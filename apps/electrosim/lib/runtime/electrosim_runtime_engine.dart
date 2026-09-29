@@ -1,11 +1,13 @@
 import 'package:electrosim_diagnostics/electrosim_diagnostics.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_energy/electrosim_energy.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
+import 'package:electrosim_pv/electrosim_pv.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 
-enum ElectroSimRuntimeSolverKind { dc, ac1, ac3 }
+enum ElectroSimRuntimeSolverKind { dc, ac1, ac3, pv }
 
 final class ElectroSimRuntimeSnapshot {
   const ElectroSimRuntimeSnapshot({
@@ -16,6 +18,8 @@ final class ElectroSimRuntimeSnapshot {
     this.dcResult,
     this.ac1Result,
     this.ac3Result,
+    this.pvResult,
+    this.energyPowerSample,
     this.measurementEngine = const MeasurementEngine(),
   });
 
@@ -26,6 +30,8 @@ final class ElectroSimRuntimeSnapshot {
   final DcSolveResult? dcResult;
   final Ac1SolveResult? ac1Result;
   final Ac3SolveResult? ac3Result;
+  final PvSolveResult? pvResult;
+  final EnergyPowerSample? energyPowerSample;
   final MeasurementEngine measurementEngine;
 
   DcSolveResult get dc =>
@@ -34,16 +40,22 @@ final class ElectroSimRuntimeSnapshot {
       ac1Result ?? (throw StateError('Current runtime result is not AC1.'));
   Ac3SolveResult get ac3 =>
       ac3Result ?? (throw StateError('Current runtime result is not AC3.'));
+  PvSolveResult get pv =>
+      pvResult ?? (throw StateError('Current runtime result is not PV.'));
 
   bool get solved => switch (solverKind) {
         ElectroSimRuntimeSolverKind.dc => dcResult?.isSolved ?? false,
         ElectroSimRuntimeSolverKind.ac1 => ac1Result?.isSolved ?? false,
         ElectroSimRuntimeSolverKind.ac3 => ac3Result?.isSolved ?? false,
+        ElectroSimRuntimeSolverKind.pv => pvResult?.isSolved ?? false,
       };
 
   bool get diagnosticsAvailable => solverKind == ElectroSimRuntimeSolverKind.dc;
   bool get dcMeasurementsAvailable =>
       solverKind == ElectroSimRuntimeSolverKind.dc && (dcResult?.isSolved ?? false);
+  bool get energyAvailable =>
+      solverKind == ElectroSimRuntimeSolverKind.pv &&
+      energyPowerSample != null;
 
   MeasurementResult measureVoltage({
     required TerminalId positiveProbe,
@@ -54,7 +66,8 @@ final class ElectroSimRuntimeSnapshot {
       return MeasurementResult.invalid(
         kind: MeasurementKind.voltageDc,
         errorCode: MeasurementErrorCode.wrongElectricalMode,
-        message: 'Les mesures CC ne sont pas disponibles en mode ${circuit.mode.name.toUpperCase()}.',
+        message:
+            'Les mesures CC ne sont pas disponibles en mode ${circuit.mode.name.toUpperCase()}.',
       );
     }
     return measurementEngine.measure(
@@ -74,7 +87,8 @@ final class ElectroSimRuntimeSnapshot {
       return MeasurementResult.invalid(
         kind: MeasurementKind.currentDc,
         errorCode: MeasurementErrorCode.wrongElectricalMode,
-        message: 'Les mesures CC ne sont pas disponibles en mode ${circuit.mode.name.toUpperCase()}.',
+        message:
+            'Les mesures CC ne sont pas disponibles en mode ${circuit.mode.name.toUpperCase()}.',
       );
     }
     return measurementEngine.measure(
@@ -91,7 +105,8 @@ final class ElectroSimRuntimeSnapshot {
       return MeasurementResult.invalid(
         kind: MeasurementKind.resistance,
         errorCode: MeasurementErrorCode.wrongElectricalMode,
-        message: 'La mesure de résistance n’est pas routée pour le mode ${circuit.mode.name.toUpperCase()}.',
+        message:
+            'La mesure de résistance n’est pas routée pour le mode ${circuit.mode.name.toUpperCase()}.',
       );
     }
     return measurementEngine.measure(
@@ -109,6 +124,8 @@ final class ElectroSimRuntimeEngine {
     this.solverDC = const SolverDC(),
     this.solverAC1 = const SolverAC1(),
     this.solverAC3 = const SolverAC3(),
+    this.solverPV = const SolverPV(),
+    this.energyEngine = const EnergyEngine(),
     this.diagnosticEngine = const DiagnosticEngine(),
     this.measurementEngine = const MeasurementEngine(),
   });
@@ -117,6 +134,8 @@ final class ElectroSimRuntimeEngine {
   final SolverDC solverDC;
   final SolverAC1 solverAC1;
   final SolverAC3 solverAC3;
+  final SolverPV solverPV;
+  final EnergyEngine energyEngine;
   final DiagnosticEngine diagnosticEngine;
   final MeasurementEngine measurementEngine;
 
@@ -158,10 +177,51 @@ final class ElectroSimRuntimeEngine {
           measurementEngine: measurementEngine,
         );
       case ElectricalMode.pv:
-        throw UnsupportedError(
-          'PV runtime routing is not integrated yet; use the dedicated PV engine until F17 PV integration.',
+        final PvSolveResult pv = solverPV.solve(circuit, topology);
+        final EnergyPowerSample? sample =
+            pv.isSolved ? EnergyPowerSample.fromPvResult(pv) : null;
+        return ElectroSimRuntimeSnapshot(
+          circuit: circuit,
+          topology: topology,
+          diagnostics: _noDcDiagnostics(circuit),
+          solverKind: ElectroSimRuntimeSolverKind.pv,
+          pvResult: pv,
+          energyPowerSample: sample,
+          measurementEngine: measurementEngine,
         );
     }
+  }
+
+  EnergySnapshot zeroEnergy(ElectroSimRuntimeSnapshot snapshot) {
+    final EnergyPowerSample? sample = snapshot.energyPowerSample;
+    if (snapshot.solverKind != ElectroSimRuntimeSolverKind.pv || sample == null) {
+      throw StateError(
+        'Energy accumulation requires a solved PV runtime snapshot.',
+      );
+    }
+    return EnergySnapshot.zero(
+      circuitId: sample.circuitId,
+      circuitRevision: sample.circuitRevision,
+      sourceEngineVersion: sample.engineVersion,
+    );
+  }
+
+  EnergySnapshot advanceEnergy({
+    required ElectroSimRuntimeSnapshot snapshot,
+    required EnergySnapshot previous,
+    required Duration elapsed,
+  }) {
+    final EnergyPowerSample? sample = snapshot.energyPowerSample;
+    if (snapshot.solverKind != ElectroSimRuntimeSolverKind.pv || sample == null) {
+      throw StateError(
+        'Energy accumulation requires a solved PV runtime snapshot.',
+      );
+    }
+    return energyEngine.advance(
+      previous: previous,
+      sample: sample,
+      elapsed: elapsed,
+    );
   }
 
   DiagnosticReport _noDcDiagnostics(CircuitState circuit) => DiagnosticReport(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'f17_tp_session_dialog.dart';
+import 'f17_tp_supervision_panel.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
@@ -362,7 +363,9 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
             onStatus: _setStatus,
             onQuickAdd: _quickAddFromPalette,
           ),
-          contextPanel: F9ContextPanels(
+          contextPanel: _workspace == 'Supervision' && widget.role == F9UserRole.teacher
+              ? F17TpSupervisionPanel(controller: _tpController)
+              : F9ContextPanels(
             circuit: _circuit,
             selectedId: _selected,
             status: _status,
@@ -378,6 +381,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
               });
             },
             runtimeSnapshot: runtimeSnapshot,
+            tpSessionController: _tpController,
           ),
           statusBar: _StatusBar(circuit: _circuit, status: _status),
           canvas: KeyedSubtree(

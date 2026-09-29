@@ -9,6 +9,7 @@ SavedCircuitDocument _document({
   String saveId = 'save-001',
   String title = 'Circuit de test',
   DateTime? updated,
+  Map<String, Object?> appState = const <String, Object?>{},
 }) {
   final circuit = buildF10ExampleRepository().all.first.circuit;
   final DateTime created = DateTime.utc(2026, 9, 29, 12);
@@ -19,6 +20,7 @@ SavedCircuitDocument _document({
     updatedAtUtc: updated ?? created,
     circuit: circuit,
     engineVersion: 'F14-test-engine',
+    appState: appState,
   );
 }
 
@@ -34,6 +36,29 @@ void main() {
       expect(decoded.updatedAtUtc, original.updatedAtUtc);
       expect(decoded.engineVersion, original.engineVersion);
       expect(decoded.circuit, original.circuit);
+      expect(decoded.appState, original.appState);
+    });
+
+    test('round-trip preserves opaque application state', () {
+      final SavedCircuitDocument original = _document(
+        appState: <String, Object?>{
+          'workspace': 'Recherche de dérangement',
+          'tp': <String, Object?>{'lifecycle': 'started'},
+        },
+      );
+      final SavedCircuitDocument decoded =
+          SavedCircuitDocument.fromJsonString(original.toJsonString());
+      expect(decoded.appState['workspace'], 'Recherche de dérangement');
+      expect((decoded.appState['tp'] as Map<String, dynamic>)['lifecycle'], 'started');
+    });
+
+    test('schema v1 migrates with empty application state', () {
+      final Map<String, dynamic> json = jsonDecode(_document().toJsonString());
+      json['schemaVersion'] = 1;
+      json.remove('appState');
+      final SavedCircuitDocument migrated = SavedCircuitDocument.fromJson(json);
+      expect(migrated.appState, isEmpty);
+      expect(migrated.circuit.revision, _document().circuit.revision);
     });
 
     test('schema v0 migrates explicitly to current schema', () {

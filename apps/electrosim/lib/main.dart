@@ -1329,7 +1329,7 @@ CircuitState _buildDemoCircuit() {
     sources: <SourceInstance>[
       SourceInstance(
         id: SourceId('source-24v'),
-        modelType: 'DC 24 V',
+        modelType: 'dc_voltage_source',
         terminals: <Terminal>[sourcePositive, sourceNegative],
         parameters: const <String, Object?>{'voltageV': 24.0},
       ),
@@ -1337,13 +1337,13 @@ CircuitState _buildDemoCircuit() {
     components: <ComponentInstance>[
       ComponentInstance(
         id: ComponentId('switch-1'),
-        modelType: 'Interrupteur',
+        modelType: 'switch',
         terminals: <Terminal>[switchIn, switchOut],
         controlState: const <String, Object?>{'closed': true},
       ),
       ComponentInstance(
         id: ComponentId('lamp-1'),
-        modelType: 'Lampe',
+        modelType: 'lamp',
         terminals: <Terminal>[lampIn, lampOut],
         parameters: const <String, Object?>{'resistanceOhm': 24.0},
       ),

@@ -450,7 +450,8 @@ class _EiePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final report = runtimeSnapshot.diagnostics;
-    final bool hasAdvice = report.advice.isNotEmpty;
+    final bool available = runtimeSnapshot.diagnosticsAvailable;
+    final bool hasAdvice = available && report.advice.isNotEmpty;
     return ListView(
       key: const Key('eie-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
@@ -462,12 +463,26 @@ class _EiePanel extends StatelessWidget {
         const SizedBox(height: ElectroSimSpacing.md),
         ElectroSimStatusChip(
           key: const Key('eie-engine-status'),
-          label: hasAdvice ? 'Anomalie étayée détectée' : 'Aucune anomalie étayée',
-          icon: hasAdvice ? Icons.warning_amber_outlined : Icons.verified_outlined,
+          label: !available
+              ? 'EIE AC non intégré'
+              : hasAdvice
+                  ? 'Anomalie étayée détectée'
+                  : 'Aucune anomalie étayée',
+          icon: !available
+              ? Icons.info_outline
+              : hasAdvice
+                  ? Icons.warning_amber_outlined
+                  : Icons.verified_outlined,
           emphasized: hasAdvice,
         ),
         const SizedBox(height: ElectroSimSpacing.sm),
-        if (!hasAdvice)
+        if (!available)
+          Text(
+            'Le solveur ${runtimeSnapshot.solverKind.name.toUpperCase()} est actif, mais l’EIE actuel ne consomme encore que les preuves du solveur CC. Aucun diagnostic AC n’est inventé.',
+            key: const Key('eie-ac-unavailable'),
+            style: Theme.of(context).textTheme.bodyMedium,
+          )
+        else if (!hasAdvice)
           Text(
             'Le moteur EIE ne dispose actuellement d’aucune preuve suffisante pour proposer un diagnostic.',
             key: const Key('eie-no-advice'),

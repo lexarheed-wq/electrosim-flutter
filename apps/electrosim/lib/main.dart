@@ -208,7 +208,7 @@ class F9HomePage extends StatelessWidget {
         ..showSnackBar(
           SnackBar(
             content: Text(
-              'Connexion à la session impossible : ' + error.toString(),
+              'Connexion à la session impossible : $error',
             ),
           ),
         );
@@ -428,7 +428,7 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
     final Uri? endpoint = Uri.tryParse(
       rawEndpoint.startsWith('ws://') || rawEndpoint.startsWith('wss://')
           ? rawEndpoint
-          : 'ws://' + rawEndpoint,
+          : 'ws://$rawEndpoint',
     );
     if (endpoint == null ||
         (endpoint.scheme != 'ws' && endpoint.scheme != 'wss') ||
@@ -798,7 +798,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _lanHostInfo = info;
       if (mounted) {
         _setStatus(
-          'Partage réseau actif — code ' + info.sessionCode,
+          'Partage réseau actif — code ${info.sessionCode}',
         );
       }
       return info;
@@ -830,7 +830,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
     setState(() {
       if (client.lastError != null) {
-        _status = 'Synchronisation : ' + client.lastError!;
+        _status = 'Synchronisation : ${client.lastError}';
       } else if (client.status == ElectroSimLanSyncStatus.reconnecting) {
         _status = 'Reconnexion au professeur…';
       } else if (client.status == ElectroSimLanSyncStatus.disconnected) {

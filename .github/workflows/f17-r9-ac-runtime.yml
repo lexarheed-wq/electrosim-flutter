@@ -1,0 +1,47 @@
+name: F17-R9 AC runtime
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f17-r9-ac-runtime
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_solver_ac/**'
+      - '.github/workflows/f17-r9-ac-runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ac-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Resolve app dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze AC runtime integration
+        working-directory: apps/electrosim
+        run: dart analyze lib test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Run AC runtime and F17 regressions
+        working-directory: apps/electrosim
+        run: flutter test test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Validate AC solver package
+        working-directory: packages/electrosim_solver_ac
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Gate marker
+        run: echo F17_R9_AC_RUNTIME_GATE_PASS

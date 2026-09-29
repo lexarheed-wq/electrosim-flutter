@@ -13,6 +13,7 @@ import 'f9_context_panels.dart';
 import 'f9_component_visuals.dart';
 import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
+import 'runtime/electrosim_runtime_engine.dart';
 
 void main() {
   runApp(const ElectroSimApp());
@@ -312,6 +313,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ElectroSimRuntimeSnapshot runtimeSnapshot =
+        const ElectroSimRuntimeEngine().evaluate(_circuit);
     return Scaffold(
       body: SafeArea(
         child: CallbackShortcuts(
@@ -351,6 +354,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                 _status = id == null ? 'Sélection effacée' : 'Sélection clavier : $id';
               });
             },
+            runtimeSnapshot: runtimeSnapshot,
           ),
           statusBar: _StatusBar(circuit: _circuit, status: _status),
           canvas: KeyedSubtree(

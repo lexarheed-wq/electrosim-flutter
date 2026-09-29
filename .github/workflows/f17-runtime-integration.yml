@@ -1,0 +1,45 @@
+name: F17 runtime integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f17-runtime-integration
+    paths:
+      - 'apps/electrosim/lib/runtime/**'
+      - 'apps/electrosim/test/f17_*'
+      - 'apps/electrosim/pubspec.yaml'
+      - '.github/workflows/f17-runtime-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  f17-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Analyze application runtime and UI integration
+        working-directory: apps/electrosim
+        run: dart analyze lib test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart test/f9_shell_test.dart
+      - name: Run F17 application integration tests
+        working-directory: apps/electrosim
+        run: flutter test test/f0_smoke_test.dart test/f9_auto_placement_test.dart test/f9_canvas_interaction_test.dart test/f9_element_editor_test.dart test/f9_shell_test.dart test/f9_wiring_policy_test.dart test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart
+      - name: Analyze DC solver extension
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          dart pub get
+          dart analyze
+      - name: Run DC solver regression
+        working-directory: packages/electrosim_solver_dc
+        run: dart test
+      - name: Gate marker
+        run: echo F17_RUNTIME_GATE_PASS

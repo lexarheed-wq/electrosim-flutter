@@ -3,6 +3,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f9_element_editor.dart';
+import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
 
 class F9ContextPanels extends StatefulWidget {
@@ -151,10 +152,10 @@ class _PropertiesPanel extends StatelessWidget {
               hint: const Text('Choisir un élément'),
               items: <DropdownMenuItem<String>>[
                 ...circuit.sources.map(
-                  (SourceInstance source) => DropdownMenuItem<String>(value: source.id.value, child: Text('${source.modelType} · ${source.id.value}')),
+                  (SourceInstance source) => DropdownMenuItem<String>(value: source.id.value, child: Text('${f9ModelLabel(source.modelType)} · ${source.id.value}')),
                 ),
                 ...circuit.components.map(
-                  (ComponentInstance component) => DropdownMenuItem<String>(value: component.id.value, child: Text('${component.modelType} · ${component.id.value}')),
+                  (ComponentInstance component) => DropdownMenuItem<String>(value: component.id.value, child: Text('${f9ModelLabel(component.modelType)} · ${component.id.value}')),
                 ),
               ],
               onChanged: onSelectElement,
@@ -167,7 +168,7 @@ class _PropertiesPanel extends StatelessWidget {
           const SizedBox(height: ElectroSimSpacing.xs),
           const Text('Aucun élément sélectionné'),
         ] else ...<Widget>[
-          Text(details.modelType, key: const Key('properties-model-type'), style: Theme.of(context).textTheme.titleMedium),
+          Text(f9ModelLabel(details.modelType), key: const Key('properties-model-type'), style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: ElectroSimSpacing.xxs),
           Text(details.id, key: const Key('properties-element-id'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ElectroSimColors.textSecondary)),
           const SizedBox(height: ElectroSimSpacing.md),

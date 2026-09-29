@@ -190,13 +190,13 @@ void paintF9Glyph(Canvas canvas, Rect rect, String modelType, Color color) {
   final double w = rect.width;
   final double h = rect.height;
 
-  if (type.contains('lampe')) {
+  if (type == 'lamp' || type.contains('lampe')) {
     canvas.drawCircle(c, rect.shortestSide * 0.28, stroke);
     canvas.drawLine(Offset(c.dx - w * 0.18, c.dy - h * 0.18), Offset(c.dx + w * 0.18, c.dy + h * 0.18), stroke);
     canvas.drawLine(Offset(c.dx + w * 0.18, c.dy - h * 0.18), Offset(c.dx - w * 0.18, c.dy + h * 0.18), stroke);
     return;
   }
-  if (type.contains('résistance') || type.contains('resistance')) {
+  if (type == 'resistor' || type.contains('résistance') || type.contains('resistance')) {
     final Path path = Path()..moveTo(rect.left + w * 0.08, c.dy);
     for (var i = 0; i < 6; i++) {
       final double x = rect.left + w * (0.2 + i * 0.1);
@@ -207,27 +207,27 @@ void paintF9Glyph(Canvas canvas, Rect rect, String modelType, Color color) {
     canvas.drawPath(path, stroke);
     return;
   }
-  if (type.contains('interrupteur') || type.contains('disjoncteur') || type.contains('bouton')) {
+  if (type == 'switch' || type == 'switch_spst' || type == 'breaker' || type == 'push_button_no' || type.contains('interrupteur') || type.contains('disjoncteur') || type.contains('bouton')) {
     canvas.drawCircle(Offset(rect.left + w * 0.2, c.dy), w * 0.07, fill);
     canvas.drawCircle(Offset(rect.right - w * 0.2, c.dy), w * 0.07, fill);
     canvas.drawLine(Offset(rect.left + w * 0.26, c.dy), Offset(rect.right - w * 0.24, rect.top + h * 0.25), stroke);
     return;
   }
-  if (type.contains('source') || type.contains('dc 24')) {
+  if (type == 'dc_voltage_source' || type == 'voltage_source' || type.contains('source') || type.contains('dc 24')) {
     canvas.drawLine(Offset(c.dx - w * 0.14, rect.top + h * 0.2), Offset(c.dx - w * 0.14, rect.bottom - h * 0.2), stroke);
     canvas.drawLine(Offset(c.dx + w * 0.12, rect.top + h * 0.32), Offset(c.dx + w * 0.12, rect.bottom - h * 0.32), stroke);
     return;
   }
-  if (type.contains('moteur') || type.contains('ventilateur')) {
+  if (type == 'motor_dc' || type == 'fan_dc' || type.contains('moteur') || type.contains('ventilateur')) {
     canvas.drawCircle(c, rect.shortestSide * 0.3, stroke);
     final TextPainter tp = TextPainter(
-      text: TextSpan(text: type.contains('ventilateur') ? 'F' : 'M', style: TextStyle(color: color, fontSize: rect.shortestSide * 0.34, fontWeight: FontWeight.w700)),
+      text: TextSpan(text: (type == 'fan_dc' || type.contains('ventilateur')) ? 'F' : 'M', style: TextStyle(color: color, fontSize: rect.shortestSide * 0.34, fontWeight: FontWeight.w700)),
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy - tp.height / 2));
     return;
   }
-  if (type.contains('buzzer')) {
+  if (type == 'buzzer' || type.contains('buzzer')) {
     final Path horn = Path()
       ..moveTo(rect.left + w * 0.18, c.dy - h * 0.12)
       ..lineTo(c.dx, c.dy - h * 0.12)
@@ -239,13 +239,13 @@ void paintF9Glyph(Canvas canvas, Rect rect, String modelType, Color color) {
     canvas.drawPath(horn, stroke);
     return;
   }
-  if (type.contains('fusible')) {
+  if (type == 'fuse' || type.contains('fusible')) {
     canvas.drawLine(Offset(rect.left + w * 0.12, c.dy), Offset(rect.left + w * 0.32, c.dy), stroke);
     canvas.drawRect(Rect.fromCenter(center: c, width: w * 0.36, height: h * 0.22), stroke);
     canvas.drawLine(Offset(rect.right - w * 0.32, c.dy), Offset(rect.right - w * 0.12, c.dy), stroke);
     return;
   }
-  if (type.contains('diode')) {
+  if (type == 'diode' || type.contains('diode')) {
     final Path tri = Path()
       ..moveTo(rect.left + w * 0.25, rect.top + h * 0.2)
       ..lineTo(rect.left + w * 0.25, rect.bottom - h * 0.2)
@@ -255,7 +255,7 @@ void paintF9Glyph(Canvas canvas, Rect rect, String modelType, Color color) {
     canvas.drawLine(Offset(rect.right - w * 0.28, rect.top + h * 0.18), Offset(rect.right - w * 0.28, rect.bottom - h * 0.18), stroke);
     return;
   }
-  if (type.contains('relais') || type.contains('bobine')) {
+  if (type == 'relay_coil' || type.contains('relais') || type.contains('bobine')) {
     final Rect coil = Rect.fromCenter(center: c, width: w * 0.48, height: h * 0.42);
     canvas.drawRRect(RRect.fromRectAndRadius(coil, Radius.circular(h * 0.12)), stroke);
     return;

@@ -1,10 +1,12 @@
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'f17_tp_session_dialog.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
@@ -14,6 +16,7 @@ import 'f9_component_visuals.dart';
 import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_runtime_engine.dart';
+import 'runtime/electrosim_tp_session_controller.dart';
 
 void main() {
   runApp(const ElectroSimApp());
@@ -259,6 +262,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.sessionNavigation = false,
     this.initialSelectedElementId,
     this.role = F9UserRole.teacher,
+    this.tpSessionController,
   });
 
   final String entryLabel;
@@ -266,6 +270,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final bool sessionNavigation;
   final String? initialSelectedElementId;
   final F9UserRole role;
+  final ElectroSimTpSessionController? tpSessionController;
 
   @override
   State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();
@@ -302,13 +307,31 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   bool _directPointerMoved = false;
   bool _trackpadPanZoomActive = false;
   double _trackpadLastScale = 1;
+  late final ElectroSimTpSessionController _tpController;
+  late final bool _ownsTpController;
+
+  bool get _studentTpReadOnly =>
+      widget.role == F9UserRole.student && _tpController.readOnly;
 
   @override
   void initState() {
     super.initState();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
-    _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
+    _ownsTpController = widget.tpSessionController == null;
+    _tpController =
+        widget.tpSessionController ?? ElectroSimTpSessionController();
+    final TpSession? tp = _tpController.session;
+    if (widget.role == F9UserRole.student &&
+        tp != null &&
+        tp.lifecycle != TpLifecycle.draft &&
+        tp.lifecycle != TpLifecycle.published) {
+      _circuit = tp.studentCircuit;
+      _workspace = 'Recherche de dérangement';
+      _layout = _layoutForCircuit(_circuit);
+    } else {
+      _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
+    }
   }
 
   @override
@@ -491,19 +514,30 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   Future<void> _showManageSession() async {
     await showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Gérer la session'),
-        content: const Text(
-          'Structure F9 active. Les actions de publication, connexion des élèves et arrêt de session seront branchées dans les lots métier dédiés.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Fermer'),
-          ),
-        ],
+      builder: (BuildContext dialogContext) => F17TpSessionDialog(
+        controller: _tpController,
+        role: widget.role,
+        onStudentStarted: (TpSession session) {
+          setState(() {
+            _circuit = session.studentCircuit;
+            _layout = _layoutForCircuit(_circuit);
+            _selected = null;
+            _workspace = 'Recherche de dérangement';
+            _status = 'TP commencé — montage élève chargé.';
+          });
+        },
       ),
     );
+    if (!mounted) {
+      return;
+    }
+    final TpSession? session = _tpController.session;
+    if (session != null) {
+      setState(() {
+        _status =
+            'TP ${session.definition.id.value} — ${session.lifecycle.name}';
+      });
+    }
   }
 
   void _acceptPaletteDrop(DragTargetDetails<F9PaletteDefinition> details) {
@@ -565,6 +599,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   void _addPaletteDefinition(F9PaletteDefinition definition, Offset worldPosition) {
+    if (_blockStudentTpMutation()) return;
     final String elementId = _allocateElementId(definition.keyName);
     final List<Terminal> terminals = _buildPaletteTerminals(definition, elementId);
     final List<ComponentInstance> components = <ComponentInstance>[..._circuit.components];
@@ -608,6 +643,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
+    _syncStudentTpCircuit();
   }
 
   List<Terminal> _buildPaletteTerminals(F9PaletteDefinition definition, String elementId) {
@@ -704,6 +740,11 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     _directDragGrabDelta = null;
 
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
+      if (_studentTpReadOnly) {
+        _setStatus('TP remis : câblage en lecture seule.');
+        _clearDirectPointerState();
+        return;
+      }
       final TerminalId terminal = hit.terminalId!;
       final TerminalId? pending = _wiringPendingTerminal;
       if (pending != null && pending != terminal) {
@@ -734,9 +775,13 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       final Offset world = _viewport.screenToWorld(event.localPosition);
       setState(() {
         _selected = id;
-        _directDragElementId = id;
-        _directDragGrabDelta = current - world;
-        _status = 'Sélection : $id';
+        if (!_studentTpReadOnly) {
+          _directDragElementId = id;
+          _directDragGrabDelta = current - world;
+        }
+        _status = _studentTpReadOnly
+            ? 'Sélection : $id — TP en lecture seule'
+            : 'Sélection : $id';
       });
       return;
     }
@@ -906,6 +951,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   void _handleConnectionRequested(TerminalId from, TerminalId to) {
+    if (_blockStudentTpMutation()) return;
     final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(_circuit, from, to);
     final Connection? connection = decision.connection;
     if (!decision.accepted || connection == null) {
@@ -924,6 +970,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _wiringHoverTerminal = null;
       _status = decision.message;
     });
+    _syncStudentTpCircuit();
     _announce(decision.message);
   }
 
@@ -948,6 +995,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   Future<void> _replaceSelectedElement() async {
+    if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
     if (selected == null) {
       return;
@@ -997,10 +1045,12 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
+    _syncStudentTpCircuit();
     _announce(_status);
   }
 
   void _toggleSelectedPrimaryState() {
+    if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
     if (selected == null) {
       return;
@@ -1015,9 +1065,11 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _circuit = next;
       _status = 'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
     });
+    _syncStudentTpCircuit();
   }
 
   void _deleteSelectedElement() {
+    if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
     if (selected == null) {
       return;
@@ -1065,6 +1117,43 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
+    _syncStudentTpCircuit();
+  }
+
+  bool _blockStudentTpMutation() {
+    if (!_studentTpReadOnly) {
+      return false;
+    }
+    _setStatus('TP remis : montage en lecture seule.');
+    return true;
+  }
+
+  void _syncStudentTpCircuit() {
+    if (widget.role != F9UserRole.student ||
+        _tpController.lifecycle != TpLifecycle.started) {
+      return;
+    }
+    _tpController.updateStudentCircuit(_circuit);
+  }
+
+  CircuitVisualLayout _layoutForCircuit(CircuitState circuit) {
+    final Map<String, Offset> positions = <String, Offset>{};
+    final List<String> ids = <String>[
+      ...circuit.sources.map((SourceInstance item) => item.id.value),
+      ...circuit.components.map((ComponentInstance item) => item.id.value),
+    ];
+    for (var index = 0; index < ids.length; index++) {
+      final int column = index % 3;
+      final int row = index ~/ 3;
+      positions[ids[index]] = Offset(
+        140 + (column * 240.0),
+        180 + (row * 180.0),
+      );
+    }
+    return F9OrthogonalRouter.reroute(
+      circuit,
+      CircuitVisualLayout(elementPositions: positions),
+    );
   }
 
   void _setStatus(String value) {
@@ -1076,6 +1165,9 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   @override
   void dispose() {
     _viewport.dispose();
+    if (_ownsTpController) {
+      _tpController.dispose();
+    }
     super.dispose();
   }
 }

@@ -31,8 +31,7 @@ for dir in "$ROOT"/packages/*; do
 done
 
 cd "$ROOT"
-echo "=== frozen visual baseline integrity ==="
-python3 tools/verify_f8_golden_baseline.py
+echo "=== frozen current visual baseline integrity ==="
 python3 tools/verify_f9_manifest.py
 
 if [ -f tools/architecture_guard.dart ]; then

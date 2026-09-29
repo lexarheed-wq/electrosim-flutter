@@ -44,6 +44,14 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test
 
+      - name: Upload existing golden baselines
+        if: steps.app-tests.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: f17-r12-golden-baselines
+          path: apps/electrosim/test/goldens/*.png
+          if-no-files-found: error
+
       - name: Render current golden candidates
         if: steps.app-tests.outcome != 'success'
         working-directory: apps/electrosim

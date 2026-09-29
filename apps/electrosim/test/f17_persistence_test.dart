@@ -5,9 +5,9 @@ import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/main.dart';
-import '../lib/runtime/electrosim_persistence_controller.dart';
-import '../lib/runtime/electrosim_tp_session_controller.dart';
+import 'package:electrosim/main.dart';
+import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
+import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 
 void main() {
   group('F17-R8 local persistence', () {

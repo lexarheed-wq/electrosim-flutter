@@ -1578,37 +1578,6 @@ class _WorkspaceTopBar extends StatelessWidget {
   }
 }
 
-class _DashboardDestination extends StatelessWidget {
-  const _DashboardDestination({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      minTileHeight: ElectroSimGeometry.minimumTouchTarget,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-        side: const BorderSide(color: ElectroSimColors.outline),
-      ),
-      leading: Icon(icon, color: ElectroSimColors.primary),
-      title: Text(title),
-      subtitle: Text(description),
-      trailing: const Icon(Icons.chevron_right),
-    );
-  }
-}
-
 class _StatusBar extends StatelessWidget {
   const _StatusBar({required this.circuit, required this.status});
 

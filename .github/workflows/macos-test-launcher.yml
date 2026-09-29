@@ -1,0 +1,27 @@
+name: macOS test launcher syntax
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - tools-macos-test-launcher
+    paths:
+      - 'tools/run_macos_test.sh'
+      - '.github/workflows/macos-test-launcher.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate launcher syntax
+        run: bash -n tools/run_macos_test.sh
+      - name: Validate required project paths
+        run: |
+          test -f apps/electrosim/pubspec.yaml
+          test -d packages/electrosim_domain
+          test -f ci/TOOLCHAIN_LOCK.json
+          echo MACOS_TEST_LAUNCHER_GATE_PASS

@@ -8,6 +8,7 @@ on:
     paths:
       - 'packages/electrosim_scenarios/**'
       - 'tools/f16_*'
+      - 'VERSION'
       - '.github/workflows/f16-catalog-qualification.yml'
 
 permissions:
@@ -29,3 +30,9 @@ jobs:
         run: |
           chmod +x tools/f16_gate.sh
           ./tools/f16_gate.sh
+      - name: Upload F16 audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: F16_AUDIT_CATALOG
+          path: docs/f16/audit_catalog.json
+          if-no-files-found: error

@@ -32,7 +32,7 @@ jobs:
         run: dart analyze lib test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart test/f9_shell_test.dart
       - name: Run F17 application integration tests
         working-directory: apps/electrosim
-        run: flutter test test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart test/f9_shell_test.dart
+        run: flutter test test/f0_smoke_test.dart test/f9_auto_placement_test.dart test/f9_canvas_interaction_test.dart test/f9_element_editor_test.dart test/f9_shell_test.dart test/f9_wiring_policy_test.dart test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart
       - name: Analyze DC solver extension
         working-directory: packages/electrosim_solver_dc
         run: |

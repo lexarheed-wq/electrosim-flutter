@@ -25,6 +25,9 @@ dependencies:
     path: ../../packages/electrosim_measurements
   electrosim_tp:
     path: ../../packages/electrosim_tp
+  electrosim_storage:
+    path: ../../packages/electrosim_storage
+  path_provider: ^2.1.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -9,16 +9,16 @@ Main has advanced beyond RC1 through controlled F17 integration stages:
 - F17-R5: EIE panel backed by DiagnosticEngine evidence only.
 - F17-R6: real teacher/student TP lifecycle with publication, start, submission, grading and closure.
 - F17-R7: TP diagnostic-sheet persistence and teacher supervision.
+- F17-R8: durable local CircuitState persistence with atomic replacement/recovery, explicit save/resume actions, and TP lifecycle reconstruction through validated engine transitions.
 
 Current marker:
 
 ```
-ELECTROSIM2-F17-R7-INTEGRATION
+ELECTROSIM2-F17-R8-INTEGRATION
 ```
 
 Remaining integration work:
 
-- durable local persistence and reconnect;
 - AC1/AC3 runtime routing;
 - PV and energy runtime routing;
 - multi-device/network teacher/student synchronization;

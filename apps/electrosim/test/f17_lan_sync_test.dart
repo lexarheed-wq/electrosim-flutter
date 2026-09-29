@@ -29,7 +29,7 @@ Future<void> _pumpUntil(
   final Stopwatch stopwatch = Stopwatch()..start();
   while (finder.evaluate().isEmpty) {
     if (stopwatch.elapsed > timeout) {
-      fail('Timed out waiting for widget: ' + finder.toString());
+      fail('Timed out waiting for widget: $finder');
     }
     await tester.pump(const Duration(milliseconds: 20));
   }

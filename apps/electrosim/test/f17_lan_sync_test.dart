@@ -262,25 +262,12 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('student joins a published teacher session from the validated home',
+    testWidgets('validated home exposes a student join form without adding a fourth entry',
         (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1100, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-
-      final ElectroSimTpSessionController teacher =
-          ElectroSimTpSessionController();
-      teacher.createDraft();
-      teacher.publish();
-      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
-        controller: teacher,
-        sessionCode: 'JOIN24',
-      );
-      final ElectroSimLanHostInfo info = await host.start(
-        address: InternetAddress.loopbackIPv4,
-      );
-      addTearDown(host.close);
 
       await tester.pumpWidget(const app.ElectroSimApp());
       expect(find.text('Créer une nouvelle session'), findsOneWidget);
@@ -291,33 +278,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('join-session-submit')), findsOneWidget);
+      expect(find.byKey(const Key('join-session-endpoint')), findsOneWidget);
+      expect(find.byKey(const Key('join-session-code')), findsOneWidget);
+
       await tester.enterText(
         find.byKey(const Key('join-session-endpoint')),
-        info.preferredEndpoint.toString(),
+        '192.168.1.20:8765',
       );
       await tester.enterText(
         find.byKey(const Key('join-session-code')),
-        'JOIN24',
+        'BAD',
       );
       await tester.tap(find.byKey(const Key('join-session-submit')));
-      await tester.pump();
-      await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 250));
-      });
       await tester.pumpAndSettle();
-      await _pumpUntil(tester, find.text('Session élève'));
 
-      expect(find.text('Session élève'), findsOneWidget);
-      expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('session-manage-action')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('tp-student-start')), findsOneWidget);
-
-      await tester.tap(find.byKey(const Key('tp-student-start')));
-      await tester.pump();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.started);
-      expect(teacher.lifecycle, TpLifecycle.started);
+      expect(find.byKey(const Key('join-session-error')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

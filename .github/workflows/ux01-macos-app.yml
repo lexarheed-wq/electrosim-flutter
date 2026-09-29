@@ -1,0 +1,64 @@
+name: UX01 macOS runnable app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ux01-application-shell-recovery
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/**'
+      - 'tools/run_macos_test.sh'
+      - '.github/workflows/ux01-macos-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos-app:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify CocoaPods
+        run: pod --version
+
+      - name: Prepare temporary macOS runner
+        run: |
+          set -euo pipefail
+          TMP_ROOT="$RUNNER_TEMP/electrosim-macos"
+          mkdir -p "$TMP_ROOT/apps"
+          cp -R apps/electrosim "$TMP_ROOT/apps/electrosim"
+          cp -R packages "$TMP_ROOT/packages"
+          cd "$TMP_ROOT/apps/electrosim"
+          cp pubspec.yaml "$TMP_ROOT/pubspec.electrosim.yaml"
+          flutter create --platforms=macos --project-name electrosim . >/dev/null
+          cp "$TMP_ROOT/pubspec.electrosim.yaml" pubspec.yaml
+          if [ -f test/widget_test.dart ] && grep -q "MyApp" test/widget_test.dart; then
+            rm -f test/widget_test.dart
+          fi
+          flutter pub get
+          echo "APP_DIR=$TMP_ROOT/apps/electrosim" >> "$GITHUB_ENV"
+
+      - name: Build macOS release
+        working-directory: ${{ env.APP_DIR }}
+        run: flutter build macos --release
+
+      - name: Verify built app architectures
+        run: |
+          set -euo pipefail
+          APP_PATH="$APP_DIR/build/macos/Build/Products/Release/electrosim.app"
+          test -d "$APP_PATH"
+          find "$APP_PATH/Contents/MacOS" -maxdepth 1 -type f -print -exec file {} \;
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$RUNNER_TEMP/ElectroSim2-UX01-macOS.app.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim2-UX01-macOS-app
+          path: ${{ runner.temp }}/ElectroSim2-UX01-macOS.app.zip
+          if-no-files-found: error

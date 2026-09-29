@@ -143,7 +143,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               )
             else ...<Widget>[
               Text(
-                'Code : ' + info.sessionCode,
+                'Code : ${info.sessionCode}',
                 key: const Key('tp-network-code'),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
@@ -154,8 +154,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               ),
               if (info.endpoints.length > 1)
                 Text(
-                  'Adresses disponibles : ' +
-                      info.endpoints.length.toString(),
+                  'Adresses disponibles : ${info.endpoints.length}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
             ],
@@ -191,7 +190,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() {
-        _lanError = 'Partage réseau indisponible : ' + error.toString();
+        _lanError = 'Partage réseau indisponible : $error';
         _startingLan = false;
       });
     }

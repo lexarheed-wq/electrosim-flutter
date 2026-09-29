@@ -633,9 +633,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
       );
     } on Object catch (error) {
       _lastError = error.toString();
-      final Completer<void>? first = _firstSnapshot;
       _firstSnapshot = null;
-      if (first != null && !first.isCompleted) first.completeError(error);
       _handleDisconnected();
       rethrow;
     }
@@ -668,7 +666,6 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
           } finally {
             _applyingRemote = false;
           }
-          _lastError = null;
           _setStatus(ElectroSimLanSyncStatus.synchronized);
           final Completer<void>? first = _firstSnapshot;
           _firstSnapshot = null;
@@ -676,6 +673,8 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
           notifyListeners();
           break;
         case ElectroSimSyncMessageType.ack:
+          _lastError = null;
+          notifyListeners();
           break;
         case ElectroSimSyncMessageType.error:
           _lastError = envelope.payload['message']?.toString();
@@ -715,6 +714,13 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
 
   void _handleDisconnected() {
     _socket = null;
+    final Completer<void>? first = _firstSnapshot;
+    _firstSnapshot = null;
+    if (first != null && !first.isCompleted) {
+      first.completeError(
+        StateError('LAN connection closed before initial synchronization.'),
+      );
+    }
     if (_closed) {
       _setStatus(ElectroSimLanSyncStatus.closed);
       return;

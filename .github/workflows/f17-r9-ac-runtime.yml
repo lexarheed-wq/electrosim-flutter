@@ -9,6 +9,8 @@ on:
       - 'apps/electrosim/**'
       - 'packages/electrosim_solver_ac/**'
       - '.github/workflows/f17-r9-ac-runtime.yml'
+      - 'docs/f17/STATUS.md'
+      - 'VERSION'
 
 permissions:
   contents: read

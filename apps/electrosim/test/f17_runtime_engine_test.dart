@@ -152,16 +152,20 @@ void main() {
     expect(snapshot.diagnosticsAvailable, isFalse);
   });
 
-  test('F17-R9 leaves PV routing explicitly unavailable for the next integration stage', () {
+  test('F17-R10 routes even invalid PV circuits through SolverPV without throwing', () {
     final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('f17-r9-pv'),
+      circuitId: CircuitId('f17-r10-invalid-pv'),
       revision: 0,
       mode: ElectricalMode.pv,
     );
-    expect(
-      () => const ElectroSimRuntimeEngine().evaluate(circuit),
-      throwsUnsupportedError,
-    );
+    final ElectroSimRuntimeSnapshot snapshot =
+        const ElectroSimRuntimeEngine().evaluate(circuit);
+
+    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
+    expect(snapshot.pvResult, isNotNull);
+    expect(snapshot.solved, isFalse);
+    expect(snapshot.energyAvailable, isFalse);
+    expect(snapshot.diagnosticsAvailable, isFalse);
   });
 
 }

@@ -70,10 +70,9 @@ void main() {
     test('explicit update preserves original creation time', () async {
       final ElectroSimTpSessionController tp =
           ElectroSimTpSessionController();
+      tp.createDraft();
       final first = await persistence.saveWorkspace(
-        circuit: tp.hasSession
-            ? tp.studentCircuit!
-            : _minimalCircuitFromWorkspace(),
+        circuit: tp.studentCircuit!,
         workspace: 'Câblage',
         tpController: tp,
       );
@@ -112,21 +111,5 @@ void main() {
 
       expect(find.textContaining('Session reprise'), findsOneWidget);
     });
-  });
-}
-
-/// Uses the real F9 workspace circuit without duplicating persistence logic.
-CircuitState _minimalCircuitFromWorkspace() {
-  // CircuitState JSON is stable and validated by electrosim_domain. This
-  // minimal state is sufficient for an update-timestamp contract test.
-  return CircuitState.fromJson(<String, dynamic>{
-    'circuitId': 'r8-minimal',
-    'revision': 1,
-    'mode': 'dc',
-    'components': <dynamic>[],
-    'connections': <dynamic>[],
-    'sources': <dynamic>[],
-    'settings': <String, dynamic>{},
-    'metadata': <String, dynamic>{},
   });
 }

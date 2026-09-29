@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - f16-r1
+      - main
     paths:
       - 'packages/electrosim_scenarios/**'
       - 'tools/f16_*'

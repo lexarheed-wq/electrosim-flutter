@@ -13,7 +13,7 @@ run_target() {
   flutter pub get
   dart analyze
 
-  mapfile -t tests < <(find test -type f -name '*_test.dart' ! -name '*_golden_test.dart' | sort 2>/dev/null || true)
+  mapfile -t tests < <(find test -type f -name '*_test.dart' ! -name '*_golden_test.dart' ! -name '*_goldens_test.dart' | sort 2>/dev/null || true)
   if [ "${#tests[@]}" -gt 0 ]; then
     echo "=== test: $dir (portable non-golden suite) ==="
     flutter test "${tests[@]}"

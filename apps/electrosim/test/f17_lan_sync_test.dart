@@ -21,6 +21,20 @@ Future<void> _waitFor(
   }
 }
 
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  final Stopwatch stopwatch = Stopwatch()..start();
+  while (finder.evaluate().isEmpty) {
+    if (stopwatch.elapsed > timeout) {
+      fail('Timed out waiting for widget: ' + finder.toString());
+    }
+    await tester.pump(const Duration(milliseconds: 20));
+  }
+}
+
 CircuitState _nextRevision(CircuitState source) => CircuitState(
       circuitId: source.circuitId,
       revision: source.revision + 1,
@@ -230,7 +244,8 @@ void main() {
       expect(find.byKey(const Key('tp-network-share')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('tp-network-share')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await _pumpUntil(tester, find.byKey(const Key('tp-network-code')));
 
       expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
       expect(find.byKey(const Key('tp-network-endpoint')), findsOneWidget);
@@ -271,7 +286,7 @@ void main() {
       await tester.tap(find.byKey(const Key('home-join-session')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Rejoindre une session'), findsOneWidget);
+      expect(find.byKey(const Key('join-session-submit')), findsOneWidget);
       await tester.enterText(
         find.byKey(const Key('join-session-endpoint')),
         info.preferredEndpoint.toString(),
@@ -281,7 +296,8 @@ void main() {
         'JOIN24',
       );
       await tester.tap(find.byKey(const Key('join-session-submit')));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await _pumpUntil(tester, find.text('Session élève'));
 
       expect(find.text('Session élève'), findsOneWidget);
       expect(find.byKey(const Key('session-manage-action')), findsOneWidget);

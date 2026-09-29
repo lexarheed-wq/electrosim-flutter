@@ -1,0 +1,55 @@
+name: F17-R10 PV and energy runtime
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f17-r10-pv-energy
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_pv/**'
+      - 'packages/electrosim_energy/**'
+      - '.github/workflows/f17-r10-pv-energy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pv-energy-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Resolve app dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze R10 runtime integration
+        working-directory: apps/electrosim
+        run: dart analyze lib test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Run R10 and F17 regression tests
+        working-directory: apps/electrosim
+        run: flutter test test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_controller_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Validate PV engine regression
+        working-directory: packages/electrosim_pv
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Validate energy engine regression
+        working-directory: packages/electrosim_energy
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Gate marker
+        run: echo F17_R10_PV_ENERGY_RUNTIME_GATE_PASS

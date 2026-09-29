@@ -25,7 +25,7 @@ void main() {
     expect((first.top - second.top).abs(), lessThan(1));
   });
 
-  testWidgets('active session exposes the validated persistent navigation', (WidgetTester tester) async {
+  testWidgets('creating a session opens setup then dashboard before simulator', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -35,16 +35,18 @@ void main() {
     await tester.tap(find.text('Créer une nouvelle session'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('session-home-action')), findsOneWidget);
-    expect(find.byKey(const Key('session-dashboard-action')), findsOneWidget);
-    expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
-    expect(find.text('Accueil'), findsOneWidget);
-    expect(find.text('Tableau de bord'), findsOneWidget);
-    expect(find.text('Gérer la session'), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsOneWidget);
+    expect(find.byKey(const Key('new-session-page')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+
+    await tester.tap(find.byKey(const Key('new-session-create')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('session-dashboard-page')), findsOneWidget);
+    expect(find.text('Tableau de bord'), findsWidgets);
+    expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
-  testWidgets('dashboard groups wiring troubleshooting and supervision', (WidgetTester tester) async {
+  testWidgets('dashboard groups distinct activities and management outside simulator', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -53,20 +55,22 @@ void main() {
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.text('Créer une nouvelle session'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('session-dashboard-action')));
+    await tester.tap(find.byKey(const Key('new-session-create')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
-    expect(find.byKey(const Key('dashboard-troubleshooting')), findsOneWidget);
-    expect(find.byKey(const Key('dashboard-supervision')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-open-wiring')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-open-troubleshooting')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-open-supervision')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-manage-session')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
 
-    await tester.tap(find.byKey(const Key('dashboard-supervision')));
+    await tester.tap(find.byKey(const Key('dashboard-manage-session')));
     await tester.pumpAndSettle();
-    expect(find.text('Supervision'), findsOneWidget);
-    expect(find.text('Recherche de dérangement'), findsNothing);
+    expect(find.byKey(const Key('session-management-page')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
-  testWidgets('maintenance enters troubleshooting without re-proposing session dashboard', (WidgetTester tester) async {
+  testWidgets('maintenance center stays outside simulator until a fault is chosen', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -76,11 +80,34 @@ void main() {
     await tester.tap(find.text('Centre de maintenance'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Centre de maintenance'), findsOneWidget);
-    expect(find.text('Recherche de dérangement'), findsOneWidget);
-    expect(find.byKey(const Key('direct-entry-status')), findsOneWidget);
-    expect(find.text('Accès direct'), findsOneWidget);
-    expect(find.byKey(const Key('session-dashboard-action')), findsNothing);
+    expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
+    expect(find.byKey(const Key('maintenance-fault-library')), findsOneWidget);
+    expect(find.byKey(const Key('maintenance-start-troubleshooting')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+
+    await tester.tap(find.byKey(const Key('maintenance-fault-library')));
+    await tester.pumpAndSettle();
+    expect(find.text('Bibliothèque de pannes'), findsWidgets);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+  });
+
+  testWidgets('design center exposes design choices before simulator', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(820, 1180);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.tap(find.text('Centre de conception'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('design-center-page')), findsOneWidget);
+    expect(find.byKey(const Key('design-new-wiring')), findsOneWidget);
+    expect(find.byKey(const Key('design-example-library')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+
+    await tester.tap(find.byKey(const Key('design-new-wiring')));
+    await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
   });
 

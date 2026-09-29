@@ -8,3 +8,9 @@ coverage/
 **/.DS_Store
 *.log
 .toolchain/
+
+.toolchain/
+toolchain/archives/
+build/
+.dart_tool/
+*.zip

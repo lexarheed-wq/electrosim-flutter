@@ -1,12 +1,14 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/material.dart';
 
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
 import 'runtime/electrosim_runtime_engine.dart';
+import 'runtime/electrosim_tp_session_controller.dart';
 
 class F9ContextPanels extends StatefulWidget {
   const F9ContextPanels({
@@ -21,6 +23,7 @@ class F9ContextPanels extends StatefulWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.tpSessionController,
   });
 
   final CircuitState circuit;
@@ -33,8 +36,20 @@ class F9ContextPanels extends StatefulWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final ElectroSimTpSessionController? tpSessionController;
 
-  bool get showDiagnostic => role == F9UserRole.student && workspace == 'Recherche de dérangement';
+  bool get showDiagnostic {
+    if (role != F9UserRole.student ||
+        workspace != 'Recherche de dérangement') {
+      return false;
+    }
+    final ElectroSimTpSessionController? controller = tpSessionController;
+    if (controller == null) {
+      return true;
+    }
+    final TpSession? session = controller.session;
+    return session?.diagnosticSheetVisibleFor(TpRole.student) ?? false;
+  }
 
   @override
   State<F9ContextPanels> createState() => _F9ContextPanelsState();
@@ -105,7 +120,8 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                   runtimeSnapshot: widget.runtimeSnapshot,
                 ),
                 _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
-                if (widget.showDiagnostic) const _StudentDiagnosticPanel(),
+                if (widget.showDiagnostic)
+                  _StudentDiagnosticPanel(controller: widget.tpSessionController),
               ],
             ),
           ),
@@ -505,24 +521,35 @@ class _EiePanel extends StatelessWidget {
   }
 }
 class _StudentDiagnosticPanel extends StatefulWidget {
-  const _StudentDiagnosticPanel();
+  const _StudentDiagnosticPanel({this.controller});
+
+  final ElectroSimTpSessionController? controller;
 
   @override
-  State<_StudentDiagnosticPanel> createState() => _StudentDiagnosticPanelState();
+  State<_StudentDiagnosticPanel> createState() =>
+      _StudentDiagnosticPanelState();
 }
 
 class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
   final TextEditingController _symptom = TextEditingController();
   final TextEditingController _hypothesis = TextEditingController();
   final TextEditingController _conclusion = TextEditingController();
+  String _status = '';
 
   @override
   Widget build(BuildContext context) {
+    final ElectroSimTpSessionController? controller = widget.controller;
+    final int savedCount =
+        controller?.session?.diagnosticSheet.entries.length ?? 0;
     return ListView(
       key: const Key('student-diagnostic-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
       children: <Widget>[
-        const ElectroSimSectionTitle(title: 'Fiche de diagnostic', subtitle: 'Visible uniquement pour l’élève en recherche de dérangement'),
+        const ElectroSimSectionTitle(
+          title: 'Fiche de diagnostic',
+          subtitle:
+              'Visible uniquement pour l’élève pendant la recherche de dérangement',
+        ),
         const SizedBox(height: ElectroSimSpacing.md),
         TextField(
           key: const Key('diagnostic-symptom'),
@@ -547,8 +574,69 @@ class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
           maxLines: 4,
           decoration: const InputDecoration(labelText: 'Conclusion'),
         ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        FilledButton.icon(
+          key: const Key('diagnostic-save'),
+          onPressed: controller == null ? null : _save,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Enregistrer dans le TP'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.xs),
+        Text(
+          'Entrées enregistrées : $savedCount',
+          key: const Key('diagnostic-saved-count'),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ElectroSimColors.textSecondary,
+              ),
+        ),
+        if (_status.isNotEmpty) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.xs),
+          Text(
+            _status,
+            key: const Key('diagnostic-save-status'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ],
     );
+  }
+
+  void _save() {
+    final ElectroSimTpSessionController? controller = widget.controller;
+    if (controller == null) {
+      return;
+    }
+    final List<DiagnosticEntry> entries = <DiagnosticEntry>[
+      if (_symptom.text.trim().isNotEmpty)
+        DiagnosticEntry(
+          promptId: 'symptom',
+          answer: _symptom.text.trim(),
+        ),
+      if (_hypothesis.text.trim().isNotEmpty)
+        DiagnosticEntry(
+          promptId: 'hypothesis',
+          answer: _hypothesis.text.trim(),
+        ),
+      if (_conclusion.text.trim().isNotEmpty)
+        DiagnosticEntry(
+          promptId: 'conclusion',
+          answer: _conclusion.text.trim(),
+        ),
+    ];
+    if (entries.isEmpty) {
+      setState(() => _status = 'Aucune réponse à enregistrer.');
+      return;
+    }
+    for (final DiagnosticEntry entry in entries) {
+      controller.addDiagnosticEntry(
+        promptId: entry.promptId,
+        answer: entry.answer,
+      );
+    }
+    _symptom.clear();
+    _hypothesis.clear();
+    _conclusion.clear();
+    setState(() => _status = 'Fiche enregistrée dans le TP.');
   }
 
   @override

@@ -10,9 +10,10 @@ final class SavedCircuitDocument {
     required this.updatedAtUtc,
     required this.circuit,
     required this.engineVersion,
+    this.appState = const <String, Object?>{},
   });
 
-  static const int currentSchemaVersion = 1;
+  static const int currentSchemaVersion = 2;
 
   final String saveId;
   final String title;
@@ -20,6 +21,13 @@ final class SavedCircuitDocument {
   final DateTime updatedAtUtc;
   final CircuitState circuit;
   final String engineVersion;
+
+  /// Opaque, JSON-compatible application state.
+  ///
+  /// The storage package deliberately does not interpret this payload. Runtime
+  /// layers may use it to restore UI/session state without duplicating file I/O
+  /// or making storage depend on TP/application packages.
+  final Map<String, Object?> appState;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'schemaVersion': currentSchemaVersion,
@@ -29,6 +37,7 @@ final class SavedCircuitDocument {
         'updatedAtUtc': updatedAtUtc.toUtc().toIso8601String(),
         'engineVersion': engineVersion,
         'circuit': circuit.toJson(),
+        'appState': appState,
       };
 
   String toJsonString() => jsonEncode(toJson());
@@ -49,16 +58,23 @@ final class SavedCircuitDocument {
     if (schemaRaw == 0) {
       return _migrateV0(json);
     }
+    if (schemaRaw == 1) {
+      return _migrateV1(json);
+    }
     if (schemaRaw != currentSchemaVersion) {
       throw FormatException('Unsupported saved circuit schemaVersion: $schemaRaw.');
     }
-    return _parseV1(json);
+    return _parseV2(json);
   }
 
-  static SavedCircuitDocument _parseV1(Map<String, dynamic> json) {
+  static SavedCircuitDocument _parseV2(Map<String, dynamic> json) {
     final Object? circuitRaw = json['circuit'];
     if (circuitRaw is! Map<String, dynamic>) {
       throw const FormatException('Missing or invalid circuit payload.');
+    }
+    final Object? appStateRaw = json['appState'] ?? const <String, Object?>{};
+    if (appStateRaw is! Map<String, dynamic>) {
+      throw const FormatException('Missing or invalid appState payload.');
     }
     final String saveId = _requiredString(json, 'saveId');
     final String title = _requiredString(json, 'title');
@@ -75,7 +91,19 @@ final class SavedCircuitDocument {
       updatedAtUtc: updated,
       engineVersion: engineVersion,
       circuit: CircuitState.fromJson(circuitRaw),
+      appState: Map<String, Object?>.unmodifiable(
+        appStateRaw.map(
+          (String key, dynamic value) => MapEntry<String, Object?>(key, value),
+        ),
+      ),
     );
+  }
+
+  static SavedCircuitDocument _migrateV1(Map<String, dynamic> json) {
+    final Map<String, dynamic> migrated = Map<String, dynamic>.from(json);
+    migrated['schemaVersion'] = currentSchemaVersion;
+    migrated['appState'] = const <String, Object?>{};
+    return _parseV2(migrated);
   }
 
   static SavedCircuitDocument _migrateV0(Map<String, dynamic> json) {
@@ -83,7 +111,8 @@ final class SavedCircuitDocument {
     migrated['schemaVersion'] = currentSchemaVersion;
     migrated['title'] = migrated.remove('name') ?? 'Imported circuit';
     migrated['engineVersion'] = migrated['engineVersion'] ?? 'legacy-v0';
-    return _parseV1(migrated);
+    migrated['appState'] = const <String, Object?>{};
+    return _parseV2(migrated);
   }
 
   static String _requiredString(Map<String, dynamic> json, String key) {

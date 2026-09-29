@@ -10,6 +10,8 @@ on:
       - 'packages/electrosim_storage/**'
       - 'packages/electrosim_tp/**'
       - '.github/workflows/f17-r8-local-persistence.yml'
+      - 'docs/f17/STATUS.md'
+      - 'VERSION'
 
 permissions:
   contents: read

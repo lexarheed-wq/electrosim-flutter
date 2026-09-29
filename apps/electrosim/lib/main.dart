@@ -38,8 +38,6 @@ class F9HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ElectroSimRuntimeSnapshot runtimeSnapshot =
-        const ElectroSimRuntimeEngine().evaluate(_circuit);
     return Scaffold(
       body: SafeArea(
         child: LayoutBuilder(
@@ -315,6 +313,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ElectroSimRuntimeSnapshot runtimeSnapshot =
+        const ElectroSimRuntimeEngine().evaluate(_circuit);
     return Scaffold(
       body: SafeArea(
         child: CallbackShortcuts(

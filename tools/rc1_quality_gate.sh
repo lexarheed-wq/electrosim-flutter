@@ -13,17 +13,12 @@ run_target() {
   flutter pub get
   dart analyze
 
-  if [ "$dir" = "apps/electrosim" ]; then
-    mapfile -t tests < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
-    if [ "${#tests[@]}" -gt 0 ]; then
-      echo "=== test: $dir (portable suite; F9 golden pixels verified by frozen manifest) ==="
-      flutter test "${tests[@]}"
-    fi
-  elif find test -type f -name '*_test.dart' -print -quit 2>/dev/null | grep -q .; then
-    echo "=== test: $dir ==="
-    flutter test
+  mapfile -t tests < <(find test -type f -name '*_test.dart' ! -name '*_golden_test.dart' | sort 2>/dev/null || true)
+  if [ "${#tests[@]}" -gt 0 ]; then
+    echo "=== test: $dir (portable non-golden suite) ==="
+    flutter test "${tests[@]}"
   else
-    echo "=== test: $dir (no tests) ==="
+    echo "=== test: $dir (no portable tests) ==="
   fi
 }
 
@@ -36,7 +31,8 @@ for dir in "$ROOT"/packages/*; do
 done
 
 cd "$ROOT"
-echo "=== frozen F9 visual baseline integrity ==="
+echo "=== frozen visual baseline integrity ==="
+python3 tools/verify_f8_golden_baseline.py
 python3 tools/verify_f9_manifest.py
 
 if [ -f tools/architecture_guard.dart ]; then

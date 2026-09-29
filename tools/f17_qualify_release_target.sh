@@ -6,7 +6,7 @@ source "$ROOT/tools/f15_flutter_env.sh"
 TARGET="${1:?target required}"
 
 "$ROOT/tools/f15_platform_preflight.sh" "$TARGET" >/dev/null
-PREP_OUT="$("$ROOT/tools/f17_prepare_release_runner.sh" "$TARGET")"
+PREP_OUT="$(bash "$ROOT/tools/f17_prepare_release_runner.sh" "$TARGET")"
 case "$PREP_OUT" in
   F17_RUNNER_PATH=*) TMP="${PREP_OUT#F17_RUNNER_PATH=}" ;;
   *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;

@@ -13,13 +13,16 @@ Main has advanced beyond RC1 through controlled F17 integration stages:
 - F17-R9: AC1/AC3 runtime routing to the qualified AC solvers; DC-only measurement and EIE capabilities remain explicitly unavailable in AC instead of fabricating values.
 - F17-R10: PV runtime routing to the qualified SolverPV, solver-backed PV evidence in the application, and EnergyEngine accumulation driven only by explicit simulation time.
 - F17-R11: teacher-authoritative classroom LAN synchronization over a versioned WebSocket protocol, with student join/share UI, replay protection, constrained student mutations, and reconnect catch-up.
+- F17-R12: final native release qualification across Linux, Windows, Android, macOS and iOS; generated runners now receive deterministic LAN permissions/configuration and the dependency lock/golden references are reproducible under Flutter 3.38.10.
 
 Current marker:
 
 ```
-ELECTROSIM2-F17-R11-INTEGRATION
+ELECTROSIM2-F17-R12-QUALIFIED
 ```
 
-Remaining integration work:
+Controlled F17 integration work is complete.
 
-- final cross-platform release qualification after these integrations.
+Remaining release confirmation:
+
+- short physical Mac validation of real trackpad behavior, native rendering and classroom LAN behavior before packaging a user-facing candidate.

@@ -23,6 +23,8 @@ dependencies:
     path: ../../packages/electrosim_scenarios
   electrosim_measurements:
     path: ../../packages/electrosim_measurements
+  electrosim_tp:
+    path: ../../packages/electrosim_tp
 dev_dependencies:
   flutter_test:
     sdk: flutter

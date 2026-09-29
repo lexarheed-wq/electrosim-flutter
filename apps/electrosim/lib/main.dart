@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'application_shell_pages.dart';
-import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -703,50 +702,48 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   Future<void> _showDashboard() async {
-    final String? selected = await showDialog<String>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Tableau de bord'),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              _DashboardDestination(
-                key: const Key('dashboard-wiring'),
-                icon: Icons.cable_outlined,
-                title: 'Câblage',
-                description: 'Préparer ou suivre une activité de câblage.',
-                onTap: () => Navigator.of(dialogContext).pop('Câblage'),
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext dashboardContext) => SessionDashboardPage(
+          sessionName: widget.entryLabel,
+          controller: _tpController,
+          onOpenWiring: () {
+            Navigator.of(dashboardContext).pop();
+            setState(() {
+              _workspace = 'Câblage';
+              _status = 'Activité : Câblage';
+            });
+          },
+          onOpenTroubleshooting: () {
+            Navigator.of(dashboardContext).pop();
+            setState(() {
+              _workspace = 'Recherche de dérangement';
+              _status = 'Activité : Recherche de dérangement';
+            });
+          },
+          onOpenSupervision: () {
+            Navigator.of(dashboardContext).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Supervision')),
+                  body: SafeArea(
+                    child: F17TpSupervisionPanel(controller: _tpController),
+                  ),
+                ),
               ),
-              const SizedBox(height: ElectroSimSpacing.xs),
-              _DashboardDestination(
-                key: const Key('dashboard-troubleshooting'),
-                icon: Icons.troubleshoot_outlined,
-                title: 'Recherche de dérangement',
-                description: 'Préparer ou suivre un diagnostic sur scénario défectueux.',
-                onTap: () => Navigator.of(dialogContext).pop('Recherche de dérangement'),
+            );
+          },
+          onManageSession: () {
+            Navigator.of(dashboardContext).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    SessionManagementPage(controller: _tpController),
               ),
-              const SizedBox(height: ElectroSimSpacing.xs),
-              _DashboardDestination(
-                key: const Key('dashboard-supervision'),
-                icon: Icons.monitor_heart_outlined,
-                title: 'Supervision',
-                description: 'Consulter la progression et les résultats de la session.',
-                onTap: () => Navigator.of(dialogContext).pop('Supervision'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
-    if (!mounted || selected == null) {
-      return;
-    }
-    setState(() {
-      _workspace = selected;
-      _status = 'Espace UI : $selected';
-    });
   }
 
   Future<void> _saveWorkspace() async {
@@ -795,30 +792,17 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   Future<void> _showManageSession() async {
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) => F17TpSessionDialog(
-        controller: _tpController,
-        role: widget.role,
-        onStudentStarted: (TpSession session) {
-          setState(() {
-            _circuit = session.studentCircuit;
-            _layout = _layoutForCircuit(_circuit);
-            _selected = null;
-            _workspace = 'Recherche de dérangement';
-            _status = 'TP commencé — montage élève chargé.';
-          });
-        },
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionManagementPage(controller: _tpController),
       ),
     );
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     final TpSession? session = _tpController.session;
     if (session != null) {
       setState(() {
         _status =
-            'TP ${session.definition.id.value} — ${session.lifecycle.name}';
+            'TP ${session.definition.id.value} — ${lifecycleLabel(session.lifecycle)}';
       });
     }
   }

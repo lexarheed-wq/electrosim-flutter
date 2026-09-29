@@ -381,7 +381,10 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
               });
             },
             runtimeSnapshot: runtimeSnapshot,
-            tpSessionController: _tpController,
+            tpSessionController:
+                widget.sessionNavigation || widget.tpSessionController != null
+                    ? _tpController
+                    : null,
           ),
           statusBar: _StatusBar(circuit: _circuit, status: _status),
           canvas: KeyedSubtree(

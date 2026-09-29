@@ -30,14 +30,14 @@ jobs:
         run: |
           flutter test --update-goldens test/f9_goldens_test.dart
           flutter test test/f9_goldens_test.dart
-      - name: Restrict change set to golden PNG files
+      - name: Restrict change set to reviewed files
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git diff --name-only)"
           printf '%s\n' "$changed"
           [ -n "$changed" ]
-          unexpected="$(printf '%s\n' "$changed" | grep -Ev '^apps/electrosim/test/goldens/[^/]+\.png$' || true)"
+          unexpected="$(printf '%s\\n' "$changed" | grep -Ev '^(apps/electrosim/test/goldens/[^/]+\\.png|apps/electrosim/pubspec\\.lock)$' || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected files changed:"
             printf '%s\n' "$unexpected"

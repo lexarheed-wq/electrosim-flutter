@@ -275,6 +275,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.initialWorkspace = 'Câblage',
     this.sessionNavigation = false,
     this.initialSelectedElementId,
+    this.initialCircuit,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
@@ -284,6 +285,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final String initialWorkspace;
   final bool sessionNavigation;
   final String? initialSelectedElementId;
+  final CircuitState? initialCircuit;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
@@ -293,7 +295,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
 }
 
 class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
-  late CircuitState _circuit = _buildDemoCircuit();
+  late CircuitState _circuit;
   late CircuitVisualLayout _layout = CircuitVisualLayout(
     elementPositions: const <String, Offset>{
       'source-24v': Offset(150, 220),
@@ -332,6 +334,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   @override
   void initState() {
     super.initState();
+    _circuit = widget.initialCircuit ?? _buildDemoCircuit();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
     _ownsTpController = widget.tpSessionController == null;
@@ -344,6 +347,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         tp.lifecycle != TpLifecycle.published) {
       _circuit = tp.studentCircuit;
       _workspace = 'Recherche de dérangement';
+      _layout = _layoutForCircuit(_circuit);
+    } else if (widget.initialCircuit != null) {
       _layout = _layoutForCircuit(_circuit);
     } else {
       _layout = F9OrthogonalRouter.reroute(_circuit, _layout);

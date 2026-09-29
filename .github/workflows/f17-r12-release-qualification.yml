@@ -39,8 +39,23 @@ jobs:
         run: flutter analyze
 
       - name: Run complete application test suite
+        id: app-tests
+        continue-on-error: true
         working-directory: apps/electrosim
         run: flutter test
+
+      - name: Render current golden candidates
+        if: steps.app-tests.outcome != 'success'
+        working-directory: apps/electrosim
+        run: flutter test --update-goldens test/f9_goldens_test.dart
+
+      - name: Upload golden candidates
+        if: steps.app-tests.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: f17-r12-golden-candidates
+          path: apps/electrosim/test/goldens/*.png
+          if-no-files-found: error
 
       - name: Validate critical F17 packages
         shell: bash
@@ -57,6 +72,12 @@ jobs:
             )
           done
           echo F17_R12_CORE_REGRESSION_PASS
+
+      - name: Enforce application regression result
+        if: steps.app-tests.outcome != 'success'
+        run: |
+          echo "Application regression suite failed; inspect uploaded golden candidates."
+          exit 1
 
   native-release:
     name: Native release — ${{ matrix.target }}

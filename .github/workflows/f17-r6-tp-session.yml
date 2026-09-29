@@ -1,0 +1,55 @@
+name: F17-R6 TP session integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f17-r6-tp-session
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_tp/**'
+      - 'packages/electrosim_scenarios/**'
+      - '.github/workflows/f17-r6-tp-session.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tp-session:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Resolve application dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze TP application integration
+        working-directory: apps/electrosim
+        run: dart analyze lib test/f17_tp_session_controller_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Run TP application integration tests
+        working-directory: apps/electrosim
+        run: flutter test test/f17_tp_session_controller_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+
+      - name: Run TP engine regression
+        working-directory: packages/electrosim_tp
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Run scenarios regression
+        working-directory: packages/electrosim_scenarios
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Gate marker
+        run: echo F17_R6_TP_SESSION_GATE_PASS

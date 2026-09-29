@@ -88,5 +88,44 @@ void main() {
       expect(student, isNot(contains('teacherTruth')));
       expect(student, isNot(contains('acceptableRepairs')));
     });
+    test('teacher can enter a bounded final score after submission', () {
+      final engine = TpEngine(faultScenarios: scenarios);
+      final def = TpDefinition.troubleshooting(
+        id: TpId('TP-RD-007'),
+        title: 'Teacher grade',
+        scenarioId: FaultScenarioId('FAULT-DC-001'),
+      );
+      engine.createDraft(def);
+      engine.publish(def.id);
+      engine.start(def.id);
+      final scenario = scenarios.findById(def.faultScenarioId!)!;
+      engine.updateCircuit(
+        def.id,
+        scenario.teacherTruth.acceptableRepairs.first
+            .apply(engine.get(def.id).studentCircuit),
+      );
+      engine.submit(def.id);
+
+      final evaluated = engine.evaluate(def.id, teacherScore: 85);
+      expect(evaluated.lifecycle, TpLifecycle.evaluated);
+      expect(evaluated.evaluation!.score, 85);
+      expect(evaluated.evaluation!.functional, isTrue);
+
+      final engine2 = TpEngine(faultScenarios: scenarios);
+      engine2.createDraft(def);
+      engine2.publish(def.id);
+      engine2.start(def.id);
+      engine2.updateCircuit(
+        def.id,
+        scenario.teacherTruth.acceptableRepairs.first
+            .apply(engine2.get(def.id).studentCircuit),
+      );
+      engine2.submit(def.id);
+      expect(
+        () => engine2.evaluate(def.id, teacherScore: 101),
+        throwsRangeError,
+      );
+    });
+
   });
 }

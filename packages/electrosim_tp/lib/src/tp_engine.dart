@@ -93,7 +93,41 @@ final class TpEngine {
     return next;
   }
 
-  TpSession evaluate(TpId id) => _transition(id, TpLifecycle.submitted, TpLifecycle.evaluated, preserveEvaluation:true);
+  TpSession evaluate(TpId id, {int? teacherScore}) {
+    final session = _require(id);
+    if (session.lifecycle != TpLifecycle.submitted) {
+      throw StateError(
+        'Invalid TP transition ${session.lifecycle.name} -> ${TpLifecycle.evaluated.name}.',
+      );
+    }
+    final TpEvaluation? generated = session.evaluation;
+    if (generated == null) {
+      throw StateError('Submitted TP has no generated evaluation.');
+    }
+    final int score = teacherScore ?? generated.score;
+    if (score < 0 || score > session.definition.maxScore) {
+      throw RangeError.range(
+        score,
+        0,
+        session.definition.maxScore,
+        'teacherScore',
+      );
+    }
+    final next = TpSession(
+      definition: session.definition,
+      lifecycle: TpLifecycle.evaluated,
+      studentCircuit: session.studentCircuit,
+      diagnosticSheet: session.diagnosticSheet,
+      evaluation: TpEvaluation(
+        score: score,
+        functional: generated.functional,
+        safetyOk: generated.safetyOk,
+        measurementsOk: generated.measurementsOk,
+      ),
+    );
+    _sessions[id] = next;
+    return next;
+  }
   TpSession close(TpId id) => _transition(id, TpLifecycle.evaluated, TpLifecycle.closed, preserveEvaluation:true);
 
   TpSession get(TpId id) => _require(id);

@@ -58,9 +58,7 @@ final class ElectroSimSyncEnvelope {
   factory ElectroSimSyncEnvelope.fromJson(Map<String, dynamic> json) {
     if (json['schemaVersion'] != schemaVersion) {
       throw FormatException(
-        'Unsupported sync schemaVersion: ' +
-            json['schemaVersion'].toString() +
-            '.',
+        'Unsupported sync schemaVersion: ${json['schemaVersion']}.',
       );
     }
     final Object? typeRaw = json['type'];
@@ -353,7 +351,7 @@ final class ElectroSimLanSyncHost {
       if (desired != TpLifecycle.started &&
           desired != TpLifecycle.submitted) {
         throw StateError(
-          'Student cannot transition published TP to ' + desired.name + '.',
+          'Student cannot transition published TP to ${desired.name}.',
         );
       }
       current = controller.startStudent();
@@ -363,7 +361,7 @@ final class ElectroSimLanSyncHost {
       if (desired != TpLifecycle.started &&
           desired != TpLifecycle.submitted) {
         throw StateError(
-          'Student cannot transition active TP to ' + desired.name + '.',
+          'Student cannot transition active TP to ${desired.name}.',
         );
       }
       final Object? circuitRaw = state['studentCircuit'];
@@ -430,9 +428,7 @@ final class ElectroSimLanSyncHost {
 
     if (desired != current.lifecycle) {
       throw StateError(
-        'Teacher TP is ' +
-            current.lifecycle.name +
-            '; student mutation is read-only.',
+        'Teacher TP is ${current.lifecycle.name}; student mutation is read-only.',
       );
     }
   }
@@ -545,7 +541,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
   static String generateClientId({Random? random}) {
     final Random source = random ?? Random.secure();
     final int value = source.nextInt(0x7fffffff);
-    return 'student-' + value.toRadixString(16).padLeft(8, '0');
+    return 'student-${value.toRadixString(16).padLeft(8, '0')}';
   }
 
   Future<void> connect(

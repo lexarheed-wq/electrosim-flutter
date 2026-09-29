@@ -341,6 +341,7 @@ final class SolverDC {
 
       switch (component.modelType) {
         case 'resistor':
+        case 'lamp':
           final double? resistance = _positiveParameter(component.parameters, 'resistanceOhm');
           if (resistance == null) {
             diagnostics.add(

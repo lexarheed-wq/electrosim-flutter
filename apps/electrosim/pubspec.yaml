@@ -21,6 +21,8 @@ dependencies:
     path: ../../packages/electrosim_diagnostics
   electrosim_scenarios:
     path: ../../packages/electrosim_scenarios
+  electrosim_measurements:
+    path: ../../packages/electrosim_measurements
 dev_dependencies:
   flutter_test:
     sdk: flutter

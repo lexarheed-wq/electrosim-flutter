@@ -23,6 +23,7 @@ case "$PREP_OUT" in
 esac
 APP="$TMP/apps/electrosim"
 [ -d "$APP" ] || { echo "F15_RUNNER_PATH_INVALID: $APP" >&2; exit 69; }
+python3 "$ROOT/tools/f17_verify_lan_platform_config.py" "$APP" "$TARGET"
 cd "$APP"
 "$FLUTTER_BIN" analyze
 "$FLUTTER_BIN" test test/f0_smoke_test.dart
@@ -57,6 +58,9 @@ if not ms: raise SystemExit(3)
 print(ms[0])
 PY
 )"
+if [ "$TARGET" = "android" ]; then
+  python3 "$ROOT/tools/f17_verify_android_apk.py" "$ART"
+fi
 SHA="$(python3 - "$ART" <<'PY'
 from pathlib import Path
 import hashlib,sys
@@ -73,7 +77,7 @@ DART_VER="$("$DART_BIN" --version 2>&1 | head -1 | tr -d '\r')"
 python3 - "$OUT" "$TARGET" "$HOST" "$FLUTTER_VER" "$DART_VER" "$SHA" "${CMD[*]}" <<'PY'
 import json,platform,sys,datetime
 out,target,host,flutter,dart,sha,buildcmd=sys.argv[1:]
-data={'schemaVersion':1,'phase':'F15-R7','target':target,'status':'PASS','host':{'uname':host,'system':platform.system(),'release':platform.release(),'machine':platform.machine()},'flutter':flutter,'dart':dart,'buildCommand':buildcmd,'artifactSha256':sha,'smokeTest':'PASS','offlineCoreSmoke':'PASS','createdAtUtc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+data={'schemaVersion':1,'phase':'F17-R12','target':target,'status':'PASS','host':{'uname':host,'system':platform.system(),'release':platform.release(),'machine':platform.machine()},'flutter':flutter,'dart':dart,'buildCommand':buildcmd,'artifactSha256':sha,'smokeTest':'PASS','offlineCoreSmoke':'PASS','createdAtUtc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
 open(out,'w',encoding='utf-8').write(json.dumps(data,indent=2,sort_keys=True)+'\n')
 print(json.dumps(data,indent=2))
 PY

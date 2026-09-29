@@ -264,6 +264,10 @@ class _MeasurementsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.pv) {
+      return _PvRuntimePanel(runtimeSnapshot: runtimeSnapshot);
+    }
+
     final _MeasurementTarget? target = _target();
     if (target == null) {
       return ListView(
@@ -380,6 +384,102 @@ class _MeasurementsPanel extends StatelessWidget {
   }
 }
 
+class _PvRuntimePanel extends StatelessWidget {
+  const _PvRuntimePanel({required this.runtimeSnapshot});
+
+  final ElectroSimRuntimeSnapshot runtimeSnapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final pv = runtimeSnapshot.pv;
+    if (!pv.isSolved) {
+      return ListView(
+        key: const Key('measurements-panel'),
+        padding: const EdgeInsets.all(ElectroSimSpacing.md),
+        children: <Widget>[
+          const ElectroSimSectionTitle(
+            title: 'Production PV',
+            subtitle: 'Résultat direct du SolverPV',
+          ),
+          const SizedBox(height: ElectroSimSpacing.md),
+          const ElectroSimStatusChip(
+            key: Key('pv-runtime-status'),
+            label: 'Circuit PV invalide',
+            icon: Icons.warning_amber_outlined,
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          ...pv.diagnostics.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
+              child: Text(item.message),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final sample = runtimeSnapshot.energyPowerSample();
+    return ListView(
+      key: const Key('measurements-panel'),
+      padding: const EdgeInsets.all(ElectroSimSpacing.md),
+      children: <Widget>[
+        const ElectroSimSectionTitle(
+          title: 'Production PV',
+          subtitle: 'SolverPV + EnergyEngine',
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        const ElectroSimStatusChip(
+          key: Key('pv-runtime-status'),
+          label: 'Solveur PV actif',
+          icon: Icons.solar_power_outlined,
+          emphasized: true,
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        Text(
+          '${pv.irradianceWm2.toStringAsFixed(1)} W/m²',
+          key: const Key('pv-irradiance-reading'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const Text('Irradiance'),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        Text(
+          '${pv.cellTemperatureC.toStringAsFixed(1)} °C',
+          key: const Key('pv-temperature-reading'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const Text('Température cellule'),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        Text(
+          '${pv.pvAvailablePowerW.toStringAsFixed(1)} W',
+          key: const Key('pv-available-power-reading'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const Text('Puissance PV disponible'),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        Text(
+          '${pv.inverterOutputPowerW.toStringAsFixed(1)} W',
+          key: const Key('pv-output-power-reading'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text('Sortie onduleur · ${pv.inverterState.name}'),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        Text(
+          '${sample.lossPowerW.toStringAsFixed(1)} W',
+          key: const Key('pv-loss-power-reading'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const Text('Pertes instantanées routées vers EnergyEngine'),
+        const SizedBox(height: ElectroSimSpacing.md),
+        const Text(
+          'L’énergie cumulée n’avance que lorsqu’une durée de simulation explicite est fournie. '
+          'Le temps de rendu de l’interface n’est jamais comptabilisé.',
+          key: Key('pv-energy-time-policy'),
+        ),
+      ],
+    );
+  }
+}
+
 final class _MeasurementTarget {
   const _MeasurementTarget({
     required this.label,
@@ -464,7 +564,7 @@ class _EiePanel extends StatelessWidget {
         ElectroSimStatusChip(
           key: const Key('eie-engine-status'),
           label: !available
-              ? 'EIE AC non intégré'
+              ? 'EIE non intégré pour ce mode'
               : hasAdvice
                   ? 'Anomalie étayée détectée'
                   : 'Aucune anomalie étayée',
@@ -478,7 +578,7 @@ class _EiePanel extends StatelessWidget {
         const SizedBox(height: ElectroSimSpacing.sm),
         if (!available)
           Text(
-            'Le solveur ${runtimeSnapshot.solverKind.name.toUpperCase()} est actif, mais l’EIE actuel ne consomme encore que les preuves du solveur CC. Aucun diagnostic AC n’est inventé.',
+            'Le solveur ${runtimeSnapshot.solverKind.name.toUpperCase()} est actif, mais l’EIE actuel ne consomme encore que les preuves du solveur CC. Aucun diagnostic pour ce mode n’est inventé.',
             key: const Key('eie-ac-unavailable'),
             style: Theme.of(context).textTheme.bodyMedium,
           )

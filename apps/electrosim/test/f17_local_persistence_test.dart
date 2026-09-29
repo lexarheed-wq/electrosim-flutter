@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -100,6 +102,36 @@ void main() {
 
       expect(second.createdAtUtc, first.createdAtUtc);
       expect(second.updatedAtUtc.isBefore(first.updatedAtUtc), isFalse);
+    });
+    testWidgets('workspace exposes explicit local save and resume actions',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            sessionNavigation: true,
+            persistenceController: persistence,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('workspace-save-action')), findsOneWidget);
+      expect(find.byKey(const Key('workspace-open-action')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('workspace-save-action')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Sauvegarde locale'),
+        findsOneWidget,
+      );
+      expect((await persistence.listSaves()).length, 1);
+      expect(tester.takeException(), isNull);
     });
   });
 }

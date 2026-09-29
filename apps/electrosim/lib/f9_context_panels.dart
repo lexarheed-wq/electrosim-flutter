@@ -1,10 +1,12 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
+import 'runtime/electrosim_runtime_engine.dart';
 
 class F9ContextPanels extends StatefulWidget {
   const F9ContextPanels({
@@ -18,6 +20,7 @@ class F9ContextPanels extends StatefulWidget {
     required this.onDeleteSelected,
     required this.onReplaceSelected,
     required this.onSelectElement,
+    required this.runtimeSnapshot,
   });
 
   final CircuitState circuit;
@@ -29,6 +32,7 @@ class F9ContextPanels extends StatefulWidget {
   final VoidCallback? onDeleteSelected;
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
+  final ElectroSimRuntimeSnapshot runtimeSnapshot;
 
   bool get showDiagnostic => role == F9UserRole.student && workspace == 'Recherche de dérangement';
 
@@ -95,7 +99,11 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
                 ),
-                const _MeasurementsPanel(),
+                _MeasurementsPanel(
+                  circuit: widget.circuit,
+                  selectedId: widget.selectedId,
+                  runtimeSnapshot: widget.runtimeSnapshot,
+                ),
                 const _EiePanel(),
                 if (widget.showDiagnostic) const _StudentDiagnosticPanel(),
               ],
@@ -228,27 +236,196 @@ class _PropertiesPanel extends StatelessWidget {
 }
 
 class _MeasurementsPanel extends StatelessWidget {
-  const _MeasurementsPanel();
+  const _MeasurementsPanel({
+    required this.circuit,
+    required this.selectedId,
+    required this.runtimeSnapshot,
+  });
+
+  final CircuitState circuit;
+  final String? selectedId;
+  final ElectroSimRuntimeSnapshot runtimeSnapshot;
 
   @override
   Widget build(BuildContext context) {
+    final _MeasurementTarget? target = _target();
+    if (target == null) {
+      return ListView(
+        key: const Key('measurements-panel'),
+        padding: const EdgeInsets.all(ElectroSimSpacing.md),
+        children: <Widget>[
+          const ElectroSimSectionTitle(
+            title: 'Mesures',
+            subtitle: 'Valeurs calculées uniquement par MeasurementEngine',
+          ),
+          const SizedBox(height: ElectroSimSpacing.md),
+          const ElectroSimStatusChip(
+            label: 'Sélectionnez un élément à 2 bornes',
+            icon: Icons.touch_app_outlined,
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          const Text(
+            'Le voltmètre et l’ampèremètre utilisent le résultat électrique courant. '
+            'Aucune valeur n’est calculée ou inventée par l’interface.',
+          ),
+        ],
+      );
+    }
+
+    final MeasurementResult voltage = runtimeSnapshot.measureVoltage(
+      positiveProbe: target.terminals[0].id,
+      negativeProbe: target.terminals[1].id,
+    );
+    final MeasurementResult current = runtimeSnapshot.measureCurrent(
+      branchId: target.branchId,
+    );
+    final bool available = voltage.isValid && current.isValid;
+
     return ListView(
       key: const Key('measurements-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
       children: <Widget>[
-        const ElectroSimSectionTitle(title: 'Mesures', subtitle: 'Aucune valeur n’est inventée par l’interface'),
-        const SizedBox(height: ElectroSimSpacing.md),
-        const ElectroSimStatusChip(label: 'En attente du moteur de mesure', icon: Icons.hourglass_empty),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        Text(
-          'F9 fournit le conteneur de présentation. Les tensions, courants et puissances seront affichés uniquement lorsqu’un résultat de mesure validé sera injecté.',
-          style: Theme.of(context).textTheme.bodyMedium,
+        const ElectroSimSectionTitle(
+          title: 'Mesures',
+          subtitle: 'MeasurementEngine + résultat solveur courant',
         ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        ElectroSimStatusChip(
+          key: const Key('measurement-engine-status'),
+          label: available ? 'Mesures moteur disponibles' : 'Mesure indisponible',
+          icon: available ? Icons.verified_outlined : Icons.warning_amber_outlined,
+          emphasized: available,
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        Text(
+          target.label,
+          key: const Key('measurement-target-label'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: ElectroSimSpacing.xs),
+        Text(
+          'Bornes ${target.terminals[0].name} → ${target.terminals[1].name}',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: ElectroSimColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        _InstrumentReading(
+          key: const Key('measurement-voltmeter'),
+          icon: Icons.speed_outlined,
+          title: 'Voltmètre CC',
+          reading: voltage,
+          readingKey: const Key('measurement-voltage-reading'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        _InstrumentReading(
+          key: const Key('measurement-ammeter'),
+          icon: Icons.electric_meter_outlined,
+          title: 'Ampèremètre CC',
+          reading: current,
+          readingKey: const Key('measurement-current-reading'),
+        ),
+        if (!available) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.md),
+          Text(
+            voltage.message ?? current.message ?? 'Résultat électrique indisponible.',
+            key: const Key('measurement-error-message'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ElectroSimColors.textSecondary,
+            ),
+          ),
+        ],
       ],
     );
   }
+
+  _MeasurementTarget? _target() {
+    final String? id = selectedId;
+    if (id == null) return null;
+    for (final ComponentInstance component in circuit.components) {
+      if (component.id.value == id && component.terminals.length == 2) {
+        return _MeasurementTarget(
+          label: '${f9ModelLabel(component.modelType)} · ${component.id.value}',
+          terminals: component.terminals,
+          branchId: 'component:${component.id.value}',
+        );
+      }
+    }
+    for (final SourceInstance source in circuit.sources) {
+      if (source.id.value == id && source.terminals.length == 2) {
+        return _MeasurementTarget(
+          label: '${f9ModelLabel(source.modelType)} · ${source.id.value}',
+          terminals: source.terminals,
+          branchId: 'source:${source.id.value}',
+        );
+      }
+    }
+    return null;
+  }
 }
 
+final class _MeasurementTarget {
+  const _MeasurementTarget({
+    required this.label,
+    required this.terminals,
+    required this.branchId,
+  });
+  final String label;
+  final List<Terminal> terminals;
+  final String branchId;
+}
+
+class _InstrumentReading extends StatelessWidget {
+  const _InstrumentReading({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.reading,
+    required this.readingKey,
+  });
+  final IconData icon;
+  final String title;
+  final MeasurementResult reading;
+  final Key readingKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final String value = reading.isValid ? _formatQuantity(reading.reading!) : '—';
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(ElectroSimSpacing.md),
+        child: Row(
+          children: <Widget>[
+            Icon(icon, color: reading.isValid ? ElectroSimColors.primary : ElectroSimColors.textSecondary),
+            const SizedBox(width: ElectroSimSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(title, style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: ElectroSimSpacing.xxs),
+                  Text(value, key: readingKey, style: Theme.of(context).textTheme.headlineSmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatQuantity(ElectricalQuantity quantity) {
+    final String unit = switch (quantity.unit) {
+      ElectricalUnit.volt => 'V',
+      ElectricalUnit.ampere => 'A',
+      ElectricalUnit.ohm => 'Ω',
+      _ => quantity.unit.name,
+    };
+    final double value = quantity.value.abs() < 1e-12 ? 0.0 : quantity.value;
+    return '${value.toStringAsFixed(3)} $unit';
+  }
+}
 class _EiePanel extends StatelessWidget {
   const _EiePanel();
 

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:electrosim/runtime/electrosim_lan_sync.dart';

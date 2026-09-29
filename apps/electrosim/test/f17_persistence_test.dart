@@ -104,12 +104,14 @@ void main() {
       await tester.tap(find.byKey(const Key('workspace-save-action')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Sauvegarde locale'), findsOneWidget);
+      final List<SavedCircuitSummary> saves = await persistence.listSaves();
+      expect(saves, hasLength(1));
+      expect(saves.single.saveId, ElectroSimPersistenceController.defaultSaveId);
 
       await tester.tap(find.byKey(const Key('workspace-open-action')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Session reprise'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

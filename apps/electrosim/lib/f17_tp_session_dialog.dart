@@ -3,6 +3,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f9_ui_context.dart';
+import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
 class F17TpSessionDialog extends StatefulWidget {
@@ -11,11 +12,15 @@ class F17TpSessionDialog extends StatefulWidget {
     required this.controller,
     required this.role,
     required this.onStudentStarted,
+    this.onEnableLanSharing,
+    this.initialLanHostInfo,
   });
 
   final ElectroSimTpSessionController controller;
   final F9UserRole role;
   final ValueChanged<TpSession> onStudentStarted;
+  final Future<ElectroSimLanHostInfo> Function()? onEnableLanSharing;
+  final ElectroSimLanHostInfo? initialLanHostInfo;
 
   @override
   State<F17TpSessionDialog> createState() => _F17TpSessionDialogState();
@@ -23,6 +28,15 @@ class F17TpSessionDialog extends StatefulWidget {
 
 class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
   final TextEditingController _score = TextEditingController();
+  ElectroSimLanHostInfo? _lanInfo;
+  String? _lanError;
+  bool _startingLan = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lanInfo = widget.initialLanHostInfo;
+  }
 
   bool get _teacher => widget.role == F9UserRole.teacher;
 
@@ -79,6 +93,10 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                   ],
                 ],
                 const SizedBox(height: ElectroSimSpacing.md),
+                if (_teacher && widget.onEnableLanSharing != null) ...<Widget>[
+                  _networkSharingSection(context),
+                  const SizedBox(height: ElectroSimSpacing.md),
+                ],
                 if (_teacher) ..._teacherActions(current),
                 if (!_teacher) ..._studentActions(current),
               ],
@@ -93,6 +111,90 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
         ),
       ],
     );
+  }
+
+  Widget _networkSharingSection(BuildContext context) {
+    final ElectroSimLanHostInfo? info = _lanInfo;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: ElectroSimColors.outline),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(ElectroSimSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              'Partage réseau local',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: ElectroSimSpacing.xs),
+            if (info == null)
+              FilledButton.tonalIcon(
+                key: const Key('tp-network-share'),
+                onPressed: _startingLan ? null : _enableLanSharing,
+                icon: const Icon(Icons.wifi_tethering_outlined),
+                label: Text(
+                  _startingLan
+                      ? 'Activation…'
+                      : 'Activer le partage professeur',
+                ),
+              )
+            else ...<Widget>[
+              Text(
+                'Code : ' + info.sessionCode,
+                key: const Key('tp-network-code'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: ElectroSimSpacing.xxs),
+              SelectableText(
+                info.preferredEndpoint.toString(),
+                key: const Key('tp-network-endpoint'),
+              ),
+              if (info.endpoints.length > 1)
+                Text(
+                  'Adresses disponibles : ' +
+                      info.endpoints.length.toString(),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+            if (_lanError != null) ...<Widget>[
+              const SizedBox(height: ElectroSimSpacing.xs),
+              Text(
+                _lanError!,
+                key: const Key('tp-network-error'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _enableLanSharing() async {
+    final Future<ElectroSimLanHostInfo> Function()? callback =
+        widget.onEnableLanSharing;
+    if (callback == null || _startingLan) return;
+    setState(() {
+      _startingLan = true;
+      _lanError = null;
+    });
+    try {
+      final ElectroSimLanHostInfo info = await callback();
+      if (!mounted) return;
+      setState(() {
+        _lanInfo = info;
+        _startingLan = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _lanError = 'Partage réseau indisponible : ' + error.toString();
+        _startingLan = false;
+      });
+    }
   }
 
   List<Widget> _teacherActions(TpSession? session) {

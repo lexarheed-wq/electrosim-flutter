@@ -1,0 +1,27 @@
+name: Package UX01 Mac test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ux01-application-shell-recovery
+    paths:
+      - '.github/workflows/package-ux01-mac-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create source ZIP
+        run: |
+          mkdir -p dist
+          zip -qr dist/ElectroSim2-UX01-Mac-Test.zip .             -x '.git/*' 'dist/*' '.dart_tool/*' 'build/*' '**/.DS_Store'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim2-UX01-Mac-Test
+          path: dist/ElectroSim2-UX01-Mac-Test.zip
+          if-no-files-found: error

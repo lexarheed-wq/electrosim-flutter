@@ -207,7 +207,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           children: <Widget>[
             const ElectroSimSectionTitle(
               title: 'Composants',
-              subtitle: 'Palette F9 finale — recherche, catégories et placement sûr',
+              subtitle: 'Recherche, catégories et ajout de composants',
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             TextField(

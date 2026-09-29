@@ -1,12 +1,13 @@
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'f17_tp_session_dialog.dart';
+import 'application_shell_pages.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -90,12 +91,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.add_circle_outline,
                                     title: 'Créer une nouvelle session',
                                     description: 'Préparer une activité et ouvrir un espace de travail.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openNewSession(
                                       context,
-                                      'Session active',
-                                      initialWorkspace: 'Câblage',
-                                      sessionNavigation: true,
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                   ),
                                   _HomeActionCard(
@@ -104,11 +102,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.build_circle_outlined,
                                     title: 'Centre de maintenance',
                                     description: 'Accéder aux parcours de recherche de dérangement.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openMaintenanceCenter(
                                       context,
-                                      'Centre de maintenance',
-                                      initialWorkspace: 'Recherche de dérangement',
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                   ),
                                   _HomeActionCard(
@@ -117,11 +113,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.account_tree_outlined,
                                     title: 'Centre de conception',
                                     description: 'Câbler librement et préparer les futurs schémas sains.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openDesignCenter(
                                       context,
-                                      'Centre de conception',
-                                      initialWorkspace: 'Câblage',
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                   ),
                                 ],
@@ -151,12 +145,220 @@ class F9HomePage extends StatelessWidget {
     return (availableWidth - (ElectroSimSpacing.md * 2)) / 3;
   }
 
-  static void _openWorkspace(
+  static void _openNewSession(
     BuildContext context,
-    String entryLabel, {
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext pageContext) => NewSessionPage(
+          onCreate: (String sessionName) {
+            final controller =
+                ElectroSimTpSessionController(title: sessionName);
+            Navigator.of(pageContext).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (BuildContext dashboardContext) =>
+                    _sessionDashboard(
+                  dashboardContext,
+                  sessionName: sessionName,
+                  controller: controller,
+                  persistenceController: persistenceController,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static void _openDesignCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext pageContext) => DesignCenterPage(
+          onNewWiring: () => _pushWorkspace(
+            pageContext,
+            entryLabel: 'Centre de conception',
+            initialWorkspace: 'Câblage',
+            persistenceController: persistenceController,
+            initialCircuit: _emptyCircuit('design-new'),
+          ),
+          onOpenExamples: () => _openExampleCatalog(
+            pageContext,
+            persistenceController,
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openMaintenanceCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext pageContext) => MaintenanceCenterPage(
+          onOpenFaultLibrary: () => _openFaultCatalog(
+            pageContext,
+            persistenceController,
+          ),
+          onStartTroubleshooting: () => _openFaultCatalog(
+            pageContext,
+            persistenceController,
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _sessionDashboard(
+    BuildContext context, {
+    required String sessionName,
+    required ElectroSimTpSessionController controller,
+    required ElectroSimPersistenceController? persistenceController,
+  }) {
+    return SessionDashboardPage(
+      sessionName: sessionName,
+      controller: controller,
+      onOpenWiring: () => _pushWorkspace(
+        context,
+        entryLabel: sessionName,
+        initialWorkspace: 'Câblage',
+        sessionNavigation: true,
+        tpSessionController: controller,
+        persistenceController: persistenceController,
+        initialCircuit: _emptyCircuit('session-wiring'),
+      ),
+      onOpenTroubleshooting: () => _pushWorkspace(
+        context,
+        entryLabel: sessionName,
+        initialWorkspace: 'Recherche de dérangement',
+        sessionNavigation: true,
+        tpSessionController: controller,
+        persistenceController: persistenceController,
+      ),
+      onOpenSupervision: () => _openSupervision(
+        context,
+        controller,
+      ),
+      onManageSession: () => _openManagement(
+        context,
+        controller,
+      ),
+    );
+  }
+
+  static void _openManagement(
+    BuildContext context,
+    ElectroSimTpSessionController controller,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionManagementPage(controller: controller),
+      ),
+    );
+  }
+
+  static void _openSupervision(
+    BuildContext context,
+    ElectroSimTpSessionController controller,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text('Supervision')),
+          body: SafeArea(
+            child: F17TpSupervisionPanel(controller: controller),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openExampleCatalog(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    final catalog = buildF16QualifiedCatalog();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext pageContext) => CatalogPage(
+          title: 'Bibliothèque de schémas sains',
+          subtitle:
+              'Chaque circuit a été validé avant son intégration au catalogue.',
+          items: catalog.examples
+              .map(
+                (example) => CatalogItem(
+                  id: example.id.value,
+                  title: example.title,
+                  subtitle: example.description,
+                ),
+              )
+              .toList(growable: false),
+          onOpen: (String id) {
+            final example = catalog.examples
+                .singleWhere((item) => item.id.value == id);
+            _pushWorkspace(
+              pageContext,
+              entryLabel: example.title,
+              initialWorkspace: 'Câblage',
+              persistenceController: persistenceController,
+              initialCircuit: example.circuit,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static void _openFaultCatalog(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    final catalog = buildF16QualifiedCatalog();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext pageContext) => CatalogPage(
+          title: 'Bibliothèque de pannes',
+          subtitle:
+              'Choisissez un scénario défectueux avant d’entrer dans le simulateur.',
+          items: catalog.faultScenarios
+              .map(
+                (scenario) => CatalogItem(
+                  id: scenario.id.value,
+                  title: scenario.title,
+                  subtitle: scenario.studentBrief,
+                ),
+              )
+              .toList(growable: false),
+          onOpen: (String id) {
+            final scenario = catalog.faultScenarios
+                .singleWhere((item) => item.id.value == id);
+            _pushWorkspace(
+              pageContext,
+              entryLabel: scenario.title,
+              initialWorkspace: 'Recherche de dérangement',
+              persistenceController: persistenceController,
+              initialCircuit: scenario.faultyCircuit,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  static void _pushWorkspace(
+    BuildContext context, {
+    required String entryLabel,
     required String initialWorkspace,
     bool sessionNavigation = false,
+    ElectroSimTpSessionController? tpSessionController,
     ElectroSimPersistenceController? persistenceController,
+    CircuitState? initialCircuit,
   }) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -164,11 +366,19 @@ class F9HomePage extends StatelessWidget {
           entryLabel: entryLabel,
           initialWorkspace: initialWorkspace,
           sessionNavigation: sessionNavigation,
+          tpSessionController: tpSessionController,
           persistenceController: persistenceController,
+          initialCircuit: initialCircuit,
         ),
       ),
     );
   }
+
+  static CircuitState _emptyCircuit(String suffix) => CircuitState(
+        circuitId: CircuitId('workspace-$suffix'),
+        revision: 0,
+        mode: ElectricalMode.dc,
+      );
 }
 
 class _BrandHeader extends StatelessWidget {
@@ -278,6 +488,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
+    this.initialCircuit,
   });
 
   final String entryLabel;
@@ -287,13 +498,14 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
+  final CircuitState? initialCircuit;
 
   @override
   State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();
 }
 
 class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
-  late CircuitState _circuit = _buildDemoCircuit();
+  late CircuitState _circuit;
   late CircuitVisualLayout _layout = CircuitVisualLayout(
     elementPositions: const <String, Offset>{
       'source-24v': Offset(150, 220),
@@ -309,7 +521,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   final ViewportController _viewport = ViewportController(scale: 1, translation: const Offset(40, 40));
   final GlobalKey _canvasDropKey = GlobalKey(debugLabel: 'f9-canvas-drop-target');
   late String? _selected;
-  String _status = 'F9 final — interface responsive et Canvas F8 validé';
+  String _status = 'Prêt';
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _f9HitTest = const HitTestEngine();
@@ -337,6 +549,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     _ownsTpController = widget.tpSessionController == null;
     _tpController =
         widget.tpSessionController ?? ElectroSimTpSessionController();
+    _circuit = widget.initialCircuit ?? _buildDemoCircuit();
     final TpSession? tp = _tpController.session;
     if (widget.role == F9UserRole.student &&
         tp != null &&
@@ -489,50 +702,48 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   Future<void> _showDashboard() async {
-    final String? selected = await showDialog<String>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Tableau de bord'),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              _DashboardDestination(
-                key: const Key('dashboard-wiring'),
-                icon: Icons.cable_outlined,
-                title: 'Câblage',
-                description: 'Préparer ou suivre une activité de câblage.',
-                onTap: () => Navigator.of(dialogContext).pop('Câblage'),
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext dashboardContext) => SessionDashboardPage(
+          sessionName: widget.entryLabel,
+          controller: _tpController,
+          onOpenWiring: () {
+            Navigator.of(dashboardContext).pop();
+            setState(() {
+              _workspace = 'Câblage';
+              _status = 'Activité : Câblage';
+            });
+          },
+          onOpenTroubleshooting: () {
+            Navigator.of(dashboardContext).pop();
+            setState(() {
+              _workspace = 'Recherche de dérangement';
+              _status = 'Activité : Recherche de dérangement';
+            });
+          },
+          onOpenSupervision: () {
+            Navigator.of(dashboardContext).push(
+              MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(title: const Text('Supervision')),
+                  body: SafeArea(
+                    child: F17TpSupervisionPanel(controller: _tpController),
+                  ),
+                ),
               ),
-              const SizedBox(height: ElectroSimSpacing.xs),
-              _DashboardDestination(
-                key: const Key('dashboard-troubleshooting'),
-                icon: Icons.troubleshoot_outlined,
-                title: 'Recherche de dérangement',
-                description: 'Préparer ou suivre un diagnostic sur scénario défectueux.',
-                onTap: () => Navigator.of(dialogContext).pop('Recherche de dérangement'),
+            );
+          },
+          onManageSession: () {
+            Navigator.of(dashboardContext).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    SessionManagementPage(controller: _tpController),
               ),
-              const SizedBox(height: ElectroSimSpacing.xs),
-              _DashboardDestination(
-                key: const Key('dashboard-supervision'),
-                icon: Icons.monitor_heart_outlined,
-                title: 'Supervision',
-                description: 'Consulter la progression et les résultats de la session.',
-                onTap: () => Navigator.of(dialogContext).pop('Supervision'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
-    if (!mounted || selected == null) {
-      return;
-    }
-    setState(() {
-      _workspace = selected;
-      _status = 'Espace UI : $selected';
-    });
   }
 
   Future<void> _saveWorkspace() async {
@@ -581,30 +792,17 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   }
 
   Future<void> _showManageSession() async {
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) => F17TpSessionDialog(
-        controller: _tpController,
-        role: widget.role,
-        onStudentStarted: (TpSession session) {
-          setState(() {
-            _circuit = session.studentCircuit;
-            _layout = _layoutForCircuit(_circuit);
-            _selected = null;
-            _workspace = 'Recherche de dérangement';
-            _status = 'TP commencé — montage élève chargé.';
-          });
-        },
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SessionManagementPage(controller: _tpController),
       ),
     );
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     final TpSession? session = _tpController.session;
     if (session != null) {
       setState(() {
         _status =
-            'TP ${session.definition.id.value} — ${session.lifecycle.name}';
+            'TP ${session.definition.id.value} — ${lifecycleLabel(session.lifecycle)}';
       });
     }
   }
@@ -1376,37 +1574,6 @@ class _WorkspaceTopBar extends StatelessWidget {
           },
         ),
       ),
-    );
-  }
-}
-
-class _DashboardDestination extends StatelessWidget {
-  const _DashboardDestination({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      minTileHeight: ElectroSimGeometry.minimumTouchTarget,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-        side: const BorderSide(color: ElectroSimColors.outline),
-      ),
-      leading: Icon(icon, color: ElectroSimColors.primary),
-      title: Text(title),
-      subtitle: Text(description),
-      trailing: const Icon(Icons.chevron_right),
     );
   }
 }

@@ -1,0 +1,43 @@
+name: UX01 application shell recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ux01-application-shell-recovery
+    paths:
+      - 'apps/electrosim/lib/**'
+      - 'apps/electrosim/test/f9_shell_test.dart'
+      - 'packages/electrosim_canvas/lib/**'
+      - '.github/workflows/ux01-application-shell.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ux-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve app dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Analyze application shell
+        working-directory: apps/electrosim
+        run: dart analyze lib test/f9_shell_test.dart
+      - name: Run shell acceptance tests
+        working-directory: apps/electrosim
+        run: flutter test test/f9_shell_test.dart
+      - name: Analyze canvas presentation
+        working-directory: packages/electrosim_canvas
+        run: |
+          flutter pub get
+          dart analyze
+          flutter test test/canvas_performance_test.dart test/hit_test_engine_test.dart test/simulator_canvas_test.dart test/viewport_controller_test.dart
+      - name: Gate marker
+        run: echo UX01_APPLICATION_SHELL_GATE_PASS

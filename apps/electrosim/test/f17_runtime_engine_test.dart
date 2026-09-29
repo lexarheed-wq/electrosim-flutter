@@ -1,6 +1,8 @@
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_energy/electrosim_energy.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
+import 'package:electrosim_pv/electrosim_pv.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -152,15 +154,78 @@ void main() {
     expect(snapshot.diagnosticsAvailable, isFalse);
   });
 
-  test('F17-R9 leaves PV routing explicitly unavailable for the next integration stage', () {
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('f17-r9-pv'),
-      revision: 0,
-      mode: ElectricalMode.pv,
-    );
+  test('F17-R10 runtime routes PV through SolverPV and exposes balanced power sample', () {
+    final CircuitState circuit = _pvCircuit(loadPowerAt230W: 2000.0);
+    final ElectroSimRuntimeSnapshot snapshot =
+        const ElectroSimRuntimeEngine().evaluate(circuit);
+
+    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
+    expect(snapshot.solved, isTrue);
+    expect(snapshot.pv.status, PvSolveStatus.solved);
+    expect(snapshot.pv.inverterState, PvInverterState.running);
+    expect(snapshot.pv.inverterOutputPowerW, closeTo(2000.0, 1e-7));
+    expect(snapshot.energyAvailable, isTrue);
+    expect(snapshot.energyPowerSample, isNotNull);
     expect(
-      () => const ElectroSimRuntimeEngine().evaluate(circuit),
-      throwsUnsupportedError,
+      snapshot.energyPowerSample!.inputPowerW,
+      closeTo(2000.0 / 0.95, 1e-7),
+    );
+    expect(snapshot.energyPowerSample!.outputPowerW, closeTo(2000.0, 1e-7));
+    expect(
+      snapshot.energyPowerSample!.inputPowerW,
+      closeTo(
+        snapshot.energyPowerSample!.outputPowerW +
+            snapshot.energyPowerSample!.lossPowerW,
+        1e-8,
+      ),
+    );
+    expect(snapshot.diagnosticsAvailable, isFalse);
+  });
+
+  test('F17-R10 energy advances only for explicit elapsed simulation time', () {
+    const ElectroSimRuntimeEngine runtime = ElectroSimRuntimeEngine();
+    final ElectroSimRuntimeSnapshot snapshot =
+        runtime.evaluate(_pvCircuit(loadPowerAt230W: 2000.0));
+    final EnergySnapshot zero = runtime.zeroEnergy(snapshot);
+
+    expect(zero.outputEnergyWh, 0.0);
+    expect(zero.elapsedSeconds, 0.0);
+
+    final EnergySnapshot afterThirtyMinutes = runtime.advanceEnergy(
+      snapshot: snapshot,
+      previous: zero,
+      elapsed: const Duration(minutes: 30),
+    );
+    expect(afterThirtyMinutes.elapsedSeconds, 1800.0);
+    expect(afterThirtyMinutes.outputEnergyWh, closeTo(1000.0, 1e-8));
+
+    final EnergySnapshot afterOneHour = runtime.advanceEnergy(
+      snapshot: snapshot,
+      previous: afterThirtyMinutes,
+      elapsed: const Duration(minutes: 30),
+    );
+    expect(afterOneHour.elapsedSeconds, 3600.0);
+    expect(afterOneHour.outputEnergyWh, closeTo(2000.0, 1e-8));
+    expect(
+      afterOneHour.inputEnergyWh,
+      closeTo((2000.0 / 0.95), 1e-7),
+    );
+  });
+
+  test('F17-R10 unsolved PV never produces an energy sample', () {
+    final ElectroSimRuntimeSnapshot snapshot =
+        const ElectroSimRuntimeEngine().evaluate(
+      _pvCircuit(disconnectDcPositive: true),
+    );
+
+    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
+    expect(snapshot.solved, isFalse);
+    expect(snapshot.pv.status, PvSolveStatus.invalid);
+    expect(snapshot.energyPowerSample, isNull);
+    expect(snapshot.energyAvailable, isFalse);
+    expect(
+      () => const ElectroSimRuntimeEngine().zeroEnergy(snapshot),
+      throwsStateError,
     );
   });
 
@@ -354,5 +419,131 @@ CircuitState _ac3Circuit() {
     components: loads,
     connections: connections,
     settings: const <String, Object?>{'frequencyHz': 50.0},
+  );
+}
+
+CircuitState _pvCircuit({
+  double loadPowerAt230W = 1000.0,
+  bool disconnectDcPositive = false,
+}) {
+  final double resistance = 230.0 * 230.0 / loadPowerAt230W;
+  final ComponentInstance inverter = ComponentInstance(
+    id: ComponentId('pv-inverter'),
+    modelType: 'pv_inverter',
+    terminals: <Terminal>[
+      _acTerminal(
+        'pv-inv-dc-pos',
+        'DC+',
+        phase: PhaseTag.dcPositive,
+        role: TerminalRole.positive,
+      ),
+      _acTerminal(
+        'pv-inv-dc-neg',
+        'DC-',
+        phase: PhaseTag.dcNegative,
+        role: TerminalRole.negative,
+      ),
+      _acTerminal(
+        'pv-inv-l',
+        'L',
+        phase: PhaseTag.l1,
+        role: TerminalRole.line,
+      ),
+      _acTerminal(
+        'pv-inv-n',
+        'N',
+        phase: PhaseTag.neutral,
+        role: TerminalRole.neutral,
+      ),
+    ],
+    parameters: const <String, Object?>{
+      'minDcVoltageV': 300.0,
+      'maxDcVoltageV': 500.0,
+      'nominalAcVoltageV': 230.0,
+      'ratedAcPowerW': 3500.0,
+      'efficiency': 0.95,
+    },
+  );
+  final ComponentInstance load = ComponentInstance(
+    id: ComponentId('pv-load'),
+    modelType: 'pv_resistive_load',
+    terminals: <Terminal>[
+      _acTerminal(
+        'pv-load-l',
+        'L',
+        phase: PhaseTag.l1,
+        role: TerminalRole.line,
+      ),
+      _acTerminal(
+        'pv-load-n',
+        'N',
+        phase: PhaseTag.neutral,
+        role: TerminalRole.neutral,
+      ),
+    ],
+    parameters: <String, Object?>{'resistanceOhm': resistance},
+  );
+  return CircuitState(
+    circuitId: CircuitId('f17-r10-pv'),
+    revision: 10,
+    mode: ElectricalMode.pv,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('pv-array'),
+        modelType: 'pv_array',
+        terminals: <Terminal>[
+          _acTerminal(
+            'pv-array-pos',
+            '+',
+            phase: PhaseTag.dcPositive,
+            role: TerminalRole.positive,
+          ),
+          _acTerminal(
+            'pv-array-neg',
+            '-',
+            phase: PhaseTag.dcNegative,
+            role: TerminalRole.negative,
+          ),
+        ],
+        parameters: const <String, Object?>{
+          'mppVoltageV': 400.0,
+          'mppCurrentA': 10.0,
+          'powerTemperatureCoefficientPerC': 0.0,
+          'voltageTemperatureCoefficientPerC': 0.0,
+        },
+      ),
+    ],
+    components: <ComponentInstance>[inverter, load],
+    connections: <Connection>[
+      if (!disconnectDcPositive)
+        Connection(
+          id: ConnectionId('pv-dc-pos'),
+          fromTerminalId: TerminalId('pv-array-pos'),
+          toTerminalId: TerminalId('pv-inv-dc-pos'),
+          phase: PhaseTag.dcPositive,
+        ),
+      Connection(
+        id: ConnectionId('pv-dc-neg'),
+        fromTerminalId: TerminalId('pv-array-neg'),
+        toTerminalId: TerminalId('pv-inv-dc-neg'),
+        phase: PhaseTag.dcNegative,
+      ),
+      Connection(
+        id: ConnectionId('pv-ac-line'),
+        fromTerminalId: TerminalId('pv-inv-l'),
+        toTerminalId: TerminalId('pv-load-l'),
+        phase: PhaseTag.l1,
+      ),
+      Connection(
+        id: ConnectionId('pv-ac-neutral'),
+        fromTerminalId: TerminalId('pv-inv-n'),
+        toTerminalId: TerminalId('pv-load-n'),
+        phase: PhaseTag.neutral,
+      ),
+    ],
+    settings: const <String, Object?>{
+      'irradianceWm2': 1000.0,
+      'cellTemperatureC': 25.0,
+    },
   );
 }

@@ -46,9 +46,9 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('palette-show-more')));
+    await tester.enterText(find.byKey(const Key('palette-search-field')), 'diode');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const Key('palette-quick-add-diode')));
+    expect(find.byKey(const Key('palette-quick-add-diode')), findsOneWidget);
     await tester.tap(find.byKey(const Key('palette-quick-add-diode')));
     await tester.pumpAndSettle();
 

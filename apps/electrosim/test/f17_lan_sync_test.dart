@@ -245,6 +245,10 @@ void main() {
 
       await tester.tap(find.byKey(const Key('tp-network-share')));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+      });
+      await tester.pumpAndSettle();
       await _pumpUntil(tester, find.byKey(const Key('tp-network-code')));
 
       expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
@@ -297,6 +301,10 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('join-session-submit')));
       await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      });
+      await tester.pumpAndSettle();
       await _pumpUntil(tester, find.text('Session élève'));
 
       expect(find.text('Session élève'), findsOneWidget);

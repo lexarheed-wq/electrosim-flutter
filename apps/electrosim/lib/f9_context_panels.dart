@@ -104,7 +104,7 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                   selectedId: widget.selectedId,
                   runtimeSnapshot: widget.runtimeSnapshot,
                 ),
-                const _EiePanel(),
+                _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
                 if (widget.showDiagnostic) const _StudentDiagnosticPanel(),
               ],
             ),
@@ -427,27 +427,83 @@ class _InstrumentReading extends StatelessWidget {
   }
 }
 class _EiePanel extends StatelessWidget {
-  const _EiePanel();
+  const _EiePanel({required this.runtimeSnapshot});
+
+  final ElectroSimRuntimeSnapshot runtimeSnapshot;
 
   @override
   Widget build(BuildContext context) {
+    final report = runtimeSnapshot.diagnostics;
+    final bool hasAdvice = report.advice.isNotEmpty;
     return ListView(
       key: const Key('eie-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
       children: <Widget>[
-        const ElectroSimSectionTitle(title: 'EIE', subtitle: 'Interface explicable, sans diagnostic spéculatif'),
-        const SizedBox(height: ElectroSimSpacing.md),
-        const ElectroSimStatusChip(label: 'Preuves moteur requises', icon: Icons.verified_outlined),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        Text(
-          'Le panneau reste volontairement neutre tant que les moteurs de topologie, de résolution et de diagnostic ne fournissent pas de preuves exploitables.',
-          style: Theme.of(context).textTheme.bodyMedium,
+        const ElectroSimSectionTitle(
+          title: 'EIE',
+          subtitle: 'Diagnostic fondé uniquement sur les preuves moteur',
         ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        ElectroSimStatusChip(
+          key: const Key('eie-engine-status'),
+          label: hasAdvice ? 'Anomalie étayée détectée' : 'Aucune anomalie étayée',
+          icon: hasAdvice ? Icons.warning_amber_outlined : Icons.verified_outlined,
+          emphasized: hasAdvice,
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        if (!hasAdvice)
+          Text(
+            'Le moteur EIE ne dispose actuellement d’aucune preuve suffisante pour proposer un diagnostic.',
+            key: const Key('eie-no-advice'),
+            style: Theme.of(context).textTheme.bodyMedium,
+          )
+        else
+          ...report.advice.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: ElectroSimSpacing.sm),
+              child: Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(ElectroSimSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        item.title,
+                        key: Key('eie-advice-${item.code.name}'),
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: ElectroSimSpacing.xs),
+                      Text(item.explanation),
+                      const SizedBox(height: ElectroSimSpacing.xs),
+                      ExpansionTile(
+                        key: Key('eie-evidence-${item.code.name}'),
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
+                        title: const Text('Preuves'),
+                        children: <Widget>[
+                          for (final String evidenceId in item.evidenceIds)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                evidenceId,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: ElectroSimColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
 }
-
 class _StudentDiagnosticPanel extends StatefulWidget {
   const _StudentDiagnosticPanel();
 

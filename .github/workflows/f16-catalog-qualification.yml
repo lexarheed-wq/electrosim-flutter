@@ -1,0 +1,38 @@
+name: F16 catalog qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f16-r1
+    paths:
+      - 'packages/electrosim_scenarios/**'
+      - 'tools/f16_*'
+      - 'VERSION'
+      - '.github/workflows/f16-catalog-qualification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    name: F16 catalog gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Run F16 gate
+        shell: bash
+        run: |
+          chmod +x tools/f16_gate.sh
+          ./tools/f16_gate.sh
+      - name: Upload F16 audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: F16_AUDIT_CATALOG
+          path: docs/f16/audit_catalog.json
+          if-no-files-found: error

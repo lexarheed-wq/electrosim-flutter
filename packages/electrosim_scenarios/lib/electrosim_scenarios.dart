@@ -8,3 +8,4 @@ export 'src/fault_scenario_definition.dart';
 export 'src/fault_scenario_repository.dart';
 export 'src/fault_scenario_validator.dart';
 export 'src/f11_fault_scenarios.dart';
+export 'src/f16_catalog.dart';

@@ -31,11 +31,11 @@ jobs:
 
       - name: Analyze R10 runtime integration
         working-directory: apps/electrosim
-        run: dart analyze lib test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_local_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+        run: dart analyze lib test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
 
       - name: Run R10 and F17 regression tests
         working-directory: apps/electrosim
-        run: flutter test test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_local_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_controller_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
+        run: flutter test test/f17_pv_energy_runtime_test.dart test/f17_runtime_engine_test.dart test/f17_persistence_test.dart test/f17_diagnostic_supervision_test.dart test/f17_tp_session_controller_test.dart test/f17_tp_session_ui_test.dart test/f17_eie_ui_test.dart test/f17_measurement_ui_test.dart test/f9_shell_test.dart
 
       - name: Validate PV engine regression
         working-directory: packages/electrosim_pv

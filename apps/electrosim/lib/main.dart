@@ -16,15 +16,21 @@ import 'f9_context_panels.dart';
 import 'f9_component_visuals.dart';
 import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
+import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
-void main() {
-  runApp(const ElectroSimApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final ElectroSimPersistenceController persistenceController =
+      await ElectroSimPersistenceController.createDefault();
+  runApp(ElectroSimApp(persistenceController: persistenceController));
 }
 
 class ElectroSimApp extends StatelessWidget {
-  const ElectroSimApp({super.key});
+  const ElectroSimApp({super.key, this.persistenceController});
+
+  final ElectroSimPersistenceController? persistenceController;
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +38,15 @@ class ElectroSimApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'ElectroSim',
       theme: ElectroSimTheme.light(),
-      home: const F9HomePage(),
+      home: F9HomePage(persistenceController: persistenceController),
     );
   }
 }
 
 class F9HomePage extends StatelessWidget {
-  const F9HomePage({super.key});
+  const F9HomePage({super.key, this.persistenceController});
+
+  final ElectroSimPersistenceController? persistenceController;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +95,7 @@ class F9HomePage extends StatelessWidget {
                                       'Session active',
                                       initialWorkspace: 'Câblage',
                                       sessionNavigation: true,
+                                      persistenceController: persistenceController,
                                     ),
                                   ),
                                   _HomeActionCard(
@@ -99,6 +108,7 @@ class F9HomePage extends StatelessWidget {
                                       context,
                                       'Centre de maintenance',
                                       initialWorkspace: 'Recherche de dérangement',
+                                      persistenceController: persistenceController,
                                     ),
                                   ),
                                   _HomeActionCard(
@@ -111,6 +121,7 @@ class F9HomePage extends StatelessWidget {
                                       context,
                                       'Centre de conception',
                                       initialWorkspace: 'Câblage',
+                                      persistenceController: persistenceController,
                                     ),
                                   ),
                                 ],
@@ -145,6 +156,7 @@ class F9HomePage extends StatelessWidget {
     String entryLabel, {
     required String initialWorkspace,
     bool sessionNavigation = false,
+    ElectroSimPersistenceController? persistenceController,
   }) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -152,6 +164,7 @@ class F9HomePage extends StatelessWidget {
           entryLabel: entryLabel,
           initialWorkspace: initialWorkspace,
           sessionNavigation: sessionNavigation,
+          persistenceController: persistenceController,
         ),
       ),
     );
@@ -264,6 +277,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.initialSelectedElementId,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
+    this.persistenceController,
   });
 
   final String entryLabel;
@@ -272,6 +286,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final String? initialSelectedElementId;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
+  final ElectroSimPersistenceController? persistenceController;
 
   @override
   State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();
@@ -357,6 +372,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
             onHome: () => Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst),
             onDashboard: widget.sessionNavigation ? _showDashboard : null,
             onManageSession: widget.sessionNavigation ? _showManageSession : null,
+            onSave: widget.persistenceController == null ? null : _saveWorkspace,
+            onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
             onRecenter: () => _viewport.reset(translation: const Offset(40, 40)),
           ),
           palette: F9ComponentPalette(
@@ -516,6 +533,51 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _workspace = selected;
       _status = 'Espace UI : $selected';
     });
+  }
+
+  Future<void> _saveWorkspace() async {
+    final ElectroSimPersistenceController? persistence =
+        widget.persistenceController;
+    if (persistence == null) return;
+    try {
+      final saved = await persistence.saveWorkspace(
+        circuit: _circuit,
+        workspace: _workspace,
+        tpController: _tpController,
+      );
+      if (!mounted) return;
+      _setStatus(
+        'Sauvegarde locale : révision ${saved.circuit.revision} — ${saved.saveId}',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      _setStatus('Échec de sauvegarde locale : $error');
+    }
+  }
+
+  Future<void> _openLatestWorkspace() async {
+    final ElectroSimPersistenceController? persistence =
+        widget.persistenceController;
+    if (persistence == null) return;
+    try {
+      final restored = await persistence.openLatest(tpController: _tpController);
+      if (!mounted) return;
+      if (restored == null) {
+        _setStatus('Aucune sauvegarde locale disponible.');
+        return;
+      }
+      setState(() {
+        _circuit = restored.circuit;
+        _workspace = restored.workspace;
+        _selected = null;
+        _layout = _layoutForCircuit(_circuit);
+        _status =
+            'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      _setStatus('Échec de reprise locale : $error');
+    }
   }
 
   Future<void> _showManageSession() async {
@@ -1187,6 +1249,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onHome,
     required this.onDashboard,
     required this.onManageSession,
+    required this.onSave,
+    required this.onOpen,
     required this.onRecenter,
   });
 
@@ -1196,6 +1260,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback onHome;
   final VoidCallback? onDashboard;
   final VoidCallback? onManageSession;
+  final VoidCallback? onSave;
+  final VoidCallback? onOpen;
   final VoidCallback onRecenter;
 
   @override
@@ -1277,7 +1343,22 @@ class _WorkspaceTopBar extends StatelessWidget {
                         icon: const Icon(Icons.settings_outlined),
                         label: const Text('Gérer la session'),
                       ),
-                  ] else
+                  ],
+                  if (onSave != null)
+                    IconButton(
+                      key: const Key('workspace-save-action'),
+                      tooltip: 'Sauvegarder localement',
+                      onPressed: onSave,
+                      icon: const Icon(Icons.save_outlined),
+                    ),
+                  if (onOpen != null)
+                    IconButton(
+                      key: const Key('workspace-open-action'),
+                      tooltip: 'Reprendre la dernière sauvegarde',
+                      onPressed: onOpen,
+                      icon: const Icon(Icons.restore_outlined),
+                    ),
+                  if (!sessionNavigation)
                     ElectroSimStatusChip(
                       key: const Key('direct-entry-status'),
                       label: 'Accès direct',

@@ -438,7 +438,30 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
       });
       return;
     }
-    if (!RegExp(r'^[A-Z2-9]{6}
+    if (rawCode.length != 6 ||
+        RegExp(r'[^A-Z2-9]').hasMatch(rawCode)) {
+      setState(() {
+        _error = 'Le code de session doit contenir 6 caractères.';
+      });
+      return;
+    }
+    Navigator.of(context).pop(
+      _NetworkJoinRequest(
+        endpoint: endpoint,
+        sessionCode: rawCode,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _endpoint.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+}
+
+class F9WorkspaceDemoPage extends StatefulWidget {
   const F9WorkspaceDemoPage({
     super.key,
     this.entryLabel = 'Centre de conception',

@@ -34,6 +34,7 @@ class ElectroSimApp extends StatelessWidget {
   const ElectroSimApp({super.key, this.persistenceController});
 
   final ElectroSimPersistenceController? persistenceController;
+  final ElectroSimLanSyncClient? syncClient;
 
   @override
   Widget build(BuildContext context) {
@@ -472,6 +473,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
+    this.syncClient,
   });
 
   final String entryLabel;
@@ -520,6 +522,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   double _trackpadLastScale = 1;
   late final ElectroSimTpSessionController _tpController;
   late final bool _ownsTpController;
+  ElectroSimLanSyncHost? _lanHost;
+  ElectroSimLanHostInfo? _lanHostInfo;
 
   bool get _studentTpReadOnly =>
       widget.role == F9UserRole.student && _tpController.readOnly;
@@ -533,6 +537,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     _ownsTpController = widget.tpSessionController == null;
     _tpController =
         widget.tpSessionController ?? ElectroSimTpSessionController();
+    widget.syncClient?.addListener(_onLanSyncChanged);
     final TpSession? tp = _tpController.session;
     if (widget.role == F9UserRole.student &&
         tp != null &&
@@ -778,12 +783,73 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     }
   }
 
+  Future<ElectroSimLanHostInfo> _enableLanSharing() async {
+    final ElectroSimLanSyncHost? existing = _lanHost;
+    final ElectroSimLanHostInfo? existingInfo = _lanHostInfo;
+    if (existing != null && existingInfo != null) return existingInfo;
+
+    final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+      controller: _tpController,
+      sessionCode: ElectroSimLanSyncHost.generateSessionCode(),
+    );
+    try {
+      final ElectroSimLanHostInfo info = await host.start();
+      _lanHost = host;
+      _lanHostInfo = info;
+      if (mounted) {
+        _setStatus(
+          'Partage réseau actif — code ' + info.sessionCode,
+        );
+      }
+      return info;
+    } on Object {
+      await host.close();
+      rethrow;
+    }
+  }
+
+  void _onLanSyncChanged() {
+    if (!mounted) return;
+    final ElectroSimLanSyncClient? client = widget.syncClient;
+    if (client == null) return;
+    final TpSession? session = _tpController.session;
+
+    var circuitChanged = false;
+    if (widget.role == F9UserRole.student &&
+        session != null &&
+        session.lifecycle != TpLifecycle.draft &&
+        session.lifecycle != TpLifecycle.published &&
+        (session.studentCircuit.circuitId != _circuit.circuitId ||
+            session.studentCircuit.revision != _circuit.revision)) {
+      _circuit = session.studentCircuit;
+      _layout = _layoutForCircuit(_circuit);
+      _workspace = 'Recherche de dérangement';
+      _selected = null;
+      circuitChanged = true;
+    }
+
+    setState(() {
+      if (client.lastError != null) {
+        _status = 'Synchronisation : ' + client.lastError!;
+      } else if (client.status == ElectroSimLanSyncStatus.reconnecting) {
+        _status = 'Reconnexion au professeur…';
+      } else if (client.status == ElectroSimLanSyncStatus.disconnected) {
+        _status = 'Connexion professeur interrompue.';
+      } else if (circuitChanged) {
+        _status = 'Montage synchronisé avec le professeur.';
+      }
+    });
+  }
+
   Future<void> _showManageSession() async {
     await showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) => F17TpSessionDialog(
         controller: _tpController,
         role: widget.role,
+        initialLanHostInfo: _lanHostInfo,
+        onEnableLanSharing:
+            widget.role == F9UserRole.teacher ? _enableLanSharing : null,
         onStudentStarted: (TpSession session) {
           setState(() {
             _circuit = session.studentCircuit;
@@ -1431,8 +1497,13 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
   @override
   void dispose() {
+    widget.syncClient?.removeListener(_onLanSyncChanged);
+    final ElectroSimLanSyncHost? host = _lanHost;
+    if (host != null) unawaited(host.close());
+    final ElectroSimLanSyncClient? client = widget.syncClient;
+    if (client != null) unawaited(client.close());
     _viewport.dispose();
-    if (_ownsTpController) {
+    if (_ownsTpController || client != null) {
       _tpController.dispose();
     }
     super.dispose();

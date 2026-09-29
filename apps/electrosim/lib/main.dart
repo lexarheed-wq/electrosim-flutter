@@ -34,7 +34,6 @@ class ElectroSimApp extends StatelessWidget {
   const ElectroSimApp({super.key, this.persistenceController});
 
   final ElectroSimPersistenceController? persistenceController;
-  final ElectroSimLanSyncClient? syncClient;
 
   @override
   Widget build(BuildContext context) {
@@ -484,6 +483,7 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
+  final ElectroSimLanSyncClient? syncClient;
 
   @override
   State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();

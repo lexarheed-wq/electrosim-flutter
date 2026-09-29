@@ -36,8 +36,8 @@ jobs:
       - name: Analyze canvas presentation
         working-directory: packages/electrosim_canvas
         run: |
-          dart pub get
+          flutter pub get
           dart analyze
-          dart test
+          flutter test test/canvas_performance_test.dart test/hit_test_engine_test.dart test/simulator_canvas_test.dart test/viewport_controller_test.dart
       - name: Gate marker
         run: echo UX01_APPLICATION_SHELL_GATE_PASS

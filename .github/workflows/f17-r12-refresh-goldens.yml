@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/electrosim/test/goldens/*.png
-          git commit -m 'F17-R12: refresh reviewed F9 golden baselines'
+          git add apps/electrosim/pubspec.lock apps/electrosim/test/goldens/*.png
+          git commit -m 'F17-R12: refresh reviewed F9 goldens and dependency lock'
           git push origin HEAD:f17-r12-release-qualification
           echo F17_R12_GOLDEN_REFRESH_PASS

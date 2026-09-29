@@ -16,7 +16,7 @@ case "$PREP_OUT" in
 esac
 
 APP="$TMP/apps/electrosim"
-python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" "$TARGET"
-python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" "$TARGET" --check
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" "$TARGET" >&2
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" "$TARGET" --check >&2
 
 printf 'F17_RUNNER_PATH=%s\n' "$TMP"

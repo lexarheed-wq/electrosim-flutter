@@ -29,9 +29,9 @@ jobs:
         run: flutter pub get
       - name: Analyze runtime bridge
         working-directory: apps/electrosim
-        run: dart analyze lib/runtime test/f17_runtime_engine_test.dart
+        run: dart analyze lib/runtime test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart
       - name: Run F17 runtime integration tests
         working-directory: apps/electrosim
-        run: flutter test test/f17_runtime_engine_test.dart
+        run: flutter test test/f17_runtime_engine_test.dart test/f17_catalog_runtime_test.dart
       - name: Gate marker
         run: echo F17_RUNTIME_GATE_PASS

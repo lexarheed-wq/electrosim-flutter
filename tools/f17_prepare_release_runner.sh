@@ -5,9 +5,9 @@ TARGET="${1:?target required}"
 TMP_ROOT="${2:-}"
 
 if [ -n "$TMP_ROOT" ]; then
-  PREP_OUT="$("$ROOT/tools/f15_prepare_runner.sh" "$TARGET" "$TMP_ROOT")"
+  PREP_OUT="$(bash "$ROOT/tools/f15_prepare_runner.sh" "$TARGET" "$TMP_ROOT")"
 else
-  PREP_OUT="$("$ROOT/tools/f15_prepare_runner.sh" "$TARGET")"
+  PREP_OUT="$(bash "$ROOT/tools/f15_prepare_runner.sh" "$TARGET")"
 fi
 
 case "$PREP_OUT" in

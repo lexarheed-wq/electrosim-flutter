@@ -36,21 +36,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('F17-R4 UI does not fabricate readings when the electrical result is unavailable',
+  testWidgets('F17-R4 UI does not fabricate readings when the solver cannot resolve a model',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
-      ),
-    );
+    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('properties-primary-toggle')));
+    await tester.tap(find.byKey(const Key('palette-show-more')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('palette-quick-add-diode')));
+    await tester.tap(find.byKey(const Key('palette-quick-add-diode')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Mesures'));

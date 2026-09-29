@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:path_provider/path_provider.dart';
@@ -51,11 +49,13 @@ final class ElectroSimPersistenceController {
   }) async {
     final DateTime now = DateTime.now().toUtc();
     DateTime createdAt = now;
-    try {
+    final List<SavedCircuitSummary> existing = await _repository.listSaves();
+    final bool alreadyExists =
+        existing.any((SavedCircuitSummary item) => item.saveId == saveId);
+    if (alreadyExists) {
+      // If the existing document is corrupt, propagate the read failure rather
+      // than silently replacing data the user may still be able to recover.
       createdAt = (await _repository.open(saveId)).createdAtUtc;
-    } on FileSystemException {
-      // A missing save is expected on first use. The repository still performs
-      // atomic replacement for later explicit updates.
     }
 
     final SavedCircuitDocument document = SavedCircuitDocument(

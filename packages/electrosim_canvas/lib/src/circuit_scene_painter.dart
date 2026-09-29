@@ -148,7 +148,7 @@ final class CircuitScenePainter extends CustomPainter {
 
     final TextPainter label = TextPainter(
       text: TextSpan(
-        text: modelType,
+        text: _displayModelLabel(modelType),
         style: TextStyle(
           color: const Color(0xFF0F172A),
           fontSize: (13 * viewport.scale).clamp(10, 18).toDouble(),
@@ -213,4 +213,23 @@ final class CircuitScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CircuitScenePainter oldDelegate) => !identical(oldDelegate, this);
+}
+
+
+String _displayModelLabel(String modelType) {
+  return switch (modelType) {
+    'dc_voltage_source' => 'Source CC',
+    'switch' || 'switch_spst' => 'Interrupteur',
+    'lamp' => 'Lampe',
+    'resistor' => 'Résistance',
+    'breaker' => 'Disjoncteur',
+    'push_button_no' => 'BP NO',
+    'buzzer' => 'Buzzer',
+    'fuse' => 'Fusible',
+    'diode' => 'Diode',
+    'fan_dc' => 'Ventilateur',
+    'motor_dc' => 'Moteur CC',
+    'relay_coil' => 'Bobine relais',
+    _ => 'Composant',
+  };
 }

@@ -1,7 +1,9 @@
+import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_energy/electrosim_energy.dart';
 import 'package:electrosim_pv/electrosim_pv.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -79,6 +81,39 @@ void main() {
           ),
         ),
       );
+    });
+
+    testWidgets('workspace renders PV evidence from the runtime snapshot',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: _pvCircuit(loadPowerAt230W: 2000.0),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mesures'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('pv-runtime-status')), findsOneWidget);
+      expect(find.text('Solveur PV actif'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('pv-irradiance-reading'))).data,
+        '1000.0 W/m²',
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const Key('pv-output-power-reading'))).data,
+        '2000.0 W',
+      );
+      expect(find.byKey(const Key('pv-energy-time-policy')), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     test('non-PV runtime refuses energy routing explicitly', () {

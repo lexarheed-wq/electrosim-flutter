@@ -1,0 +1,218 @@
+legacy_id,label,entity_class,category,domain_or_modes,source,automatic_import
+broyeur,Broyeur industriel,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+climatiseur,Climatiseur,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+compresseur_industriel,Compresseur industriel,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+congelateur,Congélateur,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+convoyeur,Convoyeur,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+fer_repasser,Fer à repasser,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+lampe_dc,Lampe DC,external-appliance,Appareils externes,DC,electrosim_b53_appliances.js,NO
+melangeur,Mélangeur industriel,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+ordinateur,Ordinateur,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+pompe_industrielle,Pompe industrielle,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+pompe_monophasee,Pompe monophasée,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+pompe_solaire,Pompe solaire DC,external-appliance,Appareils externes,DC,electrosim_b53_appliances.js,NO
+refrigerateur,Réfrigérateur,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+refrigerateur_solaire,Réfrigérateur solaire DC,external-appliance,Appareils externes,DC,electrosim_b53_appliances.js,NO
+television,Télévision,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+ventilateur_dc,Ventilateur DC,external-appliance,Appareils externes,DC,electrosim_b53_appliances.js,NO
+ventilateur_domestique,Ventilateur domestique,external-appliance,Appareils externes,AC1,electrosim_b53_appliances.js,NO
+ventilateur_industriel,Ventilateur industriel,external-appliance,Appareils externes,AC3,electrosim_b53_appliances.js,NO
+capacitorGeneric,Condensateur,palette-component,Capacitifs & inductifs,"CC,AC 1φ",teacher.html,NO
+ceramicCap,Condensateur céramique,palette-component,Capacitifs & inductifs,"CC,AC 1φ",teacher.html,NO
+chokeAC,Self / choke AC,palette-component,Capacitifs & inductifs,AC 1φ,teacher.html,NO
+chokeDC,Self / choke CC,palette-component,Capacitifs & inductifs,CC,teacher.html,NO
+electrolyticCap,Condensateur électrolytique,palette-component,Capacitifs & inductifs,CC,teacher.html,NO
+filmCap,Condensateur film,palette-component,Capacitifs & inductifs,"CC,AC 1φ",teacher.html,NO
+inductorGeneric,Inductance,palette-component,Capacitifs & inductifs,"CC,AC 1φ",teacher.html,NO
+supercapacitor,Supercondensateur,palette-component,Capacitifs & inductifs,CC,teacher.html,NO
+auxContactNC,Contact auxiliaire NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+auxContactNO,Contact auxiliaire NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+contactorAC,Contacteur AC,palette-component,Commande & détection,AC 1φ,teacher.html,NO
+contactorCoilAC,Bobine contacteur AC,palette-component,Commande & détection,AC 1φ,teacher.html,NO
+contactorCoilDC,Bobine contacteur CC,palette-component,Commande & détection,CC,teacher.html,NO
+contactorDC,Contacteur CC,palette-component,Commande & détection,CC,teacher.html,NO
+disconnectSwitch,Sectionneur,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+emergencyStop,Arrêt d'urgence NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+floatSwitchNC,Flotteur NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+floatSwitchNO,Flotteur NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+keySwitch,Interrupteur à clé,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+limitSwitchNC,Fin de course NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+limitSwitchNO,Fin de course NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+overloadContactNC,Contact thermique NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+pedalNO,Pédale NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+photoelectricNO,Capteur photoélectrique NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+pressureSwitchNO,Pressostat NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+proximityNO,Capteur proximité NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+pushNC,BP NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+pushNO,BP NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+reedSwitch,ILS / Reed,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+relayAC,Relais AC,palette-component,Commande & détection,AC 1φ,teacher.html,NO
+relayCoilAC,Bobine relais AC,palette-component,Commande & détection,AC 1φ,teacher.html,NO
+relayCoilDC,Bobine relais CC,palette-component,Commande & détection,CC,teacher.html,NO
+relayDC,Relais CC,palette-component,Commande & détection,CC,teacher.html,NO
+selectorSwitch,Sélecteur 2 positions,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+switchNC,Interrupteur NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+switchNO,Interrupteur NO,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+thermostatNC,Thermostat NC,palette-component,Commande & détection,"CC,AC 1φ",teacher.html,NO
+ac3AuxNC,Contact auxiliaire NC,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+ac3AuxNO,Contact auxiliaire NO,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+ac3EmergencyStop,Arrêt d'urgence NC,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+ac3StartNO,Marche NO,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+ac3StopNC,Arrêt NC,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+contactorCoilAC3,Bobine contacteur A1/A2,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+controlSupply24,Alimentation commande 24 V AC/DC,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+directStarter3,Démarreur direct complet,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+reversingContactor3p,Contacteur inverseur 3P,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+starDeltaStarter3,Démarreur étoile-triangle complet,palette-component,Commande moteur 3φ,AC 3φ,teacher.html,NO
+diodeRectifier,Diode redresseuse,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+diodeSchottky,Diode Schottky,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+flybackDiode,Diode roue libre,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+ledGeneric,LED,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+pont,Pont redresseur,palette-component,Diodes & semi-conducteurs CC,AC 1φ,teacher.html,NO
+reversePolarityDiode,Diode anti-inversion,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+tvsDiode,Diode TVS,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+zenerGeneric,Diode Zener,palette-component,Diodes & semi-conducteurs CC,CC,teacher.html,NO
+breaker3p,Disjoncteur 3P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+breaker4p,Disjoncteur 4P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+contactor3p,Contacteur 3P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+disconnect3p,Sectionneur 3P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+disconnect4p,Sectionneur 4P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+motorBreaker3p,Disjoncteur moteur 3P,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+motorBreakerMag3p,Disjoncteur moteur magnétothermique,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+phaseControlRelay3,Relais contrôle de phases,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+terminalBlock3,Bornier L1/L2/L3/N/PE,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+thermal3p,Relais thermique 3φ,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+voltageRelay3,Relais manque / surtension,palette-component,Distribution & protection 3φ,AC 3φ,teacher.html,NO
+pvIrradianceSensor,Irradiance,palette-component,Environnement PV,PV,teacher.html,NO
+pvShadingSensor,Ombrage,palette-component,Environnement PV,PV,teacher.html,NO
+pvTemperatureSensor,Température cellule,palette-component,Environnement PV,PV,teacher.html,NO
+bobine,Bobine,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+buzzer,Buzzer,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+condo,Condensateur,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+diode,Diode,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+disjoncteur,Disjonct.,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+fusible,Fusible 2A,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+lamp12,Lampe 12V,palette-component,Legacy / compatibilité,"CC,AC 1φ,PV",teacher.html,NO
+lamp230,Lampe 230V,palette-component,Legacy / compatibilité,"AC 1φ,PV",teacher.html,NO
+ledR,LED Rouge,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+ledV,LED Verte,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+motor12,Moteur CC,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+pile12,Pile 12V,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+pile15,Pile 1.5V,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+pile9,Pile 9V,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+r100,100 Ω,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+r10k,10 kΩ,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+r1k,1 kΩ,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+r220,R 220 Ω,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+r470,470 Ω,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+rVariable,R variable,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+relais,Relais,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+sourceAC,Source 230V~,palette-component,Legacy / compatibilité,AC 1φ,teacher.html,NO
+sourceAC24,Source 24V~,palette-component,Legacy / compatibilité,AC 1φ,teacher.html,NO
+sourceDC24,Alim. 24V CC,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+switch,Inter K1,palette-component,Legacy / compatibilité,"CC,AC 1φ",teacher.html,NO
+zener,Zener 5.1V,palette-component,Legacy / compatibilité,CC,teacher.html,NO
+amp,Ampèremètre,palette-component,Mesure,"CC,AC 1φ",teacher.html,NO
+continuity,Testeur de continuité,palette-component,Mesure,"CC,AC 1φ,AC 3φ,PV",teacher.html,NO
+volt,Voltmètre,palette-component,Mesure,"CC,AC 1φ",teacher.html,NO
+ammeterAC3,Ampèremètre par phase,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+frequencyMeterAC3,Fréquencemètre,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+meterAC3,Centrale de mesure 3φ,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+phasePresence3,Présence des phases,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+phaseSequence3,Ordre des phases,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+powerMeterAC3,Wattmètre P / Q / S,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+starDeltaTimer,Temporisateur étoile-triangle,palette-component,Mesure 3φ,"AC 3φ,AC 1φ,CC",teacher.html,NO
+voltmeterAC3,Voltmètre triphasé,palette-component,Mesure 3φ,AC 3φ,teacher.html,NO
+deltaLoad3,Charge triangle,palette-component,Moteurs & charges 3φ,"AC 3φ,PV",teacher.html,NO
+motor3,Moteur triphasé,palette-component,Moteurs & charges 3φ,"AC 3φ,PV",teacher.html,NO
+motor6,Moteur 6 bornes,palette-component,Moteurs & charges 3φ,"AC 3φ,PV",teacher.html,NO
+motorTerminalBlock6,Bornier moteur 6 voies,palette-component,Moteurs & charges 3φ,AC 3φ,teacher.html,NO
+resistiveLoad3,Charge résistive triphasée réglable,palette-component,Moteurs & charges 3φ,"AC 3φ,PV",teacher.html,NO
+starDeltaBridge3,Barrettes étoile / triangle,palette-component,Moteurs & charges 3φ,AC 3φ,teacher.html,NO
+starLoad3,Charge étoile,palette-component,Moteurs & charges 3φ,"AC 3φ,PV",teacher.html,NO
+pvArray,Champ PV,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvBlockingDiode,Diode anti-retour,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvBypassDiode,Diode bypass,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvCell,Cellule PV,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvCombinerBox,Combiner box PV,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvPanel,Panneau PV,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvString,String PV,palette-component,Production photovoltaïque,PV,teacher.html,NO
+pvBreakerDC,Disjoncteur DC PV,palette-component,Protection & sectionnement PV,PV,teacher.html,NO
+pvDisconnectDC,Sectionneur PV,palette-component,Protection & sectionnement PV,PV,teacher.html,NO
+pvFuseDC,Fusible string PV,palette-component,Protection & sectionnement PV,PV,teacher.html,NO
+pvSpdDC,Parafoudre SPD DC,palette-component,Protection & sectionnement PV,PV,teacher.html,NO
+breakerAC,Disjoncteur AC,palette-component,Protection CC / AC,AC 1φ,teacher.html,NO
+breakerDC,Disjoncteur CC,palette-component,Protection CC / AC,CC,teacher.html,NO
+fuseGeneric,Fusible,palette-component,Protection CC / AC,"CC,AC 1φ",teacher.html,NO
+motorProtectionBreaker,Disjoncteur moteur,palette-component,Protection CC / AC,"CC,AC 1φ",teacher.html,NO
+resettableFuse,Fusible réarmable PTC,palette-component,Protection CC / AC,"CC,AC 1φ",teacher.html,NO
+thermalFuse,Fusible thermique,palette-component,Protection CC / AC,"CC,AC 1φ",teacher.html,NO
+thermalOverload,Relais thermique surcharge,palette-component,Protection CC / AC,"CC,AC 1φ",teacher.html,NO
+beaconAC,Balise lumineuse AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+beaconDC,Balise lumineuse CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+bellAC,Sonnerie / cloche AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+bellDC,Sonnerie / cloche CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+brakeCoilAC,Frein électromagnétique AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+brakeCoilDC,Frein électromagnétique CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+buzzerAC,Buzzer AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+buzzerDC,Buzzer CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+electromagnetAC,Électroaimant AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+electromagnetDC,Électroaimant,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+fanAC,Ventilateur AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+fanDC,Ventilateur CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+hornAC,Avertisseur sonore AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+hornDC,Klaxon / avertisseur CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+lampGeneric,Lampe réglable,palette-component,Récepteurs & actionneurs CC / AC,"CC,AC 1φ,PV",teacher.html,NO
+motorAC230,Moteur AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+motorDCGeneric,Moteur CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+neonLampAC,Voyant néon AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+pilotLampAC,Voyant AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+pilotLampDC,Voyant lumineux,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+pumpAC,Pompe AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+pumpDC,Pompe CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+sirenAC,Sirène AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+sirenDC,Sirène CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+solenoidAC,Solénoïde AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+solenoidDC,Solénoïde,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+speakerAC,Haut-parleur,palette-component,Récepteurs & actionneurs CC / AC,AC 1φ,teacher.html,NO
+valveCoilAC,Électrovanne AC,palette-component,Récepteurs & actionneurs CC / AC,"AC 1φ,PV",teacher.html,NO
+valveCoilDC,Électrovanne CC,palette-component,Récepteurs & actionneurs CC / AC,"CC,PV",teacher.html,NO
+inverterPV,Onduleur solaire,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+inverterPV1ph,Onduleur solaire 1φ,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+inverterPV3ph,Onduleur solaire 3φ,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+pvBoost,Convertisseur Boost,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+pvBuck,Convertisseur Buck,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+pvBuckBoost,Buck-Boost,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+pvController,Régulateur MPPT,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+pvControllerPWM,Régulateur PWM,palette-component,Régulation & conversion PV,PV,teacher.html,NO
+heaterDC,Charge chauffante,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ,PV",teacher.html,NO
+ldrGeneric,LDR,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+ntcGeneric,Thermistance NTC,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+powerResistor,Résistance de puissance,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+ptcGeneric,Thermistance PTC,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+resistorGeneric,Résistance,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+rheostatGeneric,Rhéostat,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+shuntDC,Shunt de courant,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+trimmerResistor,Résistance ajustable,palette-component,Résistifs & capteurs passifs,"CC,AC 1φ",teacher.html,NO
+generatorAC,Alternateur / génératrice AC,palette-component,Sources AC 1φ,AC 1φ,teacher.html,NO
+sourceACGeneric,Source AC réglable,palette-component,Sources AC 1φ,AC 1φ,teacher.html,NO
+batteryDC,Batterie,palette-component,Sources CC,CC,teacher.html,NO
+cellDC,Pile / cellule,palette-component,Sources CC,CC,teacher.html,NO
+chassisGround,Masse châssis,palette-component,Sources CC,"CC,AC 1φ",teacher.html,NO
+generatorDC,Génératrice CC,palette-component,Sources CC,CC,teacher.html,NO
+ground,Masse,palette-component,Sources CC,"CC,AC 1φ",teacher.html,NO
+protectiveEarth,Terre de protection PE,palette-component,Sources CC,"CC,AC 1φ",teacher.html,NO
+sourceDCGeneric,Alimentation CC,palette-component,Sources CC,CC,teacher.html,NO
+terminalBlock,Bornier / borne,palette-component,Sources CC,"CC,AC 1φ",teacher.html,NO
+alternatorAC3,Alternateur triphasé,palette-component,Sources triphasées,AC 3φ,teacher.html,NO
+sourceAC3,Réseau 400/230 V 3φ,palette-component,Sources triphasées,AC 3φ,teacher.html,NO
+transformerAC3,Transformateur triphasé,palette-component,Sources triphasées,AC 3φ,teacher.html,NO
+batteryPV,Batterie PV,palette-component,Stockage & bus DC PV,PV,teacher.html,NO
+pvBatteryBank,Parc batteries,palette-component,Stockage & bus DC PV,PV,teacher.html,NO
+pvBms,BMS,palette-component,Stockage & bus DC PV,PV,teacher.html,NO
+pvDcBus,Bus DC,palette-component,Stockage & bus DC PV,PV,teacher.html,NO
+pvEnergyMeter,Compteur W / Wh / kWh,palette-component,Stockage & bus DC PV,PV,teacher.html,NO
+socketAC1PE,Prise 230 V 2P+T,socket,Prises,"AC1 / AC 1φ,PV",electrosim_b532_connections.js,NO
+socketAC3NPE,Prise industrielle 3P+N+PE,socket,Prises,"AC3 / AC 3φ,PV",electrosim_b532_connections.js,NO
+socketAC3PE,Prise industrielle 3P+PE,socket,Prises,"AC3 / AC 3φ,PV",electrosim_b532_connections.js,NO
+socketDC2,Prise DC 2 pôles,socket,Prises,"DC / CC,PV",electrosim_b532_connections.js,NO

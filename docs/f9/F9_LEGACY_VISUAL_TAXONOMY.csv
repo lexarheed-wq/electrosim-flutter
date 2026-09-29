@@ -1,0 +1,23 @@
+legacy_category,entity_class,count,proposed_visual_family,f9_action,automatic_import
+Appareils externes,external-appliance,18,external-appliances,"reference-only; define family renderer/language, do not import catalog items",NO
+Capacitifs & inductifs,palette-component,8,passive-rlc,"reference-only; define family renderer/language, do not import catalog items",NO
+Commande & détection,palette-component,29,control-detection,"reference-only; define family renderer/language, do not import catalog items",NO
+Commande moteur 3φ,palette-component,10,ac3-motor-control,"reference-only; define family renderer/language, do not import catalog items",NO
+Diodes & semi-conducteurs CC,palette-component,8,dc-semiconductors,"reference-only; define family renderer/language, do not import catalog items",NO
+Distribution & protection 3φ,palette-component,11,ac3-protection-distribution,"reference-only; define family renderer/language, do not import catalog items",NO
+Environnement PV,palette-component,3,pv-environment,"reference-only; define family renderer/language, do not import catalog items",NO
+Legacy / compatibilité,palette-component,26,legacy-reference-only,do not reproduce visually unless a future validated item requires it,NO
+Mesure,palette-component,3,measurement,"reference-only; define family renderer/language, do not import catalog items",NO
+Mesure 3φ,palette-component,8,measurement,"reference-only; define family renderer/language, do not import catalog items",NO
+Moteurs & charges 3φ,palette-component,7,ac3-loads,"reference-only; define family renderer/language, do not import catalog items",NO
+Prises,socket,4,sockets,"reference-only; define family renderer/language, do not import catalog items",NO
+Production photovoltaïque,palette-component,7,pv-generation,"reference-only; define family renderer/language, do not import catalog items",NO
+Protection & sectionnement PV,palette-component,4,pv-protection,"reference-only; define family renderer/language, do not import catalog items",NO
+Protection CC / AC,palette-component,7,protection-generic,"reference-only; define family renderer/language, do not import catalog items",NO
+Récepteurs & actionneurs CC / AC,palette-component,29,receivers-actuators,"reference-only; define family renderer/language, do not import catalog items",NO
+Régulation & conversion PV,palette-component,8,pv-conversion,"reference-only; define family renderer/language, do not import catalog items",NO
+Résistifs & capteurs passifs,palette-component,9,passive-resistive-sensors,"reference-only; define family renderer/language, do not import catalog items",NO
+Sources AC 1φ,palette-component,2,sources-ac1,"reference-only; define family renderer/language, do not import catalog items",NO
+Sources CC,palette-component,8,sources-dc,"reference-only; define family renderer/language, do not import catalog items",NO
+Sources triphasées,palette-component,3,sources-ac3,"reference-only; define family renderer/language, do not import catalog items",NO
+Stockage & bus DC PV,palette-component,5,pv-storage-bus,"reference-only; define family renderer/language, do not import catalog items",NO

@@ -1,0 +1,162 @@
+family_id,criterion_id,criterion,gate
+sources-dc,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+sources-dc,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+sources-dc,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+sources-dc,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+sources-dc,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+sources-dc,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+sources-dc,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+sources-dc,no_auto_import,No legacy component definition is automatically imported,F9-gate
+sources-ac1,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+sources-ac1,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+sources-ac1,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+sources-ac1,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+sources-ac1,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+sources-ac1,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+sources-ac1,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+sources-ac1,no_auto_import,No legacy component definition is automatically imported,F9-gate
+sources-ac3,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+sources-ac3,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+sources-ac3,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+sources-ac3,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+sources-ac3,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+sources-ac3,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+sources-ac3,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+sources-ac3,no_auto_import,No legacy component definition is automatically imported,F9-gate
+passive-resistive-sensors,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+passive-resistive-sensors,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+passive-resistive-sensors,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+passive-resistive-sensors,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+passive-resistive-sensors,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+passive-resistive-sensors,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+passive-resistive-sensors,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+passive-resistive-sensors,no_auto_import,No legacy component definition is automatically imported,F9-gate
+passive-rlc,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+passive-rlc,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+passive-rlc,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+passive-rlc,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+passive-rlc,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+passive-rlc,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+passive-rlc,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+passive-rlc,no_auto_import,No legacy component definition is automatically imported,F9-gate
+dc-semiconductors,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+dc-semiconductors,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+dc-semiconductors,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+dc-semiconductors,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+dc-semiconductors,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+dc-semiconductors,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+dc-semiconductors,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+dc-semiconductors,no_auto_import,No legacy component definition is automatically imported,F9-gate
+protection-generic,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+protection-generic,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+protection-generic,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+protection-generic,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+protection-generic,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+protection-generic,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+protection-generic,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+protection-generic,no_auto_import,No legacy component definition is automatically imported,F9-gate
+control-detection,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+control-detection,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+control-detection,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+control-detection,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+control-detection,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+control-detection,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+control-detection,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+control-detection,no_auto_import,No legacy component definition is automatically imported,F9-gate
+ac3-protection-distribution,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+ac3-protection-distribution,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+ac3-protection-distribution,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+ac3-protection-distribution,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+ac3-protection-distribution,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+ac3-protection-distribution,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+ac3-protection-distribution,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+ac3-protection-distribution,no_auto_import,No legacy component definition is automatically imported,F9-gate
+ac3-motor-control,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+ac3-motor-control,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+ac3-motor-control,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+ac3-motor-control,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+ac3-motor-control,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+ac3-motor-control,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+ac3-motor-control,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+ac3-motor-control,no_auto_import,No legacy component definition is automatically imported,F9-gate
+receivers-actuators,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+receivers-actuators,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+receivers-actuators,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+receivers-actuators,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+receivers-actuators,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+receivers-actuators,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+receivers-actuators,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+receivers-actuators,no_auto_import,No legacy component definition is automatically imported,F9-gate
+ac3-loads,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+ac3-loads,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+ac3-loads,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+ac3-loads,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+ac3-loads,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+ac3-loads,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+ac3-loads,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+ac3-loads,no_auto_import,No legacy component definition is automatically imported,F9-gate
+sockets,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+sockets,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+sockets,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+sockets,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+sockets,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+sockets,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+sockets,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+sockets,no_auto_import,No legacy component definition is automatically imported,F9-gate
+external-appliances,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+external-appliances,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+external-appliances,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+external-appliances,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+external-appliances,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+external-appliances,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+external-appliances,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+external-appliances,no_auto_import,No legacy component definition is automatically imported,F9-gate
+measurement,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+measurement,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+measurement,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+measurement,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+measurement,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+measurement,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+measurement,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+measurement,no_auto_import,No legacy component definition is automatically imported,F9-gate
+pv-environment,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+pv-environment,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+pv-environment,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+pv-environment,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+pv-environment,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+pv-environment,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+pv-environment,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+pv-environment,no_auto_import,No legacy component definition is automatically imported,F9-gate
+pv-generation,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+pv-generation,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+pv-generation,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+pv-generation,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+pv-generation,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+pv-generation,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+pv-generation,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+pv-generation,no_auto_import,No legacy component definition is automatically imported,F9-gate
+pv-protection,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+pv-protection,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+pv-protection,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+pv-protection,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+pv-protection,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+pv-protection,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+pv-protection,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+pv-protection,no_auto_import,No legacy component definition is automatically imported,F9-gate
+pv-conversion,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+pv-conversion,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+pv-conversion,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+pv-conversion,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+pv-conversion,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+pv-conversion,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+pv-conversion,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+pv-conversion,no_auto_import,No legacy component definition is automatically imported,F9-gate
+pv-storage-bus,identity,Palette and Canvas share the same canonical silhouette/metaphor,F9-gate
+pv-storage-bus,terminal_stability,Terminal relative positions are stable across compact/medium/expanded,F9-gate
+pv-storage-bus,input_target,Mouse and touch hit targets meet prepared interaction tokens,F9-gate
+pv-storage-bus,ui_electrical_separation,Selected/hover/dragging cannot create electrical state,F9-gate
+pv-storage-bus,result_driven_state,Physical animation/state appears only from the declared result source,F9-gate
+pv-storage-bus,responsive,Compact hides secondary detail without hiding required terminal identity,F9-gate
+pv-storage-bus,accessibility,Phase/polarity/role is not encoded by color alone,F9-gate
+pv-storage-bus,no_auto_import,No legacy component definition is automatically imported,F9-gate
+legacy-reference-only,excluded,No production renderer unless explicitly validated later,PRE-F9

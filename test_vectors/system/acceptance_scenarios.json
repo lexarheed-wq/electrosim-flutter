@@ -1,0 +1,55 @@
+{
+  "source": "CDC section 24",
+  "scenarios": [
+    {
+      "id": "SA-01",
+      "title": "Câblage simple",
+      "expected": "source + interrupteur + lampe; fermeture => lampe et mesures cohérentes"
+    },
+    {
+      "id": "SA-02",
+      "title": "Fil absent",
+      "expected": "retour absent => lampe éteinte, courant nul, diagnostic circuit ouvert"
+    },
+    {
+      "id": "SA-03",
+      "title": "Mauvaise borne",
+      "expected": "résultat dérivé de la topologie, aucune règle par scenarioId"
+    },
+    {
+      "id": "SA-04",
+      "title": "Panne onduleur",
+      "expected": "FaultScenario autonome; sortie onduleur défectueuse et charge aval non fonctionnelle"
+    },
+    {
+      "id": "SA-05",
+      "title": "Réparation alternative",
+      "expected": "solution techniquement valide acceptée si critères satisfaits"
+    },
+    {
+      "id": "SA-06",
+      "title": "TP terminé",
+      "expected": "élève lecture seule; professeur progression terminée + score"
+    },
+    {
+      "id": "SA-07",
+      "title": "Mobile",
+      "expected": "ajout, câblage, mesure, retour accueil sans zone inaccessible"
+    },
+    {
+      "id": "SA-08",
+      "title": "Sauvegarde multiple",
+      "expected": "deux sauvegardes; réouverture explicite de l’une; état exact"
+    },
+    {
+      "id": "SA-09",
+      "title": "Exemple sain",
+      "expected": "aucune panne cachée; fonctionnement nominal validé"
+    },
+    {
+      "id": "SA-10",
+      "title": "Isolement contenu",
+      "expected": "payload élève sans teacherTruth ni correction privée"
+    }
+  ]
+}

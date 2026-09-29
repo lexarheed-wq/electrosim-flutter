@@ -1,0 +1,22 @@
+{
+  "id": "DC-003",
+  "mode": "dc",
+  "description": "10 ohm // 10 ohm sous 10 V",
+  "circuit": {
+    "sourceVoltage_V": 10,
+    "resistors_ohm": [
+      10,
+      10
+    ],
+    "topology": "parallel"
+  },
+  "expected": {
+    "equivalentResistance_ohm": 5.0,
+    "totalCurrent_A": 2.0,
+    "branchCurrents_A": [
+      1.0,
+      1.0
+    ]
+  },
+  "tolerance": 1e-09
+}

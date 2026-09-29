@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "flutter": {
+    "version": "3.38.10",
+    "channel": "stable",
+    "dartVersion": "3.10.9",
+    "frameworkRevision": "c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80"
+  },
+  "archives": {
+    "linux_x64": {
+      "filename": "flutter_linux_3.38.10-stable.tar.xz",
+      "sha256": "385e2629a0a585a835f351ca1605d2c7996377ce2fa16e68296e8fc9a78ccf7a"
+    },
+    "macos_x64": {
+      "filename": "flutter_macos_3.38.10-stable.zip",
+      "sha256": "b7056ba00082b9b814415e7516287bb94633c1108838bfe10f8f665307b99afa"
+    },
+    "macos_arm64": {
+      "filename": "flutter_macos_arm64_3.38.10-stable.zip",
+      "sha256": "b3a8c004385273bfd9b9b901a72e3eb93ecaa65f4a7ca801ab22588aa05c490c"
+    }
+  },
+  "compatibilityProfile": {
+    "purpose": "ElectroSim development on macOS Monterey 12 where current Dart SDK cannot start",
+    "macosDevelopmentHost": "12.x compatibility candidate",
+    "selectionBasis": "Flutter 3.38.10 is the latest version empirically reported to start on macOS 12; F0 still requires local gate proof",
+    "noAutomaticFallback": true
+  },
+  "source": "Flutter stable release metadata, 3.38.10; Monterey compatibility must be verified by the F0 gate on the target Mac"
+}

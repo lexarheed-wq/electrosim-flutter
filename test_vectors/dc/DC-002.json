@@ -1,0 +1,21 @@
+{
+  "id": "DC-002",
+  "mode": "dc",
+  "description": "R1=10 ohm + R2=20 ohm sous 30 V",
+  "circuit": {
+    "sourceVoltage_V": 30,
+    "resistors_ohm": [
+      10,
+      20
+    ],
+    "topology": "series"
+  },
+  "expected": {
+    "current_A": 1.0,
+    "voltages_V": [
+      10.0,
+      20.0
+    ]
+  },
+  "tolerance": 1e-09
+}

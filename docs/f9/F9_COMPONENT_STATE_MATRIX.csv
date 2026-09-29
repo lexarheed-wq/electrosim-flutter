@@ -1,0 +1,122 @@
+family_id,state_layer,layer_type,source_of_truth,render_rule
+sources-dc,normal_ui,UI,always,Baseline renderer only
+sources-dc,selected,UI,selection_controller,Outline/halo only; no electrical inference
+sources-dc,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+sources-dc,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+sources-dc,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,deenergized;energized;limited;disabled
+sources-dc,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+sources-ac1,normal_ui,UI,always,Baseline renderer only
+sources-ac1,selected,UI,selection_controller,Outline/halo only; no electrical inference
+sources-ac1,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+sources-ac1,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+sources-ac1,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,deenergized;energized;undervoltage;overvoltage;disabled
+sources-ac1,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+sources-ac3,normal_ui,UI,always,Baseline renderer only
+sources-ac3,selected,UI,selection_controller,Outline/halo only; no electrical inference
+sources-ac3,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+sources-ac3,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+sources-ac3,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,deenergized;energized;phase_loss;phase_swap;undervoltage;overvoltage;disabled
+sources-ac3,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+passive-resistive-sensors,normal_ui,UI,always,Baseline renderer only
+passive-resistive-sensors,selected,UI,selection_controller,Outline/halo only; no electrical inference
+passive-resistive-sensors,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+passive-resistive-sensors,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+passive-resistive-sensors,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,normal;energized;overrange
+passive-resistive-sensors,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+passive-rlc,normal_ui,UI,always,Baseline renderer only
+passive-rlc,selected,UI,selection_controller,Outline/halo only; no electrical inference
+passive-rlc,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+passive-rlc,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+passive-rlc,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,normal;energized;charged;saturated_or_overrange
+passive-rlc,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+dc-semiconductors,normal_ui,UI,always,Baseline renderer only
+dc-semiconductors,selected,UI,selection_controller,Outline/halo only; no electrical inference
+dc-semiconductors,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+dc-semiconductors,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+dc-semiconductors,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,off;conducting;blocked;reverse;overrange
+dc-semiconductors,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+protection-generic,normal_ui,UI,always,Baseline renderer only
+protection-generic,selected,UI,selection_controller,Outline/halo only; no electrical inference
+protection-generic,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+protection-generic,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+protection-generic,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,closed;open;tripped;blown;deenergized
+protection-generic,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+control-detection,normal_ui,UI,always,Baseline renderer only
+control-detection,selected,UI,selection_controller,Outline/halo only; no electrical inference
+control-detection,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+control-detection,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+control-detection,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,rest;actuated;open;closed;energized;disabled
+control-detection,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+ac3-protection-distribution,normal_ui,UI,always,Baseline renderer only
+ac3-protection-distribution,selected,UI,selection_controller,Outline/halo only; no electrical inference
+ac3-protection-distribution,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+ac3-protection-distribution,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+ac3-protection-distribution,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,closed;open;tripped;phase_loss;deenergized
+ac3-protection-distribution,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+ac3-motor-control,normal_ui,UI,always,Baseline renderer only
+ac3-motor-control,selected,UI,selection_controller,Outline/halo only; no electrical inference
+ac3-motor-control,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+ac3-motor-control,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+ac3-motor-control,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,rest;coil_energized;contacts_closed;tripped;disabled
+ac3-motor-control,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+receivers-actuators,normal_ui,UI,always,Baseline renderer only
+receivers-actuators,selected,UI,selection_controller,Outline/halo only; no electrical inference
+receivers-actuators,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+receivers-actuators,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+receivers-actuators,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,off;energized;active;running;heating;overrange
+receivers-actuators,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+ac3-loads,normal_ui,UI,always,Baseline renderer only
+ac3-loads,selected,UI,selection_controller,Outline/halo only; no electrical inference
+ac3-loads,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+ac3-loads,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+ac3-loads,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,stopped;energized;running;phase_loss;phase_swap;overload
+ac3-loads,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+sockets,normal_ui,UI,always,Baseline renderer only
+sockets,selected,UI,selection_controller,Outline/halo only; no electrical inference
+sockets,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+sockets,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+sockets,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,deenergized;energized;connected_load_present
+sockets,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+external-appliances,normal_ui,UI,always,Baseline renderer only
+external-appliances,selected,UI,selection_controller,Outline/halo only; no electrical inference
+external-appliances,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+external-appliances,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+external-appliances,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,off;energized;running;active;disabled
+external-appliances,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+measurement,normal_ui,UI,always,Baseline renderer only
+measurement,selected,UI,selection_controller,Outline/halo only; no electrical inference
+measurement,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+measurement,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+measurement,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,idle;measuring;overrange;invalid_connection;unavailable
+measurement,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+pv-environment,normal_ui,UI,always,Baseline renderer only
+pv-environment,selected,UI,selection_controller,Outline/halo only; no electrical inference
+pv-environment,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+pv-environment,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+pv-environment,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,normal;low_irradiance;high_temperature;unavailable
+pv-environment,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+pv-generation,normal_ui,UI,always,Baseline renderer only
+pv-generation,selected,UI,selection_controller,Outline/halo only; no electrical inference
+pv-generation,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+pv-generation,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+pv-generation,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,dark;generating;limited;reverse;disabled
+pv-generation,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+pv-protection,normal_ui,UI,always,Baseline renderer only
+pv-protection,selected,UI,selection_controller,Outline/halo only; no electrical inference
+pv-protection,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+pv-protection,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+pv-protection,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,closed;open;tripped;blown;deenergized
+pv-protection,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+pv-conversion,normal_ui,UI,always,Baseline renderer only
+pv-conversion,selected,UI,selection_controller,Outline/halo only; no electrical inference
+pv-conversion,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+pv-conversion,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+pv-conversion,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,off;standby;converting;limited;disabled;invalid_input
+pv-conversion,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+pv-storage-bus,normal_ui,UI,always,Baseline renderer only
+pv-storage-bus,selected,UI,selection_controller,Outline/halo only; no electrical inference
+pv-storage-bus,wire_source,UI/topology,wiring_controller,Emphasize origin terminal
+pv-storage-bus,wire_target,UI/topology,compatibility_result,Compatible/incompatible explicit marker
+pv-storage-bus,physical_state,Electrical/device,SimulationResult/DeviceStateEngine,idle;charging;discharging;limited;disabled
+pv-storage-bus,diagnostic_badge,Diagnostic,Diagnostic/EIE evidence,Only when evidence engine asserts a diagnostic fact
+legacy-reference-only,excluded,,,No renderer before explicit future validation

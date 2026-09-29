@@ -1,0 +1,41 @@
+name: F1 gate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packages/electrosim_domain/**'
+      - 'tools/**'
+      - 'apps/electrosim/**'
+      - 'ci/**'
+      - '.github/workflows/f1-gate.yml'
+  pull_request:
+    paths:
+      - 'packages/electrosim_domain/**'
+      - 'tools/**'
+      - 'apps/electrosim/**'
+      - 'ci/**'
+      - '.github/workflows/f1-gate.yml'
+jobs:
+  f1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Toolchain
+        run: |
+          flutter --version
+          dart --version
+      - name: F1 gate
+        run: |
+          chmod +x tools/*.sh
+          ./tools/run_f1_gate.sh
+      - name: Upload audit logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f1-audit
+          path: audit/runtime/

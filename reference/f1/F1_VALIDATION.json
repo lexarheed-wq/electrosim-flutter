@@ -1,0 +1,21 @@
+{
+  "phase": "F1",
+  "status": "PASS",
+  "validatedOn": "2026-09-27",
+  "target": "user Mac running macOS Monterey",
+  "gateMarker": "F1_GATE_PASS",
+  "domainTests": 19,
+  "coverage": {
+    "coveredLines": 377,
+    "totalLines": 386,
+    "lineCoveragePercent": 97.67,
+    "minimumPercent": 90.0,
+    "status": "PASS"
+  },
+  "architectureGuard": {
+    "dartFilesScanned": 11,
+    "errors": [],
+    "status": "PASS"
+  },
+  "evidence": "reference/f1/evidence/F1_GATE_PASS_MONTEREY.png"
+}

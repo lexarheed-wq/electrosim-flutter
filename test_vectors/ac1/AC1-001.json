@@ -1,0 +1,10 @@
+{
+  "id": "AC1-001",
+  "mode": "ac1",
+  "description": "Charge résistive pure",
+  "expected": {
+    "reactivePower_var": 0.0,
+    "powerFactor": 1.0
+  },
+  "tolerance": 1e-09
+}

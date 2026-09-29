@@ -1,0 +1,15 @@
+name: electrosim_ui_kit
+description: Shared responsive design system and presentation primitives for ElectroSim Flutter.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true

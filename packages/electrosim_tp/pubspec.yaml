@@ -1,0 +1,17 @@
+name: electrosim_tp
+description: TP wiring and troubleshooting workflow engine for ElectroSim F12.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
+  electrosim_scenarios:
+    path: ../electrosim_scenarios
+dev_dependencies:
+  test: ^1.26.3

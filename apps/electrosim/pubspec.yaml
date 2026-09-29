@@ -1,0 +1,21 @@
+name: electrosim
+publish_to: "none"
+description: ElectroSim Flutter F9 responsive shell over the validated F8 Canvas.
+version: 0.9.99+99
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  electrosim_domain:
+    path: ../../packages/electrosim_domain
+  electrosim_canvas:
+    path: ../../packages/electrosim_canvas
+  electrosim_ui_kit:
+    path: ../../packages/electrosim_ui_kit
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true

@@ -1,0 +1,9 @@
+{
+  "id": "FAULT-001",
+  "kind": "fault",
+  "description": "Conducteur réellement absent",
+  "expected": {
+    "symptomsDerivedFromTopology": true,
+    "forbidden": "hiddenFaultInjection"
+  }
+}

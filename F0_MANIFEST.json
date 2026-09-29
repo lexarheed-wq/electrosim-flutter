@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 2,
+  "phase": "F0",
+  "candidateVersion": "0.0.0-f0-r7-monterey-candidate",
+  "coverage": "all candidate source/data files except F0_MANIFEST.json, .toolchain/, audit/, Python caches and .DS_Store",
+  "fileCount": 62,
+  "files": [
+    {
+      "path": ".github/workflows/f0-gate.yml",
+      "size_bytes": 1433,
+      "sha256": "1ad84e47c35112e5454489029d47822aa085f7fe68cc1f3fbcc03ab739bbaed2"
+    },
+    {
+      "path": ".gitignore",
+      "size_bytes": 123,
+      "sha256": "f0e545726d1463de6d43192ebe9e47c10a92226a95012f5ded271af2b5c3cd1e"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 1433,
+      "sha256": "bbd027716001d1e75bfa8f6d75977953d955eb3dd96a75755b7831485053b2a1"
+    },
+    {
+      "path": "VERSION",
+      "size_bytes": 31,
+      "sha256": "ab822265f71fab10e34006fa9eb3af5b99b7dad5da12cc66794674603b65e999"
+    },
+    {
+      "path": "apps/electrosim/README.md",
+      "size_bytes": 326,
+      "sha256": "32ee7b16f00359db3448d087a7c04179b5d850fc5a566234c953c3d9ffaca090"
+    },
+    {
+      "path": "apps/electrosim/analysis_options.yaml",
+      "size_bytes": 83,
+      "sha256": "6d0be0f6b80670e8e670bfd257e04cfb6c7abc46fc57fe292e273d0722fea36b"
+    },
+    {
+      "path": "apps/electrosim/lib/main.dart",
+      "size_bytes": 402,
+      "sha256": "387d0ceb9c838c0acb7c3611a531fb245c152428e52052bfcc27a1c2d9cbbf2b"
+    },
+    {
+      "path": "apps/electrosim/pubspec.yaml",
+      "size_bytes": 308,
+      "sha256": "77d786060994da5e4a256aa9dd6cf88529091b6ed412c49e9cca6d1bb6856ed0"
+    },
+    {
+      "path": "apps/electrosim/test/f0_smoke_test.dart",
+      "size_bytes": 278,
+      "sha256": "234cac072ca18423a5018d8e3dce8752bbaa5d88708c006512b70ae712ec1047"
+    },
+    {
+      "path": "ci/README.md",
+      "size_bytes": 237,
+      "sha256": "1ad759999e4de9ddb18a658926a0cbec80a0f8db27c0bfe6b42178a2f9b2138e"
+    },
+    {
+      "path": "ci/TOOLCHAIN_LOCK.json",
+      "size_bytes": 1207,
+      "sha256": "8bdc9b55dd6d047a9484c49a34eb51a63835d998e723779467e2adea30248520"
+    },
+    {
+      "path": "ci/TOOLCHAIN_PIN.md",
+      "size_bytes": 1094,
+      "sha256": "7266231eeedd3bf57fdb1abd44582269b9cffe0457ccbf139ac200c2c655c950"
+    },
+    {
+      "path": "docs/f0/F0_DECISIONS.md",
+      "size_bytes": 849,
+      "sha256": "ba396aa2670d527765a9331af8913bc1915eb8274bb2bc08d727c7ecb63c0062"
+    },
+    {
+      "path": "docs/f0/F0_REPORT.md",
+      "size_bytes": 3201,
+      "sha256": "ab0b903f3571f35e32f28b9824dd37160b04e667d3c3c43933d6c66c9352c8ee"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R2.md",
+      "size_bytes": 1402,
+      "sha256": "c0873680f1cafc4dfc9888c24330a8794a0b130ff8feeee61f0d48757ade342e"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R3.md",
+      "size_bytes": 1641,
+      "sha256": "c5486e673b8ddd9f5262d3f57402fa329211b1eb368f323cbce85baf4e32fbaf"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R4.md",
+      "size_bytes": 3201,
+      "sha256": "ab0b903f3571f35e32f28b9824dd37160b04e667d3c3c43933d6c66c9352c8ee"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R5.md",
+      "size_bytes": 1312,
+      "sha256": "69987563fc34819e1aaf2d8811cafa042be49624ddce4ca9b5b19a8df93309ff"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R6.md",
+      "size_bytes": 1946,
+      "sha256": "11062d930531f2a732f10b5b2c62e53451de3db59bd9c26030898f2e59c240ff"
+    },
+    {
+      "path": "docs/f0/LEGACY_FUNCTIONAL_INVENTORY.md",
+      "size_bytes": 6008,
+      "sha256": "00cc3ba01f09eb38d90e4425cffab4e41c688b40977148230db91239004142ac"
+    },
+    {
+      "path": "docs/f0/LEGACY_TECHNICAL_BASELINE.md",
+      "size_bytes": 4091,
+      "sha256": "2e6add1b7596c01c65d12bbaab65602a3566cfb494b4adf5a157e43ffaa09184"
+    },
+    {
+      "path": "docs/f0/MIGRATION_MATRIX.csv",
+      "size_bytes": 3866,
+      "sha256": "0e2c7c301964c6d0d64bf57b420d17c10b08b3ad07568af0af3bfb8c17b5ed1a"
+    },
+    {
+      "path": "docs/f0/MIGRATION_MATRIX.md",
+      "size_bytes": 4418,
+      "sha256": "323e6f1481aac1d13251df362aef7604edfaafd760b4396738b56448182d8ddb"
+    },
+    {
+      "path": "docs/f0/legacy_component_inventory.csv",
+      "size_bytes": 20939,
+      "sha256": "a81e7ec17b500125916e38adcdb193294d0f225e09157ee5c24614ab74296bc6"
+    },
+    {
+      "path": "docs/source/Cahier_des_charges_ElectroSim_Flutter_Nouveau_Noyau.pdf",
+      "size_bytes": 466200,
+      "sha256": "a88dda2b905f5b775b37060216ceaf8d74a71ec41ce0eac5f8bdde0e584e8f6c"
+    },
+    {
+      "path": "docs/source/MISSION_RECONSTRUCTION_FLUTTER.txt",
+      "size_bytes": 16177,
+      "sha256": "9f908012a5016b75a2a842c34b36e65d6e4dd6089d37765ac5211bcb7e1f4ad7"
+    },
+    {
+      "path": "packages/electrosim_diagnostics/README.md",
+      "size_bytes": 114,
+      "sha256": "7d4421ceccd4ac035578bb77cc96c65a713565d5eafdc07b47836e6bfa8593c9"
+    },
+    {
+      "path": "packages/electrosim_domain/README.md",
+      "size_bytes": 109,
+      "sha256": "dc7b776063ce1886e2dcf01ee4f252e5b86d14e85e8bc8efe5158e11e1b3dda6"
+    },
+    {
+      "path": "packages/electrosim_energy/README.md",
+      "size_bytes": 109,
+      "sha256": "dde32b2713550997e8a90613c057d20d5a48008804c01db4f89404544881d354"
+    },
+    {
+      "path": "packages/electrosim_scenarios/README.md",
+      "size_bytes": 112,
+      "sha256": "9dc6c68f08e5b18136a637250d73cd25017f04655c77a7268beb594deaebe107"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/README.md",
+      "size_bytes": 112,
+      "sha256": "6fcc0af178714f8dfe4bfe0178fc12a19bda65944388364a5287fc0719814a5e"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/README.md",
+      "size_bytes": 112,
+      "sha256": "341829c5b088df8e45c3ea8a7d4e3b4d691240f2c41572263f0ce01501459eed"
+    },
+    {
+      "path": "packages/electrosim_storage/README.md",
+      "size_bytes": 110,
+      "sha256": "b6d99b4c35c4008e1b235f10244bf5643fa2f854c6e633cb3a4c490cfd9b5bcb"
+    },
+    {
+      "path": "packages/electrosim_ui_kit/README.md",
+      "size_bytes": 109,
+      "sha256": "b2c610ac23070f5984b14a30189eb56f60a75afddd5281822f105ca43e48e0cd"
+    },
+    {
+      "path": "reference/REFERENCE_BASELINE.json",
+      "size_bytes": 1376,
+      "sha256": "405085865db16343cfccb5fb6f1dd3c51ebd811fab027db3bf78f6792cee4eba"
+    },
+    {
+      "path": "reference/legacy/ElectroSim-FIELDFIX01-R1.zip",
+      "size_bytes": 49210606,
+      "sha256": "569e05908592e6dd615bd80b342f6c7a28249850951d353dac988c5d2e1187bd"
+    },
+    {
+      "path": "test_vectors/ac1/AC1-001.json",
+      "size_bytes": 178,
+      "sha256": "10770585218532a303d4eacfb696de6be2c5164c68cade7ea487d118cba97f9e"
+    },
+    {
+      "path": "test_vectors/ac1/AC1-002.json",
+      "size_bytes": 178,
+      "sha256": "de740328980accd1f8db31ccc47193fa77f64aad190e1e5e83049229b83b1fd6"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-001.json",
+      "size_bytes": 139,
+      "sha256": "ad298971cd45963c0ba760e5b97514667384916e2bf91012d33bc0f28ae17b18"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-002.json",
+      "size_bytes": 151,
+      "sha256": "5a28253af1f6082841853c9faac57962cf6df12ea244fe0b683f968fcea6cf0f"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-003.json",
+      "size_bytes": 138,
+      "sha256": "ed2ecf14b3a748f7ad4c934b1c21b4dac552ced5a943b55e210088ffd2fb6d98"
+    },
+    {
+      "path": "test_vectors/dc/DC-001.json",
+      "size_bytes": 294,
+      "sha256": "3e462c1b0e43da73f2cafa68c98caa80adf727d01ad1de6d2d3cf36637f06048"
+    },
+    {
+      "path": "test_vectors/dc/DC-002.json",
+      "size_bytes": 324,
+      "sha256": "70fbf34b626eb82b6015fb3821df23c41b27470d3330539b08319f0a26c5c259"
+    },
+    {
+      "path": "test_vectors/dc/DC-003.json",
+      "size_bytes": 367,
+      "sha256": "db538603cda770bc31ef23ae854f24782380a41fc5c5cafa95cf4db3ba63faa8"
+    },
+    {
+      "path": "test_vectors/dc/DC-004.json",
+      "size_bytes": 154,
+      "sha256": "9ed7129515670cdf7d58bd526e9fc8d47e2c89053cddc37d1f31a8d0961ddb2c"
+    },
+    {
+      "path": "test_vectors/dc/DC-005.json",
+      "size_bytes": 168,
+      "sha256": "241cadc6ac87e6e32d72c0022347de6e1a6c74b6658b16409ffe3e4f67b48bfe"
+    },
+    {
+      "path": "test_vectors/dc/DC-006.json",
+      "size_bytes": 189,
+      "sha256": "a1bb9d0550417612076fcb970cf84c455a6220eb4019e4d87b3c9905f46feb58"
+    },
+    {
+      "path": "test_vectors/faults/FAULT-001.json",
+      "size_bytes": 195,
+      "sha256": "8d2a730cb648ddcc1912d0d40c8da03a42ac18de3fb12fcc18bc913aac3ffa64"
+    },
+    {
+      "path": "test_vectors/faults/FAULT-002.json",
+      "size_bytes": 158,
+      "sha256": "c08335dd89fa547e3a0ae24acd8802225eec303a2ec0a7d48602798c41a28844"
+    },
+    {
+      "path": "test_vectors/faults/REPAIR-001.json",
+      "size_bytes": 146,
+      "sha256": "488ae7a082ecbe99991485e1e699fbfc817e476a89ca32681d3e7880bfc1160a"
+    },
+    {
+      "path": "test_vectors/pv/PV-001.json",
+      "size_bytes": 217,
+      "sha256": "8fdc9f1de58e692ec73a849042796b84190cb1855bcbd075a2ca46d29334b4ff"
+    },
+    {
+      "path": "test_vectors/system/acceptance_scenarios.json",
+      "size_bytes": 1586,
+      "sha256": "bb4a554bd8ed09f997b157629d4935eeb58b4b40f6db59f125e155668bd377ce"
+    },
+    {
+      "path": "tools/analyze_legacy_reference.py",
+      "size_bytes": 10175,
+      "sha256": "8c759b45c7078e57f6f12b823f62eeea86551f0e911136c034e9cf37ded5f012"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f0.sh",
+      "size_bytes": 3340,
+      "sha256": "87b5cadd4949556851a9aebed984103ffaffd88e27c005caa77d43dc44789370"
+    },
+    {
+      "path": "tools/f0_guard.py",
+      "size_bytes": 2660,
+      "sha256": "a847fcc76fa8dadf6f53150f244c934259ca6ed39505fad0f177f00429c857c5"
+    },
+    {
+      "path": "tools/generate_f0_manifest.py",
+      "size_bytes": 1330,
+      "sha256": "963f5eaaba427c5c93711b226ef46f4e1a02fdaf1f808da61e5a3e6399759cab"
+    },
+    {
+      "path": "tools/run_f0_gate.sh",
+      "size_bytes": 2528,
+      "sha256": "8b6f80aa03a11cac314c42ec7aeb51232ff9c4d9b72ecdb3bde6d11fe704e211"
+    },
+    {
+      "path": "tools/test_f0_tooling.py",
+      "size_bytes": 5276,
+      "sha256": "2785994af65811960746703ae7acd9d9ef63a624a0335683c3a81e0a7622885e"
+    },
+    {
+      "path": "tools/toolchain_probe.py",
+      "size_bytes": 1667,
+      "sha256": "024e8e077d144f3f202acecd0915d284503f4ad8675f86dee67cef3a0b45007b"
+    },
+    {
+      "path": "tools/validate_test_vectors.py",
+      "size_bytes": 2695,
+      "sha256": "d33564b746f299313c6005c92497ed86bbf6a435ba98f74a774c45678d340250"
+    },
+    {
+      "path": "tools/verify_f0_manifest.py",
+      "size_bytes": 1384,
+      "sha256": "4ea1128b5a4d6f58c37b77c7d785f1fdb608fae76e29856313ad854751c5d869"
+    },
+    {
+      "path": "tools/verify_legacy_reference.py",
+      "size_bytes": 2348,
+      "sha256": "52c9a8cffa44051b3faa2eb791b8fea30b6b1452ebddaaefc194ef65576b23e0"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "phase": "F9",
+  "status": "APPROVED",
+  "approvedAt": "2026-09-29T02:47:22.061300+00:00",
+  "goldens": {
+    "f9_compact_base.png": "8ebeda1a1c6b688b1d64688ef4fee0c4f5151cd628341daac5185f2142aa5093",
+    "f9_compact_palette.png": "65ab04661aa1ff8df29d84b0dd013ae12f4d23a58bfb4761223c34cfd514148c",
+    "f9_compact_properties.png": "52a29a1e2a97953e488ca79db301686e17988f25fda3140a7d9653dbc2ce8097",
+    "f9_medium_base.png": "aa30fe8686a65cb2cd941945c13b0192342c0e4ecf8b1825d7cfe70f33408005",
+    "f9_medium_palette.png": "7d4b90f9663b80fbb1c985d9720b0e470815dd827dc5ee903caffdb96745db75",
+    "f9_medium_properties.png": "cb507a088adf96513ca1b2557fa557198f7b9650143d5f335b5730e4191b344b",
+    "f9_expanded_base.png": "da4e3082a244bebae5b6e76b075dfdd1d3c3afaeb248c98702e33023409a480a",
+    "f9_expanded_palette.png": "da4e3082a244bebae5b6e76b075dfdd1d3c3afaeb248c98702e33023409a480a",
+    "f9_expanded_properties.png": "da4e3082a244bebae5b6e76b075dfdd1d3c3afaeb248c98702e33023409a480a",
+    "f9_compact_student_diagnostic.png": "d84a944912e267c702a304d5758b5b58fc31a8c044d8dde82d597685cbabcb38"
+  }
+}

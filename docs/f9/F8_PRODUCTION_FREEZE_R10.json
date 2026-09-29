@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "purpose": "F8 production freeze during F9 preparation-only work",
+  "dartProductionFileCount": 55,
+  "treeSha256": "9c6894be0405e89ab23760d5ac3cfdc052f9dcbfaf894c66b1b63535f1834931",
+  "files": [
+    {
+      "path": "apps/electrosim/lib/main.dart",
+      "sha256": "bc63cff68b61e9e404e259772b30d18b36292623fef65e9fee7a463d729c0ff6",
+      "size_bytes": 6426
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/electrosim_canvas.dart",
+      "sha256": "9910421dd7a1e3d4683f093ef04d5da7bc43efeead7814deb92b39d665985a9f",
+      "size_bytes": 227
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/canvas_geometry.dart",
+      "sha256": "a682bef570b2e74bf41dbdf9c9219ca5690883c770d2ac4397e3ee6e8bccd053",
+      "size_bytes": 3538
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/circuit_scene_painter.dart",
+      "sha256": "0ebacdcd5f26aa7125a909c1e8a0b1ae6ab4075e9e8c7adcda21d29e7e304185",
+      "size_bytes": 7341
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/circuit_visual_layout.dart",
+      "sha256": "7e5adc80b015d09358f8728ed1e302f4d9da60f44d92c664d8ca93444909209c",
+      "size_bytes": 1552
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/hit_test_engine.dart",
+      "sha256": "8129fa4d456a9076af825c2048cb6c741a38d856fcfb47d7bb37dc66140631df",
+      "size_bytes": 3890
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/simulator_canvas.dart",
+      "sha256": "8615541a7231e47637026caa0e5270164a50ea770646a8c881d9ee20b74afe21",
+      "size_bytes": 11572
+    },
+    {
+      "path": "packages/electrosim_canvas/lib/src/viewport_controller.dart",
+      "sha256": "b4e4ff9f5a892fa03d1fe61e8c9d3b62a6a1b6140398b81faf91ce6da63e4bd0",
+      "size_bytes": 1764
+    },
+    {
+      "path": "packages/electrosim_domain/lib/electrosim_domain.dart",
+      "sha256": "b60c336376ccba8eafbad48899b74f7d287c9e6ffa4c84831ae5fc78fc90c878",
+      "size_bytes": 265
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/circuit_state.dart",
+      "sha256": "8eddd4874e1066f51903aa288fa9191873b291ab622c7a84ed2ccb46f1a6d2f5",
+      "size_bytes": 6614
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/component.dart",
+      "sha256": "0e8038cf6fff6b1a2fa46be7bd182d35005d1c543c30c5ff8f9e90d61d2136f2",
+      "size_bytes": 3185
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/connection.dart",
+      "sha256": "12d8c5d72117fe09aa32accc3a73cebcb3754d1e591f2c68a11e3e63e081e830",
+      "size_bytes": 2325
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/domain_error.dart",
+      "sha256": "689b08149dd1021e92e14f4f8a54b855b3574ec266935ee7f1a116b8fc8c4511",
+      "size_bytes": 841
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/electrical_types.dart",
+      "sha256": "32cb3268d7b15a30f75de12ea21d30cad8dd7c34262a82b181d856eb2215c8e9",
+      "size_bytes": 2229
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/ids.dart",
+      "sha256": "5e8b5b09e071664d1f19dec1858824ab7f9c42554761850fcc1af47f0c8b9395",
+      "size_bytes": 1366
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/json_support.dart",
+      "sha256": "05b17e039834e5bbfb69608163f4fa5cd3b792a8936955a76d3eaf06f6c9e887",
+      "size_bytes": 3148
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/source.dart",
+      "sha256": "39f47679dc54763ebe9fd1608784a4e02e24622d9fd2e11e923eb744d18410fc",
+      "size_bytes": 2655
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/terminal.dart",
+      "sha256": "bbd50b6e13301b19f584c18099669b7207af099ba6c0109745c7cec88ebd954b",
+      "size_bytes": 1374
+    },
+    {
+      "path": "packages/electrosim_energy/lib/electrosim_energy.dart",
+      "sha256": "04229688b68e95a72dd832679704fd056555d46157083fa4d76b1146547730a7",
+      "size_bytes": 94
+    },
+    {
+      "path": "packages/electrosim_energy/lib/src/energy_engine.dart",
+      "sha256": "395328d39c26b6862662ca8dc78d02132db1b8acca1c95b75f97bcc900080f5a",
+      "size_bytes": 1322
+    },
+    {
+      "path": "packages/electrosim_energy/lib/src/energy_models.dart",
+      "sha256": "db49a5403ac236e13064c2feca5c2ee82c937da5759fb811ff289177bde126cd",
+      "size_bytes": 4678
+    },
+    {
+      "path": "packages/electrosim_energy/tool/benchmark.dart",
+      "sha256": "05246ab90480ee2aa73f374274bfde190f25d81d98da6fea0df6ea5d4cccd489",
+      "size_bytes": 2106
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/electrosim_measurements.dart",
+      "sha256": "a82df859a73cc67f86932e2563efecf463f365e4b65036ef7b8a7903b4b73a4e",
+      "size_bytes": 184
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/device_state_engine.dart",
+      "sha256": "b557edc0e5fa665f528ad584a1249325186c1fb641dee588eba2e5965b675ed6",
+      "size_bytes": 7210
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/measurement_engine.dart",
+      "sha256": "b64011fd819437b5c00622e7b3e4b36751c2535421198a3479dfb1c94d756f02",
+      "size_bytes": 6927
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/measurement_models.dart",
+      "sha256": "a7188a38c86109275e3b300df2fa9d7fcf81503b9c5b6780b09b7c4ecfde1e22",
+      "size_bytes": 2720
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/operating_state.dart",
+      "sha256": "085ba7608b6f7929e7bb65307f318f451bc8a3b894377c8d359b2cf4fb99b2ea",
+      "size_bytes": 1170
+    },
+    {
+      "path": "packages/electrosim_pv/lib/electrosim_pv.dart",
+      "sha256": "5484a134fef24614538e8f82189406e21032ea3a54f63d643b6eaf9e94c7be53",
+      "size_bytes": 152
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_diagnostic.dart",
+      "sha256": "17993a73d3b80fc65582eb64cc1264fb6f586bf17d3ba0a350aec8963c965049",
+      "size_bytes": 860
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_result.dart",
+      "sha256": "5447a1f421586b7212bc893798d58777a12fb1d959083828cea451494dfb56c8",
+      "size_bytes": 2409
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_solver_options.dart",
+      "sha256": "4999916fc199daaf41a1f2bd217157cca600697cbedb07e182ccd9fe17540381",
+      "size_bytes": 298
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/solver_pv.dart",
+      "sha256": "186068053cfc738f1b28b13be7c26cb39f73257a7727c69a4cd2b613d1c983b0",
+      "size_bytes": 26342
+    },
+    {
+      "path": "packages/electrosim_pv/tool/benchmark.dart",
+      "sha256": "e98634b6edeeb9df43c70468738303163870756bca5d51c5d8882077eb39fef5",
+      "size_bytes": 3884
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/electrosim_solver_ac.dart",
+      "sha256": "b6bfdea4e248e5fc6ed86c586267ca5ccf65ef71fd558afd5a4a9ed19f086ec1",
+      "size_bytes": 326
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_complex.dart",
+      "sha256": "6605c5de068d96a901fe30d0175a451e55c11780258a0d3c16692df2270108e4",
+      "size_bytes": 1998
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_diagnostic.dart",
+      "sha256": "863c38faf18adad356fb9515c13e72e9166572609dfc935bc66f3dfc84c1af38",
+      "size_bytes": 943
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_result.dart",
+      "sha256": "181fe757701c670caf2b343ac6b115a665c7b48aa6830e0569c4674e5468c837",
+      "size_bytes": 2667
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_solver_options.dart",
+      "sha256": "577e1a581d6aab2ca21345e8e5a318be03f693302322ca24fb407292f2e29612",
+      "size_bytes": 267
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_diagnostic.dart",
+      "sha256": "4b3fba2e8dba511bcabc07da6ea6319d2ed362ff4e07052f679309283a498cc7",
+      "size_bytes": 1046
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_result.dart",
+      "sha256": "b9bc454f83a6e4a22b02fe1cf93875146826c9a964bc9518cef76fb1af2f224b",
+      "size_bytes": 4638
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_solver_options.dart",
+      "sha256": "deeefb18886c7b9979a0077eb0bea8992e8b35226036dbc51d56c2e5d30900d5",
+      "size_bytes": 369
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/solver_ac1.dart",
+      "sha256": "96ace215967b1c968c5ea6b34e40b8ce4c0768674e8d3c8036988e1c507cb64a",
+      "size_bytes": 26437
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/solver_ac3.dart",
+      "sha256": "7812786891a9de143398ce182d0dae3df40aa1ce37785636537b35d30130332f",
+      "size_bytes": 37364
+    },
+    {
+      "path": "packages/electrosim_solver_ac/tool/benchmark.dart",
+      "sha256": "62b468c6131783f6b8d3bbe6c0d72bc70897f692cc41bc5920d65986820fcb66",
+      "size_bytes": 3037
+    },
+    {
+      "path": "packages/electrosim_solver_ac/tool/benchmark_ac3.dart",
+      "sha256": "78dd9ff332fbb6ab4a0540f6c5f15c3348acf85186db2dfa1c1e93d11f16f742",
+      "size_bytes": 4174
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/electrosim_solver_dc.dart",
+      "sha256": "ae841df356f2249a0a3e871c84a2b2321d67e6deb5eb8befbc3270b572f96c09",
+      "size_bytes": 159
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_diagnostic.dart",
+      "sha256": "dd164d6bd26cbf83802dca00c273dea26fdbb52b2499330e030be48a386cf2b9",
+      "size_bytes": 953
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_result.dart",
+      "sha256": "8203668ef298cc43eaa38ec6894407d28675986afd48b29246a746e4fe3b69eb",
+      "size_bytes": 2153
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_solver_options.dart",
+      "sha256": "d91e2e685844dca174182dafc4b2bdd041c7aa0f59a7e28a4c522049ef06e474",
+      "size_bytes": 265
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/solver_dc.dart",
+      "sha256": "24cf0c7983273d1f50ad6b72ee6668bd96317055d33a1ef48145fa97515a232c",
+      "size_bytes": 31634
+    },
+    {
+      "path": "packages/electrosim_solver_dc/tool/benchmark.dart",
+      "sha256": "99c516181c6d065cae2c2ad3e3d1a9a33aa9ed64941e022345b94b6fb8757c92",
+      "size_bytes": 3499
+    },
+    {
+      "path": "packages/electrosim_topology/lib/electrosim_topology.dart",
+      "sha256": "8881140b8c682934c5227592eab7bf04edfe160901c3b6da0c2ff076ace03604",
+      "size_bytes": 135
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_engine.dart",
+      "sha256": "fe2ed36c205f19f0aacb9c6e56edef73d13f986906cacef4ca6a85e842ed8935",
+      "size_bytes": 8834
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_finding.dart",
+      "sha256": "20f66f5ce56941c810a2e57b4f006bc13f20b346ed44d46af9db4ad61b45ddb0",
+      "size_bytes": 838
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_graph.dart",
+      "sha256": "fe27c64f74b97a082f51c674fe1519619148bf80bb98b81b58c8a2211232253d",
+      "size_bytes": 2483
+    }
+  ]
+}

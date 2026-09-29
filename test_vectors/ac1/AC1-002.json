@@ -1,0 +1,9 @@
+{
+  "id": "AC1-002",
+  "mode": "ac1",
+  "description": "Charge inductive",
+  "expected": {
+    "reactivePowerSign": "positive",
+    "phaseRelation": "current_lags_voltage"
+  }
+}

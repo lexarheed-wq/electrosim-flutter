@@ -1,0 +1,8 @@
+{
+  "id": "AC3-003",
+  "mode": "ac3",
+  "description": "Inversion de deux phases",
+  "expected": {
+    "phaseSequenceChanged": true
+  }
+}

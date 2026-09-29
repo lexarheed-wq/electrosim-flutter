@@ -1,0 +1,17 @@
+{
+  "phase": "F2",
+  "status": "PASS",
+  "validatedOn": "2026-09-27",
+  "target": "macOS Monterey / Flutter 3.38.10 / Dart 3.10.9",
+  "evidence": "reference/f2/evidence/F2_GATE_PASS_MONTEREY.png",
+  "observed": {
+    "testsPassed": 9,
+    "coveredLines": 161,
+    "totalLines": 170,
+    "lineCoveragePercent": 94.71,
+    "minimumCoveragePercent": 90.0,
+    "architectureGuardDartFilesScanned": 5,
+    "architectureGuardErrors": 0,
+    "gateMarker": "F2_GATE_PASS"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "AC3-002",
+  "mode": "ac3",
+  "description": "Perte L2",
+  "expected": {
+    "degradedThreePhaseState": true,
+    "missingPhase": "L2"
+  }
+}

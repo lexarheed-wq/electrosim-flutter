@@ -1,0 +1,9 @@
+{
+  "id": "DC-004",
+  "mode": "dc",
+  "description": "Interrupteur idéal ouvert",
+  "expected": {
+    "branchCurrent_A": 0.0
+  },
+  "tolerance": 1e-12
+}

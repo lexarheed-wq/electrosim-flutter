@@ -1,0 +1,100 @@
+import 'package:electrosim_domain/electrosim_domain.dart';
+
+enum MeasurementKind { voltageDc, currentDc, resistance }
+
+enum MeasurementStatus { valid, invalid }
+
+enum MeasurementErrorCode {
+  simulationNotSolved,
+  identityMismatch,
+  wrongElectricalMode,
+  unknownTerminal,
+  unknownBranch,
+  branchCurrentUnavailable,
+  energizedResistanceMeasurement,
+  unknownComponent,
+  unsupportedResistanceTarget,
+  invalidResistanceParameter,
+}
+
+final class MeasurementRequest {
+  const MeasurementRequest._({
+    required this.kind,
+    this.positiveProbe,
+    this.negativeProbe,
+    this.branchId,
+    this.componentId,
+  });
+
+  factory MeasurementRequest.voltage({
+    required TerminalId positiveProbe,
+    required TerminalId negativeProbe,
+  }) => MeasurementRequest._(
+    kind: MeasurementKind.voltageDc,
+    positiveProbe: positiveProbe,
+    negativeProbe: negativeProbe,
+  );
+
+  factory MeasurementRequest.current({required String branchId}) =>
+      MeasurementRequest._(kind: MeasurementKind.currentDc, branchId: branchId);
+
+  factory MeasurementRequest.resistance({required ComponentId componentId}) =>
+      MeasurementRequest._(
+        kind: MeasurementKind.resistance,
+        componentId: componentId,
+      );
+
+  final MeasurementKind kind;
+  final TerminalId? positiveProbe;
+  final TerminalId? negativeProbe;
+  final String? branchId;
+  final ComponentId? componentId;
+}
+
+final class MeasurementResult {
+  MeasurementResult._({
+    required this.kind,
+    required this.status,
+    required this.reading,
+    required this.errorCode,
+    required this.message,
+    required Iterable<String> evidenceIds,
+  }) : evidenceIds = List<String>.unmodifiable(evidenceIds);
+
+  factory MeasurementResult.valid({
+    required MeasurementKind kind,
+    required double value,
+    required ElectricalUnit unit,
+    required Iterable<String> evidenceIds,
+  }) => MeasurementResult._(
+    kind: kind,
+    status: MeasurementStatus.valid,
+    reading: ElectricalQuantity(value: value, unit: unit),
+    errorCode: null,
+    message: null,
+    evidenceIds: evidenceIds,
+  );
+
+  factory MeasurementResult.invalid({
+    required MeasurementKind kind,
+    required MeasurementErrorCode errorCode,
+    required String message,
+    Iterable<String> evidenceIds = const <String>[],
+  }) => MeasurementResult._(
+    kind: kind,
+    status: MeasurementStatus.invalid,
+    reading: null,
+    errorCode: errorCode,
+    message: message,
+    evidenceIds: evidenceIds,
+  );
+
+  final MeasurementKind kind;
+  final MeasurementStatus status;
+  final ElectricalQuantity? reading;
+  final MeasurementErrorCode? errorCode;
+  final String? message;
+  final List<String> evidenceIds;
+
+  bool get isValid => status == MeasurementStatus.valid;
+}

@@ -1,0 +1,10 @@
+final class Ac1SolverOptions {
+  const Ac1SolverOptions({
+    this.pivotTolerance = 1e-12,
+    this.residualTolerance = 1e-9,
+  }) : assert(pivotTolerance > 0),
+       assert(residualTolerance > 0);
+
+  final double pivotTolerance;
+  final double residualTolerance;
+}

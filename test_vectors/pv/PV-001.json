@@ -1,0 +1,10 @@
+{
+  "id": "PV-001",
+  "mode": "pv",
+  "description": "Onduleur déclaré défectueux",
+  "expected": {
+    "acOutputPower_W": 0.0,
+    "downstreamDeviceRunning": false,
+    "faultMustBePhysicalModelState": true
+  }
+}

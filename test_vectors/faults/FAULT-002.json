@@ -1,0 +1,8 @@
+{
+  "id": "FAULT-002",
+  "kind": "fault",
+  "description": "Composant en condition open",
+  "expected": {
+    "openCircuitElectricalConsequences": true
+  }
+}

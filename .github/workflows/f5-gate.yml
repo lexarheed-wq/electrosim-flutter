@@ -1,0 +1,30 @@
+name: F5 Gate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packages/electrosim_solver_ac/**'
+      - 'tools/run_f5_gate.sh'
+      - 'tools/f5_*'
+      - 'validate.sh'
+
+jobs:
+  f5:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Run F5 gate
+        run: |
+          chmod +x validate.sh tools/*.sh
+          ./validate.sh
+      - name: Upload runtime audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f5-runtime-audit
+          path: audit/runtime/

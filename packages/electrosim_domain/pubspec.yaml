@@ -1,0 +1,9 @@
+name: electrosim_domain
+description: Pure Dart electrical domain contracts for ElectroSim.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dev_dependencies:
+  coverage: ^1.15.1
+  test: ^1.26.3

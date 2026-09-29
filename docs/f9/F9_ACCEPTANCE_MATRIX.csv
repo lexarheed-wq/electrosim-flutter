@@ -1,0 +1,20 @@
+id,area,requirement,automation_candidate,human_review,blocking
+F9-UX-001,home,"Trois entrées: Créer une nouvelle session / Centre de maintenance / Centre de conception",widget test,yes,yes
+F9-UX-002,session,"Accueil / Tableau de bord / Gérer la session visibles en session active",widget test,yes,yes
+F9-UX-003,dashboard,"Câblage / Recherche de dérangement / Supervision présents",widget test,yes,yes
+F9-UX-004,student-rd,"Fiche diagnostic visible uniquement en Recherche de dérangement élève",widget test,yes,yes
+F9-UX-005,student-wiring,"Aucune fiche diagnostic en câblage",widget test,yes,yes
+F9-RESP-001,compact,"Canvas prioritaire; pas de panneau latéral permanent",golden + layout test,yes,yes
+F9-RESP-002,medium,"Un seul panneau secondaire simultané",golden + layout test,yes,yes
+F9-RESP-003,expanded,"Palette + Canvas + contexte sans overflow",golden + layout test,yes,yes
+F9-RESP-004,all,"Changement de breakpoint sans mutation CircuitState",widget/state test,no,yes
+F9-A11Y-001,keyboard,"Focus visible et actions principales accessibles",semantics/widget test,yes,yes
+F9-A11Y-002,touch,"Cibles tactiles principales suffisantes",geometry test,yes,yes
+F9-VIS-001,components,"Identité palette/Canvas cohérente",golden,yes,yes
+F9-VIS-002,states,"Sélection distincte de défaut/état électrique",golden + state test,yes,yes
+F9-ARCH-001,architecture,"Aucun calcul électrique ni mutation CircuitState dans UI",architecture guard,no,yes
+F9-ARCH-002,content,"Aucune dépendance exemples↔pannes introduite par l'UI",architecture guard,no,yes
+F9-OVF-001,layout,"Zéro overflow sur écrans critiques",widget test,yes,yes
+F9-GOLD-001,goldens,"Compact 390x844 approuvé",golden,yes,yes
+F9-GOLD-002,goldens,"Medium 820x1180 approuvé",golden,yes,yes
+F9-GOLD-003,goldens,"Expanded 1440x900 approuvé",golden,yes,yes

@@ -1,0 +1,17 @@
+name: electrosim_diagnostics
+description: Evidence-based diagnostic engine for ElectroSim F13.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
+dev_dependencies:
+  electrosim_scenarios:
+    path: ../electrosim_scenarios
+  test: ^1.26.3

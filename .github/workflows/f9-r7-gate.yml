@@ -1,0 +1,23 @@
+name: F9-R7 gate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_ui_kit/**'
+      - 'packages/electrosim_canvas/**'
+      - 'packages/electrosim_domain/**'
+      - 'tools/**'
+      - 'validate.sh'
+      - '.github/workflows/f9-r6-gate.yml'
+
+jobs:
+  f9-r6:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate F9-R7
+        run: |
+          chmod +x validate.sh tools/*.sh
+          ./validate.sh

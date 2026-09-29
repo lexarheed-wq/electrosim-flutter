@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "phase": "F8",
+  "status": "PASS",
+  "candidate": "ElectroSim-Flutter-F8-R11-MONTEREY-CANDIDATE",
+  "validationHost": "macOS 12.7.6 Monterey / Xcode 14.2 / Flutter 3.38.10",
+  "evidence": "User reported F8_GATE_PASS after native macOS launch and human golden approval on 2026-09-28.",
+  "note": "F9-R1 preserves the F1-F8 package code; the application shell is intentionally replaced by F9 presentation code."
+}

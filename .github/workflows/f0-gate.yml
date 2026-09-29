@@ -1,0 +1,58 @@
+name: F0 quality gate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/electrosim/**'
+      - 'tools/**'
+      - 'ci/**'
+      - 'reference/REFERENCE_BASELINE.json'
+      - 'audit/legacy_reference_analysis.json'
+      - 'docs/f0/LEGACY_TECHNICAL_BASELINE.md'
+      - 'test_vectors/**'
+      - '.github/workflows/f0-gate.yml'
+  pull_request:
+    paths:
+      - 'apps/electrosim/**'
+      - 'tools/**'
+      - 'ci/**'
+      - 'reference/REFERENCE_BASELINE.json'
+      - 'audit/legacy_reference_analysis.json'
+      - 'docs/f0/LEGACY_TECHNICAL_BASELINE.md'
+      - 'test_vectors/**'
+      - '.github/workflows/f0-gate.yml'
+
+jobs:
+  f0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: 'stable'
+          cache: true
+
+      - name: Toolchain versions
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Run F0 gate
+        run: ./tools/run_f0_gate.sh
+
+      - name: Upload F0 runtime audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f0-runtime-audit
+          path: |
+            audit/runtime/f0_gate_runtime.json
+            audit/runtime/f0_gate.log
+            audit/runtime/toolchain_runtime.json
+          if-no-files-found: warn

@@ -1,0 +1,36 @@
+{
+  "phase": "F8",
+  "candidate": "F8-R7-MONTEREY-CANDIDATE",
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "F8-A01",
+      "status": "PASS",
+      "description": "Hit tolerances are converted from screen pixels to world units using viewport scale."
+    },
+    {
+      "id": "F8-A02",
+      "status": "PASS",
+      "description": "Pending wiring has explicit cancellation and state cleanup."
+    },
+    {
+      "id": "F8-A03",
+      "status": "PASS",
+      "description": "Wire selection has a visible render state and an interaction test."
+    },
+    {
+      "id": "F8-A04",
+      "status": "PASS",
+      "description": "Visual identifier collisions fail explicitly instead of aliasing layout or selection."
+    }
+  ],
+  "warnings": [
+    "F8-A05: compatible terminal highlighting is not implemented yet; prepared for F9/application-policy integration.",
+    "F8-A06: only global canvas semantics exist; per-element keyboard/accessibility semantics remain for F9.",
+    "F8-A08: painter always repaints; retain until profiling justifies a snapshot/caching optimization.",
+    "F8-A09: geometry index is rebuilt for each hit-test; benchmark larger circuits before optimizing.",
+    "F8-A10: manual double-click timing uses wall-clock time; consider an injectable clock only if flakiness is observed."
+  ],
+  "errors": [],
+  "f9ImplementationOpened": false
+}

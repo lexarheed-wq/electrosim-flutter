@@ -1,0 +1,12 @@
+name: electrosim_topology
+description: Pure Dart topology compiler for ElectroSim CircuitState.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+dev_dependencies:
+  coverage: ^1.15.1
+  test: ^1.26.3

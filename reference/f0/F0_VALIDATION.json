@@ -1,0 +1,13 @@
+{
+  "phase": "F0",
+  "status": "PASS",
+  "candidate": "ElectroSim-Flutter-F0-R7-MONTEREY-CANDIDATE",
+  "hostEvidence": {
+    "platform": "macOS Monterey 12.7.6 Intel",
+    "flutter": "3.38.10",
+    "dart": "3.10.9",
+    "marker": "F0_GATE_PASS",
+    "evidenceFile": "reference/f0/evidence/F0_GATE_PASS_MONTEREY.png"
+  },
+  "note": "Physical target-Mac gate proof supplied by the user on 2026-09-27."
+}

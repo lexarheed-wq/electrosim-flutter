@@ -1,0 +1,25 @@
+terminal_role,visible_label,semantic_meaning,visual_shape,semantic_group,accessibility_rule
+dc_pos,+,DC positive,circle + glyph +,power,polarité textuelle obligatoire
+dc_neg,−,DC negative,circle + glyph −,power,polarité textuelle obligatoire
+pv_pos,PV+,PV positive,circle + PV+,power,ne pas confondre avec simple signal
+pv_neg,PV−,PV negative,circle + PV−,power,ne pas confondre avec simple signal
+ac_l,L,AC line,circle + L,power,phase explicitée par lettre
+ac_n,N,Neutral,circle + N,power,N toujours textuel
+pe,PE,Protective earth,shield/ground + PE,safety,jamais couleur seule
+l1,L1,Phase 1,circle + L1,power,ordre stable L1-L2-L3
+l2,L2,Phase 2,circle + L2,power,ordre stable L1-L2-L3
+l3,L3,Phase 3,circle + L3,power,ordre stable L1-L2-L3
+u,U,Motor terminal U,circle + U,power,utilisé côté moteur si modèle le prévoit
+v,V,Motor terminal V,circle + V,power,utilisé côté moteur si modèle le prévoit
+w,W,Motor terminal W,circle + W,power,utilisé côté moteur si modèle le prévoit
+a1,A1,Coil terminal A1,square/circle + A1,control,commande distincte de puissance
+a2,A2,Coil terminal A2,square/circle + A2,control,commande distincte de puissance
+contact_13,13,NO contact input,small circle + 13,control,paire avec 14
+contact_14,14,NO contact output,small circle + 14,control,paire avec 13
+contact_21,21,NC contact input,small circle + 21,control,paire avec 22
+contact_22,22,NC contact output,small circle + 22,control,paire avec 21
+measure_com,COM,Measurement common,circle + COM,measurement,lecture jamais inventée
+measure_pos,+,Measurement positive,circle + +,measurement,instrument fournit le contexte
+measure_i,A,Current measurement,circle + A,measurement,connexion série selon moteur de mesure
+signal,S,Signal,diamond/circle + S,signal,ne doit pas être pris pour borne de puissance
+parameter,P,Parameter port,diamond + P,parameter,jamais câblé comme conducteur électrique

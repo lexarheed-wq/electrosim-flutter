@@ -1,0 +1,8 @@
+{
+  "id": "REPAIR-001",
+  "kind": "repair",
+  "description": "Réparation correcte",
+  "expected": {
+    "returnsToOperatingCriteria": true
+  }
+}

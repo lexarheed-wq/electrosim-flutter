@@ -1,0 +1,8 @@
+{
+  "id": "AC3-001",
+  "mode": "ac3",
+  "description": "Charge étoile équilibrée",
+  "expected": {
+    "lineCurrents": "balanced"
+  }
+}

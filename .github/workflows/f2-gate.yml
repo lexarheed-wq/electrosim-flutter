@@ -1,0 +1,41 @@
+name: F2 gate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'packages/electrosim_domain/**'
+      - 'packages/electrosim_topology/**'
+      - 'tools/**'
+      - 'ci/**'
+      - '.github/workflows/f2-gate.yml'
+  pull_request:
+    paths:
+      - 'packages/electrosim_domain/**'
+      - 'packages/electrosim_topology/**'
+      - 'tools/**'
+      - 'ci/**'
+      - '.github/workflows/f2-gate.yml'
+jobs:
+  f2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Toolchain
+        run: |
+          flutter --version
+          dart --version
+      - name: F2 gate
+        run: |
+          chmod +x validate.sh tools/*.sh
+          ./tools/run_f2_gate.sh
+      - name: Upload audit logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f2-audit
+          path: audit/runtime/

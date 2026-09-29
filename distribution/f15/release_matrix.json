@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "phase": "F15-R7",
+  "requiredTargets": ["macos", "windows", "linux", "android", "ios"],
+  "complementaryTargets": ["web"],
+  "offlineCoreRequired": true,
+  "evidencePolicy": {
+    "artifactSha256Required": true,
+    "nativeHostMatchRequired": true,
+    "smokeTestRequired": true,
+    "toolchainLockRequired": true
+  }
+}

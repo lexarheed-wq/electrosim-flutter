@@ -1,0 +1,13 @@
+screen,role,context,compact,medium,expanded,critical_rule
+Home,all,none,"3 cartes verticales/scroll","3 cartes adaptées","3 cartes côte à côte","3 entrées principales toujours identifiables"
+Session setup,teacher,session-create,"étapes plein écran","étapes + aide repliable","étapes + résumé latéral","aucune donnée réseau avancée imposée"
+Teacher dashboard,teacher,session-active,"cartes Câblage/RD/Supervision","grille 2 colonnes","grille 3 colonnes","branches métier visibles sans répétition"
+Simulator free,teacher/student,free,"Canvas + bottom actions","Canvas + 1 panneau","palette + Canvas + propriétés","Canvas prioritaire"
+Wiring TP,student,tp-wiring,"Canvas + consigne sheet","Canvas + panneau consigne","Canvas + panneau consigne/propriétés","aucune fiche diagnostic"
+Troubleshooting TP,student,tp-rd,"Canvas + bouton diagnostic sheet","Canvas + diagnostic repliable","Canvas + diagnostic/propriétés","fiche diagnostic uniquement ici"
+Wiring authoring,teacher,tp-wiring-author,"assistant en étapes","assistant + preview","assistant + preview latéral","pas de choix de branche répété"
+Troubleshooting authoring,teacher,tp-rd-author,"assistant en étapes","assistant + preview","assistant + preview latéral","teacherTruth jamais exposé élève"
+Supervision,teacher,session-active,"liste + détail sheet","liste + détail","tableau/liste + détail","progression/validation/score explicites"
+Maintenance center,teacher,none,"liste cartes + filtre sheet","liste + détails","liste + détails latéraux","pannes indépendantes des exemples"
+Design center,teacher,none,"schémas + câblage","schémas + preview","bibliothèque + preview","exemples sains uniquement"
+Completed TP,student,tp-closed,"résultats lecture seule","résultats lecture seule","résultats lecture seule","aucune reprise/modification"

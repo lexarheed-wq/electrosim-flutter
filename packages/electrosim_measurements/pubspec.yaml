@@ -1,0 +1,16 @@
+name: electrosim_measurements
+description: Pure Dart DC measurement and component operating-state engines for ElectroSim.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
+dev_dependencies:
+  coverage: ^1.15.1
+  test: ^1.26.3

@@ -1,0 +1,1143 @@
+{
+  "schemaVersion": 1,
+  "phase": "F7",
+  "candidateVersion": "F7-R4-MONTEREY-CANDIDATE",
+  "fileCount": 227,
+  "files": [
+    {
+      "path": ".github/workflows/f0-gate.yml",
+      "size_bytes": 1433,
+      "sha256": "1ad84e47c35112e5454489029d47822aa085f7fe68cc1f3fbcc03ab739bbaed2"
+    },
+    {
+      "path": ".github/workflows/f1-gate.yml",
+      "size_bytes": 953,
+      "sha256": "20162ea7dc4cbb07c51c061423c8fd509da286834de893af621e7daafd475b7a"
+    },
+    {
+      "path": ".github/workflows/f2-gate.yml",
+      "size_bytes": 991,
+      "sha256": "71878d3c7f1e53b10e78e98f1543d27e3d8d670e6fd9a89999aba5393d964a35"
+    },
+    {
+      "path": ".github/workflows/f3-gate.yml",
+      "size_bytes": 985,
+      "sha256": "e3957ce35a2e965bd3febe2d24b28f42233030d305fb0e9ce5854a9726b87fbd"
+    },
+    {
+      "path": ".github/workflows/f5-gate.yml",
+      "size_bytes": 656,
+      "sha256": "918de65c7030f1820a441ce2461850fa78c5dca211f7ac409983dc151b4b7519"
+    },
+    {
+      "path": ".github/workflows/f7-gate.yml",
+      "size_bytes": 580,
+      "sha256": "55dca98b2e6ae91add912b716a644606988471518e82b4e69be9787676dd2228"
+    },
+    {
+      "path": ".gitignore",
+      "size_bytes": 123,
+      "sha256": "f0e545726d1463de6d43192ebe9e47c10a92226a95012f5ded271af2b5c3cd1e"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 805,
+      "sha256": "465de5190575dcc75a8ac330fd3dffbae36d36a85d6b5fdf62b0d83a65798b94"
+    },
+    {
+      "path": "VERSION",
+      "size_bytes": 25,
+      "sha256": "093d62777ab4648c5a0efe8fd0f440f58da9c094487f5b645979036709f08b24"
+    },
+    {
+      "path": "apps/electrosim/README.md",
+      "size_bytes": 326,
+      "sha256": "32ee7b16f00359db3448d087a7c04179b5d850fc5a566234c953c3d9ffaca090"
+    },
+    {
+      "path": "apps/electrosim/analysis_options.yaml",
+      "size_bytes": 83,
+      "sha256": "6d0be0f6b80670e8e670bfd257e04cfb6c7abc46fc57fe292e273d0722fea36b"
+    },
+    {
+      "path": "apps/electrosim/lib/main.dart",
+      "size_bytes": 402,
+      "sha256": "387d0ceb9c838c0acb7c3611a531fb245c152428e52052bfcc27a1c2d9cbbf2b"
+    },
+    {
+      "path": "apps/electrosim/pubspec.yaml",
+      "size_bytes": 308,
+      "sha256": "77d786060994da5e4a256aa9dd6cf88529091b6ed412c49e9cca6d1bb6856ed0"
+    },
+    {
+      "path": "apps/electrosim/test/f0_smoke_test.dart",
+      "size_bytes": 278,
+      "sha256": "234cac072ca18423a5018d8e3dce8752bbaa5d88708c006512b70ae712ec1047"
+    },
+    {
+      "path": "ci/README.md",
+      "size_bytes": 237,
+      "sha256": "1ad759999e4de9ddb18a658926a0cbec80a0f8db27c0bfe6b42178a2f9b2138e"
+    },
+    {
+      "path": "ci/TOOLCHAIN_LOCK.json",
+      "size_bytes": 1207,
+      "sha256": "8bdc9b55dd6d047a9484c49a34eb51a63835d998e723779467e2adea30248520"
+    },
+    {
+      "path": "ci/TOOLCHAIN_PIN.md",
+      "size_bytes": 1094,
+      "sha256": "7266231eeedd3bf57fdb1abd44582269b9cffe0457ccbf139ac200c2c655c950"
+    },
+    {
+      "path": "docs/f0/F0_DECISIONS.md",
+      "size_bytes": 849,
+      "sha256": "ba396aa2670d527765a9331af8913bc1915eb8274bb2bc08d727c7ecb63c0062"
+    },
+    {
+      "path": "docs/f0/F0_REPORT.md",
+      "size_bytes": 3201,
+      "sha256": "ab0b903f3571f35e32f28b9824dd37160b04e667d3c3c43933d6c66c9352c8ee"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R2.md",
+      "size_bytes": 1402,
+      "sha256": "c0873680f1cafc4dfc9888c24330a8794a0b130ff8feeee61f0d48757ade342e"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R3.md",
+      "size_bytes": 1641,
+      "sha256": "c5486e673b8ddd9f5262d3f57402fa329211b1eb368f323cbce85baf4e32fbaf"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R4.md",
+      "size_bytes": 3201,
+      "sha256": "ab0b903f3571f35e32f28b9824dd37160b04e667d3c3c43933d6c66c9352c8ee"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R5.md",
+      "size_bytes": 1312,
+      "sha256": "69987563fc34819e1aaf2d8811cafa042be49624ddce4ca9b5b19a8df93309ff"
+    },
+    {
+      "path": "docs/f0/F0_REPORT_R6.md",
+      "size_bytes": 1946,
+      "sha256": "11062d930531f2a732f10b5b2c62e53451de3db59bd9c26030898f2e59c240ff"
+    },
+    {
+      "path": "docs/f0/LEGACY_FUNCTIONAL_INVENTORY.md",
+      "size_bytes": 6008,
+      "sha256": "00cc3ba01f09eb38d90e4425cffab4e41c688b40977148230db91239004142ac"
+    },
+    {
+      "path": "docs/f0/LEGACY_TECHNICAL_BASELINE.md",
+      "size_bytes": 4091,
+      "sha256": "2e6add1b7596c01c65d12bbaab65602a3566cfb494b4adf5a157e43ffaa09184"
+    },
+    {
+      "path": "docs/f0/MIGRATION_MATRIX.csv",
+      "size_bytes": 3866,
+      "sha256": "0e2c7c301964c6d0d64bf57b420d17c10b08b3ad07568af0af3bfb8c17b5ed1a"
+    },
+    {
+      "path": "docs/f0/MIGRATION_MATRIX.md",
+      "size_bytes": 4418,
+      "sha256": "323e6f1481aac1d13251df362aef7604edfaafd760b4396738b56448182d8ddb"
+    },
+    {
+      "path": "docs/f0/legacy_component_inventory.csv",
+      "size_bytes": 20939,
+      "sha256": "a81e7ec17b500125916e38adcdb193294d0f225e09157ee5c24614ab74296bc6"
+    },
+    {
+      "path": "docs/f1/F1_CONTRACT.md",
+      "size_bytes": 1625,
+      "sha256": "bc926c5bf7aed52651c6bf4a746aaa60d57ff13fe364038bc7dca93c5c835ca1"
+    },
+    {
+      "path": "docs/f1/F1_REPORT.md",
+      "size_bytes": 1936,
+      "sha256": "e18806145eff1b681c59856b3f4eeaeb4106915ec091943a315ffa1da337d4fd"
+    },
+    {
+      "path": "docs/f2/F2_CONTRACT.md",
+      "size_bytes": 1742,
+      "sha256": "77269a5cabed42d33beeb646400c017ad3874f3c2bb5127772da9672ce9f66bd"
+    },
+    {
+      "path": "docs/f2/F2_REPORT.md",
+      "size_bytes": 1746,
+      "sha256": "2e42583295010532f5e9dfd3acbdfb1dca953c194e9b6325bca6035ba24468f3"
+    },
+    {
+      "path": "docs/f2/F2_REPORT_R2.md",
+      "size_bytes": 1397,
+      "sha256": "a9b6108172a24b2dbc1235064154cf2a44f980ed3bde7bd2294c460ef7528bcd"
+    },
+    {
+      "path": "docs/f3/F3_CONTRACT.md",
+      "size_bytes": 1493,
+      "sha256": "93e686aa11abd75a6aebf530ee9e3ba745d645123d31dd298a2bd15e565d3723"
+    },
+    {
+      "path": "docs/f3/F3_REPORT.md",
+      "size_bytes": 1321,
+      "sha256": "7d15266e784a9a723d2ca3b63b665bf465f755df44c75ff20532fb68bc67faa5"
+    },
+    {
+      "path": "docs/f4/F4_CONTRACT.md",
+      "size_bytes": 1315,
+      "sha256": "444bc25526ba568208a7582fccaf93c5582b10eac7d8bd7e25f8f694744baeb6"
+    },
+    {
+      "path": "docs/f4/F4_REPORT.md",
+      "size_bytes": 695,
+      "sha256": "e697080e6ba98dac5866a4a2752478b11b8112d8946839d34dc8aef213b1de29"
+    },
+    {
+      "path": "docs/f5/F5_CONTRACT.md",
+      "size_bytes": 1217,
+      "sha256": "b826022fcdd2acd8758ef01a4a4690bb2c230d75a042463e13aa1ef713991e69"
+    },
+    {
+      "path": "docs/f5/F5_REPORT.md",
+      "size_bytes": 460,
+      "sha256": "8357d99282d7dea8e7113f30d1ee676d76b71219509d79f20805f3c1326abaf7"
+    },
+    {
+      "path": "docs/f6/F6_CONTRACT.md",
+      "size_bytes": 1527,
+      "sha256": "30a50335c711b595eb4e76abd5acda7a42b2a70577535197738543af09580d4b"
+    },
+    {
+      "path": "docs/f6/F6_REPORT.md",
+      "size_bytes": 1177,
+      "sha256": "282f81338bf5e2c65298ff81d17a05b55a0acb9365f5436f8c74af639917d9e4"
+    },
+    {
+      "path": "docs/f7/F7_CONTRACT.md",
+      "size_bytes": 2336,
+      "sha256": "f2606edbd8ecb7478a5a0400698a92280db068697c840b1b79f1030e2011ca0c"
+    },
+    {
+      "path": "docs/f7/F7_REPORT.md",
+      "size_bytes": 1471,
+      "sha256": "6f29d3ff6bf5c0172e50042335826bed0a62c03d105a7134282a2ca82b1dbdf5"
+    },
+    {
+      "path": "docs/f7/F7_REPORT_R2.md",
+      "size_bytes": 1447,
+      "sha256": "36d033190a4600a686ff090507ca4d02e98eb4b4f7a468302013e4796c1ff697"
+    },
+    {
+      "path": "docs/f7/F7_REPORT_R3.md",
+      "size_bytes": 1373,
+      "sha256": "ac476f1d1ea03b7d11e5f0aecc004c42f6f04662ba2a0b85d4f6f9f301c4d38a"
+    },
+    {
+      "path": "docs/f7/F7_REPORT_R4.md",
+      "size_bytes": 1697,
+      "sha256": "7cb9cd9a63d9504f46cae156ece53cf915db22bf4be17e96843c6524bc14111e"
+    },
+    {
+      "path": "docs/f7/evidence/F7_R1_FAILURE_INVALID_ID.png",
+      "size_bytes": 375172,
+      "sha256": "974fd4743ba0d553ad3092ca2567814ee1d1147c2b3b81371af14d9548a49b23"
+    },
+    {
+      "path": "packages/electrosim_diagnostics/README.md",
+      "size_bytes": 114,
+      "sha256": "7d4421ceccd4ac035578bb77cc96c65a713565d5eafdc07b47836e6bfa8593c9"
+    },
+    {
+      "path": "packages/electrosim_domain/README.md",
+      "size_bytes": 613,
+      "sha256": "17d6f918c62c3db87059dc44ddeda2d54203c9384c28d50f182706f81e15e1b2"
+    },
+    {
+      "path": "packages/electrosim_domain/analysis_options.yaml",
+      "size_bytes": 228,
+      "sha256": "e114c34f6484df2c46812014a54dc7616de08aad34c0f354a469c447f396f879"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/electrosim_domain.dart",
+      "size_bytes": 265,
+      "sha256": "b60c336376ccba8eafbad48899b74f7d287c9e6ffa4c84831ae5fc78fc90c878"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/circuit_state.dart",
+      "size_bytes": 6614,
+      "sha256": "8eddd4874e1066f51903aa288fa9191873b291ab622c7a84ed2ccb46f1a6d2f5"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/component.dart",
+      "size_bytes": 3185,
+      "sha256": "0e8038cf6fff6b1a2fa46be7bd182d35005d1c543c30c5ff8f9e90d61d2136f2"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/connection.dart",
+      "size_bytes": 2325,
+      "sha256": "12d8c5d72117fe09aa32accc3a73cebcb3754d1e591f2c68a11e3e63e081e830"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/domain_error.dart",
+      "size_bytes": 841,
+      "sha256": "689b08149dd1021e92e14f4f8a54b855b3574ec266935ee7f1a116b8fc8c4511"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/electrical_types.dart",
+      "size_bytes": 2229,
+      "sha256": "32cb3268d7b15a30f75de12ea21d30cad8dd7c34262a82b181d856eb2215c8e9"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/ids.dart",
+      "size_bytes": 1366,
+      "sha256": "5e8b5b09e071664d1f19dec1858824ab7f9c42554761850fcc1af47f0c8b9395"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/json_support.dart",
+      "size_bytes": 3148,
+      "sha256": "05b17e039834e5bbfb69608163f4fa5cd3b792a8936955a76d3eaf06f6c9e887"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/source.dart",
+      "size_bytes": 2655,
+      "sha256": "39f47679dc54763ebe9fd1608784a4e02e24622d9fd2e11e923eb744d18410fc"
+    },
+    {
+      "path": "packages/electrosim_domain/lib/src/terminal.dart",
+      "size_bytes": 1374,
+      "sha256": "bbd50b6e13301b19f584c18099669b7207af099ba6c0109745c7cec88ebd954b"
+    },
+    {
+      "path": "packages/electrosim_domain/pubspec.yaml",
+      "size_bytes": 217,
+      "sha256": "d7c3363140ee3160e44dc14e2a11f883014c80c2c1b23a5ded16167803886dff"
+    },
+    {
+      "path": "packages/electrosim_domain/test/domain_contract_test.dart",
+      "size_bytes": 15169,
+      "sha256": "bea0ca561b4e03def9a49ab1ebffabf266137e45a954fdbe73e192e8c3897a07"
+    },
+    {
+      "path": "packages/electrosim_energy/README.md",
+      "size_bytes": 228,
+      "sha256": "145cbf1eb30128f6beb3040c1bbe8ad888df60c14473580dee7e85d12d4c971e"
+    },
+    {
+      "path": "packages/electrosim_energy/analysis_options.yaml",
+      "size_bytes": 194,
+      "sha256": "a240b208743f6535ef106a5e5bce1ab9f63326c5453abda02f4dc8494d2a3010"
+    },
+    {
+      "path": "packages/electrosim_energy/lib/electrosim_energy.dart",
+      "size_bytes": 94,
+      "sha256": "04229688b68e95a72dd832679704fd056555d46157083fa4d76b1146547730a7"
+    },
+    {
+      "path": "packages/electrosim_energy/lib/src/energy_engine.dart",
+      "size_bytes": 1322,
+      "sha256": "395328d39c26b6862662ca8dc78d02132db1b8acca1c95b75f97bcc900080f5a"
+    },
+    {
+      "path": "packages/electrosim_energy/lib/src/energy_models.dart",
+      "size_bytes": 4678,
+      "sha256": "db49a5403ac236e13064c2feca5c2ee82c937da5759fb811ff289177bde126cd"
+    },
+    {
+      "path": "packages/electrosim_energy/pubspec.yaml",
+      "size_bytes": 349,
+      "sha256": "dc7a30260e8f5d790dc02ef151ae84d24ab3963bcbfa32ab82f01c2ca5d0a810"
+    },
+    {
+      "path": "packages/electrosim_energy/test/energy_engine_test.dart",
+      "size_bytes": 9704,
+      "sha256": "12b1f6f1f0839b85074bbc4e06bf594d97927a2549720d4dc987782ccbde0f53"
+    },
+    {
+      "path": "packages/electrosim_energy/tool/benchmark.dart",
+      "size_bytes": 2106,
+      "sha256": "05246ab90480ee2aa73f374274bfde190f25d81d98da6fea0df6ea5d4cccd489"
+    },
+    {
+      "path": "packages/electrosim_measurements/README.md",
+      "size_bytes": 582,
+      "sha256": "f2012980db0d5a6230c5e31b387762369c39a54580a7f0c98d765117f5cad69a"
+    },
+    {
+      "path": "packages/electrosim_measurements/analysis_options.yaml",
+      "size_bytes": 361,
+      "sha256": "e1cc2aa044443856a6cca9111c9bd491a28e7040cfa59364cc299c165d08c5c2"
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/electrosim_measurements.dart",
+      "size_bytes": 184,
+      "sha256": "a82df859a73cc67f86932e2563efecf463f365e4b65036ef7b8a7903b4b73a4e"
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/device_state_engine.dart",
+      "size_bytes": 7210,
+      "sha256": "b557edc0e5fa665f528ad584a1249325186c1fb641dee588eba2e5965b675ed6"
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/measurement_engine.dart",
+      "size_bytes": 6927,
+      "sha256": "b64011fd819437b5c00622e7b3e4b36751c2535421198a3479dfb1c94d756f02"
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/measurement_models.dart",
+      "size_bytes": 2720,
+      "sha256": "a7188a38c86109275e3b300df2fa9d7fcf81503b9c5b6780b09b7c4ecfde1e22"
+    },
+    {
+      "path": "packages/electrosim_measurements/lib/src/operating_state.dart",
+      "size_bytes": 1170,
+      "sha256": "085ba7608b6f7929e7bb65307f318f451bc8a3b894377c8d359b2cf4fb99b2ea"
+    },
+    {
+      "path": "packages/electrosim_measurements/pubspec.yaml",
+      "size_bytes": 428,
+      "sha256": "3b46c95abf2949cc87621114101003643d382883e74a47a2e25e8d443c46a5bd"
+    },
+    {
+      "path": "packages/electrosim_measurements/test/measurement_engine_test.dart",
+      "size_bytes": 20707,
+      "sha256": "639ea0b4b2b4f54bacda1ebc3c311d371bc316d47f95171fb4541ef644a961be"
+    },
+    {
+      "path": "packages/electrosim_pv/README.md",
+      "size_bytes": 282,
+      "sha256": "62497349df7eeae89e87470e8495c39b4b4526c920546c572b6ea726db429d7e"
+    },
+    {
+      "path": "packages/electrosim_pv/analysis_options.yaml",
+      "size_bytes": 220,
+      "sha256": "cd46b17604f94beabffd039ce49565bf0e669558fb50f36141bdbff572a8180b"
+    },
+    {
+      "path": "packages/electrosim_pv/lib/electrosim_pv.dart",
+      "size_bytes": 152,
+      "sha256": "5484a134fef24614538e8f82189406e21032ea3a54f63d643b6eaf9e94c7be53"
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_diagnostic.dart",
+      "size_bytes": 860,
+      "sha256": "17993a73d3b80fc65582eb64cc1264fb6f586bf17d3ba0a350aec8963c965049"
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_result.dart",
+      "size_bytes": 2409,
+      "sha256": "5447a1f421586b7212bc893798d58777a12fb1d959083828cea451494dfb56c8"
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/pv_solver_options.dart",
+      "size_bytes": 298,
+      "sha256": "4999916fc199daaf41a1f2bd217157cca600697cbedb07e182ccd9fe17540381"
+    },
+    {
+      "path": "packages/electrosim_pv/lib/src/solver_pv.dart",
+      "size_bytes": 26342,
+      "sha256": "186068053cfc738f1b28b13be7c26cb39f73257a7727c69a4cd2b613d1c983b0"
+    },
+    {
+      "path": "packages/electrosim_pv/pubspec.yaml",
+      "size_bytes": 352,
+      "sha256": "490ac163d694aaa66f1eba9b9d27e0664d29e4865e5a866dc2414df15d7926d6"
+    },
+    {
+      "path": "packages/electrosim_pv/test/solver_pv_test.dart",
+      "size_bytes": 15949,
+      "sha256": "f8e3cacfbafb20fdb1038200bff18e8c33ce32bf3f940551f74c531026b61fa4"
+    },
+    {
+      "path": "packages/electrosim_pv/tool/benchmark.dart",
+      "size_bytes": 3884,
+      "sha256": "e98634b6edeeb9df43c70468738303163870756bca5d51c5d8882077eb39fef5"
+    },
+    {
+      "path": "packages/electrosim_scenarios/README.md",
+      "size_bytes": 112,
+      "sha256": "9dc6c68f08e5b18136a637250d73cd25017f04655c77a7268beb594deaebe107"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/README.md",
+      "size_bytes": 378,
+      "sha256": "8e986c9deafd9d4cbc2190d6f006e480afd4354c46b64aaae1b5a31c1e5b8b30"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/analysis_options.yaml",
+      "size_bytes": 361,
+      "sha256": "e1cc2aa044443856a6cca9111c9bd491a28e7040cfa59364cc299c165d08c5c2"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/electrosim_solver_ac.dart",
+      "size_bytes": 326,
+      "sha256": "b6bfdea4e248e5fc6ed86c586267ca5ccf65ef71fd558afd5a4a9ed19f086ec1"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_complex.dart",
+      "size_bytes": 1998,
+      "sha256": "6605c5de068d96a901fe30d0175a451e55c11780258a0d3c16692df2270108e4"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_diagnostic.dart",
+      "size_bytes": 943,
+      "sha256": "863c38faf18adad356fb9515c13e72e9166572609dfc935bc66f3dfc84c1af38"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_result.dart",
+      "size_bytes": 2667,
+      "sha256": "181fe757701c670caf2b343ac6b115a665c7b48aa6830e0569c4674e5468c837"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac1_solver_options.dart",
+      "size_bytes": 267,
+      "sha256": "577e1a581d6aab2ca21345e8e5a318be03f693302322ca24fb407292f2e29612"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_diagnostic.dart",
+      "size_bytes": 1046,
+      "sha256": "4b3fba2e8dba511bcabc07da6ea6319d2ed362ff4e07052f679309283a498cc7"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_result.dart",
+      "size_bytes": 4638,
+      "sha256": "b9bc454f83a6e4a22b02fe1cf93875146826c9a964bc9518cef76fb1af2f224b"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/ac3_solver_options.dart",
+      "size_bytes": 369,
+      "sha256": "deeefb18886c7b9979a0077eb0bea8992e8b35226036dbc51d56c2e5d30900d5"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/solver_ac1.dart",
+      "size_bytes": 26437,
+      "sha256": "96ace215967b1c968c5ea6b34e40b8ce4c0768674e8d3c8036988e1c507cb64a"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/lib/src/solver_ac3.dart",
+      "size_bytes": 37364,
+      "sha256": "7812786891a9de143398ce182d0dae3df40aa1ce37785636537b35d30130332f"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/pubspec.yaml",
+      "size_bytes": 374,
+      "sha256": "2265bccb6910d309c534172d922273226989687ee7e07391f963e610401bb164"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/test/solver_ac1_test.dart",
+      "size_bytes": 23788,
+      "sha256": "793c04af4fd93269ee9841a3ea654719120c76d036f8aa4ecedf8e4778ad5465"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/test/solver_ac3_test.dart",
+      "size_bytes": 34796,
+      "sha256": "b33dd2f128eac633ad67368fd7c0e3235453853bf75dcbd2b3b52a600e7986dd"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/tool/benchmark.dart",
+      "size_bytes": 3037,
+      "sha256": "62b468c6131783f6b8d3bbe6c0d72bc70897f692cc41bc5920d65986820fcb66"
+    },
+    {
+      "path": "packages/electrosim_solver_ac/tool/benchmark_ac3.dart",
+      "size_bytes": 4174,
+      "sha256": "78dd9ff332fbb6ab4a0540f6c5f15c3348acf85186db2dfa1c1e93d11f16f742"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/README.md",
+      "size_bytes": 734,
+      "sha256": "d1982fa72f60d43f0f4bea4831f4b0d845acb142bf040a0b7a18eecd29676167"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/analysis_options.yaml",
+      "size_bytes": 361,
+      "sha256": "e1cc2aa044443856a6cca9111c9bd491a28e7040cfa59364cc299c165d08c5c2"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/electrosim_solver_dc.dart",
+      "size_bytes": 159,
+      "sha256": "ae841df356f2249a0a3e871c84a2b2321d67e6deb5eb8befbc3270b572f96c09"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_diagnostic.dart",
+      "size_bytes": 953,
+      "sha256": "dd164d6bd26cbf83802dca00c273dea26fdbb52b2499330e030be48a386cf2b9"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_result.dart",
+      "size_bytes": 2153,
+      "sha256": "8203668ef298cc43eaa38ec6894407d28675986afd48b29246a746e4fe3b69eb"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/dc_solver_options.dart",
+      "size_bytes": 265,
+      "sha256": "d91e2e685844dca174182dafc4b2bdd041c7aa0f59a7e28a4c522049ef06e474"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/lib/src/solver_dc.dart",
+      "size_bytes": 31634,
+      "sha256": "24cf0c7983273d1f50ad6b72ee6668bd96317055d33a1ef48145fa97515a232c"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/pubspec.yaml",
+      "size_bytes": 371,
+      "sha256": "cab82b33938efe04c36d519dd9b80e442e23d977b442165b1ed4c6bc741438e9"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/test/solver_dc_test.dart",
+      "size_bytes": 22610,
+      "sha256": "86f4aaaefe9fd1ec8e06af1e81a1170d8e89f78b2bc0847b5d89b1265b646f7b"
+    },
+    {
+      "path": "packages/electrosim_solver_dc/tool/benchmark.dart",
+      "size_bytes": 3499,
+      "sha256": "99c516181c6d065cae2c2ad3e3d1a9a33aa9ed64941e022345b94b6fb8757c92"
+    },
+    {
+      "path": "packages/electrosim_storage/README.md",
+      "size_bytes": 110,
+      "sha256": "b6d99b4c35c4008e1b235f10244bf5643fa2f854c6e633cb3a4c490cfd9b5bcb"
+    },
+    {
+      "path": "packages/electrosim_topology/README.md",
+      "size_bytes": 212,
+      "sha256": "6e39f51f4ffae1452abcab341e4658bf80767bded78de127ff2882f6f8196b47"
+    },
+    {
+      "path": "packages/electrosim_topology/analysis_options.yaml",
+      "size_bytes": 401,
+      "sha256": "b9905b1d3a5b0c2f04af53ad29b9ab841c41f50346ee6582406e5f0b856f72a3"
+    },
+    {
+      "path": "packages/electrosim_topology/lib/electrosim_topology.dart",
+      "size_bytes": 135,
+      "sha256": "8881140b8c682934c5227592eab7bf04edfe160901c3b6da0c2ff076ace03604"
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_engine.dart",
+      "size_bytes": 8834,
+      "sha256": "fe2ed36c205f19f0aacb9c6e56edef73d13f986906cacef4ca6a85e842ed8935"
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_finding.dart",
+      "size_bytes": 838,
+      "sha256": "20f66f5ce56941c810a2e57b4f006bc13f20b346ed44d46af9db4ad61b45ddb0"
+    },
+    {
+      "path": "packages/electrosim_topology/lib/src/topology_graph.dart",
+      "size_bytes": 2483,
+      "sha256": "fe27c64f74b97a082f51c674fe1519619148bf80bb98b81b58c8a2211232253d"
+    },
+    {
+      "path": "packages/electrosim_topology/pubspec.yaml",
+      "size_bytes": 288,
+      "sha256": "46d18f35fd4a61a69479bf66efd8eb094c145eecd586789de1ef8681b34e3f05"
+    },
+    {
+      "path": "packages/electrosim_topology/test/topology_engine_test.dart",
+      "size_bytes": 10333,
+      "sha256": "34216a399ae4a1e31b22dac3baf787b4f585d4d33d5a22954d81c1c88d101d6e"
+    },
+    {
+      "path": "packages/electrosim_ui_kit/README.md",
+      "size_bytes": 109,
+      "sha256": "b2c610ac23070f5984b14a30189eb56f60a75afddd5281822f105ca43e48e0cd"
+    },
+    {
+      "path": "reference/REFERENCE_BASELINE.json",
+      "size_bytes": 1376,
+      "sha256": "405085865db16343cfccb5fb6f1dd3c51ebd811fab027db3bf78f6792cee4eba"
+    },
+    {
+      "path": "reference/f0/F0_VALIDATION.json",
+      "size_bytes": 402,
+      "sha256": "56d4f5dcc8699032109992fba2ed95e4895afe8146116570dfa44213222df330"
+    },
+    {
+      "path": "reference/f0/F0_VERSION",
+      "size_bytes": 31,
+      "sha256": "ab822265f71fab10e34006fa9eb3af5b99b7dad5da12cc66794674603b65e999"
+    },
+    {
+      "path": "reference/f0/evidence/F0_GATE_PASS_MONTEREY.png",
+      "size_bytes": 391458,
+      "sha256": "12cbba181546b83516fe6efe789684e719fb20171692dcd7562ca1fc0ff5ae84"
+    },
+    {
+      "path": "reference/f1/F1_VALIDATION.json",
+      "size_bytes": 485,
+      "sha256": "353fb6f8fa589791547b6b9167cbc91f0c0cf77d1316d573b39e3e8e425f47c4"
+    },
+    {
+      "path": "reference/f1/F1_VERSION",
+      "size_bytes": 25,
+      "sha256": "010df75f6007955991344bb07bac046b1244e0d78651f295bfd828c989faea9d"
+    },
+    {
+      "path": "reference/f1/evidence/F1_GATE_PASS_MONTEREY.png",
+      "size_bytes": 343227,
+      "sha256": "f756f0963f350fba028d7bd4cb2b0ee96a94ba60da4e36bed4b700409680e53e"
+    },
+    {
+      "path": "reference/f2/F2_VALIDATION.json",
+      "size_bytes": 470,
+      "sha256": "0983e480c5206e7fa21875a726759e7e9e1afcb34e9d68905ded201a1fd4b818"
+    },
+    {
+      "path": "reference/f2/F2_VERSION",
+      "size_bytes": 44,
+      "sha256": "1ad613d02848dd39b4e063287c26e2df3cc09d8f4081608bfd532211e86339b7"
+    },
+    {
+      "path": "reference/f2/evidence/F2_GATE_PASS_MONTEREY.png",
+      "size_bytes": 348210,
+      "sha256": "c6de86028be81881c936f61fc08ad32e2a9c310135cc12fe396891fd28dff567"
+    },
+    {
+      "path": "reference/f3/F3_VALIDATION.json",
+      "size_bytes": 221,
+      "sha256": "3adfff50f177b089d9d5865636e311c62001e81b1027722315554bf79f266908"
+    },
+    {
+      "path": "reference/f3/F3_VERSION",
+      "size_bytes": 44,
+      "sha256": "d50d2c0efb471ce8912c85c00f130e4d9ab7f82b43b87236285131f6d2c0275d"
+    },
+    {
+      "path": "reference/f4/F4_VALIDATION.json",
+      "size_bytes": 151,
+      "sha256": "f3d295014242a0ab617f1e840f4359a60eb70147f7dfa9361012c05f669374a4"
+    },
+    {
+      "path": "reference/f4/F4_VERSION",
+      "size_bytes": 44,
+      "sha256": "1a350628f16f643d5fb3ec46212a209ac480f0e38fa2e883f792d7303dc53127"
+    },
+    {
+      "path": "reference/f6/F6_VALIDATION.json",
+      "size_bytes": 149,
+      "sha256": "cf8087f546bfbc8d5f7a7394fc67f031d836dc682ab3a751f4f598499ec4fd7a"
+    },
+    {
+      "path": "reference/f6/F6_VERSION",
+      "size_bytes": 25,
+      "sha256": "88d7e07b4a4b59b261d057f9257d26d88d3972b75fd4a105e3830d29f098e265"
+    },
+    {
+      "path": "test_vectors/ac1/AC1-001.json",
+      "size_bytes": 178,
+      "sha256": "10770585218532a303d4eacfb696de6be2c5164c68cade7ea487d118cba97f9e"
+    },
+    {
+      "path": "test_vectors/ac1/AC1-002.json",
+      "size_bytes": 178,
+      "sha256": "de740328980accd1f8db31ccc47193fa77f64aad190e1e5e83049229b83b1fd6"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-001.json",
+      "size_bytes": 139,
+      "sha256": "ad298971cd45963c0ba760e5b97514667384916e2bf91012d33bc0f28ae17b18"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-002.json",
+      "size_bytes": 151,
+      "sha256": "5a28253af1f6082841853c9faac57962cf6df12ea244fe0b683f968fcea6cf0f"
+    },
+    {
+      "path": "test_vectors/ac3/AC3-003.json",
+      "size_bytes": 138,
+      "sha256": "ed2ecf14b3a748f7ad4c934b1c21b4dac552ced5a943b55e210088ffd2fb6d98"
+    },
+    {
+      "path": "test_vectors/dc/DC-001.json",
+      "size_bytes": 294,
+      "sha256": "3e462c1b0e43da73f2cafa68c98caa80adf727d01ad1de6d2d3cf36637f06048"
+    },
+    {
+      "path": "test_vectors/dc/DC-002.json",
+      "size_bytes": 324,
+      "sha256": "70fbf34b626eb82b6015fb3821df23c41b27470d3330539b08319f0a26c5c259"
+    },
+    {
+      "path": "test_vectors/dc/DC-003.json",
+      "size_bytes": 367,
+      "sha256": "db538603cda770bc31ef23ae854f24782380a41fc5c5cafa95cf4db3ba63faa8"
+    },
+    {
+      "path": "test_vectors/dc/DC-004.json",
+      "size_bytes": 154,
+      "sha256": "9ed7129515670cdf7d58bd526e9fc8d47e2c89053cddc37d1f31a8d0961ddb2c"
+    },
+    {
+      "path": "test_vectors/dc/DC-005.json",
+      "size_bytes": 168,
+      "sha256": "241cadc6ac87e6e32d72c0022347de6e1a6c74b6658b16409ffe3e4f67b48bfe"
+    },
+    {
+      "path": "test_vectors/dc/DC-006.json",
+      "size_bytes": 189,
+      "sha256": "a1bb9d0550417612076fcb970cf84c455a6220eb4019e4d87b3c9905f46feb58"
+    },
+    {
+      "path": "test_vectors/faults/FAULT-001.json",
+      "size_bytes": 195,
+      "sha256": "8d2a730cb648ddcc1912d0d40c8da03a42ac18de3fb12fcc18bc913aac3ffa64"
+    },
+    {
+      "path": "test_vectors/faults/FAULT-002.json",
+      "size_bytes": 158,
+      "sha256": "c08335dd89fa547e3a0ae24acd8802225eec303a2ec0a7d48602798c41a28844"
+    },
+    {
+      "path": "test_vectors/faults/REPAIR-001.json",
+      "size_bytes": 146,
+      "sha256": "488ae7a082ecbe99991485e1e699fbfc817e476a89ca32681d3e7880bfc1160a"
+    },
+    {
+      "path": "test_vectors/pv/PV-001.json",
+      "size_bytes": 217,
+      "sha256": "8fdc9f1de58e692ec73a849042796b84190cb1855bcbd075a2ca46d29334b4ff"
+    },
+    {
+      "path": "test_vectors/system/acceptance_scenarios.json",
+      "size_bytes": 1586,
+      "sha256": "bb4a554bd8ed09f997b157629d4935eeb58b4b40f6db59f125e155668bd377ce"
+    },
+    {
+      "path": "tools/analyze_legacy_reference.py",
+      "size_bytes": 10175,
+      "sha256": "8c759b45c7078e57f6f12b823f62eeea86551f0e911136c034e9cf37ded5f012"
+    },
+    {
+      "path": "tools/architecture_guard.dart",
+      "size_bytes": 1663,
+      "sha256": "15603a4e3645c78aa05bd52be5b2f9343c45411b776d07fa4c7d59c81257cbdb"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f0.sh",
+      "size_bytes": 3340,
+      "sha256": "87b5cadd4949556851a9aebed984103ffaffd88e27c005caa77d43dc44789370"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f1.sh",
+      "size_bytes": 3340,
+      "sha256": "2c90b8daa8b8412d2da27a101ff544c0c3831dca39bf73d00cf459b2bbdcfef5"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f2.sh",
+      "size_bytes": 834,
+      "sha256": "308389f542fc6f8a35c47e40ebf8539a6ce0009d34e120a1a678d6f0c75c9828"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f3.sh",
+      "size_bytes": 550,
+      "sha256": "c4ddadba3c9b72edfbeb65c611c4ec976fbb54fa713bcc9eb4652b092bb1d271"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f4.sh",
+      "size_bytes": 550,
+      "sha256": "ae7829a9c014ccc7d6afabd03b512b75963197c1d54c97084bca3101bab0ff0f"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f5.sh",
+      "size_bytes": 550,
+      "sha256": "4cf939ac9cec24a29d52c996c07e2605d95c00c4b1582c71d244bd468682dca0"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f6.sh",
+      "size_bytes": 550,
+      "sha256": "be42fb475de4090c82e6dbda696b34357a8e3c165d057753872649c99bdc7c2a"
+    },
+    {
+      "path": "tools/bootstrap_flutter_and_run_f7.sh",
+      "size_bytes": 550,
+      "sha256": "2dc8b68599c5681ac5361ee0997ea48c5bcf7c8108d6ae15dd904f2bc0ee1177"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f2_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "ef499148d21159e33afd620457ef194ac08b3cd38291ce06abeb1446973eae88"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f3_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "9956ec1e52e9c534e98d435544291fda91de1c9f58c6dc6c11c6847b6453e5d9"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f4_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "3eea5c35fe56cbf66e0abf250fe2392413a141ce10d37524173bbd41e322c8a7"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f5_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "ebdfc0f96a6ef1469547284a3fd16b8926f84e55f23ef207efd636eeb29ca209"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f6_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "01981785fbb0d17f4ce765d7c1c6e2b512d97749852b82abefc1985558138fbe"
+    },
+    {
+      "path": "tools/bootstrap_flutter_f7_fallback.sh",
+      "size_bytes": 3340,
+      "sha256": "84eec303f551dcdf2fc76c81b27679aacb95dbe8cb89b163e5a192355aae76a5"
+    },
+    {
+      "path": "tools/check_lcov.py",
+      "size_bytes": 1144,
+      "sha256": "4cba68d43eb6ce7df7d492825e0d08a9a4b51012526fee941100775c46f5b622"
+    },
+    {
+      "path": "tools/f0_guard.py",
+      "size_bytes": 2660,
+      "sha256": "a847fcc76fa8dadf6f53150f244c934259ca6ed39505fad0f177f00429c857c5"
+    },
+    {
+      "path": "tools/f1_architecture_guard.py",
+      "size_bytes": 1159,
+      "sha256": "5e3a10f998545965493292995257e19529a92786f087c0cf36e4896fa416ef87"
+    },
+    {
+      "path": "tools/f1_static_contract_check.py",
+      "size_bytes": 1658,
+      "sha256": "2d86c131aff80654a67eec74247b9eb6b1f702e951bfae14e05c63f6586fb23a"
+    },
+    {
+      "path": "tools/f2_architecture_guard.dart",
+      "size_bytes": 1733,
+      "sha256": "4429ff2d5c7740828d1f5a8d713e336d183462a6fa80dedda0cd7faf9d8e8cf4"
+    },
+    {
+      "path": "tools/f2_architecture_guard.py",
+      "size_bytes": 1857,
+      "sha256": "b008e1e5c5ec9eab96d1301776424ed8829905338cd55cd32223422761706eb8"
+    },
+    {
+      "path": "tools/f2_static_contract_check.py",
+      "size_bytes": 3173,
+      "sha256": "ed07072d55bdbbf4111a7e21eefa242cfe965bfc52e5c23bd3acfa77da799e12"
+    },
+    {
+      "path": "tools/f3_architecture_guard.dart",
+      "size_bytes": 1500,
+      "sha256": "960b4a4be0e6826cc927ab34d0bad26a6207f299ab6c2bbd806281f910ad2e8e"
+    },
+    {
+      "path": "tools/f3_architecture_guard.py",
+      "size_bytes": 1587,
+      "sha256": "7acbf1679b1f7b864cde2692550b100d17268a452f56e1a3dc4689a89de8297f"
+    },
+    {
+      "path": "tools/f3_static_contract_check.py",
+      "size_bytes": 1887,
+      "sha256": "9e1df2cd770bf93e202d3400387f3906b4904b46ca1139cae61f2411c69420b9"
+    },
+    {
+      "path": "tools/f4_architecture_guard.dart",
+      "size_bytes": 1598,
+      "sha256": "6492caba5bd3f676cd5a571140ea385107fa2c4ba072a91b11c235308347cf50"
+    },
+    {
+      "path": "tools/f4_architecture_guard.py",
+      "size_bytes": 1699,
+      "sha256": "08e1b244ea2fc9363e4b90521f9ade6bc1d74a14f4b340a58c1ac990f051554d"
+    },
+    {
+      "path": "tools/f4_static_contract_check.py",
+      "size_bytes": 2026,
+      "sha256": "3b0356cffca28fa302d0351b738c4c9ce0640571b0ffe5068403ef1db37d9fb4"
+    },
+    {
+      "path": "tools/f5_architecture_guard.dart",
+      "size_bytes": 1552,
+      "sha256": "3cf5456267d914b1538017ac3867f5be82e82c2f313abf00c2d06d066306a01a"
+    },
+    {
+      "path": "tools/f5_architecture_guard.py",
+      "size_bytes": 1605,
+      "sha256": "2905ccc7ee21dea13d30ed22317d96022e555fa309a4ee5126159393515328a4"
+    },
+    {
+      "path": "tools/f5_static_contract_check.py",
+      "size_bytes": 1862,
+      "sha256": "07cccc088ffaa6f8c12a3c3b3a4aac7aafde978a7e0acb2723314f6e5aa5642a"
+    },
+    {
+      "path": "tools/f6_architecture_guard.dart",
+      "size_bytes": 1552,
+      "sha256": "76b4880eff702530c1ff22e8f4beaa2bb5214f2944e8761892b70326f1c8c258"
+    },
+    {
+      "path": "tools/f6_architecture_guard.py",
+      "size_bytes": 2005,
+      "sha256": "f0c278c25edbbae45f8c69331d270c426df8ffdc4ff0354dad68c22f8ede838e"
+    },
+    {
+      "path": "tools/f6_static_contract_check.py",
+      "size_bytes": 1997,
+      "sha256": "6df073b56688f21688223299ea219b6e422b33edcd1b01131267e6325c2a76aa"
+    },
+    {
+      "path": "tools/f7_architecture_guard.dart",
+      "size_bytes": 1943,
+      "sha256": "1ed5cbfcd1974faee049251dc6bd70e1773d491a8edd21cb9b41469b29044409"
+    },
+    {
+      "path": "tools/f7_architecture_guard.py",
+      "size_bytes": 1805,
+      "sha256": "12d6ea4232b859717590cfc93ef7eefcbbdda0b8e2c8ab36f0d435ab0d99e80a"
+    },
+    {
+      "path": "tools/f7_static_contract_check.py",
+      "size_bytes": 4480,
+      "sha256": "e5a3ac51711ed2d6e0dffda0e3ddfb367ba205de2ae5e71bf719a5425c83e497"
+    },
+    {
+      "path": "tools/generate_f0_manifest.py",
+      "size_bytes": 1330,
+      "sha256": "963f5eaaba427c5c93711b226ef46f4e1a02fdaf1f808da61e5a3e6399759cab"
+    },
+    {
+      "path": "tools/generate_f1_manifest.py",
+      "size_bytes": 1323,
+      "sha256": "07653584b91899168371654d08e29b2a76e03d8d5ad70dc4489cf95e167c0ebe"
+    },
+    {
+      "path": "tools/generate_f2_manifest.py",
+      "size_bytes": 1323,
+      "sha256": "d28f6edaf94f3014870f8b58dbfa7e0e48688243ab3426e993063275f1ac6098"
+    },
+    {
+      "path": "tools/generate_f3_manifest.py",
+      "size_bytes": 1324,
+      "sha256": "48062a459569de2483ceea61fb91a5d156b05d15ac6dc6988fcfdfb725829d33"
+    },
+    {
+      "path": "tools/generate_f4_manifest.py",
+      "size_bytes": 1343,
+      "sha256": "54c1cc17932c8fdd083eabc171efda2431937da9c03818f51bdd739550da5ddb"
+    },
+    {
+      "path": "tools/generate_f5_manifest.py",
+      "size_bytes": 1362,
+      "sha256": "ea985ade93df0541988acb6c180de729a295fc4c7f21c000c4d3393487a99415"
+    },
+    {
+      "path": "tools/generate_f6_manifest.py",
+      "size_bytes": 1308,
+      "sha256": "be477ac61b7807b84c042911384f4c09993eb59b1abf97423ea34dcf7a0c0679"
+    },
+    {
+      "path": "tools/generate_f7_manifest.py",
+      "size_bytes": 1308,
+      "sha256": "55f96f7ddde57730fbc9630d023d633cbf28b694d4ef60b0380bc83846504b02"
+    },
+    {
+      "path": "tools/run_f0_gate.sh",
+      "size_bytes": 2580,
+      "sha256": "4cdd5126b38c504bdf73ad48a063c7df4906e06c47aef8951eeeb45e82dfb8eb"
+    },
+    {
+      "path": "tools/run_f1_gate.sh",
+      "size_bytes": 2660,
+      "sha256": "c87dded2c375a0be916c001ca79690a34195e4237157d6320452a664fe7c38f3"
+    },
+    {
+      "path": "tools/run_f2_gate.sh",
+      "size_bytes": 4044,
+      "sha256": "08c5d768312fbd1cc134df513d443aeab279af733ad430c5bfee303d80d0fa6c"
+    },
+    {
+      "path": "tools/run_f3_gate.sh",
+      "size_bytes": 3641,
+      "sha256": "fd75fe6c100924d9570573a3d024e1213576be59150b5a2aeccc5581030ad393"
+    },
+    {
+      "path": "tools/run_f4_gate.sh",
+      "size_bytes": 3889,
+      "sha256": "8cf9983160a0827316ad523eb294da92f1e1a05775312cbdebe854767c2a28b2"
+    },
+    {
+      "path": "tools/run_f5_gate.sh",
+      "size_bytes": 4392,
+      "sha256": "d51baac186c77303a5c16ff29271d33b5cc7068e8b7d9594261bb6662e5b4dfa"
+    },
+    {
+      "path": "tools/run_f6_gate.sh",
+      "size_bytes": 5133,
+      "sha256": "80fd3c1dcc6a3db77ec6508e2f4fb05e7d2564307b710a1c0e6d6810ae67ee9d"
+    },
+    {
+      "path": "tools/run_f7_gate.sh",
+      "size_bytes": 6597,
+      "sha256": "1b8f1f2423241e0c3eace0606901fbbd9ba0fd3a102e50f5543f46c084d3e238"
+    },
+    {
+      "path": "tools/test_f0_tooling.py",
+      "size_bytes": 5276,
+      "sha256": "2785994af65811960746703ae7acd9d9ef63a624a0335683c3a81e0a7622885e"
+    },
+    {
+      "path": "tools/toolchain_probe.py",
+      "size_bytes": 1667,
+      "sha256": "024e8e077d144f3f202acecd0915d284503f4ad8675f86dee67cef3a0b45007b"
+    },
+    {
+      "path": "tools/validate_test_vectors.py",
+      "size_bytes": 2695,
+      "sha256": "d33564b746f299313c6005c92497ed86bbf6a435ba98f74a774c45678d340250"
+    },
+    {
+      "path": "tools/verify_f0_manifest.py",
+      "size_bytes": 1384,
+      "sha256": "4ea1128b5a4d6f58c37b77c7d785f1fdb608fae76e29856313ad854751c5d869"
+    },
+    {
+      "path": "tools/verify_f1_manifest.py",
+      "size_bytes": 1337,
+      "sha256": "503344aea3dd58f6da14eb91dda0d1f8c5b308d4a6405b1f27af02af56d02464"
+    },
+    {
+      "path": "tools/verify_f2_manifest.py",
+      "size_bytes": 1337,
+      "sha256": "44be802fdd8ab996fe0b93f99992b88f978cb9c220c607946d954e5a42c135db"
+    },
+    {
+      "path": "tools/verify_f3_manifest.py",
+      "size_bytes": 1351,
+      "sha256": "8bbbefbc1a8a6d86dcf88cee3427b345a8aa3e5043c097de0011bf50f350d419"
+    },
+    {
+      "path": "tools/verify_f4_manifest.py",
+      "size_bytes": 1351,
+      "sha256": "8c825121b30161782cf80374686bff955e67eb9c16c729cb4b58363bd61bfc62"
+    },
+    {
+      "path": "tools/verify_f5_manifest.py",
+      "size_bytes": 1351,
+      "sha256": "6508d9055034cc2588e84ec1b20bb87b92ea5e2cc378f1e695f1cd044bbe575f"
+    },
+    {
+      "path": "tools/verify_f6_manifest.py",
+      "size_bytes": 1351,
+      "sha256": "3d80a614fa7f9eecbbd6219e0055057d7c2e1fb05b1ebcc04cc6375e1cfbd9e2"
+    },
+    {
+      "path": "tools/verify_f7_manifest.py",
+      "size_bytes": 1351,
+      "sha256": "211374f24725eff1fc2b39b8b20100aab1584cb4511617ae16115690d6ee7ae4"
+    },
+    {
+      "path": "tools/verify_legacy_reference.py",
+      "size_bytes": 2348,
+      "sha256": "52c9a8cffa44051b3faa2eb791b8fea30b6b1452ebddaaefc194ef65576b23e0"
+    },
+    {
+      "path": "validate.sh",
+      "size_bytes": 127,
+      "sha256": "c8a427c44fb8d7b7f01c8b131d796ba8818791759e71727c244ea22650769350"
+    }
+  ]
+}

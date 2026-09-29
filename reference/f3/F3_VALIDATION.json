@@ -1,0 +1,8 @@
+{
+  "phase": "F3",
+  "status": "PASS",
+  "validatedOn": "2026-09-27",
+  "target": "macOS Monterey / Flutter 3.38.10 / Dart 3.10.9",
+  "evidenceType": "user-reported terminal gate marker",
+  "gateMarker": "F3_GATE_PASS"
+}

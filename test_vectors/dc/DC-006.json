@@ -1,0 +1,9 @@
+{
+  "id": "DC-006",
+  "mode": "dc",
+  "description": "Court-circuit source idéale",
+  "expected": {
+    "status": "invalid_or_limited",
+    "mustNotReturnArbitraryFiniteValue": true
+  }
+}

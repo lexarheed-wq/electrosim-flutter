@@ -1,0 +1,29 @@
+{
+  "phase": "F0",
+  "status": "REFERENCE_FROZEN",
+  "captured_at": "2026-09-27",
+  "legacy_zip": {
+    "filename": "ElectroSim-FIELDFIX01-R1.zip",
+    "sha256": "569e05908592e6dd615bd80b342f6c7a28249850951d353dac988c5d2e1187bd",
+    "package_version": "14.31.15-eie08-r1-eie08ux04-r1-eie-mon03-r1-tp-sync01-r1-deenergized01-r3-meter01-energytime01-eiers14-tpflow03-r1-uic01-r1-palette01-r2-canvasactions01-r2-tpflow04-r1-sup04-r1-rpr03-r1-risk01-r1-pal04-r1-act03-r1-uic04-r1-propedit01-r1-nf03-r1-eie20mode01-r1-contact01-r1-contact02-r1-eie01r4-r1-eie0405-r1-eie08m-r1-eie03i-r2-eie07a-r1-fieldfix01-r1",
+    "size_bytes": 49210606
+  },
+  "requirements_pdf": {
+    "filename": "Cahier_des_charges_ElectroSim_Flutter_Nouveau_Noyau.pdf",
+    "sha256": "a88dda2b905f5b775b37060216ceaf8d74a71ec41ce0eac5f8bdde0e584e8f6c",
+    "pages": 22
+  },
+  "mission_text": {
+    "filename": "MISSION_RECONSTRUCTION_FLUTTER.txt",
+    "sha256": "9f908012a5016b75a2a842c34b36e65d6e4dd6089d37765ac5211bcb7e1f4ad7"
+  },
+  "legacy_architecture_metrics": {
+    "teacher_script_tags": 137,
+    "student_script_tags": 128,
+    "root_electrosim_js_ts_files": 137,
+    "globalThis_app_occurrences": 38,
+    "window_app_occurrences": 1,
+    "prototype_patch_assignments": 14
+  },
+  "note": "Legacy ZIP is an immutable functional/visual oracle only. No legacy example or fault scenario is imported."
+}

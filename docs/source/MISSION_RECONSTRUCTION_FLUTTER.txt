@@ -1,0 +1,752 @@
+# MISSION — RECONSTRUCTION COMPLÈTE D’ELECTROSIM EN FLUTTER/DART
+
+Tu disposes de deux sources principales :
+
+1. `Cahier_des_charges_ElectroSim_Flutter_Nouveau_Noyau.pdf`
+2. Le dernier ZIP disponible de l’application ElectroSim historique.
+
+Ta mission consiste à **reconstruire ElectroSim proprement en Flutter/Dart selon le cahier des charges**, en travaillant de manière autonome, progressive, contrôlée et vérifiable.
+
+## 1. HIÉRARCHIE DES SOURCES
+
+Le cahier des charges Flutter constitue la **source de vérité architecturale et fonctionnelle principale**.
+
+L’ancien ZIP ElectroSim constitue uniquement :
+
+- une référence fonctionnelle ;
+- une référence ergonomique ;
+- une référence visuelle ;
+- une source permettant de comprendre les fonctionnalités existantes ;
+- une source permettant d’identifier les composants et comportements utiles ;
+- un oracle de comparaison lorsque le cahier des charges demande de conserver un comportement.
+
+Il ne constitue PAS l’architecture du nouveau projet.
+
+### Interdictions
+
+Ne pas :
+
+- convertir automatiquement l’application TypeScript en Dart ;
+- reproduire son architecture historique ;
+- recopier ses dépendances globales ;
+- reproduire les anciennes incohérences ;
+- conserver les anciens mécanismes de FaultEngine par injection ;
+- importer automatiquement les anciens schémas ;
+- importer automatiquement les anciennes pannes ;
+- créer des dépendances entre exemples de câblage et scénarios de panne ;
+- conserver du code uniquement parce qu’il existait dans l’ancienne version.
+
+Le nouveau projet doit repartir sur une architecture propre.
+
+---
+
+# 2. OBJECTIF FONDAMENTAL
+
+Construire une nouvelle génération d’ElectroSim basée sur :
+
+**Flutter + Dart + nouveau moteur électrique déterministe.**
+
+Architecture centrale obligatoire :
+
+`CircuitState`
+→ `TopologyEngine`
+→ `SolverEngine`
+→ `SimulationResult`
+
+`CircuitState` doit être la seule source de vérité électrique.
+
+Aucun écran, widget, Canvas, TP, module énergie, multimètre, scénario de panne ou système EIE ne doit disposer d’une représentation concurrente de l’état électrique.
+
+---
+
+# 3. SÉPARATION ABSOLUE EXEMPLES / PANNES
+
+Cette règle est non négociable.
+
+## Exemples
+
+Les exemples sont exclusivement des :
+
+**circuits correctement câblés, fonctionnels et pédagogiquement validés.**
+
+Ils servent :
+
+- à observer un montage ;
+- à comprendre un câblage ;
+- à démarrer un exercice ;
+- à présenter un exemple de fonctionnement normal.
+
+## Scénarios de panne
+
+Une panne est un **circuit autonome déjà défectueux**.
+
+Elle peut contenir directement :
+
+- mauvais branchement ;
+- conducteur manquant ;
+- conducteur mal connecté ;
+- court-circuit ;
+- inversion de conducteurs ;
+- inversion de polarité ;
+- perte de phase ;
+- mauvaise séquence de phases ;
+- composant défectueux ;
+- contact bloqué ;
+- bobine coupée ;
+- lampe grillée ;
+- moteur défaillant ;
+- appareil hors service ;
+- mauvais réglage ;
+- alimentation anormale ;
+- combinaison de plusieurs défauts.
+
+Les scénarios de panne ne sont PAS obtenus en prenant un exemple et en injectant une panne.
+
+Architecture interdite :
+
+`ExampleCircuit + FaultInjection`
+
+Architecture obligatoire :
+
+`FaultScenario → FaultyCircuitState`
+
+Il ne doit exister aucune dépendance fonctionnelle entre bibliothèque d’exemples et bibliothèque de pannes.
+
+Le nouveau projet commence avec :
+
+- 0 ancien exemple importé ;
+- 0 ancienne panne importée.
+
+Les bibliothèques seront reconstruites ultérieurement uniquement à partir de contenus validés.
+
+---
+
+# 4. NOUVEAU MOTEUR ÉLECTRIQUE
+
+Le Canvas Flutter ne calcule jamais l’électricité.
+
+Il représente uniquement le résultat du moteur.
+
+Flux obligatoire :
+
+`CircuitState`
+→ compilation topologique
+→ modèle électrique
+→ solveur
+→ états physiques
+→ mesures
+→ diagnostic
+→ rendu graphique
+
+## CC
+
+Construire un véritable solveur fondé sur l’analyse nodale modifiée, ou une méthode mathématique équivalente suffisamment générale.
+
+Il doit traiter proprement :
+
+- tension ;
+- courant ;
+- résistance ;
+- sources ;
+- branches ;
+- série ;
+- parallèle ;
+- nœuds ;
+- circuits ouverts ;
+- courts-circuits ;
+- composants commutables ;
+- mesures ;
+- plusieurs sources lorsque le modèle le permet.
+
+## AC monophasé
+
+Utiliser les grandeurs complexes.
+
+Prendre en charge au minimum :
+
+- impédance ;
+- résistance ;
+- réactance ;
+- tension complexe ;
+- courant complexe ;
+- déphasage ;
+- puissance active P ;
+- puissance réactive Q ;
+- puissance apparente S ;
+- cos φ.
+
+## AC triphasé
+
+L1, L2, L3 et N doivent être explicitement représentés.
+
+Ne pas modéliser le triphasé comme « une phase × 3 ».
+
+Prévoir notamment :
+
+- réseau équilibré ;
+- réseau déséquilibré ;
+- neutre ;
+- perte de phase ;
+- inversion de phases ;
+- ordre des phases ;
+- charges triphasées ;
+- charges monophasées raccordées au réseau triphasé.
+
+## PV
+
+Créer un domaine PV propre et testable conformément au cahier des charges.
+
+---
+
+# 5. MODÈLES DES COMPOSANTS
+
+Chaque composant doit posséder un modèle métier explicite.
+
+Exemple de structure conceptuelle :
+
+`ElectricalComponent`
+
+avec :
+
+- identifiant unique ;
+- type ;
+- bornes ;
+- paramètres nominaux ;
+- modèle électrique ;
+- état physique ;
+- limites ;
+- propriétés ;
+- métadonnées nécessaires.
+
+L’état visuel ne doit jamais remplacer l’état physique.
+
+Exemple :
+
+Le ventilateur ne tourne pas parce que l’animation est activée.
+
+Il tourne parce que :
+
+`SolverEngine → DeviceStateEngine → running`
+
+et Flutter représente ensuite cet état.
+
+---
+
+# 6. MOTEUR TOPOLOGIQUE
+
+Créer un `TopologyEngine` indépendant du moteur graphique.
+
+Il doit construire et analyser :
+
+- bornes ;
+- connexions ;
+- conducteurs ;
+- nœuds ;
+- branches ;
+- composants connectés ;
+- chemins électriques ;
+- éléments isolés.
+
+Il doit pouvoir détecter avant résolution :
+
+- borne flottante ;
+- absence de retour ;
+- circuit ouvert ;
+- court-circuit topologique ;
+- composant isolé ;
+- connexion impossible ;
+- conducteur manquant ;
+- source incohérente ;
+- problème de phase ;
+- incohérence structurelle.
+
+---
+
+# 7. SIMULATOR CANVAS FLUTTER
+
+Construire un moteur graphique Flutter propre.
+
+Prévoir notamment :
+
+- `SimulatorCanvas`
+- `ComponentRenderer`
+- `WireRenderer`
+- `TerminalRenderer`
+- `NodeRenderer`
+- `SelectionRenderer`
+- `MeasurementRenderer`
+- `ViewportController`
+- `GestureController`
+- `HitTestEngine`
+
+Interactions attendues :
+
+- clic sur composant → sélection ;
+- appui long → déplacement ;
+- clic sur borne → début du câblage ;
+- clic ou dépôt sur borne compatible → connexion ;
+- double-clic fil → action contextuelle/nœud lorsque pertinent ;
+- double-clic composant → propriétés/actions ;
+- zoom fluide ;
+- déplacement de la vue ;
+- feedback visuel des bornes compatibles ;
+- aimantation raisonnable ;
+- annulation d’une connexion ;
+- interactions tactiles et souris cohérentes.
+
+Le Canvas doit être découplé du moteur électrique.
+
+---
+
+# 8. DESIGN ET RESPONSIVE
+
+Créer une interface réellement adaptée aux catégories :
+
+- téléphone ;
+- tablette ;
+- desktop.
+
+Ne jamais simplement réduire l’interface desktop pour téléphone.
+
+Le design doit être :
+
+- moderne ;
+- professionnel ;
+- cohérent ;
+- pédagogique ;
+- lisible ;
+- fluide ;
+- tactile ;
+- accessible.
+
+Construire un véritable design system :
+
+- couleurs ;
+- typographie ;
+- espacements ;
+- boutons ;
+- cartes ;
+- panneaux ;
+- états ;
+- alertes ;
+- menus ;
+- composants interactifs.
+
+Les composants affichés dans la palette et sur la platine doivent être visuellement cohérents.
+
+---
+
+# 9. MESURES
+
+Construire un `MeasurementEngine` indépendant.
+
+Le multimètre et les instruments doivent interroger les résultats du solveur.
+
+Prévoir progressivement :
+
+- V ;
+- A ;
+- Ω ;
+- W ;
+- Wh ;
+- kWh ;
+- Hz ;
+- P ;
+- Q ;
+- S ;
+- cos φ.
+
+Aucune valeur affichée ne doit être inventée par l’interface.
+
+---
+
+# 10. ÉNERGIE
+
+Créer un `EnergyEngine` indépendant basé sur les résultats physiques.
+
+Il doit notamment pouvoir produire :
+
+- puissance instantanée ;
+- énergie ;
+- pertes ;
+- rendement ;
+- historique ;
+- données exportables.
+
+---
+
+# 11. DIAGNOSTIC ET EIE
+
+L’EIE doit devenir un moteur fondé sur des preuves.
+
+Flux attendu :
+
+`TopologyEngine`
++
+`SolverEngine`
++
+`MeasurementEngine`
++
+états des composants
+→
+`DiagnosticEngine`
+→
+EIE
+
+L’EIE ne doit jamais inventer une cause.
+
+Elle doit pouvoir distinguer :
+
+- observation ;
+- anomalie mesurée ;
+- hypothèse ;
+- cause confirmée.
+
+Lorsque cela est possible, une recommandation EIE doit pouvoir localiser graphiquement l’élément concerné.
+
+---
+
+# 12. TP DE CÂBLAGE
+
+Le TP de câblage doit s’appuyer sur des circuits fonctionnels.
+
+Le système doit permettre :
+
+- consigne ;
+- circuit attendu ;
+- progression ;
+- mesures ;
+- vérification ;
+- validation ;
+- évaluation.
+
+Une validation doit provenir de l’état réel du circuit, et non d’un simple indicateur UI.
+
+---
+
+# 13. RECHERCHE DE DÉRANGEMENT
+
+Un TP de recherche de dérangement charge directement un `FaultScenario`.
+
+L’élève reçoit :
+
+- le circuit défectueux ;
+- les consignes ;
+- les outils de mesure nécessaires.
+
+Il ne doit jamais recevoir les données privées expliquant la panne.
+
+Prévoir une structure privée professeur de type :
+
+`teacherTruth`
+
+comprenant :
+
+- défaut réel ;
+- symptômes attendus ;
+- mesures attendues ;
+- méthode de vérification ;
+- critères de réparation ;
+- critères d’évaluation.
+
+La validation de la réparation doit être physique :
+
+circuit réparé
+→ recalcul complet
+→ contrôle topologique
+→ contrôle électrique
+→ contrôle fonctionnel.
+
+Ne jamais valider uniquement parce qu’un identifiant de panne a disparu.
+
+---
+
+# 14. MÉTHODE DE DÉVELOPPEMENT
+
+Suivre strictement les phases F0 à F16 définies dans le cahier des charges.
+
+Ne jamais développer plusieurs grosses couches simultanément.
+
+Une phase doit être :
+
+1. implémentée ;
+2. testée ;
+3. auditée ;
+4. documentée ;
+5. validée automatiquement ;
+
+avant de passer à la suivante.
+
+---
+
+# 15. QUALITY GATES OBLIGATOIRES
+
+À la fin de chaque phase, exécuter tous les contrôles pertinents.
+
+Minimum attendu :
+
+### Analyse statique
+
+- `flutter analyze`
+- absence d’erreur Dart ;
+- absence d’avertissements critiques ;
+- règles de lint respectées.
+
+### Tests unitaires
+
+Tester chaque classe métier importante.
+
+### Tests d’intégration
+
+Tester les interactions entre modules.
+
+### Tests widget
+
+Tester les éléments Flutter.
+
+### Tests golden
+
+Utiliser des tests visuels lorsque pertinents.
+
+### Tests électriques
+
+Créer des circuits canoniques dont les résultats sont mathématiquement connus.
+
+### Tests topologiques
+
+Tester les anomalies structurelles.
+
+### Tests de persistance
+
+Tester :
+
+enregistrement
+→ fermeture
+→ ouverture
+→ comparaison exacte.
+
+### Tests de déterminisme
+
+La même entrée doit toujours produire le même résultat dans les mêmes conditions.
+
+### Tests de performance
+
+Surveiller :
+
+- temps de résolution ;
+- fluidité ;
+- consommation mémoire ;
+- rendu graphique.
+
+### Tests responsive
+
+Tester au minimum :
+
+- petit écran ;
+- tablette ;
+- desktop.
+
+---
+
+# 16. RÈGLE DE BLOCAGE
+
+NE PAS passer à la phase suivante lorsqu’un test requis échoue.
+
+Si une anomalie apparaît :
+
+1. reproduire ;
+2. isoler ;
+3. identifier la cause racine ;
+4. corriger ;
+5. créer un test empêchant sa réapparition ;
+6. rejouer l’ensemble des tests concernés ;
+7. seulement ensuite poursuivre.
+
+Ne pas masquer un problème par un contournement visuel.
+
+---
+
+# 17. RÉGRESSION
+
+Chaque correction de bug doit ajouter un test de non-régression.
+
+Une anomalie corrigée ne doit jamais pouvoir revenir silencieusement.
+
+Conserver une suite cumulative de tests.
+
+---
+
+# 18. AUDIT AUTOMATIQUE DE FIN DE PHASE
+
+Produire systématiquement un rapport comprenant :
+
+- phase ;
+- objectifs ;
+- fichiers ajoutés ;
+- fichiers modifiés ;
+- architecture touchée ;
+- tests exécutés ;
+- nombre de tests réussis ;
+- nombre de tests échoués ;
+- analyse statique ;
+- performance si pertinente ;
+- dette technique introduite ;
+- anomalies connues ;
+- décision GO/NO-GO.
+
+`GO` uniquement lorsque les critères de sortie du cahier des charges sont remplis.
+
+---
+
+# 19. VERSIONNEMENT
+
+Créer un point de restauration propre à chaque phase validée.
+
+Ne jamais écraser une version validée avec une évolution non validée.
+
+Utiliser des noms explicites de versions/lots.
+
+Conserver :
+
+- source ;
+- rapport de tests ;
+- rapport d’audit ;
+- hash du livrable lorsque pertinent.
+
+---
+
+# 20. TRAITEMENT DE L’ANCIEN ZIP
+
+Analyser l’ancien ZIP avant développement afin d’établir :
+
+- inventaire des fonctionnalités ;
+- inventaire des composants ;
+- comportements utilisateur ;
+- formats de données ;
+- fonctions utiles ;
+- problèmes connus ;
+- dépendances historiques ;
+- éléments à reprendre conceptuellement ;
+- éléments à abandonner.
+
+Créer un tableau :
+
+`Ancienne fonctionnalité | Nouveau module | Reprise | Refonte | Abandon | Justification`
+
+Ne pas utiliser cette analyse pour recopier aveuglément le code.
+
+---
+
+# 21. AUTONOMIE
+
+Travaille de manière autonome dans le cadre du cahier des charges.
+
+Ne demande pas confirmation pour chaque détail d’implémentation lorsque la réponse peut être déduite :
+
+1. du cahier des charges ;
+2. de l’architecture validée ;
+3. des bonnes pratiques Flutter/Dart ;
+4. des tests ;
+5. de la physique électrique.
+
+En cas de choix technique interne, privilégier :
+
+- simplicité ;
+- déterminisme ;
+- isolation des responsabilités ;
+- testabilité ;
+- lisibilité ;
+- maintenabilité ;
+- robustesse.
+
+Ne modifie pas les exigences fonctionnelles validées simplement pour faciliter l’implémentation.
+
+---
+
+# 22. NE PAS FAIRE DE FAUSSE VALIDATION
+
+Ne jamais déclarer :
+
+- « terminé » ;
+- « fonctionnel » ;
+- « corrigé » ;
+- « validé » ;
+- « 100 % »
+
+uniquement parce que le code compile.
+
+Toute affirmation de réussite doit être accompagnée d’une preuve :
+
+- test ;
+- mesure ;
+- audit ;
+- résultat attendu comparé au résultat obtenu.
+
+---
+
+# 23. LIVRABLE APRÈS CHAQUE PHASE
+
+À la fin de chaque phase validée, fournir :
+
+1. le projet complet à jour ;
+2. un livrable testable lorsque pertinent ;
+3. le rapport de phase ;
+4. les tests ;
+5. le rapport d’audit automatique ;
+6. les anomalies restantes éventuelles ;
+7. le hash du livrable lorsque possible ;
+8. la prochaine phase prévue.
+
+---
+
+# 24. PREMIÈRE ACTION
+
+Commence par **F0**.
+
+Avant d’écrire le nouveau moteur :
+
+1. lis intégralement le cahier des charges ;
+2. analyse le ZIP de référence ;
+3. établis l’inventaire fonctionnel ;
+4. identifie les comportements qu’il faut conserver ;
+5. identifie les comportements qui appartiennent à l’ancienne architecture et qu’il faut abandonner ;
+6. crée la matrice de migration fonctionnelle ;
+7. crée la structure initiale des tests de référence ;
+8. crée le projet Flutter neuf dans un dossier séparé ;
+9. vérifie l’environnement Flutter/Dart ;
+10. lance l’analyse et les tests initiaux ;
+11. produis le rapport F0.
+
+L’ancienne application doit rester intacte.
+
+Ne commence pas par convertir ses fichiers.
+
+---
+
+# OBJECTIF FINAL
+
+Obtenir un ElectroSim nouvelle génération :
+
+- Flutter/Dart ;
+- architecture propre ;
+- nouveau solveur fiable ;
+- interface moderne ;
+- interactions fluides ;
+- desktop/mobile responsive ;
+- fonctionnement hors ligne ;
+- composants visuellement cohérents ;
+- simulations physiquement cohérentes ;
+- exemples et pannes totalement indépendants ;
+- TP fiables ;
+- diagnostic fondé sur les résultats réels ;
+- tests automatiques étendus ;
+- audits à chaque évolution ;
+- absence de régression silencieuse.
+
+Le critère principal n’est pas la vitesse de développement.
+
+Le critère principal est :
+
+**cohérence → exactitude → robustesse → testabilité → ergonomie → performance.**
+
+Commence maintenant par F0 et poursuis de façon autonome tant qu’aucune porte de qualité n’échoue.

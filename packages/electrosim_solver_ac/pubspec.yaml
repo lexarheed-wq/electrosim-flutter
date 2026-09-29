@@ -1,0 +1,14 @@
+name: electrosim_solver_ac
+description: Deterministic pure Dart AC single- and three-phase phasor/MNA solvers for ElectroSim.
+version: 0.2.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+dev_dependencies:
+  coverage: ^1.15.1
+  test: ^1.26.3

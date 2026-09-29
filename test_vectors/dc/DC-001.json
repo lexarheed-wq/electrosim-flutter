@@ -1,0 +1,17 @@
+{
+  "id": "DC-001",
+  "mode": "dc",
+  "description": "Source idéale 24 V + R=12 ohm",
+  "circuit": {
+    "sourceVoltage_V": 24,
+    "resistors_ohm": [
+      12
+    ],
+    "topology": "series"
+  },
+  "expected": {
+    "current_A": 2.0,
+    "resistorVoltage_V": 24.0
+  },
+  "tolerance": 1e-09
+}

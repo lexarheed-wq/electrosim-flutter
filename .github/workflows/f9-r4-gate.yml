@@ -1,0 +1,22 @@
+name: F9-R4 gate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_ui_kit/**'
+      - 'packages/electrosim_canvas/**'
+      - 'tools/f9_*'
+      - 'tools/run_f9_r3_gate.sh'
+      - 'validate.sh'
+jobs:
+  f9-r4:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - run: chmod +x validate.sh tools/*.sh
+      - run: ./validate.sh

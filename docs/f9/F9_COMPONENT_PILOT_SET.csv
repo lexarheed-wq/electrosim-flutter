@@ -1,0 +1,16 @@
+pilot_id,family_id,domain,proposed_component,priority,acceptance_focus
+PILOT-DC-SOURCE,sources-dc,DC,Source CC réglable,P1,"polarité +/−, sélection, état energized"
+PILOT-RESISTOR,passive-resistive-sensors,DC,Résistance générique,P1,"2 bornes, valeur, identité palette/canvas"
+PILOT-LAMP,receivers-actuators,DC/AC1,Lampe générique,P1,"off/energized, animation lumineuse result-driven"
+PILOT-SWITCH-NO,control-detection,DC/AC1,Interrupteur NO,P1,"ouvert/fermé, clic ne modifie pas vérité hors commande métier"
+PILOT-BREAKER,protection-generic,DC/AC1,Disjoncteur générique,P1,closed/open/tripped
+PILOT-AC1-SOURCE,sources-ac1,AC1,Source monophasée,P1,"L/N, 1~, fréquence"
+PILOT-SOCKET,sockets,AC1,Prise L/N/PE,P1,bornes explicites et touch targets
+PILOT-METER,measurement,DC/AC1,Multimètre/voltmètre de référence,P1,lecture depuis MeasurementEngine uniquement
+PILOT-AC3-SOURCE,sources-ac3,AC3,Source triphasée,P1,"L1/L2/L3/N, ordre déterministe"
+PILOT-CONTACTOR,ac3-motor-control,AC3,Contacteur 3φ,P1,puissance + A1/A2
+PILOT-MOTOR3,ac3-loads,AC3,Moteur 3φ,P1,"U/V/W, stopped/running result-driven"
+PILOT-PV-MODULE,pv-generation,PV,Module PV,P1,"PV+/PV−, generating"
+PILOT-INVERTER,pv-conversion,PV/AC1,Onduleur PV,P1,"IN/OUT, conversion state"
+PILOT-BATTERY,pv-storage-bus,PV/DC,Batterie de stockage,P1,"+/−, charge/discharge"
+PILOT-PV-ENV,pv-environment,PV,Environnement irradiance/température,P2,aucun faux terminal électrique

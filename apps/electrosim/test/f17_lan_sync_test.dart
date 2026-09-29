@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/runtime/electrosim_lan_sync.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _waitFor(
@@ -207,6 +209,92 @@ void main() {
       expect(client.synchronized, isTrue);
       expect(student.lifecycle, TpLifecycle.evaluated);
       expect(student.evaluation?.score, 73);
+    });
+
+    testWidgets('teacher can expose a LAN code and endpoint from session management',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: app.F9WorkspaceDemoPage(sessionNavigation: true),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tp-network-share')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('tp-network-share')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
+      expect(find.byKey(const Key('tp-network-endpoint')), findsOneWidget);
+      expect(
+        tester.widget<SelectableText>(
+          find.byKey(const Key('tp-network-endpoint')),
+        ).data,
+        startsWith('ws://'),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('student joins a published teacher session from the validated home',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ElectroSimTpSessionController teacher =
+          ElectroSimTpSessionController();
+      teacher.createDraft();
+      teacher.publish();
+      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+        controller: teacher,
+        sessionCode: 'JOIN24',
+      );
+      final ElectroSimLanHostInfo info = await host.start(
+        address: InternetAddress.loopbackIPv4,
+      );
+      addTearDown(host.close);
+
+      await tester.pumpWidget(const app.ElectroSimApp());
+      expect(find.text('Créer une nouvelle session'), findsOneWidget);
+      expect(find.text('Centre de maintenance'), findsOneWidget);
+      expect(find.text('Centre de conception'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home-join-session')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rejoindre une session'), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('join-session-endpoint')),
+        info.preferredEndpoint.toString(),
+      );
+      await tester.enterText(
+        find.byKey(const Key('join-session-code')),
+        'JOIN24',
+      );
+      await tester.tap(find.byKey(const Key('join-session-submit')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session élève'), findsOneWidget);
+      expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tp-student-start')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('tp-student-start')));
+      await tester.pump();
+      await _waitFor(() => teacher.lifecycle == TpLifecycle.started);
+      expect(teacher.lifecycle, TpLifecycle.started);
+      expect(tester.takeException(), isNull);
     });
 
     test('wrong session code is rejected before synchronization', () async {

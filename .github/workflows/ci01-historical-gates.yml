@@ -1,0 +1,26 @@
+name: CI01 historical gate compatibility
+
+on:
+  push:
+    branches:
+      - ci01-modernize-historical-gates
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tools/f0_guard.py'
+      - 'tools/test_f0_tooling.py'
+      - 'tools/test_ci01_historical_gate_compatibility.py'
+      - 'tools/run_f0_gate.sh'
+      - '.github/workflows/ci01-historical-gates.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ci01-red-green:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CI01 regression test
+        run: python3 -m unittest tools.test_ci01_historical_gate_compatibility -v

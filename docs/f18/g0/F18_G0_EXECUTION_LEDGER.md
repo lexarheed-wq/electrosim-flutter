@@ -39,3 +39,14 @@ Task 4 RED-1: workflow run 36719523932 failed because validate_capability_parity
 Task 4 RED-2: workflow run 36719610887 passed all validators except the committed capability matrix, which was absent.
 Task 4 GREEN/final verification: workflow run 36719853724 passed with 29 capability rows: 4 PRESENT, 19 PARTIAL, 2 MISSING, 4 INTENTIONALLY_REDESIGNED.
 Task 4: complete (commits aacba30..9244967, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0CapabilityParityTests -v → PASS)
+
+
+Task 5 RED: workflow run 36720005670 failed because find_forbidden_g0_changes did not exist.
+Task 5 GREEN-1: workflow run 36720124523 passed all Python drift-guard tests after commit 71b1ae3.
+Task 5 RED-2: workflow run 36720202908 failed because check_committed_parity did not exist.
+Task 5 GREEN-2: workflow run 36720328630 passed committed parity checks after commit ab62fd5.
+Task 5 integration finding: workflow run 36720468625 failed before Flutter because verify_legacy_reference.py consumed audit/legacy_reference_analysis.json without first generating it.
+Task 5 Ruling: run tools/analyze_legacy_reference.py immediately before tools/verify_legacy_reference.py in G0 CI; do not alter historical F0 tools. Root cause is workflow ordering, not reference corruption. Cost if wrong: G0 could generate a transient audit that masks a verifier defect, but the verifier still independently checks the frozen ZIP SHA and stored audit structure.
+Task 5 final verification: workflow run 36720687139 PASS on head 5715fd244e6f70ce4d8f0764522543b4936dbbca; marker F18_G0_BASELINE_INVENTORY_GATE_PASS; Flutter suite 76/76 PASS.
+Task 5 evidence artifact: id 11099130881, digest sha256:cdae5aea664ed26b66156225c9b93093d2146f70b8865d6d25f2cf9e0a6ef011.
+Task 5: complete (commits 4357958..5715fd2, full G0 gate → PASS)

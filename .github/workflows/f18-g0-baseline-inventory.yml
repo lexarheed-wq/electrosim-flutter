@@ -1,0 +1,90 @@
+name: F18-G0 baseline inventory
+
+on:
+  push:
+    branches:
+      - f18-g0-baseline-inventory
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout full history for drift guard
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up locked Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version
+          test "$(flutter --version | awk 'NR==1 {print $2}')" = "3.38.10"
+          dart --version 2>&1 | grep -q "3.10.9"
+
+      - name: Analyze and verify immutable legacy reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/analyze_legacy_reference.py
+          python3 tools/verify_legacy_reference.py
+
+      - name: Run G0 tooling tests
+        run: python3 -m unittest tools.test_f18_g0_tooling -v
+
+      - name: Verify F17 baseline and G0 drift guard
+        run: python3 tools/f18_g0_capture_baseline.py --check --base-sha 554d156839418f2be690980fe8acb941f776a425
+
+      - name: Verify committed parity matrices
+        run: python3 tools/f18_g0_build_parity.py --check
+
+      - name: Resolve app dependencies without lock drift
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          before="$(sha256sum pubspec.lock | awk '{print $1}')"
+          flutter pub get
+          after="$(sha256sum pubspec.lock | awk '{print $1}')"
+          test "$before" = "$after"
+
+      - name: Analyze Flutter app
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Run complete Flutter app suite
+        working-directory: apps/electrosim
+        run: flutter test
+
+      - name: Final G0 marker
+        run: echo "F18_G0_BASELINE_INVENTORY_GATE_PASS"
+
+      - name: Upload G0 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: f18-g0-baseline-inventory-evidence
+          path: |
+            docs/f18/g0/F18_G0_BASELINE.json
+            docs/f18/g0/F18_CURRENT_PRODUCT_INVENTORY.json
+            docs/f18/g0/F18_PRODUCT_PARITY.csv
+            docs/f18/g0/F18_PRODUCT_PARITY.md
+            docs/f18/g0/F18_CAPABILITY_PARITY.csv
+            docs/f18/g0/F18_G0_REPORT.md
+          if-no-files-found: warn

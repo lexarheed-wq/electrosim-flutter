@@ -81,8 +81,11 @@ class F0ToolingTests(unittest.TestCase):
         self.assertIn('dart format --output=none --set-exit-if-changed lib test',s)
         self.assertNotIn('dart format --output=none --set-exit-if-changed .',s)
 
-    def test_no_f1_domain_source(self):
+    def test_post_f0_domain_source_is_allowed_by_regression_guard(self):
         domain=ROOT/"packages/electrosim_domain"
-        self.assertEqual([p for p in domain.rglob('*') if p.is_file() and p.name!='README.md'],[])
+        dart_files=[p for p in domain.rglob('*.dart') if p.is_file()]
+        self.assertTrue(dart_files)
+        p=subprocess.run(["python3",str(ROOT/"tools/f0_guard.py")],capture_output=True,text=True)
+        self.assertEqual(p.returncode,0,p.stdout+p.stderr)
 
 if __name__=="__main__": unittest.main(verbosity=2)

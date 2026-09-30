@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "phase": "F18-G0",
+  "palette": {
+    "count": 12,
+    "items": [
+      {"keyName":"source-dc-24v","title":"Source CC 24 V","category":"Sources","modelType":"dc_voltage_source"},
+      {"keyName":"switch-no","title":"Interrupteur NO","category":"Commande","modelType":"switch"},
+      {"keyName":"lamp","title":"Lampe","category":"Récepteurs","modelType":"lamp"},
+      {"keyName":"resistor","title":"Résistance","category":"Passifs","modelType":"resistor"},
+      {"keyName":"breaker","title":"Disjoncteur","category":"Protection","modelType":"breaker"},
+      {"keyName":"push-button-no","title":"Bouton-poussoir NO","category":"Commande","modelType":"push_button_no"},
+      {"keyName":"buzzer","title":"Buzzer","category":"Récepteurs","modelType":"buzzer"},
+      {"keyName":"fuse","title":"Fusible","category":"Protection","modelType":"fuse"},
+      {"keyName":"diode","title":"Diode","category":"Passifs","modelType":"diode"},
+      {"keyName":"fan-dc","title":"Ventilateur CC","category":"Récepteurs","modelType":"fan_dc"},
+      {"keyName":"motor-dc","title":"Moteur CC","category":"Récepteurs","modelType":"motor_dc"},
+      {"keyName":"relay-coil","title":"Bobine relais","category":"Commande","modelType":"relay_coil"}
+    ]
+  },
+  "qualifiedCatalog": {
+    "examples": 5,
+    "faultScenarios": 3
+  }
+}

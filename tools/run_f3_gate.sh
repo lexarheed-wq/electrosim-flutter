@@ -27,6 +27,7 @@ done
 
 cd "$ROOT"
 run_step "f0-guard" python3 "$ROOT/tools/f0_guard.py"
+run_step "legacy-analysis" python3 "$ROOT/tools/analyze_legacy_reference.py"
 run_step "legacy-reference" python3 "$ROOT/tools/verify_legacy_reference.py"
 run_step "test-vectors" python3 "$ROOT/tools/validate_test_vectors.py"
 run_step "f1-architecture-static" python3 "$ROOT/tools/f1_architecture_guard.py"

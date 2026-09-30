@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from tools.f18_g0_capture_baseline import capture_baseline
-from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions, validate_parity
+from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions, validate_capability_parity, validate_parity
 
 
 EXPECTED_VERSION = "ELECTROSIM2-F17-R12-QUALIFIED"
@@ -188,6 +188,64 @@ class F18G0ParityMatrixTests(unittest.TestCase):
         }
         errors = validate_parity([row])
         self.assertTrue(any("unknown flutter_model_type" in error for error in errors))
+
+
+class F18G0CapabilityParityTests(unittest.TestCase):
+    REQUIRED_CAPABILITIES = {
+        "Accueil",
+        "Session",
+        "Centre de maintenance",
+        "Centre de conception",
+        "Palette composants",
+        "Canvas",
+        "Câblage interactif",
+        "Mesures",
+        "Énergie",
+        "EIE / diagnostic",
+        "Sauvegardes locales",
+        "TP câblage",
+        "Recherche de dérangement",
+        "Supervision professeur",
+        "Responsive/mobile",
+        "LAN professeur/élève",
+    }
+
+    def test_committed_capability_matrix_covers_required_product_surface(self) -> None:
+        path = pathlib.Path("docs/f18/g0/F18_CAPABILITY_PARITY.csv")
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(validate_capability_parity(rows), [])
+        capabilities = {row["capability"] for row in rows}
+        self.assertTrue(self.REQUIRED_CAPABILITIES.issubset(capabilities))
+        self.assertGreaterEqual(len(rows), 22)
+
+    def test_validate_capability_parity_rejects_missing_evidence_and_acceptance(self) -> None:
+        row = {
+            "capability": "X",
+            "legacy_evidence": "",
+            "flutter_evidence": "",
+            "current_state": "PARTIAL",
+            "target_gate": "",
+            "acceptance": "",
+        }
+        errors = validate_capability_parity([row])
+        self.assertTrue(any("legacy_evidence" in error for error in errors))
+        self.assertTrue(any("flutter_evidence" in error for error in errors))
+        self.assertTrue(any("target_gate" in error for error in errors))
+        self.assertTrue(any("acceptance" in error for error in errors))
+
+    def test_validate_capability_parity_rejects_unknown_state_and_duplicates(self) -> None:
+        row = {
+            "capability": "X",
+            "legacy_evidence": "legacy",
+            "flutter_evidence": "flutter",
+            "current_state": "UNKNOWN",
+            "target_gate": "G2",
+            "acceptance": "works",
+        }
+        errors = validate_capability_parity([row, dict(row)])
+        self.assertTrue(any("invalid current_state" in error for error in errors))
+        self.assertTrue(any("duplicate capability" in error for error in errors))
 
 
 if __name__ == "__main__":

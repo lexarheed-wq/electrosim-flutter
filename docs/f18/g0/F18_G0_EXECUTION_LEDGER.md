@@ -50,3 +50,8 @@ Task 5 Ruling: run tools/analyze_legacy_reference.py immediately before tools/ve
 Task 5 final verification: workflow run 36720687139 PASS on head 5715fd244e6f70ce4d8f0764522543b4936dbbca; marker F18_G0_BASELINE_INVENTORY_GATE_PASS; Flutter suite 76/76 PASS.
 Task 5 evidence artifact: id 11099130881, digest sha256:cdae5aea664ed26b66156225c9b93093d2146f70b8865d6d25f2cf9e0a6ef011.
 Task 5: complete (commits 4357958..5715fd2, full G0 gate → PASS)
+
+
+Task 6 Ruling: a committed report cannot contain the SHA/run of the commit that contains itself. F18_G0_REPORT.md therefore records the qualified implementation head/run (5715fd2 / 36720687139); the final report+ledger head is verified separately by the next exact-head workflow and will be recorded in the PR. Cost if wrong: readers must consult the PR/Actions run for the final documentation-only head rather than finding that self-reference inside the report.
+Task 6 report generated from committed machine-readable outputs: 217 component rows (195 palette, 4 socket, 18 external), dispositions 12 REBUILD / 11 REPLACE / 168 DEFER / 26 RETIRE; 29 capability rows; current Flutter inventory 12 palette / 5 examples / 3 faults.
+Task 6 pending: exact-head full G0 gate and final whole-branch review. No further documentation-only commits after this ledger entry unless a review finding requires a fix.

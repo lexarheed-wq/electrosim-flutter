@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from tools.f18_g0_capture_baseline import capture_baseline, find_forbidden_g0_changes
-from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions, validate_capability_parity, validate_parity
+from tools.f18_g0_build_parity import check_committed_parity, extract_catalog_counts, extract_palette_definitions, validate_capability_parity, validate_parity
 
 
 EXPECTED_VERSION = "ELECTROSIM2-F17-R12-QUALIFIED"
@@ -272,6 +272,12 @@ class F18G0DriftGuardTests(unittest.TestCase):
     def test_drift_guard_rejects_version_and_toolchain_changes(self) -> None:
         paths = ["VERSION", "ci/TOOLCHAIN_LOCK.json"]
         self.assertEqual(find_forbidden_g0_changes(paths), paths)
+
+
+class F18G0CommittedChecksTests(unittest.TestCase):
+    def test_committed_parity_check_accepts_current_g0_artifacts(self) -> None:
+        errors = check_committed_parity(pathlib.Path("."))
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":

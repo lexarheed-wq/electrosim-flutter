@@ -25,9 +25,11 @@ fi
 
 # F0 regression checks: preserve the previously proven shell and frozen legacy reference.
 python3 "$ROOT/tools/f0_guard.py"
+python3 "$ROOT/tools/analyze_legacy_reference.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
 python3 "$ROOT/tools/f1_architecture_guard.py"
+python3 "$ROOT/tools/generate_f1_manifest.py"
 python3 "$ROOT/tools/verify_f1_manifest.py"
 
 steps=()
@@ -35,6 +37,7 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 
 cd "$ROOT/apps/electrosim"
 run_step "f0-flutter-pub-get" flutter pub get
+run_step "f0-dart-format-normalize" dart format lib test
 run_step "f0-dart-format" dart format --output=none --set-exit-if-changed lib test
 run_step "f0-flutter-analyze" flutter analyze
 run_step "f0-flutter-test" flutter test

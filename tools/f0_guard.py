@@ -43,11 +43,9 @@ for source_root in authored_roots:
         if p.suffix.lower() in {'.js', '.ts'}:
             errors.append(f'legacy-code-outside-reference:{rel.as_posix()}')
 
-# No catalog items in scenario package during F0.
-scen = ROOT / 'packages/electrosim_scenarios'
-for p in scen.rglob('*'):
-    if p.is_file() and p.name != 'README.md':
-        errors.append(f'scenario-content-in-f0:{p.relative_to(ROOT).as_posix()}')
+# Post-F0 Dart packages are legitimate regression inputs. The guard keeps
+# enforcing the timeless invariant above (no authored legacy JS/TS) rather
+# than preserving temporary "package must still be empty" assumptions from F0.
 
 # Verify frozen ZIP hash. The distributable must be self-contained: a missing
 # immutable legacy oracle is a structured gate failure, never an uncaught

@@ -4,7 +4,7 @@ import pathlib
 import tempfile
 import unittest
 
-from tools.f18_g0_capture_baseline import capture_baseline
+from tools.f18_g0_capture_baseline import capture_baseline, find_forbidden_g0_changes
 from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions, validate_capability_parity, validate_parity
 
 
@@ -246,6 +246,32 @@ class F18G0CapabilityParityTests(unittest.TestCase):
         errors = validate_capability_parity([row, dict(row)])
         self.assertTrue(any("invalid current_state" in error for error in errors))
         self.assertTrue(any("duplicate capability" in error for error in errors))
+
+
+class F18G0DriftGuardTests(unittest.TestCase):
+    def test_drift_guard_allows_only_g0_docs_tools_tests_and_workflow(self) -> None:
+        allowed = [
+            "docs/f18/g0/F18_G0_REPORT.md",
+            "docs/superpowers/specs/2026-09-30-electrosim-f18-product-parity-design.md",
+            "docs/superpowers/plans/2026-09-30-electrosim-f18-g0-baseline-inventory.md",
+            "tools/f18_g0_capture_baseline.py",
+            "tools/f18_g0_build_parity.py",
+            "tools/test_f18_g0_tooling.py",
+            ".github/workflows/f18-g0-baseline-inventory.yml",
+        ]
+        self.assertEqual(find_forbidden_g0_changes(allowed), [])
+
+    def test_drift_guard_rejects_runtime_and_core_library_changes(self) -> None:
+        paths = [
+            "apps/electrosim/lib/main.dart",
+            "packages/electrosim_domain/lib/src/circuit_state.dart",
+            "packages/electrosim_solver_dc/lib/src/solver.dart",
+        ]
+        self.assertEqual(find_forbidden_g0_changes(paths), paths)
+
+    def test_drift_guard_rejects_version_and_toolchain_changes(self) -> None:
+        paths = ["VERSION", "ci/TOOLCHAIN_LOCK.json"]
+        self.assertEqual(find_forbidden_g0_changes(paths), paths)
 
 
 if __name__ == "__main__":

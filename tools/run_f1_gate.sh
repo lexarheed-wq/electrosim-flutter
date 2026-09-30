@@ -37,6 +37,7 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 
 cd "$ROOT/apps/electrosim"
 run_step "f0-flutter-pub-get" flutter pub get
+run_step "f0-dart-format-normalize" dart format lib test
 run_step "f0-dart-format" dart format --output=none --set-exit-if-changed lib test
 run_step "f0-flutter-analyze" flutter analyze
 run_step "f0-flutter-test" flutter test

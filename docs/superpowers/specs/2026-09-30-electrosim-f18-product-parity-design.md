@@ -289,9 +289,9 @@ Toute modification exige :
 
 ## 21. Méthodologie autonome Superpowers + GitHub
 
-Après approbation de cette spécification :
+Après approbation de cette spécification, F18 est exécuté comme **programme de gates indépendants** et non comme un changement monolithique. Chaque gate G0→G12 possède son propre plan, sa branche/worktree, ses tests, ses preuves et sa PR. Un gate ne démarre qu'après qualification du précédent sur la base intégrée.
 
-1. écrire le plan détaillé dans `docs/superpowers/plans/` ;
+1. écrire le plan directeur F18 puis le plan détaillé du gate courant dans `docs/superpowers/plans/` ;
 2. créer un worktree/branche isolé depuis `main` vert ;
 3. TDD systématique rouge → vert → refactor ;
 4. petits commits vérifiables ;
@@ -300,6 +300,8 @@ Après approbation de cette spécification :
 7. revue de code après chaque lot majeur et avant fusion ;
 8. aucun merge si un gate échoue ;
 9. `main` reste stable et rollbackable.
+10. aucun gate n'est fusionné avec des findings Critiques ou Importants ouverts ; les findings Mineurs sont explicitement tracés.
+11. les validations physiques sont demandées uniquement quand un comportement matériel ne peut pas être qualifié de façon fiable en CI.
 
 Outils :
 - **Superpowers** : brainstorming, planning, TDD, debugging, review, verification ;

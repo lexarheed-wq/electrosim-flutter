@@ -1,0 +1,93 @@
+name: F17 physical Mac validation package
+
+on:
+  push:
+    branches:
+      - f17-physical-mac-validation
+    paths:
+      - '.github/workflows/f17-physical-mac-package.yml'
+      - 'tools/run_macos_test.sh'
+      - 'docs/f17/PHYSICAL_MAC_VALIDATION.md'
+
+permissions:
+  contents: read
+
+jobs:
+  source-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify qualified marker
+        run: test "$(cat VERSION)" = "ELECTROSIM2-F17-R12-QUALIFIED"
+      - name: Validate launcher syntax
+        run: bash -n tools/run_macos_test.sh
+      - name: Create Mac validation source ZIP
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -qr dist/ElectroSim2-F17-R12-QUALIFIED-Mac-Validation.zip .             -x '.git/*' 'dist/*' '.dart_tool/*' 'build/*' '**/.DS_Store'
+          sha256sum dist/ElectroSim2-F17-R12-QUALIFIED-Mac-Validation.zip             > dist/ElectroSim2-F17-R12-QUALIFIED-Mac-Validation.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim2-F17-R12-QUALIFIED-Mac-Validation
+          path: |
+            dist/ElectroSim2-F17-R12-QUALIFIED-Mac-Validation.zip
+            dist/ElectroSim2-F17-R12-QUALIFIED-Mac-Validation.zip.sha256
+          if-no-files-found: error
+
+  mac-intel-toolchain:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build verified offline Mac Intel toolchain bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          FLUTTER_ROOT="$(cd "$(dirname "$(command -v flutter)")/.." && pwd)"
+          test "$(flutter --version | awk 'NR==1 {print $2}')" = "3.38.10"
+          DART_VERSION="$(dart --version 2>&1 | sed -E 's/^Dart SDK version: ([0-9.]+).*/\1/' | head -1)"
+          test "$DART_VERSION" = "3.10.9"
+
+          mkdir -p dist/toolchain/archives
+          ARCHIVE="flutter-local-macos-x64-3.38.10.tar.xz"
+          (
+            cd "$(dirname "$FLUTTER_ROOT")"
+            tar -cJf "$GITHUB_WORKSPACE/dist/toolchain/archives/$ARCHIVE" "$(basename "$FLUTTER_ROOT")"
+          )
+          SHA="$(shasum -a 256 "dist/toolchain/archives/$ARCHIVE" | awk '{print $1}')"
+          python3 - "$SHA" "$ARCHIVE" <<'PY'
+import json, sys
+sha, name = sys.argv[1:]
+data = {
+  "schemaVersion": 1,
+  "kind": "repacked-verified-local-sdk",
+  "filename": name,
+  "sha256": sha,
+  "platform": "macos-x64",
+  "flutterVersion": "3.38.10",
+  "dartVersion": "3.10.9"
+}
+with open("dist/toolchain/LOCAL_TOOLCHAIN.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+with open("dist/toolchain/SHA256SUMS.txt", "w", encoding="utf-8") as f:
+    f.write(f"{sha}  {name}\n")
+PY
+          (
+            cd dist
+            zip -qr ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip toolchain
+          )
+          shasum -a 256 dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip             > dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-offline
+          path: |
+            dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip
+            dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
+          if-no-files-found: error

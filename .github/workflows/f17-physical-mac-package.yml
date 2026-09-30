@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/f17-physical-mac-package.yml'
       - 'tools/run_macos_test.sh'
+      - 'tools/install_macos_intel_toolchain_parts.sh'
       - 'docs/f17/PHYSICAL_MAC_VALIDATION.md'
 
 permissions:
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download and verify locked official Mac Intel Flutter archive
+      - name: Download, verify and split locked official Mac Intel Flutter archive
         shell: bash
         run: |
           set -euo pipefail
@@ -47,23 +48,67 @@ jobs:
           EXPECTED="b7056ba00082b9b814415e7516287bb94633c1108838bfe10f8f665307b99afa"
           URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/$ARCHIVE"
 
-          mkdir -p dist/bundle/toolchain/archives
-          curl --fail --location --retry 3 "$URL" -o "dist/bundle/toolchain/archives/$ARCHIVE"
+          mkdir -p dist/parts
+          curl --fail --location --retry 3 "$URL" -o "dist/$ARCHIVE"
 
-          ACTUAL="$(sha256sum "dist/bundle/toolchain/archives/$ARCHIVE" | awk '{print $1}')"
+          ACTUAL="$(sha256sum "dist/$ARCHIVE" | awk '{print $1}')"
           test "$ACTUAL" = "$EXPECTED"
-          printf '%s  %s\n' "$ACTUAL" "$ARCHIVE" > dist/bundle/toolchain/SHA256SUMS.txt
+          printf '%s  %s\n' "$ACTUAL" "$ARCHIVE" > dist/parts/SHA256SUMS.txt
+          split -b 300m -d -a 2 "dist/$ARCHIVE" "dist/parts/$ARCHIVE.part-"
 
-          cp ci/TOOLCHAIN_LOCK.json dist/bundle/toolchain/TOOLCHAIN_LOCK.json
-          (
-            cd dist/bundle
-            zip -qr ../ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip toolchain
-          )
-          sha256sum dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip             > dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
+          cat > dist/parts/README.txt <<'EOF'
+Place all flutter_macos_3.38.10-stable.zip.part-* files in one folder.
+From the ElectroSim source root, run:
+  chmod +x tools/install_macos_intel_toolchain_parts.sh
+  ./tools/install_macos_intel_toolchain_parts.sh /path/to/that/folder
+Then launch:
+  ./tools/run_macos_test.sh
+EOF
       - uses: actions/upload-artifact@v4
         with:
-          name: ElectroSim-Flutter-3.38.10-macOS-Intel-offline
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-manifest
           path: |
-            dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip
-            dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
+            dist/parts/SHA256SUMS.txt
+            dist/parts/README.txt
+            ci/TOOLCHAIN_LOCK.json
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-00
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-00
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-01
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-01
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-02
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-02
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-03
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-03
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-04
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-04
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-05
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-05
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-06
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-06
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-3.38.10-macOS-Intel-part-07
+          path: dist/parts/flutter_macos_3.38.10-stable.zip.part-07
+          if-no-files-found: ignore

@@ -7,9 +7,16 @@ Cette validation ne sert pas à redévelopper F17. Elle confirme seulement le co
 ## Lancement
 
 1. Décompresser le ZIP ElectroSim dans un dossier local.
-2. Si Flutter 3.38.10 / Dart 3.10.9 n'est pas déjà disponible, décompresser le bundle toolchain séparé à la racine du dossier ElectroSim. Il doit ajouter `toolchain/LOCAL_TOOLCHAIN.json` et `toolchain/archives/...`.
-3. Ouvrir Terminal dans le dossier ElectroSim.
-4. Exécuter :
+2. Si Flutter 3.38.10 / Dart 3.10.9 n'est pas déjà disponible, télécharger tous les morceaux `flutter_macos_3.38.10-stable.zip.part-*` dans un même dossier.
+3. Depuis le dossier ElectroSim, reconstruire et vérifier automatiquement l'archive officielle :
+
+```bash
+chmod +x tools/install_macos_intel_toolchain_parts.sh
+./tools/install_macos_intel_toolchain_parts.sh /chemin/vers/le/dossier/des/morceaux
+```
+
+4. Ouvrir Terminal dans le dossier ElectroSim.
+5. Exécuter :
 
 ```bash
 chmod +x tools/run_macos_test.sh

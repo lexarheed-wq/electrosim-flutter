@@ -1,0 +1,22 @@
+name: F18-G0 baseline inventory
+
+on:
+  push:
+    branches:
+      - f18-g0-baseline-inventory
+    paths:
+      - 'tools/f18_g0_*.py'
+      - 'tools/test_f18_g0_tooling.py'
+      - 'docs/f18/g0/**'
+      - '.github/workflows/f18-g0-baseline-inventory.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  g0-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run G0 tooling tests
+        run: python3 -m unittest tools.test_f18_g0_tooling -v

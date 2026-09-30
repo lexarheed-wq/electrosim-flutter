@@ -19,3 +19,9 @@ Task 1 RED: workflow run 36718170896 failed with ModuleNotFoundError for tools.f
 Task 1 GREEN: workflow run 36718286958 passed the four baseline tests after commit 9510729.
 Task 1 final verification: workflow run 36718365860 passed on head ba05ba7 after committing deterministic JSON/Markdown outputs.
 Task 1: complete (commits 31f70a1..ba05ba7, tests: python3 -m unittest tools.test_f18_g0_tooling -v → PASS)
+
+
+Task 2 RED: workflow run 36718517520 failed with ModuleNotFoundError for tools.f18_g0_build_parity, matching the planned missing-feature failure.
+Task 2 GREEN: workflow run 36718700391 passed inventory extraction tests after commit 08e29fa.
+Task 2 final verification: workflow run 36718771223 passed on head caffa983 with committed current-product inventory.
+Task 2: complete (commits be0a00f..caffa983, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0ParityTests -v → PASS)

@@ -51,6 +51,7 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 # Mac, R6 reached Dart successfully but dart format ran before pub get, which
 # caused package-resolution warnings and exposed an unformatted F0 source file.
 run_step "flutter-pub-get" flutter pub get
+run_step "dart-format-normalize" dart format lib test
 run_step "dart-format" dart format --output=none --set-exit-if-changed lib test
 run_step "flutter-analyze" flutter analyze
 run_step "flutter-test" flutter test

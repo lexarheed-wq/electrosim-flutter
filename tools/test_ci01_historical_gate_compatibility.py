@@ -66,5 +66,18 @@ class CI01HistoricalGateCompatibilityTests(unittest.TestCase):
             self.assertGreater(verify, analyze, f"{script_name} must analyze before verify")
 
 
+    def test_f0_and_f1_refresh_their_historical_manifests_before_verifying(self):
+        expectations = {
+            "run_f0_gate.sh": ("generate_f0_manifest.py", "verify_f0_manifest.py"),
+            "run_f1_gate.sh": ("generate_f1_manifest.py", "verify_f1_manifest.py"),
+        }
+        for script_name, (generate_name, verify_name) in expectations.items():
+            script = (ROOT / "tools" / script_name).read_text(encoding="utf-8")
+            generate = script.find(generate_name)
+            verify = script.find(verify_name)
+            self.assertGreaterEqual(generate, 0, f"{script_name} must refresh its manifest")
+            self.assertGreater(verify, generate, f"{script_name} must refresh before verify")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

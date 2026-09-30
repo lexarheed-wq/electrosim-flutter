@@ -92,5 +92,16 @@ class CI01HistoricalGateCompatibilityTests(unittest.TestCase):
             )
 
 
+    def test_completed_f18_g0_gate_is_not_a_global_pull_request_gate(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "f18-g0-baseline-inventory.yml"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn(
+            "pull_request:",
+            workflow,
+            "completed G0 phase gate must not reject unrelated future PRs",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

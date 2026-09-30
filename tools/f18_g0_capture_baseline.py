@@ -2,6 +2,7 @@
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
 from typing import Any
 
@@ -17,6 +18,35 @@ OUT_MD = ROOT / "docs" / "f18" / "g0" / "F18_G0_BASELINE.md"
 
 def _read_json(path: pathlib.Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def find_forbidden_g0_changes(paths: list[str]) -> list[str]:
+    allowed_exact = {
+        ".github/workflows/f18-g0-baseline-inventory.yml",
+        "tools/test_f18_g0_tooling.py",
+    }
+    forbidden: list[str] = []
+    for raw in paths:
+        path = raw.strip()
+        if not path:
+            continue
+        allowed = (
+            path.startswith("docs/")
+            or path.startswith("tools/f18_g0_")
+            or path in allowed_exact
+        )
+        if not allowed:
+            forbidden.append(path)
+    return forbidden
+
+
+def _changed_paths(base_sha: str) -> list[str]:
+    output = subprocess.check_output(
+        ["git", "diff", "--name-only", f"{base_sha}...HEAD"],
+        cwd=ROOT,
+        text=True,
+    )
+    return [line.strip() for line in output.splitlines() if line.strip()]
 
 
 def capture_baseline(root: pathlib.Path) -> dict[str, object]:
@@ -112,6 +142,7 @@ def _check(snapshot: dict[str, object]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--base-sha")
     args = parser.parse_args(argv)
 
     try:
@@ -120,6 +151,12 @@ def main(argv: list[str] | None = None) -> int:
             _check(snapshot)
         else:
             _write(snapshot)
+        if args.base_sha:
+            forbidden = find_forbidden_g0_changes(_changed_paths(args.base_sha))
+            if forbidden:
+                raise ValueError(
+                    "forbidden G0 changes: " + ", ".join(forbidden)
+                )
     except Exception as exc:
         print(f"F18_G0_BASELINE_FAIL {exc}", file=sys.stderr)
         return 1

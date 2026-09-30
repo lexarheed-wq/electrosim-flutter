@@ -1,10 +1,11 @@
+import csv
 import json
 import pathlib
 import tempfile
 import unittest
 
 from tools.f18_g0_capture_baseline import capture_baseline
-from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions
+from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions, validate_parity
 
 
 EXPECTED_VERSION = "ELECTROSIM2-F17-R12-QUALIFIED"
@@ -140,6 +141,53 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
             sources.append(pathlib.Path(path).read_text(encoding="utf-8"))
         counts = extract_catalog_counts("\n".join(sources))
         self.assertEqual(counts, {"examples": 5, "faultScenarios": 3})
+
+
+class F18G0ParityMatrixTests(unittest.TestCase):
+    def test_committed_product_parity_matrix_is_exhaustive(self) -> None:
+        path = pathlib.Path("docs/f18/g0/F18_PRODUCT_PARITY.csv")
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(validate_parity(rows), [])
+        self.assertEqual(len(rows), 217)
+        self.assertEqual(sum(r["entity_class"] == "palette-component" for r in rows), 195)
+        self.assertEqual(sum(r["entity_class"] == "socket" for r in rows), 4)
+        self.assertEqual(sum(r["entity_class"] == "external-appliance" for r in rows), 18)
+        self.assertNotIn("UNREVIEWED", {r["disposition"] for r in rows})
+
+    def test_validate_parity_rejects_duplicate_legacy_ids(self) -> None:
+        row = {
+            "legacy_id": "dup", "label": "Dup", "entity_class": "palette-component",
+            "legacy_category": "X", "legacy_modes": "CC", "flutter_model_type": "",
+            "disposition": "DEFER", "reason": "Needs a model", "target_gate": "G5",
+            "visual_family": "x",
+        }
+        errors = validate_parity([row, dict(row)])
+        self.assertTrue(any("duplicate legacy_id" in error for error in errors))
+
+    def test_validate_parity_rejects_invalid_disposition_and_empty_reason(self) -> None:
+        row = {
+            "legacy_id": "x", "label": "X", "entity_class": "palette-component",
+            "legacy_category": "X", "legacy_modes": "CC", "flutter_model_type": "",
+            "disposition": "UNREVIEWED", "reason": "", "target_gate": "",
+            "visual_family": "",
+        }
+        errors = validate_parity([row])
+        self.assertTrue(any("invalid disposition" in error for error in errors))
+        self.assertTrue(any("reason" in error for error in errors))
+        self.assertTrue(any("target_gate" in error for error in errors))
+        self.assertTrue(any("visual_family" in error for error in errors))
+
+    def test_validate_parity_rejects_unknown_flutter_model_type_outside_rebuild(self) -> None:
+        row = {
+            "legacy_id": "x", "label": "X", "entity_class": "palette-component",
+            "legacy_category": "X", "legacy_modes": "CC",
+            "flutter_model_type": "invented_model",
+            "disposition": "DEFER", "reason": "Deferred", "target_gate": "G5",
+            "visual_family": "x",
+        }
+        errors = validate_parity([row])
+        self.assertTrue(any("unknown flutter_model_type" in error for error in errors))
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@
 - Toolchain : Flutter 3.38.10 / Dart 3.10.9.
 - Figma est la source de vérité visuelle ; le code ne peut pas devenir une source de substitution si l’écriture Figma échoue.
 - Le fichier Figma G1 porte le nom exact `ElectroSim F18 — Design System G1`.
-- Pages Figma exactes : `00 Foundations`, `01 Components`, `02 Electrical Visual Language`, `03 Reference Screens`.
+- Pages Figma exactes : `00 Foundations`, `01 Components`, `02 Electrical System`. La troisième page contient deux sections de premier niveau : `Electrical Visual Language` et `Reference Screens`.
 - Frames de référence obligatoires : Accueil 1440×900, Workspace 1440×900, Workspace compact 390×844, Recherche de dérangement élève.
 - Les breakpoints restent : compact < 600, medium 600–1000, expanded > 1000.
 - Aucun fichier sous `apps/electrosim/lib/**`, `packages/electrosim_domain/**`, `packages/electrosim_topology/**`, `packages/electrosim_solver_dc/**`, `packages/electrosim_solver_ac/**`, `packages/electrosim_pv/**`, `packages/electrosim_energy/**`, `packages/electrosim_measurements/**`, `packages/electrosim_diagnostics/**`, `packages/electrosim_tp/**` ou `packages/electrosim_storage/**` ne peut être modifié par G1.
@@ -88,14 +88,14 @@
 
 **Interfaces:**
 - Consumes: Figma plan key `team::1683861915998326637`.
-- Produces: `fileKey`, `fileUrl`, and page IDs for exactly four pages.
+- Produces: `fileKey`, `fileUrl`, and page IDs for exactly three pages.
 - Produces JSON keys:
   - `schemaVersion: 1`
   - `fileName`
   - `fileKey`
   - `url`
   - `planKey`
-  - `pages.foundations|components|electricalVisualLanguage|referenceScreens.nodeId`
+  - `pages.foundations|components|electricalSystem.nodeId`
   - `referenceFrames` initially empty.
 
 - [ ] **Step 1: Load required Figma skills**
@@ -114,13 +114,13 @@
 - [ ] **Step 3: Inspect the new file before mutation**
   Read pages, local variables, styles and libraries. Expected: blank/new-file state or known starter content only.
 
-- [ ] **Step 4: Create the exact four-page skeleton**
+- [ ] **Step 4: Create the exact three-page skeleton**
   Use sequential `use_figma` mutations with deterministic page names:
-  `00 Foundations`, `01 Components`, `02 Electrical Visual Language`, `03 Reference Screens`.
+  `00 Foundations`, `01 Components`, `02 Electrical System`.
   Delete no unknown content; reuse the initial blank page by renaming it where safe.
 
 - [ ] **Step 5: Verify page structure**
-  Read back page IDs/names. Expected: each required page appears exactly once.
+  Read back page IDs/names. Expected: each of the three required pages appears exactly once. On `02 Electrical System`, create two deterministic top-level sections named `Electrical Visual Language` and `Reference Screens` before Task 4 content is added.
 
 - [ ] **Step 6: Commit Figma reference + ledger**
   Commit message: `F18-G1: register writable Figma design source`.
@@ -207,14 +207,15 @@
 - [ ] **Step 8: Commit reference updates**
   Commit message: `F18-G1: record Figma component library identities`.
 
-### Task 4: Build the electrical visual language and four reference screens
+### Task 4: Build the electrical system page and four reference screens
 
 **Files:**
 - Modify: `docs/f18/g1/F18_G1_FIGMA_REFERENCE.json`
 - Modify: `docs/f18/g1/F18_G1_EXECUTION_LEDGER.md`
 
 **Interfaces:**
-- Consumes: Tasks 2–3 foundations/components.
+- Consumes: Tasks 2–3 foundations/components and Task 1 `electricalSystem` page ID.
+- Produces two top-level sections on `02 Electrical System`: `Electrical Visual Language` and `Reference Screens`.
 - Produces archetype cards for `source`, `protection`, `control`, `load`, `rotating-machine`, `measurement`, `conversion`, `pv-energy`.
 - Produces exact frames:
   - `Reference/Home/Desktop` 1440×900
@@ -222,31 +223,34 @@
   - `Reference/Workspace/Compact` 390×844
   - `Reference/Troubleshooting/Student` 820×1180
 
-- [ ] **Step 1: Build Electrical Visual Language archetypes**
+- [ ] **Step 1: Resolve the two Electrical System sections**
+  Verify or create exactly one top-level section `Electrical Visual Language` and exactly one top-level section `Reference Screens` on `02 Electrical System`; all Task 4 nodes must be descendants of one of these sections.
+
+- [ ] **Step 2: Build Electrical Visual Language archetypes**
   Each archetype documents silhouette, terminal placement, markings, palette simplification, canvas rendering, UI states and electrical states. Explicitly separate `selected/focused/dragging` from `energized/running/faulted`.
 
-- [ ] **Step 2: Build Home desktop reference**
+- [ ] **Step 3: Build Home desktop reference**
   Must expose exactly three primary entry cards plus secondary `Rejoindre une session`, with professional density and no redundant entry choice.
 
-- [ ] **Step 3: Build Workspace desktop reference**
+- [ ] **Step 4: Build Workspace desktop reference**
   Must simultaneously show top bar, palette, dominant canvas, inspector, status bar, selection state and a small demonstrator circuit. Demonstrator components are visual examples, not new runtime support.
 
-- [ ] **Step 4: Build Workspace compact reference**
+- [ ] **Step 5: Build Workspace compact reference**
   Canvas remains dominant; palette and inspector are invoked contextually without permanent side panels; no clipping at 390×844.
 
-- [ ] **Step 5: Build Troubleshooting student reference**
+- [ ] **Step 6: Build Troubleshooting student reference**
   Must show Canvas, deployable diagnostic sheet, measurement progress and repair gating; no student EIE coach.
 
-- [ ] **Step 6: Structural audit**
+- [ ] **Step 7: Structural audit**
   For each reference frame: verify dimensions, descendant type counts, component instances, variable bindings, no full-screen raster/image capture, no placeholder nodes and no clipped text.
 
-- [ ] **Step 7: Visual audit**
+- [ ] **Step 8: Visual audit**
   Take one screenshot per reference frame at readable size. Apply targeted fixes only to defects found.
 
-- [ ] **Step 8: Record frame IDs**
+- [ ] **Step 9: Record frame IDs**
   Populate `referenceFrames.homeDesktop|workspaceDesktop|workspaceCompact|troubleshootingStudent` with node ID and dimensions.
 
-- [ ] **Step 9: Commit reference updates**
+- [ ] **Step 10: Commit reference updates**
   Commit message: `F18-G1: record electrical language and reference frames`.
 
 ### Task 5: Obtain the single human visual approval and freeze reference images

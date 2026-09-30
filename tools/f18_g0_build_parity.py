@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+import argparse
+import csv
+import pathlib
 import re
+import sys
 
 
 _FIELD_PATTERNS = {
@@ -156,3 +160,97 @@ def validate_capability_parity(rows: list[dict[str, str]]) -> list[str]:
             if not row[field].strip():
                 errors.append(f"row {index}: {field} is empty")
     return errors
+
+
+REQUIRED_PRODUCT_CAPABILITIES = frozenset({
+    "Accueil",
+    "Session",
+    "Centre de maintenance",
+    "Centre de conception",
+    "Palette composants",
+    "Canvas",
+    "Câblage interactif",
+    "Mesures",
+    "Énergie",
+    "EIE / diagnostic",
+    "Sauvegardes locales",
+    "TP câblage",
+    "Recherche de dérangement",
+    "Supervision professeur",
+    "Responsive/mobile",
+    "LAN professeur/élève",
+})
+
+
+def _read_csv(path: pathlib.Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def check_committed_parity(root: pathlib.Path) -> list[str]:
+    errors: list[str] = []
+
+    product_path = root / "docs" / "f18" / "g0" / "F18_PRODUCT_PARITY.csv"
+    capability_path = root / "docs" / "f18" / "g0" / "F18_CAPABILITY_PARITY.csv"
+    try:
+        product_rows = _read_csv(product_path)
+    except Exception as exc:
+        errors.append(f"product parity unreadable: {exc}")
+        product_rows = []
+    try:
+        capability_rows = _read_csv(capability_path)
+    except Exception as exc:
+        errors.append(f"capability parity unreadable: {exc}")
+        capability_rows = []
+
+    errors.extend(validate_parity(product_rows))
+    errors.extend(validate_capability_parity(capability_rows))
+
+    if len(product_rows) != 217:
+        errors.append(f"product parity row count must be 217, got {len(product_rows)}")
+
+    expected_classes = {
+        "palette-component": 195,
+        "socket": 4,
+        "external-appliance": 18,
+    }
+    for entity_class, expected in expected_classes.items():
+        actual = sum(row.get("entity_class") == entity_class for row in product_rows)
+        if actual != expected:
+            errors.append(
+                f"entity_class {entity_class} count must be {expected}, got {actual}"
+            )
+
+    capabilities = {row.get("capability", "") for row in capability_rows}
+    missing_capabilities = sorted(REQUIRED_PRODUCT_CAPABILITIES - capabilities)
+    if missing_capabilities:
+        errors.append(
+            "missing required capabilities: " + ", ".join(missing_capabilities)
+        )
+    if len(capability_rows) < 22:
+        errors.append(
+            f"capability parity must contain at least 22 rows, got {len(capability_rows)}"
+        )
+
+    return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args(argv)
+    if not args.check:
+        parser.error("--check is required; generation is intentionally explicit")
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    errors = check_committed_parity(root)
+    if errors:
+        for error in errors:
+            print(f"F18_G0_PRODUCT_PARITY_ERROR {error}", file=sys.stderr)
+        return 1
+    print("F18_G0_PRODUCT_PARITY_PASS rows=217")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

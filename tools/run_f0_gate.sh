@@ -10,6 +10,7 @@ exec > >(tee "$LOG") 2>&1
 
 python3 "$ROOT/tools/toolchain_probe.py"
 python3 "$ROOT/tools/f0_guard.py"
+python3 "$ROOT/tools/analyze_legacy_reference.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
 python3 "$ROOT/tools/verify_f0_manifest.py"

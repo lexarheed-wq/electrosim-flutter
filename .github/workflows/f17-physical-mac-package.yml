@@ -56,14 +56,14 @@ jobs:
           printf '%s  %s\n' "$ACTUAL" "$ARCHIVE" > dist/parts/SHA256SUMS.txt
           split -b 300m -d -a 2 "dist/$ARCHIVE" "dist/parts/$ARCHIVE.part-"
 
-          cat > dist/parts/README.txt <<'EOF'
-Place all flutter_macos_3.38.10-stable.zip.part-* files in one folder.
-From the ElectroSim source root, run:
-  chmod +x tools/install_macos_intel_toolchain_parts.sh
-  ./tools/install_macos_intel_toolchain_parts.sh /path/to/that/folder
-Then launch:
-  ./tools/run_macos_test.sh
-EOF
+          printf '%s\n' \
+            'Place all flutter_macos_3.38.10-stable.zip.part-* files in one folder.' \
+            'From the ElectroSim source root, run:' \
+            '  chmod +x tools/install_macos_intel_toolchain_parts.sh' \
+            '  ./tools/install_macos_intel_toolchain_parts.sh /path/to/that/folder' \
+            'Then launch:' \
+            '  ./tools/run_macos_test.sh' \
+            > dist/parts/README.txt
       - uses: actions/upload-artifact@v4
         with:
           name: ElectroSim-Flutter-3.38.10-macOS-Intel-manifest

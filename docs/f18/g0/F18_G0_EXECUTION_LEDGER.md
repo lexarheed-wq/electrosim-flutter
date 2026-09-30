@@ -13,3 +13,9 @@ Pre-flight shared interfaces:
 Ruling: G0 branch starts from the approved spec/plan head 0a2e1eeb rather than raw main so the binding spec is reachable during execution. Product/runtime files remain identical to main@554d1568. Cost if wrong: documentation commits would need to be split into a separate PR before merge.
 
 Ruling: introduce the G0 workflow during Task 1 instead of Task 5 solely to observe RED→GREEN remotely. The workflow is configuration-only and will be expanded at Task 5. Cost if wrong: one workflow-history cleanup/refactor, no product behavior impact.
+
+
+Task 1 RED: workflow run 36718170896 failed with ModuleNotFoundError for tools.f18_g0_capture_baseline, matching the planned missing-feature failure.
+Task 1 GREEN: workflow run 36718286958 passed the four baseline tests after commit 9510729.
+Task 1 final verification: workflow run 36718365860 passed on head ba05ba7 after committing deterministic JSON/Markdown outputs.
+Task 1: complete (commits 31f70a1..ba05ba7, tests: python3 -m unittest tools.test_f18_g0_tooling -v → PASS)

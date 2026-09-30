@@ -35,9 +35,22 @@ fi
 
 "$FLUTTER_BIN" pub get
 
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos --check
+
+echo
+echo "Prévalidation locale rapide..."
+"$FLUTTER_BIN" analyze
+"$FLUTTER_BIN" test \
+  test/f0_smoke_test.dart \
+  test/f17_lan_sync_test.dart \
+  test/f17_persistence_test.dart \
+  test/f9_shell_test.dart
+
 echo
 echo "============================================================"
-echo "ElectroSim est prêt pour le test macOS."
+echo "ElectroSim F17-R12 QUALIFIED est prêt pour le test macOS."
+echo "Vérifiez : navigation, trackpad pan/zoom, rendu, sauvegarde/reprise et LAN."
 echo "Fermez l'application ou faites Ctrl+C dans Terminal pour arrêter."
 echo "============================================================"
 echo

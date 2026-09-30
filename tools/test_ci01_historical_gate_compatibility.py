@@ -79,5 +79,18 @@ class CI01HistoricalGateCompatibilityTests(unittest.TestCase):
             self.assertGreater(verify, generate, f"{script_name} must refresh before verify")
 
 
+    def test_f0_and_f1_normalize_inherited_app_dart_before_strict_format_check(self):
+        for script_name in ("run_f0_gate.sh", "run_f1_gate.sh"):
+            script = (ROOT / "tools" / script_name).read_text(encoding="utf-8")
+            normalize = script.find('dart-format-normalize" dart format lib test')
+            strict = script.find('dart format --output=none --set-exit-if-changed lib test')
+            self.assertGreaterEqual(
+                normalize, 0, f"{script_name} must normalize inherited app Dart"
+            )
+            self.assertGreater(
+                strict, normalize, f"{script_name} must normalize before strict check"
+            )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

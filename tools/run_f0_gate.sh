@@ -13,6 +13,7 @@ python3 "$ROOT/tools/f0_guard.py"
 python3 "$ROOT/tools/analyze_legacy_reference.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
+python3 "$ROOT/tools/generate_f0_manifest.py"
 python3 "$ROOT/tools/verify_f0_manifest.py"
 python3 "$ROOT/tools/test_f0_tooling.py"
 

@@ -29,6 +29,7 @@ python3 "$ROOT/tools/analyze_legacy_reference.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
 python3 "$ROOT/tools/f1_architecture_guard.py"
+python3 "$ROOT/tools/generate_f1_manifest.py"
 python3 "$ROOT/tools/verify_f1_manifest.py"
 
 steps=()

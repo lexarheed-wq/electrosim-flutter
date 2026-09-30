@@ -113,3 +113,46 @@ def validate_parity(rows: list[dict[str, str]]) -> list[str]:
                     f"row {index}: unknown flutter_model_type {model_type}"
                 )
     return errors
+
+
+ALLOWED_CAPABILITY_STATES = frozenset({
+    "PRESENT",
+    "PARTIAL",
+    "MISSING",
+    "INTENTIONALLY_REDESIGNED",
+})
+REQUIRED_CAPABILITY_FIELDS = (
+    "capability",
+    "legacy_evidence",
+    "flutter_evidence",
+    "current_state",
+    "target_gate",
+    "acceptance",
+)
+
+
+def validate_capability_parity(rows: list[dict[str, str]]) -> list[str]:
+    errors: list[str] = []
+    seen: set[str] = set()
+    for index, row in enumerate(rows, start=2):
+        missing = [field for field in REQUIRED_CAPABILITY_FIELDS if field not in row]
+        if missing:
+            errors.append(f"row {index}: missing fields {','.join(missing)}")
+            continue
+
+        capability = row["capability"].strip()
+        if not capability:
+            errors.append(f"row {index}: capability is empty")
+        elif capability in seen:
+            errors.append(f"row {index}: duplicate capability {capability}")
+        else:
+            seen.add(capability)
+
+        state = row["current_state"].strip()
+        if state not in ALLOWED_CAPABILITY_STATES:
+            errors.append(f"row {index}: invalid current_state {state or '<empty>'}")
+
+        for field in ("legacy_evidence", "flutter_evidence", "target_gate", "acceptance"):
+            if not row[field].strip():
+                errors.append(f"row {index}: {field} is empty")
+    return errors

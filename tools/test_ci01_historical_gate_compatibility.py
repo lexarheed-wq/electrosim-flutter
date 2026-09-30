@@ -52,5 +52,19 @@ class CI01HistoricalGateCompatibilityTests(unittest.TestCase):
             probe.unlink(missing_ok=True)
 
 
+    def test_historical_gates_generate_legacy_audit_before_verifying_it(self):
+        for script_name in (
+            "run_f0_gate.sh",
+            "run_f1_gate.sh",
+            "run_f2_gate.sh",
+            "run_f3_gate.sh",
+        ):
+            script = (ROOT / "tools" / script_name).read_text(encoding="utf-8")
+            analyze = script.find("analyze_legacy_reference.py")
+            verify = script.find("verify_legacy_reference.py")
+            self.assertGreaterEqual(analyze, 0, f"{script_name} must generate the legacy audit")
+            self.assertGreater(verify, analyze, f"{script_name} must analyze before verify")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

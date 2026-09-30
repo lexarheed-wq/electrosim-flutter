@@ -55,3 +55,22 @@ Task 5: complete (commits 4357958..5715fd2, full G0 gate → PASS)
 Task 6 Ruling: a committed report cannot contain the SHA/run of the commit that contains itself. F18_G0_REPORT.md therefore records the qualified implementation head/run (5715fd2 / 36720687139); the final report+ledger head is verified separately by the next exact-head workflow and will be recorded in the PR. Cost if wrong: readers must consult the PR/Actions run for the final documentation-only head rather than finding that self-reference inside the report.
 Task 6 report generated from committed machine-readable outputs: 217 component rows (195 palette, 4 socket, 18 external), dispositions 12 REBUILD / 11 REPLACE / 168 DEFER / 26 RETIRE; 29 capability rows; current Flutter inventory 12 palette / 5 examples / 3 faults.
 Task 6 pending: exact-head full G0 gate and final whole-branch review. No further documentation-only commits after this ledger entry unless a review finding requires a fix.
+
+
+Task 6 exact-head pre-review gate: workflow run 36721078747 PASS on head 567ebb8d679789dbc97f8e10c2d7e5569bf60d20; marker F18_G0_BASELINE_INVENTORY_GATE_PASS; Flutter suite 76/76 PASS; evidence artifact 11098856542 digest sha256:461aa7484e0888e71c3c514f41cb1e802ade8db614aeaabde3442f76687fcc9f.
+Task 6: complete (report generated from committed machine-readable outputs; exact-head gate PASS).
+
+Final review: self-review (no subagent tool).
+Final review scope: main@554d156839418f2be690980fe8acb941f776a425..f18-g0-baseline-inventory@567ebb8d679789dbc97f8e10c2d7e5569bf60d20.
+Final review findings:
+- Critical: 0.
+- Important: 0.
+- Minor (deferred): drift guard intentionally allows all docs/** during G0 rather than a narrower F18-only documentation allowlist. Current branch contains only approved F18/F18-G0 documentation; risk is limited to a future unrelated docs-only edit escaping the G0 drift rule.
+- Minor (deferred): G0 drift baseline is pinned to main@554d1568. If main advances before merge, the PR gate may fail conservatively and require an explicit rebase/rebaseline instead of silently accepting concurrent product changes.
+Final review checks:
+- product/runtime/core files changed: 0;
+- legacy component rows: 217 exactly, IDs unique, no UNREVIEWED;
+- capability rows: 29 with required surface covered;
+- deterministic baseline outputs contain no timestamp;
+- no legacy code is executed as application runtime;
+- workflow verifies frozen V1 SHA, lock stability, analyze and complete Flutter tests.

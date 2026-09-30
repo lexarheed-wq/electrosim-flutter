@@ -25,3 +25,11 @@ Task 2 RED: workflow run 36718517520 failed with ModuleNotFoundError for tools.f
 Task 2 GREEN: workflow run 36718700391 passed inventory extraction tests after commit 08e29fa.
 Task 2 final verification: workflow run 36718771223 passed on head caffa983 with committed current-product inventory.
 Task 2: complete (commits be0a00f..caffa983, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0ParityTests -v → PASS)
+
+
+Task 3 RED-1: workflow run 36718962740 failed because validate_parity did not exist, matching the planned validator gap.
+Task 3 RED-2: workflow run 36719190187 passed 10/11 tests and failed only because docs/f18/g0/F18_PRODUCT_PARITY.csv did not yet exist.
+Task 3 Ruling: current support is conservative — only the 12 modelType values demonstrated by the qualified Flutter palette are marked REBUILD. Measurement entities are REPLACE via MeasurementEngine; legacy compatibility entries are RETIRE; all other unsupported/unproven families are DEFER until G5 evidence. Cost if wrong: a genuinely supported family may remain hidden one gate longer, but no unsupported component is falsely exposed.
+Task 3 classification: 217 rows = 12 REBUILD, 11 REPLACE, 168 DEFER, 26 RETIRE; entity classes remain 195 palette-component, 4 socket, 18 external-appliance.
+Task 3 GREEN/final verification: workflow run 36719356243 passed the complete G0 Python suite on head 2ce88da.
+Task 3: complete (commits 73a3161..2ce88da, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0ParityMatrixTests -v → PASS)

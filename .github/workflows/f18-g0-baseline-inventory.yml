@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - f18-g0-baseline-inventory
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:

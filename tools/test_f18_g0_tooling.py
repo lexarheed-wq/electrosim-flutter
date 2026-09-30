@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from tools.f18_g0_capture_baseline import capture_baseline
+from tools.f18_g0_build_parity import extract_catalog_counts, extract_palette_definitions
 
 
 EXPECTED_VERSION = "ELECTROSIM2-F17-R12-QUALIFIED"
@@ -89,6 +90,56 @@ class F18G0BaselineTests(unittest.TestCase):
             second = capture_baseline(root)
             self.assertEqual(first, second)
             self.assertNotIn("timestamp", json.dumps(first).lower())
+
+
+class F18G0ParityTests(unittest.TestCase):
+    def test_extract_palette_definitions_finds_exact_current_catalog(self) -> None:
+        source = (pathlib.Path("apps/electrosim/lib/f9_component_palette.dart")
+                  .read_text(encoding="utf-8"))
+        items = extract_palette_definitions(source)
+        self.assertEqual(len(items), 12)
+        self.assertEqual(len({item["keyName"] for item in items}), 12)
+        self.assertEqual(len({item["modelType"] for item in items}), 12)
+        self.assertEqual(items[0]["keyName"], "source-dc-24v")
+        self.assertEqual(items[0]["modelType"], "dc_voltage_source")
+        self.assertIn("relay_coil", {item["modelType"] for item in items})
+
+    def test_extract_palette_definitions_rejects_duplicate_keys(self) -> None:
+        block = """
+const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
+  F9PaletteDefinition(
+    keyName: 'dup',
+    title: 'A',
+    category: 'X',
+    modelType: 'a',
+    icon: Icons.add,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1', '2'],
+  ),
+  F9PaletteDefinition(
+    keyName: 'dup',
+    title: 'B',
+    category: 'X',
+    modelType: 'b',
+    icon: Icons.add,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1', '2'],
+  ),
+];
+"""
+        with self.assertRaisesRegex(ValueError, "duplicate palette key"):
+            extract_palette_definitions(block)
+
+    def test_extract_catalog_counts_finds_five_examples_and_three_faults(self) -> None:
+        sources = []
+        for path in (
+            "packages/electrosim_scenarios/lib/src/f10_examples.dart",
+            "packages/electrosim_scenarios/lib/src/f11_fault_scenarios.dart",
+            "packages/electrosim_scenarios/lib/src/f16_catalog.dart",
+        ):
+            sources.append(pathlib.Path(path).read_text(encoding="utf-8"))
+        counts = extract_catalog_counts("\n".join(sources))
+        self.assertEqual(counts, {"examples": 5, "faultScenarios": 3})
 
 
 if __name__ == "__main__":

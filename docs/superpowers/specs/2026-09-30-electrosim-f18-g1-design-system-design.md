@@ -90,7 +90,7 @@ Le système actuel souffre principalement de trois limites :
 
 ## 5. Structure du fichier Figma G1
 
-Le fichier doit contenir exactement quatre pages principales.
+Le fichier doit contenir exactement **trois pages principales**. Cette adaptation a été validée après constat de la limite Figma Starter à trois pages ; elle ne réduit aucun livrable fonctionnel.
 
 ### 5.1 Foundations
 
@@ -138,7 +138,11 @@ Composants fondamentaux minimum :
 
 Chaque composant possède variantes de taille, état et interaction si pertinentes.
 
-### 5.3 Electrical Visual Language
+### 5.3 Electrical System
+
+Cette page regroupe deux sections indépendantes : `Electrical Visual Language` et `Reference Screens`.
+
+#### 5.3.1 Electrical Visual Language
 
 Doit définir :
 
@@ -158,7 +162,7 @@ Doit définir :
 
 G1 ne dessine pas toutes les familles finales. Il définit un **contrat de rendu** applicable à G4.
 
-### 5.4 Reference Screens
+#### 5.3.2 Reference Screens
 
 Quatre frames obligatoires :
 
@@ -463,15 +467,16 @@ Règles :
 
 ## 19. Gestion de la permission Figma
 
-Le connecteur Figma est actif, mais l’identité courante expose un siège `View`.
+Le connecteur Figma est actif. Le fichier G1 a pu être créé sur le plan Starter, qui impose toutefois une limite de trois pages et un quota MCP. La structure G1 est donc volontairement adaptée à trois pages physiques sans réduire son contenu.
 
 Le workflow G1 doit :
 
 1. tenter proprement la création ou l’édition après approbation de la présente spec ;
-2. si l’écriture est refusée, arrêter uniquement le sous-gate Figma ;
-3. ne pas contourner Figma en déclarant arbitrairement le code comme source visuelle ;
-4. demander à l’utilisateur uniquement l’action minimale nécessaire pour obtenir une permission d’écriture ;
-5. reprendre ensuite sur le même plan.
+2. utiliser exactement trois pages : `00 Foundations`, `01 Components`, `02 Electrical System` ;
+3. si l’écriture ou le quota MCP bloque l’opération, arrêter uniquement le sous-gate Figma ;
+4. ne pas contourner Figma en déclarant arbitrairement le code comme source visuelle ;
+5. demander à l’utilisateur uniquement l’action minimale nécessaire si une permission ou capacité externe manque ;
+6. reprendre ensuite sur le même plan.
 
 Une limitation de siège n’autorise pas à dégrader la méthodologie.
 

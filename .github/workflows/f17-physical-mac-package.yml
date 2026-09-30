@@ -61,24 +61,7 @@ jobs:
             tar -cJf "$GITHUB_WORKSPACE/dist/toolchain/archives/$ARCHIVE" "$(basename "$FLUTTER_ROOT")"
           )
           SHA="$(shasum -a 256 "dist/toolchain/archives/$ARCHIVE" | awk '{print $1}')"
-          python3 - "$SHA" "$ARCHIVE" <<'PY'
-import json, sys
-sha, name = sys.argv[1:]
-data = {
-  "schemaVersion": 1,
-  "kind": "repacked-verified-local-sdk",
-  "filename": name,
-  "sha256": sha,
-  "platform": "macos-x64",
-  "flutterVersion": "3.38.10",
-  "dartVersion": "3.10.9"
-}
-with open("dist/toolchain/LOCAL_TOOLCHAIN.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
-with open("dist/toolchain/SHA256SUMS.txt", "w", encoding="utf-8") as f:
-    f.write(f"{sha}  {name}\n")
-PY
+          python3 -c 'import json,sys; sha,name=sys.argv[1:]; data={"schemaVersion":1,"kind":"repacked-verified-local-sdk","filename":name,"sha256":sha,"platform":"macos-x64","flutterVersion":"3.38.10","dartVersion":"3.10.9"}; open("dist/toolchain/LOCAL_TOOLCHAIN.json","w",encoding="utf-8").write(json.dumps(data,indent=2)+"\\n"); open("dist/toolchain/SHA256SUMS.txt","w",encoding="utf-8").write(f"{sha}  {name}\\n")' "$SHA" "$ARCHIVE"
           (
             cd dist
             zip -qr ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip toolchain

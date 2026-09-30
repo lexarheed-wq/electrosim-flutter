@@ -33,3 +33,9 @@ Task 3 Ruling: current support is conservative — only the 12 modelType values 
 Task 3 classification: 217 rows = 12 REBUILD, 11 REPLACE, 168 DEFER, 26 RETIRE; entity classes remain 195 palette-component, 4 socket, 18 external-appliance.
 Task 3 GREEN/final verification: workflow run 36719356243 passed the complete G0 Python suite on head 2ce88da.
 Task 3: complete (commits 73a3161..2ce88da, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0ParityMatrixTests -v → PASS)
+
+
+Task 4 RED-1: workflow run 36719523932 failed because validate_capability_parity did not exist.
+Task 4 RED-2: workflow run 36719610887 passed all validators except the committed capability matrix, which was absent.
+Task 4 GREEN/final verification: workflow run 36719853724 passed with 29 capability rows: 4 PRESENT, 19 PARTIAL, 2 MISSING, 4 INTENTIONALLY_REDESIGNED.
+Task 4: complete (commits aacba30..9244967, tests: python3 -m unittest tools.test_f18_g0_tooling.F18G0CapabilityParityTests -v → PASS)

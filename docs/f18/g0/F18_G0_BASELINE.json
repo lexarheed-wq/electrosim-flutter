@@ -1,0 +1,18 @@
+{
+  "legacy": {
+    "archivePath": "reference/legacy/ElectroSim-FIELDFIX01-R1.zip",
+    "baselinePath": "reference/REFERENCE_BASELINE.json",
+    "filename": "ElectroSim-FIELDFIX01-R1.zip",
+    "sha256": "569e05908592e6dd615bd80b342f6c7a28249850951d353dac988c5d2e1187bd"
+  },
+  "phase": "F18-G0",
+  "qualifiedMainSha": "554d156839418f2be690980fe8acb941f776a425",
+  "schemaVersion": 1,
+  "toolchain": {
+    "channel": "stable",
+    "dart": "3.10.9",
+    "flutter": "3.38.10",
+    "frameworkRevision": "c6f67dede3d4aa1aa7a69dd56a3494a5cde6cc80"
+  },
+  "version": "ELECTROSIM2-F17-R12-QUALIFIED"
+}

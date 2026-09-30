@@ -44,3 +44,17 @@ Task 1 blocker 1: Figma Starter plan rejected creation of the fourth page with: 
 Task 1 blocker 2: immediate read-back then failed because the Figma MCP Starter-plan tool-call quota was reached.
 
 Ruling: do not guess page IDs, do not continue Task 2, and do not synchronize Flutter tokens without a qualified Figma source. This is a binding-spec conflict (spec requires exactly four pages) plus an external MCP quota, so execution pauses at Task 1. Cost if wrong: none to product/runtime; main is untouched and only one draft Figma file plus documentation branch exist.
+
+
+User-approved G1 adaptation (30/09/2026): use exactly three physical Figma pages due to Starter-plan page limit:
+- `00 Foundations`
+- `01 Components`
+- `02 Electrical System`
+
+The third page contains two deterministic top-level sections:
+- `Electrical Visual Language`
+- `Reference Screens`
+
+All four required reference screens, component inventory, token mapping, accessibility requirements, Flutter synchronization and CI gates remain unchanged.
+
+Ruling: the three-page adaptation supersedes the original four-page physical layout in the G1 spec and plan. This is a structural packaging change only; no functional acceptance criterion is removed. Cost if wrong: the third page is denser, but section boundaries and stable IDs preserve independent validation.

@@ -36,37 +36,30 @@ jobs:
           if-no-files-found: error
 
   mac-intel-toolchain:
-    runs-on: macos-15-intel
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.38.10'
-          channel: stable
-          cache: true
-      - name: Build verified offline Mac Intel toolchain bundle
+      - name: Download and verify locked official Mac Intel Flutter archive
         shell: bash
         run: |
           set -euo pipefail
-          test "$(uname -m)" = "x86_64"
-          FLUTTER_ROOT="$(cd "$(dirname "$(command -v flutter)")/.." && pwd)"
-          test "$(flutter --version | awk 'NR==1 {print $2}')" = "3.38.10"
-          DART_VERSION="$(dart --version 2>&1 | sed -E 's/^Dart SDK version: ([0-9.]+).*/\1/' | head -1)"
-          test "$DART_VERSION" = "3.10.9"
+          ARCHIVE="flutter_macos_3.38.10-stable.zip"
+          EXPECTED="b7056ba00082b9b814415e7516287bb94633c1108838bfe10f8f665307b99afa"
+          URL="https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/$ARCHIVE"
 
-          mkdir -p dist/toolchain/archives
-          ARCHIVE="flutter-local-macos-x64-3.38.10.tar.xz"
+          mkdir -p dist/bundle/toolchain/archives
+          curl --fail --location --retry 3 "$URL" -o "dist/bundle/toolchain/archives/$ARCHIVE"
+
+          ACTUAL="$(sha256sum "dist/bundle/toolchain/archives/$ARCHIVE" | awk '{print $1}')"
+          test "$ACTUAL" = "$EXPECTED"
+          printf '%s  %s\n' "$ACTUAL" "$ARCHIVE" > dist/bundle/toolchain/SHA256SUMS.txt
+
+          cp ci/TOOLCHAIN_LOCK.json dist/bundle/toolchain/TOOLCHAIN_LOCK.json
           (
-            cd "$(dirname "$FLUTTER_ROOT")"
-            tar -cJf "$GITHUB_WORKSPACE/dist/toolchain/archives/$ARCHIVE" "$(basename "$FLUTTER_ROOT")"
+            cd dist/bundle
+            zip -qr ../ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip toolchain
           )
-          SHA="$(shasum -a 256 "dist/toolchain/archives/$ARCHIVE" | awk '{print $1}')"
-          python3 -c 'import json,sys; sha,name=sys.argv[1:]; data={"schemaVersion":1,"kind":"repacked-verified-local-sdk","filename":name,"sha256":sha,"platform":"macos-x64","flutterVersion":"3.38.10","dartVersion":"3.10.9"}; open("dist/toolchain/LOCAL_TOOLCHAIN.json","w",encoding="utf-8").write(json.dumps(data,indent=2)+"\\n"); open("dist/toolchain/SHA256SUMS.txt","w",encoding="utf-8").write(f"{sha}  {name}\\n")' "$SHA" "$ARCHIVE"
-          (
-            cd dist
-            zip -qr ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip toolchain
-          )
-          shasum -a 256 dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip             > dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
+          sha256sum dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip             > dist/ElectroSim-Flutter-3.38.10-Dart-3.10.9-macOS-Intel-offline.zip.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: ElectroSim-Flutter-3.38.10-macOS-Intel-offline

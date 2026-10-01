@@ -40,11 +40,8 @@ void main() {
     expect(find.textContaining('Voir moins'), findsNothing);
 
     final Finder list = find.byKey(const Key('palette-results-list'));
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('palette-item-push-button-no')),
-      220,
-      scrollable: list,
-    );
+    await tester.drag(list, const Offset(0, -320));
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-item-push-button-no')), findsOneWidget);
   });
 

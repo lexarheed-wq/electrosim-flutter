@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "gate": "F18-G2A",
+  "baseHead": "41911a87c6d8915b89134bc050b9844c906f652d",
+  "geometry": {
+    "allowedOrientations": [
+      "horizontal",
+      "vertical"
+    ],
+    "canvasGrid": 24,
+    "routingTrackPitch": 24,
+    "minimumTerminalStub": 24,
+    "componentKeepOut": 24,
+    "bendKeepOut": 48,
+    "minimumParallelConductorSpacing": 24,
+    "minimumComponentGap": 48,
+    "terminalVisualDiameter": 16,
+    "terminalHitTarget": 48,
+    "maximumCenteringSnapError": 12
+  },
+  "routing": {
+    "automaticDifferentNetCrossingsAllowed": false,
+    "automaticNonJunctionCrossingsAllowed": false,
+    "componentPenetrationAllowed": false,
+    "deterministic": true,
+    "rerouteMovesComponents": false,
+    "unresolvedInsteadOfCrossing": true,
+    "candidateOrder": [
+      "straight",
+      "one-bend",
+      "two-bend",
+      "manhattan-a-star",
+      "unresolved"
+    ],
+    "costs": {
+      "gridStep": 1,
+      "bend": 30,
+      "conductorProximity": 8,
+      "laneChange": 12,
+      "crossing": "forbidden",
+      "componentPenetration": "forbidden"
+    }
+  },
+  "placement": {
+    "autoPlacementRequiresStraightHost": true,
+    "autoPlacementAtBendAllowed": false,
+    "singleInlinePlacement": "usable-segment-midpoint",
+    "multipleInlinePlacement": "equal-gap-centered-group",
+    "electricalOrderPreserved": true
+  },
+  "domains": {
+    "dc": {
+      "defaultLayout": "rectangular-loop",
+      "rectangularPreferred": true,
+      "symmetricInlinePlacement": true,
+      "roleHints": {
+        "source": "side-branch-center",
+        "protectionControl": "straight-rail-centered",
+        "load": "opposite-branch-center"
+      }
+    },
+    "ac1": {
+      "laneOrder": [
+        "L",
+        "N",
+        "PE"
+      ],
+      "preserveLaneOrder": true,
+      "groupSeparation": 48
+    },
+    "ac3": {
+      "laneOrder": [
+        "L1",
+        "L2",
+        "L3",
+        "N",
+        "PE"
+      ],
+      "preserveLaneOrder": true,
+      "groupSeparation": 48
+    },
+    "pv": {
+      "zones": [
+        "generation",
+        "dc-protection",
+        "regulation-storage",
+        "conversion",
+        "ac-distribution-load"
+      ],
+      "dcPairOrder": [
+        "+",
+        "-"
+      ],
+      "separateDcAndAcCorridors": true
+    }
+  },
+  "junctions": {
+    "topologyJunction": "filled-marker",
+    "manualNonJunctionCrossing": "bridge-or-gap",
+    "automaticNonJunctionCrossing": "forbidden"
+  },
+  "invariants": [
+    "axis-aligned-auto-segments",
+    "zero-auto-different-net-crossings",
+    "zero-auto-components-in-bend-keepout",
+    "dc-centered-symmetric-inline-placement",
+    "stable-ac1-lane-order",
+    "stable-ac3-lane-order",
+    "stable-pv-polarity-order",
+    "topology-preserved-by-reroute",
+    "topology-preserved-by-arrange",
+    "deterministic-routing",
+    "idempotent-reroute"
+  ],
+  "referenceScenarios": [
+    "dc-single-rectangular-loop",
+    "dc-series-two-inline-devices",
+    "dc-parallel-branches",
+    "ac1-two-load-distribution",
+    "ac3-motor-protection",
+    "pv-generation-to-ac-load",
+    "obstacle-detour-zero-crossing",
+    "unresolved-no-crossing-route",
+    "manual-non-junction-crossing",
+    "explicit-junction"
+  ]
+}

@@ -14,6 +14,8 @@ Widget _host({
   ElementMovedCallback? onElementMoved,
   ConnectionRequestedCallback? onConnectionRequested,
   ValueChanged<CanvasHitResult>? onContextAction,
+  CircuitWireLayoutEngine? wireLayoutEngine,
+  WirePreviewPlanner? wirePreviewPlanner,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox.expand(
@@ -25,6 +27,8 @@ Widget _host({
         onElementMoved: onElementMoved,
         onConnectionRequested: onConnectionRequested,
         onContextAction: onContextAction,
+        wireLayoutEngine: wireLayoutEngine,
+        wirePreviewPlanner: wirePreviewPlanner,
       ),
     ),
   ),
@@ -192,6 +196,64 @@ void main() {
     await tester.tapAt(const Offset(210, 80));
     await tester.pump();
     expect(selected, 'wire-a');
+  });
+
+  testWidgets('smart routing opt-in supplies routed geometry to the painter', (
+    WidgetTester tester,
+  ) async {
+    final CircuitState base = buildTestCircuit();
+    final CircuitState circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      sources: base.sources,
+      connections: base.connections,
+      components: <ComponentInstance>[
+        ...base.components,
+        ComponentInstance(
+          id: ComponentId('blocker'),
+          modelType: 'Routing obstacle',
+          terminals: const <Terminal>[],
+        ),
+      ],
+      settings: base.settings,
+      metadata: base.metadata,
+    );
+    final CircuitVisualLayout layout = CircuitVisualLayout(
+      elementPositions: const <String, Offset>{
+        'source': Offset(120, 120),
+        'blocker': Offset(120, 264),
+        'resistor': Offset(120, 408),
+      },
+    );
+    const OrthogonalWireRouter router = OrthogonalWireRouter(
+      grid: 24,
+      obstacleClearance: 24,
+      envelopePadding: 120,
+    );
+
+    await tester.pumpWidget(
+      _host(
+        circuit: circuit,
+        layout: layout,
+        wireLayoutEngine: const CircuitWireLayoutEngine(router: router),
+        wirePreviewPlanner: const WirePreviewPlanner(
+          router: router,
+          terminalSnapRadius: 24,
+        ),
+      ),
+    );
+
+    final CustomPaint paint = tester.widget<CustomPaint>(
+      find.byType(CustomPaint).last,
+    );
+    final CircuitScenePainter painter = paint.painter! as CircuitScenePainter;
+    expect(painter.layout.routeFor('wire-a'), isNotEmpty);
+    expect(painter.wirePreviewPlanner, isNotNull);
+    expect(circuit.toJsonString(), base.toJsonString().replaceFirst(
+      '"components":[',
+      '"components":[',
+    ), isNot(equals('')));
   });
 
   testWidgets('wheel zoom changes viewport around pointer', (WidgetTester tester) async {

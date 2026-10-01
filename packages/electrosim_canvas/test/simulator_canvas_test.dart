@@ -251,6 +251,7 @@ void main() {
     final CircuitScenePainter painter = paint.painter! as CircuitScenePainter;
     expect(painter.layout.routeFor('wire-a'), isNotEmpty);
     expect(painter.wirePreviewPlanner, isNotNull);
+    expect(painter.smartWireSemantics, isTrue);
     expect(circuit.toJsonString(), before);
   });
 

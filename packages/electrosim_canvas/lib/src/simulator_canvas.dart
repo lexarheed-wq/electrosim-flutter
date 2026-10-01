@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 
 import 'circuit_scene_painter.dart';
 import 'circuit_visual_layout.dart';
+import 'circuit_wire_layout_engine.dart';
 import 'hit_test_engine.dart';
 import 'viewport_controller.dart';
+import 'wire_preview_planner.dart';
 
 typedef ElementMovedCallback = void Function(String elementId, Offset worldPosition);
 typedef ConnectionRequestedCallback = void Function(TerminalId from, TerminalId to);
@@ -23,6 +25,8 @@ final class SimulatorCanvas extends StatefulWidget {
     this.onContextAction,
     this.hitTestEngine = const HitTestEngine(),
     this.enableInteraction = true,
+    this.wireLayoutEngine,
+    this.wirePreviewPlanner,
   });
 
   final CircuitState circuit;
@@ -35,6 +39,8 @@ final class SimulatorCanvas extends StatefulWidget {
   final ValueChanged<CanvasHitResult>? onContextAction;
   final HitTestEngine hitTestEngine;
   final bool enableInteraction;
+  final CircuitWireLayoutEngine? wireLayoutEngine;
+  final WirePreviewPlanner? wirePreviewPlanner;
 
   @override
   State<SimulatorCanvas> createState() => _SimulatorCanvasState();
@@ -43,6 +49,7 @@ final class SimulatorCanvas extends StatefulWidget {
 final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   late ViewportController _viewport;
   late bool _ownsViewport;
+  late CircuitVisualLayout _effectiveLayout;
   String? _localSelectedElementId;
   TerminalId? _pendingTerminalId;
   String? _draggingElementId;
@@ -68,12 +75,18 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   @override
   void initState() {
     super.initState();
+    _refreshEffectiveLayout();
     _attachViewport(widget.viewportController);
   }
 
   @override
   void didUpdateWidget(SimulatorCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.circuit != widget.circuit ||
+        !identical(oldWidget.layout, widget.layout) ||
+        oldWidget.wireLayoutEngine != widget.wireLayoutEngine) {
+      _refreshEffectiveLayout();
+    }
     if (oldWidget.viewportController != widget.viewportController) {
       _detachViewport();
       _attachViewport(widget.viewportController);
@@ -81,6 +94,13 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     if (_pendingTerminalId != null && !_terminalExists(_pendingTerminalId!)) {
       _pendingTerminalId = null;
     }
+  }
+
+  void _refreshEffectiveLayout() {
+    final CircuitWireLayoutEngine? engine = widget.wireLayoutEngine;
+    _effectiveLayout = engine == null
+        ? widget.layout
+        : engine.routeAll(circuit: widget.circuit, layout: widget.layout);
   }
 
   void _attachViewport(ViewportController? controller) {
@@ -119,7 +139,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   CanvasHitResult _hitAt(Offset screenPosition) => widget.hitTestEngine.hitTest(
     worldPoint: _viewport.screenToWorld(screenPosition),
     circuit: widget.circuit,
-    layout: widget.layout,
+    layout: _effectiveLayout,
     previewPositions: _previewPositions,
     viewportScale: _viewport.scale,
   );
@@ -221,7 +241,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
       return;
     }
     final String id = hit.elementId!;
-    final Offset? current = widget.layout.positionOf(id);
+    final Offset? current = _effectiveLayout.positionOf(id);
     if (current == null) {
       return;
     }
@@ -338,12 +358,13 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
             child: CustomPaint(
               painter: CircuitScenePainter(
                 circuit: widget.circuit,
-                layout: widget.layout,
+                layout: _effectiveLayout,
                 viewport: _viewport,
                 selectedElementId: _selectedElementId,
                 pendingTerminalId: _pendingTerminalId,
                 pointerWorldPosition: _pointerWorldPosition,
                 previewPositions: _previewPositions,
+                wirePreviewPlanner: widget.wirePreviewPlanner,
               ),
               size: Size.infinite,
             ),

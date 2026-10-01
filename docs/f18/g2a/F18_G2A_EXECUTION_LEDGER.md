@@ -65,3 +65,22 @@ Still required before full `F18_G2A_WIRE_ROUTING_GATE_PASS`:
 - final full application regression and visual validation.
 
 No solver, topology, diagnostics, measurement, PV engine, energy, TP or storage package was modified by these routing milestones.
+
+
+## Final G2A qualification
+
+Final dedicated run `36924756020` on code head `47fcb5c4d6be7ebd9c5e33587c30f2a11565db62` completed successfully:
+- Canvas analyze: PASS;
+- targeted G2A tests: 35 PASS;
+- Canvas non-golden regressions: 18 PASS;
+- application analyze: PASS;
+- application non-golden regressions: 72 PASS;
+- historical goldens preserved: PASS;
+- protected electrical-engine scope: PASS;
+- `F18_G2A_WIRE_ROUTING_GATE_PASS` emitted.
+
+Robustness qualification added 100 seeded obstacle fixtures and 60 seeded different-net barrier fixtures, all deterministic.
+
+Legacy F8 remains non-authoritative for this branch because its F15/F14 freeze check compares the post-F17/G1/G2A repository against the historical F14 baseline. No historical freeze or golden evidence was rewritten to make it green.
+
+Ruling: this report commit is documentation-only and requires one final exact-head G2A workflow pass before handoff or merge consideration.

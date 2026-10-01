@@ -38,7 +38,7 @@ jobs:
         run: flutter analyze
       - name: Run G2A geometry tests
         working-directory: packages/electrosim_canvas
-        run: flutter test test/wire_geometry_test.dart test/inline_component_placement_test.dart test/orthogonal_wire_router_test.dart test/conductor_bundle_planner_test.dart test/dc_rectangular_arrange_test.dart test/circuit_wire_layout_engine_test.dart
+        run: flutter test test/wire_geometry_test.dart test/inline_component_placement_test.dart test/orthogonal_wire_router_test.dart test/conductor_bundle_planner_test.dart test/dc_rectangular_arrange_test.dart test/circuit_wire_layout_engine_test.dart test/wire_preview_planner_test.dart
 
       - name: Run Canvas non-golden regression tests
         working-directory: packages/electrosim_canvas

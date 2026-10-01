@@ -7,6 +7,7 @@ import 'canvas_geometry.dart';
 import 'circuit_visual_layout.dart';
 import 'viewport_controller.dart';
 import 'wire_preview_planner.dart';
+import 'wire_semantics.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -18,6 +19,7 @@ final class CircuitScenePainter extends CustomPainter {
     this.pointerWorldPosition,
     this.previewPositions = const <String, Offset>{},
     this.wirePreviewPlanner,
+    this.smartWireSemantics = false,
   });
 
   final CircuitState circuit;
@@ -28,6 +30,7 @@ final class CircuitScenePainter extends CustomPainter {
   final Offset? pointerWorldPosition;
   final Map<String, Offset> previewPositions;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final bool smartWireSemantics;
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -49,10 +52,19 @@ final class CircuitScenePainter extends CustomPainter {
       layout,
       previewPositions: previewPositions,
     );
+    final WireSemantics? semantics = smartWireSemantics
+        ? const WireSemanticsAnalyzer().analyze(
+            circuit: circuit,
+            layout: layout,
+          )
+        : null;
     _paintWires(canvas, geometry);
+    if (semantics != null) {
+      _paintNonJunctionCrossingGaps(canvas, semantics);
+    }
     _paintSources(canvas, geometry);
     _paintComponents(canvas, geometry);
-    _paintTerminals(canvas, geometry);
+    _paintTerminals(canvas, geometry, semantics);
     _paintWiringPreview(canvas, geometry);
   }
 
@@ -168,12 +180,42 @@ final class CircuitScenePainter extends CustomPainter {
     );
   }
 
-  void _paintTerminals(Canvas canvas, CircuitGeometryIndex geometry) {
+  void _paintNonJunctionCrossingGaps(
+    Canvas canvas,
+    WireSemantics semantics,
+  ) {
+    final double radius = (5 * viewport.scale).clamp(3, 7).toDouble();
+    for (final NonJunctionWireCrossing crossing
+        in semantics.nonJunctionCrossings) {
+      canvas.drawCircle(
+        viewport.worldToScreen(crossing.point),
+        radius,
+        Paint()..color = boardColor,
+      );
+    }
+  }
+
+  void _paintTerminals(
+    Canvas canvas,
+    CircuitGeometryIndex geometry,
+    WireSemantics? semantics,
+  ) {
     for (final MapEntry<TerminalId, Offset> entry in geometry.terminalPositions.entries) {
       final Offset screen = viewport.worldToScreen(entry.value);
       final bool pending = entry.key == pendingTerminalId;
+      final bool junction =
+          semantics?.junctionTerminalIds.contains(entry.key) ?? false;
       final double radius = pending ? 7 : 5;
-      canvas.drawCircle(screen, radius, Paint()..color = pending ? pendingColor : terminalFill);
+      canvas.drawCircle(
+        screen,
+        radius,
+        Paint()
+          ..color = pending
+              ? pendingColor
+              : junction
+                  ? terminalStroke
+                  : terminalFill,
+      );
       canvas.drawCircle(
         screen,
         radius,

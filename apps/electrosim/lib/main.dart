@@ -396,6 +396,11 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   );
   static const CircuitWireLayoutEngine _g2aWireLayoutEngine =
       CircuitWireLayoutEngine(router: _g2aRouter);
+  static const WirePreviewPlanner _g2aWirePreviewPlanner =
+      WirePreviewPlanner(
+        router: _g2aRouter,
+        terminalSnapRadius: 24,
+      );
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout = CircuitVisualLayout(
@@ -576,6 +581,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                           });
                         },
                         enableInteraction: false,
+                        wireLayoutEngine: _g2aWireLayoutEngine,
+                        wirePreviewPlanner: _g2aWirePreviewPlanner,
                       ),
                       AnimatedBuilder(
                         animation: _viewport,
@@ -585,6 +592,10 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                           viewport: _viewport,
                           pendingTerminalId: _wiringPendingTerminal,
                           hoverTerminalId: _wiringHoverTerminal,
+                          pointerWorldPosition: _lastCanvasPointerLocal == null
+                              ? null
+                              : _viewport.screenToWorld(_lastCanvasPointerLocal!),
+                          wirePreviewPlanner: _g2aWirePreviewPlanner,
                         ),
                       ),
                       ],

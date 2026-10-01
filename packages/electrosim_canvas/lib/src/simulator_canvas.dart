@@ -365,6 +365,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                 pointerWorldPosition: _pointerWorldPosition,
                 previewPositions: _previewPositions,
                 wirePreviewPlanner: widget.wirePreviewPlanner,
+                smartWireSemantics: widget.wireLayoutEngine != null,
               ),
               size: Size.infinite,
             ),

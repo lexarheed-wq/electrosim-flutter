@@ -84,6 +84,34 @@ void main() {
     expect(result.failure, WireRouteFailure.noCrossingFreeRoute);
   });
 
+  test('falls back to Manhattan A* for a staggered multi-turn corridor', () {
+    const OrthogonalWireRouter mazeRouter = OrthogonalWireRouter(
+      grid: 24,
+      obstacleClearance: 24,
+      envelopePadding: 96,
+    );
+
+    final WireRouteResult result = mazeRouter.route(
+      start: const Offset(24, 120),
+      end: const Offset(312, 120),
+      obstacles: const <RoutingObstacle>[
+        RoutingObstacle(bounds: Rect.fromLTWH(96, -24, 24, 144)),
+        RoutingObstacle(bounds: Rect.fromLTWH(192, 120, 24, 144)),
+      ],
+    );
+
+    expect(result.isResolved, isTrue);
+    expect(result.path!.bends.length, greaterThanOrEqualTo(4));
+    expect(
+      result.path!.segments.every(
+        (OrthogonalSegment segment) =>
+            segment.axis == WireAxis.horizontal ||
+            segment.axis == WireAxis.vertical,
+      ),
+      isTrue,
+    );
+  });
+
   test('routing is deterministic for identical inputs', () {
     const List<RoutingObstacle> obstacles = <RoutingObstacle>[
       RoutingObstacle(bounds: Rect.fromLTWH(120, 72, 72, 96)),

@@ -35,10 +35,9 @@ final class DcRectangularArrangement {
     );
   }
 
-  const DcRectangularArrangement.unresolved(DcArrangeFailure failure)
+  const DcRectangularArrangement.unresolved(this.failure)
       : positions = const <String, Offset>{},
-        outerLoop = null,
-        failure = failure;
+        outerLoop = null;
 
   final Map<String, Offset> positions;
   final OrthogonalWirePath? outerLoop;

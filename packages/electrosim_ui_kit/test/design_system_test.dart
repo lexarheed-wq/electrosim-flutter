@@ -15,6 +15,16 @@ void main() {
     expect(ElectroSimColors.primary, isNot(ElectroSimColors.dcPositive));
     expect(ElectroSimColors.secondary, isNot(ElectroSimColors.dcNegative));
     expect(ElectroSimColors.phaseL1, isNot(ElectroSimColors.phaseL2));
+    expect(ElectroSimColors.background, isNot(ElectroSimColors.surface));
+    expect(ElectroSimColors.focus, isNot(ElectroSimColors.dcPositive));
+  });
+
+  test('F18 qualified interaction geometry remains accessible', () {
+    expect(ElectroSimGeometry.minimumTouchTarget, greaterThanOrEqualTo(48));
+    expect(ElectroSimGeometry.terminalHitTarget, greaterThanOrEqualTo(48));
+    expect(ElectroSimGeometry.terminalVisualDiameter, lessThan(ElectroSimGeometry.terminalHitTarget));
+    expect(ElectroSimComponentTokens.quickPaletteItemCount, 5);
+    expect(ElectroSimComponentTokens.paletteExpansionLabel, 'Voir tous');
   });
 
   testWidgets('expanded shell exposes palette canvas and context simultaneously', (WidgetTester tester) async {

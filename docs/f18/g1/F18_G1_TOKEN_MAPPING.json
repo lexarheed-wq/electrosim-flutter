@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "gate": "F18-G1",
+  "source": {
+    "kind": "magicpath",
+    "projectId": "456415562449448960",
+    "projectName": "ElectroSim F18 — Professional Design System",
+    "figmaFileKeyRetainedForOptionalComparison": "TyYIfxMB0jPVIEcJPGsOwI",
+    "authority": "qualified_visual_source_for_g1b"
+  },
+  "approval": {
+    "humanVisualApproved": true,
+    "approvedOn": "2026-10-01",
+    "goldenPolicy": "no_golden_is_official_before_human_visual_approval"
+  },
+  "designAssets": {
+    "foundations": {
+      "componentId": "456416399569604608",
+      "revisionId": "456416399569604609",
+      "name": "Foundations/Design Tokens"
+    },
+    "coreLibrary": {
+      "componentId": "456416678377570304",
+      "revisionId": "456416678377570305",
+      "name": "Components/Core Library"
+    },
+    "electricalVisualLanguage": {
+      "componentId": "456416985736171520",
+      "revisionId": "456420930390990848",
+      "name": "Electrical/Visual Language",
+      "realismRevision": 2
+    }
+  },
+  "tokens": {
+    "uiColors": {
+      "primary": "#174D89",
+      "onPrimary": "#FFFFFF",
+      "primaryStrong": "#123B73",
+      "secondary": "#344054",
+      "background": "#F4F7FA",
+      "surface": "#FFFFFF",
+      "surfaceRaised": "#FFFFFF",
+      "surfaceMuted": "#F1F5F9",
+      "outline": "#8492A6",
+      "textPrimary": "#132033",
+      "textSecondary": "#5A6D83",
+      "textDisabled": "#99A5B2",
+      "success": "#067647",
+      "warning": "#B54708",
+      "danger": "#B42318",
+      "info": "#175CD3",
+      "focus": "#2563EB"
+    },
+    "electricalColors": {
+      "dcPositive": "#D92D20",
+      "dcNegative": "#101828",
+      "l1": "#B42318",
+      "l2": "#F79009",
+      "l3": "#475467",
+      "neutral": "#1570EF",
+      "protectiveEarth": "#039855"
+    },
+    "spacing": [
+      4,
+      8,
+      12,
+      16,
+      24,
+      32
+    ],
+    "radii": {
+      "control": 8,
+      "panel": 12,
+      "card": 16,
+      "pill": 999
+    },
+    "motionMs": {
+      "instantFeedback": 90,
+      "shortTransition": 160,
+      "panelTransition": 220
+    },
+    "geometry": {
+      "minimumTouchTarget": 48,
+      "desktopTopBar": 64,
+      "compactTopBar": 56,
+      "expandedPaletteWidth": 264,
+      "expandedContextWidth": 304,
+      "mediumPanelWidth": 288,
+      "statusBarHeight": 40,
+      "controlHeight": 40,
+      "compactControlHeight": 32,
+      "iconSmall": 16,
+      "iconMedium": 20,
+      "iconLarge": 24
+    },
+    "breakpoints": {
+      "compactLt": 600,
+      "mediumMin": 600,
+      "mediumMax": 1000,
+      "expandedGt": 1000
+    },
+    "typography": {
+      "display": {
+        "size": 40,
+        "lineHeight": 48,
+        "weight": 700
+      },
+      "headingL": {
+        "size": 32,
+        "lineHeight": 40,
+        "weight": 700
+      },
+      "headingM": {
+        "size": 28,
+        "lineHeight": 36,
+        "weight": 700
+      },
+      "headingS": {
+        "size": 24,
+        "lineHeight": 32,
+        "weight": 700
+      },
+      "titleL": {
+        "size": 20,
+        "lineHeight": 28,
+        "weight": 700
+      },
+      "titleM": {
+        "size": 18,
+        "lineHeight": 24,
+        "weight": 600
+      },
+      "titleS": {
+        "size": 16,
+        "lineHeight": 22,
+        "weight": 600
+      },
+      "bodyL": {
+        "size": 16,
+        "lineHeight": 24,
+        "weight": 400
+      },
+      "bodyM": {
+        "size": 14,
+        "lineHeight": 20,
+        "weight": 400
+      },
+      "bodyS": {
+        "size": 12,
+        "lineHeight": 18,
+        "weight": 400
+      },
+      "labelL": {
+        "size": 14,
+        "lineHeight": 20,
+        "weight": 600
+      },
+      "labelM": {
+        "size": 12,
+        "lineHeight": 16,
+        "weight": 600
+      },
+      "labelS": {
+        "size": 11,
+        "lineHeight": 16,
+        "weight": 600
+      },
+      "technicalValue": {
+        "size": 22,
+        "lineHeight": 28,
+        "weight": 700
+      },
+      "technicalUnit": {
+        "size": 12,
+        "lineHeight": 16,
+        "weight": 600
+      },
+      "diagnosticMono": {
+        "size": 12,
+        "lineHeight": 18,
+        "weight": 500
+      }
+    },
+    "elevation": [
+      "none",
+      "card",
+      "floating",
+      "dialog"
+    ]
+  },
+  "components": {
+    "fundamental": [
+      "Primary Button",
+      "Secondary Button",
+      "Tertiary/Text Button",
+      "Icon Button",
+      "Search Field",
+      "Text Field",
+      "Select/Dropdown",
+      "Toggle",
+      "Checkbox",
+      "Radio",
+      "Chip/Status",
+      "Card",
+      "Navigation Item",
+      "Toolbar Action",
+      "Segmented Control",
+      "Tabs",
+      "Palette Item",
+      "Property Row",
+      "Inspector Section",
+      "Status Bar Item",
+      "Empty State",
+      "Inline Error",
+      "Snackbar",
+      "Dialog"
+    ],
+    "rules": {
+      "maxVariantsPerSet": 30,
+      "minimumTouchTarget": 48,
+      "visibleFocusRequired": true,
+      "paletteCanvasSameVisualIdentity": true,
+      "singleDeleteAction": true,
+      "rotationAdjacentToDelete": true,
+      "quickPaletteItemsPerDomain": 5,
+      "paletteExpansionLabel": "Voir tous"
+    }
+  },
+  "electrical": {
+    "archetypes": [
+      "source",
+      "protection",
+      "control",
+      "load",
+      "rotating-machine",
+      "measurement",
+      "conversion",
+      "pv-energy"
+    ],
+    "rules": {
+      "terminalsExplicit": true,
+      "terminalLabelsVisible": true,
+      "phaseOrPolarityNotColorOnly": true,
+      "selectionIsUiOnly": true,
+      "electricalStateRequiresEvidence": true,
+      "decorationMustNotObscureTerminals": true,
+      "focusedNeEnergized": true,
+      "selectedNeFaulted": true,
+      "draggingNeRunning": true,
+      "compatibleTargetNeEnergized": true
+    }
+  },
+  "references": [
+    {
+      "name": "Reference/Home/Desktop",
+      "componentId": "456415638643150848",
+      "revisionId": "456415638643150849",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "Reference/Workspace/Desktop",
+      "componentId": "456417407095963648",
+      "revisionId": "456417407095963649",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "Reference/Workspace/Compact",
+      "componentId": "456417656019521536",
+      "revisionId": "456417656019521537",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "Reference/Troubleshooting/Student",
+      "componentId": "456418021750222848",
+      "revisionId": "456418021750222849",
+      "width": 820,
+      "height": 1180
+    }
+  ],
+  "exceptions": [
+    {
+      "id": "platform-font-family",
+      "reason": "Flutter runtime remains platform-native; numeric typography metrics are mapped exactly.",
+      "scope": "typography"
+    }
+  ]
+}

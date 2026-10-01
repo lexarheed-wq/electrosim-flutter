@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_home.dart';
+import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -198,43 +199,23 @@ class F9HomePage extends StatelessWidget {
   ) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext routeContext) => F18SessionShellPage(
-          onHome: () => Navigator.of(routeContext).popUntil(
-            (Route<dynamic> route) => route.isFirst,
-          ),
-          onWiring: () => _openWorkspace(
-            routeContext,
-            'Session active',
-            initialWorkspace: 'Câblage',
+        builder: (BuildContext routeContext) =>
+            F18TeacherSessionCoordinatorPage(
+          workspaceBuilder: (
+            BuildContext workspaceContext,
+            ElectroSimTpSessionController controller,
+            String workspace,
+            VoidCallback onDashboard,
+            VoidCallback onManageSession,
+          ) =>
+              F9WorkspaceDemoPage(
+            entryLabel: 'Session active',
+            initialWorkspace: workspace,
             sessionNavigation: true,
+            tpSessionController: controller,
             persistenceController: persistenceController,
-          ),
-          onTroubleshooting: () => _openWorkspace(
-            routeContext,
-            'Session active',
-            initialWorkspace: 'Recherche de dérangement',
-            sessionNavigation: true,
-            persistenceController: persistenceController,
-          ),
-          onSupervision: () => Navigator.of(routeContext).push(
-            MaterialPageRoute<void>(
-              builder: (BuildContext context) => const F18PlaceholderPage(
-                pageKey: Key('session-supervision-page'),
-                title: 'Supervision',
-                description:
-                    'Le tableau de supervision professeur sera raccordé ici sans passer par le simulateur.',
-              ),
-            ),
-          ),
-          onManageSession: () => Navigator.of(routeContext).push(
-            MaterialPageRoute<void>(
-              builder: (BuildContext context) => const F18PlaceholderPage(
-                pageKey: Key('session-manage-page'),
-                title: 'Gérer la session',
-                description:
-                    'Les paramètres et participants de la session seront administrés dans cet espace.',
-              ),
-            ),
+            onSessionDashboard: onDashboard,
+            onSessionManage: onManageSession,
           ),
         ),
       ),
@@ -387,6 +368,8 @@ class F9WorkspaceDemoPage extends StatefulWidget {
     this.tpSessionController,
     this.persistenceController,
     this.syncClient,
+    this.onSessionDashboard,
+    this.onSessionManage,
   });
 
   final String entryLabel;
@@ -398,6 +381,8 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
   final ElectroSimLanSyncClient? syncClient;
+  final VoidCallback? onSessionDashboard;
+  final VoidCallback? onSessionManage;
 
   @override
   State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();
@@ -487,8 +472,12 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
             workspace: _workspace,
             sessionNavigation: widget.sessionNavigation,
             onHome: () => Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst),
-            onDashboard: widget.sessionNavigation ? _showDashboard : null,
-            onManageSession: widget.sessionNavigation ? _showManageSession : null,
+            onDashboard: widget.sessionNavigation
+                ? (widget.onSessionDashboard ?? _showDashboard)
+                : null,
+            onManageSession: widget.sessionNavigation
+                ? (widget.onSessionManage ?? _showManageSession)
+                : null,
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
             onRecenter: () => _viewport.reset(translation: const Offset(40, 40)),

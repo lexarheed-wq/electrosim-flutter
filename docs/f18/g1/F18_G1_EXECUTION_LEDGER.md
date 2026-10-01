@@ -58,3 +58,25 @@ The third page contains two deterministic top-level sections:
 All four required reference screens, component inventory, token mapping, accessibility requirements, Flutter synchronization and CI gates remain unchanged.
 
 Ruling: the three-page adaptation supersedes the original four-page physical layout in the G1 spec and plan. This is a structural packaging change only; no functional acceptance criterion is removed. Cost if wrong: the third page is denser, but section boundaries and stable IDs preserve independent validation.
+
+
+## User-approved visual-source override — 2026-10-01
+
+Figma MCP remained blocked by the Starter-plan tool-call quota after repeated direct checks. The user explicitly approved continuing G1 with MagicPath to avoid making the external quota a product-development blocker.
+
+Qualified MagicPath source:
+- Project: `ElectroSim F18 — Professional Design System`
+- projectId: `456415562449448960`
+- Foundations: component `456416399569604608`, revision `456416399569604609`
+- Core UI Library: component `456416678377570304`, revision `456416678377570305`
+- Electrical Visual Language realism V2: component `456416985736171520`, revision `456420930390990848`
+- Home: component `456415638643150848`, revision `456415638643150849`
+- Workspace Desktop: component `456417407095963648`, revision `456417407095963649`
+- Workspace Compact: component `456417656019521536`, revision `456417656019521537`
+- Troubleshooting Student: component `456418021750222848`, revision `456418021750222849`
+
+Human visual approval was given once, on the four reference screens as a group, preserving the original single-checkpoint intent.
+
+Ruling: MagicPath is the qualified G1B visual source for Tasks 5–8. Figma file `TyYIfxMB0jPVIEcJPGsOwI` remains an optional later comparison source and is no longer a blocking dependency. All original G1 acceptance criteria remain: 24 fundamental UI components, 8 electrical archetypes, 4 exact reference sizes, accessibility, no automatic golden acceptance, and no production changes outside `packages/electrosim_ui_kit/lib/**`.
+
+Ruling: the visual-source substitution does not authorize rebuilding business screens, solver, TP/LAN, EIE runtime, or any protected package in G1.

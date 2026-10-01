@@ -35,3 +35,25 @@ jobs:
       - name: Point 01 runtime router integration
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point01_runtime_router_test.dart
+
+      - name: Application non-golden regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+
+      - name: Preserve qualified package scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 6bcfacbf2b39c0667ac695a80b39d4f3e215615b...HEAD -- packages)"
+          if [ -n "$changed" ]; then
+            echo "Point 01 unexpectedly modified package production scope:"
+            echo "$changed"
+            exit 1
+          fi
+          echo F18_G3R1_P01_PACKAGE_SCOPE_PASS
+
+      - name: Point 01 gate
+        run: echo F18_G3R1_P01_G2A_RUNTIME_ROUTER_PASS

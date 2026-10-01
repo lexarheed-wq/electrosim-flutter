@@ -375,8 +375,12 @@ void main() {
     expect(canvas, findsOneWidget);
     expect(find.ancestor(of: canvas, matching: find.byType(ClipRect)), findsWidgets);
 
+    final SimulatorCanvas canvasWidget = tester.widget<SimulatorCanvas>(canvas);
     final Offset canvasTopLeft = tester.getTopLeft(canvas);
-    final Offset switchCenter = canvasTopLeft + const Offset(430, 260);
+    final Offset switchWorld = canvasWidget.layout.positionOf('switch-1')!;
+    final Offset switchLocal =
+        canvasWidget.viewportController!.worldToScreen(switchWorld);
+    final Offset switchCenter = canvasTopLeft + switchLocal;
     final TestGesture gesture = await tester.startGesture(switchCenter);
     await gesture.moveBy(const Offset(72, 24), timeStamp: const Duration(milliseconds: 60));
     await tester.pump();

@@ -46,6 +46,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point03_dc_rectangular_workspace_test.dart
 
+      - name: Point 04 no automatic different-net crossing
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point04_no_auto_crossing_test.dart
+
       - name: Application non-golden regression
         working-directory: apps/electrosim
         shell: bash
@@ -73,3 +77,6 @@ jobs:
 
       - name: Point 03 gate
         run: echo F18_G3R1_P03_DC_RECTANGULAR_WORKSPACE_PASS
+
+      - name: Point 04 gate
+        run: echo F18_G3R1_P04_NO_AUTO_CROSSING_PASS

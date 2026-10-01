@@ -107,6 +107,25 @@ void main() {
     expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
   });
 
+  testWidgets('session shell tolerates compact viewport without overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    final Finder createSession = find.byKey(const Key('home-create-session'));
+    await tester.ensureVisible(createSession);
+    await tester.tap(createSession);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+    expect(find.byKey(const Key('session-home-action')), findsOneWidget);
+    expect(find.byKey(const Key('session-dashboard-action')), findsOneWidget);
+    expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('center shells tolerate compact viewport without overflow', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

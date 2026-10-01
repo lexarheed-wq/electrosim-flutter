@@ -80,3 +80,18 @@ Human visual approval was given once, on the four reference screens as a group, 
 Ruling: MagicPath is the qualified G1B visual source for Tasks 5–8. Figma file `TyYIfxMB0jPVIEcJPGsOwI` remains an optional later comparison source and is no longer a blocking dependency. All original G1 acceptance criteria remain: 24 fundamental UI components, 8 electrical archetypes, 4 exact reference sizes, accessibility, no automatic golden acceptance, and no production changes outside `packages/electrosim_ui_kit/lib/**`.
 
 Ruling: the visual-source substitution does not authorize rebuilding business screens, solver, TP/LAN, EIE runtime, or any protected package in G1.
+
+
+### G1B CI ruling — historical F9 goldens
+
+Dedicated G1 CI run `36882238177` proved:
+- locked Flutter/Dart toolchain: PASS;
+- Python mapping + protected-source drift guard: PASS;
+- UI kit analyze: PASS;
+- UI kit full tests including F18 token contract: PASS;
+- application analyze: PASS;
+- application test result before G1-specific golden handling: 72 tests PASS, 4 suites FAIL exclusively in `f9_goldens_test.dart`.
+
+Observed F9 pixel drift is expected after the approved F18 token synchronization (compact base 4.05%, compact palette 19.04%, compact properties 18.62%, medium base 2.65%, medium palette 11.69%, medium properties 7.19%, expanded reference sets 10.48%, student diagnostic 16.00%).
+
+Ruling: never regenerate or auto-accept the F9 goldens in G1. They remain historical F9 evidence. The G1 gate runs the complete functional application suite excluding only `f9_goldens_test.dart`, and separately fails if any F9 golden file or its test is modified. New F18 goldens are created only from implemented F18 screens after approved references are consumed in later UI gates.

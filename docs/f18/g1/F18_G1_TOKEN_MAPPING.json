@@ -288,6 +288,11 @@
       "id": "platform-font-family",
       "reason": "Flutter runtime remains platform-native; numeric typography metrics are mapped exactly.",
       "scope": "typography"
+    },
+    {
+      "id": "legacy-f9-goldens-historical",
+      "reason": "F9 goldens are preserved as historical baselines and intentionally diverge after the approved F18 G1 token synchronization. They must not be regenerated or auto-accepted in G1.",
+      "scope": "apps/electrosim/test/goldens and f9_goldens_test.dart"
     }
   ]
 }

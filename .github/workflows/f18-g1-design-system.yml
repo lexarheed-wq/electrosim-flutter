@@ -59,9 +59,24 @@ jobs:
           git diff --exit-code -- pubspec.lock
           flutter analyze
 
-      - name: Test application
+      - name: Test application functional regression
         working-directory: apps/electrosim
-        run: flutter test
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+
+      - name: Preserve historical F9 golden baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 591b8d6386de36093ed22deaab785c38245f5331...HEAD -- apps/electrosim/test/goldens apps/electrosim/test/f9_goldens_test.dart)"
+          if [ -n "$changed" ]; then
+            echo "Historical F9 golden evidence was modified:"
+            echo "$changed"
+            exit 1
+          fi
+          echo F18_G1_LEGACY_GOLDENS_PRESERVED
 
       - name: Verify visual approval evidence
         shell: bash

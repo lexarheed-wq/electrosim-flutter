@@ -7,3 +7,5 @@ export 'src/viewport_controller.dart';
 export 'src/inline_component_placement.dart';
 export 'src/wire_geometry.dart';
 export 'src/orthogonal_wire_router.dart';
+export 'src/conductor_bundle_planner.dart';
+export 'src/dc_rectangular_arrange.dart';

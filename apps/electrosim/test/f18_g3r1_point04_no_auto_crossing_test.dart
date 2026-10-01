@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
-
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim/f18_workspace_wire_safety.dart';
@@ -9,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 Terminal _terminal(String id) => Terminal(
       id: TerminalId(id),
       name: id,
-      role: TerminalRole.bidirectional,
+      role: TerminalRole.input,
     );
 
 ComponentInstance _component(String id, Terminal terminal) => ComponentInstance(

@@ -40,3 +40,38 @@ jobs:
       - name: Run G3 session tests
         working-directory: apps/electrosim
         run: flutter test test/f18_g3_session_dashboard_test.dart
+
+      - name: Run application non-golden regression tests
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+
+      - name: Preserve historical visual baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 1a533a0a256fd1b79ab133baff7492f52fd4ddb7...HEAD -- apps/electrosim/test/goldens apps/electrosim/test/f9_goldens_test.dart packages/electrosim_canvas/test/goldens)"
+          if [ -n "$changed" ]; then
+            echo "Historical golden evidence was modified:"
+            echo "$changed"
+            exit 1
+          fi
+          echo F18_G3_LEGACY_GOLDENS_PRESERVED
+
+      - name: Protect all package production scopes
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 1a533a0a256fd1b79ab133baff7492f52fd4ddb7...HEAD)"
+          forbidden="$(printf '%s\n' "$changed" | grep -E '^packages/' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "G3 modified protected package scope:"
+            echo "$forbidden"
+            exit 1
+          fi
+          echo F18_G3_PROTECTED_SCOPE_PASS
+
+      - name: Gate
+        run: echo F18_G3_SESSION_DASHBOARD_GATE_PASS

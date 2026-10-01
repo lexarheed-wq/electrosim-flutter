@@ -96,7 +96,7 @@ void main() {
       end: const Offset(312, 120),
       obstacles: const <RoutingObstacle>[
         RoutingObstacle(bounds: Rect.fromLTWH(96, -24, 24, 144)),
-        RoutingObstacle(bounds: Rect.fromLTWH(192, 120, 24, 144)),
+        RoutingObstacle(bounds: Rect.fromLTWH(216, 120, 24, 144)),
       ],
     );
 

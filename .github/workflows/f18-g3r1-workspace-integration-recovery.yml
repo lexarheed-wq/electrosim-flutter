@@ -42,6 +42,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point02_smart_canvas_integration_test.dart
 
+      - name: Point 03 DC rectangular workspace
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point03_dc_rectangular_workspace_test.dart
+
       - name: Application non-golden regression
         working-directory: apps/electrosim
         shell: bash
@@ -66,3 +70,6 @@ jobs:
 
       - name: Point 02 gate
         run: echo F18_G3R1_P02_SMART_CANVAS_INTEGRATION_PASS
+
+      - name: Point 03 gate
+        run: echo F18_G3R1_P03_DC_RECTANGULAR_WORKSPACE_PASS

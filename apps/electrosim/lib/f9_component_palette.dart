@@ -166,7 +166,7 @@ class F9ComponentPalette extends StatefulWidget {
 }
 
 class _F9ComponentPaletteState extends State<F9ComponentPalette> {
-  static const int _collapsedLimit = 6;
+  static const int _collapsedLimit = 5;
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
@@ -207,7 +207,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           children: <Widget>[
             const ElectroSimSectionTitle(
               title: 'Composants',
-              subtitle: 'Palette F9 finale — recherche, catégories et placement sûr',
+              subtitle: 'Palette F18 — recherche, catégories et placement sûr',
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             TextField(
@@ -227,7 +227,10 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
                         tooltip: 'Effacer la recherche',
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _query = '');
+                          setState(() {
+                            _query = '';
+                            _expanded = false;
+                          });
                         },
                         icon: const Icon(Icons.close),
                       ),
@@ -275,13 +278,13 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
                       },
                     ),
             ),
-            if (canExpand) ...<Widget>[
+            if (canExpand && !_expanded) ...<Widget>[
               const SizedBox(height: ElectroSimSpacing.xs),
               OutlinedButton.icon(
-                key: const Key('palette-show-more'),
-                onPressed: () => setState(() => _expanded = !_expanded),
-                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-                label: Text(_expanded ? 'Voir moins de composants' : 'Voir plus de composants'),
+                key: const Key('palette-show-all'),
+                onPressed: () => setState(() => _expanded = true),
+                icon: const Icon(Icons.apps_outlined),
+                label: const Text('Voir tous les composants'),
               ),
             ],
             const SizedBox(height: ElectroSimSpacing.xs),

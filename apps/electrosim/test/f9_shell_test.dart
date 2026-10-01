@@ -123,23 +123,31 @@ void main() {
   });
 
 
-  testWidgets('palette search and pinned show-more remain deterministic', (WidgetTester tester) async {
+  testWidgets('palette search and one-way show-all remain deterministic', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    expect(find.byKey(const Key('palette-show-more')), findsOneWidget);
-    expect(tester.getRect(find.byKey(const Key('palette-show-more'))).bottom, lessThanOrEqualTo(900));
+    expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const Key('palette-show-all'))).bottom,
+      lessThanOrEqualTo(900),
+    );
+    expect(find.text('Voir tous les composants'), findsOneWidget);
     expect(find.text('12 composants disponibles'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('palette-show-more')));
+    await tester.tap(find.byKey(const Key('palette-show-all')));
     await tester.pumpAndSettle();
-    expect(find.text('Voir moins de composants'), findsOneWidget);
+    expect(find.byKey(const Key('palette-show-all')), findsNothing);
+    expect(find.textContaining('Voir moins'), findsNothing);
     expect(find.text('12 composants disponibles'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('palette-search-field')), 'résistance');
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'résistance',
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-lamp')), findsNothing);

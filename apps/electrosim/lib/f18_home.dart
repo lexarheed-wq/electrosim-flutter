@@ -409,8 +409,7 @@ class _HomeActionCard extends StatelessWidget {
                         color: secondary,
                       ),
                 ),
-                const Spacer(),
-                const SizedBox(height: ElectroSimSpacing.lg),
+                const SizedBox(height: ElectroSimSpacing.xl),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[

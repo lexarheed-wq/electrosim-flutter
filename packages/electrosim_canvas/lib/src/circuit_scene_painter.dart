@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'canvas_geometry.dart';
 import 'circuit_visual_layout.dart';
 import 'viewport_controller.dart';
+import 'wire_preview_planner.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -16,6 +17,7 @@ final class CircuitScenePainter extends CustomPainter {
     this.pendingTerminalId,
     this.pointerWorldPosition,
     this.previewPositions = const <String, Offset>{},
+    this.wirePreviewPlanner,
   });
 
   final CircuitState circuit;
@@ -25,6 +27,7 @@ final class CircuitScenePainter extends CustomPainter {
   final TerminalId? pendingTerminalId;
   final Offset? pointerWorldPosition;
   final Map<String, Offset> previewPositions;
+  final WirePreviewPlanner? wirePreviewPlanner;
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -190,6 +193,38 @@ final class CircuitScenePainter extends CustomPainter {
     if (start == null) {
       return;
     }
+
+    final WirePreviewPlanner? planner = wirePreviewPlanner;
+    if (planner != null) {
+      final WirePreviewPlan preview = planner.plan(
+        circuit: circuit,
+        layout: layout,
+        startTerminalId: pendingTerminalId!,
+        pointerWorldPosition: pointerWorldPosition!,
+      );
+      if (!preview.route.isResolved) {
+        return;
+      }
+      final List<Offset> points = preview.route.path!.points;
+      final Path path = Path();
+      final Offset first = viewport.worldToScreen(points.first);
+      path.moveTo(first.dx, first.dy);
+      for (final Offset worldPoint in points.skip(1)) {
+        final Offset point = viewport.worldToScreen(worldPoint);
+        path.lineTo(point.dx, point.dy);
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = pendingColor
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      return;
+    }
+
     canvas.drawLine(
       viewport.worldToScreen(start),
       viewport.worldToScreen(pointerWorldPosition!),

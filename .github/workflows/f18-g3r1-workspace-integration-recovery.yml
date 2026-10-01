@@ -1,0 +1,37 @@
+name: F18-G3R1 Workspace Integration Recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g3r1-workspace-integration-recovery
+    paths:
+      - 'apps/electrosim/**'
+      - '.github/workflows/f18-g3r1-workspace-integration-recovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  point01-runtime-router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+      - name: Resolve app
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Analyze app
+        working-directory: apps/electrosim
+        run: flutter analyze
+      - name: Point 01 runtime router integration
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point01_runtime_router_test.dart

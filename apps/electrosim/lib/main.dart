@@ -401,20 +401,16 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         router: _g2aRouter,
         terminalSnapRadius: 24,
       );
+  static const DcRectangularArrangePolicy _dcArrangePolicy =
+      DcRectangularArrangePolicy(
+        grid: 24,
+        bendKeepOut: 48,
+        minimumTerminalStub: 24,
+        minimumComponentGap: 48,
+      );
 
   late CircuitState _circuit;
-  late CircuitVisualLayout _layout = CircuitVisualLayout(
-    elementPositions: const <String, Offset>{
-      'source-24v': Offset(150, 220),
-      'switch-1': Offset(390, 220),
-      'lamp-1': Offset(630, 220),
-    },
-    wireRoutes: const <String, List<Offset>>{
-      'wire-1': <Offset>[Offset(270, 160), Offset(330, 160)],
-      'wire-2': <Offset>[Offset(510, 280), Offset(570, 280)],
-      'wire-3': <Offset>[Offset(630, 360), Offset(150, 360)],
-    },
-  );
+  late CircuitVisualLayout _layout;
   final ViewportController _viewport = ViewportController(scale: 1, translation: const Offset(40, 40));
   final GlobalKey _canvasDropKey = GlobalKey(debugLabel: 'f9-canvas-drop-target');
   late String? _selected;
@@ -457,12 +453,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         tp.lifecycle != TpLifecycle.published) {
       _circuit = tp.studentCircuit;
       _workspace = 'Recherche de dérangement';
-      _layout = _layoutForCircuit(_circuit);
-    } else if (widget.initialCircuit != null) {
-      _layout = _layoutForCircuit(_circuit);
-    } else {
-      _layout = _routeWithG2A(_circuit, _layout);
     }
+    _layout = _layoutForCircuit(_circuit);
   }
 
   @override
@@ -1401,14 +1393,122 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       final int column = index % 3;
       final int row = index ~/ 3;
       positions[ids[index]] = Offset(
-        140 + (column * 240.0),
-        180 + (row * 180.0),
+        144 + (column * 240.0),
+        192 + (row * 192.0),
       );
     }
-    return _routeWithG2A(
-      circuit,
-      CircuitVisualLayout(elementPositions: positions),
+
+    final CircuitVisualLayout base = CircuitVisualLayout(
+      elementPositions: positions,
     );
+    final CircuitVisualLayout arranged = _arrangeSimpleDcCircuit(
+      circuit,
+      base,
+    );
+    return _routeWithG2A(circuit, arranged);
+  }
+
+  CircuitVisualLayout _arrangeSimpleDcCircuit(
+    CircuitState circuit,
+    CircuitVisualLayout base,
+  ) {
+    if (!_isSimpleSeriesDc(circuit) ||
+        circuit.sources.length != 1 ||
+        circuit.components.isEmpty) {
+      return base;
+    }
+
+    final ComponentInstance load = _preferredDcLoad(circuit.components);
+    final List<ComponentInstance> inline = circuit.components
+        .where((ComponentInstance item) => item.id != load.id)
+        .toList(growable: false);
+
+    final double width =
+        576 + (inline.length > 1 ? (inline.length - 1) * 168.0 : 0);
+    final DcRectangularArrangement arrangement = _dcArrangePolicy.arrange(
+      topLeft: const Offset(168, 144),
+      width: width,
+      height: 336,
+      sourceId: circuit.sources.single.id.value,
+      loadId: load.id.value,
+      topInlineElements: inline
+          .map(
+            (ComponentInstance item) => DcInlineElement(
+              id: item.id.value,
+              extent: base.sizeOf(item.id.value).width,
+            ),
+          )
+          .toList(growable: false),
+    );
+    if (!arrangement.isResolved) {
+      return base;
+    }
+
+    return CircuitVisualLayout(
+      elementPositions: <String, Offset>{
+        ...base.elementPositions,
+        ...arrangement.positions,
+      },
+      elementSizes: base.elementSizes,
+      defaultElementSize: base.defaultElementSize,
+    );
+  }
+
+  bool _isSimpleSeriesDc(CircuitState circuit) {
+    if (circuit.mode != ElectricalMode.dc ||
+        circuit.sources.length != 1 ||
+        circuit.connections.length != circuit.components.length + 1) {
+      return false;
+    }
+
+    final Map<TerminalId, String> owners = <TerminalId, String>{};
+    final SourceInstance source = circuit.sources.single;
+    if (source.terminals.length != 2) {
+      return false;
+    }
+    for (final Terminal terminal in source.terminals) {
+      owners[terminal.id] = source.id.value;
+    }
+    for (final ComponentInstance component in circuit.components) {
+      if (component.terminals.length != 2) {
+        return false;
+      }
+      for (final Terminal terminal in component.terminals) {
+        owners[terminal.id] = component.id.value;
+      }
+    }
+
+    final Map<String, int> degree = <String, int>{
+      source.id.value: 0,
+      for (final ComponentInstance component in circuit.components)
+        component.id.value: 0,
+    };
+    for (final Connection connection in circuit.connections) {
+      final String? from = owners[connection.fromTerminalId];
+      final String? to = owners[connection.toTerminalId];
+      if (from == null || to == null || from == to) {
+        return false;
+      }
+      degree[from] = (degree[from] ?? 0) + 1;
+      degree[to] = (degree[to] ?? 0) + 1;
+    }
+    return degree.values.every((int value) => value == 2);
+  }
+
+  ComponentInstance _preferredDcLoad(List<ComponentInstance> components) {
+    const Set<String> loadTypes = <String>{
+      'lamp',
+      'motor_dc',
+      'fan_dc',
+      'buzzer',
+      'resistor',
+    };
+    for (final ComponentInstance component in components.reversed) {
+      if (loadTypes.contains(component.modelType.toLowerCase())) {
+        return component;
+      }
+    }
+    return components.last;
   }
 
   CircuitVisualLayout _routeWithG2A(

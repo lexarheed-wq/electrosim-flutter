@@ -219,6 +219,7 @@ void main() {
       settings: base.settings,
       metadata: base.metadata,
     );
+    final String before = circuit.toJsonString();
     final CircuitVisualLayout layout = CircuitVisualLayout(
       elementPositions: const <String, Offset>{
         'source': Offset(120, 120),
@@ -250,10 +251,7 @@ void main() {
     final CircuitScenePainter painter = paint.painter! as CircuitScenePainter;
     expect(painter.layout.routeFor('wire-a'), isNotEmpty);
     expect(painter.wirePreviewPlanner, isNotNull);
-    expect(circuit.toJsonString(), base.toJsonString().replaceFirst(
-      '"components":[',
-      '"components":[',
-    ), isNot(equals('')));
+    expect(circuit.toJsonString(), before);
   });
 
   testWidgets('wheel zoom changes viewport around pointer', (WidgetTester tester) async {

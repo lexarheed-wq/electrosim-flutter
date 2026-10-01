@@ -1,0 +1,40 @@
+name: F18-G2A Wire Architecture Spec
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g2a-wire-architecture-spec
+    paths:
+      - 'docs/f18/g2a/**'
+      - 'docs/superpowers/specs/2026-10-01-electrosim-f18-g2a-wire-architecture-design.md'
+      - 'docs/superpowers/plans/2026-10-01-electrosim-f18-g2a-wire-architecture.md'
+      - 'tools/f18_g2a_wire_contract.py'
+      - 'tools/test_f18_g2a_wire_contract.py'
+      - '.github/workflows/f18-g2a-wire-architecture-spec.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contract tests
+        run: python3 -m unittest tools.test_f18_g2a_wire_contract -v
+      - name: Contract validator
+        run: python3 tools/f18_g2a_wire_contract.py
+      - name: Verify no production code changes in spec branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 41911a87c6d8915b89134bc050b9844c906f652d...HEAD)"
+          forbidden="$(printf '%s\n' "$changed" | grep -E '^(apps/|packages/)' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "Spec branch modified production code:"
+            echo "$forbidden"
+            exit 1
+          fi
+      - name: Gate
+        run: echo F18_G2A_WIRE_ARCHITECTURE_SPEC_PASS

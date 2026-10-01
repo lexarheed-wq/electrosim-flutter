@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "source": "MagicPath",
+  "projectId": "456415562449448960",
+  "projectName": "ElectroSim F18 — Professional Design System",
+  "reference": {
+    "name": "Reference/Wire Architecture G2A",
+    "componentId": "456432394111688704",
+    "revisionId": "456432394111688705",
+    "width": 1440,
+    "height": 1100
+  },
+  "panels": [
+    {
+      "id": "dc-rectangular",
+      "requirements": [
+        "rectangular-orthogonal-loop",
+        "components-on-straight-segments",
+        "components-away-from-bends",
+        "balanced-placement",
+        "zero-auto-crossings"
+      ]
+    },
+    {
+      "id": "ac-bundles",
+      "requirements": [
+        "stable-lane-order",
+        "parallel-corridors",
+        "common-bend-stations",
+        "zero-auto-crossings"
+      ]
+    },
+    {
+      "id": "pv-zones",
+      "requirements": [
+        "generation-to-ac-zone-order",
+        "dc-pair-bundle",
+        "separate-dc-ac-corridors",
+        "zero-auto-crossings"
+      ]
+    },
+    {
+      "id": "obstacle-routing",
+      "requirements": [
+        "orthogonal-detour",
+        "keep-out-respected",
+        "crossing-forbidden",
+        "unresolved-if-no-clean-route"
+      ]
+    }
+  ]
+}

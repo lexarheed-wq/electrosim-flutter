@@ -18,3 +18,15 @@ Ruling: pure rerouting never moves components. Component movement belongs to an 
 Ruling: the 24 px visual grid established in the F18 workspace becomes the routing track pitch. Component auto-placement keeps 48 px from bends and uses a 48 px minimum interaction target for terminals.
 
 No merge to `main` is performed by this specification branch.
+
+
+## MagicPath visual prototype
+
+Reference board:
+- projectId: `456415562449448960`
+- componentId: `456432394111688704`
+- revisionId: `456432394111688705`
+- name: `Reference/Wire Architecture G2A`
+- size: 1440×1100
+
+The board demonstrates four required visual cases in one review surface: DC rectangular layout, ordered AC conductor bundles, separated PV DC/AC zones, and obstacle detour with automatic crossings forbidden.

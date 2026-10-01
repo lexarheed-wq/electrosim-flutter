@@ -6,3 +6,4 @@ export 'src/simulator_canvas.dart';
 export 'src/viewport_controller.dart';
 export 'src/inline_component_placement.dart';
 export 'src/wire_geometry.dart';
+export 'src/orthogonal_wire_router.dart';

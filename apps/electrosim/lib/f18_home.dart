@@ -444,6 +444,7 @@ class _JoinSessionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      key: const Key('home-join-panel'),
       color: ElectroSimColors.surfaceElevated,
       borderRadius: BorderRadius.circular(ElectroSimRadii.card),
       child: Padding(

@@ -25,7 +25,7 @@ void main() {
     expect((first.top - second.top).abs(), lessThan(1));
   });
 
-  testWidgets('active session exposes the validated persistent navigation', (WidgetTester tester) async {
+  testWidgets('active session opens persistent dashboard before simulator', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -41,7 +41,10 @@ void main() {
     expect(find.text('Accueil'), findsOneWidget);
     expect(find.text('Tableau de bord'), findsOneWidget);
     expect(find.text('Gérer la session'), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-troubleshooting')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-supervision')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
   testWidgets('dashboard groups wiring troubleshooting and supervision', (WidgetTester tester) async {
@@ -66,7 +69,7 @@ void main() {
     expect(find.text('Recherche de dérangement'), findsNothing);
   });
 
-  testWidgets('maintenance enters troubleshooting without re-proposing session dashboard', (WidgetTester tester) async {
+  testWidgets('maintenance requires explicit troubleshooting choice before simulator', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -76,8 +79,14 @@ void main() {
     await tester.tap(find.text('Centre de maintenance'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Centre de maintenance'), findsOneWidget);
-    expect(find.text('Recherche de dérangement'), findsOneWidget);
+    expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
+    expect(find.byKey(const Key('maintenance-troubleshooting')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+
+    await tester.tap(find.byKey(const Key('maintenance-troubleshooting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recherche de dérangement'), findsWidgets);
     expect(find.byKey(const Key('direct-entry-status')), findsOneWidget);
     expect(find.text('Accès direct'), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsNothing);

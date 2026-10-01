@@ -13,6 +13,7 @@ import 'f17_tp_supervision_panel.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
+import 'f18_workspace_wire_safety.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
@@ -561,10 +562,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                           });
                         },
                         onElementMoved: (String id, Offset position) {
-                          setState(() {
-                            _layout = _routeWithG2A(_circuit, _layout.moveElement(id, position));
-                            _status = 'Position graphique mise à jour : $id';
-                          });
+                          _commitElementMoveIfSafe(id, position);
                         },
                         onConnectionRequested: _handleConnectionRequested,
                         onContextAction: (CanvasHitResult hit) {
@@ -1068,13 +1066,11 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     if (draggingId != null && grabDelta != null) {
       final Offset world = _viewport.screenToWorld(event.localPosition);
       final Offset nextPosition = world + grabDelta;
-      setState(() {
-        _layout = _routeWithG2A(
-          _circuit,
-          _layout.moveElement(draggingId, nextPosition),
-        );
-        _status = 'Déplacement : $draggingId';
-      });
+      _commitElementMoveIfSafe(
+        draggingId,
+        nextPosition,
+        moving: true,
+      );
       return;
     }
 
@@ -1199,7 +1195,8 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
   void _handleConnectionRequested(TerminalId from, TerminalId to) {
     if (_blockStudentTpMutation()) return;
-    final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(_circuit, from, to);
+    final F9WiringDecision decision =
+        F9WiringPolicy.evaluateAndBuild(_circuit, from, to);
     final Connection? connection = decision.connection;
     if (!decision.accepted || connection == null) {
       setState(() {
@@ -1210,15 +1207,62 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       _announce(decision.message);
       return;
     }
+
+    final CircuitState nextCircuit =
+        F9WiringPolicy.append(_circuit, connection);
+    final CircuitVisualLayout nextLayout =
+        _routeWithG2A(nextCircuit, _layout);
+    if (!F18WorkspaceWireSafety.isCrossingFree(
+      circuit: nextCircuit,
+      layout: nextLayout,
+    )) {
+      const String message =
+          'Connexion refusée : aucun routage automatique sans croisement de nets différents.';
+      setState(() {
+        _wiringPendingTerminal = null;
+        _wiringHoverTerminal = null;
+        _status = message;
+      });
+      _announce(message);
+      return;
+    }
+
     setState(() {
-      _circuit = F9WiringPolicy.append(_circuit, connection);
-      _layout = _routeWithG2A(_circuit, _layout);
+      _circuit = nextCircuit;
+      _layout = nextLayout;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
       _status = decision.message;
     });
     _syncStudentTpCircuit();
     _announce(decision.message);
+  }
+
+  void _commitElementMoveIfSafe(
+    String elementId,
+    Offset position, {
+    bool moving = false,
+  }) {
+    final CircuitVisualLayout candidate = _routeWithG2A(
+      _circuit,
+      _layout.moveElement(elementId, position),
+    );
+    if (!F18WorkspaceWireSafety.isCrossingFree(
+      circuit: _circuit,
+      layout: candidate,
+    )) {
+      setState(() {
+        _status =
+            'Déplacement refusé : ce placement créerait un croisement automatique entre nets.';
+      });
+      return;
+    }
+    setState(() {
+      _layout = candidate;
+      _status = moving
+          ? 'Déplacement : $elementId'
+          : 'Position graphique mise à jour : $elementId';
+    });
   }
 
   void _cancelCanvasInteraction() {

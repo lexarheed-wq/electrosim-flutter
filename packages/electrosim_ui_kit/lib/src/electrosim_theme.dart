@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'typography_tokens.dart';
 
 abstract final class ElectroSimTheme {
   static ThemeData light() {
@@ -20,20 +21,12 @@ abstract final class ElectroSimTheme {
       brightness: Brightness.light,
       useMaterial3: true,
       colorScheme: colors,
-      scaffoldBackgroundColor: ElectroSimColors.surface,
+      scaffoldBackgroundColor: ElectroSimColors.background,
       visualDensity: VisualDensity.standard,
     );
 
     return base.copyWith(
-      textTheme: base.textTheme.copyWith(
-        headlineMedium: base.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.4,
-        ),
-        titleLarge: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        titleMedium: base.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        labelLarge: base.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-      ),
+      textTheme: ElectroSimTypography.apply(base.textTheme),
       appBarTheme: const AppBarTheme(
         backgroundColor: ElectroSimColors.surfaceElevated,
         foregroundColor: ElectroSimColors.textPrimary,
@@ -54,6 +47,14 @@ abstract final class ElectroSimTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: ElectroSimColors.surfaceElevated,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+          borderSide: const BorderSide(color: ElectroSimColors.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+          borderSide: const BorderSide(color: ElectroSimColors.focus, width: 2),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
           borderSide: const BorderSide(color: ElectroSimColors.outline),
@@ -80,7 +81,7 @@ abstract final class ElectroSimTheme {
           ),
         ),
       ),
-      focusColor: ElectroSimColors.info.withValues(alpha: 0.18),
+      focusColor: ElectroSimColors.focus.withValues(alpha: 0.18),
     );
   }
 }

@@ -331,9 +331,24 @@ class _F18CenterTopBar extends StatelessWidget {
                   icon: const Icon(Icons.home_outlined),
                 ),
                 const SizedBox(width: ElectroSimSpacing.sm),
-                const Flexible(child: _F18Wordmark()),
-                const Spacer(),
-                if (!compact) const _F18ReadyBadge(),
+                if (compact)
+                  const Expanded(
+                    child: Text(
+                      'ElectroSim',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: ElectroSimColors.textPrimary,
+                      ),
+                    ),
+                  )
+                else ...<Widget>[
+                  const _F18Wordmark(),
+                  const Spacer(),
+                  const _F18ReadyBadge(),
+                ],
               ],
             ),
           );

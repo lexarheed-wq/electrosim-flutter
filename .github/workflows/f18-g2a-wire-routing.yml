@@ -1,0 +1,41 @@
+name: F18-G2A Wire Routing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g2a-wire-routing
+    paths:
+      - 'packages/electrosim_canvas/**'
+      - 'docs/f18/g2a/**'
+      - 'tools/f18_g2a_*'
+      - '.github/workflows/f18-g2a-wire-routing.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+      - name: Resolve canvas package
+        working-directory: packages/electrosim_canvas
+        run: flutter pub get
+      - name: Analyze canvas package
+        working-directory: packages/electrosim_canvas
+        run: flutter analyze
+      - name: Run G2A geometry tests
+        working-directory: packages/electrosim_canvas
+        run: flutter test test/wire_geometry_test.dart test/inline_component_placement_test.dart

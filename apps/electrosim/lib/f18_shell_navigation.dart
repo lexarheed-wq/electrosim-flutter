@@ -375,8 +375,7 @@ class _F18SessionTopBar extends StatelessWidget {
       height: ElectroSimGeometry.desktopTopBarHeight,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool dense =
-              constraints.maxWidth <= ElectroSimBreakpoints.mediumUpperBound;
+          final bool dense = constraints.maxWidth < 1200;
           return Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: ElectroSimSpacing.md,

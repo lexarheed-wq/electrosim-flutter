@@ -9,3 +9,4 @@ export 'src/wire_geometry.dart';
 export 'src/orthogonal_wire_router.dart';
 export 'src/conductor_bundle_planner.dart';
 export 'src/dc_rectangular_arrange.dart';
+export 'src/circuit_wire_layout_engine.dart';

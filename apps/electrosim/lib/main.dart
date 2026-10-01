@@ -389,6 +389,14 @@ class F9WorkspaceDemoPage extends StatefulWidget {
 }
 
 class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
+  static const OrthogonalWireRouter _g2aRouter = OrthogonalWireRouter(
+    grid: 24,
+    obstacleClearance: 24,
+    envelopePadding: 120,
+  );
+  static const CircuitWireLayoutEngine _g2aWireLayoutEngine =
+      CircuitWireLayoutEngine(router: _g2aRouter);
+
   late CircuitState _circuit;
   late CircuitVisualLayout _layout = CircuitVisualLayout(
     elementPositions: const <String, Offset>{
@@ -448,7 +456,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     } else if (widget.initialCircuit != null) {
       _layout = _layoutForCircuit(_circuit);
     } else {
-      _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
+      _layout = _routeWithG2A(_circuit, _layout);
     }
   }
 
@@ -557,7 +565,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                         },
                         onElementMoved: (String id, Offset position) {
                           setState(() {
-                            _layout = F9OrthogonalRouter.reroute(_circuit, _layout.moveElement(id, position));
+                            _layout = _routeWithG2A(_circuit, _layout.moveElement(id, position));
                             _status = 'Position graphique mise à jour : $id';
                           });
                         },
@@ -875,7 +883,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
 
     setState(() {
       _circuit = nextCircuit;
-      _layout = F9OrthogonalRouter.reroute(_circuit, _layout.moveElement(elementId, worldPosition));
+      _layout = _routeWithG2A(_circuit, _layout.moveElement(elementId, worldPosition));
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
@@ -1058,7 +1066,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       final Offset world = _viewport.screenToWorld(event.localPosition);
       final Offset nextPosition = world + grabDelta;
       setState(() {
-        _layout = F9OrthogonalRouter.reroute(
+        _layout = _routeWithG2A(
           _circuit,
           _layout.moveElement(draggingId, nextPosition),
         );
@@ -1201,7 +1209,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     }
     setState(() {
       _circuit = F9WiringPolicy.append(_circuit, connection);
-      _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
+      _layout = _routeWithG2A(_circuit, _layout);
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
       _status = decision.message;
@@ -1278,7 +1286,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     );
     setState(() {
       _circuit = next;
-      _layout = F9OrthogonalRouter.reroute(_circuit, _layout);
+      _layout = _routeWithG2A(_circuit, _layout);
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _syncStudentTpCircuit();
@@ -1341,7 +1349,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       ..removeWhere((String key, List<Offset> value) => removedConnectionIds.contains(key));
     setState(() {
       _circuit = next;
-      _layout = F9OrthogonalRouter.reroute(
+      _layout = _routeWithG2A(
         _circuit,
         CircuitVisualLayout(
           elementPositions: positions,
@@ -1386,9 +1394,19 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         180 + (row * 180.0),
       );
     }
-    return F9OrthogonalRouter.reroute(
+    return _routeWithG2A(
       circuit,
       CircuitVisualLayout(elementPositions: positions),
+    );
+  }
+
+  CircuitVisualLayout _routeWithG2A(
+    CircuitState circuit,
+    CircuitVisualLayout layout,
+  ) {
+    return _g2aWireLayoutEngine.routeAll(
+      circuit: circuit,
+      layout: layout,
     );
   }
 

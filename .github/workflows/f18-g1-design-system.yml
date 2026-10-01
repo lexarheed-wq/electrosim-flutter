@@ -1,0 +1,82 @@
+name: F18-G1 Design System
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g1-design-system
+    paths:
+      - 'docs/f18/g1/**'
+      - 'tools/f18_g1*'
+      - 'packages/electrosim_ui_kit/**'
+      - '.github/workflows/f18-g1-design-system.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Validate G1 mapping and drift guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.test_f18_g1_design_system -v
+          python3 tools/f18_g1_design_system.py --check --base-sha 591b8d6386de36093ed22deaab785c38245f5331
+
+      - name: Resolve and analyze UI kit
+        working-directory: packages/electrosim_ui_kit
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Test UI kit
+        working-directory: packages/electrosim_ui_kit
+        run: flutter test
+
+      - name: Resolve and analyze application
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+
+      - name: Test application
+        working-directory: apps/electrosim
+        run: flutter test
+
+      - name: Verify visual approval evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'F18_G1_MAGICPATH_VISUAL_APPROVED' docs/f18/g1/F18_G1_VISUAL_APPROVAL.md
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('docs/f18/g1/F18_G1_TOKEN_MAPPING.json').read_text())
+          assert data['approval']['humanVisualApproved'] is True
+          assert len(data['references']) == 4
+          assert data['designAssets']['electricalVisualLanguage']['realismRevision'] == 2
+          print('F18_G1_VISUAL_EVIDENCE_PASS')
+          PY
+
+      - name: Gate
+        run: echo F18_G1_DESIGN_SYSTEM_GATE_PASS

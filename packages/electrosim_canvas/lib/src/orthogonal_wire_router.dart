@@ -213,12 +213,224 @@ final class OrthogonalWireRouter {
       }
     }
 
-    if (best == null) {
-      return const WireRouteResult.unresolved(
-        WireRouteFailure.noCrossingFreeRoute,
-      );
+    if (best != null) {
+      return WireRouteResult.resolved(best);
     }
-    return WireRouteResult.resolved(best);
+
+    final OrthogonalWirePath? manhattan = _routeManhattanAStar(
+      start: start,
+      end: end,
+      envelope: envelope,
+      obstacles: expandedObstacles,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+    );
+    if (manhattan != null) {
+      return WireRouteResult.resolved(manhattan);
+    }
+
+    return const WireRouteResult.unresolved(
+      WireRouteFailure.noCrossingFreeRoute,
+    );
+  }
+
+  OrthogonalWirePath? _routeManhattanAStar({
+    required Offset start,
+    required Offset end,
+    required Rect envelope,
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  }) {
+    final List<double> xs = _gridCoordinates(
+      envelope.left,
+      envelope.right,
+      extras: <double>[start.dx, end.dx],
+    );
+    final List<double> ys = _gridCoordinates(
+      envelope.top,
+      envelope.bottom,
+      extras: <double>[start.dy, end.dy],
+    );
+    final int startX = xs.indexOf(start.dx);
+    final int startY = ys.indexOf(start.dy);
+    final int endX = xs.indexOf(end.dx);
+    final int endY = ys.indexOf(end.dy);
+    if (startX < 0 || startY < 0 || endX < 0 || endY < 0) {
+      return null;
+    }
+
+    final List<_SearchNode> open = <_SearchNode>[
+      _SearchNode(
+        xIndex: startX,
+        yIndex: startY,
+        previousAxis: null,
+        g: 0,
+        f: _manhattanDistance(start, end),
+      ),
+    ];
+    final Map<String, double> bestG = <String, double>{
+      _stateKey(startX, startY, null): 0,
+    };
+    final Map<String, String?> previous = <String, String?>{
+      _stateKey(startX, startY, null): null,
+    };
+    final Map<String, _SearchNode> nodes = <String, _SearchNode>{
+      _stateKey(startX, startY, null): open.first,
+    };
+
+    _SearchNode? goal;
+    while (open.isNotEmpty) {
+      open.sort(_compareSearchNodes);
+      final _SearchNode current = open.removeAt(0);
+      final String currentKey = _stateKey(
+        current.xIndex,
+        current.yIndex,
+        current.previousAxis,
+      );
+      final double? knownBest = bestG[currentKey];
+      if (knownBest == null || current.g > knownBest + 0.0001) {
+        continue;
+      }
+
+      if (current.xIndex == endX && current.yIndex == endY) {
+        goal = current;
+        break;
+      }
+
+      final List<(int, int, WireAxis)> neighbors =
+          <(int, int, WireAxis)>[
+            if (current.xIndex > 0)
+              (current.xIndex - 1, current.yIndex, WireAxis.horizontal),
+            if (current.xIndex + 1 < xs.length)
+              (current.xIndex + 1, current.yIndex, WireAxis.horizontal),
+            if (current.yIndex > 0)
+              (current.xIndex, current.yIndex - 1, WireAxis.vertical),
+            if (current.yIndex + 1 < ys.length)
+              (current.xIndex, current.yIndex + 1, WireAxis.vertical),
+          ];
+
+      for (final (int nextX, int nextY, WireAxis axis) in neighbors) {
+        final Offset from = Offset(xs[current.xIndex], ys[current.yIndex]);
+        final Offset to = Offset(xs[nextX], ys[nextY]);
+        final OrthogonalSegment segment = OrthogonalSegment(
+          start: from,
+          end: to,
+        );
+        if (!_segmentIsLegal(
+          segment,
+          obstacles: obstacles,
+          occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+        )) {
+          continue;
+        }
+
+        final double stepCost = segment.length +
+            (current.previousAxis != null &&
+                    current.previousAxis != axis
+                ? bendPenalty
+                : 0);
+        final double nextG = current.g + stepCost;
+        final String nextKey = _stateKey(nextX, nextY, axis);
+        final double? existing = bestG[nextKey];
+        if (existing != null && nextG >= existing - 0.0001) {
+          continue;
+        }
+
+        final Offset nextPoint = Offset(xs[nextX], ys[nextY]);
+        final _SearchNode nextNode = _SearchNode(
+          xIndex: nextX,
+          yIndex: nextY,
+          previousAxis: axis,
+          g: nextG,
+          f: nextG + _manhattanDistance(nextPoint, end),
+        );
+        bestG[nextKey] = nextG;
+        previous[nextKey] = currentKey;
+        nodes[nextKey] = nextNode;
+        open.add(nextNode);
+      }
+    }
+
+    if (goal == null) {
+      return null;
+    }
+
+    final List<Offset> reversed = <Offset>[];
+    String? key = _stateKey(goal.xIndex, goal.yIndex, goal.previousAxis);
+    while (key != null) {
+      final _SearchNode? node = nodes[key];
+      if (node == null) {
+        return null;
+      }
+      reversed.add(Offset(xs[node.xIndex], ys[node.yIndex]));
+      key = previous[key];
+    }
+
+    final List<Offset> points = _normalize(reversed.reversed.toList());
+    if (points.length < 2) {
+      return null;
+    }
+    return OrthogonalWirePath(points: points);
+  }
+
+  bool _segmentIsLegal(
+    OrthogonalSegment segment, {
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  }) {
+    for (final RoutingObstacle obstacle in obstacles) {
+      if (_segmentHitsRect(segment, obstacle.bounds)) {
+        return false;
+      }
+    }
+    return !WireRouteSafety.hasDifferentNetCrossing(
+      candidate: OrthogonalWirePath(
+        points: <Offset>[segment.start, segment.end],
+      ),
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+    );
+  }
+
+  List<double> _gridCoordinates(
+    double minimum,
+    double maximum, {
+    required List<double> extras,
+  }) {
+    final double first = (minimum / grid).ceilToDouble() * grid;
+    final double last = (maximum / grid).floorToDouble() * grid;
+    final List<double> values = <double>[...extras];
+    for (double value = first; value <= last + 0.0001; value += grid) {
+      values.add(value);
+    }
+    return _dedupeSorted(values);
+  }
+
+  static String _stateKey(int x, int y, WireAxis? axis) {
+    return '$x:$y:${axis?.index ?? -1}';
+  }
+
+  static double _manhattanDistance(Offset first, Offset second) {
+    return (first.dx - second.dx).abs() + (first.dy - second.dy).abs();
+  }
+
+  static int _compareSearchNodes(_SearchNode first, _SearchNode second) {
+    final int byF = first.f.compareTo(second.f);
+    if (byF != 0) {
+      return byF;
+    }
+    final int byG = first.g.compareTo(second.g);
+    if (byG != 0) {
+      return byG;
+    }
+    final int byY = first.yIndex.compareTo(second.yIndex);
+    if (byY != 0) {
+      return byY;
+    }
+    final int byX = first.xIndex.compareTo(second.xIndex);
+    if (byX != 0) {
+      return byX;
+    }
+    return (first.previousAxis?.index ?? -1)
+        .compareTo(second.previousAxis?.index ?? -1);
   }
 
   double _cost(OrthogonalWirePath path) {
@@ -300,4 +512,21 @@ final class OrthogonalWireRouter {
 
   static double _min(double a, double b) => a < b ? a : b;
   static double _max(double a, double b) => a > b ? a : b;
+}
+
+
+final class _SearchNode {
+  const _SearchNode({
+    required this.xIndex,
+    required this.yIndex,
+    required this.previousAxis,
+    required this.g,
+    required this.f,
+  });
+
+  final int xIndex;
+  final int yIndex;
+  final WireAxis? previousAxis;
+  final double g;
+  final double f;
 }

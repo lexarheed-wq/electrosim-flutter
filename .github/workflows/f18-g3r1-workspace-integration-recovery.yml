@@ -50,6 +50,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point04_no_auto_crossing_test.dart
 
+      - name: Point 05 F18 palette contract
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point05_palette_contract_test.dart
+
       - name: Application non-golden regression
         working-directory: apps/electrosim
         shell: bash
@@ -80,3 +84,6 @@ jobs:
 
       - name: Point 04 gate
         run: echo F18_G3R1_P04_NO_AUTO_CROSSING_PASS
+
+      - name: Point 05 gate
+        run: echo F18_G3R1_P05_PALETTE_CONTRACT_PASS

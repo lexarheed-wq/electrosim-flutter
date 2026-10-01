@@ -4,3 +4,5 @@ export 'src/circuit_visual_layout.dart';
 export 'src/hit_test_engine.dart';
 export 'src/simulator_canvas.dart';
 export 'src/viewport_controller.dart';
+export 'src/inline_component_placement.dart';
+export 'src/wire_geometry.dart';

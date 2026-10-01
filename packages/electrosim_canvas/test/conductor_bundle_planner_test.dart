@@ -7,10 +7,10 @@ void main() {
     grid: 24,
   );
 
-  test('AC1 preserves L N PE order and common bend station', () {
+  test('AC1 preserves L N PE order as parallel lanes', () {
     final ConductorBundlePlan plan = planner.planAc1(
       start: const Offset(48, 72),
-      end: const Offset(432, 168),
+      end: const Offset(432, 72),
     );
 
     expect(
@@ -22,24 +22,25 @@ void main() {
       ],
     );
     expect(plan.paths, hasLength(3));
-    expect(plan.commonBendStationX, isNotNull);
 
     final List<double> startYs = plan.laneOrder
         .map((role) => plan.paths[role]!.points.first.dy)
         .toList();
+    final List<double> endYs = plan.laneOrder
+        .map((role) => plan.paths[role]!.points.last.dy)
+        .toList();
     expect(startYs, orderedEquals(<double>[72, 96, 120]));
+    expect(endYs, orderedEquals(<double>[72, 96, 120]));
 
     for (final ConductorLaneRole role in plan.laneOrder) {
-      final OrthogonalWirePath path = plan.paths[role]!;
-      expect(path.points[1].dx, plan.commonBendStationX);
-      expect(path.points[path.points.length - 2].dx, plan.commonBendStationX);
+      expect(plan.paths[role]!.bends, isEmpty);
     }
   });
 
   test('AC3 preserves L1 L2 L3 N PE order without crossings', () {
     final ConductorBundlePlan plan = planner.planAc3(
       start: const Offset(48, 72),
-      end: const Offset(480, 192),
+      end: const Offset(480, 72),
     );
 
     expect(

@@ -39,3 +39,24 @@ jobs:
       - name: Run G2A geometry tests
         working-directory: packages/electrosim_canvas
         run: flutter test test/wire_geometry_test.dart test/inline_component_placement_test.dart
+
+      - name: Run Canvas non-golden regression tests
+        working-directory: packages/electrosim_canvas
+        run: |
+          flutter test \
+            test/hit_test_engine_test.dart \
+            test/simulator_canvas_test.dart \
+            test/viewport_controller_test.dart \
+            test/canvas_performance_test.dart
+
+      - name: Protect electrical engine scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only 8cafdbe93b2c4756e9ec176f598c66f75763639c...HEAD)"
+          forbidden="$(printf '%s\n' "$changed" | grep -E '^packages/(electrosim_domain|electrosim_topology|electrosim_solver_dc|electrosim_solver_ac|electrosim_pv|electrosim_energy|electrosim_measurements|electrosim_diagnostics|electrosim_tp|electrosim_storage)/' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "G2A modified protected electrical scope:"
+            echo "$forbidden"
+            exit 1
+          fi

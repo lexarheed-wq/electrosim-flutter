@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect;
+
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 

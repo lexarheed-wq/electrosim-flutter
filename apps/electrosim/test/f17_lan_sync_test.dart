@@ -274,7 +274,11 @@ void main() {
       expect(find.text('Centre de maintenance'), findsOneWidget);
       expect(find.text('Centre de conception'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('home-join-session')));
+      final Finder joinSession =
+          find.byKey(const Key('home-join-session'));
+      await tester.ensureVisible(joinSession);
+      await tester.pumpAndSettle();
+      await tester.tap(joinSession);
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('join-session-submit')), findsOneWidget);

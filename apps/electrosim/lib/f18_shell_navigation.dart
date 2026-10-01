@@ -375,8 +375,8 @@ class _F18SessionTopBar extends StatelessWidget {
       height: ElectroSimGeometry.desktopTopBarHeight,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool compact =
-              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          final bool dense =
+              constraints.maxWidth <= ElectroSimBreakpoints.mediumUpperBound;
           return Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: ElectroSimSpacing.md,
@@ -385,11 +385,11 @@ class _F18SessionTopBar extends StatelessWidget {
               children: <Widget>[
                 const Flexible(child: _F18Wordmark()),
                 SizedBox(
-                  width: compact
+                  width: dense
                       ? ElectroSimSpacing.xs
                       : ElectroSimSpacing.lg,
                 ),
-                if (compact) ...<Widget>[
+                if (dense) ...<Widget>[
                   _F18CompactTopAction(
                     key: const Key('session-home-action'),
                     icon: Icons.home_outlined,

@@ -38,9 +38,10 @@ void main() {
     expect(find.byKey(const Key('session-home-action')), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsOneWidget);
     expect(find.byKey(const Key('session-manage-action')), findsOneWidget);
-    expect(find.text('Accueil'), findsOneWidget);
+    expect(find.byTooltip('Accueil'), findsOneWidget);
+    expect(find.byTooltip('Tableau de bord'), findsOneWidget);
+    expect(find.byTooltip('Gérer la session'), findsOneWidget);
     expect(find.text('Tableau de bord'), findsOneWidget);
-    expect(find.text('Gérer la session'), findsOneWidget);
     expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
     expect(find.byKey(const Key('dashboard-troubleshooting')), findsOneWidget);
     expect(find.byKey(const Key('dashboard-supervision')), findsOneWidget);
@@ -65,7 +66,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('dashboard-supervision')));
     await tester.pumpAndSettle();
-    expect(find.text('Supervision'), findsOneWidget);
+    expect(find.byKey(const Key('session-supervision-page')), findsOneWidget);
+    expect(find.text('Supervision'), findsWidgets);
     expect(find.text('Recherche de dérangement'), findsNothing);
   });
 

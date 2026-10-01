@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MAPPING = ROOT / "docs/f18/g1/F18_G1_TOKEN_MAPPING.json"
@@ -74,6 +74,7 @@ def find_forbidden_g1_changes(paths):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--base-sha")
     args = parser.parse_args()
     mapping = load_mapping()
     errors = validate_mapping(mapping)
@@ -86,6 +87,18 @@ def main():
     for name,fg,bg,minimum in checks:
         ratio = contrast_ratio(fg,bg)
         if ratio < minimum: errors.append(f"contrast:{name}:{ratio:.2f}")
+    if args.base_sha:
+        completed = subprocess.run(
+            ["git", "diff", "--name-only", f"{args.base_sha}...HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        changed = [line for line in completed.stdout.splitlines() if line]
+        forbidden = find_forbidden_g1_changes(changed)
+        if forbidden:
+            errors.extend("forbidden-change:" + path for path in forbidden)
     if errors:
         print("F18_G1_TOKEN_MAPPING_FAIL")
         for error in errors: print(error)

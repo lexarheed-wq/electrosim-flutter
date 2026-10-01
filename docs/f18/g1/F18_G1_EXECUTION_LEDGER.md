@@ -95,3 +95,18 @@ Dedicated G1 CI run `36882238177` proved:
 Observed F9 pixel drift is expected after the approved F18 token synchronization (compact base 4.05%, compact palette 19.04%, compact properties 18.62%, medium base 2.65%, medium palette 11.69%, medium properties 7.19%, expanded reference sets 10.48%, student diagnostic 16.00%).
 
 Ruling: never regenerate or auto-accept the F9 goldens in G1. They remain historical F9 evidence. The G1 gate runs the complete functional application suite excluding only `f9_goldens_test.dart`, and separately fails if any F9 golden file or its test is modified. New F18 goldens are created only from implemented F18 screens after approved references are consumed in later UI gates.
+
+
+### Task 7/8 qualification evidence
+
+Dedicated G1B run `36882699136` on code head `486ff6cd6c95f8b53239a0006fdbf75b1e722974` completed successfully:
+- mapping/drift: PASS;
+- UI kit analyze: PASS;
+- UI kit tests: 12 PASS;
+- app analyze: PASS;
+- non-golden functional app tests: 72 PASS;
+- F9 historical golden preservation: PASS;
+- visual approval evidence: PASS;
+- `F18_G1_DESIGN_SYSTEM_GATE_PASS` emitted.
+
+Ruling: the final report commit is documentation-only and must receive one final exact-head G1B workflow pass before handoff.

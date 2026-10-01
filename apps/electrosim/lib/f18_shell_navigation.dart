@@ -255,7 +255,6 @@ class _F18CenterScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: key,
       backgroundColor: ElectroSimColors.background,
       body: SafeArea(
         child: Column(
@@ -419,7 +418,6 @@ class _F18TopAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton.icon(
-      key: key,
       onPressed: onPressed,
       icon: Icon(icon, size: ElectroSimComponentTokens.iconMedium),
       label: Text(label),

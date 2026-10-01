@@ -1,5 +1,8 @@
+export 'src/component_tokens.dart';
 export 'src/design_tokens.dart';
+export 'src/electrical_visual_tokens.dart';
 export 'src/electrosim_theme.dart';
 export 'src/responsive.dart';
 export 'src/surface_components.dart';
+export 'src/typography_tokens.dart';
 export 'src/workspace_shell.dart';

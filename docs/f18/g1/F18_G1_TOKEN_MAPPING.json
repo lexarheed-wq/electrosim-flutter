@@ -72,7 +72,8 @@
       "control": 8,
       "panel": 12,
       "card": 16,
-      "pill": 999
+      "pill": 999,
+      "dialog": 16
     },
     "motionMs": {
       "instantFeedback": 90,
@@ -91,7 +92,9 @@
       "compactControlHeight": 32,
       "iconSmall": 16,
       "iconMedium": 20,
-      "iconLarge": 24
+      "iconLarge": 24,
+      "terminalHitTarget": 48,
+      "terminalVisualDiameter": 16
     },
     "breakpoints": {
       "compactLt": 600,

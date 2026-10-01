@@ -1,0 +1,42 @@
+name: F18-G2 Shell Navigation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g2-shell-navigation
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_ui_kit/**'
+      - 'docs/superpowers/specs/2026-10-01-electrosim-f18-g2-shell-navigation-design.md'
+      - 'docs/superpowers/plans/2026-10-01-electrosim-f18-g2-shell-navigation.md'
+      - '.github/workflows/f18-g2-shell-navigation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  shell-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+      - name: Run G2 navigation tests
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g2_navigation_test.dart

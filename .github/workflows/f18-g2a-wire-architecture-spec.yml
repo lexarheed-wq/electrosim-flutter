@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Contract tests
         run: python3 -m unittest tools.test_f18_g2a_wire_contract -v
       - name: Contract validator

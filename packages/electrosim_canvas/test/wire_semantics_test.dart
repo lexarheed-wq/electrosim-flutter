@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 Terminal _terminal(String id) => Terminal(
   id: TerminalId(id),
   name: id,
-  role: TerminalRole.bidirectional,
+  role: TerminalRole.generic,
 );
 
 ComponentInstance _node(String id, String terminalId) => ComponentInstance(

@@ -37,6 +37,8 @@ class F9CanvasVisualOverlay extends StatelessWidget {
     required this.viewport,
     this.pendingTerminalId,
     this.hoverTerminalId,
+    this.pointerWorldPosition,
+    this.wirePreviewPlanner,
   });
 
   final CircuitState circuit;
@@ -44,6 +46,8 @@ class F9CanvasVisualOverlay extends StatelessWidget {
   final ViewportController viewport;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final Offset? pointerWorldPosition;
+  final WirePreviewPlanner? wirePreviewPlanner;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +59,8 @@ class F9CanvasVisualOverlay extends StatelessWidget {
           viewport: viewport,
           pendingTerminalId: pendingTerminalId,
           hoverTerminalId: hoverTerminalId,
+          pointerWorldPosition: pointerWorldPosition,
+          wirePreviewPlanner: wirePreviewPlanner,
         ),
         size: Size.infinite,
       ),
@@ -69,6 +75,8 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     required this.viewport,
     required this.pendingTerminalId,
     required this.hoverTerminalId,
+    required this.pointerWorldPosition,
+    required this.wirePreviewPlanner,
   });
 
   final CircuitState circuit;
@@ -76,10 +84,13 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   final ViewportController viewport;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final Offset? pointerWorldPosition;
+  final WirePreviewPlanner? wirePreviewPlanner;
 
   @override
   void paint(Canvas canvas, Size size) {
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
+    _paintSmartWirePreview(canvas);
     for (final SourceInstance source in circuit.sources) {
       final Rect? rect = geometry.elementRects[source.id.value];
       if (rect == null) {
@@ -97,6 +108,46 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       _paintElementGlyph(canvas, rect, component.modelType, active);
     }
     _paintWiringTargets(canvas, geometry);
+  }
+
+  void _paintSmartWirePreview(Canvas canvas) {
+    final TerminalId? pending = pendingTerminalId;
+    final Offset? pointer = pointerWorldPosition;
+    final WirePreviewPlanner? planner = wirePreviewPlanner;
+    if (pending == null || pointer == null || planner == null) {
+      return;
+    }
+
+    final WirePreviewPlan plan = planner.plan(
+      circuit: circuit,
+      layout: layout,
+      startTerminalId: pending,
+      pointerWorldPosition: pointer,
+    );
+    if (!plan.route.isResolved) {
+      return;
+    }
+
+    final List<Offset> points = plan.route.path!.points;
+    if (points.length < 2) {
+      return;
+    }
+    final Path path = Path();
+    final Offset first = viewport.worldToScreen(points.first);
+    path.moveTo(first.dx, first.dy);
+    for (final Offset point in points.skip(1)) {
+      final Offset screen = viewport.worldToScreen(point);
+      path.lineTo(screen.dx, screen.dy);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = ElectroSimColors.primary
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
   }
 
   void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {

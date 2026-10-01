@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -18,6 +19,13 @@ ComponentInstance _component(String id, Terminal terminal) => ComponentInstance(
     );
 
 void main() {
+  test('real workspace enforces crossing safety on connection and drag commits', () {
+    final String source = File('lib/main.dart').readAsStringSync();
+    final int uses =
+        'F18WorkspaceWireSafety.isCrossingFree'.allMatches(source).length;
+    expect(uses, greaterThanOrEqualTo(2));
+  });
+
   test('different-net geometric crossing is rejected', () {
     final Terminal a = _terminal('a');
     final Terminal b = _terminal('b');

@@ -314,23 +314,30 @@ class _F18CenterTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: ElectroSimGeometry.desktopTopBarHeight,
-      child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.md),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              key: const Key('center-home-action'),
-              onPressed: onHome,
-              tooltip: 'Accueil',
-              icon: const Icon(Icons.home_outlined),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ElectroSimSpacing.md,
             ),
-            const SizedBox(width: ElectroSimSpacing.sm),
-            const _F18Wordmark(),
-            const Spacer(),
-            const _F18ReadyBadge(),
-          ],
-        ),
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  key: const Key('center-home-action'),
+                  onPressed: onHome,
+                  tooltip: 'Accueil',
+                  icon: const Icon(Icons.home_outlined),
+                ),
+                const SizedBox(width: ElectroSimSpacing.sm),
+                const Flexible(child: _F18Wordmark()),
+                const Spacer(),
+                if (!compact) const _F18ReadyBadge(),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -351,54 +358,108 @@ class _F18SessionTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: ElectroSimGeometry.desktopTopBarHeight,
-      child: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.md),
-        child: Row(
-          children: <Widget>[
-            const _F18Wordmark(),
-            const SizedBox(width: ElectroSimSpacing.lg),
-            _F18TopAction(
-              key: const Key('session-home-action'),
-              icon: Icons.home_outlined,
-              label: 'Accueil',
-              onPressed: onHome,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ElectroSimSpacing.md,
             ),
-            _F18TopAction(
-              key: const Key('session-dashboard-action'),
-              icon: Icons.dashboard_outlined,
-              label: 'Tableau de bord',
-              onPressed: onDashboard,
-            ),
-            _F18TopAction(
-              key: const Key('session-manage-action'),
-              icon: Icons.settings_outlined,
-              label: 'Gérer la session',
-              onPressed: onManageSession,
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: ElectroSimSpacing.sm,
-                vertical: ElectroSimSpacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: ElectroSimColors.surfaceMuted,
-                borderRadius:
-                    BorderRadius.circular(ElectroSimRadii.compact),
-              ),
-              child: const Text(
-                'SESSION · PRÊTE',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: ElectroSimColors.textSecondary,
+            child: Row(
+              children: <Widget>[
+                const Flexible(child: _F18Wordmark()),
+                SizedBox(
+                  width: compact
+                      ? ElectroSimSpacing.xs
+                      : ElectroSimSpacing.lg,
                 ),
-              ),
+                if (compact) ...<Widget>[
+                  _F18CompactTopAction(
+                    key: const Key('session-home-action'),
+                    icon: Icons.home_outlined,
+                    label: 'Accueil',
+                    onPressed: onHome,
+                  ),
+                  _F18CompactTopAction(
+                    key: const Key('session-dashboard-action'),
+                    icon: Icons.dashboard_outlined,
+                    label: 'Tableau de bord',
+                    onPressed: onDashboard,
+                  ),
+                  _F18CompactTopAction(
+                    key: const Key('session-manage-action'),
+                    icon: Icons.settings_outlined,
+                    label: 'Gérer la session',
+                    onPressed: onManageSession,
+                  ),
+                ] else ...<Widget>[
+                  _F18TopAction(
+                    key: const Key('session-home-action'),
+                    icon: Icons.home_outlined,
+                    label: 'Accueil',
+                    onPressed: onHome,
+                  ),
+                  _F18TopAction(
+                    key: const Key('session-dashboard-action'),
+                    icon: Icons.dashboard_outlined,
+                    label: 'Tableau de bord',
+                    onPressed: onDashboard,
+                  ),
+                  _F18TopAction(
+                    key: const Key('session-manage-action'),
+                    icon: Icons.settings_outlined,
+                    label: 'Gérer la session',
+                    onPressed: onManageSession,
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: ElectroSimSpacing.sm,
+                      vertical: ElectroSimSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ElectroSimColors.surfaceMuted,
+                      borderRadius:
+                          BorderRadius.circular(ElectroSimRadii.compact),
+                    ),
+                    child: const Text(
+                      'SESSION · PRÊTE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: ElectroSimColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _F18CompactTopAction extends StatelessWidget {
+  const _F18CompactTopAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: label,
+      icon: Icon(icon, size: ElectroSimComponentTokens.iconMedium),
     );
   }
 }

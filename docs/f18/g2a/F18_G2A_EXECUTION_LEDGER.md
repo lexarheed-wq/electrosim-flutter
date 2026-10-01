@@ -30,3 +30,38 @@ Reference board:
 - size: 1440×1100
 
 The board demonstrates four required visual cases in one review surface: DC rectangular layout, ordered AC conductor bundles, separated PV DC/AC zones, and obstacle detour with automatic crossings forbidden.
+
+
+## Runtime geometry milestone — 2026-10-01
+
+Implementation branch: `f18-g2a-wire-routing`.
+
+TDD evidence:
+- RED run `36886114738`: geometry types intentionally absent; analyzer failed on missing `OrthogonalWirePath`, `OrthogonalSegment`, `RoutingObstacle`, `InlinePlacementPolicy`.
+- First GREEN run `36886812371`: orthogonal geometry + centered inline placement passed analysis, targeted tests, Canvas non-golden regressions and protected electrical-scope guard.
+- Router RED run `36887054274`: missing `OrthogonalWireRouter`, `WireRouteResult`, `WireRouteSafety` and `WireRouteFailure` confirmed.
+- Router GREEN run `36887255090`: analysis PASS, all targeted G2A geometry/router tests PASS, Canvas non-golden regressions PASS, protected electrical engine scope PASS.
+
+Implemented so far:
+- orthogonal horizontal/vertical segment contract;
+- explicit bend extraction;
+- perpendicular intersection detection;
+- expanded routing obstacles;
+- centered/symmetric inline component placement with bend keep-out and terminal stubs;
+- deterministic direct/L/U outer-channel router;
+- obstacle avoidance;
+- different-net crossing rejection;
+- unresolved result rather than forced crossing;
+- deterministic identical-input output.
+
+Still required before full `F18_G2A_WIRE_ROUTING_GATE_PASS`:
+- Manhattan A* fallback on the 24 px routing grid;
+- AC1/AC3 stable lane-bundle planner;
+- PV paired DC corridor + DC/AC zone planner;
+- DC rectangular circuit arrange policy tied to visual roles;
+- route idempotence/property/randomized fixtures;
+- Canvas preview/commit integration;
+- explicit junction vs manual non-junction rendering;
+- final full application regression and visual validation.
+
+No solver, topology, diagnostics, measurement, PV engine, energy, TP or storage package was modified by these routing milestones.

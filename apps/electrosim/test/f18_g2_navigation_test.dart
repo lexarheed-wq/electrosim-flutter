@@ -114,7 +114,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const app.ElectroSimApp());
-    await tester.tap(find.byKey(const Key('home-design')));
+    final Finder design = find.byKey(const Key('home-design'));
+    await tester.ensureVisible(design);
+    await tester.pumpAndSettle();
+    await tester.tap(design);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('design-center-page')), findsOneWidget);

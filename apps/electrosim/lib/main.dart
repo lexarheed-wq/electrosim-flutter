@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
+import 'f18_home.dart';
 import 'f18_shell_navigation.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -54,104 +55,24 @@ class F9HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final ElectroSimWindowClass windowClass = ElectroSimBreakpoints.classify(constraints.maxWidth);
-            final double maxContentWidth = windowClass == ElectroSimWindowClass.expanded ? 1180 : 760;
-            return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxContentWidth),
-                child: Padding(
-                  padding: const EdgeInsets.all(ElectroSimSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const _BrandHeader(),
-                      const SizedBox(height: ElectroSimSpacing.xl),
-                      Text('Que voulez-vous faire ?', style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: ElectroSimSpacing.xs),
-                      Text(
-                        'Accédez au simulateur, à la maintenance ou à la conception depuis une structure commune.',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: ElectroSimColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: ElectroSimSpacing.lg),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (BuildContext context, BoxConstraints bodyConstraints) {
-                            final double cardWidth = _homeCardWidth(windowClass, bodyConstraints.maxWidth);
-                            return SingleChildScrollView(
-                              child: Wrap(
-                                spacing: ElectroSimSpacing.md,
-                                runSpacing: ElectroSimSpacing.md,
-                                children: <Widget>[
-                                  _HomeActionCard(
-                                    key: const Key('home-create-session'),
-                                    width: cardWidth,
-                                    icon: Icons.add_circle_outline,
-                                    title: 'Créer une nouvelle session',
-                                    description: 'Préparer une activité et ouvrir un espace de travail.',
-                                    onTap: () => _openSessionShell(
-                                      context,
-                                      persistenceController,
-                                    ),
-                                    secondaryLabel: 'Rejoindre une session',
-                                    secondaryKey: const Key('home-join-session'),
-                                    onSecondaryTap: () => _joinLanSession(
-                                      context,
-                                      persistenceController,
-                                    ),
-                                  ),
-                                  _HomeActionCard(
-                                    key: const Key('home-maintenance'),
-                                    width: cardWidth,
-                                    icon: Icons.build_circle_outlined,
-                                    title: 'Centre de maintenance',
-                                    description: 'Accéder aux parcours de recherche de dérangement.',
-                                    onTap: () => _openMaintenanceCenter(
-                                      context,
-                                      persistenceController,
-                                    ),
-                                  ),
-                                  _HomeActionCard(
-                                    key: const Key('home-design'),
-                                    width: cardWidth,
-                                    icon: Icons.account_tree_outlined,
-                                    title: 'Centre de conception',
-                                    description: 'Câbler librement et préparer les futurs schémas sains.',
-                                    onTap: () => _openDesignCenter(
-                                      context,
-                                      persistenceController,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+    return F18HomeSurface(
+      onCreateSession: () => _openSessionShell(
+        context,
+        persistenceController,
+      ),
+      onMaintenance: () => _openMaintenanceCenter(
+        context,
+        persistenceController,
+      ),
+      onDesign: () => _openDesignCenter(
+        context,
+        persistenceController,
+      ),
+      onJoinSession: () => _joinLanSession(
+        context,
+        persistenceController,
       ),
     );
-  }
-
-  static double _homeCardWidth(ElectroSimWindowClass windowClass, double availableWidth) {
-    if (windowClass == ElectroSimWindowClass.compact) {
-      return availableWidth;
-    }
-    if (windowClass == ElectroSimWindowClass.medium) {
-      return (availableWidth - ElectroSimSpacing.md) / 2;
-    }
-    return (availableWidth - (ElectroSimSpacing.md * 2)) / 3;
   }
 
   static Future<void> _joinLanSession(
@@ -335,118 +256,6 @@ class F9HomePage extends StatelessWidget {
           sessionNavigation: sessionNavigation,
           persistenceController: persistenceController,
         ),
-      ),
-    );
-  }
-}
-
-class _BrandHeader extends StatelessWidget {
-  const _BrandHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: ElectroSimColors.primary,
-            borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-          ),
-          child: const Icon(Icons.bolt, color: Colors.white),
-        ),
-        const SizedBox(width: ElectroSimSpacing.sm),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('ElectroSim', style: Theme.of(context).textTheme.titleLarge),
-            Text(
-              'Laboratoire électrique',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ElectroSimColors.textSecondary),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _HomeActionCard extends StatelessWidget {
-  const _HomeActionCard({
-    super.key,
-    required this.width,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
-    this.secondaryLabel,
-    this.secondaryKey,
-    this.onSecondaryTap,
-  });
-
-  final double width;
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
-  final String? secondaryLabel;
-  final Key? secondaryKey;
-  final VoidCallback? onSecondaryTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: title,
-      hint: description,
-      child: SizedBox(
-        width: width,
-        child: Card(
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ElectroSimRadii.panel),
-          side: const BorderSide(color: ElectroSimColors.outline),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(ElectroSimRadii.panel),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(ElectroSimSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Icon(icon, size: 32, color: ElectroSimColors.primary),
-                const SizedBox(height: ElectroSimSpacing.lg),
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: ElectroSimSpacing.xs),
-                Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: ElectroSimColors.textSecondary),
-                ),
-                const SizedBox(height: ElectroSimSpacing.md),
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text('Ouvrir'),
-                    SizedBox(width: ElectroSimSpacing.xs),
-                    Icon(Icons.arrow_forward, size: 18),
-                  ],
-                ),
-                if (onSecondaryTap != null && secondaryLabel != null) ...<Widget>[
-                  const SizedBox(height: ElectroSimSpacing.xs),
-                  TextButton.icon(
-                    key: secondaryKey,
-                    onPressed: onSecondaryTap,
-                    icon: const Icon(Icons.login_outlined),
-                    label: Text(secondaryLabel!),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
       ),
     );
   }

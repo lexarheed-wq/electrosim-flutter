@@ -1,0 +1,179 @@
+name: F18-G3 Physical Mac Intel Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g3-physical-mac-candidate
+    paths:
+      - '.github/workflows/f18-g3-physical-mac-candidate.yml'
+      - 'docs/f18/physical/G3_MAC_TEST_CHECKLIST.md'
+
+permissions:
+  contents: read
+
+jobs:
+  build-mac-intel-candidate:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify qualified G3 source freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='6bcfacbf2b39c0667ac695a80b39d4f3e215615b'
+          changed="$(git diff --name-only "$SOURCE_SHA"...HEAD -- apps packages tools ci)"
+          if [ -n "$changed" ]; then
+            echo "Physical candidate changed qualified source/runtime files:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "F18_G3_PHYSICAL_SOURCE_FREEZE_PASS $SOURCE_SHA"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify Intel host and locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          echo "F18_G3_PHYSICAL_INTEL_HOST_PASS"
+
+      - name: Re-run G3 application qualification
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/f18_g3_session_dashboard_test.dart
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+          echo "F18_G3_PHYSICAL_REGRESSION_PASS"
+
+      - name: Generate native macOS runner with LAN entitlements
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREP_OUT="$(bash tools/f17_prepare_release_runner.sh macos "$RUNNER_TEMP/electrosim-g3-physical")"
+          case "$PREP_OUT" in
+            F17_RUNNER_PATH=*) TMP="${PREP_OUT#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
+          esac
+          echo "root=$TMP" >> "$GITHUB_OUTPUT"
+          echo "app=$TMP/apps/electrosim" >> "$GITHUB_OUTPUT"
+
+      - name: Build release app
+        working-directory: ${{ steps.runner.outputs.app }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build macos --release
+
+      - name: Verify and package Intel candidate
+        id: package
+        shell: bash
+        env:
+          APP_ROOT: ${{ steps.runner.outputs.app }}
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='6bcfacbf2b39c0667ac695a80b39d4f3e215615b'
+          APP_BUNDLE="$(find "$APP_ROOT/build/macos/Build/Products/Release" -maxdepth 1 -type d -name '*.app' | head -1)"
+          test -n "$APP_BUNDLE"
+          EXEC_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_BUNDLE/Contents/Info.plist")"
+          EXECUTABLE="$APP_BUNDLE/Contents/MacOS/$EXEC_NAME"
+          test -f "$EXECUTABLE"
+
+          ARCHS="$(lipo -archs "$EXECUTABLE")"
+          echo "Executable architectures: $ARCHS"
+          echo "$ARCHS" | tr ' ' '\n' | grep -qx 'x86_64'
+
+          if ! codesign --verify --deep --strict "$APP_BUNDLE"; then
+            codesign --force --deep --sign - "$APP_BUNDLE"
+          fi
+          codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+
+          OUT="$RUNNER_TEMP/F18_G3_PHYSICAL_MAC_INTEL"
+          CANDIDATE="$OUT/F18_G3_PHYSICAL_MAC_INTEL"
+          mkdir -p "$CANDIDATE"
+          ditto "$APP_BUNDLE" "$CANDIDATE/ElectroSim.app"
+          cp docs/f18/physical/G3_MAC_TEST_CHECKLIST.md "$CANDIDATE/LISEZ_MOI_TEST_MAC.md"
+
+          FLUTTER_LINE="$(flutter --version | head -1 | tr -d '\r')"
+          DART_LINE="$(dart --version 2>&1 | head -1 | tr -d '\r')"
+          XCODE_LINE="$(xcodebuild -version | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+          MACOS_LINE="$(sw_vers -productVersion)"
+          PACKAGE_SHA="$(git rev-parse HEAD)"
+
+          python3 - "$CANDIDATE/BUILD_PROVENANCE.json" "$SOURCE_SHA" "$PACKAGE_SHA" "$ARCHS" "$FLUTTER_LINE" "$DART_LINE" "$XCODE_LINE" "$MACOS_LINE" <<'PY'
+          import datetime, json, sys
+          out, source_sha, package_sha, archs, flutter, dart, xcode, macos = sys.argv[1:]
+          data = {
+              "schemaVersion": 1,
+              "candidate": "F18_G3_PHYSICAL_MAC_INTEL",
+              "qualifiedSourceSha": source_sha,
+              "packagingCommitSha": package_sha,
+              "hostArchitecture": "x86_64",
+              "executableArchitectures": archs.split(),
+              "flutter": flutter,
+              "dart": dart,
+              "xcode": xcode,
+              "builderMacOS": macos,
+              "codeSigning": "ad-hoc/CI verification",
+              "g3Gate": "F18_G3_SESSION_DASHBOARD_GATE_PASS",
+              "createdAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          with open(out, "w", encoding="utf-8") as handle:
+              json.dump(data, handle, indent=2, sort_keys=True)
+              handle.write("\n")
+          PY
+
+          (
+            cd "$CANDIDATE"
+            shasum -a 256 "ElectroSim.app/Contents/MacOS/$EXEC_NAME" > EXECUTABLE_SHA256.txt
+          )
+
+          ZIP="$OUT/F18_G3_PHYSICAL_MAC_INTEL.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$CANDIDATE" "$ZIP"
+          unzip -t "$ZIP"
+
+          ZIP_SHA="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
+          printf '%s  %s\n' "$ZIP_SHA" "$(basename "$ZIP")" > "$ZIP.sha256"
+
+          VERIFY="$RUNNER_TEMP/verify-candidate"
+          mkdir -p "$VERIFY"
+          ditto -x -k "$ZIP" "$VERIFY"
+          EXTRACTED="$VERIFY/F18_G3_PHYSICAL_MAC_INTEL/ElectroSim.app"
+          codesign --verify --deep --strict "$EXTRACTED"
+          EXTRACTED_EXEC="$EXTRACTED/Contents/MacOS/$EXEC_NAME"
+          lipo -archs "$EXTRACTED_EXEC" | tr ' ' '\n' | grep -qx 'x86_64'
+
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "sha=$ZIP.sha256" >> "$GITHUB_OUTPUT"
+          echo "zip_sha256=$ZIP_SHA" >> "$GITHUB_OUTPUT"
+          echo "F18_G3_PHYSICAL_MAC_INTEL_PACKAGE_PASS"
+
+      - name: Upload physical candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: F18_G3_PHYSICAL_MAC_INTEL
+          path: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Candidate gate
+        run: |
+          echo "SHA256=${{ steps.package.outputs.zip_sha256 }}"
+          echo F18_G3_PHYSICAL_MAC_INTEL_CANDIDATE_PASS

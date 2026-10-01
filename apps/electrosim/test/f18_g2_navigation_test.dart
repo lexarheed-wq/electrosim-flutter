@@ -6,69 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 void _desktop(WidgetTester tester) {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
-  testWidgets('desktop home keeps the three primary cards aligned in one row', (WidgetTester tester) async {
-    _desktop(tester);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const app.ElectroSimApp());
-    await tester.pumpAndSettle();
-
-    final Rect session = tester.getRect(find.byKey(const Key('home-create-session')));
-    final Rect maintenance = tester.getRect(find.byKey(const Key('home-maintenance')));
-    final Rect design = tester.getRect(find.byKey(const Key('home-design')));
-    expect((session.top - maintenance.top).abs(), lessThan(1));
-    expect((maintenance.top - design.top).abs(), lessThan(1));
-    expect(session.left, lessThan(maintenance.left));
-    expect(maintenance.left, lessThan(design.left));
-
-    final Rect join = tester.getRect(find.byKey(const Key('home-join-panel')));
-    expect(join.top, greaterThan(session.bottom));
-    expect(join.top, greaterThan(maintenance.bottom));
-    expect(join.top, greaterThan(design.bottom));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('medium home keeps two-column hierarchy and secondary join panel below', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(820, 1180);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const app.ElectroSimApp());
-    await tester.pumpAndSettle();
-
-    final Rect session = tester.getRect(find.byKey(const Key('home-create-session')));
-    final Rect maintenance = tester.getRect(find.byKey(const Key('home-maintenance')));
-    final Rect design = tester.getRect(find.byKey(const Key('home-design')));
-    expect((session.top - maintenance.top).abs(), lessThan(1));
-    expect(design.top, greaterThan(session.bottom));
-    expect(find.byKey(const Key('home-join-panel')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('compact home scrolls all primary and secondary actions without overflow', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const app.ElectroSimApp());
-    await tester.pumpAndSettle();
-
-    for (final Key key in const <Key>[
-      Key('home-create-session'),
-      Key('home-maintenance'),
-      Key('home-design'),
-      Key('home-join-panel'),
-    ]) {
-      final Finder finder = find.byKey(key);
-      await tester.ensureVisible(finder);
-      await tester.pumpAndSettle();
-      expect(finder, findsOneWidget);
-      expect(tester.takeException(), isNull);
-    }
-  });
 }
 
 void main() {
@@ -205,4 +142,68 @@ void main() {
     expect(find.byKey(const Key('design-center-page')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('desktop home keeps the three primary cards aligned in one row', (WidgetTester tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.pumpAndSettle();
+
+    final Rect session = tester.getRect(find.byKey(const Key('home-create-session')));
+    final Rect maintenance = tester.getRect(find.byKey(const Key('home-maintenance')));
+    final Rect design = tester.getRect(find.byKey(const Key('home-design')));
+    expect((session.top - maintenance.top).abs(), lessThan(1));
+    expect((maintenance.top - design.top).abs(), lessThan(1));
+    expect(session.left, lessThan(maintenance.left));
+    expect(maintenance.left, lessThan(design.left));
+
+    final Rect join = tester.getRect(find.byKey(const Key('home-join-panel')));
+    expect(join.top, greaterThan(session.bottom));
+    expect(join.top, greaterThan(maintenance.bottom));
+    expect(join.top, greaterThan(design.bottom));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('medium home keeps two-column hierarchy and secondary join panel below', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(820, 1180);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.pumpAndSettle();
+
+    final Rect session = tester.getRect(find.byKey(const Key('home-create-session')));
+    final Rect maintenance = tester.getRect(find.byKey(const Key('home-maintenance')));
+    final Rect design = tester.getRect(find.byKey(const Key('home-design')));
+    expect((session.top - maintenance.top).abs(), lessThan(1));
+    expect(design.top, greaterThan(session.bottom));
+    expect(find.byKey(const Key('home-join-panel')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('compact home scrolls all primary and secondary actions without overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.pumpAndSettle();
+
+    for (final Key key in const <Key>[
+      Key('home-create-session'),
+      Key('home-maintenance'),
+      Key('home-design'),
+      Key('home-join-panel'),
+    ]) {
+      final Finder finder = find.byKey(key);
+      await tester.ensureVisible(finder);
+      await tester.pumpAndSettle();
+      expect(finder, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
 }

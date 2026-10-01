@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
+import 'f18_shell_navigation.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
@@ -93,12 +94,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.add_circle_outline,
                                     title: 'Créer une nouvelle session',
                                     description: 'Préparer une activité et ouvrir un espace de travail.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openSessionShell(
                                       context,
-                                      'Session active',
-                                      initialWorkspace: 'Câblage',
-                                      sessionNavigation: true,
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                     secondaryLabel: 'Rejoindre une session',
                                     secondaryKey: const Key('home-join-session'),
@@ -113,11 +111,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.build_circle_outlined,
                                     title: 'Centre de maintenance',
                                     description: 'Accéder aux parcours de recherche de dérangement.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openMaintenanceCenter(
                                       context,
-                                      'Centre de maintenance',
-                                      initialWorkspace: 'Recherche de dérangement',
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                   ),
                                   _HomeActionCard(
@@ -126,11 +122,9 @@ class F9HomePage extends StatelessWidget {
                                     icon: Icons.account_tree_outlined,
                                     title: 'Centre de conception',
                                     description: 'Câbler librement et préparer les futurs schémas sains.',
-                                    onTap: () => _openWorkspace(
+                                    onTap: () => _openDesignCenter(
                                       context,
-                                      'Centre de conception',
-                                      initialWorkspace: 'Câblage',
-                                      persistenceController: persistenceController,
+                                      persistenceController,
                                     ),
                                   ),
                                 ],
@@ -213,6 +207,117 @@ class F9HomePage extends StatelessWidget {
           ),
         );
     }
+  }
+
+  static void _openDesignCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext routeContext) => F18DesignCenterPage(
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) => route.isFirst,
+          ),
+          onWiring: () => _openWorkspace(
+            routeContext,
+            'Centre de conception',
+            initialWorkspace: 'Câblage',
+            persistenceController: persistenceController,
+          ),
+          onSchemaLibrary: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => const F18PlaceholderPage(
+                pageKey: Key('design-schema-library-page'),
+                title: 'Bibliothèque de schémas',
+                description:
+                    'Les schémas sains seront gérés dans la bibliothèque de conception F18.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openMaintenanceCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext routeContext) => F18MaintenanceCenterPage(
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) => route.isFirst,
+          ),
+          onTroubleshooting: () => _openWorkspace(
+            routeContext,
+            'Centre de maintenance',
+            initialWorkspace: 'Recherche de dérangement',
+            persistenceController: persistenceController,
+          ),
+          onFaultLibrary: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => const F18PlaceholderPage(
+                pageKey: Key('maintenance-fault-library-page'),
+                title: 'Bibliothèque de pannes',
+                description:
+                    'Les circuits défectueux autonomes seront gérés dans la bibliothèque de maintenance F18.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openSessionShell(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext routeContext) => F18SessionShellPage(
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) => route.isFirst,
+          ),
+          onWiring: () => _openWorkspace(
+            routeContext,
+            'Session active',
+            initialWorkspace: 'Câblage',
+            sessionNavigation: true,
+            persistenceController: persistenceController,
+          ),
+          onTroubleshooting: () => _openWorkspace(
+            routeContext,
+            'Session active',
+            initialWorkspace: 'Recherche de dérangement',
+            sessionNavigation: true,
+            persistenceController: persistenceController,
+          ),
+          onSupervision: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => const F18PlaceholderPage(
+                pageKey: Key('session-supervision-page'),
+                title: 'Supervision',
+                description:
+                    'Le tableau de supervision professeur sera raccordé ici sans passer par le simulateur.',
+              ),
+            ),
+          ),
+          onManageSession: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              builder: (BuildContext context) => const F18PlaceholderPage(
+                pageKey: Key('session-manage-page'),
+                title: 'Gérer la session',
+                description:
+                    'Les paramètres et participants de la session seront administrés dans cet espace.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   static void _openWorkspace(

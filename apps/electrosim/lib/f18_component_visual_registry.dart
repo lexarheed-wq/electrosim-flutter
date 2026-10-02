@@ -50,19 +50,21 @@ abstract final class F18ComponentVisualRegistry {
     Canvas canvas,
     Rect rect,
     String modelType,
-    Color accent,
-  ) {
+    Color accent, {
+    bool active = true,
+    bool fault = false,
+  }) {
     final String t = modelType.toLowerCase();
     if (t == 'dc_voltage_source') {
-      _paintPowerSupply(canvas, rect, accent);
+      _paintPowerSupply(canvas, rect, accent, active: active, fault: fault);
       return true;
     }
     if (t == 'breaker' || t.contains('disjoncteur')) {
-      _paintBreaker(canvas, rect, accent);
+      _paintBreaker(canvas, rect, accent, active: active, fault: fault);
       return true;
     }
     if (t == 'switch' || t.contains('interrupteur')) {
-      _paintSwitch(canvas, rect, accent);
+      _paintSwitch(canvas, rect, accent, active: active, fault: fault);
       return true;
     }
     if (t.contains('push_button')) {
@@ -70,13 +72,13 @@ abstract final class F18ComponentVisualRegistry {
       return true;
     }
     if (t == 'lamp' || t.contains('lampe')) {
-      _paintLamp(canvas, rect, accent);
+      _paintLamp(canvas, rect, accent, active: active, fault: fault);
       return true;
     }
     if (t.contains('multimeter') ||
         t.contains('voltmeter') ||
         t.contains('ammeter')) {
-      _paintMeter(canvas, rect, t, accent);
+      _paintMeter(canvas, rect, t, accent, active: active);
       return true;
     }
     if (t == 'resistor') {
@@ -96,19 +98,19 @@ abstract final class F18ComponentVisualRegistry {
       return true;
     }
     if (t.contains('motor')) {
-      _paintMotor(canvas, rect, accent);
+      _paintMotor(canvas, rect, accent, active: active);
       return true;
     }
     if (t.contains('fan')) {
-      _paintFan(canvas, rect, accent);
+      _paintFan(canvas, rect, accent, active: active);
       return true;
     }
     if (t.contains('relay_coil')) {
-      _paintRelay(canvas, rect, accent);
+      _paintRelay(canvas, rect, accent, active: active);
       return true;
     }
     if (t.contains('contactor') || t.contains('contacteur')) {
-      _paintContactor(canvas, rect, accent);
+      _paintContactor(canvas, rect, accent, active: active, fault: fault);
       return true;
     }
     if (t.contains('inverter')) {
@@ -213,7 +215,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintPowerSupply(Canvas canvas, Rect rect, Color accent) {
+  static void _paintPowerSupply(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
     final Rect b = _inset(rect, .025);
     final RRect caseRect =
         RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .10));
@@ -300,7 +302,7 @@ abstract final class F18ComponentVisualRegistry {
     );
     _tiny(
       canvas,
-      '24.0',
+      active ? '24.0' : '0.0',
       Offset(screen.center.dx - screen.width * .05, screen.center.dy),
       screen.height * .48,
       color: const Color(0xFFD8FFF1),
@@ -361,6 +363,15 @@ abstract final class F18ComponentVisualRegistry {
       );
     }
 
+    canvas.drawCircle(
+      Offset(face.left + face.width * .08, face.bottom - face.height * .08),
+      b.shortestSide * .035,
+      Paint()..color = fault
+          ? const Color(0xFFD97706)
+          : active
+              ? const Color(0xFF22A35A)
+              : const Color(0xFF87959E),
+    );
     _tiny(
       canvas,
       'DC POWER SUPPLY',
@@ -399,7 +410,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintBreaker(Canvas canvas, Rect rect, Color accent) {
+  static void _paintBreaker(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
       width: rect.width * .82,
@@ -498,7 +509,9 @@ abstract final class F18ComponentVisualRegistry {
 
     final Rect lever = Rect.fromLTWH(
       slot.left + slot.width * .18,
-      slot.top + slot.height * .08,
+      active
+          ? slot.top + slot.height * .08
+          : slot.top + slot.height * .34,
       slot.width * .64,
       slot.height * .58,
     );
@@ -532,7 +545,11 @@ abstract final class F18ComponentVisualRegistry {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(window, const Radius.circular(2)),
-      Paint()..color = const Color(0xFF4CB46D),
+      Paint()..color = fault
+          ? const Color(0xFFF59E0B)
+          : active
+              ? const Color(0xFF4CB46D)
+              : const Color(0xFFCF5C55),
     );
 
     _screw(
@@ -547,7 +564,7 @@ abstract final class F18ComponentVisualRegistry {
     );
     _tiny(
       canvas,
-      'I',
+      active ? 'I' : 'O',
       Offset(b.center.dx, b.top + b.height * .30),
       b.height * .062,
       color: const Color(0xFF253235),
@@ -565,7 +582,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintSwitch(Canvas canvas, Rect rect, Color accent) {
+  static void _paintSwitch(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
       width: rect.width * .72,
@@ -610,7 +627,12 @@ abstract final class F18ComponentVisualRegistry {
     );
 
     final Rect rocker = Rect.fromCenter(
-      center: Offset(well.center.dx, well.center.dy + well.height * .20),
+      center: Offset(
+        well.center.dx,
+        active
+            ? well.center.dy + well.height * .20
+            : well.center.dy - well.height * .20,
+      ),
       width: well.width * .74,
       height: well.height * .36,
     );
@@ -620,11 +642,17 @@ abstract final class F18ComponentVisualRegistry {
       rockerR,
       _gradient(
         rocker,
-        const <Color>[
-          Color(0xFF7CDF98),
-          Color(0xFF36A65F),
-          Color(0xFF257A45),
-        ],
+        active
+            ? const <Color>[
+                Color(0xFF7CDF98),
+                Color(0xFF36A65F),
+                Color(0xFF257A45),
+              ]
+            : const <Color>[
+                Color(0xFFDDE4E8),
+                Color(0xFF9EADB5),
+                Color(0xFF697A83),
+              ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ),
@@ -647,7 +675,7 @@ abstract final class F18ComponentVisualRegistry {
     );
     _tiny(
       canvas,
-      'I',
+      active ? 'I' : 'O',
       Offset(b.center.dx, b.bottom - b.height * .07),
       b.height * .095,
       color: const Color(0xFF263237),
@@ -688,7 +716,7 @@ abstract final class F18ComponentVisualRegistry {
     _tiny(canvas, 'NO', block.center, b.height * .08);
   }
 
-  static void _paintLamp(Canvas canvas, Rect rect, Color accent) {
+  static void _paintLamp(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
     final Rect b = _inset(rect, .015);
     final Offset bulbCenter =
         Offset(b.center.dx, b.top + b.height * .36);
@@ -698,19 +726,21 @@ abstract final class F18ComponentVisualRegistry {
       center: bulbCenter,
       radius: bulbR * 1.25,
     );
-    canvas.drawCircle(
-      bulbCenter,
-      bulbR * 1.20,
-      _radial(
-        glowRect,
-        const <Color>[
-          Color(0x55FFE78A),
-          Color(0x16FFE78A),
-          Color(0x00FFE78A),
-        ],
-        stops: const <double>[0, .65, 1],
-      ),
-    );
+    if (active && !fault) {
+      canvas.drawCircle(
+        bulbCenter,
+        bulbR * 1.20,
+        _radial(
+          glowRect,
+          const <Color>[
+            Color(0x66FFE78A),
+            Color(0x18FFE78A),
+            Color(0x00FFE78A),
+          ],
+          stops: const <double>[0, .65, 1],
+        ),
+      );
+    }
 
     final Rect glassRect = Rect.fromCircle(center: bulbCenter, radius: bulbR);
     canvas.drawCircle(
@@ -718,11 +748,17 @@ abstract final class F18ComponentVisualRegistry {
       bulbR,
       _radial(
         glassRect,
-        const <Color>[
-          Color(0xFFFFFFD0),
-          Color(0xFFFFE690),
-          Color(0xFFF5C84A),
-        ],
+        active && !fault
+            ? const <Color>[
+                Color(0xFFFFFFD0),
+                Color(0xFFFFE690),
+                Color(0xFFF5C84A),
+              ]
+            : const <Color>[
+                Color(0xFFF3F5F5),
+                Color(0xFFD7DFE2),
+                Color(0xFFAAB8BE),
+              ],
         stops: const <double>[0, .68, 1],
       ),
     );
@@ -810,7 +846,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintMeter(Canvas canvas, Rect rect, String t, Color accent) {
+  static void _paintMeter(Canvas canvas, Rect rect, String t, Color accent, {required bool active}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
       width: rect.width * .84,
@@ -867,11 +903,13 @@ abstract final class F18ComponentVisualRegistry {
         end: Alignment.bottomRight,
       ),
     );
-    final String reading = t.contains('amp')
-        ? '1.00 A'
-        : t.contains('volt')
-            ? '24.0 V'
-            : 'AUTO';
+    final String reading = !active
+        ? '---'
+        : t.contains('amp')
+            ? '1.00 A'
+            : t.contains('volt')
+                ? '24.0 V'
+                : 'AUTO';
     _tiny(
       canvas,
       reading,
@@ -1068,7 +1106,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintMotor(Canvas canvas, Rect rect, Color accent) {
+  static void _paintMotor(Canvas canvas, Rect rect, Color accent, {required bool active}) {
     final Rect body = Rect.fromCenter(
       center: Offset(rect.center.dx - rect.width * .04, rect.center.dy),
       width: rect.width * .68,
@@ -1098,9 +1136,16 @@ abstract final class F18ComponentVisualRegistry {
       Paint()..color = const Color(0xFF6E7E8C),
     );
     _tiny(canvas, 'M', body.center, body.height * .28, color: const Color(0xFFF8FAFC));
+    canvas.drawCircle(
+      Offset(body.left + body.width * .16, body.bottom - body.height * .14),
+      body.shortestSide * .035,
+      Paint()..color = active
+          ? const Color(0xFF36A65F)
+          : const Color(0xFF7F8D96),
+    );
   }
 
-  static void _paintFan(Canvas canvas, Rect rect, Color accent) {
+  static void _paintFan(Canvas canvas, Rect rect, Color accent, {required bool active}) {
     final Rect b = _inset(rect, .025);
     final Offset c = Offset(
       b.left + b.width * .43,
@@ -1147,7 +1192,13 @@ abstract final class F18ComponentVisualRegistry {
 
     canvas.drawCircle(c, r * .18, Paint()..color = const Color(0xFF9CB2C0));
     canvas.drawCircle(c, r * .18, _stroke(const Color(0xFF263B4B), 1));
-    canvas.drawCircle(c, r * .07, Paint()..color = const Color(0xFF425967));
+    canvas.drawCircle(
+      c,
+      r * .07,
+      Paint()..color = active
+          ? const Color(0xFF36A65F)
+          : const Color(0xFF425967),
+    );
 
     final Rect motor = Rect.fromCenter(
       center: Offset(c.dx + r * 1.28, c.dy),
@@ -1189,7 +1240,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintRelay(Canvas canvas, Rect rect, Color accent) {
+  static void _paintRelay(Canvas canvas, Rect rect, Color accent, {required bool active}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
       width: rect.width * .82,
@@ -1228,7 +1279,7 @@ abstract final class F18ComponentVisualRegistry {
     );
   }
 
-  static void _paintContactor(Canvas canvas, Rect rect, Color accent) {
+  static void _paintContactor(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
       width: rect.width * .86,
@@ -1306,10 +1357,15 @@ abstract final class F18ComponentVisualRegistry {
         RRect.fromRectAndRadius(indicator, const Radius.circular(1.5)),
         _gradient(
           indicator,
-          const <Color>[
-            Color(0xFF8B9A9D),
-            Color(0xFF5B696C),
-          ],
+          active
+              ? const <Color>[
+                  Color(0xFF71C58B),
+                  Color(0xFF2F8250),
+                ]
+              : const <Color>[
+                  Color(0xFF8B9A9D),
+                  Color(0xFF5B696C),
+                ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -1344,7 +1400,11 @@ abstract final class F18ComponentVisualRegistry {
     canvas.drawCircle(
       Offset(b.right - b.width * .15, b.top + b.height * .72),
       b.shortestSide * .045,
-      Paint()..color = const Color(0xFF6A7B7F),
+      Paint()..color = fault
+          ? const Color(0xFFD97706)
+          : active
+              ? const Color(0xFF39A861)
+              : const Color(0xFF6A7B7F),
     );
   }
 
@@ -1397,7 +1457,10 @@ abstract final class F18ComponentVisualRegistry {
           -math.pi / 2,
           math.pi,
           false,
-          _stroke(accent, 1.2),
+          _stroke(
+            active ? const Color(0xFF2F8E57) : accent,
+            1.2,
+          ),
         );
       }
     }

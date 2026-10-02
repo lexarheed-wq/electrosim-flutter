@@ -67,6 +67,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point08_visual_archetypes_test.dart
 
+      - name: Point 09 no legacy workspace regression
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point09_no_legacy_workspace_regression_test.dart
+
       - name: Canvas routing regression
         working-directory: packages/electrosim_canvas
         run: flutter test test/circuit_wire_layout_engine_test.dart
@@ -114,3 +118,6 @@ jobs:
 
       - name: Point 08 gate
         run: echo F18_G3R1_P08_VISUAL_ARCHETYPES_PASS
+
+      - name: Point 09 gate
+        run: echo F18_G3R1_P09_NO_LEGACY_WORKSPACE_REGRESSION_PASS

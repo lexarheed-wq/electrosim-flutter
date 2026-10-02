@@ -7,6 +7,7 @@ on:
       - f18-g3r1-workspace-integration-recovery
     paths:
       - 'apps/electrosim/**'
+      - 'packages/electrosim_canvas/**'
       - '.github/workflows/f18-g3r1-workspace-integration-recovery.yml'
 
 permissions:
@@ -54,6 +55,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point05_palette_contract_test.dart
 
+      - name: Point 06 topbar rotation and single delete
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point06_topbar_actions_rotation_test.dart
+
       - name: Application non-golden regression
         working-directory: apps/electrosim
         shell: bash
@@ -61,17 +66,18 @@ jobs:
           set -euo pipefail
           find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
 
-      - name: Preserve qualified package scope
+      - name: Protect package scope
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git diff --name-only 6bcfacbf2b39c0667ac695a80b39d4f3e215615b...HEAD -- packages)"
-          if [ -n "$changed" ]; then
-            echo "Point 01 unexpectedly modified package production scope:"
-            echo "$changed"
+          forbidden="$(printf '%s\n' "$changed" | grep -v '^packages/electrosim_canvas/' || true)"
+          if [ -n "$forbidden" ]; then
+            echo "G3R1 modified a package outside the explicitly allowed Canvas scope:"
+            echo "$forbidden"
             exit 1
           fi
-          echo F18_G3R1_P01_PACKAGE_SCOPE_PASS
+          echo F18_G3R1_PACKAGE_SCOPE_PASS
 
       - name: Point 01 gate
         run: echo F18_G3R1_P01_G2A_RUNTIME_ROUTER_PASS
@@ -87,3 +93,6 @@ jobs:
 
       - name: Point 05 gate
         run: echo F18_G3R1_P05_PALETTE_CONTRACT_PASS
+
+      - name: Point 06 gate
+        run: echo F18_G3R1_P06_TOPBAR_ROTATION_SINGLE_DELETE_PASS

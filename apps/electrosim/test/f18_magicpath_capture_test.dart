@@ -1,5 +1,6 @@
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -69,13 +70,23 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await _setSurface(tester, const Size(820, 1180));
+    final ElectroSimTpSessionController controller =
+        ElectroSimTpSessionController(
+      tpIdValue: 'K7M4P2',
+      title: 'TP 04 · Circuit d’éclairage 24 V',
+    );
+    controller.createDraft();
+    controller.publish();
+    controller.startStudent();
+
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ElectroSimTheme.light(),
-        home: const app.F18WorkspacePage(
+        home: app.F18WorkspacePage(
           initialWorkspace: 'Recherche de dérangement',
           role: F9UserRole.student,
+          tpSessionController: controller,
         ),
       ),
     );

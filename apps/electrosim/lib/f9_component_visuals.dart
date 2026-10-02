@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
@@ -96,7 +98,13 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       if (rect == null) {
         continue;
       }
-      _paintElementGlyph(canvas, rect, source.modelType, source.enabled);
+      _paintElementGlyph(
+        canvas,
+        rect,
+        source.modelType,
+        source.enabled,
+        layout.quarterTurnsOf(source.id.value),
+      );
     }
     for (final ComponentInstance component in circuit.components) {
       final Rect? rect = geometry.elementRects[component.id.value];
@@ -105,7 +113,13 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       }
       final Object? closed = component.controlState['closed'];
       final bool active = component.condition != ComponentCondition.disabled && closed != false;
-      _paintElementGlyph(canvas, rect, component.modelType, active);
+      _paintElementGlyph(
+        canvas,
+        rect,
+        component.modelType,
+        active,
+        layout.quarterTurnsOf(component.id.value),
+      );
     }
     _paintWiringTargets(canvas, geometry);
   }
@@ -195,17 +209,35 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     }
   }
 
-  void _paintElementGlyph(Canvas canvas, Rect worldRect, String modelType, bool active) {
+  void _paintElementGlyph(
+    Canvas canvas,
+    Rect worldRect,
+    String modelType,
+    bool active,
+    int quarterTurns,
+  ) {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final double scale = viewport.scale.clamp(0.65, 1.5).toDouble();
     final double glyphSize = 20 * scale;
-    final Rect glyphRect = Rect.fromCenter(
-      center: Offset(center.dx, center.dy - (18 * scale)),
-      width: glyphSize,
-      height: glyphSize,
+    final Offset glyphCenter =
+        Offset(center.dx, center.dy - (18 * scale));
+    final Color color =
+        active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
+
+    canvas.save();
+    canvas.translate(glyphCenter.dx, glyphCenter.dy);
+    canvas.rotate(math.pi / 2 * quarterTurns);
+    paintF9Glyph(
+      canvas,
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: glyphSize,
+        height: glyphSize,
+      ),
+      modelType,
+      color,
     );
-    final Color color = active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
-    paintF9Glyph(canvas, glyphRect, modelType, color);
+    canvas.restore();
   }
 
   @override

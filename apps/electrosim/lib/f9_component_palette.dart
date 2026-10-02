@@ -180,23 +180,16 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
 
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  String _category = 'Tous';
+  String _domain = 'CC';
   bool _expanded = false;
-
-  List<String> get _categories => <String>{
-    'Tous',
-    ...f9PaletteCatalog.map((F9PaletteDefinition item) => item.category),
-  }.toList(growable: false);
 
   List<F9PaletteDefinition> get _filtered {
     final String q = _query.trim().toLowerCase();
     return f9PaletteCatalog.where((F9PaletteDefinition item) {
-      final bool categoryMatches = _category == 'Tous' || item.category == _category;
-      final bool queryMatches = q.isEmpty ||
+      return q.isEmpty ||
           item.title.toLowerCase().contains(q) ||
           item.category.toLowerCase().contains(q) ||
           item.modelType.toLowerCase().contains(q);
-      return categoryMatches && queryMatches;
     }).toList(growable: false);
   }
 
@@ -211,98 +204,150 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     return ColoredBox(
       color: ElectroSimColors.surfaceElevated,
       child: Padding(
-        padding: const EdgeInsets.all(ElectroSimSpacing.md),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const ElectroSimSectionTitle(
-              title: 'Composants',
-              subtitle: 'Palette F18 — recherche, catégories et placement sûr',
-            ),
-            const SizedBox(height: ElectroSimSpacing.md),
-            TextField(
-              key: const Key('palette-search-field'),
-              controller: _searchController,
-              onChanged: (String value) => setState(() {
-                _query = value;
-                _expanded = true;
-              }),
-              decoration: InputDecoration(
-                hintText: 'Rechercher un composant',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        key: const Key('palette-clear-search'),
-                        tooltip: 'Effacer la recherche',
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _query = '';
-                            _expanded = false;
-                          });
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
+            SizedBox(
+              height: 40,
+              child: TextField(
+                key: const Key('palette-search-field'),
+                controller: _searchController,
+                onChanged: (String value) => setState(() {
+                  _query = value;
+                  _expanded = value.trim().isNotEmpty;
+                }),
+                style: const TextStyle(fontSize: 12),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'Rechercher',
+                  prefixIcon: const Icon(Icons.search, size: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          key: const Key('palette-clear-search'),
+                          tooltip: 'Effacer la recherche',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _query = '';
+                              _expanded = false;
+                            });
+                          },
+                          icon: const Icon(Icons.close, size: 16),
+                        ),
+                ),
               ),
             ),
-            const SizedBox(height: ElectroSimSpacing.sm),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (final String category in _categories) ...<Widget>[
-                    ChoiceChip(
-                      key: Key('palette-category-${_slug(category)}'),
-                      label: Text(category),
-                      selected: _category == category,
-                      onSelected: (_) => setState(() {
-                        _category = category;
-                        _expanded = false;
-                      }),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                const Expanded(
+                  child: Text(
+                    'COMPOSANTS',
+                    style: TextStyle(
+                      color: ElectroSimColors.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.1,
                     ),
-                    const SizedBox(width: ElectroSimSpacing.xs),
-                  ],
-                ],
-              ),
+                  ),
+                ),
+                if (canExpand && !_expanded)
+                  TextButton(
+                    key: const Key('palette-show-all'),
+                    onPressed: () => setState(() => _expanded = true),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 30),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                    ),
+                    child: const Text(
+                      'Voir tous',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: ElectroSimSpacing.md),
+            if (!_expanded && _query.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Les plus utilisés',
+                  style: TextStyle(
+                    color: ElectroSimColors.textSecondary,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
             Expanded(
               child: visible.isEmpty
                   ? const Center(child: Text('Aucun composant correspondant.'))
-                  : ListView.builder(
+                  : ListView.separated(
                       key: const Key('palette-results-list'),
                       clipBehavior: Clip.hardEdge,
-                      padding: const EdgeInsets.only(bottom: ElectroSimSpacing.md),
+                      padding: const EdgeInsets.only(bottom: 8),
                       itemCount: visible.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
                       itemBuilder: (BuildContext context, int index) {
                         final F9PaletteDefinition item = visible[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: ElectroSimSpacing.sm),
-                          child: _PaletteDraggableTile(
-                            definition: item,
-                            onStatus: widget.onStatus,
-                            onQuickAdd: widget.onQuickAdd,
-                          ),
+                        return _PaletteDraggableTile(
+                          definition: item,
+                          onStatus: widget.onStatus,
+                          onQuickAdd: widget.onQuickAdd,
                         );
                       },
                     ),
             ),
-            if (canExpand && !_expanded) ...<Widget>[
-              const SizedBox(height: ElectroSimSpacing.xs),
-              OutlinedButton.icon(
-                key: const Key('palette-show-all'),
-                onPressed: () => setState(() => _expanded = true),
-                icon: const Icon(Icons.apps_outlined),
-                label: const Text('Voir tous les composants'),
-              ),
-            ],
-            const SizedBox(height: ElectroSimSpacing.xs),
-            Text(
-              '${filtered.length} composant${filtered.length > 1 ? 's' : ''} disponible${filtered.length > 1 ? 's' : ''}',
-              key: const Key('palette-result-count'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            const Divider(height: 18),
+            const Text(
+              'DOMAINES',
+              style: TextStyle(
                 color: ElectroSimColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                for (final String domain in const <String>['CC', 'AC1', 'AC3', 'PV'])
+                  SizedBox(
+                    width: 112,
+                    height: 36,
+                    child: ChoiceChip(
+                      key: Key('palette-domain-${domain.toLowerCase()}'),
+                      label: SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          domain,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ),
+                      selected: _domain == domain,
+                      onSelected: (_) {
+                        setState(() => _domain = domain);
+                        widget.onStatus('Domaine de palette : $domain');
+                      },
+                    ),
+                  ),
+              ],
+            ),
+            Offstage(
+              offstage: true,
+              child: Text(
+                '${filtered.length}',
+                key: const Key('palette-result-count'),
               ),
             ),
           ],
@@ -316,11 +361,6 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     _searchController.dispose();
     super.dispose();
   }
-
-  static String _slug(String input) => input
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-      .replaceAll(RegExp(r'^-+|-+$'), '');
 }
 
 class _PaletteDraggableTile extends StatelessWidget {

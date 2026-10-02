@@ -563,6 +563,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           statusBar: _StatusBar(circuit: _circuit, status: _status),
           showStatusBar: false,
           showCompactPanelSwitcher: false,
+          showMediumPanelSwitcher: false,
           mediumPanelInitiallyVisible:
               widget.role == F9UserRole.student &&
                   _workspace == 'Recherche de dérangement',

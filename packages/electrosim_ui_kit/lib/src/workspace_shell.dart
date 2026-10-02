@@ -19,6 +19,12 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
     required this.contextPanel,
     required this.topBar,
     required this.statusBar,
+    this.showStatusBar = true,
+    this.showCompactPanelSwitcher = true,
+    this.mediumPanelInitiallyVisible = false,
+    this.expandedPaletteWidth = ElectroSimGeometry.expandedPaletteWidth,
+    this.expandedContextWidth = ElectroSimGeometry.expandedContextWidth,
+    this.mediumPanelWidth = ElectroSimGeometry.mediumPanelWidth,
   });
 
   final Widget canvas;
@@ -26,6 +32,12 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
   final Widget contextPanel;
   final Widget topBar;
   final Widget statusBar;
+  final bool showStatusBar;
+  final bool showCompactPanelSwitcher;
+  final bool mediumPanelInitiallyVisible;
+  final double expandedPaletteWidth;
+  final double expandedContextWidth;
+  final double mediumPanelWidth;
 
   @override
   State<ElectroSimWorkspaceShell> createState() => _ElectroSimWorkspaceShellState();
@@ -33,6 +45,14 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
 
 class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
   ElectroSimWorkspacePanel? _activePanel;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mediumPanelInitiallyVisible) {
+      _activePanel = ElectroSimWorkspacePanel.context;
+    }
+  }
 
   void _toggle(ElectroSimWorkspacePanel panel) {
     setState(() {
@@ -64,7 +84,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             children: <Widget>[
               SizedBox(
                 key: electroSimPaletteRegionKey,
-                width: ElectroSimGeometry.expandedPaletteWidth,
+                width: widget.expandedPaletteWidth,
                 child: widget.palette,
               ),
               const VerticalDivider(width: 1),
@@ -72,14 +92,19 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               const VerticalDivider(width: 1),
               SizedBox(
                 key: electroSimContextRegionKey,
-                width: ElectroSimGeometry.expandedContextWidth,
+                width: widget.expandedContextWidth,
                 child: widget.contextPanel,
               ),
             ],
           ),
         ),
-        const Divider(height: 1),
-        SizedBox(height: ElectroSimGeometry.statusBarHeight, child: widget.statusBar),
+        if (widget.showStatusBar) ...<Widget>[
+          const Divider(height: 1),
+          SizedBox(
+            height: ElectroSimGeometry.statusBarHeight,
+            child: widget.statusBar,
+          ),
+        ],
       ],
     );
   }
@@ -110,15 +135,20 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                   key: _activePanel == ElectroSimWorkspacePanel.palette
                       ? electroSimPaletteRegionKey
                       : electroSimContextRegionKey,
-                  width: ElectroSimGeometry.mediumPanelWidth,
+                  width: widget.mediumPanelWidth,
                   child: panel,
                 ),
               ],
             ],
           ),
         ),
-        const Divider(height: 1),
-        SizedBox(height: ElectroSimGeometry.statusBarHeight, child: widget.statusBar),
+        if (widget.showStatusBar) ...<Widget>[
+          const Divider(height: 1),
+          SizedBox(
+            height: ElectroSimGeometry.statusBarHeight,
+            child: widget.statusBar,
+          ),
+        ],
       ],
     );
   }
@@ -164,14 +194,20 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             ],
           ),
         ),
-        const Divider(height: 1),
-        SizedBox(height: ElectroSimGeometry.statusBarHeight, child: widget.statusBar),
-        _PanelSwitcher(
-          key: electroSimCompactActionsKey,
-          activePanel: _activePanel,
-          onPalette: () => _toggle(ElectroSimWorkspacePanel.palette),
-          onContext: () => _toggle(ElectroSimWorkspacePanel.context),
-        ),
+        if (widget.showStatusBar) ...<Widget>[
+          const Divider(height: 1),
+          SizedBox(
+            height: ElectroSimGeometry.statusBarHeight,
+            child: widget.statusBar,
+          ),
+        ],
+        if (widget.showCompactPanelSwitcher)
+          _PanelSwitcher(
+            key: electroSimCompactActionsKey,
+            activePanel: _activePanel,
+            onPalette: () => _toggle(ElectroSimWorkspacePanel.palette),
+            onContext: () => _toggle(ElectroSimWorkspacePanel.context),
+          ),
       ],
     );
   }

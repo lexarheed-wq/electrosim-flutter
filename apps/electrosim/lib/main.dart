@@ -969,6 +969,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (label == '−') {
       return TerminalRole.negative;
     }
+    if (label == 'A1') {
+      return TerminalRole.coilA1;
+    }
+    if (label == 'A2') {
+      return TerminalRole.coilA2;
+    }
     return fallback;
   }
 
@@ -979,6 +985,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     'fan-dc' => const <String, Object?>{'resistanceOhm': 12.0},
     'motor-dc' => const <String, Object?>{'resistanceOhm': 8.0},
     'relay-coil' => const <String, Object?>{'resistanceOhm': 120.0},
+    'breaker' => const <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
+    'fuse' => const <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
     _ => const <String, Object?>{},
   };
 
@@ -986,7 +998,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     'switch-no' => const <String, Object?>{'closed': false},
     'push-button-no' => const <String, Object?>{'closed': false},
     'breaker' => const <String, Object?>{'closed': true, 'tripped': false},
-    'fuse' => const <String, Object?>{'blown': false},
+    'fuse' => const <String, Object?>{'closed': true, 'tripped': false},
     _ => const <String, Object?>{},
   };
 

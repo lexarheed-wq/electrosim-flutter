@@ -135,10 +135,10 @@ void main() {
     await tester.tap(find.textContaining('switch-1').last);
     await tester.pumpAndSettle();
 
-    final IconButton rotate = tester.widget<IconButton>(
+    final TextButton rotate = tester.widget<TextButton>(
       find.byKey(const Key('workspace-rotate-action')),
     );
-    final IconButton delete = tester.widget<IconButton>(
+    final TextButton delete = tester.widget<TextButton>(
       find.byKey(const Key('workspace-delete-action')),
     );
     expect(rotate.onPressed, isNotNull);

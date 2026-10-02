@@ -515,7 +515,7 @@ class F9ComponentPreview extends StatelessWidget {
               child: Center(
                 child: F18ComponentArchetypeGlyph(
                   modelType: definition.modelType,
-                  size: compact ? 32 : 40,
+                  size: compact ? 42 : 50,
                 ),
               ),
             ),

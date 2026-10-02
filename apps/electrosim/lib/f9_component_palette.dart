@@ -1,7 +1,7 @@
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
-import 'f9_component_visuals.dart';
+import 'f18_component_archetypes.dart';
 
 enum F9PaletteElementKind { source, component }
 
@@ -444,7 +444,7 @@ class F9ComponentPreview extends StatelessWidget {
                 border: Border.all(color: const Color(0xFF334155)),
               ),
               child: Center(
-                child: F9ComponentGlyph(
+                child: F18ComponentArchetypeGlyph(
                   modelType: definition.modelType,
                   size: compact ? 20 : 28,
                 ),

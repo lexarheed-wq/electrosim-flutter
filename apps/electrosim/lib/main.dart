@@ -1596,9 +1596,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final CircuitVisualLayout magicPathDemo = CircuitVisualLayout(
         elementPositions: const <String, Offset>{
           'source-24v': Offset(168, 288),
-          'breaker-1': Offset(336, 288),
-          'switch-1': Offset(504, 288),
-          'lamp-1': Offset(672, 288),
+          'breaker-1': Offset(360, 288),
+          'switch-1': Offset(552, 288),
+          'lamp-1': Offset(744, 288),
         },
         elementSizes: const <String, Size>{
           'source-24v': Size(76, 76),

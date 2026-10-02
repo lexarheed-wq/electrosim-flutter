@@ -107,6 +107,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         );
       }
     }
+    _paintFaultMarkers(canvas, geometry);
     _paintWiringTargets(canvas, geometry);
   }
 
@@ -148,6 +149,62 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
+  }
+
+  void _paintFaultMarkers(
+    Canvas canvas,
+    CircuitGeometryIndex geometry,
+  ) {
+    for (final ComponentInstance component in circuit.components) {
+      if (component.condition == ComponentCondition.normal) {
+        continue;
+      }
+      final Rect? worldRect = geometry.elementRects[component.id.value];
+      if (worldRect == null) {
+        continue;
+      }
+      final Offset topLeft = viewport.worldToScreen(worldRect.topLeft);
+      final Offset bottomRight = viewport.worldToScreen(worldRect.bottomRight);
+      final Rect screenRect = Rect.fromPoints(topLeft, bottomRight).inflate(7);
+      final RRect outline = RRect.fromRectAndRadius(
+        screenRect,
+        const Radius.circular(14),
+      );
+      canvas.drawRRect(
+        outline,
+        Paint()
+          ..color = const Color(0xFFF59E0B)
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke,
+      );
+      final Offset badgeCenter = Offset(
+        screenRect.right - 3,
+        screenRect.top + 3,
+      );
+      canvas.drawCircle(
+        badgeCenter,
+        10,
+        Paint()..color = const Color(0xFFC2410C),
+      );
+      final TextPainter warning = TextPainter(
+        text: const TextSpan(
+          text: '!',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      warning.paint(
+        canvas,
+        Offset(
+          badgeCenter.dx - warning.width / 2,
+          badgeCenter.dy - warning.height / 2,
+        ),
+      );
+    }
   }
 
   void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {

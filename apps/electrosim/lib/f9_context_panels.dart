@@ -658,9 +658,23 @@ class _StudentDiagnosticPanel extends StatefulWidget {
 }
 
 class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
-  final TextEditingController _symptom = TextEditingController();
-  final TextEditingController _hypothesis = TextEditingController();
+  static const List<String> _locations = <String>[
+    'Source / alimentation',
+    'Circuit de commande',
+    'Récepteur / lampe',
+  ];
+
+  static const List<String> _suspects = <String>[
+    'G1 — Alimentation',
+    'QF1 — Disjoncteur',
+    'S1 — Interrupteur',
+    'H1 — Lampe',
+  ];
+
+  final TextEditingController _evidence = TextEditingController();
   final TextEditingController _conclusion = TextEditingController();
+  String _location = 'Circuit de commande';
+  String _suspect = 'S1 — Interrupteur';
   String _status = '';
 
   @override
@@ -668,60 +682,188 @@ class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
     final ElectroSimTpSessionController? controller = widget.controller;
     final int savedCount =
         controller?.session?.diagnosticSheet.entries.length ?? 0;
+    final bool readOnly = controller?.readOnly ?? false;
+
     return ListView(
       key: const Key('student-diagnostic-panel'),
-      padding: const EdgeInsets.all(ElectroSimSpacing.md),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
       children: <Widget>[
-        const ElectroSimSectionTitle(
-          title: 'Fiche de diagnostic',
-          subtitle:
-              'Visible uniquement pour l’élève pendant la recherche de dérangement',
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            border: Border.all(color: const Color(0xFFD7E0EA)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Expanded(
+                    child: Text(
+                      'FICHE DE DIAGNOSTIC',
+                      style: TextStyle(
+                        color: ElectroSimColors.textSecondary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .8,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: savedCount == 0
+                          ? const Color(0xFFFFF1E8)
+                          : const Color(0xFFEFF4FF),
+                      borderRadius:
+                          BorderRadius.circular(ElectroSimRadii.pill),
+                    ),
+                    child: Text(
+                      savedCount == 0 ? 'À compléter' : 'En cours',
+                      style: TextStyle(
+                        color: savedCount == 0
+                            ? ElectroSimColors.warning
+                            : ElectroSimColors.info,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Renseignez votre raisonnement avant d’accéder à la réparation.',
+                style: TextStyle(
+                  color: ElectroSimColors.textSecondary,
+                  fontSize: 10,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: ElectroSimSpacing.md),
-        TextField(
-          key: const Key('diagnostic-symptom'),
-          controller: _symptom,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Symptôme observé'),
+        const SizedBox(height: 12),
+        _DiagnosticQuestionCard(
+          title: '1. Où situez-vous la panne ?',
+          child: Column(
+            children: <Widget>[
+              for (final String location in _locations)
+                _DiagnosticRadioRow(
+                  key: Key(
+                    'diagnostic-location-${_diagnosticSlug(location)}',
+                  ),
+                  label: location,
+                  selected: _location == location,
+                  enabled: !readOnly,
+                  onTap: () {
+                    if (readOnly) return;
+                    setState(() => _location = location);
+                  },
+                ),
+            ],
+          ),
         ),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        TextField(
-          key: const Key('diagnostic-hypothesis'),
-          controller: _hypothesis,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Hypothèse'),
+        const SizedBox(height: 12),
+        _DiagnosticQuestionCard(
+          title: '2. Composant suspecté',
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                key: const Key('diagnostic-suspect'),
+                value: _suspect,
+                isExpanded: true,
+                items: _suspects
+                    .map(
+                      (String value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: readOnly
+                    ? null
+                    : (String? value) {
+                        if (value != null) {
+                          setState(() => _suspect = value);
+                        }
+                      },
+              ),
+            ),
+          ),
         ),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        TextField(
-          key: const Key('diagnostic-conclusion'),
-          controller: _conclusion,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Conclusion'),
+        const SizedBox(height: 12),
+        _DiagnosticQuestionCard(
+          title: '3. Preuve de mesure',
+          child: TextField(
+            key: const Key('diagnostic-evidence'),
+            controller: _evidence,
+            enabled: !readOnly,
+            minLines: 3,
+            maxLines: 5,
+            style: const TextStyle(fontSize: 10),
+            decoration: const InputDecoration(
+              hintText:
+                  'Ex. indiquez les valeurs réellement mesurées et l’endroit où la tension disparaît.',
+              hintStyle: TextStyle(fontSize: 9),
+            ),
+          ),
         ),
-        const SizedBox(height: ElectroSimSpacing.md),
+        const SizedBox(height: 12),
+        _DiagnosticQuestionCard(
+          title: '4. Conclusion / action proposée',
+          child: TextField(
+            key: const Key('diagnostic-conclusion'),
+            controller: _conclusion,
+            enabled: !readOnly,
+            minLines: 2,
+            maxLines: 4,
+            style: const TextStyle(fontSize: 10),
+            decoration: const InputDecoration(
+              hintText: 'Décrivez la vérification ou la réparation à réaliser.',
+              hintStyle: TextStyle(fontSize: 9),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
         FilledButton.icon(
           key: const Key('diagnostic-save'),
-          onPressed: controller == null ? null : _save,
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Enregistrer dans le TP'),
+          onPressed: controller == null || readOnly ? null : _save,
+          icon: const Icon(Icons.save_outlined, size: 17),
+          label: const Text('Enregistrer le diagnostic'),
         ),
-        const SizedBox(height: ElectroSimSpacing.xs),
+        const SizedBox(height: 8),
         Text(
           'Entrées enregistrées : $savedCount',
           key: const Key('diagnostic-saved-count'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: ElectroSimColors.textSecondary,
+                fontSize: 9,
               ),
         ),
         if (_status.isNotEmpty) ...<Widget>[
-          const SizedBox(height: ElectroSimSpacing.xs),
+          const SizedBox(height: 6),
           Text(
             _status,
             key: const Key('diagnostic-save-status'),
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 9,
+                ),
           ),
         ],
       ],
@@ -733,46 +875,166 @@ class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
     if (controller == null) {
       return;
     }
+    final String evidence = _evidence.text.trim();
+    final String conclusion = _conclusion.text.trim();
     final List<DiagnosticEntry> entries = <DiagnosticEntry>[
-      if (_symptom.text.trim().isNotEmpty)
+      DiagnosticEntry(
+        promptId: 'fault_location',
+        answer: _location,
+      ),
+      DiagnosticEntry(
+        promptId: 'suspected_component',
+        answer: _suspect,
+      ),
+      if (evidence.isNotEmpty)
         DiagnosticEntry(
-          promptId: 'symptom',
-          answer: _symptom.text.trim(),
+          promptId: 'measurement_evidence',
+          answer: evidence,
         ),
-      if (_hypothesis.text.trim().isNotEmpty)
-        DiagnosticEntry(
-          promptId: 'hypothesis',
-          answer: _hypothesis.text.trim(),
-        ),
-      if (_conclusion.text.trim().isNotEmpty)
+      if (conclusion.isNotEmpty)
         DiagnosticEntry(
           promptId: 'conclusion',
-          answer: _conclusion.text.trim(),
+          answer: conclusion,
         ),
     ];
-    if (entries.isEmpty) {
-      setState(() => _status = 'Aucune réponse à enregistrer.');
-      return;
-    }
     for (final DiagnosticEntry entry in entries) {
       controller.addDiagnosticEntry(
         promptId: entry.promptId,
         answer: entry.answer,
       );
     }
-    _symptom.clear();
-    _hypothesis.clear();
+    _evidence.clear();
     _conclusion.clear();
-    setState(() => _status = 'Fiche enregistrée dans le TP.');
+    setState(() => _status = 'Diagnostic enregistré dans le TP.');
   }
 
   @override
   void dispose() {
-    _symptom.dispose();
-    _hypothesis.dispose();
+    _evidence.dispose();
     _conclusion.dispose();
     super.dispose();
   }
+}
+
+class _DiagnosticQuestionCard extends StatelessWidget {
+  const _DiagnosticQuestionCard({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        border: Border.all(color: const Color(0xFFD7E0EA)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            title,
+            style: const TextStyle(
+              color: ElectroSimColors.textPrimary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _DiagnosticRadioRow extends StatelessWidget {
+  const _DiagnosticRadioRow({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            minHeight: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFD7E0EA)),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected
+                          ? ElectroSimColors.info
+                          : const Color(0xFF9FB0C4),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: selected
+                      ? Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: ElectroSimColors.info,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: ElectroSimColors.textPrimary,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _diagnosticSlug(String value) {
+  return value
+      .toLowerCase()
+      .replaceAll('é', 'e')
+      .replaceAll('è', 'e')
+      .replaceAll('à', 'a')
+      .replaceAll(' / ', '-')
+      .replaceAll(' ', '-');
 }
 
 class _PropertyLine extends StatelessWidget {

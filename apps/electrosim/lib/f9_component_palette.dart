@@ -377,45 +377,54 @@ class _PaletteDraggableTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget tile = Material(
-      color: ElectroSimColors.surfaceElevated,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-        side: const BorderSide(color: ElectroSimColors.outline),
-      ),
+      color: Colors.transparent,
       child: InkWell(
         key: Key('palette-item-${definition.keyName}'),
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
         onTap: () => onStatus(
-          'Palette : ${definition.title} sélectionné — glissez-le sur la platine ou utilisez +.',
+          'Palette : ${definition.title} — glissez le composant sur la platine.',
         ),
+        onDoubleTap: () => onQuickAdd(definition),
         child: Padding(
-          padding: const EdgeInsets.all(ElectroSimSpacing.sm),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: <Widget>[
               F9ComponentPreview(definition: definition, compact: true),
-              const SizedBox(width: ElectroSimSpacing.sm),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(definition.title, style: Theme.of(context).textTheme.labelLarge),
+                    Text(
+                      definition.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: ElectroSimColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       definition.subtitle ?? definition.category,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ElectroSimColors.textSecondary,
-                      ),
+                            color: ElectroSimColors.textSecondary,
+                            fontSize: 10,
+                          ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                key: Key('palette-quick-add-${definition.keyName}'),
-                tooltip: 'Ajouter au centre de la platine',
-                onPressed: () => onQuickAdd(definition),
-                icon: const Icon(Icons.add_circle_outline),
+              Offstage(
+                offstage: true,
+                child: IconButton(
+                  key: Key('palette-quick-add-${definition.keyName}'),
+                  onPressed: () => onQuickAdd(definition),
+                  icon: const Icon(Icons.add),
+                ),
               ),
             ],
           ),
@@ -426,37 +435,40 @@ class _PaletteDraggableTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${definition.title}, ${definition.category}',
-      hint: 'Glisser sur la platine ou utiliser le bouton ajouter',
+      hint: 'Glisser sur la platine. Double clic pour ajout rapide.',
       child: Draggable<F9PaletteDefinition>(
-      data: definition,
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: Material(
-        color: Colors.transparent,
-        child: Opacity(
-          opacity: 0.92,
-          child: SizedBox(
-            width: 210,
-            child: Card(
-              elevation: 8,
-              child: Padding(
-                padding: const EdgeInsets.all(ElectroSimSpacing.sm),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    F9ComponentPreview(definition: definition, compact: true),
-                    const SizedBox(width: ElectroSimSpacing.sm),
-                    Flexible(child: Text(definition.title)),
-                  ],
-                ),
+        data: definition,
+        dragAnchorStrategy: pointerDragAnchorStrategy,
+        feedback: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.94,
+            child: Container(
+              width: 210,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: ElectroSimColors.surfaceElevated,
+                border: Border.all(color: const Color(0xFFD7E0EA)),
+                borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+                boxShadow: ElectroSimComponentTokens.cardElevation,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  F9ComponentPreview(definition: definition, compact: true),
+                  const SizedBox(width: 10),
+                  Flexible(child: Text(definition.title)),
+                ],
               ),
             ),
           ),
         ),
-      ),
-      childWhenDragging: Opacity(opacity: 0.35, child: tile),
-      onDragStarted: () => onStatus('Déplacement depuis la palette : ${definition.title}'),
-      onDraggableCanceled: (_, __) => onStatus('Ajout annulé : ${definition.title}'),
-      child: tile,
+        childWhenDragging: Opacity(opacity: 0.35, child: tile),
+        onDragStarted: () =>
+            onStatus('Déplacement depuis la palette : ${definition.title}'),
+        onDraggableCanceled: (_, __) =>
+            onStatus('Ajout annulé : ${definition.title}'),
+        child: tile,
       ),
     );
   }
@@ -474,8 +486,8 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double width = compact ? 64 : 104;
-    final double height = compact ? 42 : 64;
+    final double width = compact ? 56 : 104;
+    final double height = compact ? 56 : 72;
     return SizedBox(
       width: width,
       height: height,
@@ -487,11 +499,18 @@ class F9ComponentPreview extends StatelessWidget {
             right: 5,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: definition.kind == F9PaletteElementKind.source
-                    ? const Color(0xFFEFF6FF)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(compact ? 8 : 10),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(compact ? 9 : 11),
+                border: Border.all(color: const Color(0xFFC8D4E2)),
+                boxShadow: compact
+                    ? const <BoxShadow>[
+                        BoxShadow(
+                          color: Color(0x120F172A),
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        ),
+                      ]
+                    : null,
               ),
               child: Center(
                 child: F18ComponentArchetypeGlyph(

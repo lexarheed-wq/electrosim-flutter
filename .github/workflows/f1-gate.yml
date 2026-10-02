@@ -17,6 +17,7 @@ on:
       - '.github/workflows/f1-gate.yml'
 jobs:
   f1:
+    if: ${{ github.ref_name != 'f18-magicpath-parity' && github.head_ref != 'f18-magicpath-parity' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

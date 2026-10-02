@@ -729,3 +729,55 @@ void _paintLetter(
     Offset(center.dx - painter.width / 2, center.dy - painter.height / 2),
   );
 }
+
+
+void _paintScrew(
+  Canvas canvas,
+  Offset center,
+  double radius,
+) {
+  final Paint fill = Paint()
+    ..color = const Color(0xFFD7E0EA)
+    ..style = PaintingStyle.fill;
+  final Paint stroke = Paint()
+    ..color = const Color(0xFF6B7E91)
+    ..strokeWidth = math.max(1, radius * .35)
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  canvas.drawCircle(center, radius, fill);
+  canvas.drawCircle(center, radius, stroke);
+  canvas.drawLine(
+    Offset(center.dx - radius * .55, center.dy),
+    Offset(center.dx + radius * .55, center.dy),
+    stroke,
+  );
+}
+
+void _paintTinyText(
+  Canvas canvas,
+  String text,
+  Offset center,
+  Color color,
+  double fontSize,
+) {
+  final TextPainter painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: color,
+        fontSize: math.max(6, fontSize),
+        fontWeight: FontWeight.w800,
+        height: 1,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+    maxLines: 1,
+  )..layout();
+  painter.paint(
+    canvas,
+    Offset(
+      center.dx - painter.width / 2,
+      center.dy - painter.height / 2,
+    ),
+  );
+}

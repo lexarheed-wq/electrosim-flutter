@@ -1,4 +1,4 @@
-name: Convergence M0-M2 qualification
+name: Convergence M0-M3 qualification
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - '.github/workflows/convergence-m0-m2-qualification.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   qualify:
@@ -16,19 +16,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Reassemble and verify candidate patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat .ci/convergence_m2/chunk_*.b64 > /tmp/convergence.patch.gz.b64
-          echo "246c5443256d24de1ba0e5a145d1d0c03f04ac01e89ecb280b7cce39e663f894  /tmp/convergence.patch.gz.b64" | sha256sum -c -
-          base64 -d /tmp/convergence.patch.gz.b64 | gzip -d > /tmp/convergence.patch
-          echo "ab05e40f6581a010cfcf234f863e9788b5d2db20524cddcec71ad982192cfdd4  /tmp/convergence.patch" | sha256sum -c -
-          git apply --check /tmp/convergence.patch
-          git apply /tmp/convergence.patch
 
       - uses: subosito/flutter-action@v2
         with:
@@ -43,12 +30,13 @@ jobs:
           flutter --version
           dart --version 2>&1 | grep '3.10.9'
 
-      - name: Static convergence contracts
+      - name: Static convergence contracts M0-M3
         run: |
           python3 -m unittest \
             tools/test_convergence_m0_contract.py \
             tools/test_convergence_m1_domain_contract.py \
             tools/test_convergence_m1b_m2_contract.py \
+            tools/test_convergence_m3a_dc_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -65,31 +53,17 @@ jobs:
           dart analyze
           dart test
 
+      - name: DC solver analyze and tests
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
       - name: Scenario non-migration guards
         run: |
           python3 tools/f11_static_contract_check.py
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M2_TOPOLOGY_BRANCH_CONVERGENCE_PASS
-
-      - name: Persist qualified M0-M2 source
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "electrosim-ci"
-          git config user.email "electrosim-ci@users.noreply.github.com"
-          git add \
-            CONVERGENCE_VERSION \
-            docs/convergence \
-            docs/f0/MIGRATION_MATRIX.csv \
-            docs/f0/MIGRATION_MATRIX.md \
-            packages/electrosim_domain \
-            packages/electrosim_scenarios \
-            packages/electrosim_topology \
-            tools/test_convergence_m0_contract.py \
-            tools/test_convergence_m1_domain_contract.py \
-            tools/test_convergence_m1b_m2_contract.py
-          test -n "$(git diff --cached --name-only)"
-          git commit -m "M2: qualify domain contracts and component branch topology"
-          git push origin HEAD:f18-v1-v2-convergence
+        run: echo M3A_DC_SOLVER_CONVERGENCE_PASS

@@ -696,6 +696,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             viewportScale,
                             active: active,
                             fault: fault,
+                            quarterTurns:
+                                _layout.quarterTurnsOf(elementId),
                           );
                         },
                         showElementLabels: false,

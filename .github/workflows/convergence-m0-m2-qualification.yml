@@ -1,4 +1,4 @@
-name: Convergence M0-M3 qualification
+name: Convergence M0-M3B qualification
 
 on:
   push:
@@ -11,6 +11,9 @@ on:
       - 'packages/electrosim_solver_dc/**'
       - 'docs/convergence/**'
       - 'tools/test_convergence_*.py'
+      - 'apps/electrosim/lib/f9_component_palette.dart'
+      - 'apps/electrosim/lib/main.dart'
+      - 'apps/electrosim/test/m3b_palette_canonical_models_test.dart'
 
 permissions:
   contents: read
@@ -42,6 +45,7 @@ jobs:
             tools/test_convergence_m1_domain_contract.py \
             tools/test_convergence_m1b_m2_contract.py \
             tools/test_convergence_m3a_dc_contract.py \
+            tools/test_convergence_m3b_palette_engine_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -65,10 +69,20 @@ jobs:
           dart analyze
           dart test
 
+      - name: App analyze and targeted palette/runtime tests
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test \
+            test/f18_g3r1_point05_palette_contract_test.dart \
+            test/m3b_palette_canonical_models_test.dart \
+            test/f17_runtime_engine_test.dart
+
       - name: Scenario non-migration guards
         run: |
           python3 tools/f11_static_contract_check.py
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M3A_DC_SOLVER_CONVERGENCE_PASS
+        run: echo M3B_PALETTE_ENGINE_PARITY_PASS

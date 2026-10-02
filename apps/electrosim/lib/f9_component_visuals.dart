@@ -19,6 +19,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
     this.pointerWorldPosition,
     this.wirePreviewPlanner,
     this.paintElementGlyphs = true,
+    this.showFaultMarkers = true,
   });
 
   final CircuitState circuit;
@@ -29,6 +30,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool paintElementGlyphs;
+  final bool showFaultMarkers;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
           pointerWorldPosition: pointerWorldPosition,
           wirePreviewPlanner: wirePreviewPlanner,
           paintElementGlyphs: paintElementGlyphs,
+          showFaultMarkers: showFaultMarkers,
         ),
         size: Size.infinite,
       ),
@@ -60,6 +63,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     required this.pointerWorldPosition,
     required this.wirePreviewPlanner,
     required this.paintElementGlyphs,
+    required this.showFaultMarkers,
   });
 
   final CircuitState circuit;
@@ -70,6 +74,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool paintElementGlyphs;
+  final bool showFaultMarkers;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -107,7 +112,9 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         );
       }
     }
-    _paintFaultMarkers(canvas, geometry);
+    if (showFaultMarkers) {
+      _paintFaultMarkers(canvas, geometry);
+    }
     _paintWiringTargets(canvas, geometry);
   }
 

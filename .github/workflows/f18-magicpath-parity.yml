@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' ! -name 'f18_magicpath_capture_test.dart' -print0 | xargs -0 flutter test
       - name: Scope guard
         shell: bash
         run: |
@@ -151,3 +151,38 @@ jobs:
             dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip
             dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip.sha256
           if-no-files-found: error
+
+
+  capture-flutter-surfaces:
+    name: Capture Flutter parity surfaces
+    needs: parity-stage-1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Render deterministic F18 surfaces
+        working-directory: apps/electrosim
+        run: flutter test --update-goldens test/f18_magicpath_capture_test.dart
+      - name: Verify captures
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f apps/electrosim/test/_capture/01_flutter_home_desktop.png
+          test -f apps/electrosim/test/_capture/02_flutter_workspace_desktop.png
+          test -f apps/electrosim/test/_capture/03_flutter_workspace_compact.png
+          test -f apps/electrosim/test/_capture/04_flutter_troubleshooting_student.png
+          file apps/electrosim/test/_capture/*.png
+          sha256sum apps/electrosim/test/_capture/*.png > apps/electrosim/test/_capture/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: F18_FLUTTER_PARITY_SURFACES
+          path: apps/electrosim/test/_capture
+          if-no-files-found: error
+          retention-days: 30

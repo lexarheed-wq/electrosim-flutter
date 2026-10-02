@@ -307,6 +307,7 @@ void paintF18MagicPathCanvasElement(
   double viewportScale, {
   bool active = true,
   bool fault = false,
+  int quarterTurns = 0,
 }) {
   final double labelHeight =
       (16 * viewportScale).clamp(12, 18).toDouble();
@@ -339,15 +340,38 @@ void paintF18MagicPathCanvasElement(
     );
   }
 
-  paintF18ElectricalArchetype(
-    canvas,
-    bodyRect,
-    modelType,
-    source ? ElectroSimColors.primaryStrong : ElectroSimColors.primary,
-    drawTerminals: false,
-    active: active,
-    fault: fault,
-  );
+  final int turns = quarterTurns % 4;
+  if (turns == 0) {
+    paintF18ElectricalArchetype(
+      canvas,
+      bodyRect,
+      modelType,
+      source ? ElectroSimColors.primaryStrong : ElectroSimColors.primary,
+      drawTerminals: false,
+      active: active,
+      fault: fault,
+    );
+  } else {
+    canvas.save();
+    canvas.translate(bodyRect.center.dx, bodyRect.center.dy);
+    canvas.rotate(math.pi / 2 * turns);
+    final bool odd = turns.isOdd;
+    final Rect rotatedBody = Rect.fromCenter(
+      center: Offset.zero,
+      width: odd ? bodyRect.height : bodyRect.width,
+      height: odd ? bodyRect.width : bodyRect.height,
+    );
+    paintF18ElectricalArchetype(
+      canvas,
+      rotatedBody,
+      modelType,
+      source ? ElectroSimColors.primaryStrong : ElectroSimColors.primary,
+      drawTerminals: false,
+      active: active,
+      fault: fault,
+    );
+    canvas.restore();
+  }
 
   final TextPainter label = TextPainter(
     text: TextSpan(

@@ -666,6 +666,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                     : null,
                               ),
                       ),
+                      if (_selected == null)
+                        Positioned(
+                          right: 16,
+                          top: 14,
+                          child: IgnorePointer(
+                            child: Opacity(
+                              opacity: 0,
+                              child: F18SelectionToolbar(
+                                onRotate: null,
+                                onDelete: null,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                       ),
                     ),
@@ -1895,18 +1909,25 @@ class _WorkspaceTopBar extends StatelessWidget {
                         switch (value) {
                           case 'edition':
                             onModeChanged(false);
+                            break;
                           case 'simulation':
                             onModeChanged(true);
+                            break;
                           case 'dashboard':
                             onDashboard?.call();
+                            break;
                           case 'manage':
                             onManageSession?.call();
+                            break;
                           case 'save':
                             onSave?.call();
+                            break;
                           case 'open':
                             onOpen?.call();
+                            break;
                           case 'recenter':
                             onRecenter();
+                            break;
                         }
                       },
                       itemBuilder: (BuildContext context) =>

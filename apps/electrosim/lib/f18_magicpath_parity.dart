@@ -376,16 +376,14 @@ class F18CircuitZoneOverlay extends StatelessWidget {
     required this.layout,
     required this.viewport,
     required this.title,
-    this.horizontalPadding = 26,
-    this.verticalPadding = 26,
+    this.framePadding = const EdgeInsets.fromLTRB(55, 84, 41, 35),
   });
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
   final ViewportController viewport;
   final String title;
-  final double horizontalPadding;
-  final double verticalPadding;
+  final EdgeInsets framePadding;
 
   @override
   Widget build(BuildContext context) {
@@ -393,21 +391,26 @@ class F18CircuitZoneOverlay extends StatelessWidget {
       child: AnimatedBuilder(
         animation: viewport,
         builder: (BuildContext context, Widget? child) {
-          final Rect base = F18MagicPathViewportFitter.contentBounds(
-            circuit: circuit,
-            layout: layout,
-          );
-          final Rect world = Rect.fromLTRB(
-            base.left - horizontalPadding,
-            base.top - verticalPadding,
-            base.right + horizontalPadding,
-            base.bottom + verticalPadding,
+          final CircuitGeometryIndex geometry =
+              CircuitGeometryIndex.build(circuit, layout);
+          Rect? deviceWorldBounds;
+          for (final Rect rect in geometry.elementRects.values) {
+            deviceWorldBounds = deviceWorldBounds == null
+                ? rect
+                : deviceWorldBounds!.expandToInclude(rect);
+          }
+          final Rect base = deviceWorldBounds ?? Rect.zero;
+          final Rect deviceScreen = Rect.fromLTRB(
+            base.left * viewport.scale + viewport.translation.dx,
+            base.top * viewport.scale + viewport.translation.dy,
+            base.right * viewport.scale + viewport.translation.dx,
+            base.bottom * viewport.scale + viewport.translation.dy,
           );
           final Rect screen = Rect.fromLTRB(
-            world.left * viewport.scale + viewport.translation.dx,
-            world.top * viewport.scale + viewport.translation.dy,
-            world.right * viewport.scale + viewport.translation.dx,
-            world.bottom * viewport.scale + viewport.translation.dy,
+            deviceScreen.left - framePadding.left,
+            deviceScreen.top - framePadding.top,
+            deviceScreen.right + framePadding.right,
+            deviceScreen.bottom + framePadding.bottom,
           );
           return Stack(
             fit: StackFit.expand,

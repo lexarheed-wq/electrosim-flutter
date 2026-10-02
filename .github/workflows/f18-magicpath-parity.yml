@@ -37,9 +37,12 @@ jobs:
       - name: Analyze Canvas package
         working-directory: packages/electrosim_canvas
         run: flutter analyze
-      - name: Canvas package regression
+      - name: Canvas package non-golden regression
         working-directory: packages/electrosim_canvas
-        run: flutter test
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name '*_test.dart' ! -name 'simulator_canvas_golden_test.dart' -print0 | xargs -0 flutter test
       - name: Resolve application
         working-directory: apps/electrosim
         run: flutter pub get

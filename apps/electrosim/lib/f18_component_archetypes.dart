@@ -229,91 +229,189 @@ Rect _paintArchetypeHousing(
   final String type = modelType.toLowerCase();
   switch (archetype) {
     case F18ElectricalArchetype.source:
+      final Rect sourceBody = Rect.fromCenter(
+        center: Offset(body.center.dx, body.center.dy + body.height * .04),
+        width: body.width * .84,
+        height: body.height * .78,
+      );
       final RRect housing = RRect.fromRectAndRadius(
-        body,
-        Radius.circular(radius),
+        sourceBody,
+        Radius.circular(radius * .75),
       );
-      canvas.drawRRect(
-        housing,
-        Paint()..color = const Color(0xFFEAF2FF),
-      );
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFFC7D2DE));
       canvas.drawRRect(housing, border);
-      final TextPainter polarity = TextPainter(
-        text: TextSpan(
-          text: '+    −',
-          style: TextStyle(
-            color: foreground,
-            fontSize: math.max(8, body.height * .18),
-            fontWeight: FontWeight.w800,
+      final double tabW = sourceBody.width * .18;
+      final double tabH = math.max(3, sourceBody.height * .12);
+      for (final double dx in <double>[.30, .70]) {
+        final RRect tab = RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(
+              sourceBody.left + sourceBody.width * dx,
+              sourceBody.top - tabH * .18,
+            ),
+            width: tabW,
+            height: tabH,
           ),
+          Radius.circular(radius * .25),
+        );
+        canvas.drawRRect(tab, Paint()..color = const Color(0xFF8293A6));
+      }
+      final RRect front = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          sourceBody.left + sourceBody.width * .15,
+          sourceBody.top + sourceBody.height * .22,
+          sourceBody.width * .70,
+          sourceBody.height * .54,
         ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      polarity.paint(
-        canvas,
-        Offset(body.center.dx - polarity.width / 2, body.top + 2),
+        Radius.circular(radius * .35),
       );
-      return body.deflate(body.shortestSide * .16).shift(
-            Offset(0, body.height * .07),
-          );
+      canvas.drawRRect(front, Paint()..color = const Color(0xFFE8EEF4));
+      canvas.drawRRect(
+        front,
+        Paint()
+          ..color = const Color(0xFFAAB8C6)
+          ..strokeWidth = math.max(1, body.shortestSide * .018)
+          ..style = PaintingStyle.stroke,
+      );
+      return front.outerRect.deflate(sourceBody.shortestSide * .08);
     case F18ElectricalArchetype.protection:
       final Rect module = Rect.fromCenter(
         center: body.center,
-        width: body.width * .82,
-        height: body.height * .96,
+        width: body.width * .68,
+        height: body.height * .94,
       );
       final RRect housing = RRect.fromRectAndRadius(
         module,
-        Radius.circular(radius * .55),
+        Radius.circular(radius * .48),
       );
-      canvas.drawRRect(housing, Paint()..color = const Color(0xFFF8FAFC));
-      canvas.drawRRect(housing, border);
-      canvas.drawRect(
-        Rect.fromLTWH(
-          module.left + module.width * .08,
-          module.top + module.height * .08,
-          module.width * .84,
-          module.height * .12,
-        ),
-        Paint()..color = const Color(0xFFE2E8F0),
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFFF1F4F7));
+      canvas.drawRRect(
+        housing,
+        Paint()
+          ..color = const Color(0xFF8FA0B3)
+          ..strokeWidth = math.max(1, body.shortestSide * .02)
+          ..style = PaintingStyle.stroke,
+      );
+      _paintScrew(
+        canvas,
+        Offset(module.left + module.width * .15, module.top + module.height * .12),
+        module.shortestSide * .055,
+      );
+      _paintScrew(
+        canvas,
+        Offset(module.right - module.width * .15, module.top + module.height * .12),
+        module.shortestSide * .055,
+      );
+      _paintTinyText(
+        canvas,
+        'MCB',
+        Offset(module.center.dx, module.top + module.height * .25),
+        const Color(0xFF52657A),
+        module.height * .075,
       );
       return Rect.fromCenter(
-        center: Offset(module.center.dx, module.center.dy + module.height * .06),
-        width: module.width * .66,
-        height: module.height * .50,
+        center: Offset(module.center.dx, module.center.dy + module.height * .08),
+        width: module.width * .56,
+        height: module.height * .44,
       );
     case F18ElectricalArchetype.control:
-      final RRect housing = RRect.fromRectAndRadius(
-        body,
-        Radius.circular(radius * 1.25),
+      if (type.contains('switch') || type.contains('interrupteur')) {
+        final Rect switchBody = Rect.fromCenter(
+          center: body.center,
+          width: body.width * .90,
+          height: body.height * .64,
+        );
+        final RRect housing = RRect.fromRectAndRadius(
+          switchBody,
+          Radius.circular(radius * .75),
+        );
+        canvas.drawRRect(housing, Paint()..color = const Color(0xFFF8FAFC));
+        canvas.drawRRect(housing, border);
+        return switchBody.deflate(body.shortestSide * .13);
+      }
+      final Rect contactor = Rect.fromCenter(
+        center: body.center,
+        width: body.width * .82,
+        height: body.height * .92,
       );
-      canvas.drawRRect(housing, Paint()..color = const Color(0xFFFFFFFF));
-      canvas.drawRRect(housing, border);
-      if (type.contains('push_button') || type.contains('bouton')) {
-        canvas.drawCircle(
-          Offset(body.center.dx, body.top + body.height * .27),
-          body.shortestSide * .13,
-          Paint()..color = const Color(0xFFE2E8F0),
+      final RRect housing = RRect.fromRectAndRadius(
+        contactor,
+        Radius.circular(radius * .55),
+      );
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFFE9EEF3));
+      canvas.drawRRect(
+        housing,
+        Paint()
+          ..color = const Color(0xFF93A4B5)
+          ..strokeWidth = math.max(1, body.shortestSide * .02)
+          ..style = PaintingStyle.stroke,
+      );
+      _paintScrew(
+        canvas,
+        Offset(contactor.left + contactor.width * .13, contactor.top + contactor.height * .10),
+        contactor.shortestSide * .045,
+      );
+      _paintScrew(
+        canvas,
+        Offset(contactor.right - contactor.width * .13, contactor.top + contactor.height * .10),
+        contactor.shortestSide * .045,
+      );
+      for (var i = 0; i < 3; i++) {
+        final Rect cell = Rect.fromLTWH(
+          contactor.left + contactor.width * (.16 + i * .23),
+          contactor.top + contactor.height * .24,
+          contactor.width * .17,
+          contactor.height * .13,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(cell, Radius.circular(radius * .15)),
+          Paint()..color = const Color(0xFFF8FAFC),
         );
       }
-      return body.deflate(body.shortestSide * .16).shift(
-            Offset(0, body.height * .08),
-          );
+      return Rect.fromCenter(
+        center: Offset(contactor.center.dx, contactor.center.dy + contactor.height * .14),
+        width: contactor.width * .58,
+        height: contactor.height * .38,
+      );
     case F18ElectricalArchetype.load:
       if (type.contains('lamp') || type.contains('lampe')) {
-        final double diameter = math.min(body.width, body.height) * .88;
-        final Rect circleBounds = Rect.fromCenter(
+        final Rect lampBody = Rect.fromCenter(
           center: body.center,
+          width: body.width * .78,
+          height: body.height * .86,
+        );
+        final RRect housing = RRect.fromRectAndRadius(
+          lampBody,
+          Radius.circular(radius * .60),
+        );
+        canvas.drawRRect(housing, Paint()..color = const Color(0xFFE9EEF3));
+        canvas.drawRRect(
+          housing,
+          Paint()
+            ..color = const Color(0xFF96A6B6)
+            ..strokeWidth = math.max(1, body.shortestSide * .02)
+            ..style = PaintingStyle.stroke,
+        );
+        final double diameter = lampBody.shortestSide * .58;
+        final Rect circleBounds = Rect.fromCenter(
+          center: lampBody.center,
           width: diameter,
           height: diameter,
         );
         canvas.drawCircle(
-          body.center,
+          lampBody.center,
           diameter / 2,
-          Paint()..color = const Color(0xFFFFFBEB),
+          Paint()..color = const Color(0xFFFFE28A),
         );
-        canvas.drawCircle(body.center, diameter / 2, border);
-        return circleBounds.deflate(diameter * .13);
+        canvas.drawCircle(
+          lampBody.center,
+          diameter / 2,
+          Paint()
+            ..color = const Color(0xFFC49A22)
+            ..strokeWidth = math.max(1.2, body.shortestSide * .025)
+            ..style = PaintingStyle.stroke,
+        );
+        return circleBounds.deflate(diameter * .12);
       }
       final RRect housing = RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -327,63 +425,149 @@ Rect _paintArchetypeHousing(
       canvas.drawRRect(housing, border);
       return housing.outerRect.deflate(body.shortestSide * .10);
     case F18ElectricalArchetype.rotatingMachine:
-      final double diameter = math.min(body.width * .72, body.height * .92);
+      final double diameter = math.min(body.width * .70, body.height * .86);
       final Offset center =
-          Offset(body.center.dx - body.width * .05, body.center.dy);
-      canvas.drawCircle(
-        center,
-        diameter / 2,
-        Paint()..color = const Color(0xFFF1F5F9),
+          Offset(body.center.dx - body.width * .07, body.center.dy);
+      final Rect motorRect = Rect.fromCircle(center: center, radius: diameter / 2);
+      canvas.drawOval(motorRect, Paint()..color = const Color(0xFFB9C6D2));
+      for (var i = -2; i <= 2; i++) {
+        final double x = center.dx + i * diameter * .11;
+        canvas.drawLine(
+          Offset(x, motorRect.top + diameter * .08),
+          Offset(x, motorRect.bottom - diameter * .08),
+          Paint()
+            ..color = const Color(0xFF8395A8)
+            ..strokeWidth = math.max(1, body.shortestSide * .018),
+        );
+      }
+      canvas.drawOval(motorRect, border);
+      final Rect shaft = Rect.fromLTWH(
+        motorRect.right - 1,
+        center.dy - diameter * .08,
+        body.right - motorRect.right,
+        diameter * .16,
       );
-      canvas.drawCircle(center, diameter / 2, border);
-      canvas.drawLine(
-        Offset(center.dx + diameter / 2, center.dy),
-        Offset(body.right, center.dy),
-        border,
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(shaft, Radius.circular(radius * .18)),
+        Paint()..color = const Color(0xFF7D8EA0),
       );
-      return Rect.fromCircle(center: center, radius: diameter * .36);
+      return Rect.fromCircle(center: center, radius: diameter * .34);
     case F18ElectricalArchetype.measurement:
-      final RRect housing = RRect.fromRectAndRadius(
-        body,
-        Radius.circular(radius),
+      final Rect meter = Rect.fromCenter(
+        center: body.center,
+        width: body.width * .76,
+        height: body.height * .94,
       );
-      canvas.drawRRect(housing, Paint()..color = const Color(0xFFF8FAFC));
-      canvas.drawRRect(housing, border);
+      final RRect housing = RRect.fromRectAndRadius(
+        meter,
+        Radius.circular(radius * .80),
+      );
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFF27323D));
+      canvas.drawRRect(
+        housing,
+        Paint()
+          ..color = const Color(0xFF17212B)
+          ..strokeWidth = math.max(1, body.shortestSide * .02)
+          ..style = PaintingStyle.stroke,
+      );
       final RRect display = RRect.fromRectAndRadius(
         Rect.fromLTWH(
-          body.left + body.width * .15,
-          body.top + body.height * .12,
-          body.width * .70,
-          body.height * .30,
+          meter.left + meter.width * .14,
+          meter.top + meter.height * .12,
+          meter.width * .72,
+          meter.height * .28,
         ),
-        Radius.circular(radius * .4),
+        Radius.circular(radius * .30),
       );
-      canvas.drawRRect(display, Paint()..color = const Color(0xFFE2E8F0));
+      canvas.drawRRect(display, Paint()..color = const Color(0xFFD8F0C9));
+      _paintTinyText(
+        canvas,
+        type.contains('amp') ? '1.00 A' : '230.0 V',
+        display.outerRect.center,
+        const Color(0xFF17412B),
+        meter.height * .12,
+      );
       return Rect.fromCenter(
-        center: Offset(body.center.dx, body.center.dy + body.height * .10),
-        width: body.width * .60,
-        height: body.height * .46,
+        center: Offset(meter.center.dx, meter.center.dy + meter.height * .18),
+        width: meter.width * .52,
+        height: meter.height * .34,
       );
     case F18ElectricalArchetype.conversion:
-      final Path housing = Path()
-        ..moveTo(body.left + body.width * .08, body.top)
-        ..lineTo(body.right - body.width * .08, body.top)
-        ..lineTo(body.right, body.center.dy)
-        ..lineTo(body.right - body.width * .08, body.bottom)
-        ..lineTo(body.left + body.width * .08, body.bottom)
-        ..lineTo(body.left, body.center.dy)
-        ..close();
-      canvas.drawPath(housing, Paint()..color = const Color(0xFFF1F5F9));
-      canvas.drawPath(housing, border);
-      return body.deflate(body.shortestSide * .16);
-    case F18ElectricalArchetype.pvEnergy:
-      final RRect housing = RRect.fromRectAndRadius(
-        body,
-        Radius.circular(radius * .45),
+      final Rect inverter = Rect.fromCenter(
+        center: body.center,
+        width: body.width * .78,
+        height: body.height * .86,
       );
-      canvas.drawRRect(housing, Paint()..color = const Color(0xFFEAF2FF));
+      final RRect housing = RRect.fromRectAndRadius(
+        inverter,
+        Radius.circular(radius * .55),
+      );
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFFD7E0E8));
       canvas.drawRRect(housing, border);
-      return body.deflate(body.shortestSide * .12);
+      for (final double x in <double>[inverter.left, inverter.right]) {
+        for (var i = 0; i < 5; i++) {
+          final double y = inverter.top + inverter.height * (.18 + i * .14);
+          canvas.drawLine(
+            Offset(x, y),
+            Offset(x + (x == inverter.left ? -body.width * .06 : body.width * .06), y),
+            Paint()
+              ..color = const Color(0xFF72869A)
+              ..strokeWidth = math.max(1, body.shortestSide * .018),
+          );
+        }
+      }
+      final RRect screen = RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          inverter.left + inverter.width * .18,
+          inverter.top + inverter.height * .18,
+          inverter.width * .64,
+          inverter.height * .26,
+        ),
+        Radius.circular(radius * .25),
+      );
+      canvas.drawRRect(screen, Paint()..color = const Color(0xFF16395B));
+      _paintTinyText(
+        canvas,
+        'INV',
+        screen.outerRect.center,
+        Colors.white,
+        inverter.height * .10,
+      );
+      return Rect.fromCenter(
+        center: Offset(inverter.center.dx, inverter.center.dy + inverter.height * .16),
+        width: inverter.width * .55,
+        height: inverter.height * .30,
+      );
+    case F18ElectricalArchetype.pvEnergy:
+      final Rect panel = Rect.fromCenter(
+        center: body.center,
+        width: body.width * .84,
+        height: body.height * .74,
+      );
+      final RRect housing = RRect.fromRectAndRadius(
+        panel,
+        Radius.circular(radius * .35),
+      );
+      canvas.drawRRect(housing, Paint()..color = const Color(0xFF2C5F8E));
+      canvas.drawRRect(
+        housing,
+        Paint()
+          ..color = const Color(0xFF9FB0C0)
+          ..strokeWidth = math.max(1, body.shortestSide * .025)
+          ..style = PaintingStyle.stroke,
+      );
+      final Paint grid = Paint()
+        ..color = const Color(0xFF75A0C6)
+        ..strokeWidth = math.max(.8, body.shortestSide * .012);
+      for (var i = 1; i < 4; i++) {
+        final double x = panel.left + panel.width * i / 4;
+        canvas.drawLine(Offset(x, panel.top), Offset(x, panel.bottom), grid);
+      }
+      for (var i = 1; i < 2; i++) {
+        final double y = panel.top + panel.height * i / 2;
+        canvas.drawLine(Offset(panel.left, y), Offset(panel.right, y), grid);
+      }
+      return panel.deflate(body.shortestSide * .08);
   }
 }
 

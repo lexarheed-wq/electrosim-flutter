@@ -29,6 +29,7 @@ final class SimulatorCanvas extends StatefulWidget {
     this.wirePreviewPlanner,
     this.elementVisualPainter,
     this.showElementLabels = true,
+    this.preserveCommittedWireRoutes = false,
   });
 
   final CircuitState circuit;
@@ -45,6 +46,7 @@ final class SimulatorCanvas extends StatefulWidget {
   final WirePreviewPlanner? wirePreviewPlanner;
   final CircuitElementVisualPainter? elementVisualPainter;
   final bool showElementLabels;
+  final bool preserveCommittedWireRoutes;
 
   @override
   State<SimulatorCanvas> createState() => _SimulatorCanvasState();
@@ -88,7 +90,9 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.circuit != widget.circuit ||
         !identical(oldWidget.layout, widget.layout) ||
-        oldWidget.wireLayoutEngine != widget.wireLayoutEngine) {
+        oldWidget.wireLayoutEngine != widget.wireLayoutEngine ||
+        oldWidget.preserveCommittedWireRoutes !=
+            widget.preserveCommittedWireRoutes) {
       _refreshEffectiveLayout();
     }
     if (oldWidget.viewportController != widget.viewportController) {
@@ -102,7 +106,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
 
   void _refreshEffectiveLayout() {
     final CircuitWireLayoutEngine? engine = widget.wireLayoutEngine;
-    _effectiveLayout = engine == null
+    _effectiveLayout = engine == null || widget.preserveCommittedWireRoutes
         ? widget.layout
         : engine.routeAll(circuit: widget.circuit, layout: widget.layout);
   }

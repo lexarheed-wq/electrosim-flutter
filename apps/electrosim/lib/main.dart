@@ -12,6 +12,7 @@ import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_home.dart';
+import 'f18_magicpath_parity.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -474,6 +475,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _workspace = 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fitViewportToMagicPath();
+      }
+    });
   }
 
   @override
@@ -512,7 +518,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 canTransformSelection ? _rotateSelectedElement : null,
             onDeleteSelected:
                 canTransformSelection ? _deleteSelectedElement : null,
-            onRecenter: () => _viewport.reset(translation: const Offset(40, 40)),
+            onRecenter: _fitViewportToMagicPath,
           ),
           palette: F9ComponentPalette(
             onStatus: _setStatus,
@@ -598,6 +604,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         enableInteraction: false,
                         wireLayoutEngine: _g2aWireLayoutEngine,
                         wirePreviewPlanner: _g2aWirePreviewPlanner,
+                        elementVisualPainter: paintF18MagicPathCanvasElement,
+                        showElementLabels: false,
                       ),
                       AnimatedBuilder(
                         animation: _viewport,
@@ -611,6 +619,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               ? null
                               : _viewport.screenToWorld(_lastCanvasPointerLocal!),
                           wirePreviewPlanner: _g2aWirePreviewPlanner,
+                          paintElementGlyphs: false,
                         ),
                       ),
                       ],
@@ -1184,6 +1193,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _onCanvasPointerHover(PointerHoverEvent event) => _updateWiringHover(event.localPosition);
+
+  void _fitViewportToMagicPath() {
+    final Size viewportSize = _canvasViewportSize();
+    if (viewportSize.isEmpty) {
+      return;
+    }
+    final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
+      circuit: _circuit,
+      layout: _layout,
+      viewportSize: viewportSize,
+      minScale: _viewport.minScale,
+      maxScale: 1,
+    );
+    _viewport.reset(
+      scale: fit.scale,
+      translation: fit.translation,
+    );
+  }
 
   void _setBoundedViewportTranslation(Offset proposed) {
     final Size size = _canvasViewportSize();

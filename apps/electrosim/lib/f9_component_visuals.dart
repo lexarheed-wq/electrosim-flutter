@@ -18,6 +18,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
     this.hoverTerminalId,
     this.pointerWorldPosition,
     this.wirePreviewPlanner,
+    this.paintElementGlyphs = true,
   });
 
   final CircuitState circuit;
@@ -27,6 +28,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final bool paintElementGlyphs;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,7 @@ class F9CanvasVisualOverlay extends StatelessWidget {
           hoverTerminalId: hoverTerminalId,
           pointerWorldPosition: pointerWorldPosition,
           wirePreviewPlanner: wirePreviewPlanner,
+          paintElementGlyphs: paintElementGlyphs,
         ),
         size: Size.infinite,
       ),
@@ -56,6 +59,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     required this.hoverTerminalId,
     required this.pointerWorldPosition,
     required this.wirePreviewPlanner,
+    required this.paintElementGlyphs,
   });
 
   final CircuitState circuit;
@@ -65,38 +69,43 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final bool paintElementGlyphs;
 
   @override
   void paint(Canvas canvas, Size size) {
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
     _paintSmartWirePreview(canvas);
-    for (final SourceInstance source in circuit.sources) {
-      final Rect? rect = geometry.elementRects[source.id.value];
-      if (rect == null) {
-        continue;
+    if (paintElementGlyphs) {
+      for (final SourceInstance source in circuit.sources) {
+        final Rect? rect = geometry.elementRects[source.id.value];
+        if (rect == null) {
+          continue;
+        }
+        _paintElementGlyph(
+          canvas,
+          rect,
+          source.modelType,
+          source.enabled,
+          layout.quarterTurnsOf(source.id.value),
+        );
       }
-      _paintElementGlyph(
-        canvas,
-        rect,
-        source.modelType,
-        source.enabled,
-        layout.quarterTurnsOf(source.id.value),
-      );
-    }
-    for (final ComponentInstance component in circuit.components) {
-      final Rect? rect = geometry.elementRects[component.id.value];
-      if (rect == null) {
-        continue;
+      for (final ComponentInstance component in circuit.components) {
+        final Rect? rect = geometry.elementRects[component.id.value];
+        if (rect == null) {
+          continue;
+        }
+        final Object? closed = component.controlState['closed'];
+        final bool active =
+            component.condition != ComponentCondition.disabled &&
+                closed != false;
+        _paintElementGlyph(
+          canvas,
+          rect,
+          component.modelType,
+          active,
+          layout.quarterTurnsOf(component.id.value),
+        );
       }
-      final Object? closed = component.controlState['closed'];
-      final bool active = component.condition != ComponentCondition.disabled && closed != false;
-      _paintElementGlyph(
-        canvas,
-        rect,
-        component.modelType,
-        active,
-        layout.quarterTurnsOf(component.id.value),
-      );
     }
     _paintWiringTargets(canvas, geometry);
   }

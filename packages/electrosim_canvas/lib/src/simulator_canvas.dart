@@ -27,6 +27,8 @@ final class SimulatorCanvas extends StatefulWidget {
     this.enableInteraction = true,
     this.wireLayoutEngine,
     this.wirePreviewPlanner,
+    this.elementVisualPainter,
+    this.showElementLabels = true,
   });
 
   final CircuitState circuit;
@@ -41,6 +43,8 @@ final class SimulatorCanvas extends StatefulWidget {
   final bool enableInteraction;
   final CircuitWireLayoutEngine? wireLayoutEngine;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final CircuitElementVisualPainter? elementVisualPainter;
+  final bool showElementLabels;
 
   @override
   State<SimulatorCanvas> createState() => _SimulatorCanvasState();
@@ -366,6 +370,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                 previewPositions: _previewPositions,
                 wirePreviewPlanner: widget.wirePreviewPlanner,
                 smartWireSemantics: widget.wireLayoutEngine != null,
+                elementVisualPainter: widget.elementVisualPainter,
+                showElementLabels: widget.showElementLabels,
               ),
               size: Size.infinite,
             ),

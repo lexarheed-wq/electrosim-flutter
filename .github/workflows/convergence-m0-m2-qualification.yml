@@ -8,7 +8,7 @@ on:
       - '.github/workflows/convergence-m0-m2-qualification.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   qualify:
@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Reassemble and verify candidate patch
         shell: bash
@@ -27,6 +29,7 @@ jobs:
           echo "ab05e40f6581a010cfcf234f863e9788b5d2db20524cddcec71ad982192cfdd4  /tmp/convergence.patch" | sha256sum -c -
           git apply --check /tmp/convergence.patch
           git apply /tmp/convergence.patch
+          git diff --check
 
       - uses: subosito/flutter-action@v2
         with:
@@ -70,3 +73,26 @@ jobs:
 
       - name: Qualification gate
         run: echo M2_TOPOLOGY_BRANCH_CONVERGENCE_PASS
+
+      - name: Persist qualified M0-M2 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "electrosim-ci"
+          git config user.email "electrosim-ci@users.noreply.github.com"
+          git add \
+            .github/workflows/convergence-m0-contract.yml \
+            CONVERGENCE_VERSION \
+            docs/convergence \
+            docs/f0/MIGRATION_MATRIX.csv \
+            docs/f0/MIGRATION_MATRIX.md \
+            packages/electrosim_domain \
+            packages/electrosim_scenarios \
+            packages/electrosim_topology \
+            tools/test_convergence_m0_contract.py \
+            tools/test_convergence_m1_domain_contract.py \
+            tools/test_convergence_m1b_m2_contract.py
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m "M2: qualify domain contracts and component branch topology"
+          git push origin HEAD:f18-v1-v2-convergence

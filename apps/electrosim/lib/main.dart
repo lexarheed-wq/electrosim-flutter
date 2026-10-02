@@ -357,7 +357,6 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
   }
 }
 
-@Deprecated('Use F18WorkspacePage for all product routes.')
 class F9WorkspaceDemoPage extends F18WorkspacePage {
   const F9WorkspaceDemoPage({
     super.key,

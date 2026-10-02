@@ -120,19 +120,30 @@ jobs:
           flutter-version: '3.38.10'
           channel: stable
           cache: true
-      - name: Build release application
+      - name: Build release application in a non-destructive macOS runner
         shell: bash
         run: |
           set -euo pipefail
-          flutter config --enable-macos-desktop
-          cd apps/electrosim
+          ROOT="$PWD"
+          TMP_APP="$RUNNER_TEMP/electrosim-f18-magicpath"
+          rm -rf "$TMP_APP"
+          mkdir -p "$TMP_APP/apps"
+          cp -R apps/electrosim "$TMP_APP/apps/electrosim"
+          cp -R packages "$TMP_APP/packages"
+          cd "$TMP_APP/apps/electrosim"
+          cp pubspec.yaml "$RUNNER_TEMP/electrosim-pubspec.yaml"
+          flutter create --platforms=macos --project-name electrosim . >/dev/null
+          cp "$RUNNER_TEMP/electrosim-pubspec.yaml" pubspec.yaml
+          if [ -f test/widget_test.dart ] && grep -q 'MyApp' test/widget_test.dart; then
+            rm -f test/widget_test.dart
+          fi
           flutter pub get
           flutter build macos --release
           APP="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$APP"
-          mkdir -p ../../dist
-          ditto -c -k --keepParent "$APP" ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip
-          shasum -a 256 ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip > ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip.sha256
+          mkdir -p "$ROOT/dist"
+          ditto -c -k --keepParent "$APP" "$ROOT/dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip"
+          shasum -a 256 "$ROOT/dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip" > "$ROOT/dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: F18_MAGICPATH_PARITY_STAGE1_MAC

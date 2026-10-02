@@ -2271,7 +2271,10 @@ CircuitState _buildDemoCircuit() {
       SourceInstance(
         id: SourceId('source-24v'),
         modelType: 'dc_voltage_source',
-        terminals: <Terminal>[sourcePositive, sourceNegative],
+        // Canvas geometry assigns the first two terminals to left/right.
+        // The qualified MagicPath source sends the positive branch to the
+        // right and returns the negative branch on the left/bottom loop.
+        terminals: <Terminal>[sourceNegative, sourcePositive],
         parameters: const <String, Object?>{'voltageV': 24.0},
       ),
     ],

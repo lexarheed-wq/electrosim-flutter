@@ -344,12 +344,16 @@ class F18CircuitZoneOverlay extends StatelessWidget {
     required this.layout,
     required this.viewport,
     required this.title,
+    this.horizontalPadding = 26,
+    this.verticalPadding = 26,
   });
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
   final ViewportController viewport;
   final String title;
+  final double horizontalPadding;
+  final double verticalPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -357,10 +361,16 @@ class F18CircuitZoneOverlay extends StatelessWidget {
       child: AnimatedBuilder(
         animation: viewport,
         builder: (BuildContext context, Widget? child) {
-          final Rect world = F18MagicPathViewportFitter.contentBounds(
+          final Rect base = F18MagicPathViewportFitter.contentBounds(
             circuit: circuit,
             layout: layout,
-          ).inflate(26);
+          );
+          final Rect world = Rect.fromLTRB(
+            base.left - horizontalPadding,
+            base.top - verticalPadding,
+            base.right + horizontalPadding,
+            base.bottom + verticalPadding,
+          );
           final Rect screen = Rect.fromLTRB(
             world.left * viewport.scale + viewport.translation.dx,
             world.top * viewport.scale + viewport.translation.dy,
@@ -586,6 +596,176 @@ class F18ZoomChip extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+
+class F18TroubleshootingProgressCard extends StatelessWidget {
+  const F18TroubleshootingProgressCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        border: Border.all(color: const Color(0xFFD7E0EA)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Expanded(
+                child: Text(
+                  'PROGRESSION',
+                  style: TextStyle(
+                    color: ElectroSimColors.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .9,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Étape 2 / 3',
+                  style: TextStyle(
+                    color: ElectroSimColors.info,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Méthode de diagnostic',
+            style: TextStyle(
+              color: ElectroSimColors.textPrimary,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: <Widget>[
+              _F18ProgressStep(
+                label: 'Observer',
+                icon: Icons.visibility_outlined,
+                state: _F18ProgressState.complete,
+              ),
+              _F18ProgressConnector(active: true),
+              _F18ProgressStep(
+                label: 'Mesurer',
+                icon: Icons.straighten_outlined,
+                state: _F18ProgressState.active,
+              ),
+              _F18ProgressConnector(active: false),
+              _F18ProgressStep(
+                label: 'Conclure',
+                icon: Icons.fact_check_outlined,
+                state: _F18ProgressState.pending,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _F18ProgressState { complete, active, pending }
+
+class _F18ProgressStep extends StatelessWidget {
+  const _F18ProgressStep({
+    required this.label,
+    required this.icon,
+    required this.state,
+  });
+
+  final String label;
+  final IconData icon;
+  final _F18ProgressState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool active = state != _F18ProgressState.pending;
+    return SizedBox(
+      width: 70,
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: state == _F18ProgressState.complete
+                  ? const Color(0xFFECFDF3)
+                  : state == _F18ProgressState.active
+                      ? const Color(0xFFEFF6FF)
+                      : const Color(0xFFF8FAFC),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: active
+                    ? (state == _F18ProgressState.complete
+                        ? ElectroSimColors.success
+                        : ElectroSimColors.info)
+                    : const Color(0xFFD7E0EA),
+              ),
+            ),
+            child: Icon(
+              state == _F18ProgressState.complete ? Icons.check : icon,
+              size: 16,
+              color: active
+                  ? (state == _F18ProgressState.complete
+                      ? ElectroSimColors.success
+                      : ElectroSimColors.info)
+                  : ElectroSimColors.textDisabled,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: active
+                  ? ElectroSimColors.textPrimary
+                  : ElectroSimColors.textDisabled,
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _F18ProgressConnector extends StatelessWidget {
+  const _F18ProgressConnector({required this.active});
+
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        height: 1,
+        margin: const EdgeInsets.only(bottom: 20),
+        color: active
+            ? ElectroSimColors.info
+            : const Color(0xFFD7E0EA),
+      ),
     );
   }
 }

@@ -17,6 +17,8 @@ enum DcDiagnosticCode {
   floatingElectricalIsland,
   singularMatrix,
   numericalResidualExceeded,
+  sourceCurrentLimited,
+  currentLimitIterationExceeded,
 }
 
 final class DcSolverDiagnostic {

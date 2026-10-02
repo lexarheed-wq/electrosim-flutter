@@ -1655,18 +1655,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'g1': Offset(168, 288),
           'qf1': Offset(336, 288),
           's1': Offset(504, 288),
-          'h1': Offset(576, 288),
+          'h1': Offset(672, 288),
         },
         elementSizes: const <String, Size>{
-          'g1': Size(76, 76),
-          'qf1': Size(68, 78),
-          's1': Size(76, 66),
-          'h1': Size(66, 66),
+          'g1': Size(96, 92),
+          'qf1': Size(86, 96),
+          's1': Size(90, 86),
+          'h1': Size(88, 90),
         },
         wireRoutes: const <String, List<Offset>>{
           'f18-w4': <Offset>[
-            Offset(609, 392),
-            Offset(130, 392),
+            Offset(716, 420),
+            Offset(120, 420),
           ],
         },
         defaultElementSize: const Size(76, 66),
@@ -1686,17 +1686,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'lamp-1': Offset(672, 288),
         },
         elementSizes: const <String, Size>{
-          'source-24v': Size(76, 76),
-          'breaker-1': Size(68, 78),
-          'switch-1': Size(76, 66),
-          'lamp-1': Size(66, 66),
+          'source-24v': Size(96, 92),
+          'breaker-1': Size(86, 96),
+          'switch-1': Size(90, 86),
+          'lamp-1': Size(88, 90),
         },
         wireRoutes: const <String, List<Offset>>{
           // Qualified MagicPath composition: the positive branch remains
           // horizontal and the negative return is routed below the devices.
           'wire-4': <Offset>[
-            Offset(705, 392),
-            Offset(130, 392),
+            Offset(716, 420),
+            Offset(120, 420),
           ],
         },
         defaultElementSize: const Size(76, 66),

@@ -1,0 +1,101 @@
+import 'package:electrosim/main.dart' as app;
+import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+Terminal _terminal(String id, TerminalRole role) => Terminal(
+      id: TerminalId(id),
+      name: id,
+      role: role,
+    );
+
+void main() {
+  test('CircuitVisualLayout rotates terminal geometry by quarter turns', () {
+    final Terminal left = _terminal('left', TerminalRole.input);
+    final Terminal right = _terminal('right', TerminalRole.output);
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('rotation'),
+      revision: 1,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('S1'),
+          modelType: 'switch',
+          terminals: <Terminal>[left, right],
+        ),
+      ],
+      sources: const <SourceInstance>[],
+      connections: const <Connection>[],
+    );
+
+    final CircuitVisualLayout initial = CircuitVisualLayout(
+      elementPositions: const <String, Offset>{'S1': Offset(240, 240)},
+      elementSizes: const <String, Size>{'S1': Size(104, 64)},
+    );
+    final CircuitGeometryIndex before =
+        CircuitGeometryIndex.build(circuit, initial);
+    expect(before.terminalPositions[left.id]!.dy, 240);
+    expect(before.terminalPositions[right.id]!.dy, 240);
+
+    final CircuitVisualLayout rotated = initial.rotateElement('S1');
+    expect(rotated.quarterTurnsOf('S1'), 1);
+
+    final CircuitGeometryIndex after =
+        CircuitGeometryIndex.build(circuit, rotated);
+    expect(after.terminalPositions[left.id]!.dx, 240);
+    expect(after.terminalPositions[right.id]!.dx, 240);
+    expect(
+      after.terminalPositions[left.id]!.dy,
+      lessThan(after.terminalPositions[right.id]!.dy),
+    );
+  });
+
+  testWidgets('workspace owns the only delete action and a real rotate action',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.tap(find.byKey(const Key('home-design')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('design-wiring')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);
+    expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);
+    expect(find.byKey(const Key('properties-delete-element')), findsNothing);
+    expect(find.text('Supprimer du circuit'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('properties-element-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('switch-1').last);
+    await tester.pumpAndSettle();
+
+    final IconButton rotate = tester.widget<IconButton>(
+      find.byKey(const Key('workspace-rotate-action')),
+    );
+    final IconButton delete = tester.widget<IconButton>(
+      find.byKey(const Key('workspace-delete-action')),
+    );
+    expect(rotate.onPressed, isNotNull);
+    expect(delete.onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('workspace-rotate-action')));
+    await tester.pumpAndSettle();
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.layout.quarterTurnsOf('switch-1'), 1);
+
+    await tester.tap(find.byKey(const Key('workspace-delete-action')));
+    await tester.pumpAndSettle();
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(
+      canvas.circuit.components
+          .where((ComponentInstance item) => item.id.value == 'switch-1'),
+      isEmpty,
+    );
+  });
+}

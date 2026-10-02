@@ -217,7 +217,7 @@ void main() {
     expect(find.textContaining('resistor-1'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('context panel exposes state control and safe deletion', (WidgetTester tester) async {
+  testWidgets('state control remains in properties and deletion is owned by topbar', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -239,7 +239,7 @@ void main() {
     await tester.pumpAndSettle();
     expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('État modifié'));
   
-    await tester.tap(find.byKey(const Key('properties-delete-element')));
+    await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
     expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('2 éléments'));
     expect(find.text('Aucun élément sélectionné'), findsOneWidget);

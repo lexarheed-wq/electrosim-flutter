@@ -462,6 +462,10 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   Widget build(BuildContext context) {
     final ElectroSimRuntimeSnapshot runtimeSnapshot =
         const ElectroSimRuntimeEngine().evaluate(_circuit);
+    final F9ElementDetails? selectedDetails =
+        F9ElementEditor.describe(_circuit, _selected);
+    final bool canTransformSelection =
+        selectedDetails != null && !_studentTpReadOnly;
     return Scaffold(
       body: SafeArea(
         child: CallbackShortcuts(
@@ -486,6 +490,10 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
                 : null,
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
+            onRotateSelected:
+                canTransformSelection ? _rotateSelectedElement : null,
+            onDeleteSelected:
+                canTransformSelection ? _deleteSelectedElement : null,
             onRecenter: () => _viewport.reset(translation: const Offset(40, 40)),
           ),
           palette: F9ComponentPalette(
@@ -501,7 +509,6 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
             workspace: _workspace,
             role: widget.role,
             onTogglePrimaryState: _selected == null ? null : _toggleSelectedPrimaryState,
-            onDeleteSelected: _selected == null ? null : _deleteSelectedElement,
             onReplaceSelected: _selected == null ? null : _replaceSelectedElement,
             onSelectElement: (String? id) {
               setState(() {
@@ -1359,6 +1366,37 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     _syncStudentTpCircuit();
   }
 
+  void _rotateSelectedElement() {
+    if (_blockStudentTpMutation()) return;
+    final String? selected = _selected;
+    if (selected == null ||
+        F9ElementEditor.describe(_circuit, selected) == null) {
+      _setStatus('Rotation impossible : aucun élément sélectionné.');
+      return;
+    }
+
+    final CircuitVisualLayout candidate = _routeWithG2A(
+      _circuit,
+      _layout.rotateElement(selected),
+    );
+    if (!F18WorkspaceWireSafety.isCrossingFree(
+      circuit: _circuit,
+      layout: candidate,
+    )) {
+      _setStatus(
+        'Rotation refusée : aucun routage sans croisement automatique.',
+      );
+      return;
+    }
+
+    setState(() {
+      _layout = candidate;
+      _status =
+          'Rotation 90° : $selected · ${_layout.quarterTurnsOf(selected) * 90}°';
+    });
+    _announce(_status);
+  }
+
   void _deleteSelectedElement() {
     if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
@@ -1391,9 +1429,16 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         .toSet();
     final CircuitState next = F9ElementEditor.deleteElement(_circuit, selected);
     final Map<String, Offset> positions = <String, Offset>{..._layout.elementPositions}..remove(selected);
-    final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes}..remove(selected);
-    final Map<String, List<Offset>> routes = <String, List<Offset>>{..._layout.wireRoutes}
-      ..removeWhere((String key, List<Offset> value) => removedConnectionIds.contains(key));
+    final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes}
+      ..remove(selected);
+    final Map<String, int> rotations = <String, int>{
+      ..._layout.elementQuarterTurns,
+    }..remove(selected);
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      ..._layout.wireRoutes,
+    }..removeWhere(
+        (String key, List<Offset> value) => removedConnectionIds.contains(key),
+      );
     setState(() {
       _circuit = next;
       _layout = _routeWithG2A(
@@ -1402,6 +1447,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
           elementPositions: positions,
           elementSizes: sizes,
           wireRoutes: routes,
+          elementQuarterTurns: rotations,
           defaultElementSize: _layout.defaultElementSize,
         ),
       );
@@ -1494,6 +1540,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
         ...arrangement.positions,
       },
       elementSizes: base.elementSizes,
+      elementQuarterTurns: base.elementQuarterTurns,
       defaultElementSize: base.defaultElementSize,
     );
   }
@@ -1596,6 +1643,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onManageSession,
     required this.onSave,
     required this.onOpen,
+    required this.onRotateSelected,
+    required this.onDeleteSelected,
     required this.onRecenter,
   });
 
@@ -1607,6 +1656,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onManageSession;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
+  final VoidCallback? onRotateSelected;
+  final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
 
   @override
@@ -1710,6 +1761,18 @@ class _WorkspaceTopBar extends StatelessWidget {
                       icon: Icons.open_in_new_outlined,
                       emphasized: true,
                     ),
+                  IconButton(
+                    key: const Key('workspace-rotate-action'),
+                    tooltip: 'Rotation 90°',
+                    onPressed: onRotateSelected,
+                    icon: const Icon(Icons.rotate_right_outlined),
+                  ),
+                  IconButton(
+                    key: const Key('workspace-delete-action'),
+                    tooltip: 'Supprimer la sélection',
+                    onPressed: onDeleteSelected,
+                    icon: const Icon(Icons.delete_outline),
+                  ),
                   IconButton(
                     tooltip: 'Recentrer le Canvas',
                     onPressed: onRecenter,

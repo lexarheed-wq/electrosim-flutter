@@ -92,8 +92,8 @@ void main() {
       expect(
         canvas.layout.routeFor('wire-4'),
         orderedEquals(const <Offset>[
-          Offset(705, 392),
-          Offset(130, 392),
+          Offset(716, 420),
+          Offset(120, 420),
         ]),
       );
     },

@@ -9,3 +9,5 @@ export 'src/fault_scenario_repository.dart';
 export 'src/fault_scenario_validator.dart';
 export 'src/f11_fault_scenarios.dart';
 export 'src/f16_catalog.dart';
+
+export 'src/f18_product_catalog.dart';

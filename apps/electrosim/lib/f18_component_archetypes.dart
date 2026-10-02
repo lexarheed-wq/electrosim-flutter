@@ -287,10 +287,8 @@ void _paintArchetypeMark(
       final Path zigzag = Path()..moveTo(rect.left + w * .08, c.dy);
       for (var i = 0; i < 6; i++) {
         zigzag.lineTo(
-          Offset(
-            rect.left + w * (.20 + i * .11),
-            c.dy + (i.isEven ? -h * .18 : h * .18),
-          ),
+          rect.left + w * (.20 + i * .11),
+          c.dy + (i.isEven ? -h * .18 : h * .18),
         );
       }
       zigzag.lineTo(rect.right - w * .08, c.dy);

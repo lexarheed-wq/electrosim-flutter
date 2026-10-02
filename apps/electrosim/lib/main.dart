@@ -1724,10 +1724,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         circuit.components.any((ComponentInstance item) => item.id.value == 'h1')) {
       return CircuitVisualLayout(
         elementPositions: const <String, Offset>{
-          'g1': Offset(168, 288),
-          'qf1': Offset(336, 288),
-          's1': Offset(504, 288),
-          'h1': Offset(672, 288),
+          'g1': Offset(160, 288),
+          'qf1': Offset(352, 288),
+          's1': Offset(544, 288),
+          'h1': Offset(736, 288),
         },
         elementSizes: const <String, Size>{
           'g1': Size(112, 104),
@@ -1737,8 +1737,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         },
         wireRoutes: const <String, List<Offset>>{
           'f18-w4': <Offset>[
-            Offset(720, 430),
-            Offset(112, 430),
+            Offset(784, 430),
+            Offset(104, 430),
           ],
         },
         defaultElementSize: const Size(76, 66),
@@ -1752,10 +1752,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         circuit.components.any((ComponentInstance item) => item.id.value == 'lamp-1')) {
       final CircuitVisualLayout magicPathDemo = CircuitVisualLayout(
         elementPositions: const <String, Offset>{
-          'source-24v': Offset(168, 288),
-          'breaker-1': Offset(336, 288),
-          'switch-1': Offset(504, 288),
-          'lamp-1': Offset(672, 288),
+          'source-24v': Offset(160, 288),
+          'breaker-1': Offset(352, 288),
+          'switch-1': Offset(544, 288),
+          'lamp-1': Offset(736, 288),
         },
         elementSizes: const <String, Size>{
           'source-24v': Size(112, 104),
@@ -1767,8 +1767,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           // Qualified MagicPath composition: the positive branch remains
           // horizontal and the negative return is routed below the devices.
           'wire-4': <Offset>[
-            Offset(720, 430),
-            Offset(112, 430),
+            Offset(784, 430),
+            Offset(104, 430),
           ],
         },
         defaultElementSize: const Size(76, 66),

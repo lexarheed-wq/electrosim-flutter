@@ -276,11 +276,17 @@ void main() {
   
     await tester.tap(find.byKey(const Key('properties-primary-toggle')));
     await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('État modifié'));
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('context-status-message')),
+      )).data,
+      contains('État modifié'),
+    );
   
     await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('2 éléments'));
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.components.length + canvas.circuit.sources.length, 3);
     expect(find.text('Aucun élément sélectionné'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

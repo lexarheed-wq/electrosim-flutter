@@ -80,7 +80,6 @@ jobs:
           git config user.name "electrosim-ci"
           git config user.email "electrosim-ci@users.noreply.github.com"
           git add \
-            .github/workflows/convergence-m0-contract.yml \
             CONVERGENCE_VERSION \
             docs/convergence \
             docs/f0/MIGRATION_MATRIX.csv \

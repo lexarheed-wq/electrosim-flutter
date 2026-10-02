@@ -160,9 +160,41 @@ abstract final class F18MagicPathViewportFitter {
     final double freeHeight = math.max(0, viewportSize.height - scaledHeight);
     final double x = freeWidth * horizontalAlignment;
     final double y = freeHeight * verticalAlignment;
-    final Offset translation = Offset(
+    Offset translation = Offset(
       x - worldBounds.left * scale,
       y - worldBounds.top * scale,
+    );
+
+    // Alignment expresses the visual composition target, but clipping
+    // protection is a hard product invariant. Re-clamp the resulting scene
+    // after alignment so the complete routed bounds always remain inside the
+    // requested safety inset.
+    Rect screen = Rect.fromLTRB(
+      worldBounds.left * scale + translation.dx,
+      worldBounds.top * scale + translation.dy,
+      worldBounds.right * scale + translation.dx,
+      worldBounds.bottom * scale + translation.dy,
+    );
+    double dx = 0;
+    double dy = 0;
+    if (screen.left < padding) {
+      dx += padding - screen.left;
+    }
+    if (screen.right + dx > viewportSize.width - padding) {
+      dx -= (screen.right + dx) - (viewportSize.width - padding);
+    }
+    if (screen.top < padding) {
+      dy += padding - screen.top;
+    }
+    if (screen.bottom + dy > viewportSize.height - padding) {
+      dy -= (screen.bottom + dy) - (viewportSize.height - padding);
+    }
+    translation += Offset(dx, dy);
+    screen = Rect.fromLTRB(
+      worldBounds.left * scale + translation.dx,
+      worldBounds.top * scale + translation.dy,
+      worldBounds.right * scale + translation.dx,
+      worldBounds.bottom * scale + translation.dy,
     );
 
     return F18ViewportFitResult(

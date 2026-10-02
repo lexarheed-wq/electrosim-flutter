@@ -1,3 +1,4 @@
+// BOOTSTRAP_FIXTURE_ONLY: V2 technical contract fixture; not the target product library.
 import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'fault_scenario_definition.dart';

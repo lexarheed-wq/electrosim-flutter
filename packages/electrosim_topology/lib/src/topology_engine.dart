@@ -4,7 +4,11 @@ import 'topology_finding.dart';
 import 'topology_graph.dart';
 
 final class TopologyEngine {
-  const TopologyEngine();
+  const TopologyEngine({ComponentModelRegistry? modelRegistry}) : _modelRegistry = modelRegistry;
+
+  final ComponentModelRegistry? _modelRegistry;
+
+  ComponentModelRegistry get _contracts => _modelRegistry ?? CoreComponentModelContracts.registry;
 
   TopologyGraph compile(CircuitState circuit) {
     final List<Terminal> terminals = <Terminal>[
@@ -75,6 +79,56 @@ final class TopologyEngine {
     }
 
     final List<TopologyFinding> findings = <TopologyFinding>[];
+    final List<TopologyBranch> componentBranches = <TopologyBranch>[];
+    for (final ComponentInstance component in circuit.components) {
+      final ComponentModelContract? contract = _contracts.resolve(component.modelType);
+      if (contract == null) {
+        continue;
+      }
+      if (!contract.supportsMode(circuit.mode)) {
+        findings.add(
+          TopologyFinding(
+            code: TopologyFindingCode.componentModeMismatch,
+            severity: TopologyFindingSeverity.error,
+            message: 'Component ${component.id.value} (${component.modelType}) does not support '
+                'electrical mode ${circuit.mode.name}.',
+            componentId: component.id,
+            terminalIds: component.terminals.map((Terminal t) => t.id).toList(growable: false),
+          ),
+        );
+      }
+      if (component.terminals.length != contract.terminalCount) {
+        findings.add(
+          TopologyFinding(
+            code: TopologyFindingCode.componentContractMismatch,
+            severity: TopologyFindingSeverity.error,
+            message: 'Component ${component.id.value} (${component.modelType}) has '
+                '${component.terminals.length} terminals but its canonical contract requires '
+                '${contract.terminalCount}.',
+            componentId: component.id,
+            terminalIds: component.terminals.map((Terminal t) => t.id).toList(growable: false),
+          ),
+        );
+        continue;
+      }
+      for (final ComponentBranchDefinition definition in contract.branches) {
+        final Terminal fromTerminal = component.terminals[definition.fromTerminalIndex];
+        final Terminal toTerminal = component.terminals[definition.toTerminalIndex];
+        componentBranches.add(
+          TopologyBranch(
+            componentId: component.id,
+            branchId: definition.id,
+            role: definition.role,
+            fromTerminalId: fromTerminal.id,
+            toTerminalId: toTerminal.id,
+            fromNodeId: terminalToNode[fromTerminal.id]!,
+            toNodeId: terminalToNode[toTerminal.id]!,
+            poleIndex: definition.poleIndex,
+          ),
+        );
+      }
+    }
+    componentBranches.sort(_compareBranches);
     for (final Connection connection in disabledConnections) {
       findings.add(
         TopologyFinding(
@@ -158,6 +212,7 @@ final class TopologyEngine {
       disabledConnectionIds: disabledConnections.map((Connection c) => c.id),
       componentNodeIds: componentNodeIds,
       sourceNodeIds: sourceNodeIds,
+      componentBranches: componentBranches,
       findings: findings,
     );
   }
@@ -191,6 +246,14 @@ bool _hasConflictingPhases(Set<PhaseTag> phases) {
     return false;
   }
   return true;
+}
+
+int _compareBranches(TopologyBranch a, TopologyBranch b) {
+  final int component = a.componentId.value.compareTo(b.componentId.value);
+  if (component != 0) {
+    return component;
+  }
+  return a.branchId.compareTo(b.branchId);
 }
 
 int _compareFindings(TopologyFinding a, TopologyFinding b) {

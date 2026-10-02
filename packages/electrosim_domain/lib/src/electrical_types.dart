@@ -39,6 +39,17 @@ enum TerminalRole {
   normallyOpen,
   normallyClosed,
   measurement,
+  lineL1,
+  lineL2,
+  lineL3,
+  loadT1,
+  loadT2,
+  loadT3,
+  coilA1,
+  coilA2,
+  auxiliaryCommon,
+  auxiliaryNormallyOpen,
+  auxiliaryNormallyClosed,
 }
 
 enum PhaseTag {

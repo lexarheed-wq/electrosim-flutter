@@ -14,6 +14,32 @@ final class TopologyNode {
   final List<TerminalId> terminalIds;
 }
 
+/// Structural internal branch projected from a canonical component model.
+///
+/// A topology branch is not a conductor node merge. The solver decides how the
+/// branch behaves electrically from the component model, condition and state.
+final class TopologyBranch {
+  TopologyBranch({
+    required this.componentId,
+    required this.branchId,
+    required this.role,
+    required this.fromTerminalId,
+    required this.toTerminalId,
+    required this.fromNodeId,
+    required this.toNodeId,
+    this.poleIndex,
+  });
+
+  final ComponentId componentId;
+  final String branchId;
+  final ElectricalBranchRole role;
+  final TerminalId fromTerminalId;
+  final TerminalId toTerminalId;
+  final String fromNodeId;
+  final String toNodeId;
+  final int? poleIndex;
+}
+
 final class TopologyGraph {
   TopologyGraph({
     required this.circuitId,
@@ -25,6 +51,7 @@ final class TopologyGraph {
     required Iterable<ConnectionId> disabledConnectionIds,
     required Map<ComponentId, List<String>> componentNodeIds,
     required Map<SourceId, List<String>> sourceNodeIds,
+    Iterable<TopologyBranch> componentBranches = const <TopologyBranch>[],
     required Iterable<TopologyFinding> findings,
   }) : nodes = List<TopologyNode>.unmodifiable(nodes),
        terminalToNode = Map<TerminalId, String>.unmodifiable(terminalToNode),
@@ -32,6 +59,7 @@ final class TopologyGraph {
        disabledConnectionIds = List<ConnectionId>.unmodifiable(disabledConnectionIds),
        componentNodeIds = _freezeOwnerMap<ComponentId>(componentNodeIds),
        sourceNodeIds = _freezeOwnerMap<SourceId>(sourceNodeIds),
+       componentBranches = List<TopologyBranch>.unmodifiable(componentBranches),
        findings = List<TopologyFinding>.unmodifiable(findings);
 
   final CircuitId circuitId;
@@ -43,6 +71,7 @@ final class TopologyGraph {
   final List<ConnectionId> disabledConnectionIds;
   final Map<ComponentId, List<String>> componentNodeIds;
   final Map<SourceId, List<String>> sourceNodeIds;
+  final List<TopologyBranch> componentBranches;
   final List<TopologyFinding> findings;
 
   TopologyNode nodeForTerminal(TerminalId terminalId) {
@@ -52,6 +81,11 @@ final class TopologyGraph {
     }
     return nodes.firstWhere((TopologyNode node) => node.id == nodeId);
   }
+
+  List<TopologyBranch> branchesForComponent(ComponentId componentId) =>
+      List<TopologyBranch>.unmodifiable(
+        componentBranches.where((TopologyBranch branch) => branch.componentId == componentId),
+      );
 }
 
 Map<K, List<String>> _freezeOwnerMap<K>(Map<K, List<String>> input) {

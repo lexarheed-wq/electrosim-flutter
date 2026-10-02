@@ -8,6 +8,8 @@ enum TopologyFindingCode {
   isolatedComponent,
   isolatedSource,
   conflictingPhases,
+  componentContractMismatch,
+  componentModeMismatch,
 }
 
 final class TopologyFinding {

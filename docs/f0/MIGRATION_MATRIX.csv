@@ -10,9 +10,9 @@ Canvas/câblage JS,Simulator Interaction + Rendering,Gestes et ergonomie,Oui,Mot
 Analyse nœuds/branches,TopologyEngine,Concept pédagogique,Oui,Implémentation legacy,Graphe canonique indépendant du rendu.
 Mesures,MeasurementEngine,Grandeurs/instruments,Oui,Lecture directe UI/états,Mesures uniquement depuis SimulationResult.
 Prises/cordons/appareils externes,Domain + UI interaction,UX de branchement,Oui,Double représentation électrique,Modèles explicites intégrés au circuit.
-Bibliothèque Exemples,electrosim_scenarios / ExampleRepository,Concept d’exemple sain,Oui,Tous items legacy,Repart de zéro; aucun ancien schéma importé.
+Bibliothèque Exemples,electrosim_scenarios / ExampleRepository,Principe seulement (circuit sain),Oui,"Tous les items, données, titres, IDs et circuits V1","Reconstruction intégrale depuis zéro dans Flutter; aucun schéma V1 n’est importé, converti ou utilisé comme entrée de génération."
 FaultEngine par injection,Aucun,Taxonomie de défauts seulement,Oui,FaultEngine injection,Architecture interdite par le cahier des charges.
-Bibliothèque Pannes,electrosim_scenarios / FaultScenarioRepository,Connaissance métier,Oui,Tous items legacy,Scénarios autonomes avec faultyCircuitState.
+Bibliothèque Pannes,electrosim_scenarios / FaultScenarioRepository,Principe seulement (scénario autonome),Oui,"Tous les items, données, titres, IDs, circuits et teacher-truth V1","Reconstruction intégrale depuis zéro; aucun scénario V1 n’est importé, converti ou utilisé comme entrée de génération. Chaque panne finale possède directement son faultyCircuitState."
 TP câblage,Application / TPEngine,Flux pédagogique,Oui,Orchestration legacy,Validation structurelle/fonctionnelle réelle.
 Recherche de dérangement,Application / TPEngine + FaultScenario,Démarche diagnostic,Oui,Ponts exemple+panne,FaultScenario chargé directement.
 Teacher truth,Policy sécurité pédagogique,Principe de confidentialité,Oui,Payloads/masquages legacy,Données privées jamais envoyées à l’élève.

@@ -629,6 +629,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         wirePreviewPlanner: _g2aWirePreviewPlanner,
                         elementVisualPainter: paintF18MagicPathCanvasElement,
                         showElementLabels: false,
+                        preserveCommittedWireRoutes: true,
                       ),
                       F18CircuitZoneOverlay(
                         circuit: _circuit,
@@ -1294,8 +1295,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final bool medium =
         !compact &&
         viewportSize.width < ElectroSimBreakpoints.mediumUpperBound;
-    final double padding = compact ? 12 : (medium ? 20 : 34);
-    final double verticalAlignment = compact ? .30 : (medium ? .18 : .47);
+    final double padding = compact ? 24 : (medium ? 38 : 34);
+    final double verticalAlignment = compact ? .34 : (medium ? 0 : .64);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,
@@ -1624,6 +1625,34 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   CircuitVisualLayout _layoutForCircuit(CircuitState circuit) {
+    if (circuit.circuitId.value == 'fault-f18-lighting-004' &&
+        circuit.sources.any((SourceInstance item) => item.id.value == 'g1') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 'qf1') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 's1') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 'h1')) {
+      return CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'g1': Offset(168, 288),
+          'qf1': Offset(336, 288),
+          's1': Offset(504, 288),
+          'h1': Offset(672, 288),
+        },
+        elementSizes: const <String, Size>{
+          'g1': Size(76, 76),
+          'qf1': Size(68, 78),
+          's1': Size(76, 66),
+          'h1': Size(66, 66),
+        },
+        wireRoutes: const <String, List<Offset>>{
+          'f18-w4': <Offset>[
+            Offset(705, 392),
+            Offset(130, 392),
+          ],
+        },
+        defaultElementSize: const Size(76, 66),
+      );
+    }
+
     if (circuit.circuitId.value == 'f18-workspace-demo' &&
         circuit.sources.any((SourceInstance item) => item.id.value == 'source-24v') &&
         circuit.components.any((ComponentInstance item) => item.id.value == 'breaker-1') &&

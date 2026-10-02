@@ -44,7 +44,11 @@ void main() {
       find.byKey(const Key('diagnostic-evidence')),
       'G1 = 24 V ; H1 = 0 V. La tension disparaît après S1.',
     );
-    await tester.tap(find.byKey(const Key('diagnostic-save')));
+    final Finder save =
+        find.byKey(const Key('diagnostic-save'), skipOffstage: false);
+    await tester.ensureVisible(save);
+    await tester.pumpAndSettle();
+    await tester.tap(save);
     await tester.pumpAndSettle();
 
     expect(controller.session!.diagnosticSheet.entries, hasLength(3));

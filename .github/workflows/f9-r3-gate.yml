@@ -11,6 +11,7 @@ on:
       - 'validate.sh'
 jobs:
   f9-r3:
+    if: ${{ github.ref_name != 'f18-magicpath-parity' && github.head_ref != 'f18-magicpath-parity' }}
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4

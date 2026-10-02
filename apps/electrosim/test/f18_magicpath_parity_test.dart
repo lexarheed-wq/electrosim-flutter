@@ -35,6 +35,27 @@ void main() {
     );
   });
 
+  test('viewport fitter enforces requested safety inset after alignment', () {
+    final CircuitState circuit = app.buildF18DemoCircuitForTest();
+    final CircuitVisualLayout layout = app.buildF18DemoLayoutForTest(circuit);
+    const Size viewportSize = Size(896, 760);
+    const double padding = 34;
+    final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
+      circuit: circuit,
+      layout: layout,
+      viewportSize: viewportSize,
+      padding: padding,
+      minScale: .35,
+      maxScale: 1,
+      verticalAlignment: .64,
+    );
+    final Rect screen = F18MagicPathViewportFitter.screenBounds(fit);
+    expect(screen.left, greaterThanOrEqualTo(padding));
+    expect(screen.top, greaterThanOrEqualTo(padding));
+    expect(screen.right, lessThanOrEqualTo(viewportSize.width - padding));
+    expect(screen.bottom, lessThanOrEqualTo(viewportSize.height - padding));
+  });
+
   testWidgets(
     'desktop workspace initially fits the complete routed scene without clipping',
     (WidgetTester tester) async {

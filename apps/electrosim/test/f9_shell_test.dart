@@ -171,7 +171,9 @@ void main() {
       'résistance',
     );
     await tester.pumpAndSettle();
-    await tester.doubleTap(find.byKey(const Key('palette-item-resistor')));
+    await tester.tap(find.byKey(const Key('palette-item-resistor')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('palette-item-resistor')));
     await tester.pumpAndSettle();
 
     canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
@@ -192,7 +194,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await tester.doubleTap(find.byKey(const Key('palette-item-lamp')));
+    await tester.tap(find.byKey(const Key('palette-item-lamp')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('palette-item-lamp')));
     await tester.pumpAndSettle();
 
     final SimulatorCanvas canvas =

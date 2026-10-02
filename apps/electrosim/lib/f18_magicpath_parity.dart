@@ -132,6 +132,8 @@ abstract final class F18MagicPathViewportFitter {
     double padding = defaultPadding,
     double minScale = minimumInitialScale,
     double maxScale = maximumInitialScale,
+    double horizontalAlignment = .5,
+    double verticalAlignment = .32,
   }) {
     final Rect worldBounds = contentBounds(circuit: circuit, layout: layout);
     if (viewportSize.isEmpty || worldBounds.isEmpty) {
@@ -152,9 +154,15 @@ abstract final class F18MagicPathViewportFitter {
         .min(maxScale, math.min(widthScale, heightScale))
         .clamp(minScale, maxScale)
         .toDouble();
+    final double scaledWidth = worldBounds.width * scale;
+    final double scaledHeight = worldBounds.height * scale;
+    final double freeWidth = math.max(0, viewportSize.width - scaledWidth);
+    final double freeHeight = math.max(0, viewportSize.height - scaledHeight);
+    final double x = freeWidth * horizontalAlignment;
+    final double y = freeHeight * verticalAlignment;
     final Offset translation = Offset(
-      viewportSize.width / 2 - worldBounds.center.dx * scale,
-      viewportSize.height / 2 - worldBounds.center.dy * scale,
+      x - worldBounds.left * scale,
+      y - worldBounds.top * scale,
     );
 
     return F18ViewportFitResult(
@@ -352,7 +360,7 @@ class F18CircuitZoneOverlay extends StatelessWidget {
           final Rect world = F18MagicPathViewportFitter.contentBounds(
             circuit: circuit,
             layout: layout,
-          ).inflate(52);
+          ).inflate(26);
           final Rect screen = Rect.fromLTRB(
             world.left * viewport.scale + viewport.translation.dx,
             world.top * viewport.scale + viewport.translation.dy,

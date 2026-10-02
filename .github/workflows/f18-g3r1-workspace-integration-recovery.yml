@@ -63,6 +63,10 @@ jobs:
         working-directory: apps/electrosim
         run: flutter test test/f18_g3r1_point07_f18_workspace_identity_test.dart
 
+      - name: Point 08 F18 visual archetypes
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g3r1_point08_visual_archetypes_test.dart
+
       - name: Canvas routing regression
         working-directory: packages/electrosim_canvas
         run: flutter test test/circuit_wire_layout_engine_test.dart
@@ -107,3 +111,6 @@ jobs:
 
       - name: Point 07 gate
         run: echo F18_G3R1_P07_F18_WORKSPACE_IDENTITY_PASS
+
+      - name: Point 08 gate
+        run: echo F18_G3R1_P08_VISUAL_ARCHETYPES_PASS

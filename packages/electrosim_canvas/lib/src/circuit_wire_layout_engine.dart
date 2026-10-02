@@ -91,6 +91,7 @@ final class CircuitWireLayoutEngine {
       elementPositions: layout.elementPositions,
       elementSizes: layout.elementSizes,
       wireRoutes: nextRoutes,
+      elementQuarterTurns: layout.elementQuarterTurns,
       defaultElementSize: layout.defaultElementSize,
     );
   }

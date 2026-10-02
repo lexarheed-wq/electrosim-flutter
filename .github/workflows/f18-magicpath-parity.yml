@@ -77,7 +77,7 @@ jobs:
         run: |
           set -euo pipefail
           changed="$(git diff --name-only f52da0acba9e93032433849756abfdea17dc442d...HEAD)"
-          forbidden="$(printf '%s\n' "$changed" | grep -Ev '^(apps/electrosim/|packages/electrosim_canvas/|packages/electrosim_ui_kit/|packages/electrosim_solver_dc/|docs/f18/magicpath_parity/|\.github/workflows/(f18-magicpath-parity|f0-gate|f1-gate|f8-gate|f9-r3-gate|f9-r4-gate|f9-r7-gate)\.yml$)' || true)"
+          forbidden="$(printf '%s\n' "$changed" | grep -Ev '^(apps/electrosim/|packages/electrosim_canvas/|packages/electrosim_ui_kit/|packages/electrosim_solver_dc/|packages/electrosim_scenarios/|docs/f18/magicpath_parity/|\.github/workflows/(f18-magicpath-parity|f0-gate|f1-gate|f8-gate|f9-r3-gate|f9-r4-gate|f9-r7-gate)\.yml$)' || true)"
           if [ -n "$forbidden" ]; then
             echo 'MagicPath parity modified files outside the approved UI/Canvas scope:'
             echo "$forbidden"

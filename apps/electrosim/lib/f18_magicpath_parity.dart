@@ -520,16 +520,21 @@ class F18SelectionToolbar extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               icon: const Icon(Icons.rotate_right_outlined),
             ),
-            TextButton.icon(
+            IconButton(
               key: const Key('workspace-delete-action'),
+              tooltip: 'Supprimer la sélection',
               onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline, size: 16),
-              label: const Text('Supprimer'),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 34),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                foregroundColor: ElectroSimColors.danger,
-                textStyle: const TextStyle(
+              iconSize: 16,
+              visualDensity: VisualDensity.compact,
+              color: ElectroSimColors.danger,
+              icon: const Icon(Icons.delete_outline),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Text(
+                'Supprimer',
+                style: TextStyle(
+                  color: ElectroSimColors.danger,
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                 ),

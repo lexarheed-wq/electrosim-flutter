@@ -414,39 +414,98 @@ abstract final class F18ComponentVisualRegistry {
   }
 
   static void _paintLamp(Canvas canvas, Rect rect, Color accent) {
-    final Rect b = Rect.fromCenter(
-      center: rect.center,
-      width: rect.width * .82,
-      height: rect.height * .88,
-    );
-    final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .10));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFD3DCE5));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8798A9), 1));
+    final Rect b = _inset(rect, .025);
+    final Offset bulbCenter =
+        Offset(b.center.dx, b.top + b.height * .37);
+    final double bulbR = math.min(b.width * .34, b.height * .31);
 
-    final Offset c = Offset(b.center.dx, b.top + b.height * .43);
-    final double bezelR = b.shortestSide * .29;
-    canvas.drawCircle(c, bezelR, Paint()..color = const Color(0xFF6F7F90));
-    canvas.drawCircle(c, bezelR * .82, Paint()..color = const Color(0xFFFFC928));
-    canvas.drawCircle(c, bezelR * .82, _stroke(const Color(0xFFC19115), 1));
+    final Paint glass = Paint()..color = const Color(0xFFFFE79A);
+    final Paint outline = _stroke(const Color(0xFF243746), 1.5);
+    canvas.drawCircle(bulbCenter, bulbR, glass);
+    canvas.drawCircle(bulbCenter, bulbR, outline);
     canvas.drawCircle(
-      Offset(c.dx - bezelR * .22, c.dy - bezelR * .26),
-      bezelR * .18,
-      Paint()..color = const Color(0x70FFFFFF),
+      Offset(
+        bulbCenter.dx - bulbR * .28,
+        bulbCenter.dy - bulbR * .30,
+      ),
+      bulbR * .17,
+      Paint()..color = const Color(0x55FFFFFF),
     );
 
-    final Rect label = Rect.fromLTWH(
-      b.left + b.width * .20,
-      b.bottom - b.height * .20,
-      b.width * .60,
-      b.height * .11,
+    final double neckTopY = bulbCenter.dy + bulbR * .72;
+    final double baseTopY = b.top + b.height * .74;
+    final double neckHalf = bulbR * .24;
+    final Path neck = Path()
+      ..moveTo(bulbCenter.dx - bulbR * .52, bulbCenter.dy + bulbR * .55)
+      ..quadraticBezierTo(
+        bulbCenter.dx - neckHalf,
+        neckTopY,
+        bulbCenter.dx - neckHalf,
+        baseTopY,
+      )
+      ..lineTo(bulbCenter.dx + neckHalf, baseTopY)
+      ..quadraticBezierTo(
+        bulbCenter.dx + neckHalf,
+        neckTopY,
+        bulbCenter.dx + bulbR * .52,
+        bulbCenter.dy + bulbR * .55,
+      );
+    canvas.drawPath(
+      neck,
+      Paint()
+        ..color = const Color(0xFFFFE79A)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(neck, outline);
+
+    final Offset filamentNode =
+        Offset(bulbCenter.dx, bulbCenter.dy + bulbR * .22);
+    canvas.drawLine(
+      Offset(bulbCenter.dx - bulbR * .28, bulbCenter.dy + bulbR * .04),
+      filamentNode,
+      _stroke(const Color(0xFF243746), 1.4),
+    );
+    canvas.drawLine(
+      Offset(bulbCenter.dx + bulbR * .28, bulbCenter.dy + bulbR * .04),
+      filamentNode,
+      _stroke(const Color(0xFF243746), 1.4),
+    );
+    canvas.drawLine(
+      filamentNode,
+      Offset(bulbCenter.dx, baseTopY),
+      _stroke(const Color(0xFF243746), 1.3),
+    );
+
+    final Rect collar = Rect.fromCenter(
+      center: Offset(b.center.dx, b.top + b.height * .78),
+      width: bulbR * .70,
+      height: b.height * .11,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(label, const Radius.circular(2)),
-      Paint()..color = const Color(0xFFF6F8FA),
+      RRect.fromRectAndRadius(collar, const Radius.circular(2)),
+      Paint()..color = const Color(0xFF7B8D9B),
     );
-    _tiny(canvas, '24 V', label.center, b.height * .065);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(collar, const Radius.circular(2)),
+      _stroke(const Color(0xFF243746), 1),
+    );
+    for (var i = 0; i < 2; i++) {
+      final double y = collar.top + collar.height * (.35 + i * .28);
+      canvas.drawLine(
+        Offset(collar.left + collar.width * .10, y),
+        Offset(collar.right - collar.width * .10, y),
+        _stroke(const Color(0xFFDDE6EC), 1),
+      );
+    }
+    final Rect foot = Rect.fromCenter(
+      center: Offset(b.center.dx, b.top + b.height * .88),
+      width: collar.width * .48,
+      height: b.height * .07,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(foot, Radius.circular(foot.height * .45)),
+      Paint()..color = const Color(0xFF4D6575),
+    );
   }
 
   static void _paintMeter(Canvas canvas, Rect rect, String t, Color accent) {
@@ -640,29 +699,92 @@ abstract final class F18ComponentVisualRegistry {
   }
 
   static void _paintFan(Canvas canvas, Rect rect, Color accent) {
-    final Offset c = rect.center;
-    final double r = rect.shortestSide * .36;
-    canvas.drawCircle(c, r, Paint()..color = const Color(0xFFE3E8ED));
-    canvas.drawCircle(c, r, _stroke(const Color(0xFF8797A6), 1));
+    final Rect b = _inset(rect, .025);
+    final Offset c = Offset(
+      b.left + b.width * .43,
+      b.top + b.height * .37,
+    );
+    final double r = math.min(b.width * .30, b.height * .30);
+    final Paint cage = _stroke(const Color(0xFF263B4B), 1.2);
+
+    canvas.drawCircle(c, r, cage);
+    canvas.drawCircle(c, r * .74, cage);
+    for (var i = 0; i < 8; i++) {
+      final double a = math.pi * 2 * i / 8;
+      canvas.drawLine(
+        c,
+        Offset(
+          c.dx + math.cos(a) * r,
+          c.dy + math.sin(a) * r,
+        ),
+        _stroke(const Color(0x66495F70), .8),
+      );
+    }
+
     for (var i = 0; i < 4; i++) {
       final double a = math.pi / 2 * i;
       final Path blade = Path()
-        ..moveTo(c.dx, c.dy)
+        ..moveTo(c.dx + math.cos(a) * r * .13,
+            c.dy + math.sin(a) * r * .13)
         ..quadraticBezierTo(
-          c.dx + math.cos(a + .4) * r * .55,
-          c.dy + math.sin(a + .4) * r * .55,
-          c.dx + math.cos(a) * r * .82,
-          c.dy + math.sin(a) * r * .82,
+          c.dx + math.cos(a + .48) * r * .72,
+          c.dy + math.sin(a + .48) * r * .72,
+          c.dx + math.cos(a + .10) * r * .86,
+          c.dy + math.sin(a + .10) * r * .86,
         )
         ..quadraticBezierTo(
-          c.dx + math.cos(a - .55) * r * .38,
-          c.dy + math.sin(a - .55) * r * .38,
-          c.dx,
-          c.dy,
-        );
-      canvas.drawPath(blade, Paint()..color = const Color(0xFF73879A));
+          c.dx + math.cos(a - .48) * r * .54,
+          c.dy + math.sin(a - .48) * r * .54,
+          c.dx + math.cos(a) * r * .13,
+          c.dy + math.sin(a) * r * .13,
+        )
+        ..close();
+      canvas.drawPath(blade, Paint()..color = const Color(0xFF7EA4BB));
+      canvas.drawPath(blade, _stroke(const Color(0xFF526F80), .8));
     }
-    canvas.drawCircle(c, r * .13, Paint()..color = const Color(0xFF334155));
+
+    canvas.drawCircle(c, r * .18, Paint()..color = const Color(0xFF9CB2C0));
+    canvas.drawCircle(c, r * .18, _stroke(const Color(0xFF263B4B), 1));
+    canvas.drawCircle(c, r * .07, Paint()..color = const Color(0xFF425967));
+
+    final Rect motor = Rect.fromCenter(
+      center: Offset(c.dx + r * 1.28, c.dy),
+      width: r * .54,
+      height: r * .72,
+    );
+    final RRect motorR =
+        RRect.fromRectAndRadius(motor, Radius.circular(motor.shortestSide * .24));
+    canvas.drawRRect(motorR, Paint()..color = const Color(0xFF6F8999));
+    canvas.drawRRect(motorR, _stroke(const Color(0xFF405A69), 1));
+
+    final double stemTop = c.dy + r;
+    final double baseY = b.bottom - b.height * .12;
+    canvas.drawLine(
+      Offset(c.dx, stemTop),
+      Offset(c.dx, baseY - b.height * .08),
+      _stroke(const Color(0xFF405A69), 1.6),
+    );
+
+    final Rect base = Rect.fromCenter(
+      center: Offset(c.dx, baseY),
+      width: r * 1.18,
+      height: b.height * .18,
+    );
+    final RRect baseR =
+        RRect.fromRectAndRadius(base, Radius.circular(base.height * .45));
+    _shadow(canvas, baseR);
+    canvas.drawRRect(baseR, Paint()..color = const Color(0xFF6F8999));
+    canvas.drawRRect(baseR, _stroke(const Color(0xFF405A69), 1));
+    canvas.drawLine(
+      Offset(base.left + base.width * .18, base.center.dy),
+      Offset(base.right - base.width * .18, base.center.dy),
+      _stroke(const Color(0xFFD9E5EA), 1.2),
+    );
+    canvas.drawCircle(
+      Offset(base.right - base.width * .14, base.center.dy),
+      base.height * .12,
+      Paint()..color = const Color(0xFFA8BBB9),
+    );
   }
 
   static void _paintRelay(Canvas canvas, Rect rect, Color accent) {

@@ -234,6 +234,76 @@ final class CoreComponentModelContracts {
         ],
       ),
       ComponentModelContract(
+        modelType: 'push_button_no',
+        family: ComponentFamily.switching,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'buzzer',
+        family: ComponentFamily.receiver,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'fan_dc',
+        family: ComponentFamily.receiver,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'motor_dc',
+        family: ComponentFamily.receiver,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'relay_coil',
+        family: ComponentFamily.electromechanicalControl,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'control:coil',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.controlCoil,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'switch',
         family: ComponentFamily.switching,
         terminalCount: 2,

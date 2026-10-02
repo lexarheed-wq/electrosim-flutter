@@ -79,6 +79,47 @@ void main() {
     }
   });
 
+  test('G4-R2 critical visuals keep a minimum physical-detail complexity',
+      () async {
+    for (final String model in const <String>[
+      'dc_voltage_source',
+      'breaker',
+      'switch',
+      'lamp',
+      'multimeter',
+      'motor_dc',
+      'fan_dc',
+      'relay_coil',
+      'contactor',
+    ]) {
+      final Uint8List pixels = await _raster(model, active: true);
+      final Set<int> colors = <int>{};
+      var nonWhite = 0;
+      for (var i = 0; i + 3 < pixels.length; i += 4) {
+        final int r = pixels[i];
+        final int g = pixels[i + 1];
+        final int b = pixels[i + 2];
+        final int a = pixels[i + 3];
+        if (a == 0) continue;
+        colors.add((r << 16) | (g << 8) | b);
+        if (r < 248 || g < 248 || b < 248) {
+          nonWhite++;
+        }
+      }
+      expect(
+        colors.length,
+        greaterThan(24),
+        reason:
+            '$model must retain gradients, hardware details and anti-aliased contours.',
+      );
+      expect(
+        nonWhite,
+        greaterThan(700),
+        reason: '$model must occupy a meaningful physical footprint.',
+      );
+    }
+  });
+
   test('G4-R2 fault state changes protected-device evidence', () async {
     final Uint8List normal = await _raster(
       'breaker',

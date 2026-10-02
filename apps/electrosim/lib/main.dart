@@ -1299,7 +1299,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     // MagicPath composition is specified against the full product viewport,
     // not the remaining Canvas width after palette/inspector deduction.
     final double horizontalAlignment =
-        compact ? .68 : (medium ? .75 : .44);
+        compact ? .68 : (medium ? 1.0 : .44);
     final double verticalAlignment =
         compact ? .33 : (medium ? .26 : .37);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
@@ -1651,7 +1651,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         },
         wireRoutes: const <String, List<Offset>>{
           'f18-w4': <Offset>[
-            Offset(705, 392),
+            Offset(609, 392),
             Offset(130, 392),
           ],
         },

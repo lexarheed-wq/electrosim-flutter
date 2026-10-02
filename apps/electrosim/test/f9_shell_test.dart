@@ -1,6 +1,7 @@
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,10 +90,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Recherche de dérangement'), findsWidgets);
-    expect(find.byKey(const Key('direct-entry-status')), findsOneWidget);
-    expect(find.text('Accès direct'), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsNothing);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
+    expect(find.byKey(const Key('f18-canvas-drop-region')), findsOneWidget);
   });
 
   testWidgets('workspace keeps validated F8 Canvas interactions mounted', (WidgetTester tester) async {
@@ -103,7 +103,7 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     expect(find.text('Câblage'), findsWidgets);
-    expect(find.text('Composants'), findsOneWidget);
+    expect(find.text('COMPOSANTS'), findsOneWidget);
     expect(find.text('Propriétés'), findsWidgets);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
   });
@@ -117,8 +117,9 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
-    expect(find.text('Palette'), findsOneWidget);
-    expect(find.text('Propriétés'), findsWidgets);
+    expect(find.text('Palette'), findsNothing);
+    expect(find.text('Propriétés'), findsNothing);
+    expect(find.byKey(const Key('f18-canvas-drop-region')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -135,14 +136,13 @@ void main() {
       tester.getRect(find.byKey(const Key('palette-show-all'))).bottom,
       lessThanOrEqualTo(900),
     );
-    expect(find.text('Voir tous les composants'), findsOneWidget);
-    expect(find.text('12 composants disponibles'), findsOneWidget);
+    expect(find.text('Voir tous'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('palette-show-all')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-show-all')), findsNothing);
     expect(find.textContaining('Voir moins'), findsNothing);
-    expect(find.text('12 composants disponibles'), findsOneWidget);
+    expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('palette-search-field')),
@@ -151,7 +151,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-lamp')), findsNothing);
-    expect(find.text('1 composant disponible'), findsOneWidget);
+    expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -162,14 +162,25 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('3 éléments · 1 source'));
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.components.length + canvas.circuit.sources.length, 4);
 
-    await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'résistance',
+    );
+    await tester.pumpAndSettle();
+    await tester.doubleTap(find.byKey(const Key('palette-item-resistor')));
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Résistance'));
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.components.length + canvas.circuit.sources.length, 5);
+    expect(
+      canvas.circuit.components
+          .where((ComponentInstance item) => item.id.value == 'resistor-1'),
+      hasLength(1),
+    );
     expect(find.textContaining('resistor-1'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -181,11 +192,17 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
+    await tester.doubleTap(find.byKey(const Key('palette-item-lamp')));
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Lampe'));
+    final SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.components.length + canvas.circuit.sources.length, 5);
+    expect(
+      canvas.circuit.components
+          .where((ComponentInstance item) => item.id.value == 'lamp-2'),
+      hasLength(1),
+    );
     expect(find.textContaining('lamp-2'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -197,6 +214,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'résistance',
+    );
+    await tester.pumpAndSettle();
     final Finder item = find.byKey(const Key('palette-item-resistor'));
     final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
     expect(item, findsOneWidget);
@@ -212,8 +234,14 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Résistance'));
+    final SimulatorCanvas dropped =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(dropped.circuit.components.length + dropped.circuit.sources.length, 5);
+    expect(
+      dropped.circuit.components
+          .where((ComponentInstance item) => item.id.value == 'resistor-1'),
+      hasLength(1),
+    );
     expect(find.textContaining('resistor-1'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -231,9 +259,16 @@ void main() {
     await tester.pumpAndSettle();
   
     expect(find.byKey(const Key('properties-model-type')), findsOneWidget);
-    expect(find.text('Interrupteur'), findsOneWidget);
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('properties-model-type')),
+      )).data,
+      'Interrupteur',
+    );
     expect(find.byKey(const Key('properties-primary-toggle')), findsOneWidget);
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('3 éléments'));
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.components.length + canvas.circuit.sources.length, 4);
   
     await tester.tap(find.byKey(const Key('properties-primary-toggle')));
     await tester.pumpAndSettle();
@@ -293,7 +328,12 @@ void main() {
     await tester.tap(find.text('Lampe · lamp-1').last);
     await tester.pumpAndSettle();
     expect(find.text('lamp-1'), findsWidgets);
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Sélection clavier'));
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('context-status-message')),
+      )).data,
+      contains('Sélection clavier'),
+    );
   });
 
   testWidgets('escape shortcut resets canvas interaction without mutating circuit revision', (WidgetTester tester) async {
@@ -304,12 +344,20 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
-    final String before = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
+    final SimulatorCanvas before =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final int beforeRevision = before.circuit.revision;
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('annulée'));
-    final String after = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
-    expect(after, before);
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('context-status-message')),
+      )).data,
+      contains('annulée'),
+    );
+    final SimulatorCanvas after =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(after.circuit.revision, beforeRevision);
   });
 
   testWidgets('breakpoint transition does not mutate CircuitState', (WidgetTester tester) async {
@@ -320,16 +368,18 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
-    final String before = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
-    expect(before, contains('Révision 1'));
+    final SimulatorCanvas before =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(before.circuit.revision, 1);
 
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(1440, 900);
     await tester.pumpAndSettle();
-    final String after = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
-    expect(after, before);
+    final SimulatorCanvas after =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(after.circuit.revision, before.circuit.revision);
   });
 
   testWidgets('selected component can be replaced without losing its identity', (WidgetTester tester) async {
@@ -348,7 +398,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Résistance'), findsWidgets);
     expect(find.text('switch-1'), findsWidgets);
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Remplacement'));
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('context-status-message')),
+      )).data,
+      contains('Remplacement'),
+    );
   });
 
 
@@ -395,7 +450,12 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Position graphique mise à jour'));
+    expect(
+      (tester.widget<Text>(
+        find.byKey(const Key('context-status-message')),
+      )).data,
+      contains('Position graphique mise à jour'),
+    );
     expect(tester.takeException(), isNull);
   });
 

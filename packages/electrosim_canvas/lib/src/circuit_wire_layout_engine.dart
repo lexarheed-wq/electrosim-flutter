@@ -39,12 +39,19 @@ final class CircuitWireLayoutEngine {
           geometry.terminalOwners[connection.fromTerminalId];
       final String? toOwner =
           geometry.terminalOwners[connection.toTerminalId];
+      final Rect? fromRect =
+          fromOwner == null ? null : geometry.elementRects[fromOwner];
+      final Rect? toRect =
+          toOwner == null ? null : geometry.elementRects[toOwner];
+
+      final Offset startStub = fromRect == null
+          ? start
+          : _terminalStubPoint(start, fromRect);
+      final Offset endStub = toRect == null
+          ? end
+          : _terminalStubPoint(end, toRect);
 
       final List<RoutingObstacle> obstacles = geometry.elementRects.entries
-          .where(
-            (MapEntry<String, Rect> entry) =>
-                entry.key != fromOwner && entry.key != toOwner,
-          )
           .map(
             (MapEntry<String, Rect> entry) =>
                 RoutingObstacle(bounds: entry.value),
@@ -60,21 +67,33 @@ final class CircuitWireLayoutEngine {
           .toList(growable: false);
 
       final WireRouteResult result = router.route(
-        start: start,
-        end: end,
+        start: startStub,
+        end: endStub,
         obstacles: obstacles,
         occupiedDifferentNetPaths: crossingObstacles,
       );
 
       if (result.isResolved) {
-        final OrthogonalWirePath path = result.path!;
-        nextRoutes[connection.id.value] = path.points.length <= 2
-            ? const <Offset>[]
-            : List<Offset>.unmodifiable(
-                path.points.sublist(1, path.points.length - 1),
-              );
-        occupied.add(path);
-        continue;
+        final OrthogonalWirePath? path = _composeStubbedPath(
+          start: start,
+          startStub: startStub,
+          routed: result.path!,
+          endStub: endStub,
+          end: end,
+        );
+        if (path != null &&
+            !WireRouteSafety.hasDifferentNetCrossing(
+              candidate: path,
+              occupiedDifferentNetPaths: crossingObstacles,
+            )) {
+          nextRoutes[connection.id.value] = path.points.length <= 2
+              ? const <Offset>[]
+              : List<Offset>.unmodifiable(
+                  path.points.sublist(1, path.points.length - 1),
+                );
+          occupied.add(path);
+          continue;
+        }
       }
 
       final OrthogonalWirePath? existing = _existingOrthogonalPath(
@@ -94,6 +113,90 @@ final class CircuitWireLayoutEngine {
       elementQuarterTurns: layout.elementQuarterTurns,
       defaultElementSize: layout.defaultElementSize,
     );
+  }
+
+  Offset _terminalStubPoint(Offset terminal, Rect ownerRect) {
+    final Offset direction = _terminalOutwardDirection(terminal, ownerRect);
+    final double distance = router.obstacleClearance + router.grid;
+    return terminal + direction * distance;
+  }
+
+  static Offset _terminalOutwardDirection(Offset terminal, Rect rect) {
+    const double epsilon = 0.001;
+    if ((terminal.dx - rect.left).abs() <= epsilon) {
+      return const Offset(-1, 0);
+    }
+    if ((terminal.dx - rect.right).abs() <= epsilon) {
+      return const Offset(1, 0);
+    }
+    if ((terminal.dy - rect.top).abs() <= epsilon) {
+      return const Offset(0, -1);
+    }
+    if ((terminal.dy - rect.bottom).abs() <= epsilon) {
+      return const Offset(0, 1);
+    }
+
+    final Map<Offset, double> distances = <Offset, double>{
+      const Offset(-1, 0): (terminal.dx - rect.left).abs(),
+      const Offset(1, 0): (terminal.dx - rect.right).abs(),
+      const Offset(0, -1): (terminal.dy - rect.top).abs(),
+      const Offset(0, 1): (terminal.dy - rect.bottom).abs(),
+    };
+    return distances.entries
+        .reduce(
+          (MapEntry<Offset, double> a, MapEntry<Offset, double> b) =>
+              a.value <= b.value ? a : b,
+        )
+        .key;
+  }
+
+  static OrthogonalWirePath? _composeStubbedPath({
+    required Offset start,
+    required Offset startStub,
+    required OrthogonalWirePath routed,
+    required Offset endStub,
+    required Offset end,
+  }) {
+    final List<Offset> raw = <Offset>[
+      start,
+      if (startStub != start) startStub,
+      ...routed.points.skip(1).take(
+        routed.points.length > 2 ? routed.points.length - 2 : 0,
+      ),
+      if (endStub != end) endStub,
+      end,
+    ];
+    final List<Offset> normalized = <Offset>[];
+    for (final Offset point in raw) {
+      if (normalized.isEmpty || normalized.last != point) {
+        normalized.add(point);
+      }
+    }
+
+    var index = 1;
+    while (index < normalized.length - 1) {
+      final Offset before = normalized[index - 1];
+      final Offset current = normalized[index];
+      final Offset after = normalized[index + 1];
+      final bool horizontal =
+          before.dy == current.dy && current.dy == after.dy;
+      final bool vertical =
+          before.dx == current.dx && current.dx == after.dx;
+      if (horizontal || vertical) {
+        normalized.removeAt(index);
+      } else {
+        index++;
+      }
+    }
+
+    if (normalized.length < 2) {
+      return null;
+    }
+    try {
+      return OrthogonalWirePath(points: normalized);
+    } on ArgumentError {
+      return null;
+    }
   }
 
   static bool _sharesEndpoint(OrthogonalWirePath path, Offset point) {

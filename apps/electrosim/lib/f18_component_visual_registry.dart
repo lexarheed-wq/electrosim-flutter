@@ -317,10 +317,24 @@ abstract final class F18ComponentVisualRegistry {
       _stroke(const Color(0x33FFFFFF), 1),
     );
 
-    final Offset stateDot = Offset(b.center.dx, b.bottom - b.height * .12);
+    _screw(
+      canvas,
+      Offset(b.center.dx, b.top + b.height * .13),
+      b.shortestSide * .045,
+    );
+    _screw(
+      canvas,
+      Offset(b.center.dx, b.bottom - b.height * .08),
+      b.shortestSide * .045,
+    );
+
+    final Offset stateDot = Offset(
+      b.left + b.width * .18,
+      b.bottom - b.height * .11,
+    );
     canvas.drawCircle(
       stateDot,
-      b.shortestSide * .055,
+      b.shortestSide * .045,
       Paint()..color = const Color(0xFF5CBD79),
     );
     _tiny(

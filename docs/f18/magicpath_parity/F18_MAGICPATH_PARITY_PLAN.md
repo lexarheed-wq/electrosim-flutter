@@ -68,3 +68,17 @@ A screen is not complete because its functional tests pass. It is complete only 
 - Repeat the user video flow.
 - Compare side-by-side with MagicPath references.
 - Close only when no unexplained visible deviation remains.
+
+
+## CI authority on convergence branch
+
+For `f18-magicpath-parity`, the blocking qualification authority is
+`F18 MagicPath Parity` plus the current platform qualification. Historical
+F0/F1/F8/F9 freeze gates remain preserved for their historical branches but
+are intentionally skipped on this convergence branch because they compare
+against pre-F18 frozen baselines and otherwise report expected F18 UI changes
+as regressions.
+
+Stage 2 no-clipping contract uses a 24 px minimum visible safety inset while
+the exact visual placement is verified by the qualified MagicPath reference
+captures rather than by an obsolete 46 px G3R1 margin.

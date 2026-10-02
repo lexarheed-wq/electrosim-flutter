@@ -58,8 +58,8 @@ void main() {
     expect(
       canvas.layout.routeFor('wire-4'),
       orderedEquals(const <Offset>[
-        Offset(716, 420),
-        Offset(120, 420),
+        Offset(720, 430),
+        Offset(112, 430),
       ]),
     );
     final double lowestDeviceBottom = geometry.elementRects.values

@@ -304,8 +304,10 @@ void paintF18MagicPathCanvasElement(
   String modelType,
   bool source,
   bool selected,
-  double viewportScale,
-) {
+  double viewportScale, {
+  bool active = true,
+  bool fault = false,
+}) {
   final double labelHeight =
       (16 * viewportScale).clamp(12, 18).toDouble();
   final Rect bodyRect = Rect.fromLTRB(
@@ -343,6 +345,8 @@ void paintF18MagicPathCanvasElement(
     modelType,
     source ? ElectroSimColors.primaryStrong : ElectroSimColors.primary,
     drawTerminals: false,
+    active: active,
+    fault: fault,
   );
 
   final TextPainter label = TextPainter(

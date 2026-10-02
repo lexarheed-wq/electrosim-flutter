@@ -18,39 +18,35 @@ Future<SimulatorCanvas> _openDcWorkspace(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('default DC workspace uses visible rectangular arrangement',
+  testWidgets('default DC workspace matches the qualified four-device MagicPath arrangement',
       (WidgetTester tester) async {
     final SimulatorCanvas canvas = await _openDcWorkspace(tester);
     final CircuitVisualLayout layout = canvas.layout;
 
     final Offset source = layout.positionOf('source-24v')!;
+    final Offset breaker = layout.positionOf('breaker-1')!;
+    final Offset command = layout.positionOf('switch-1')!;
     final Offset load = layout.positionOf('lamp-1')!;
-    final Offset series = layout.positionOf('switch-1')!;
 
-    expect(source.dx, lessThan(load.dx));
-    expect(source.dy, load.dy);
-    expect(series.dy, lessThan(source.dy));
-
-    final double branchMidpointX = (source.dx + load.dx) / 2;
-    expect((series.dx - branchMidpointX).abs(), lessThanOrEqualTo(0.01));
+    expect(source.dx, lessThan(breaker.dx));
+    expect(breaker.dx, lessThan(command.dx));
+    expect(command.dx, lessThan(load.dx));
+    expect(<double>{source.dy, breaker.dy, command.dy, load.dy}, hasLength(1));
   });
 
-  testWidgets('DC series component stays far from both rectangular corners',
+  testWidgets('MagicPath inline devices keep stable spacing on the straight branch',
       (WidgetTester tester) async {
     final SimulatorCanvas canvas = await _openDcWorkspace(tester);
     final CircuitVisualLayout layout = canvas.layout;
 
     final Offset source = layout.positionOf('source-24v')!;
+    final Offset breaker = layout.positionOf('breaker-1')!;
+    final Offset command = layout.positionOf('switch-1')!;
     final Offset load = layout.positionOf('lamp-1')!;
-    final Offset series = layout.positionOf('switch-1')!;
-    final Size seriesSize = layout.sizeOf('switch-1');
 
-    const double bendKeepOut = 48;
-    const double minimumTerminalStub = 24;
-    final double required = bendKeepOut + minimumTerminalStub + seriesSize.width / 2;
-
-    expect(series.dx - source.dx, greaterThanOrEqualTo(required));
-    expect(load.dx - series.dx, greaterThanOrEqualTo(required));
+    expect(breaker.dx - source.dx, greaterThanOrEqualTo(150));
+    expect(command.dx - breaker.dx, greaterThanOrEqualTo(150));
+    expect(load.dx - command.dx, greaterThanOrEqualTo(150));
   });
 
   testWidgets('committed DC routes remain orthogonal after rectangular arrange',

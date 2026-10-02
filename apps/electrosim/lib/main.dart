@@ -436,6 +436,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late String? _selected;
   String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
+  bool _simulationMode = false;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
   TerminalId? _wiringPendingTerminal;
@@ -489,7 +490,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final F9ElementDetails? selectedDetails =
         F9ElementEditor.describe(_circuit, _selected);
     final bool canTransformSelection =
-        selectedDetails != null && !_studentTpReadOnly;
+        selectedDetails != null && !_studentTpReadOnly && !_simulationMode;
     return Scaffold(
       body: SafeArea(
         child: CallbackShortcuts(
@@ -514,10 +515,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 : null,
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
-            onRotateSelected:
-                canTransformSelection ? _rotateSelectedElement : null,
-            onDeleteSelected:
-                canTransformSelection ? _deleteSelectedElement : null,
+            simulationMode: _simulationMode,
+            onModeChanged: (bool simulation) {
+              setState(() {
+                _simulationMode = simulation;
+                _status = simulation
+                    ? 'Simulation active — édition du montage verrouillée.'
+                    : 'Mode édition — le montage peut être modifié.';
+              });
+            },
             onRecenter: _fitViewportToMagicPath,
           ),
           palette: F9ComponentPalette(
@@ -547,6 +553,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                     : null,
           ),
           statusBar: _StatusBar(circuit: _circuit, status: _status),
+          showStatusBar: false,
+          showCompactPanelSwitcher: false,
+          mediumPanelInitiallyVisible:
+              widget.role == F9UserRole.student &&
+                  _workspace == 'Recherche de dérangement',
+          expandedPaletteWidth: 304,
+          expandedContextWidth: 300,
+          mediumPanelWidth: 318,
           canvas: KeyedSubtree(
             key: const Key('f18-canvas-drop-region'),
             child: DragTarget<F9PaletteDefinition>(
@@ -607,6 +621,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         elementVisualPainter: paintF18MagicPathCanvasElement,
                         showElementLabels: false,
                       ),
+                      F18CircuitZoneOverlay(
+                        circuit: _circuit,
+                        layout: _layout,
+                        viewport: _viewport,
+                        title: _workspace == 'Recherche de dérangement'
+                            ? 'Circuit de recherche de dérangement'
+                            : 'Circuit 24 V DC · commande simple',
+                      ),
                       AnimatedBuilder(
                         animation: _viewport,
                         builder: (BuildContext context, Widget? child) => F9CanvasVisualOverlay(
@@ -621,6 +643,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           wirePreviewPlanner: _g2aWirePreviewPlanner,
                           paintElementGlyphs: false,
                         ),
+                      ),
+                      Positioned(
+                        left: 16,
+                        top: 14,
+                        child: F18CanvasToolbar(
+                          onRecenter: _fitViewportToMagicPath,
+                          onStatus: _setStatus,
+                        ),
+                      ),
+                      Positioned(
+                        right: 16,
+                        top: 14,
+                        child: _selected == null
+                            ? F18ZoomChip(viewport: _viewport)
+                            : F18SelectionToolbar(
+                                onRotate: canTransformSelection
+                                    ? _rotateSelectedElement
+                                    : null,
+                                onDelete: canTransformSelection
+                                    ? _deleteSelectedElement
+                                    : null,
+                              ),
                       ),
                       ],
                       ),

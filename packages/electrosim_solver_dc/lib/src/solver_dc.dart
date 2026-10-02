@@ -355,6 +355,10 @@ final class SolverDC {
       switch (component.modelType) {
         case 'resistor':
         case 'lamp':
+        case 'buzzer':
+        case 'fan_dc':
+        case 'motor_dc':
+        case 'relay_coil':
           final double? resistance = _positiveParameter(component.parameters, 'resistanceOhm');
           if (resistance == null) {
             diagnostics.add(
@@ -378,6 +382,7 @@ final class SolverDC {
           }
         case 'switch':
         case 'switch_spst':
+        case 'push_button_no':
           final Object? rawClosed = component.controlState['closed'];
           if (rawClosed is! bool) {
             diagnostics.add(
@@ -774,6 +779,11 @@ const Set<String> _supportedDcComponentModels = <String>{
   'lamp',
   'switch',
   'switch_spst',
+  'push_button_no',
+  'buzzer',
+  'fan_dc',
+  'motor_dc',
+  'relay_coil',
   'breaker_dc',
   'fuse_dc',
 };

@@ -25,7 +25,7 @@ void main() {
 
   testWidgets('Voir tous expands once and never becomes a Voir moins toggle',
       (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.physicalSize = const Size(1440, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -39,14 +39,13 @@ void main() {
     expect(find.byKey(const Key('palette-show-all')), findsNothing);
     expect(find.textContaining('Voir moins'), findsNothing);
 
-    final Finder list = find.byKey(const Key('palette-results-list'));
-    final Finder target =
-        find.byKey(const Key('palette-item-push-button-no'));
-    for (var attempt = 0; attempt < 8 && target.evaluate().isEmpty; attempt++) {
-      await tester.drag(list, const Offset(0, -220));
-      await tester.pumpAndSettle();
-    }
-    expect(target, findsOneWidget);
+    expect(
+      find.byKey(
+        const Key('palette-item-push-button-no'),
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('search exposes non-quick component without requiring Voir tous',

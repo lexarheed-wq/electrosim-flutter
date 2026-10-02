@@ -14,13 +14,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('palette-item-source-dc-24v')), findsOneWidget);
+    expect(find.byKey(const Key('palette-item-breaker')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-switch-no')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-lamp')), findsOneWidget);
-    expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
-    expect(find.byKey(const Key('palette-item-breaker')), findsOneWidget);
-    expect(find.byKey(const Key('palette-item-push-button-no')), findsNothing);
+    expect(find.byKey(const Key('palette-item-multimeter')), findsOneWidget);
+    expect(find.byKey(const Key('palette-item-resistor')), findsNothing);
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
-    expect(find.text('Voir tous les composants'), findsOneWidget);
+    expect(find.text('Voir tous'), findsOneWidget);
   });
 
   testWidgets('Voir tous expands once and never becomes a Voir moins toggle',

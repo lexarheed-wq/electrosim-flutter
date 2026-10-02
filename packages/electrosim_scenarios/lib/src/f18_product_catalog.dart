@@ -1,5 +1,6 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
+import 'example_definition.dart';
 import 'f16_catalog.dart';
 import 'fault_scenario_definition.dart';
 import 'fault_scenario_repository.dart';
@@ -17,7 +18,7 @@ QualifiedCatalog buildF18ProductCatalog() {
   );
   return QualifiedCatalog(
     catalogVersion: '18.0.0',
-    examples: const <dynamic>[],
+    examples: const <ExampleDefinition>[],
     faultScenarios: faults.all,
   );
 }

@@ -1760,7 +1760,7 @@ class _WorkspaceTopBar extends StatelessWidget {
                       onPressed: onOpen,
                       icon: const Icon(Icons.restore_outlined),
                     ),
-                  if (!sessionNavigation)
+                  if (!sessionNavigation && !compact)
                     ElectroSimStatusChip(
                       key: const Key('direct-entry-status'),
                       label: 'Accès direct',

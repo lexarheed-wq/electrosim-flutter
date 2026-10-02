@@ -1,0 +1,79 @@
+name: F18 MagicPath Parity
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-magicpath-parity
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_canvas/**'
+      - 'packages/electrosim_ui_kit/**'
+      - 'docs/f18/magicpath_parity/**'
+      - '.github/workflows/f18-magicpath-parity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  parity-stage-1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify locked toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+      - name: Resolve Canvas package
+        working-directory: packages/electrosim_canvas
+        run: flutter pub get
+      - name: Analyze Canvas package
+        working-directory: packages/electrosim_canvas
+        run: flutter analyze
+      - name: Canvas package regression
+        working-directory: packages/electrosim_canvas
+        run: flutter test
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+      - name: MagicPath parity contract
+        working-directory: apps/electrosim
+        run: flutter test test/f18_magicpath_parity_test.dart
+      - name: Preserve G3R1 recovery contracts
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in test/f18_g3r1_point*_test.dart; do
+            flutter test "$test_file"
+          done
+      - name: Application non-golden regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+      - name: Scope guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only f52da0acba9e93032433849756abfdea17dc442d...HEAD)"
+          forbidden="$(printf '%s\n' "$changed" | grep -Ev '^(apps/electrosim/|packages/electrosim_canvas/|packages/electrosim_ui_kit/|docs/f18/magicpath_parity/|\.github/workflows/f18-magicpath-parity\.yml$)' || true)"
+          if [ -n "$forbidden" ]; then
+            echo 'MagicPath parity modified files outside the approved UI/Canvas scope:'
+            echo "$forbidden"
+            exit 1
+          fi
+          echo F18_MAGICPATH_PARITY_SCOPE_PASS
+      - name: Stage 1 gate
+        run: echo F18_MAGICPATH_PARITY_STAGE1_PASS

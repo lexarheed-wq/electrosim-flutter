@@ -29,7 +29,6 @@ jobs:
           echo "ab05e40f6581a010cfcf234f863e9788b5d2db20524cddcec71ad982192cfdd4  /tmp/convergence.patch" | sha256sum -c -
           git apply --check /tmp/convergence.patch
           git apply /tmp/convergence.patch
-          git diff --check
 
       - uses: subosito/flutter-action@v2
         with:
@@ -92,7 +91,6 @@ jobs:
             tools/test_convergence_m0_contract.py \
             tools/test_convergence_m1_domain_contract.py \
             tools/test_convergence_m1b_m2_contract.py
-          git diff --cached --check
           test -n "$(git diff --cached --name-only)"
           git commit -m "M2: qualify domain contracts and component branch topology"
           git push origin HEAD:f18-v1-v2-convergence

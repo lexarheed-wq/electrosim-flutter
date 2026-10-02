@@ -15,10 +15,15 @@ Future<void> _openDesignWorkspace(
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(const app.ElectroSimApp());
-  await tester.tap(find.byKey(const Key('home-design')));
+  final Finder design = find.byKey(const Key('home-design'));
+  await tester.ensureVisible(design);
   await tester.pumpAndSettle();
+  await tester.tap(design);
+  await tester.pumpAndSettle();
+
   final Finder wiring = find.byKey(const Key('design-wiring'));
   await tester.ensureVisible(wiring);
+  await tester.pumpAndSettle();
   await tester.tap(wiring);
   await tester.pumpAndSettle();
 }
@@ -61,7 +66,13 @@ void main() {
     expect(find.textContaining('Canvas F8'), findsNothing);
 
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
-    expect(find.byType(F18ComponentArchetypeGlyph), findsAtLeastNWidgets(5));
+    expect(
+      find.byType(F18ComponentArchetypeGlyph),
+      findsAtLeastNWidgets(3),
+      reason:
+          'The visible palette viewport must use F18 archetype visuals; '
+          'P05 separately proves the five-item quick contract.',
+    );
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);
     expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);
     expect(find.text('Supprimer du circuit'), findsNothing);

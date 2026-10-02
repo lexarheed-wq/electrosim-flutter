@@ -1295,20 +1295,34 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ElectroSimBreakpoints.classify(windowWidth);
     final bool compact = windowClass == ElectroSimWindowClass.compact;
     final bool medium = windowClass == ElectroSimWindowClass.medium;
+    final bool studentTroubleshooting =
+        widget.role == F9UserRole.student &&
+            _workspace == 'Recherche de dérangement';
     final double padding = compact ? 24 : (medium ? 38 : 34);
     // MagicPath composition is specified against the full product viewport,
     // not the remaining Canvas width after palette/inspector deduction.
-    final double horizontalAlignment =
-        compact ? .68 : (medium ? 1.0 : .44);
-    final double verticalAlignment =
-        compact ? .33 : (medium ? .26 : .37);
+    final double horizontalAlignment = studentTroubleshooting
+        ? .44
+        : compact
+            ? .68
+            : medium
+                ? .75
+                : .46;
+    final double verticalAlignment = studentTroubleshooting
+        ? .27
+        : compact
+            ? .33
+            : medium
+                ? .26
+                : .385;
+    final double maximumScale = studentTroubleshooting ? .786 : 1;
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,
       viewportSize: viewportSize,
       padding: padding,
       minScale: _viewport.minScale,
-      maxScale: 1,
+      maxScale: maximumScale,
       horizontalAlignment: horizontalAlignment,
       verticalAlignment: verticalAlignment,
     );

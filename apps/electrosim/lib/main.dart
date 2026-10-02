@@ -1738,8 +1738,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onManageSession,
     required this.onSave,
     required this.onOpen,
-    required this.onRotateSelected,
-    required this.onDeleteSelected,
+    required this.simulationMode,
+    required this.onModeChanged,
     required this.onRecenter,
   });
 
@@ -1751,39 +1751,52 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onManageSession;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
-  final VoidCallback? onRotateSelected;
-  final VoidCallback? onDeleteSelected;
+  final bool simulationMode;
+  final ValueChanged<bool> onModeChanged;
   final VoidCallback onRecenter;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: ElectroSimColors.surfaceElevated,
-      child: SizedBox(
-        height: 64,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool compact = constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.xs),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          return SizedBox(
+            height: compact ? 64 : 72,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 10 : 16,
+              ),
               child: Row(
                 children: <Widget>[
-                  if (sessionNavigation && !compact)
-                    TextButton.icon(
-                      key: const Key('session-home-action'),
-                      onPressed: onHome,
-                      icon: const Icon(Icons.home_outlined),
-                      label: const Text('Accueil'),
-                    )
-                  else
-                    IconButton(
-                      key: const Key('session-home-action'),
-                      tooltip: 'Accueil',
-                      onPressed: onHome,
-                      icon: const Icon(Icons.home_outlined),
+                  _F18TopBarIconButton(
+                    key: const Key('session-home-action'),
+                    tooltip: 'Retour',
+                    onPressed: onHome,
+                    icon: Icons.arrow_back,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: compact ? 36 : 40,
+                    height: compact ? 36 : 40,
+                    decoration: BoxDecoration(
+                      color: ElectroSimColors.primaryStrong,
+                      borderRadius:
+                          BorderRadius.circular(ElectroSimRadii.compact),
                     ),
-                  const SizedBox(width: ElectroSimSpacing.xs),
-                  Expanded(
+                    child: const Icon(
+                      Icons.electrical_services_outlined,
+                      size: 20,
+                      color: ElectroSimColors.onPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: compact ? 180 : 250,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1792,91 +1805,262 @@ class _WorkspaceTopBar extends StatelessWidget {
                           entryLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: ElectroSimColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                         ),
+                        const SizedBox(height: 1),
                         Text(
                           workspace,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: ElectroSimColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: ElectroSimColors.textSecondary,
+                                    fontSize: 9,
+                                    letterSpacing: .4,
+                                  ),
                         ),
                       ],
                     ),
                   ),
-                  if (sessionNavigation) ...<Widget>[
-                    if (compact)
-                      IconButton(
+                  if (!compact) ...<Widget>[
+                    const SizedBox(width: 18),
+                    _F18ModeSwitch(
+                      simulationMode: simulationMode,
+                      onChanged: onModeChanged,
+                    ),
+                    const Spacer(),
+                    if (sessionNavigation)
+                      OutlinedButton(
                         key: const Key('session-dashboard-action'),
-                        tooltip: 'Tableau de bord',
                         onPressed: onDashboard,
-                        icon: const Icon(Icons.dashboard_outlined),
-                      )
-                    else
-                      TextButton.icon(
-                        key: const Key('session-dashboard-action'),
-                        onPressed: onDashboard,
-                        icon: const Icon(Icons.dashboard_outlined),
-                        label: const Text('Tableau de bord'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 38),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          side: const BorderSide(
+                            color: Color(0xFFD7E0EA),
+                          ),
+                        ),
+                        child: const Text(
+                          'Tableau de bord',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    if (compact)
+                    if (sessionNavigation) const SizedBox(width: 8),
+                    if (sessionNavigation)
+                      OutlinedButton(
+                        key: const Key('session-manage-action'),
+                        onPressed: onManageSession,
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 38),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          side: const BorderSide(
+                            color: Color(0xFFD7E0EA),
+                          ),
+                        ),
+                        child: const Text(
+                          'Gérer',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    if (onSave != null)
                       IconButton(
-                        key: const Key('session-manage-action'),
-                        tooltip: 'Gérer la session',
-                        onPressed: onManageSession,
-                        icon: const Icon(Icons.settings_outlined),
-                      )
-                    else
-                      TextButton.icon(
-                        key: const Key('session-manage-action'),
-                        onPressed: onManageSession,
-                        icon: const Icon(Icons.settings_outlined),
-                        label: const Text('Gérer la session'),
+                        key: const Key('workspace-save-action'),
+                        tooltip: 'Sauvegarder localement',
+                        onPressed: onSave,
+                        icon: const Icon(Icons.save_outlined, size: 19),
                       ),
+                    if (onOpen != null)
+                      IconButton(
+                        key: const Key('workspace-open-action'),
+                        tooltip: 'Reprendre la dernière sauvegarde',
+                        onPressed: onOpen,
+                        icon: const Icon(Icons.restore_outlined, size: 19),
+                      ),
+                  ] else ...<Widget>[
+                    const Spacer(),
+                    PopupMenuButton<String>(
+                      tooltip: 'Actions',
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (String value) {
+                        switch (value) {
+                          case 'edition':
+                            onModeChanged(false);
+                          case 'simulation':
+                            onModeChanged(true);
+                          case 'dashboard':
+                            onDashboard?.call();
+                          case 'manage':
+                            onManageSession?.call();
+                          case 'save':
+                            onSave?.call();
+                          case 'open':
+                            onOpen?.call();
+                          case 'recenter':
+                            onRecenter();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value:
+                              simulationMode ? 'edition' : 'simulation',
+                          child: Text(
+                            simulationMode
+                                ? 'Passer en édition'
+                                : 'Passer en simulation',
+                          ),
+                        ),
+                        if (sessionNavigation)
+                          const PopupMenuItem<String>(
+                            value: 'dashboard',
+                            child: Text('Tableau de bord'),
+                          ),
+                        if (sessionNavigation)
+                          const PopupMenuItem<String>(
+                            value: 'manage',
+                            child: Text('Gérer la session'),
+                          ),
+                        if (onSave != null)
+                          const PopupMenuItem<String>(
+                            value: 'save',
+                            child: Text('Sauvegarder'),
+                          ),
+                        if (onOpen != null)
+                          const PopupMenuItem<String>(
+                            value: 'open',
+                            child: Text('Reprendre'),
+                          ),
+                        const PopupMenuItem<String>(
+                          value: 'recenter',
+                          child: Text('Recentrer'),
+                        ),
+                      ],
+                    ),
                   ],
-                  if (onSave != null)
-                    IconButton(
-                      key: const Key('workspace-save-action'),
-                      tooltip: 'Sauvegarder localement',
-                      onPressed: onSave,
-                      icon: const Icon(Icons.save_outlined),
-                    ),
-                  if (onOpen != null)
-                    IconButton(
-                      key: const Key('workspace-open-action'),
-                      tooltip: 'Reprendre la dernière sauvegarde',
-                      onPressed: onOpen,
-                      icon: const Icon(Icons.restore_outlined),
-                    ),
-                  if (!sessionNavigation && !compact)
-                    ElectroSimStatusChip(
-                      key: const Key('direct-entry-status'),
-                      label: 'Accès direct',
-                      icon: Icons.open_in_new_outlined,
-                      emphasized: true,
-                    ),
-                  IconButton(
-                    key: const Key('workspace-rotate-action'),
-                    tooltip: 'Rotation 90°',
-                    onPressed: onRotateSelected,
-                    icon: const Icon(Icons.rotate_right_outlined),
-                  ),
-                  IconButton(
-                    key: const Key('workspace-delete-action'),
-                    tooltip: 'Supprimer la sélection',
-                    onPressed: onDeleteSelected,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                  IconButton(
-                    tooltip: 'Recentrer le Canvas',
-                    onPressed: onRecenter,
-                    icon: const Icon(Icons.center_focus_strong),
-                  ),
                 ],
               ),
-            );
-          },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _F18TopBarIconButton extends StatelessWidget {
+  const _F18TopBarIconButton({
+    super.key,
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String tooltip;
+  final VoidCallback onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        border: Border.all(color: const Color(0xFFD7E0EA)),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+      ),
+      child: IconButton(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        iconSize: 18,
+        icon: Icon(icon),
+      ),
+    );
+  }
+}
+
+class _F18ModeSwitch extends StatelessWidget {
+  const _F18ModeSwitch({
+    required this.simulationMode,
+    required this.onChanged,
+  });
+
+  final bool simulationMode;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceMuted,
+        border: Border.all(color: const Color(0xFFD7E0EA)),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          _F18ModeButton(
+            label: 'Édition',
+            selected: !simulationMode,
+            onTap: () => onChanged(false),
+          ),
+          _F18ModeButton(
+            label: 'Simulation',
+            selected: simulationMode,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _F18ModeButton extends StatelessWidget {
+  const _F18ModeButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? ElectroSimColors.surfaceElevated
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected
+                  ? ElectroSimColors.primaryStrong
+                  : ElectroSimColors.textSecondary,
+              fontSize: 10,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );

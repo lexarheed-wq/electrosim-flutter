@@ -207,4 +207,141 @@ void main() {
     );
     await _capture(tester, '05_flutter_component_gallery.png');
   });
+
+  testWidgets('capture G4-R2 component physical states',
+      (WidgetTester tester) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _setSurface(tester, const Size(1440, 900));
+
+    const List<(String, String)> components = <(String, String)>[
+      ('Alimentation', 'dc_voltage_source'),
+      ('Disjoncteur', 'breaker'),
+      ('Interrupteur', 'switch'),
+      ('Lampe', 'lamp'),
+      ('Multimètre', 'multimeter'),
+      ('Moteur CC', 'motor_dc'),
+      ('Ventilateur', 'fan_dc'),
+      ('Relais', 'relay_coil'),
+      ('Contacteur', 'contactor'),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ElectroSimTheme.light(),
+        home: Scaffold(
+          backgroundColor: const Color(0xFFF4F7FA),
+          body: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'G4-R2 · États physiques',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF132033),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'L’état électrique et mécanique doit être lisible sans ouvrir le panneau de propriétés.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF5A6D83),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 18,
+                      mainAxisSpacing: 18,
+                      childAspectRatio: 1.65,
+                    ),
+                    itemCount: components.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final (String label, String model) = components[index];
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(
+                            color: const Color(0xFFD7E0EA),
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: <Widget>[
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF132033),
+                              ),
+                            ),
+                            const Spacer(),
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                Column(
+                                  children: <Widget>[
+                                    F18ComponentArchetypeGlyph(
+                                      modelType: model,
+                                      size: 64,
+                                      active: false,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'OFF',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Color(0xFF5A6D83),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: <Widget>[
+                                    F18ComponentArchetypeGlyph(
+                                      modelType: model,
+                                      size: 64,
+                                      active: true,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'ON',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Color(0xFF067647),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await _capture(tester, '06_flutter_component_states.png');
+  });
+
 }

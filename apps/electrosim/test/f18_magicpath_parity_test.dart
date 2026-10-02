@@ -4,6 +4,7 @@ import 'package:electrosim/f18_magicpath_parity.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

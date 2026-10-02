@@ -111,11 +111,13 @@ class F18ComponentArchetypeGlyph extends StatelessWidget {
     required this.modelType,
     this.size = 28,
     this.active = true,
+    this.fault = false,
   });
 
   final String modelType;
   final double size;
   final bool active;
+  final bool fault;
 
   @override
   Widget build(BuildContext context) {
@@ -126,6 +128,8 @@ class F18ComponentArchetypeGlyph extends StatelessWidget {
       painter: _F18ArchetypePainter(
         modelType: modelType,
         foreground: color,
+        active: active,
+        fault: fault,
       ),
     );
   }
@@ -135,10 +139,14 @@ class _F18ArchetypePainter extends CustomPainter {
   const _F18ArchetypePainter({
     required this.modelType,
     required this.foreground,
+    required this.active,
+    required this.fault,
   });
 
   final String modelType;
   final Color foreground;
+  final bool active;
+  final bool fault;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -148,13 +156,17 @@ class _F18ArchetypePainter extends CustomPainter {
       modelType,
       foreground,
       drawTerminals: false,
+      active: active,
+      fault: fault,
     );
   }
 
   @override
   bool shouldRepaint(_F18ArchetypePainter oldDelegate) {
     return oldDelegate.modelType != modelType ||
-        oldDelegate.foreground != foreground;
+        oldDelegate.foreground != foreground ||
+        oldDelegate.active != active ||
+        oldDelegate.fault != fault;
   }
 }
 
@@ -164,6 +176,8 @@ void paintF18ElectricalArchetype(
   String modelType,
   Color foreground, {
   bool drawTerminals = true,
+  bool active = true,
+  bool fault = false,
 }) {
   final F18ElectricalArchetype archetype =
       F18ElectricalArchetypeClassifier.forModel(modelType);
@@ -175,6 +189,8 @@ void paintF18ElectricalArchetype(
     body,
     modelType,
     foreground,
+    active: active,
+    fault: fault,
   )) {
     return;
   }

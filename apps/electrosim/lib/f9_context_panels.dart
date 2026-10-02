@@ -56,7 +56,7 @@ class F9ContextPanels extends StatefulWidget {
 class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderStateMixin {
   late TabController _controller;
 
-  int get _tabCount => widget.showDiagnostic ? 4 : 3;
+  int get _tabCount => 3;
 
   @override
   void initState() {
@@ -80,21 +80,42 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
       color: ElectroSimColors.surfaceElevated,
       child: Column(
         children: <Widget>[
+          SizedBox(
+            height: 52,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  widget.showDiagnostic ? 'Panneau élève' : 'Inspecteur',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: ElectroSimColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 1),
           Material(
             color: ElectroSimColors.surfaceElevated,
             child: TabBar(
               controller: _controller,
-              // Keep every contextual action directly reachable. In particular, the
-              // student-only Diagnostic tab must not be pushed outside the 304 px
-              // expanded context panel where a widget-test tap (and a real pointer)
-              // cannot hit it without first scrolling the tab strip.
               isScrollable: false,
+              labelStyle: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
               tabs: <Widget>[
-                const Tab(icon: Icon(Icons.tune_outlined), text: 'Propriétés'),
-                const Tab(icon: Icon(Icons.straighten_outlined), text: 'Mesures'),
-                const Tab(icon: Icon(Icons.psychology_alt_outlined), text: 'EIE'),
+                const Tab(text: 'Propriétés'),
+                const Tab(text: 'Mesures'),
                 if (widget.showDiagnostic)
-                  const Tab(key: Key('diagnostic-tab'), icon: Icon(Icons.fact_check_outlined), text: 'Diagnostic'),
+                  const Tab(
+                    key: Key('diagnostic-tab'),
+                    text: 'Diagnostic',
+                  )
+                else
+                  const Tab(text: 'EIE'),
               ],
             ),
           ),
@@ -116,9 +137,12 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                   selectedId: widget.selectedId,
                   runtimeSnapshot: widget.runtimeSnapshot,
                 ),
-                _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
                 if (widget.showDiagnostic)
-                  _StudentDiagnosticPanel(controller: widget.tpSessionController),
+                  _StudentDiagnosticPanel(
+                    controller: widget.tpSessionController,
+                  )
+                else
+                  _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
               ],
             ),
           ),

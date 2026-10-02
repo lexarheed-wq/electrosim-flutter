@@ -32,7 +32,7 @@ class F18HomeSurface extends StatelessWidget {
                   final double horizontalPadding =
                       windowClass == ElectroSimWindowClass.compact
                           ? ElectroSimSpacing.md
-                          : ElectroSimSpacing.xl;
+                          : 40;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
@@ -44,11 +44,11 @@ class F18HomeSurface extends StatelessWidget {
                     ),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1180),
+                        constraints: const BoxConstraints(maxWidth: 1360),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            _Hero(windowClass: windowClass),
+                            _HomeHeroBand(windowClass: windowClass),
                             const SizedBox(height: 40),
                             _HomeActionGrid(
                               windowClass: windowClass,
@@ -61,6 +61,7 @@ class F18HomeSurface extends StatelessWidget {
                                       'Préparez un environnement de travail, invitez les participants et lancez une activité encadrée.',
                                   icon: Icons.add,
                                   actionLabel: 'Créer une session',
+                                  badge: 'Point de départ',
                                   emphasized: true,
                                   onTap: onCreateSession,
                                 ),
@@ -72,6 +73,7 @@ class F18HomeSurface extends StatelessWidget {
                                       'Accédez aux scénarios de panne, aux activités de recherche de dérangement et au diagnostic.',
                                   icon: Icons.build_outlined,
                                   actionLabel: 'Ouvrir le centre',
+                                  badge: 'Diagnostic & pannes',
                                   onTap: onMaintenance,
                                 ),
                                 _HomeAction(
@@ -82,6 +84,7 @@ class F18HomeSurface extends StatelessWidget {
                                       'Construisez, câblez et validez des circuits électriques dans un espace de conception professionnel.',
                                   icon: Icons.account_tree_outlined,
                                   actionLabel: 'Ouvrir le centre',
+                                  badge: 'Câblage & schémas',
                                   onTap: onDesign,
                                 ),
                               ],
@@ -119,11 +122,11 @@ class _HomeHeader extends StatelessWidget {
           return Padding(
             padding: EdgeInsets.symmetric(
               horizontal:
-                  compact ? ElectroSimSpacing.md : ElectroSimSpacing.xl,
+                  compact ? ElectroSimSpacing.md : 40,
             ),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1312),
+                constraints: const BoxConstraints(maxWidth: 1360),
                 child: Row(
                   children: <Widget>[
                     Container(
@@ -177,7 +180,10 @@ class _HomeHeader extends StatelessWidget {
                           vertical: ElectroSimSpacing.xs,
                         ),
                         decoration: BoxDecoration(
-                          color: ElectroSimColors.surfaceMuted,
+                          color: ElectroSimColors.surfaceElevated,
+                          border: Border.all(
+                            color: const Color(0xFFD7E0EA),
+                          ),
                           borderRadius:
                               BorderRadius.circular(ElectroSimRadii.pill),
                         ),
@@ -185,11 +191,11 @@ class _HomeHeader extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Icon(
-                              Icons.check_circle,
-                              size: 14,
-                              color: ElectroSimColors.success,
+                              Icons.circle,
+                              size: 10,
+                              color: Color(0xFF12B76A),
                             ),
-                            SizedBox(width: ElectroSimSpacing.xxs),
+                            SizedBox(width: ElectroSimSpacing.xs),
                             Text(
                               'Système prêt',
                               style: TextStyle(
@@ -201,6 +207,27 @@ class _HomeHeader extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: ElectroSimColors.surfaceElevated,
+                          border: Border.all(
+                            color: const Color(0xFFD7E0EA),
+                          ),
+                          borderRadius:
+                              BorderRadius.circular(ElectroSimRadii.compact),
+                        ),
+                        child: IconButton(
+                          key: const Key('home-settings'),
+                          tooltip: 'Paramètres',
+                          onPressed: () => _showSettings(context),
+                          padding: EdgeInsets.zero,
+                          iconSize: 19,
+                          icon: const Icon(Icons.settings_outlined),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -208,6 +235,95 @@ class _HomeHeader extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _HomeHeroBand extends StatelessWidget {
+  const _HomeHeroBand({required this.windowClass});
+
+  final ElectroSimWindowClass windowClass;
+
+  @override
+  Widget build(BuildContext context) {
+    if (windowClass != ElectroSimWindowClass.expanded) {
+      return _Hero(windowClass: windowClass);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: _Hero(windowClass: windowClass),
+        ),
+        const SizedBox(width: 48),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: _PlatformStateCard(),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlatformStateCard extends StatelessWidget {
+  const _PlatformStateCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        border: Border.all(color: const Color(0xFFD7E0EA)),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        boxShadow: ElectroSimComponentTokens.cardElevation,
+      ),
+      child: const Row(
+        children: <Widget>[
+          SizedBox(
+            width: 38,
+            height: 38,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              child: Icon(
+                Icons.verified_user_outlined,
+                size: 19,
+                color: ElectroSimColors.info,
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'ÉTAT PLATEFORME',
+                  style: TextStyle(
+                    color: ElectroSimColors.textSecondary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Environnement sécurisé',
+                  style: TextStyle(
+                    color: ElectroSimColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -285,7 +401,7 @@ class _HomeActionGrid extends StatelessWidget {
           ElectroSimWindowClass.medium => 2,
           ElectroSimWindowClass.expanded => 3,
         };
-        final double gap = ElectroSimSpacing.md;
+        final double gap = ElectroSimSpacing.lg;
         final double width =
             (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
@@ -314,6 +430,7 @@ class _HomeAction {
     required this.icon,
     required this.actionLabel,
     required this.onTap,
+    this.badge,
     this.emphasized = false,
   });
 
@@ -324,6 +441,7 @@ class _HomeAction {
   final IconData icon;
   final String actionLabel;
   final VoidCallback onTap;
+  final String? badge;
   final bool emphasized;
 }
 
@@ -354,7 +472,7 @@ class _HomeActionCard extends StatelessWidget {
           onTap: action.onTap,
           borderRadius: BorderRadius.circular(18),
           child: Container(
-            constraints: const BoxConstraints(minHeight: 286),
+            constraints: const BoxConstraints(minHeight: 310),
             padding: const EdgeInsets.all(ElectroSimSpacing.lg),
             decoration: BoxDecoration(
               border: Border.all(
@@ -370,22 +488,50 @@ class _HomeActionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: action.emphasized
-                        ? Colors.white.withValues(alpha: .10)
-                        : const Color(0xFFF3F7FB),
-                    borderRadius:
-                        BorderRadius.circular(ElectroSimRadii.panel),
-                    border: Border.all(
-                      color: action.emphasized
-                          ? Colors.white.withValues(alpha: .20)
-                          : ElectroSimColors.outline.withValues(alpha: .4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: action.emphasized
+                            ? Colors.white.withValues(alpha: .10)
+                            : const Color(0xFFF3F7FB),
+                        borderRadius:
+                            BorderRadius.circular(ElectroSimRadii.panel),
+                        border: Border.all(
+                          color: action.emphasized
+                              ? Colors.white.withValues(alpha: .20)
+                              : ElectroSimColors.outline.withValues(alpha: .4),
+                        ),
+                      ),
+                      child: Icon(action.icon, color: foreground),
                     ),
-                  ),
-                  child: Icon(action.icon, color: foreground),
+                    const Spacer(),
+                    if (action.badge != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: action.emphasized
+                              ? Colors.white.withValues(alpha: .10)
+                              : const Color(0xFFF3F7FB),
+                          borderRadius:
+                              BorderRadius.circular(ElectroSimRadii.pill),
+                        ),
+                        child: Text(
+                          action.badge!,
+                          style: TextStyle(
+                            color: secondary,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: ElectroSimSpacing.lg),
                 Text(
@@ -523,6 +669,24 @@ class _JoinSessionPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showSettings(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: const Text('Paramètres'),
+      content: const Text(
+        'Les paramètres avancés seront exposés ici sans modifier les parcours principaux.',
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Fermer'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _HomeFooter extends StatelessWidget {

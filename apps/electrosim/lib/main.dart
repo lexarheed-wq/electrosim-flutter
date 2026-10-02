@@ -105,7 +105,7 @@ class F9HomePage extends StatelessWidget {
       }
       Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (BuildContext context) => F9WorkspaceDemoPage(
+          builder: (BuildContext context) => F18WorkspacePage(
             entryLabel: 'Session élève',
             initialWorkspace: 'Recherche de dérangement',
             sessionNavigation: true,
@@ -209,7 +209,7 @@ class F9HomePage extends StatelessWidget {
             VoidCallback onDashboard,
             VoidCallback onManageSession,
           ) =>
-              F9WorkspaceDemoPage(
+              F18WorkspacePage(
             entryLabel: 'Session active',
             initialWorkspace: workspace,
             sessionNavigation: true,
@@ -232,7 +232,7 @@ class F9HomePage extends StatelessWidget {
   }) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) => F9WorkspaceDemoPage(
+        builder: (BuildContext context) => F18WorkspacePage(
           entryLabel: entryLabel,
           initialWorkspace: initialWorkspace,
           sessionNavigation: sessionNavigation,
@@ -357,8 +357,38 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
   }
 }
 
-class F9WorkspaceDemoPage extends StatefulWidget {
+@Deprecated('Use F18WorkspacePage for all product routes.')
+class F9WorkspaceDemoPage extends F18WorkspacePage {
   const F9WorkspaceDemoPage({
+    super.key,
+    String entryLabel = 'Centre de conception',
+    String initialWorkspace = 'Câblage',
+    bool sessionNavigation = false,
+    String? initialSelectedElementId,
+    CircuitState? initialCircuit,
+    F9UserRole role = F9UserRole.teacher,
+    ElectroSimTpSessionController? tpSessionController,
+    ElectroSimPersistenceController? persistenceController,
+    ElectroSimLanSyncClient? syncClient,
+    VoidCallback? onSessionDashboard,
+    VoidCallback? onSessionManage,
+  }) : super(
+          entryLabel: entryLabel,
+          initialWorkspace: initialWorkspace,
+          sessionNavigation: sessionNavigation,
+          initialSelectedElementId: initialSelectedElementId,
+          initialCircuit: initialCircuit,
+          role: role,
+          tpSessionController: tpSessionController,
+          persistenceController: persistenceController,
+          syncClient: syncClient,
+          onSessionDashboard: onSessionDashboard,
+          onSessionManage: onSessionManage,
+        );
+}
+
+class F18WorkspacePage extends StatefulWidget {
+  const F18WorkspacePage({
     super.key,
     this.entryLabel = 'Centre de conception',
     this.initialWorkspace = 'Câblage',
@@ -386,10 +416,10 @@ class F9WorkspaceDemoPage extends StatefulWidget {
   final VoidCallback? onSessionManage;
 
   @override
-  State<F9WorkspaceDemoPage> createState() => _F9WorkspaceDemoPageState();
+  State<F18WorkspacePage> createState() => _F18WorkspacePageState();
 }
 
-class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
+class _F18WorkspacePageState extends State<F18WorkspacePage> {
   static const OrthogonalWireRouter _g2aRouter = OrthogonalWireRouter(
     grid: 24,
     obstacleClearance: 24,
@@ -413,12 +443,12 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
   final ViewportController _viewport = ViewportController(scale: 1, translation: const Offset(40, 40));
-  final GlobalKey _canvasDropKey = GlobalKey(debugLabel: 'f9-canvas-drop-target');
+  final GlobalKey _canvasDropKey = GlobalKey(debugLabel: 'f18-canvas-drop-target');
   late String? _selected;
-  String _status = 'F9 final — interface responsive et Canvas F8 validé';
+  String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
   int _canvasInteractionEpoch = 0;
-  final HitTestEngine _f9HitTest = const HitTestEngine();
+  final HitTestEngine _hitTest = const HitTestEngine();
   TerminalId? _wiringPendingTerminal;
   TerminalId? _wiringHoverTerminal;
   int? _activeCanvasPointer;
@@ -524,7 +554,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
           ),
           statusBar: _StatusBar(circuit: _circuit, status: _status),
           canvas: KeyedSubtree(
-            key: const Key('f9-canvas-drop-region'),
+            key: const Key('f18-canvas-drop-region'),
             child: DragTarget<F9PaletteDefinition>(
               key: _canvasDropKey,
               onWillAcceptWithDetails: (_) => true,
@@ -972,7 +1002,7 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
     _ => const <String, Object?>{},
   };
 
-  CanvasHitResult _f9CanvasHit(Offset localPosition) => _f9HitTest.hitTest(
+  CanvasHitResult _f9CanvasHit(Offset localPosition) => _hitTest.hitTest(
     worldPoint: _viewport.screenToWorld(localPosition),
     circuit: _circuit,
     layout: _layout,
@@ -1921,7 +1951,7 @@ CircuitState _buildDemoCircuit() {
   );
 
   return CircuitState(
-    circuitId: CircuitId('f9-final-demo'),
+    circuitId: CircuitId('f18-workspace-demo'),
     revision: 1,
     mode: ElectricalMode.dc,
     sources: <SourceInstance>[

@@ -1375,9 +1375,15 @@ class _F9WorkspaceDemoPageState extends State<F9WorkspaceDemoPage> {
       return;
     }
 
+    final CircuitVisualLayout rotated = _layout.rotateElement(selected);
     final CircuitVisualLayout candidate = _routeWithG2A(
       _circuit,
-      _layout.rotateElement(selected),
+      CircuitVisualLayout(
+        elementPositions: rotated.elementPositions,
+        elementSizes: rotated.elementSizes,
+        elementQuarterTurns: rotated.elementQuarterTurns,
+        defaultElementSize: rotated.defaultElementSize,
+      ),
     );
     if (!F18WorkspaceWireSafety.isCrossingFree(
       circuit: _circuit,

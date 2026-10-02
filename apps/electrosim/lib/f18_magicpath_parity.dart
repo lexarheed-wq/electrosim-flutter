@@ -397,7 +397,7 @@ class F18CircuitZoneOverlay extends StatelessWidget {
           for (final Rect rect in geometry.elementRects.values) {
             deviceWorldBounds = deviceWorldBounds == null
                 ? rect
-                : deviceWorldBounds!.expandToInclude(rect);
+                : deviceWorldBounds.expandToInclude(rect);
           }
           final Rect base = deviceWorldBounds ?? Rect.zero;
           final Rect deviceScreen = Rect.fromLTRB(

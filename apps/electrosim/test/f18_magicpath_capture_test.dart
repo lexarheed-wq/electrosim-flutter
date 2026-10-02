@@ -40,6 +40,8 @@ void main() {
         debugShowCheckedModeBanner: false,
         theme: ElectroSimTheme.light(),
         home: const app.F18WorkspacePage(
+          entryLabel: 'TP Commande Moteur',
+          sessionNavigation: true,
           initialSelectedElementId: 'breaker-1',
         ),
       ),
@@ -55,7 +57,9 @@ void main() {
       MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ElectroSimTheme.light(),
-        home: const app.F18WorkspacePage(),
+        home: const app.F18WorkspacePage(
+          entryLabel: 'TP Commande',
+        ),
       ),
     );
     await _capture(tester, '03_flutter_workspace_compact.png');

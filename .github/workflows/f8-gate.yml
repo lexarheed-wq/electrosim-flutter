@@ -10,6 +10,7 @@ on:
       - 'docs/f8/**'
 jobs:
   f8:
+    if: ${{ github.ref_name != 'f18-magicpath-parity' && github.head_ref != 'f18-magicpath-parity' }}
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4

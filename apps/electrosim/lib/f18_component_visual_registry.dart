@@ -264,102 +264,118 @@ abstract final class F18ComponentVisualRegistry {
   static void _paintBreaker(Canvas canvas, Rect rect, Color accent) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .70,
-      height: rect.height * .95,
+      width: rect.width * .78,
+      height: rect.height * .94,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .08));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFF3F5F7));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8C9BAB), 1.1));
+    final RRect outer =
+        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .09));
+    _shadow(canvas, outer);
+    canvas.drawRRect(outer, Paint()..color = const Color(0xFFDFE7E8));
+    canvas.drawRRect(outer, _stroke(const Color(0xFF65777C), 1.2));
 
-    final Rect head = Rect.fromLTWH(
-      b.left + b.width * .08,
-      b.top + b.height * .06,
-      b.width * .84,
+    final Rect label = Rect.fromLTWH(
+      b.left + b.width * .13,
+      b.top + b.height * .08,
+      b.width * .74,
       b.height * .18,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(head, const Radius.circular(3)),
-      Paint()..color = const Color(0xFFD8DEE5),
+      RRect.fromRectAndRadius(label, const Radius.circular(3)),
+      Paint()..color = const Color(0xFFF7F9FA),
     );
-    _tiny(canvas, 'C10', head.center, b.height * .075);
+    _tiny(
+      canvas,
+      'C10',
+      Offset(label.center.dx, label.center.dy - label.height * .08),
+      b.height * .075,
+      color: const Color(0xFF253235),
+    );
 
-    final Rect leverSlot = Rect.fromLTWH(
-      b.left + b.width * .27,
+    final Rect slot = Rect.fromLTWH(
+      b.left + b.width * .32,
       b.top + b.height * .31,
-      b.width * .46,
-      b.height * .34,
+      b.width * .36,
+      b.height * .40,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(leverSlot, const Radius.circular(4)),
-      Paint()..color = const Color(0xFFCAD3DD),
+      RRect.fromRectAndRadius(slot, const Radius.circular(3)),
+      Paint()..color = const Color(0xFFBBC6CC),
     );
     final Rect lever = Rect.fromLTWH(
-      leverSlot.left + leverSlot.width * .20,
-      leverSlot.top + leverSlot.height * .10,
-      leverSlot.width * .60,
-      leverSlot.height * .48,
+      slot.left + slot.width * .16,
+      slot.top + slot.height * .08,
+      slot.width * .68,
+      slot.height * .55,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(lever, const Radius.circular(3)),
-      Paint()..color = const Color(0xFF46596D),
+      Paint()..color = const Color(0xFF232D31),
+    );
+    canvas.drawLine(
+      Offset(lever.left + lever.width * .16, lever.top + lever.height * .20),
+      Offset(lever.right - lever.width * .16, lever.top + lever.height * .20),
+      _stroke(const Color(0x33FFFFFF), 1),
+    );
+
+    final Offset stateDot = Offset(b.center.dx, b.bottom - b.height * .12);
+    canvas.drawCircle(
+      stateDot,
+      b.shortestSide * .055,
+      Paint()..color = const Color(0xFF5CBD79),
     );
     _tiny(
       canvas,
       'I',
-      Offset(b.center.dx, lever.bottom + b.height * .08),
-      b.height * .07,
-      color: const Color(0xFF067647),
-    );
-
-    _screw(
-      canvas,
-      Offset(b.center.dx, b.top + b.height * .12),
-      b.shortestSide * .055,
-    );
-    _screw(
-      canvas,
-      Offset(b.center.dx, b.bottom - b.height * .10),
-      b.shortestSide * .055,
+      Offset(b.center.dx, b.top + b.height * .25),
+      b.height * .075,
+      color: const Color(0xFF253235),
     );
   }
 
   static void _paintSwitch(Canvas canvas, Rect rect, Color accent) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .90,
-      height: rect.height * .72,
+      width: rect.width * .68,
+      height: rect.height * .94,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .11));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFE6EBF0));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8798A9), 1.1));
+    final RRect outer =
+        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .12));
+    _shadow(canvas, outer);
+    canvas.drawRRect(outer, Paint()..color = const Color(0xFFDFE7E8));
+    canvas.drawRRect(outer, _stroke(const Color(0xFF667B81), 1.2));
 
-    final Rect plate = Rect.fromLTWH(
-      b.left + b.width * .12,
-      b.top + b.height * .18,
-      b.width * .76,
-      b.height * .64,
+    final Rect well = Rect.fromCenter(
+      center: b.center,
+      width: b.width * .52,
+      height: b.height * .74,
     );
+    final RRect wellR =
+        RRect.fromRectAndRadius(well, Radius.circular(well.shortestSide * .18));
+    canvas.drawRRect(wellR, Paint()..color = const Color(0xFF26363B));
+
+    final Rect rocker = Rect.fromCenter(
+      center: Offset(well.center.dx, well.center.dy + well.height * .22),
+      width: well.width * .72,
+      height: well.height * .33,
+    );
+    final RRect rockerR =
+        RRect.fromRectAndRadius(rocker, Radius.circular(rocker.shortestSide * .25));
+    canvas.drawRRect(rockerR, Paint()..color = const Color(0xFF5CBD79));
     canvas.drawRRect(
-      RRect.fromRectAndRadius(plate, const Radius.circular(5)),
-      Paint()..color = const Color(0xFFF8FAFC),
+      rockerR,
+      _stroke(const Color(0xFF386A49), 1),
     );
-
-    final double r = b.shortestSide * .07;
-    _screw(canvas, Offset(plate.left + plate.width * .12, plate.center.dy), r);
-    _screw(canvas, Offset(plate.right - plate.width * .12, plate.center.dy), r);
-
-    final Offset a = Offset(plate.left + plate.width * .24, plate.center.dy);
-    final Offset d = Offset(plate.right - plate.width * .24, plate.center.dy);
-    canvas.drawCircle(a, r * .65, Paint()..color = const Color(0xFF334155));
-    canvas.drawCircle(d, r * .65, Paint()..color = const Color(0xFF334155));
     canvas.drawLine(
-      Offset(a.dx + r, a.dy),
-      Offset(d.dx - r * .7, d.dy - plate.height * .28),
-      _stroke(accent, math.max(1.5, rect.shortestSide * .035)),
+      Offset(rocker.left + rocker.width * .18, rocker.top + rocker.height * .28),
+      Offset(rocker.right - rocker.width * .18, rocker.top + rocker.height * .28),
+      _stroke(const Color(0x55FFFFFF), 1),
+    );
+    _tiny(
+      canvas,
+      'I',
+      Offset(b.center.dx, b.bottom - b.height * .07),
+      b.height * .10,
+      color: const Color(0xFF263237),
     );
   }
 
@@ -691,39 +707,67 @@ abstract final class F18ComponentVisualRegistry {
   static void _paintContactor(Canvas canvas, Rect rect, Color accent) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .78,
-      height: rect.height * .96,
+      width: rect.width * .82,
+      height: rect.height * .94,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .07));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFE5EAF0));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8394A6), 1.1));
-    for (var row = 0; row < 2; row++) {
-      for (var col = 0; col < 3; col++) {
-        final Offset c = Offset(
-          b.left + b.width * (.23 + col * .27),
-          b.top + b.height * (.16 + row * .68),
-        );
-        _screw(canvas, c, b.shortestSide * .05);
-      }
-    }
-    final Rect core = Rect.fromLTWH(
-      b.left + b.width * .15,
-      b.top + b.height * .31,
-      b.width * .70,
-      b.height * .34,
+    final RRect outer =
+        RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .10));
+    _shadow(canvas, outer);
+    canvas.drawRRect(outer, Paint()..color = const Color(0xFFDFE7E8));
+    canvas.drawRRect(outer, _stroke(const Color(0xFF5C7177), 1.2));
+
+    final Rect darkPanel = Rect.fromLTWH(
+      b.left + b.width * .09,
+      b.top + b.height * .10,
+      b.width * .82,
+      b.height * .48,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(core, const Radius.circular(4)),
-      Paint()..color = const Color(0xFFF8FAFC),
+      RRect.fromRectAndRadius(darkPanel, const Radius.circular(4)),
+      Paint()..color = const Color(0xFF36464B),
     );
-    _tiny(canvas, 'KM', core.center, b.height * .12);
+
+    for (var i = 0; i < 3; i++) {
+      final double x = darkPanel.left + darkPanel.width * (.22 + i * .28);
+      final Rect channel = Rect.fromCenter(
+        center: Offset(x, darkPanel.center.dy),
+        width: darkPanel.width * .15,
+        height: darkPanel.height * .64,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(channel, const Radius.circular(2)),
+        Paint()..color = const Color(0xFF1B292E),
+      );
+      final Rect indicator = Rect.fromLTWH(
+        channel.left + channel.width * .25,
+        channel.top + channel.height * .14,
+        channel.width * .50,
+        channel.height * .58,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(indicator, const Radius.circular(1.5)),
+        Paint()..color = const Color(0xFF7A888B),
+      );
+    }
+
+    _tiny(
+      canvas,
+      'KM',
+      Offset(b.center.dx, b.bottom - b.height * .20),
+      b.height * .10,
+      color: const Color(0xFF263237),
+    );
     _tiny(
       canvas,
       'A1   A2',
-      Offset(core.center.dx, core.bottom + b.height * .09),
-      b.height * .07,
+      Offset(b.center.dx, b.bottom - b.height * .08),
+      b.height * .065,
+      color: const Color(0xFF52677B),
+    );
+    canvas.drawCircle(
+      Offset(b.right - b.width * .14, b.bottom - b.height * .18),
+      b.shortestSide * .05,
+      Paint()..color = const Color(0xFF7A888B),
     );
   }
 

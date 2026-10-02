@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
+import 'f18_component_archetypes.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
@@ -1333,7 +1334,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           child: ListView(
             children: candidates.map((F9PaletteDefinition item) => ListTile(
               key: Key('replace-${item.keyName}'),
-              leading: F9ComponentGlyph(modelType: item.modelType),
+              leading: F18ComponentArchetypeGlyph(modelType: item.modelType),
               title: Text(item.title),
               subtitle: Text(item.subtitle ?? item.category),
               onTap: () => Navigator.of(dialogContext).pop(item),

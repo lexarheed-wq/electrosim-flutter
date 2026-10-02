@@ -560,7 +560,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                   _workspace == 'Recherche de dérangement',
           expandedPaletteWidth: 304,
           expandedContextWidth: 300,
-          mediumPanelWidth: 318,
+          mediumPanelWidth: 288,
           canvas: KeyedSubtree(
             key: const Key('f18-canvas-drop-region'),
             child: DragTarget<F9PaletteDefinition>(
@@ -1262,12 +1262,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (viewportSize.isEmpty) {
       return;
     }
+    final bool compact =
+        viewportSize.width < ElectroSimBreakpoints.compactUpperBound;
+    final bool medium =
+        !compact &&
+        viewportSize.width < ElectroSimBreakpoints.mediumUpperBound;
+    final double padding = compact ? 12 : (medium ? 20 : 34);
+    final double verticalAlignment = compact ? .25 : (medium ? .28 : .32);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,
       viewportSize: viewportSize,
+      padding: padding,
       minScale: _viewport.minScale,
       maxScale: 1,
+      verticalAlignment: verticalAlignment,
     );
     _viewport.reset(
       scale: fit.scale,

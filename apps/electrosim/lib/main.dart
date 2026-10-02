@@ -636,6 +636,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         title: _workspace == 'Recherche de dérangement'
                             ? 'Circuit de recherche de dérangement'
                             : 'Circuit 24 V DC · commande simple',
+                        verticalPadding:
+                            widget.role == F9UserRole.student &&
+                                    _workspace == 'Recherche de dérangement'
+                                ? 62
+                                : 26,
                       ),
                       AnimatedBuilder(
                         animation: _viewport,
@@ -674,6 +679,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                     : null,
                               ),
                       ),
+                      if (widget.role == F9UserRole.student &&
+                          _workspace == 'Recherche de dérangement' &&
+                          MediaQuery.sizeOf(context).width >=
+                              ElectroSimBreakpoints.compactUpperBound)
+                        const Positioned(
+                          left: 20,
+                          right: 20,
+                          top: 490,
+                          child: F18TroubleshootingProgressCard(),
+                        ),
                       if (_selected == null)
                         Positioned(
                           right: 16,
@@ -1276,7 +1291,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         !compact &&
         viewportSize.width < ElectroSimBreakpoints.mediumUpperBound;
     final double padding = compact ? 12 : (medium ? 20 : 34);
-    final double verticalAlignment = compact ? .25 : (medium ? .28 : .32);
+    final double verticalAlignment = compact ? .27 : (medium ? .18 : .32);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,

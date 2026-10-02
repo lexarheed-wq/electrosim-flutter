@@ -638,14 +638,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         title: _workspace == 'Recherche de dérangement'
                             ? 'Circuit de recherche de dérangement'
                             : 'Circuit 24 V DC · commande simple',
-                        verticalPadding:
+                        framePadding:
                             widget.role == F9UserRole.student &&
                                     _workspace == 'Recherche de dérangement'
-                                ? 62
+                                ? const EdgeInsets.fromLTRB(34, 115, 46, 114)
                                 : MediaQuery.sizeOf(context).width <
                                         ElectroSimBreakpoints.compactUpperBound
-                                    ? 82
-                                    : 26,
+                                    ? const EdgeInsets.fromLTRB(28, 92, 16, 81)
+                                    : const EdgeInsets.fromLTRB(55, 84, 41, 35),
                       ),
                       AnimatedBuilder(
                         animation: _viewport,
@@ -1298,7 +1298,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final double padding = compact ? 24 : (medium ? 38 : 34);
     // MagicPath composition is specified against the full product viewport,
     // not the remaining Canvas width after palette/inspector deduction.
-    final double verticalAlignment = compact ? .24 : (medium ? .20 : .30);
+    final double horizontalAlignment =
+        compact ? .68 : (medium ? .75 : .44);
+    final double verticalAlignment =
+        compact ? .33 : (medium ? .26 : .37);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,
@@ -1306,6 +1309,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       padding: padding,
       minScale: _viewport.minScale,
       maxScale: 1,
+      horizontalAlignment: horizontalAlignment,
       verticalAlignment: verticalAlignment,
     );
     _viewport.reset(
@@ -1637,7 +1641,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'g1': Offset(168, 288),
           'qf1': Offset(336, 288),
           's1': Offset(504, 288),
-          'h1': Offset(672, 288),
+          'h1': Offset(576, 288),
         },
         elementSizes: const <String, Size>{
           'g1': Size(76, 76),

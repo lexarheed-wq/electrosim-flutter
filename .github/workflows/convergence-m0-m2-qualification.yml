@@ -6,6 +6,11 @@ on:
       - f18-v1-v2-convergence
     paths:
       - '.github/workflows/convergence-m0-m2-qualification.yml'
+      - 'packages/electrosim_domain/**'
+      - 'packages/electrosim_topology/**'
+      - 'packages/electrosim_solver_dc/**'
+      - 'docs/convergence/**'
+      - 'tools/test_convergence_*.py'
 
 permissions:
   contents: read

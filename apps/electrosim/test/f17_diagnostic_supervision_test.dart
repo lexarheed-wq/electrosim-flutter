@@ -36,17 +36,13 @@ void main() {
     await tester.tap(find.byKey(const Key('diagnostic-tab')));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('diagnostic-symptom')),
-      'La lampe reste éteinte.',
+    await tester.tap(
+      find.byKey(const Key('diagnostic-location-recepteur-lampe')),
     );
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const Key('diagnostic-hypothesis')),
-      'Une liaison série est absente.',
-    );
-    await tester.enterText(
-      find.byKey(const Key('diagnostic-conclusion')),
-      'Contrôler puis rétablir la liaison.',
+      find.byKey(const Key('diagnostic-evidence')),
+      'G1 = 24 V ; H1 = 0 V. La tension disparaît après S1.',
     );
     await tester.tap(find.byKey(const Key('diagnostic-save')));
     await tester.pumpAndSettle();
@@ -59,9 +55,11 @@ void main() {
     final String teacher =
         jsonEncode(controller.payloadFor(TpRole.teacher));
     expect(student, contains('diagnosticSheet'));
-    expect(student, contains('La lampe reste éteinte.'));
+    expect(student, contains('Récepteur / lampe'));
+    expect(student, contains('S1 — Interrupteur'));
+    expect(student, contains('La tension disparaît après S1.'));
     expect(teacher, isNot(contains('diagnosticSheet')));
-    expect(teacher, isNot(contains('La lampe reste éteinte.')));
+    expect(teacher, isNot(contains('La tension disparaît après S1.')));
     expect(tester.takeException(), isNull);
   });
 

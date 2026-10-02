@@ -486,8 +486,8 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double width = compact ? 68 : 112;
-    final double height = compact ? 68 : 82;
+    final double width = compact ? 78 : 124;
+    final double height = compact ? 78 : 92;
     return SizedBox(
       width: width,
       height: height,
@@ -515,7 +515,7 @@ class F9ComponentPreview extends StatelessWidget {
               child: Center(
                 child: F18ComponentArchetypeGlyph(
                   modelType: definition.modelType,
-                  size: compact ? 42 : 50,
+                  size: compact ? 58 : 68,
                 ),
               ),
             ),

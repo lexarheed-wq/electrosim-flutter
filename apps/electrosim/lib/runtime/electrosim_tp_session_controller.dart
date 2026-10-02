@@ -6,10 +6,10 @@ import 'package:flutter/foundation.dart';
 final class ElectroSimTpSessionController extends ChangeNotifier {
   ElectroSimTpSessionController({
     QualifiedCatalog? catalog,
-    this.tpIdValue = 'TP-RD-F17',
-    this.title = 'Recherche de dérangement — F17',
-    String scenarioId = 'FAULT-DC-003',
-  })  : _catalog = catalog ?? buildF16QualifiedCatalog(),
+    this.tpIdValue = 'TP04-F18',
+    this.title = 'TP 04 · Circuit d’éclairage 24 V',
+    String scenarioId = 'FAULT-F18-004',
+  })  : _catalog = catalog ?? buildF18ProductCatalog(),
         _scenarioId = FaultScenarioId(scenarioId) {
     _engine = _buildEngine();
   }

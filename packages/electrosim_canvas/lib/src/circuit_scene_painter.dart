@@ -236,7 +236,7 @@ final class CircuitScenePainter extends CustomPainter {
       final bool pending = entry.key == pendingTerminalId;
       final bool junction =
           semantics?.junctionTerminalIds.contains(entry.key) ?? false;
-      final double radius = pending ? 7 : 5;
+      final double radius = pending ? 6 : 3.8;
       canvas.drawCircle(
         screen,
         radius,
@@ -252,7 +252,7 @@ final class CircuitScenePainter extends CustomPainter {
         radius,
         Paint()
           ..color = pending ? pendingColor : terminalStroke
-          ..strokeWidth = 2
+          ..strokeWidth = pending ? 2 : 1.4
           ..style = PaintingStyle.stroke,
       );
     }

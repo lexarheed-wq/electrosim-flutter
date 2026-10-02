@@ -1068,6 +1068,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (_activeCanvasPointer != null) {
       return;
     }
+    // MagicPath canvas chrome occupies the first 64 logical pixels. Those
+    // controls must not also trigger background selection/pan handlers.
+    if (event.localPosition.dy < 64) {
+      return;
+    }
     final CanvasHitResult hit = _f9CanvasHit(event.localPosition);
     _activeCanvasPointer = event.pointer;
     _lastCanvasPointerLocal = event.localPosition;

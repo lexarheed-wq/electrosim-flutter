@@ -105,7 +105,7 @@ Future<Uint8List> _raster(
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   final Canvas canvas = Canvas(recorder);
   canvas.drawRect(
-    const Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    const Rect.fromLTWH(0, 0, 180, 130),
     Paint()..color = Colors.white,
   );
   F18ComponentVisualRegistry.paint(

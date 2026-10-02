@@ -1,0 +1,193 @@
+name: F18-G3R1 Passation Mac Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g3r1-passation-2026-10-02
+    paths:
+      - '.github/workflows/f18-g3r1-passation-mac.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-passation:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify recovery source freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='f52da0acba9e93032433849756abfdea17dc442d'
+          changed="$(git diff --name-only "$SOURCE_SHA"...HEAD -- apps packages tools ci)"
+          if [ -n "$changed" ]; then
+            echo "Passation branch changed qualified runtime/source files:"
+            echo "$changed"
+            exit 1
+          fi
+          echo F18_G3R1_PASSATION_SOURCE_FREEZE_PASS
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify Intel host and toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "x86_64"
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          echo F18_G3R1_PASSATION_INTEL_HOST_PASS
+
+      - name: Re-run G3R1 correction qualification
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          for test_file in             test/f18_g3r1_point01_runtime_router_test.dart             test/f18_g3r1_point02_smart_canvas_integration_test.dart             test/f18_g3r1_point03_dc_rectangular_workspace_test.dart             test/f18_g3r1_point04_no_auto_crossing_test.dart             test/f18_g3r1_point05_palette_contract_test.dart             test/f18_g3r1_point06_topbar_actions_rotation_test.dart             test/f18_g3r1_point07_f18_workspace_identity_test.dart             test/f18_g3r1_point08_visual_archetypes_test.dart             test/f18_g3r1_point09_no_legacy_workspace_regression_test.dart             test/f18_g3r1_point10_integrated_visible_contract_test.dart
+          do
+            flutter test "$test_file"
+          done
+          find test -name '*_test.dart' ! -name 'f9_goldens_test.dart' -print0 | xargs -0 flutter test
+          echo F18_G3R1_PASSATION_TESTS_PASS
+
+      - name: Generate native macOS runner with LAN entitlements
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREP_OUT="$(bash tools/f17_prepare_release_runner.sh macos "$RUNNER_TEMP/electrosim-g3r1-passation")"
+          case "$PREP_OUT" in
+            F17_RUNNER_PATH=*) TMP="${PREP_OUT#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
+          esac
+          echo "root=$TMP" >> "$GITHUB_OUTPUT"
+          echo "app=$TMP/apps/electrosim" >> "$GITHUB_OUTPUT"
+
+      - name: Build macOS release
+        working-directory: ${{ steps.runner.outputs.app }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build macos --release
+
+      - name: Verify and package Mac candidate
+        id: package
+        shell: bash
+        env:
+          APP_ROOT: ${{ steps.runner.outputs.app }}
+        run: |
+          set -euo pipefail
+          SOURCE_SHA='f52da0acba9e93032433849756abfdea17dc442d'
+          APP_BUNDLE="$(find "$APP_ROOT/build/macos/Build/Products/Release" -maxdepth 1 -type d -name '*.app' | head -1)"
+          test -n "$APP_BUNDLE"
+          EXEC_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_BUNDLE/Contents/Info.plist")"
+          EXECUTABLE="$APP_BUNDLE/Contents/MacOS/$EXEC_NAME"
+          ARCHS="$(lipo -archs "$EXECUTABLE")"
+          echo "Executable architectures: $ARCHS"
+          echo "$ARCHS" | tr ' ' '\n' | grep -qx 'x86_64'
+
+          if ! codesign --verify --deep --strict "$APP_BUNDLE"; then
+            codesign --force --deep --sign - "$APP_BUNDLE"
+          fi
+          codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
+
+          OUT="$RUNNER_TEMP/F18_G3R1_PASSATION"
+          MAC_DIR="$OUT/MAC_TEST"
+          mkdir -p "$MAC_DIR"
+          ditto "$APP_BUNDLE" "$MAC_DIR/ElectroSim.app"
+
+          cat > "$MAC_DIR/LISEZ_MOI_TEST_MAC.md" <<'EOF'
+          # ElectroSim F18 G3R1 — Test physique Mac
+
+          Source qualifiée : f52da0acba9e93032433849756abfdea17dc442d
+
+          Vérifier en priorité :
+          1. Accueil F18 et navigation.
+          2. Création de session / tableau de bord / gestion / supervision.
+          3. Centre de conception -> Câblage.
+          4. Palette : 5 composants rapides + Voir tous, sans Voir moins.
+          5. Workspace sans labels F8/F9.
+          6. Composants utilisant les archétypes visuels F18.
+          7. Rotation + Suppression en topbar ; aucune suppression dans Propriétés.
+          8. Circuit CC rectangulaire, composants centrés et éloignés des angles.
+          9. Fils orthogonaux, preview G2A, absence de croisements automatiques entre nets.
+          10. Trackpad : pan, zoom, déplacement de composants.
+          EOF
+
+          FLUTTER_LINE="$(flutter --version | head -1 | tr -d '\r')"
+          DART_LINE="$(dart --version 2>&1 | head -1 | tr -d '\r')"
+          XCODE_LINE="$(xcodebuild -version | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+          MACOS_LINE="$(sw_vers -productVersion)"
+          PACKAGE_SHA="$(git rev-parse HEAD)"
+          python3 - "$MAC_DIR/BUILD_PROVENANCE.json" "$SOURCE_SHA" "$PACKAGE_SHA" "$ARCHS" "$FLUTTER_LINE" "$DART_LINE" "$XCODE_LINE" "$MACOS_LINE" <<'PY'
+          import datetime, json, sys
+          out, source_sha, package_sha, archs, flutter, dart, xcode, macos = sys.argv[1:]
+          data = {
+              "schemaVersion": 1,
+              "candidate": "ElectroSim_F18_G3R1_Recovery_Mac",
+              "qualifiedSourceSha": source_sha,
+              "packagingCommitSha": package_sha,
+              "executableArchitectures": archs.split(),
+              "flutter": flutter,
+              "dart": dart,
+              "xcode": xcode,
+              "builderMacOS": macos,
+              "gate": "F18_G3R1_WORKSPACE_INTEGRATION_RECOVERY_PASS",
+              "createdAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          with open(out, "w", encoding="utf-8") as handle:
+              json.dump(data, handle, indent=2, sort_keys=True)
+              handle.write("\n")
+          PY
+
+          (
+            cd "$MAC_DIR"
+            shasum -a 256 "ElectroSim.app/Contents/MacOS/$EXEC_NAME" > EXECUTABLE_SHA256.txt
+          )
+
+          MAC_ZIP="$OUT/ElectroSim-F18-G3R1-RECOVERY-MAC-TEST.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$MAC_DIR" "$MAC_ZIP"
+          unzip -t "$MAC_ZIP"
+
+          VERIFY="$RUNNER_TEMP/verify-g3r1"
+          mkdir -p "$VERIFY"
+          ditto -x -k "$MAC_ZIP" "$VERIFY"
+          codesign --verify --deep --strict "$VERIFY/MAC_TEST/ElectroSim.app"
+          EXTRACTED_EXEC="$VERIFY/MAC_TEST/ElectroSim.app/Contents/MacOS/$EXEC_NAME"
+          lipo -archs "$EXTRACTED_EXEC" | tr ' ' '\n' | grep -qx 'x86_64'
+
+          git archive --format=zip --output="$OUT/ElectroSim-F18-G3R1-RECOVERY-SOURCE.zip" "$SOURCE_SHA"
+
+          (
+            cd "$OUT"
+            shasum -a 256 ElectroSim-F18-G3R1-RECOVERY-MAC-TEST.zip               ElectroSim-F18-G3R1-RECOVERY-SOURCE.zip > SHA256SUMS.txt
+          )
+
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          echo F18_G3R1_PASSATION_PACKAGE_PASS
+
+      - name: Upload passation binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: F18_G3R1_PASSATION_BINARIES
+          path: |
+            ${{ steps.package.outputs.out }}/ElectroSim-F18-G3R1-RECOVERY-MAC-TEST.zip
+            ${{ steps.package.outputs.out }}/ElectroSim-F18-G3R1-RECOVERY-SOURCE.zip
+            ${{ steps.package.outputs.out }}/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Passation build gate
+        run: echo F18_G3R1_PASSATION_BUILD_PASS

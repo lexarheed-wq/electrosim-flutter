@@ -977,7 +977,7 @@ class _DiagnosticRadioRow extends StatelessWidget {
           onTap: enabled ? onTap : null,
           borderRadius: BorderRadius.circular(9),
           child: Container(
-            minHeight: 36,
+            constraints: const BoxConstraints(minHeight: 36),
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFD7E0EA)),

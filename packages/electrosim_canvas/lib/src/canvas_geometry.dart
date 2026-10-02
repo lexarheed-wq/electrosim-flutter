@@ -47,7 +47,7 @@ final class CircuitGeometryIndex {
         final Offset local = _terminalOffset(
           baseSize,
           index,
-          terminals.length,
+          terminals,
         );
         terminalPositions[terminal.id] =
             center + _rotateQuarterTurns(local, quarterTurns);
@@ -80,7 +80,12 @@ final class CircuitGeometryIndex {
   final Map<TerminalId, Offset> terminalPositions;
   final Map<TerminalId, String> terminalOwners;
 
-  static Offset _terminalOffset(Size size, int index, int count) {
+  static Offset _terminalOffset(
+    Size size,
+    int index,
+    List<Terminal> terminals,
+  ) {
+    final int count = terminals.length;
     final Rect rect = Rect.fromCenter(
       center: Offset.zero,
       width: size.width,
@@ -90,6 +95,23 @@ final class CircuitGeometryIndex {
       return Offset(rect.right, rect.center.dy);
     }
     if (count == 2) {
+      final Terminal terminal = terminals[index];
+      // Product geometry follows electrical semantics. Sources keep their
+      // solver order (+, -), while the Canvas is free to place + on the
+      // outgoing right side and - on the left return side. Two-terminal
+      // components use input-left/output-right.
+      if (terminal.role == TerminalRole.positive) {
+        return Offset(rect.right, rect.center.dy);
+      }
+      if (terminal.role == TerminalRole.negative) {
+        return Offset(rect.left, rect.center.dy);
+      }
+      if (terminal.role == TerminalRole.input) {
+        return Offset(rect.left, rect.center.dy);
+      }
+      if (terminal.role == TerminalRole.output) {
+        return Offset(rect.right, rect.center.dy);
+      }
       return index == 0
           ? Offset(rect.left, rect.center.dy)
           : Offset(rect.right, rect.center.dy);

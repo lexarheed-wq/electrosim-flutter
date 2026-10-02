@@ -145,6 +145,62 @@ void main() {
     },
   );
 
+  testWidgets(
+    'student TP04 committed wiring remains strictly orthogonal',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(820, 1180));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final ElectroSimTpSessionController controller =
+          ElectroSimTpSessionController(
+        tpIdValue: 'K7M4P2',
+        title: 'TP 04 · Circuit d’éclairage 24 V',
+      );
+      controller.createDraft();
+      controller.publish();
+      controller.startStudent();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ElectroSimTheme.light(),
+          home: app.F18WorkspacePage(
+            initialWorkspace: 'Recherche de dérangement',
+            role: F9UserRole.student,
+            tpSessionController: controller,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final SimulatorCanvas canvas =
+          tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      final CircuitGeometryIndex geometry =
+          CircuitGeometryIndex.build(canvas.circuit, canvas.layout);
+      for (final Connection connection in canvas.circuit.connections) {
+        final Offset start =
+            geometry.terminalPositions[connection.fromTerminalId]!;
+        final Offset end =
+            geometry.terminalPositions[connection.toTerminalId]!;
+        final List<Offset> points = <Offset>[
+          start,
+          ...canvas.layout.routeFor(connection.id.value),
+          end,
+        ];
+        for (var index = 0; index + 1 < points.length; index++) {
+          final Offset a = points[index];
+          final Offset b = points[index + 1];
+          expect(
+            a.dx == b.dx || a.dy == b.dy,
+            isTrue,
+            reason:
+                'TP04 route ${connection.id.value} contains a diagonal: $points',
+          );
+        }
+      }
+      controller.dispose();
+    },
+  );
+
   test('canvas product labels never expose raw technical model identifiers', () {
     expect(f18DisplayNameForModel('dc_voltage_source'), 'Source CC');
     expect(f18DisplayNameForModel('switch'), 'Interrupteur');

@@ -51,6 +51,67 @@ void main() {
     );
   });
 
+  testWidgets('rotated default DC layout can be rerouted safely before UI commit',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.tap(find.byKey(const Key('home-design')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('design-wiring')));
+    await tester.pumpAndSettle();
+
+    final SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final CircuitVisualLayout rotated =
+        canvas.layout.rotateElement('switch-1');
+    final CircuitVisualLayout clean = CircuitVisualLayout(
+      elementPositions: rotated.elementPositions,
+      elementSizes: rotated.elementSizes,
+      elementQuarterTurns: rotated.elementQuarterTurns,
+      defaultElementSize: rotated.defaultElementSize,
+    );
+    const CircuitWireLayoutEngine engine = CircuitWireLayoutEngine(
+      router: OrthogonalWireRouter(
+        grid: 24,
+        obstacleClearance: 24,
+        envelopePadding: 120,
+      ),
+    );
+    final CircuitVisualLayout routed = engine.routeAll(
+      circuit: canvas.circuit,
+      layout: clean,
+    );
+
+    expect(routed.quarterTurnsOf('switch-1'), 1);
+    final CircuitGeometryIndex geometry =
+        CircuitGeometryIndex.build(canvas.circuit, routed);
+    for (final Connection connection in canvas.circuit.connections) {
+      final Offset start =
+          geometry.terminalPositions[connection.fromTerminalId]!;
+      final Offset end =
+          geometry.terminalPositions[connection.toTerminalId]!;
+      final List<Offset> points = <Offset>[
+        start,
+        ...routed.routeFor(connection.id.value),
+        end,
+      ];
+      for (var index = 0; index + 1 < points.length; index++) {
+        final Offset a = points[index];
+        final Offset b = points[index + 1];
+        expect(
+          a.dx == b.dx || a.dy == b.dy,
+          isTrue,
+          reason:
+              '${connection.id.value} unresolved/diagonal after rotation: $points',
+        );
+      }
+    }
+  });
+
   testWidgets('workspace owns the only delete action and a real rotate action',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);

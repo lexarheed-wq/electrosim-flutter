@@ -627,7 +627,77 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         enableInteraction: false,
                         wireLayoutEngine: _g2aWireLayoutEngine,
                         wirePreviewPlanner: _g2aWirePreviewPlanner,
-                        elementVisualPainter: paintF18MagicPathCanvasElement,
+                        elementVisualPainter: (
+                          Canvas canvas,
+                          Rect screenRect,
+                          String elementId,
+                          String modelType,
+                          bool source,
+                          bool selected,
+                          double viewportScale,
+                        ) {
+                          bool active = true;
+                          bool fault = false;
+                          if (source) {
+                            for (final SourceInstance item in _circuit.sources) {
+                              if (item.id.value == elementId) {
+                                active = item.enabled;
+                                break;
+                              }
+                            }
+                          } else {
+                            ComponentInstance? instance;
+                            for (final ComponentInstance item
+                                in _circuit.components) {
+                              if (item.id.value == elementId) {
+                                instance = item;
+                                break;
+                              }
+                            }
+                            if (instance != null) {
+                              fault =
+                                  instance.condition != ComponentCondition.normal;
+                              final Object? closed =
+                                  instance.controlState['closed'];
+                              active = instance.condition !=
+                                      ComponentCondition.disabled &&
+                                  closed != false;
+
+                              final String type = modelType.toLowerCase();
+                              final bool currentDrivenVisual =
+                                  type.contains('lamp') ||
+                                      type.contains('motor') ||
+                                      type.contains('fan') ||
+                                      type.contains('buzzer') ||
+                                      type.contains('relay_coil') ||
+                                      type.contains('contactor');
+                              if (currentDrivenVisual &&
+                                  runtimeSnapshot.dcResult != null) {
+                                try {
+                                  final double? current = runtimeSnapshot.dcResult!
+                                      .branch('component:$elementId')
+                                      .currentA;
+                                  active = current != null &&
+                                      current.abs() > 1e-6;
+                                } on StateError {
+                                  // Some UI-only components are intentionally
+                                  // absent from the solver branch inventory.
+                                }
+                              }
+                            }
+                          }
+                          paintF18MagicPathCanvasElement(
+                            canvas,
+                            screenRect,
+                            elementId,
+                            modelType,
+                            source,
+                            selected,
+                            viewportScale,
+                            active: active,
+                            fault: fault,
+                          );
+                        },
                         showElementLabels: false,
                         preserveCommittedWireRoutes: true,
                       ),
@@ -660,6 +730,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               : _viewport.screenToWorld(_lastCanvasPointerLocal!),
                           wirePreviewPlanner: _g2aWirePreviewPlanner,
                           paintElementGlyphs: false,
+                          showFaultMarkers:
+                              widget.role != F9UserRole.student,
                         ),
                       ),
                       Positioned(

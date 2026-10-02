@@ -21,6 +21,7 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
     required this.statusBar,
     this.showStatusBar = true,
     this.showCompactPanelSwitcher = true,
+    this.showMediumPanelSwitcher = true,
     this.mediumPanelInitiallyVisible = false,
     this.expandedPaletteWidth = ElectroSimGeometry.expandedPaletteWidth,
     this.expandedContextWidth = ElectroSimGeometry.expandedContextWidth,
@@ -34,6 +35,7 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
   final Widget statusBar;
   final bool showStatusBar;
   final bool showCompactPanelSwitcher;
+  final bool showMediumPanelSwitcher;
   final bool mediumPanelInitiallyVisible;
   final double expandedPaletteWidth;
   final double expandedContextWidth;
@@ -118,13 +120,15 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     return Column(
       children: <Widget>[
         widget.topBar,
-        _PanelSwitcher(
-          key: electroSimMediumActionsKey,
-          activePanel: _activePanel,
-          onPalette: () => _toggle(ElectroSimWorkspacePanel.palette),
-          onContext: () => _toggle(ElectroSimWorkspacePanel.context),
-        ),
-        const Divider(height: 1),
+        if (widget.showMediumPanelSwitcher) ...<Widget>[
+          _PanelSwitcher(
+            key: electroSimMediumActionsKey,
+            activePanel: _activePanel,
+            onPalette: () => _toggle(ElectroSimWorkspacePanel.palette),
+            onContext: () => _toggle(ElectroSimWorkspacePanel.context),
+          ),
+          const Divider(height: 1),
+        ],
         Expanded(
           child: Row(
             children: <Widget>[

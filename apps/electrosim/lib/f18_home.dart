@@ -32,7 +32,7 @@ class F18HomeSurface extends StatelessWidget {
                   final double horizontalPadding =
                       windowClass == ElectroSimWindowClass.compact
                           ? ElectroSimSpacing.md
-                          : 40;
+                          : ElectroSimSpacing.xl;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
@@ -122,7 +122,7 @@ class _HomeHeader extends StatelessWidget {
           return Padding(
             padding: EdgeInsets.symmetric(
               horizontal:
-                  compact ? ElectroSimSpacing.md : 40,
+                  compact ? ElectroSimSpacing.md : ElectroSimSpacing.xl,
             ),
             child: Center(
               child: ConstrainedBox(

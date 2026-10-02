@@ -196,6 +196,44 @@ final class CoreComponentModelContracts {
   static final ComponentModelRegistry registry = ComponentModelRegistry(
     <ComponentModelContract>[
       ComponentModelContract(
+        modelType: 'resistor',
+        family: ComponentFamily.passive,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+          ElectricalMode.pv,
+        },
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'lamp',
+        family: ComponentFamily.receiver,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+          ElectricalMode.pv,
+        },
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'switch',
         family: ComponentFamily.switching,
         terminalCount: 2,

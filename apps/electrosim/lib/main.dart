@@ -558,8 +558,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           mediumPanelInitiallyVisible:
               widget.role == F9UserRole.student &&
                   _workspace == 'Recherche de dérangement',
-          expandedPaletteWidth: 304,
-          expandedContextWidth: 300,
+          expandedPaletteWidth: ElectroSimGeometry.expandedPaletteWidth,
+          expandedContextWidth: ElectroSimGeometry.expandedContextWidth,
           mediumPanelWidth: 288,
           canvas: KeyedSubtree(
             key: const Key('f18-canvas-drop-region'),
@@ -1605,9 +1605,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final CircuitVisualLayout magicPathDemo = CircuitVisualLayout(
         elementPositions: const <String, Offset>{
           'source-24v': Offset(168, 288),
-          'breaker-1': Offset(360, 288),
-          'switch-1': Offset(552, 288),
-          'lamp-1': Offset(744, 288),
+          'breaker-1': Offset(336, 288),
+          'switch-1': Offset(504, 288),
+          'lamp-1': Offset(672, 288),
         },
         elementSizes: const <String, Size>{
           'source-24v': Size(76, 76),
@@ -1815,7 +1815,9 @@ class _WorkspaceTopBar extends StatelessWidget {
           final bool compact =
               constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
           return SizedBox(
-            height: compact ? 64 : 72,
+            height: compact
+                ? ElectroSimGeometry.compactTopBarHeight
+                : ElectroSimGeometry.desktopTopBarHeight,
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: compact ? 10 : 16,
@@ -1846,32 +1848,76 @@ class _WorkspaceTopBar extends StatelessWidget {
                   const SizedBox(width: 10),
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: compact ? 180 : 250,
+                      maxWidth: compact ? 190 : 230,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          entryLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    color: ElectroSimColors.textPrimary,
+                        if (compact)
+                          Text(
+                            entryLabel == 'Centre de conception'
+                                ? 'TP Commande'
+                                : entryLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  color: ElectroSimColors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          )
+                        else
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Text(
+                                'ElectroSim',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: ElectroSimColors.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF4FF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Text(
+                                  'F18',
+                                  style: TextStyle(
+                                    color: ElectroSimColors.primary,
+                                    fontSize: 8,
                                     fontWeight: FontWeight.w800,
                                   ),
-                        ),
+                                ),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 1),
                         Text(
-                          workspace,
+                          compact
+                              ? (workspace == 'Câblage'
+                                  ? 'CC · 24 V'
+                                  : workspace)
+                              : entryLabel.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style:
                               Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: ElectroSimColors.textSecondary,
                                     fontSize: 9,
-                                    letterSpacing: .4,
+                                    letterSpacing: .6,
                                   ),
                         ),
                       ],

@@ -640,7 +640,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             widget.role == F9UserRole.student &&
                                     _workspace == 'Recherche de dérangement'
                                 ? 62
-                                : 26,
+                                : MediaQuery.sizeOf(context).width <
+                                        ElectroSimBreakpoints.compactUpperBound
+                                    ? 82
+                                    : 26,
                       ),
                       AnimatedBuilder(
                         animation: _viewport,
@@ -1291,7 +1294,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         !compact &&
         viewportSize.width < ElectroSimBreakpoints.mediumUpperBound;
     final double padding = compact ? 12 : (medium ? 20 : 34);
-    final double verticalAlignment = compact ? .27 : (medium ? .18 : .32);
+    final double verticalAlignment = compact ? .30 : (medium ? .18 : .47);
     final F18ViewportFitResult fit = F18MagicPathViewportFitter.fit(
       circuit: _circuit,
       layout: _layout,
@@ -1638,9 +1641,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'switch-1': Size(76, 66),
           'lamp-1': Size(66, 66),
         },
+        wireRoutes: const <String, List<Offset>>{
+          // Qualified MagicPath composition: the positive branch remains
+          // horizontal and the negative return is routed below the devices.
+          'wire-4': <Offset>[
+            Offset(705, 392),
+            Offset(130, 392),
+          ],
+        },
         defaultElementSize: const Size(76, 66),
       );
-      return _routeWithG2A(circuit, magicPathDemo);
+      return magicPathDemo;
     }
 
     final Map<String, Offset> positions = <String, Offset>{};

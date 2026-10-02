@@ -191,7 +191,7 @@ final class SolverDC {
       currentLimitIteration++;
     }
 
-    final List<double> solution = network!.solution;
+    final List<double> solution = network.solution;
     final int nodeCount = network.nodeCount;
     final Map<String, int> idealIndex = network.idealIndex;
     final double maxResidual = network.maxResidual;

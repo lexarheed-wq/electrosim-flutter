@@ -9,6 +9,16 @@ import 'viewport_controller.dart';
 import 'wire_preview_planner.dart';
 import 'wire_semantics.dart';
 
+typedef CircuitElementVisualPainter = void Function(
+  Canvas canvas,
+  Rect screenRect,
+  String elementId,
+  String modelType,
+  bool source,
+  bool selected,
+  double viewportScale,
+);
+
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
     required this.circuit,
@@ -20,6 +30,8 @@ final class CircuitScenePainter extends CustomPainter {
     this.previewPositions = const <String, Offset>{},
     this.wirePreviewPlanner,
     this.smartWireSemantics = false,
+    this.elementVisualPainter,
+    this.showElementLabels = true,
   });
 
   final CircuitState circuit;
@@ -31,6 +43,8 @@ final class CircuitScenePainter extends CustomPainter {
   final Map<String, Offset> previewPositions;
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool smartWireSemantics;
+  final CircuitElementVisualPainter? elementVisualPainter;
+  final bool showElementLabels;
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -151,6 +165,20 @@ final class CircuitScenePainter extends CustomPainter {
       height: worldRect.height * viewport.scale,
     );
     final bool selected = selectedElementId == elementId;
+    final CircuitElementVisualPainter? customPainter = elementVisualPainter;
+    if (customPainter != null) {
+      customPainter(
+        canvas,
+        rect,
+        elementId,
+        modelType,
+        source,
+        selected,
+        viewport.scale,
+      );
+      return;
+    }
+
     final RRect rrect = RRect.fromRectAndRadius(rect, const Radius.circular(10));
     canvas.drawRRect(rrect, Paint()..color = source ? sourceFill : elementFill);
     canvas.drawRRect(
@@ -161,6 +189,9 @@ final class CircuitScenePainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
+    if (!showElementLabels) {
+      return;
+    }
     final TextPainter label = TextPainter(
       text: TextSpan(
         text: modelType,

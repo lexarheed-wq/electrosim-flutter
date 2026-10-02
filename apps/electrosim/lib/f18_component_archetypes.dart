@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
+import 'f18_component_visual_registry.dart';
+
 enum F18ElectricalArchetype {
   source,
   protection,
@@ -145,6 +147,7 @@ class _F18ArchetypePainter extends CustomPainter {
       Offset.zero & size,
       modelType,
       foreground,
+      drawTerminals: false,
     );
   }
 
@@ -167,6 +170,14 @@ void paintF18ElectricalArchetype(
   final double unit = rect.shortestSide;
   final double radius = math.max(4, unit * .14);
   final Rect body = rect.deflate(math.max(1.5, unit * .05));
+  if (F18ComponentVisualRegistry.paint(
+    canvas,
+    body,
+    modelType,
+    foreground,
+  )) {
+    return;
+  }
   final Paint border = Paint()
     ..color = const Color(0xFF334155)
     ..strokeWidth = math.max(1.2, unit * .04)

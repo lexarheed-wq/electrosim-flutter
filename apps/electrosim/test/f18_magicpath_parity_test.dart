@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:electrosim/f18_magicpath_parity.dart';
+import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';

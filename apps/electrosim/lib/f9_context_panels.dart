@@ -19,7 +19,6 @@ class F9ContextPanels extends StatefulWidget {
     required this.workspace,
     required this.role,
     required this.onTogglePrimaryState,
-    required this.onDeleteSelected,
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
@@ -32,7 +31,6 @@ class F9ContextPanels extends StatefulWidget {
   final String workspace;
   final F9UserRole role;
   final VoidCallback? onTogglePrimaryState;
-  final VoidCallback? onDeleteSelected;
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
@@ -110,7 +108,6 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                   selectedId: widget.selectedId,
                   status: widget.status,
                   onTogglePrimaryState: widget.onTogglePrimaryState,
-                  onDeleteSelected: widget.onDeleteSelected,
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
                 ),
@@ -143,7 +140,6 @@ class _PropertiesPanel extends StatelessWidget {
     required this.selectedId,
     required this.status,
     required this.onTogglePrimaryState,
-    required this.onDeleteSelected,
     required this.onReplaceSelected,
     required this.onSelectElement,
   });
@@ -152,7 +148,6 @@ class _PropertiesPanel extends StatelessWidget {
   final String? selectedId;
   final String status;
   final VoidCallback? onTogglePrimaryState;
-  final VoidCallback? onDeleteSelected;
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
 

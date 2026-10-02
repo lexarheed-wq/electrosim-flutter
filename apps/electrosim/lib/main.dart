@@ -360,30 +360,18 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
 class F9WorkspaceDemoPage extends F18WorkspacePage {
   const F9WorkspaceDemoPage({
     super.key,
-    String entryLabel = 'Centre de conception',
-    String initialWorkspace = 'Câblage',
-    bool sessionNavigation = false,
-    String? initialSelectedElementId,
-    CircuitState? initialCircuit,
-    F9UserRole role = F9UserRole.teacher,
-    ElectroSimTpSessionController? tpSessionController,
-    ElectroSimPersistenceController? persistenceController,
-    ElectroSimLanSyncClient? syncClient,
-    VoidCallback? onSessionDashboard,
-    VoidCallback? onSessionManage,
-  }) : super(
-          entryLabel: entryLabel,
-          initialWorkspace: initialWorkspace,
-          sessionNavigation: sessionNavigation,
-          initialSelectedElementId: initialSelectedElementId,
-          initialCircuit: initialCircuit,
-          role: role,
-          tpSessionController: tpSessionController,
-          persistenceController: persistenceController,
-          syncClient: syncClient,
-          onSessionDashboard: onSessionDashboard,
-          onSessionManage: onSessionManage,
-        );
+    super.entryLabel = 'Centre de conception',
+    super.initialWorkspace = 'Câblage',
+    super.sessionNavigation = false,
+    super.initialSelectedElementId,
+    super.initialCircuit,
+    super.role = F9UserRole.teacher,
+    super.tpSessionController,
+    super.persistenceController,
+    super.syncClient,
+    super.onSessionDashboard,
+    super.onSessionManage,
+  });
 }
 
 class F18WorkspacePage extends StatefulWidget {

@@ -80,3 +80,63 @@ jobs:
           echo F18_MAGICPATH_PARITY_SCOPE_PASS
       - name: Stage 1 gate
         run: echo F18_MAGICPATH_PARITY_STAGE1_PASS
+
+
+  capture-magicpath-references:
+    name: Capture qualified MagicPath previews
+    needs: parity-stage-1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download immutable reference previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p references
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/dd9d576f-23b2-4959-b009-8c2d02b778c9.png' -o references/01_home_desktop.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/fd6cc932-ca25-43e9-a7b3-f7b1ea98ca64.png' -o references/02_foundations_design_tokens.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/9f86a146-51c7-4d1f-81b3-3407f6720aae.png' -o references/03_core_ui_library.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/40835404-cd55-4bf0-94e0-223267a7d540.png' -o references/04_electrical_visual_language_v2.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/7cd578a6-05a4-4d64-b732-576813e1db7e.png' -o references/05_workspace_desktop.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/5679d921-ccf6-4aa5-910e-f0fb574dc1d6.png' -o references/06_workspace_compact.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/760492e0-7f5f-4e24-bbc1-58cd6d362164.png' -o references/07_troubleshooting_student.png
+          curl -fL --retry 3 'https://storage.googleapis.com/storage.magicpath.ai/component-previews/d0e742b7-f63b-4980-b7fc-76b873b0fd01.png' -o references/08_wire_architecture_g2a.png
+          file references/*.png
+          sha256sum references/*.png > references/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: F18_MAGICPATH_QUALIFIED_REFERENCES
+          path: references
+          if-no-files-found: error
+          retention-days: 30
+
+  build-macos-candidate:
+    name: Build macOS parity candidate
+    needs: parity-stage-1
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build release application
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter config --enable-macos-desktop
+          cd apps/electrosim
+          flutter pub get
+          flutter build macos --release
+          APP="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP"
+          mkdir -p ../../dist
+          ditto -c -k --keepParent "$APP" ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip
+          shasum -a 256 ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip > ../../dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: F18_MAGICPATH_PARITY_STAGE1_MAC
+          path: |
+            dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip
+            dist/ElectroSim-F18-MagicPath-Parity-Stage1-Mac.zip.sha256
+          if-no-files-found: error

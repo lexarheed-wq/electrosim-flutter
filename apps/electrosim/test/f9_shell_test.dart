@@ -322,7 +322,12 @@ void main() {
     await tester.tap(find.byKey(const Key('diagnostic-tab')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('student-diagnostic-panel')), findsOneWidget);
-    expect(find.byKey(const Key('diagnostic-symptom')), findsOneWidget);
+    expect(
+      find.byKey(const Key('diagnostic-location-circuit-de-commande')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('diagnostic-suspect')), findsOneWidget);
+    expect(find.byKey(const Key('diagnostic-evidence')), findsOneWidget);
   });
 
   testWidgets('keyboard selector provides an alternative to pointer-only selection', (WidgetTester tester) async {

@@ -1583,6 +1583,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   CircuitVisualLayout _layoutForCircuit(CircuitState circuit) {
+    if (circuit.circuitId.value == 'f18-workspace-demo' &&
+        circuit.sources.any((SourceInstance item) => item.id.value == 'source-24v') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 'breaker-1') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 'switch-1') &&
+        circuit.components.any((ComponentInstance item) => item.id.value == 'lamp-1')) {
+      final CircuitVisualLayout magicPathDemo = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'source-24v': Offset(168, 288),
+          'breaker-1': Offset(336, 288),
+          'switch-1': Offset(504, 288),
+          'lamp-1': Offset(672, 288),
+        },
+        elementSizes: const <String, Size>{
+          'source-24v': Size(76, 76),
+          'breaker-1': Size(68, 78),
+          'switch-1': Size(76, 66),
+          'lamp-1': Size(66, 66),
+        },
+        defaultElementSize: const Size(76, 66),
+      );
+      return _routeWithG2A(circuit, magicPathDemo);
+    }
+
     final Map<String, Offset> positions = <String, Offset>{};
     final List<String> ids = <String>[
       ...circuit.sources.map((SourceInstance item) => item.id.value),
@@ -2189,6 +2212,18 @@ CircuitState _buildDemoCircuit() {
     role: TerminalRole.negative,
     phase: PhaseTag.dcNegative,
   );
+  final Terminal breakerIn = Terminal(
+    id: TerminalId('breaker-in'),
+    name: '1',
+    role: TerminalRole.input,
+    phase: PhaseTag.dcPositive,
+  );
+  final Terminal breakerOut = Terminal(
+    id: TerminalId('breaker-out'),
+    name: '2',
+    role: TerminalRole.output,
+    phase: PhaseTag.dcPositive,
+  );
   final Terminal switchIn = Terminal(
     id: TerminalId('switch-in'),
     name: '1',
@@ -2228,6 +2263,15 @@ CircuitState _buildDemoCircuit() {
     ],
     components: <ComponentInstance>[
       ComponentInstance(
+        id: ComponentId('breaker-1'),
+        modelType: 'breaker',
+        terminals: <Terminal>[breakerIn, breakerOut],
+        controlState: const <String, Object?>{
+          'closed': true,
+          'tripped': false,
+        },
+      ),
+      ComponentInstance(
         id: ComponentId('switch-1'),
         modelType: 'switch',
         terminals: <Terminal>[switchIn, switchOut],
@@ -2244,17 +2288,23 @@ CircuitState _buildDemoCircuit() {
       Connection(
         id: ConnectionId('wire-1'),
         fromTerminalId: sourcePositive.id,
-        toTerminalId: switchIn.id,
+        toTerminalId: breakerIn.id,
         phase: PhaseTag.dcPositive,
       ),
       Connection(
         id: ConnectionId('wire-2'),
+        fromTerminalId: breakerOut.id,
+        toTerminalId: switchIn.id,
+        phase: PhaseTag.dcPositive,
+      ),
+      Connection(
+        id: ConnectionId('wire-3'),
         fromTerminalId: switchOut.id,
         toTerminalId: lampIn.id,
         phase: PhaseTag.dcPositive,
       ),
       Connection(
-        id: ConnectionId('wire-3'),
+        id: ConnectionId('wire-4'),
         fromTerminalId: lampOut.id,
         toTerminalId: sourceNegative.id,
         phase: PhaseTag.dcNegative,

@@ -66,10 +66,23 @@ void main() {
       ).first;
       final Size canvasSize = tester.getSize(canvasPaint);
 
-      expect(screenBounds.left, greaterThanOrEqualTo(46));
-      expect(screenBounds.top, greaterThanOrEqualTo(46));
-      expect(screenBounds.right, lessThanOrEqualTo(canvasSize.width - 46));
-      expect(screenBounds.bottom, lessThanOrEqualTo(canvasSize.height - 46));
+      const double magicPathSafetyInset = 24;
+      expect(
+        screenBounds.left,
+        greaterThanOrEqualTo(magicPathSafetyInset),
+      );
+      expect(
+        screenBounds.top,
+        greaterThanOrEqualTo(magicPathSafetyInset),
+      );
+      expect(
+        screenBounds.right,
+        lessThanOrEqualTo(canvasSize.width - magicPathSafetyInset),
+      );
+      expect(
+        screenBounds.bottom,
+        lessThanOrEqualTo(canvasSize.height - magicPathSafetyInset),
+      );
       expect(canvas.elementVisualPainter, isNotNull);
       expect(canvas.showElementLabels, isFalse);
     },

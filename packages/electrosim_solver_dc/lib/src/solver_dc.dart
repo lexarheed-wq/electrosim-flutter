@@ -365,6 +365,7 @@ final class SolverDC {
           }
         case 'switch':
         case 'switch_spst':
+        case 'breaker':
           final Object? rawClosed = component.controlState['closed'];
           if (rawClosed is! bool) {
             diagnostics.add(

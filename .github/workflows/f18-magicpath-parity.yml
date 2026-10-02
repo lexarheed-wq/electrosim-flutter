@@ -185,6 +185,7 @@ jobs:
           test -f apps/electrosim/test/_capture/03_flutter_workspace_compact.png
           test -f apps/electrosim/test/_capture/04_flutter_troubleshooting_student.png
           test -f apps/electrosim/test/_capture/05_flutter_component_gallery.png
+          test -f apps/electrosim/test/_capture/06_flutter_component_states.png
           file apps/electrosim/test/_capture/*.png
           sha256sum apps/electrosim/test/_capture/*.png > apps/electrosim/test/_capture/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4

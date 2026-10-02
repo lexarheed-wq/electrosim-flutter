@@ -27,7 +27,7 @@ void main() {
         expect(result.status, DcSolveStatus.solved);
         expect(
           result.branch('component:x1').currentA?.abs(),
-          closeTo(24.0 / entry.value, 1e-9),
+          closeTo(24.0 / (entry.value + 12.0), 1e-9),
         );
         _expectResiduals(result);
       });

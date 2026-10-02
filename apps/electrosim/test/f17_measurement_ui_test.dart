@@ -48,8 +48,8 @@ void main() {
 
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'diode');
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('palette-quick-add-diode')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('palette-quick-add-diode')));
+    expect(find.byKey(const Key('palette-item-diode')), findsOneWidget);
+    await tester.doubleTap(find.byKey(const Key('palette-item-diode')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Mesures'));

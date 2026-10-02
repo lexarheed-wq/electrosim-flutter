@@ -8,6 +8,7 @@ enum DcBranchKind {
   resistor,
   idealSwitch,
   idealShort,
+  idealProtection,
   voltageSource,
   currentSource,
   openCircuit,

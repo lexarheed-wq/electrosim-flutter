@@ -174,6 +174,23 @@ abstract final class F18MagicPathViewportFitter {
   }
 }
 
+String f18ReferenceDesignator(String elementId, String modelType) {
+  final String id = elementId.toLowerCase();
+  final String type = modelType.toLowerCase();
+  if (id.contains('source') || type.contains('voltage_source')) return 'G1';
+  if (id.contains('breaker') || type.contains('breaker')) return 'QF1';
+  if (id.contains('fuse') || type.contains('fuse')) return 'F1';
+  if (id.contains('switch') || type.contains('switch')) return 'S1';
+  if (id.contains('push') || type.contains('push_button')) return 'S2';
+  if (id.contains('lamp') || type.contains('lamp')) return 'H1';
+  if (id.contains('motor') || type.contains('motor')) return 'M1';
+  if (id.contains('meter') || type.contains('meter')) return 'X1';
+  final String compact = elementId
+      .replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+      .toUpperCase();
+  return compact.length <= 5 ? compact : compact.substring(0, 5);
+}
+
 String f18DisplayNameForModel(String modelType) {
   final String type = modelType.toLowerCase();
   if (type.contains('dc_voltage_source') || type == 'source_dc') {
@@ -290,7 +307,7 @@ void paintF18MagicPathCanvasElement(
 
   final TextPainter label = TextPainter(
     text: TextSpan(
-      text: f18DisplayNameForModel(modelType),
+      text: f18ReferenceDesignator(elementId, modelType),
       style: TextStyle(
         color: ElectroSimColors.textPrimary,
         fontSize: (11 * viewportScale).clamp(9, 12).toDouble(),
@@ -309,4 +326,253 @@ void paintF18MagicPathCanvasElement(
       screenRect.bottom - label.height - 1,
     ),
   );
+}
+
+
+class F18CircuitZoneOverlay extends StatelessWidget {
+  const F18CircuitZoneOverlay({
+    super.key,
+    required this.circuit,
+    required this.layout,
+    required this.viewport,
+    required this.title,
+  });
+
+  final CircuitState circuit;
+  final CircuitVisualLayout layout;
+  final ViewportController viewport;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: viewport,
+        builder: (BuildContext context, Widget? child) {
+          final Rect world = F18MagicPathViewportFitter.contentBounds(
+            circuit: circuit,
+            layout: layout,
+          ).inflate(52);
+          final Rect screen = Rect.fromLTRB(
+            world.left * viewport.scale + viewport.translation.dx,
+            world.top * viewport.scale + viewport.translation.dy,
+            world.right * viewport.scale + viewport.translation.dx,
+            world.bottom * viewport.scale + viewport.translation.dy,
+          );
+          return Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Positioned.fromRect(
+                rect: screen,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFFD7E0EA),
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: screen.left + 18,
+                top: screen.top + 12,
+                child: Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF7B8DA3),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .9,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class F18CanvasToolbar extends StatelessWidget {
+  const F18CanvasToolbar({
+    super.key,
+    required this.onRecenter,
+    required this.onStatus,
+  });
+
+  final VoidCallback onRecenter;
+  final ValueChanged<String> onStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: ElectroSimColors.surfaceElevated,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFD7E0EA)),
+          borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            IconButton(
+              tooltip: 'Annuler',
+              onPressed: () => onStatus('Historique : aucune action à annuler.'),
+              iconSize: 17,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.undo),
+            ),
+            IconButton(
+              tooltip: 'Rétablir',
+              onPressed: () => onStatus('Historique : aucune action à rétablir.'),
+              iconSize: 17,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.redo),
+            ),
+            const SizedBox(
+              height: 22,
+              child: VerticalDivider(width: 10),
+            ),
+            IconButton(
+              tooltip: 'Recentrer',
+              onPressed: onRecenter,
+              iconSize: 17,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.center_focus_strong),
+            ),
+            const SizedBox(
+              height: 22,
+              child: VerticalDivider(width: 10),
+            ),
+            TextButton.icon(
+              onPressed: () => onStatus(
+                'Mode câblage : sélectionnez deux bornes compatibles.',
+              ),
+              icon: const Icon(Icons.cable, size: 16),
+              label: const Text('Câbler'),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                foregroundColor: ElectroSimColors.primary,
+                backgroundColor: const Color(0xFFEFF4FF),
+                textStyle: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class F18SelectionToolbar extends StatelessWidget {
+  const F18SelectionToolbar({
+    super.key,
+    required this.onRotate,
+    required this.onDelete,
+  });
+
+  final VoidCallback? onRotate;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: ElectroSimColors.surfaceElevated,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.only(left: 12, right: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFD7E0EA)),
+          borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Text(
+              '1 sélection',
+              style: TextStyle(
+                color: ElectroSimColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(
+              height: 22,
+              child: VerticalDivider(width: 14),
+            ),
+            IconButton(
+              key: const Key('workspace-rotate-action'),
+              tooltip: 'Rotation 90°',
+              onPressed: onRotate,
+              iconSize: 17,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.rotate_right_outlined),
+            ),
+            TextButton.icon(
+              key: const Key('workspace-delete-action'),
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline, size: 16),
+              label: const Text('Supprimer'),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                foregroundColor: ElectroSimColors.danger,
+                textStyle: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class F18ZoomChip extends StatelessWidget {
+  const F18ZoomChip({
+    super.key,
+    required this.viewport,
+  });
+
+  final ViewportController viewport;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: viewport,
+      builder: (BuildContext context, Widget? child) {
+        final int percent = (viewport.scale * 100).round();
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+          decoration: BoxDecoration(
+            color: ElectroSimColors.surfaceElevated,
+            border: Border.all(color: const Color(0xFFD7E0EA)),
+            borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+          ),
+          child: Text(
+            '$percent%',
+            style: const TextStyle(
+              color: ElectroSimColors.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

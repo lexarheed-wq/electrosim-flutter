@@ -198,7 +198,7 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     final Finder item = find.byKey(const Key('palette-item-resistor'));
-    final Finder dropRegion = find.byKey(const Key('f9-canvas-drop-region'));
+    final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
     expect(item, findsOneWidget);
     expect(dropRegion, findsOneWidget);
 

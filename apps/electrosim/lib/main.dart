@@ -515,6 +515,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 : null,
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
+            studentTroubleshooting:
+                widget.role == F9UserRole.student &&
+                    _workspace == 'Recherche de dérangement',
+            studentSubtitle:
+                _tpController.session?.definition.title ??
+                    'TP 04 · Circuit d’éclairage 24 V',
+            studentSessionLabel:
+                _tpController.session?.definition.id.value ?? 'LOCAL',
             simulationMode: _simulationMode,
             onModeChanged: (bool simulation) {
               setState(() {
@@ -1789,6 +1797,9 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onManageSession,
     required this.onSave,
     required this.onOpen,
+    required this.studentTroubleshooting,
+    required this.studentSubtitle,
+    required this.studentSessionLabel,
     required this.simulationMode,
     required this.onModeChanged,
     required this.onRecenter,
@@ -1802,6 +1813,9 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onManageSession;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
+  final bool studentTroubleshooting;
+  final String studentSubtitle;
+  final String studentSessionLabel;
   final bool simulationMode;
   final ValueChanged<bool> onModeChanged;
   final VoidCallback onRecenter;
@@ -1814,6 +1828,104 @@ class _WorkspaceTopBar extends StatelessWidget {
         builder: (BuildContext context, BoxConstraints constraints) {
           final bool compact =
               constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          if (studentTroubleshooting) {
+            return SizedBox(
+              height: ElectroSimGeometry.desktopTopBarHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: <Widget>[
+                    _F18TopBarIconButton(
+                      key: const Key('session-home-action'),
+                      tooltip: 'Retour',
+                      onPressed: onHome,
+                      icon: Icons.arrow_back,
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: ElectroSimColors.primaryStrong,
+                        borderRadius:
+                            BorderRadius.circular(ElectroSimRadii.compact),
+                      ),
+                      child: const Icon(
+                        Icons.electrical_services_outlined,
+                        size: 20,
+                        color: ElectroSimColors.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'Recherche de dérangement',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: ElectroSimColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            studentSubtitle.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: ElectroSimColors.textSecondary,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: .5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 108),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: ElectroSimColors.surfaceMuted,
+                        border: Border.all(color: const Color(0xFFD7E0EA)),
+                        borderRadius:
+                            BorderRadius.circular(ElectroSimRadii.panel),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'ÉLÈVE',
+                            style: TextStyle(
+                              color: ElectroSimColors.textSecondary,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            'Session $studentSessionLabel',
+                            style: const TextStyle(
+                              color: ElectroSimColors.textPrimary,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           return SizedBox(
             height: compact
                 ? ElectroSimGeometry.compactTopBarHeight

@@ -425,6 +425,9 @@ class F18CanvasToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool compact =
+        MediaQuery.sizeOf(context).width <
+            ElectroSimBreakpoints.compactUpperBound;
     return Material(
       color: ElectroSimColors.surfaceElevated,
       elevation: 2,
@@ -457,34 +460,64 @@ class F18CanvasToolbar extends StatelessWidget {
               height: 22,
               child: VerticalDivider(width: 10),
             ),
-            IconButton(
-              tooltip: 'Recentrer',
-              onPressed: onRecenter,
-              iconSize: 17,
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.center_focus_strong),
-            ),
-            const SizedBox(
-              height: 22,
-              child: VerticalDivider(width: 10),
-            ),
-            TextButton.icon(
-              onPressed: () => onStatus(
-                'Mode câblage : sélectionnez deux bornes compatibles.',
+            if (compact)
+              Container(
+                width: 36,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF4FF),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: IconButton(
+                  tooltip: 'Câbler',
+                  onPressed: () => onStatus(
+                    'Mode câblage : sélectionnez deux bornes compatibles.',
+                  ),
+                  padding: EdgeInsets.zero,
+                  iconSize: 16,
+                  color: ElectroSimColors.primary,
+                  icon: const Icon(Icons.cable),
+                ),
+              )
+            else ...<Widget>[
+              IconButton(
+                tooltip: 'Alignement',
+                onPressed: () => onStatus(
+                  'Aide d’alignement active sur la grille du Canvas.',
+                ),
+                iconSize: 17,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.straighten_outlined),
               ),
-              icon: const Icon(Icons.cable, size: 16),
-              label: const Text('Câbler'),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 34),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                foregroundColor: ElectroSimColors.primary,
-                backgroundColor: const Color(0xFFEFF4FF),
-                textStyle: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              IconButton(
+                tooltip: 'Recentrer',
+                onPressed: onRecenter,
+                iconSize: 17,
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.center_focus_strong),
+              ),
+              const SizedBox(
+                height: 22,
+                child: VerticalDivider(width: 10),
+              ),
+              TextButton.icon(
+                onPressed: () => onStatus(
+                  'Mode câblage : sélectionnez deux bornes compatibles.',
+                ),
+                icon: const Icon(Icons.cable, size: 16),
+                label: const Text('Câbler'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  foregroundColor: ElectroSimColors.primary,
+                  backgroundColor: const Color(0xFFEFF4FF),
+                  textStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -530,29 +563,31 @@ class F18SelectionToolbar extends StatelessWidget {
               height: 22,
               child: VerticalDivider(width: 14),
             ),
-            IconButton(
+            TextButton.icon(
               key: const Key('workspace-rotate-action'),
-              tooltip: 'Rotation 90°',
               onPressed: onRotate,
-              iconSize: 17,
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.rotate_right_outlined),
+              icon: const Icon(Icons.rotate_right_outlined, size: 16),
+              label: const Text('Rotation'),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                foregroundColor: ElectroSimColors.primary,
+                textStyle: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            IconButton(
+            TextButton.icon(
               key: const Key('workspace-delete-action'),
-              tooltip: 'Supprimer la sélection',
               onPressed: onDelete,
-              iconSize: 16,
-              visualDensity: VisualDensity.compact,
-              color: ElectroSimColors.danger,
-              icon: const Icon(Icons.delete_outline),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Text(
-                'Supprimer',
-                style: TextStyle(
-                  color: ElectroSimColors.danger,
+              icon: const Icon(Icons.delete_outline, size: 16),
+              label: const Text('Supprimer'),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                foregroundColor: ElectroSimColors.danger,
+                textStyle: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                 ),

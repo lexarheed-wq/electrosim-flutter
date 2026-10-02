@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:electrosim/f18_magicpath_parity.dart';
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -107,6 +108,33 @@ void main() {
     expect(canvas.elementVisualPainter, isNotNull);
     expect(canvas.showElementLabels, isFalse);
   });
+
+  test(
+    'default troubleshooting session is the qualified MagicPath TP04',
+    () {
+      final ElectroSimTpSessionController controller =
+          ElectroSimTpSessionController();
+      controller.createDraft();
+      controller.publish();
+      controller.startStudent();
+
+      final CircuitState circuit = controller.session!.studentCircuit;
+      expect(controller.tpId.value, 'TP04-F18');
+      expect(controller.title, 'TP 04 · Circuit d’éclairage 24 V');
+      expect(circuit.circuitId.value, 'fault-f18-lighting-004');
+      expect(
+        circuit.components.map((ComponentInstance item) => item.id.value),
+        containsAll(<String>['qf1', 's1', 'h1']),
+      );
+      expect(
+        circuit.components
+            .singleWhere((ComponentInstance item) => item.id.value == 's1')
+            .condition,
+        ComponentCondition.openCircuit,
+      );
+      controller.dispose();
+    },
+  );
 
   test('canvas product labels never expose raw technical model identifiers', () {
     expect(f18DisplayNameForModel('dc_voltage_source'), 'Source CC');

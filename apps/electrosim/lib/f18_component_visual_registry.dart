@@ -1798,10 +1798,7 @@ abstract final class F18ComponentVisualRegistry {
           -math.pi / 2,
           math.pi,
           false,
-          _stroke(
-            active ? const Color(0xFF2F8E57) : accent,
-            1.2,
-          ),
+          _stroke(accent, 1.2),
         );
       }
     }

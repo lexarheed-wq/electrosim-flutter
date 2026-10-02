@@ -27,16 +27,30 @@ final class CircuitGeometryIndex {
           'Canvas requires globally unique source/component visual IDs; duplicate: $id',
         );
       }
-      final Offset? base = previewPositions[id] ?? layout.positionOf(id);
-      if (base == null) {
+      final Offset? center = previewPositions[id] ?? layout.positionOf(id);
+      if (center == null) {
         return;
       }
-      final Size size = layout.sizeOf(id);
-      final Rect rect = Rect.fromCenter(center: base, width: size.width, height: size.height);
+      final Size baseSize = layout.sizeOf(id);
+      final int quarterTurns = layout.quarterTurnsOf(id);
+      final Size displaySize = quarterTurns.isOdd
+          ? Size(baseSize.height, baseSize.width)
+          : baseSize;
+      final Rect rect = Rect.fromCenter(
+        center: center,
+        width: displaySize.width,
+        height: displaySize.height,
+      );
       elementRects[id] = rect;
       for (var index = 0; index < terminals.length; index++) {
         final Terminal terminal = terminals[index];
-        terminalPositions[terminal.id] = _terminalPosition(rect, index, terminals.length);
+        final Offset local = _terminalOffset(
+          baseSize,
+          index,
+          terminals.length,
+        );
+        terminalPositions[terminal.id] =
+            center + _rotateQuarterTurns(local, quarterTurns);
         terminalOwners[terminal.id] = id;
       }
     }
@@ -66,7 +80,12 @@ final class CircuitGeometryIndex {
   final Map<TerminalId, Offset> terminalPositions;
   final Map<TerminalId, String> terminalOwners;
 
-  static Offset _terminalPosition(Rect rect, int index, int count) {
+  static Offset _terminalOffset(Size size, int index, int count) {
+    final Rect rect = Rect.fromCenter(
+      center: Offset.zero,
+      width: size.width,
+      height: size.height,
+    );
     if (count <= 1) {
       return Offset(rect.right, rect.center.dy);
     }
@@ -86,10 +105,32 @@ final class CircuitGeometryIndex {
     final int ring = index ~/ 4;
     final double inset = 10.0 + ring * 8.0;
     return switch (side) {
-      0 => Offset(rect.left, (rect.top + inset).clamp(rect.top, rect.bottom).toDouble()),
-      1 => Offset(rect.right, (rect.top + inset).clamp(rect.top, rect.bottom).toDouble()),
-      2 => Offset((rect.left + inset).clamp(rect.left, rect.right).toDouble(), rect.top),
-      _ => Offset((rect.left + inset).clamp(rect.left, rect.right).toDouble(), rect.bottom),
+      0 => Offset(
+          rect.left,
+          (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
+        ),
+      1 => Offset(
+          rect.right,
+          (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
+        ),
+      2 => Offset(
+          (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
+          rect.top,
+        ),
+      _ => Offset(
+          (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
+          rect.bottom,
+        ),
     };
   }
+
+  static Offset _rotateQuarterTurns(Offset offset, int quarterTurns) {
+    return switch (quarterTurns % 4) {
+      0 => offset,
+      1 => Offset(-offset.dy, offset.dx),
+      2 => Offset(-offset.dx, -offset.dy),
+      _ => Offset(offset.dy, -offset.dx),
+    };
+  }
+
 }

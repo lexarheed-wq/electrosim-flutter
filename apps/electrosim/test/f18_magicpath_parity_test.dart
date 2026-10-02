@@ -87,6 +87,14 @@ void main() {
       );
       expect(canvas.elementVisualPainter, isNotNull);
       expect(canvas.showElementLabels, isFalse);
+      expect(canvas.preserveCommittedWireRoutes, isTrue);
+      expect(
+        canvas.layout.routeFor('wire-4'),
+        orderedEquals(const <Offset>[
+          Offset(705, 392),
+          Offset(130, 392),
+        ]),
+      );
     },
   );
 

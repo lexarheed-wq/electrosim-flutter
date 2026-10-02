@@ -1910,7 +1910,9 @@ class _WorkspaceTopBar extends StatelessWidget {
                               ? (workspace == 'Câblage'
                                   ? 'CC · 24 V'
                                   : workspace)
-                              : entryLabel.toUpperCase(),
+                              : (entryLabel.startsWith('Centre de')
+                                  ? workspace
+                                  : entryLabel.toUpperCase()),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style:
@@ -2317,10 +2319,7 @@ CircuitState _buildDemoCircuit() {
       SourceInstance(
         id: SourceId('source-24v'),
         modelType: 'dc_voltage_source',
-        // Canvas geometry assigns the first two terminals to left/right.
-        // The qualified MagicPath source sends the positive branch to the
-        // right and returns the negative branch on the left/bottom loop.
-        terminals: <Terminal>[sourceNegative, sourcePositive],
+        terminals: <Terminal>[sourcePositive, sourceNegative],
         parameters: const <String, Object?>{'voltageV': 24.0},
       ),
     ],

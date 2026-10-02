@@ -221,13 +221,6 @@ class _PropertiesPanel extends StatelessWidget {
               icon: const Icon(Icons.swap_horiz),
               label: const Text('Remplacer…'),
             ),
-          const SizedBox(height: ElectroSimSpacing.xs),
-          OutlinedButton.icon(
-            key: const Key('properties-delete-element'),
-            onPressed: onDeleteSelected,
-            icon: const Icon(Icons.delete_outline),
-            label: const Text('Supprimer du circuit'),
-          ),
         ],
         const SizedBox(height: ElectroSimSpacing.lg),
         Text('Activité', style: Theme.of(context).textTheme.labelLarge),

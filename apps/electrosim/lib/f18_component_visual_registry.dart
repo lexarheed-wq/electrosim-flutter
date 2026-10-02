@@ -685,35 +685,90 @@ abstract final class F18ComponentVisualRegistry {
   static void _paintPushButton(Canvas canvas, Rect rect, Color accent) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .82,
-      height: rect.height * .86,
+      width: rect.width * .78,
+      height: rect.height * .88,
     );
-    final RRect rr =
+    final RRect outer =
         RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .10));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFCCD6E0));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8192A4), 1));
+    _shadow(canvas, outer);
+    canvas.drawRRect(
+      outer,
+      _gradient(
+        b,
+        const <Color>[
+          Color(0xFFF1F4F5),
+          Color(0xFFCAD5DA),
+          Color(0xFF9AABB3),
+        ],
+      ),
+    );
+    canvas.drawRRect(outer, _stroke(const Color(0xFF5D7078), 1.15));
 
     final Offset c = Offset(b.center.dx, b.top + b.height * .34);
-    canvas.drawCircle(c, b.shortestSide * .22, Paint()..color = const Color(0xFFCC3C2F));
-    canvas.drawCircle(c, b.shortestSide * .22, _stroke(const Color(0xFF8D251D), 1.2));
+    final double bezel = b.shortestSide * .25;
     canvas.drawCircle(
-      Offset(c.dx - b.width * .05, c.dy - b.height * .05),
-      b.shortestSide * .055,
+      c,
+      bezel,
+      _radial(
+        Rect.fromCircle(center: c, radius: bezel),
+        const <Color>[
+          Color(0xFF697980),
+          Color(0xFF28373D),
+        ],
+      ),
+    );
+    final double buttonR = bezel * .73;
+    canvas.drawCircle(
+      c,
+      buttonR,
+      _radial(
+        Rect.fromCircle(center: c, radius: buttonR),
+        const <Color>[
+          Color(0xFFFF786F),
+          Color(0xFFD64039),
+          Color(0xFF8E201C),
+        ],
+        stops: const <double>[0, .55, 1],
+      ),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(c.dx - buttonR * .25, c.dy - buttonR * .28),
+        width: buttonR * .50,
+        height: buttonR * .24,
+      ),
       Paint()..color = const Color(0x55FFFFFF),
     );
 
-    final Rect block = Rect.fromLTWH(
-      b.left + b.width * .18,
-      b.top + b.height * .62,
-      b.width * .64,
+    final Rect contactBlock = Rect.fromLTWH(
+      b.left + b.width * .17,
+      b.top + b.height * .65,
+      b.width * .66,
       b.height * .22,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(block, const Radius.circular(3)),
-      Paint()..color = const Color(0xFFF4F6F8),
+      RRect.fromRectAndRadius(contactBlock, const Radius.circular(4)),
+      _gradient(
+        contactBlock,
+        const <Color>[
+          Color(0xFFF8F9F9),
+          Color(0xFFDDE4E6),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
     );
-    _tiny(canvas, 'NO', block.center, b.height * .08);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(contactBlock, const Radius.circular(4)),
+      _stroke(const Color(0xFF89989D), .9),
+    );
+    _tiny(
+      canvas,
+      '13   14',
+      contactBlock.center,
+      b.height * .075,
+      color: const Color(0xFF39494F),
+    );
   }
 
   static void _paintLamp(Canvas canvas, Rect rect, Color accent, {required bool active, required bool fault}) {
@@ -996,36 +1051,68 @@ abstract final class F18ComponentVisualRegistry {
   }
 
   static void _paintResistor(Canvas canvas, Rect rect, Color accent) {
-    final Rect b = Rect.fromCenter(
+    final Rect body = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .88,
-      height: rect.height * .44,
+      width: rect.width * .62,
+      height: rect.height * .36,
     );
+    final Paint lead = _stroke(const Color(0xFF697B86), 1.6);
     canvas.drawLine(
       Offset(rect.left + 2, rect.center.dy),
-      Offset(b.left, rect.center.dy),
-      _stroke(const Color(0xFF52677B), 1.4),
+      Offset(body.left, rect.center.dy),
+      lead,
     );
     canvas.drawLine(
-      Offset(b.right, rect.center.dy),
+      Offset(body.right, rect.center.dy),
       Offset(rect.right - 2, rect.center.dy),
-      _stroke(const Color(0xFF52677B), 1.4),
+      lead,
     );
+
     final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.height * .45));
+        RRect.fromRectAndRadius(body, Radius.circular(body.height * .48));
     _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFE4C58E));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF9B7640), 1));
+    canvas.drawRRect(
+      rr,
+      _gradient(
+        body,
+        const <Color>[
+          Color(0xFFF4DEAF),
+          Color(0xFFD4AA63),
+          Color(0xFFA97939),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    );
+    canvas.drawRRect(rr, _stroke(const Color(0xFF8A6231), 1));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          body.left + body.width * .08,
+          body.top + body.height * .10,
+          body.width * .84,
+          body.height * .20,
+        ),
+        Radius.circular(body.height * .10),
+      ),
+      Paint()..color = const Color(0x44FFFFFF),
+    );
+
     const List<Color> bands = <Color>[
-      Color(0xFF6B3E1E),
-      Color(0xFF111827),
-      Color(0xFFD92D20),
-      Color(0xFFD4A72C),
+      Color(0xFF70401F),
+      Color(0xFF15191C),
+      Color(0xFFD83A31),
+      Color(0xFFD6AA2C),
     ];
     for (var i = 0; i < bands.length; i++) {
-      final double x = b.left + b.width * (.24 + i * .15);
+      final double x = body.left + body.width * (.22 + i * .17);
       canvas.drawRect(
-        Rect.fromLTWH(x, b.top + 2, math.max(2, b.width * .035), b.height - 4),
+        Rect.fromLTWH(
+          x,
+          body.top + body.height * .05,
+          math.max(2, body.width * .045),
+          body.height * .90,
+        ),
         Paint()..color = bands[i],
       );
     }
@@ -1034,114 +1121,297 @@ abstract final class F18ComponentVisualRegistry {
   static void _paintFuse(Canvas canvas, Rect rect, Color accent) {
     final Rect tube = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .76,
-      height: rect.height * .30,
+      width: rect.width * .72,
+      height: rect.height * .34,
     );
-    final RRect glass =
-        RRect.fromRectAndRadius(tube, Radius.circular(tube.height * .45));
-    _shadow(canvas, glass);
-    canvas.drawRRect(glass, Paint()..color = const Color(0xFFE9F3F6));
-    canvas.drawRRect(glass, _stroke(const Color(0xFF8AA1B1), 1));
-    final double cap = tube.width * .14;
-    canvas.drawRect(
-      Rect.fromLTWH(tube.left, tube.top, cap, tube.height),
-      Paint()..color = const Color(0xFF8797A6),
+    final double capW = tube.width * .15;
+    final Rect glass = Rect.fromLTWH(
+      tube.left + capW * .72,
+      tube.top,
+      tube.width - capW * 1.44,
+      tube.height,
     );
-    canvas.drawRect(
-      Rect.fromLTWH(tube.right - cap, tube.top, cap, tube.height),
-      Paint()..color = const Color(0xFF8797A6),
+    final RRect glassR =
+        RRect.fromRectAndRadius(glass, Radius.circular(glass.height * .48));
+    _shadow(canvas, glassR);
+    canvas.drawRRect(
+      glassR,
+      _gradient(
+        glass,
+        const <Color>[
+          Color(0xFFF9FFFF),
+          Color(0xFFDCECEF),
+          Color(0xFFAEC4CA),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
     );
-    canvas.drawLine(
-      Offset(tube.left + cap, tube.center.dy),
-      Offset(tube.right - cap, tube.center.dy),
-      _stroke(const Color(0xFFB7791F), 1.2),
-    );
+    canvas.drawRRect(glassR, _stroke(const Color(0xFF76909A), 1));
+
+    for (final Rect cap in <Rect>[
+      Rect.fromLTWH(tube.left, tube.top, capW, tube.height),
+      Rect.fromLTWH(tube.right - capW, tube.top, capW, tube.height),
+    ]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cap, Radius.circular(cap.height * .16)),
+        _gradient(
+          cap,
+          const <Color>[
+            Color(0xFFDCE4E8),
+            Color(0xFF748692),
+            Color(0xFFBAC7CE),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cap, Radius.circular(cap.height * .16)),
+        _stroke(const Color(0xFF596C77), .9),
+      );
+    }
+
+    final double y = tube.center.dy;
+    final Path wire = Path()
+      ..moveTo(glass.left + glass.width * .05, y)
+      ..lineTo(glass.center.dx - glass.width * .10, y - glass.height * .10)
+      ..lineTo(glass.center.dx + glass.width * .10, y + glass.height * .10)
+      ..lineTo(glass.right - glass.width * .05, y);
+    canvas.drawPath(wire, _stroke(const Color(0xFFC37A23), 1.25));
   }
 
   static void _paintBuzzer(Canvas canvas, Rect rect, Color accent) {
     final Offset c = rect.center;
-    final double r = rect.shortestSide * .36;
-    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF273746));
-    canvas.drawCircle(c, r, _stroke(const Color(0xFF0F172A), 1.1));
-    canvas.drawCircle(c, r * .42, Paint()..color = const Color(0xFF111820));
-    for (var i = 0; i < 8; i++) {
-      final double a = math.pi * 2 * i / 8;
+    final double r = rect.shortestSide * .37;
+    final Rect disk = Rect.fromCircle(center: c, radius: r);
+    canvas.drawCircle(
+      c,
+      r,
+      _radial(
+        disk,
+        const <Color>[
+          Color(0xFF5D6C75),
+          Color(0xFF27333B),
+          Color(0xFF10171C),
+        ],
+        stops: const <double>[0, .62, 1],
+      ),
+    );
+    canvas.drawCircle(c, r, _stroke(const Color(0xFF0B1014), 1.2));
+    canvas.drawCircle(
+      Offset(c.dx - r * .24, c.dy - r * .26),
+      r * .16,
+      Paint()..color = const Color(0x22FFFFFF),
+    );
+    final double holeR = r * .055;
+    for (var i = 0; i < 10; i++) {
+      final double a = math.pi * 2 * i / 10;
       final Offset p = Offset(
-        c.dx + math.cos(a) * r * .68,
-        c.dy + math.sin(a) * r * .68,
+        c.dx + math.cos(a) * r * .60,
+        c.dy + math.sin(a) * r * .60,
       );
-      canvas.drawCircle(p, r * .055, Paint()..color = const Color(0xFF8AA0B2));
+      canvas.drawCircle(p, holeR, Paint()..color = const Color(0xFF0B1115));
     }
+    canvas.drawCircle(c, r * .16, Paint()..color = const Color(0xFF0B1115));
+    _tiny(
+      canvas,
+      '+',
+      Offset(c.dx + r * .52, c.dy + r * .52),
+      r * .28,
+      color: const Color(0xFFD9E0E4),
+    );
   }
 
   static void _paintDiode(Canvas canvas, Rect rect, Color accent) {
-    final Rect b = Rect.fromCenter(
+    final Rect body = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .68,
-      height: rect.height * .32,
+      width: rect.width * .58,
+      height: rect.height * .31,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(b, Radius.circular(b.height * .48));
-    _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFF222A32));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF0F172A), 1));
-    canvas.drawRect(
-      Rect.fromLTWH(
-        b.right - b.width * .23,
-        b.top,
-        b.width * .07,
-        b.height,
-      ),
-      Paint()..color = const Color(0xFFE8E8E8),
-    );
+    final Paint lead = _stroke(const Color(0xFF6D7D86), 1.5);
     canvas.drawLine(
       Offset(rect.left + 2, rect.center.dy),
-      Offset(b.left, rect.center.dy),
-      _stroke(const Color(0xFF697C8E), 1.2),
+      Offset(body.left, rect.center.dy),
+      lead,
     );
     canvas.drawLine(
-      Offset(b.right, rect.center.dy),
+      Offset(body.right, rect.center.dy),
       Offset(rect.right - 2, rect.center.dy),
-      _stroke(const Color(0xFF697C8E), 1.2),
+      lead,
+    );
+    final RRect rr =
+        RRect.fromRectAndRadius(body, Radius.circular(body.height * .48));
+    _shadow(canvas, rr);
+    canvas.drawRRect(
+      rr,
+      _gradient(
+        body,
+        const <Color>[
+          Color(0xFF4A545B),
+          Color(0xFF171D21),
+          Color(0xFF050709),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    );
+    canvas.drawRRect(rr, _stroke(const Color(0xFF050607), 1));
+    canvas.drawRect(
+      Rect.fromLTWH(
+        body.right - body.width * .22,
+        body.top,
+        body.width * .075,
+        body.height,
+      ),
+      _gradient(
+        body,
+        const <Color>[
+          Color(0xFFF4F4F2),
+          Color(0xFFB8BEC0),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          body.left + body.width * .08,
+          body.top + body.height * .10,
+          body.width * .66,
+          body.height * .16,
+        ),
+        Radius.circular(body.height * .08),
+      ),
+      Paint()..color = const Color(0x35FFFFFF),
     );
   }
 
   static void _paintMotor(Canvas canvas, Rect rect, Color accent, {required bool active}) {
     final Rect body = Rect.fromCenter(
-      center: Offset(rect.center.dx - rect.width * .04, rect.center.dy),
-      width: rect.width * .68,
-      height: rect.height * .72,
+      center: Offset(rect.center.dx - rect.width * .05, rect.center.dy),
+      width: rect.width * .67,
+      height: rect.height * .70,
     );
     final RRect rr =
-        RRect.fromRectAndRadius(body, Radius.circular(body.height * .22));
+        RRect.fromRectAndRadius(body, Radius.circular(body.height * .20));
     _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFF9EAFBF));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF667A8E), 1.1));
-    for (var i = 0; i < 5; i++) {
-      final double x = body.left + body.width * (.18 + i * .13);
-      canvas.drawLine(
-        Offset(x, body.top + body.height * .12),
-        Offset(x, body.bottom - body.height * .12),
-        _stroke(const Color(0xFF788B9E), 1),
+    canvas.drawRRect(
+      rr,
+      _gradient(
+        body,
+        const <Color>[
+          Color(0xFFC8D3DB),
+          Color(0xFF8095A5),
+          Color(0xFF506676),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
+    );
+    canvas.drawRRect(rr, _stroke(const Color(0xFF415768), 1.1));
+
+    final Rect endCap = Rect.fromLTWH(
+      body.left - body.width * .04,
+      body.top + body.height * .08,
+      body.width * .15,
+      body.height * .84,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(endCap, Radius.circular(endCap.width * .40)),
+      _gradient(
+        endCap,
+        const <Color>[
+          Color(0xFFA9B9C4),
+          Color(0xFF617787),
+        ],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ),
+    );
+
+    for (var i = 0; i < 6; i++) {
+      final double x = body.left + body.width * (.17 + i * .11);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            x,
+            body.top + body.height * .10,
+            body.width * .035,
+            body.height * .80,
+          ),
+          const Radius.circular(1),
+        ),
+        Paint()..color = const Color(0xFF5C7384),
       );
     }
+
+    final Rect terminalBox = Rect.fromLTWH(
+      body.left + body.width * .28,
+      body.top - body.height * .12,
+      body.width * .34,
+      body.height * .20,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(terminalBox, const Radius.circular(3)),
+      _gradient(
+        terminalBox,
+        const <Color>[
+          Color(0xFFBCC9D1),
+          Color(0xFF708492),
+        ],
+      ),
+    );
+    _screw(
+      canvas,
+      Offset(
+        terminalBox.left + terminalBox.width * .28,
+        terminalBox.center.dy,
+      ),
+      terminalBox.shortestSide * .12,
+    );
+    _screw(
+      canvas,
+      Offset(
+        terminalBox.right - terminalBox.width * .28,
+        terminalBox.center.dy,
+      ),
+      terminalBox.shortestSide * .12,
+    );
+
     final Rect shaft = Rect.fromLTWH(
       body.right,
-      body.center.dy - body.height * .07,
-      rect.right - body.right - 2,
-      body.height * .14,
+      body.center.dy - body.height * .065,
+      math.max(4, rect.right - body.right - 3),
+      body.height * .13,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(shaft, const Radius.circular(2)),
-      Paint()..color = const Color(0xFF6E7E8C),
+      _gradient(
+        shaft,
+        const <Color>[
+          Color(0xFFE0E6EA),
+          Color(0xFF758591),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ),
     );
-    _tiny(canvas, 'M', body.center, body.height * .28, color: const Color(0xFFF8FAFC));
+
+    _tiny(
+      canvas,
+      'M',
+      body.center,
+      body.height * .27,
+      color: const Color(0xFFF6FAFC),
+    );
     canvas.drawCircle(
       Offset(body.left + body.width * .16, body.bottom - body.height * .14),
       body.shortestSide * .035,
       Paint()..color = active
-          ? const Color(0xFF36A65F)
-          : const Color(0xFF7F8D96),
+          ? const Color(0xFF4AD476)
+          : const Color(0xFF71818B),
     );
   }
 
@@ -1243,39 +1513,110 @@ abstract final class F18ComponentVisualRegistry {
   static void _paintRelay(Canvas canvas, Rect rect, Color accent, {required bool active}) {
     final Rect b = Rect.fromCenter(
       center: rect.center,
-      width: rect.width * .82,
-      height: rect.height * .72,
+      width: rect.width * .84,
+      height: rect.height * .74,
     );
     final RRect rr =
         RRect.fromRectAndRadius(b, Radius.circular(b.shortestSide * .08));
     _shadow(canvas, rr);
-    canvas.drawRRect(rr, Paint()..color = const Color(0xFFDDE5EC));
-    canvas.drawRRect(rr, _stroke(const Color(0xFF8293A5), 1));
-    final Rect coil = Rect.fromLTWH(
-      b.left + b.width * .12,
-      b.top + b.height * .24,
-      b.width * .36,
-      b.height * .50,
+    canvas.drawRRect(
+      rr,
+      _gradient(
+        b,
+        const <Color>[
+          Color(0xFFF2F5F6),
+          Color(0xFFCBD7DB),
+          Color(0xFFA1B1B7),
+        ],
+      ),
     );
-    for (var i = 0; i < 5; i++) {
-      final double x = coil.left + coil.width * i / 4;
+    canvas.drawRRect(rr, _stroke(const Color(0xFF61747B), 1.1));
+
+    final Rect window = Rect.fromLTWH(
+      b.left + b.width * .10,
+      b.top + b.height * .16,
+      b.width * .56,
+      b.height * .66,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(window, const Radius.circular(4)),
+      Paint()..color = const Color(0x553F5964),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(window, const Radius.circular(4)),
+      _stroke(const Color(0xFF7A8C93), .8),
+    );
+
+    final Rect coil = Rect.fromLTWH(
+      window.left + window.width * .08,
+      window.top + window.height * .22,
+      window.width * .48,
+      window.height * .54,
+    );
+    for (var i = 0; i < 7; i++) {
+      final double x = coil.left + coil.width * i / 6;
       canvas.drawArc(
         Rect.fromCenter(
           center: Offset(x, coil.center.dy),
-          width: coil.width * .28,
-          height: coil.height * .75,
+          width: coil.width * .20,
+          height: coil.height * .78,
         ),
         -math.pi / 2,
         math.pi,
         false,
-        _stroke(accent, 1.2),
+        _stroke(
+          active ? const Color(0xFFD69032) : const Color(0xFFA06B2B),
+          1.1,
+        ),
       );
     }
+
+    final Paint contactPaint = _stroke(
+      active ? const Color(0xFF39A861) : const Color(0xFF4B5D64),
+      1.3,
+    );
+    final Offset pivot = Offset(
+      window.left + window.width * .67,
+      window.center.dy,
+    );
+    canvas.drawCircle(pivot, b.shortestSide * .035, Paint()..color = contactPaint.color);
+    canvas.drawLine(
+      pivot,
+      Offset(
+        window.right - window.width * .08,
+        window.center.dy + (active ? 0 : -window.height * .20),
+      ),
+      contactPaint,
+    );
+
+    final Rect label = Rect.fromLTWH(
+      b.right - b.width * .27,
+      b.top + b.height * .20,
+      b.width * .18,
+      b.height * .50,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(label, const Radius.circular(3)),
+      Paint()..color = const Color(0xFFF7F9FA),
+    );
     _tiny(
       canvas,
-      'A1  A2',
-      Offset(b.right - b.width * .24, b.center.dy),
+      'K1',
+      label.center,
       b.height * .10,
+      color: const Color(0xFF3B4B51),
+    );
+    _tiny(
+      canvas,
+      'A1',
+      Offset(b.left + b.width * .08, b.bottom - b.height * .06),
+      b.height * .055,
+    );
+    _tiny(
+      canvas,
+      'A2',
+      Offset(b.right - b.width * .08, b.bottom - b.height * .06),
+      b.height * .055,
     );
   }
 

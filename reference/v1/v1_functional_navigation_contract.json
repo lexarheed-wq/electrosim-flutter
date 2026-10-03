@@ -1,0 +1,118 @@
+{
+  "contract_version": "1.0.0",
+  "scope": "functional_navigation",
+  "theme_policy": "current_flutter_theme_is_allowed; V1 colors/ornamentation are not acceptance criteria for this contract",
+  "source": {
+    "kind": "screen_recording",
+    "file_name": "Enregistrement de l’écran 2026-10-03 à 18.59.51.mov",
+    "sha256": "5727d0e521d04590c3c3ffdca3c054f64e481d3aac6617858bb527681abde704",
+    "duration_seconds": 118.05,
+    "frame_width": 2880,
+    "frame_height": 1800
+  },
+  "canonical_states": [
+    {
+      "id": "HOME",
+      "timestamp_seconds": 0,
+      "frame_sha256": "acbffa71d5d68ffa1c07645c3b10e44e443327c0164f17f9e4af759c037ee027",
+      "purpose": "Global entry point",
+      "required_affordances": ["create_session", "open_maintenance_center", "open_design_center"]
+    },
+    {
+      "id": "CREATE_SESSION_DIALOG",
+      "timestamp_seconds": 8,
+      "frame_sha256": "33656d2a9ebc3204cdf7e611b919d7d65b7c08add1850a7a4ac76395067b899e",
+      "purpose": "Create/configure a teacher session before entering the pedagogical space",
+      "required_affordances": ["session_name_or_class_configuration", "create_session", "cancel_or_close"]
+    },
+    {
+      "id": "WAITING_ROOM",
+      "timestamp_seconds": 16,
+      "frame_sha256": "2fb6108e7a25211fc86e7584dc0ab8da948e2fbc2191f6b200c1b42766233f21",
+      "purpose": "Expose the active session joining information and connected-student state",
+      "required_affordances": ["session_join_code_or_qr", "connected_students", "advance_session_flow", "close"]
+    },
+    {
+      "id": "TEACHER_DASHBOARD",
+      "timestamp_seconds": 24,
+      "frame_sha256": "139dd1959476197aad3b9cff29c7318f8deadbde91ef67d6ca744b6821610d84",
+      "purpose": "Central teacher navigation hub for an active session",
+      "required_affordances": ["home", "dashboard", "manage_session", "open_cabling", "open_fault_diagnosis", "open_supervision", "session_status"]
+    },
+    {
+      "id": "CABLING_ACTIVITY_SETUP",
+      "timestamp_seconds": 32,
+      "frame_sha256": "6ac2274961575956b4f336bd4a4b7373d3fb0f256a0d7e0ba954e35df5590a78",
+      "purpose": "Configure a cabling activity before launch/publication",
+      "required_affordances": ["return_to_dashboard", "choose_or_prepare_circuit", "configure_activity", "create_or_publish_activity"]
+    },
+    {
+      "id": "SUPERVISION",
+      "timestamp_seconds": 40,
+      "frame_sha256": "cc20841c193e02f0364ea390c0f3d61f7fd7e8b33b186f04d788349b5e8742e2",
+      "purpose": "Monitor students and activity progress from the teacher session",
+      "required_affordances": ["return_to_dashboard", "student_progress_summary", "activity_status", "session_status"]
+    },
+    {
+      "id": "MAINTENANCE_CENTER",
+      "timestamp_seconds": 48,
+      "frame_sha256": "a8d48dfc9ee5cd6e8b3c3bd0bf8b51a123e8c4950079f2a937503f4ff09a4511",
+      "purpose": "Entry hub for maintenance/fault-finding workflows",
+      "required_affordances": ["fault_library", "fault_search", "student_situation_validation", "home"]
+    },
+    {
+      "id": "STUDENT_SITUATION_VALIDATION",
+      "timestamp_seconds": 52,
+      "frame_sha256": "7d870319f5d5c5cabe03415833a8662c8f7b0fbdfb1eb6a2f7bb7b2018303303",
+      "purpose": "Select a reference circuit and fault for a student validation scenario",
+      "required_affordances": ["return_to_maintenance_center", "choose_reference_circuit", "choose_fault", "launch_or_validate_scenario"]
+    },
+    {
+      "id": "DESIGN_CENTER",
+      "timestamp_seconds": 64,
+      "frame_sha256": "964734ef5a7fe8111dc88104b7997f4b3d6ecbabf347c6f9b0479093e4a8f677",
+      "purpose": "Entry hub for healthy-circuit design workflows",
+      "required_affordances": ["scheme_library", "prepare_activity", "home"]
+    },
+    {
+      "id": "WORKSHOP",
+      "timestamp_seconds": 84,
+      "frame_sha256": "18943c143196ccb773d0d67cec2956959c7160af9c6c9f8338195e29fc2ebf81",
+      "purpose": "Circuit construction/simulation workspace",
+      "required_affordances": ["component_palette", "canvas", "workspace_tools", "component_or_circuit_properties", "save_to_library", "quit_workshop"]
+    }
+  ],
+  "observed_transitions": [
+    {"from": "HOME", "action": "create_session", "to": "CREATE_SESSION_DIALOG"},
+    {"from": "CREATE_SESSION_DIALOG", "action": "create_session", "to": "WAITING_ROOM"},
+    {"from": "WAITING_ROOM", "action": "advance_session_flow", "to": "TEACHER_DASHBOARD"},
+    {"from": "TEACHER_DASHBOARD", "action": "open_cabling", "to": "CABLING_ACTIVITY_SETUP"},
+    {"from": "CABLING_ACTIVITY_SETUP", "action": "return_to_dashboard", "to": "TEACHER_DASHBOARD"},
+    {"from": "TEACHER_DASHBOARD", "action": "open_supervision", "to": "SUPERVISION"},
+    {"from": "SUPERVISION", "action": "return_to_dashboard", "to": "TEACHER_DASHBOARD"},
+    {"from": "HOME", "action": "open_maintenance_center", "to": "MAINTENANCE_CENTER"},
+    {"from": "MAINTENANCE_CENTER", "action": "student_situation_validation", "to": "STUDENT_SITUATION_VALIDATION"},
+    {"from": "STUDENT_SITUATION_VALIDATION", "action": "return_to_maintenance_center", "to": "MAINTENANCE_CENTER"},
+    {"from": "HOME", "action": "open_design_center", "to": "DESIGN_CENTER"},
+    {"from": "DESIGN_CENTER", "action": "prepare_activity_or_open_scheme", "to": "WORKSHOP"},
+    {"from": "WORKSHOP", "action": "quit_workshop", "to": "DESIGN_CENTER"},
+    {"from": "DESIGN_CENTER", "action": "home", "to": "HOME"}
+  ],
+  "visible_but_not_exercised_in_recording": [
+    {"state": "TEACHER_DASHBOARD", "action": "manage_session"},
+    {"state": "TEACHER_DASHBOARD", "action": "open_fault_diagnosis"},
+    {"state": "MAINTENANCE_CENTER", "action": "fault_library"},
+    {"state": "MAINTENANCE_CENTER", "action": "fault_search"},
+    {"state": "DESIGN_CENTER", "action": "scheme_library"}
+  ],
+  "acceptance_rules": [
+    "The Flutter application may keep its current visual theme.",
+    "Every canonical state must be reachable without dead-end navigation.",
+    "Observed transitions must preserve their semantic destination.",
+    "A back/return/quit action must return to the semantic parent shown by V1.",
+    "Teacher-session navigation must not collapse unrelated actions into the simulator.",
+    "Opening an activity configuration screen must not bypass directly to the workshop unless V1 does so for that action.",
+    "The workshop must remain a child of a design/activity flow and must provide an explicit exit path.",
+    "Visible-but-not-exercised actions are required entry points but are not assigned unobserved destination behavior by this contract."
+  ]
+}

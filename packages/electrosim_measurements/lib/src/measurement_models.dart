@@ -1,6 +1,6 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-enum MeasurementKind { voltageDc, currentDc, resistance }
+enum MeasurementKind { voltageDc, currentDc, resistance, voltageAcRms, currentAcRms, frequency }
 
 enum MeasurementStatus { valid, invalid }
 
@@ -43,6 +43,24 @@ final class MeasurementRequest {
         kind: MeasurementKind.resistance,
         componentId: componentId,
       );
+
+  factory MeasurementRequest.voltageAcRms({
+    required TerminalId positiveProbe,
+    required TerminalId negativeProbe,
+  }) => MeasurementRequest._(
+    kind: MeasurementKind.voltageAcRms,
+    positiveProbe: positiveProbe,
+    negativeProbe: negativeProbe,
+  );
+
+  factory MeasurementRequest.currentAcRms({required String branchId}) =>
+      MeasurementRequest._(
+        kind: MeasurementKind.currentAcRms,
+        branchId: branchId,
+      );
+
+  factory MeasurementRequest.frequency() =>
+      const MeasurementRequest._(kind: MeasurementKind.frequency);
 
   final MeasurementKind kind;
   final TerminalId? positiveProbe;

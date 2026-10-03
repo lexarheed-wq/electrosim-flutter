@@ -368,26 +368,59 @@ class _StudentActionCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(ElectroSimSpacing.lg),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, size: 42, color: ElectroSimColors.primary),
-            const SizedBox(width: ElectroSimSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: ElectroSimSpacing.xs),
-                  Text(description),
-                ],
-              ),
-            ),
-            const SizedBox(width: ElectroSimSpacing.md),
-            FilledButton(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final Widget copy = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: ElectroSimSpacing.xs),
+                Text(description),
+              ],
+            );
+            final Widget action = FilledButton(
               onPressed: enabled ? onPressed : null,
               child: const Text('Ouvrir'),
-            ),
-          ],
+            );
+
+            if (constraints.maxWidth < 440) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(
+                        icon,
+                        size: 42,
+                        color: ElectroSimColors.primary,
+                      ),
+                      const SizedBox(width: ElectroSimSpacing.md),
+                      Expanded(child: copy),
+                    ],
+                  ),
+                  const SizedBox(height: ElectroSimSpacing.md),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: action,
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: <Widget>[
+                Icon(icon, size: 42, color: ElectroSimColors.primary),
+                const SizedBox(width: ElectroSimSpacing.lg),
+                Expanded(child: copy),
+                const SizedBox(width: ElectroSimSpacing.md),
+                action,
+              ],
+            );
+          },
         ),
       ),
     );

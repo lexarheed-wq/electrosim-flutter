@@ -28,6 +28,8 @@ cd "$APP"
 cp pubspec.yaml "$TMP_ROOT/pubspec.electrosim.yaml"
 "$FLUTTER_BIN" create --platforms=macos --project-name electrosim . >/dev/null
 cp "$TMP_ROOT/pubspec.electrosim.yaml" pubspec.yaml
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos --check
 
 if [ -f test/widget_test.dart ] && grep -q "MyApp" test/widget_test.dart; then
   rm -f test/widget_test.dart

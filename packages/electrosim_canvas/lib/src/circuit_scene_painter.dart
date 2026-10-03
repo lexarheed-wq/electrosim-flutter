@@ -18,6 +18,7 @@ final class CircuitScenePainter extends CustomPainter {
     this.previewPositions = const <String, Offset>{},
     this.wirePreviewPlanner,
     this.smartWireSemantics = false,
+    this.paintElementChrome = true,
   });
 
   final CircuitState circuit;
@@ -29,6 +30,7 @@ final class CircuitScenePainter extends CustomPainter {
   final Map<String, Offset> previewPositions;
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool smartWireSemantics;
+  final bool paintElementChrome;
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -60,9 +62,11 @@ final class CircuitScenePainter extends CustomPainter {
     if (semantics != null) {
       _paintNonJunctionCrossingGaps(canvas, semantics);
     }
-    _paintSources(canvas, geometry);
-    _paintComponents(canvas, geometry);
-    _paintTerminals(canvas, geometry, semantics);
+    if (paintElementChrome) {
+      _paintSources(canvas, geometry);
+      _paintComponents(canvas, geometry);
+      _paintTerminals(canvas, geometry, semantics);
+    }
     _paintWiringPreview(canvas, geometry);
   }
 

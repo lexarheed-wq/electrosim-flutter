@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 
 import 'dart:html' as html;
 
@@ -264,7 +264,7 @@ class _StudentHubPage extends StatelessWidget {
         ),
       );
     }
-    final bool tpAvailable = controller.hasSession;
+    final bool tpAvailable = controller.hasSession &&\n        controller.lifecycle?.name != 'draft';
     return Scaffold(
       key: const Key('student-web-hub-page'),
       backgroundColor: ElectroSimColors.background,

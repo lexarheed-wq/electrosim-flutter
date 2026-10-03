@@ -27,6 +27,10 @@ on:
     branches:
       - v1-parity
 
+concurrency:
+  group: v1-parity-point3-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

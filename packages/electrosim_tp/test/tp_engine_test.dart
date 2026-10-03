@@ -128,4 +128,21 @@ void main() {
     });
 
   });
+    test('M10 cancellation closes a non-submitted activity without fabricating an evaluation', () {
+      final TpEngine engine = TpEngine(faultScenarios: scenarios);
+      final TpDefinition def = TpDefinition.troubleshooting(
+        id: TpId('TP-RD-CANCEL'),
+        title: 'Cancel',
+        scenarioId: FaultScenarioId('FAULT-DC-001'),
+      );
+      engine.createDraft(def);
+      engine.publish(def.id);
+      engine.start(def.id);
+      final TpSession cancelled = engine.cancel(def.id);
+      expect(cancelled.lifecycle, TpLifecycle.closed);
+      expect(cancelled.evaluation, isNull);
+      expect(cancelled.readOnly, isTrue);
+      expect(() => engine.submit(def.id), throwsStateError);
+    });
+
 }

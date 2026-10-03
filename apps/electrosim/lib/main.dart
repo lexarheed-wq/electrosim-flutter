@@ -474,6 +474,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _workspace = 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fitCircuitToViewport();
+      }
+    });
   }
 
   @override
@@ -512,7 +517,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 canTransformSelection ? _rotateSelectedElement : null,
             onDeleteSelected:
                 canTransformSelection ? _deleteSelectedElement : null,
-            onRecenter: () => _viewport.reset(translation: const Offset(40, 40)),
+            onRecenter: _fitCircuitToViewport,
           ),
           palette: F9ComponentPalette(
             onStatus: _setStatus,
@@ -1209,7 +1214,57 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _viewport.reset(scale: _viewport.scale, translation: bounded);
   }
 
-  void _clampCurrentViewport() => _setBoundedViewportTranslation(_viewport.translation);
+  void _clampCurrentViewport() =>
+      _setBoundedViewportTranslation(_viewport.translation);
+
+  void _fitCircuitToViewport() {
+    final Size size = _canvasViewportSize();
+    if (size.isEmpty) {
+      return;
+    }
+    final CircuitGeometryIndex geometry =
+        CircuitGeometryIndex.build(_circuit, _layout);
+    if (geometry.elementRects.isEmpty) {
+      _viewport.reset(scale: 1, translation: const Offset(40, 40));
+      return;
+    }
+
+    Rect bounds = geometry.elementRects.values.first;
+    for (final Rect rect in geometry.elementRects.values.skip(1)) {
+      bounds = bounds.expandToInclude(rect);
+    }
+    for (final Connection connection in _circuit.connections) {
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
+      if (start == null || end == null) {
+        continue;
+      }
+      for (final Offset point in <Offset>[
+        start,
+        ..._layout.routeFor(connection.id.value),
+        end,
+      ]) {
+        bounds = bounds.expandToInclude(Rect.fromCircle(
+          center: point,
+          radius: 1,
+        ));
+      }
+    }
+
+    bounds = bounds.inflate(56);
+    final double scaleX =
+        (size.width - 48).clamp(120.0, double.infinity) / bounds.width;
+    final double scaleY =
+        (size.height - 48).clamp(120.0, double.infinity) / bounds.height;
+    final double scale = math.min(scaleX, scaleY).clamp(0.75, 1.35).toDouble();
+    final Offset translation = Offset(
+      size.width / 2 - bounds.center.dx * scale,
+      size.height / 2 - bounds.center.dy * scale,
+    );
+    _viewport.reset(scale: scale, translation: translation);
+    _clampCurrentViewport();
+  }
 
   Size _canvasViewportSize() {
     final RenderObject? renderObject = _canvasDropKey.currentContext?.findRenderObject();

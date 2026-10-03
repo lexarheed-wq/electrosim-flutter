@@ -34,6 +34,12 @@ void main() {
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.text('Créer une nouvelle session'));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-create-dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('session-create-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-waiting-room-page')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('session-waiting-continue')));
+    await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('session-home-action')), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsOneWidget);
@@ -56,6 +62,10 @@ void main() {
 
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.text('Créer une nouvelle session'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-create-confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-waiting-continue')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('session-dashboard-action')));
     await tester.pumpAndSettle();
@@ -88,10 +98,17 @@ void main() {
     await tester.tap(find.byKey(const Key('maintenance-troubleshooting')));
     await tester.pumpAndSettle();
 
+    expect(
+      find.byKey(const Key('maintenance-troubleshooting-setup-page')),
+      findsOneWidget,
+    );
+    expect(find.byType(SimulatorCanvas), findsNothing);
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+    await tester.pumpAndSettle();
+
     expect(find.text('Recherche de dérangement'), findsWidgets);
-    expect(find.byKey(const Key('direct-entry-status')), findsOneWidget);
-    expect(find.text('Accès direct'), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsNothing);
+    expect(find.byKey(const Key('workspace-exit-action')), findsOneWidget);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
   });
 

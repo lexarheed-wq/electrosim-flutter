@@ -194,11 +194,12 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     int quarterTurns,
   ) {
     final Offset center = viewport.worldToScreen(worldRect.center);
-    final double scale = viewport.scale.clamp(0.65, 1.5).toDouble();
-    final double visualWidth = 46 * scale;
-    final double visualHeight = 32 * scale;
-    final Offset visualCenter =
-        Offset(center.dx, center.dy - (10 * scale));
+    final double scale = viewport.scale;
+    final double visualWidth =
+        (worldRect.width * scale * 0.92).clamp(64.0, 132.0).toDouble();
+    final double visualHeight =
+        (worldRect.height * scale * 0.84).clamp(42.0, 88.0).toDouble();
+    final Offset visualCenter = center;
     final Color color =
         active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
 

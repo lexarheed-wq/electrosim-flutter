@@ -1,4 +1,5 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
@@ -153,13 +154,19 @@ void main() {
       lessThanOrEqualTo(900),
     );
     expect(find.text('Voir tous les composants'), findsOneWidget);
-    expect(find.text('12 composants disponibles'), findsOneWidget);
+    expect(
+      find.text('${f9PaletteCatalog.length} composants disponibles'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('palette-show-all')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-show-all')), findsNothing);
     expect(find.textContaining('Voir moins'), findsNothing);
-    expect(find.text('12 composants disponibles'), findsOneWidget);
+    expect(
+      find.text('${f9PaletteCatalog.length} composants disponibles'),
+      findsOneWidget,
+    );
 
     await tester.enterText(
       find.byKey(const Key('palette-search-field')),

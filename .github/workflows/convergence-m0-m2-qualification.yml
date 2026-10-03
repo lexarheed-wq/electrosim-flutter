@@ -9,6 +9,7 @@ on:
       - 'packages/electrosim_domain/**'
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'
+      - 'packages/electrosim_diagnostics/**'
       - 'docs/convergence/**'
       - 'tools/test_convergence_*.py'
       - 'apps/electrosim/lib/f9_component_palette.dart'

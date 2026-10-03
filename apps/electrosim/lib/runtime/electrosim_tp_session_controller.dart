@@ -35,6 +35,20 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   TpLifecycle? get lifecycle => _session?.lifecycle;
   bool get readOnly => _session?.readOnly ?? false;
 
+  ElectroSimTpSessionController createStudentReplica() {
+    final ElectroSimTpSessionController replica =
+        ElectroSimTpSessionController(
+      catalog: _catalog,
+      tpIdValue: tpIdValue,
+      title: title,
+      scenarioId: _scenarioId.value,
+    );
+    if (_session != null) {
+      replica.restoreFromPersistenceJson(toPersistenceJson());
+    }
+    return replica;
+  }
+
   TpSession createDraft() {
     if (_session != null) {
       throw StateError('A TP session already exists.');

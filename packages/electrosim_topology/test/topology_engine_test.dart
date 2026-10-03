@@ -396,88 +396,6 @@ void main() {
     });
   });
 
-  group('TopologyGraph immutability', () {
-    test('public collections cannot be mutated', () {
-      final TopologyGraph graph = engine.compile(_simpleDcCircuit());
-
-      expect(() => graph.nodes.add(graph.nodes.first), throwsUnsupportedError);
-      expect(
-        () => graph.terminalToNode[TerminalId('src_p')] = 'tampered',
-        throwsUnsupportedError,
-      );
-      expect(
-        () => graph.componentNodeIds[ComponentId('r1')]!.add('tampered'),
-        throwsUnsupportedError,
-      );
-    });
-  });
-}
-
-CircuitState _simpleDcCircuit() => CircuitState(
-  circuitId: CircuitId('dc-simple'),
-  revision: 1,
-  mode: ElectricalMode.dc,
-  components: <ComponentInstance>[
-    ComponentInstance(
-      id: ComponentId('r1'),
-      modelType: 'resistor',
-      terminals: <Terminal>[
-        Terminal(id: TerminalId('r_a'), name: 'A'),
-        Terminal(id: TerminalId('r_b'), name: 'B'),
-      ],
-      parameters: <String, Object?>{'resistanceOhm': 12.0},
-    ),
-  ],
-  connections: <Connection>[
-    Connection(
-      id: ConnectionId('c1'),
-      fromTerminalId: TerminalId('src_p'),
-      toTerminalId: TerminalId('r_a'),
-      phase: PhaseTag.dcPositive,
-    ),
-    Connection(
-      id: ConnectionId('c2'),
-      fromTerminalId: TerminalId('src_n'),
-      toTerminalId: TerminalId('r_b'),
-      phase: PhaseTag.dcNegative,
-    ),
-  ],
-  sources: <SourceInstance>[
-    SourceInstance(
-      id: SourceId('src'),
-      modelType: 'dc_voltage_source',
-      terminals: <Terminal>[
-        Terminal(
-          id: TerminalId('src_p'),
-          name: '+',
-          role: TerminalRole.positive,
-          phase: PhaseTag.dcPositive,
-        ),
-        Terminal(
-          id: TerminalId('src_n'),
-          name: '-',
-          role: TerminalRole.negative,
-          phase: PhaseTag.dcNegative,
-        ),
-      ],
-      parameters: <String, Object?>{'voltageV': 24.0},
-    ),
-  ],
-);
-
-String _graphSignature(TopologyGraph graph) {
-  final String nodes = graph.nodes
-      .map(
-        (TopologyNode node) =>
-            '${node.id}=[${node.terminalIds.map((TerminalId id) => id.value).join(',')}]',
-      )
-      .join('|');
-  final String enabled = graph.enabledConnectionIds.map((ConnectionId id) => id.value).join(',');
-  final String findings = graph.findings
-      .map((TopologyFinding f) => '${f.code.name}:${f.nodeId ?? ''}:${f.connectionId?.value ?? ''}')
-      .join('|');
-  return '$nodes#$enabled#$findings';
-
   test('current-limited DC source direct short is warning not topology error', () {
     final CircuitState circuit = CircuitState(
       circuitId: CircuitId('limited-direct-short-topology'),
@@ -572,5 +490,88 @@ String _graphSignature(TopologyGraph graph) {
       isTrue,
     );
   });
+
+  group('TopologyGraph immutability', () {
+    test('public collections cannot be mutated', () {
+      final TopologyGraph graph = engine.compile(_simpleDcCircuit());
+
+      expect(() => graph.nodes.add(graph.nodes.first), throwsUnsupportedError);
+      expect(
+        () => graph.terminalToNode[TerminalId('src_p')] = 'tampered',
+        throwsUnsupportedError,
+      );
+      expect(
+        () => graph.componentNodeIds[ComponentId('r1')]!.add('tampered'),
+        throwsUnsupportedError,
+      );
+    });
+  });
+}
+
+CircuitState _simpleDcCircuit() => CircuitState(
+  circuitId: CircuitId('dc-simple'),
+  revision: 1,
+  mode: ElectricalMode.dc,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('r1'),
+      modelType: 'resistor',
+      terminals: <Terminal>[
+        Terminal(id: TerminalId('r_a'), name: 'A'),
+        Terminal(id: TerminalId('r_b'), name: 'B'),
+      ],
+      parameters: <String, Object?>{'resistanceOhm': 12.0},
+    ),
+  ],
+  connections: <Connection>[
+    Connection(
+      id: ConnectionId('c1'),
+      fromTerminalId: TerminalId('src_p'),
+      toTerminalId: TerminalId('r_a'),
+      phase: PhaseTag.dcPositive,
+    ),
+    Connection(
+      id: ConnectionId('c2'),
+      fromTerminalId: TerminalId('src_n'),
+      toTerminalId: TerminalId('r_b'),
+      phase: PhaseTag.dcNegative,
+    ),
+  ],
+  sources: <SourceInstance>[
+    SourceInstance(
+      id: SourceId('src'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        Terminal(
+          id: TerminalId('src_p'),
+          name: '+',
+          role: TerminalRole.positive,
+          phase: PhaseTag.dcPositive,
+        ),
+        Terminal(
+          id: TerminalId('src_n'),
+          name: '-',
+          role: TerminalRole.negative,
+          phase: PhaseTag.dcNegative,
+        ),
+      ],
+      parameters: <String, Object?>{'voltageV': 24.0},
+    ),
+  ],
+);
+
+String _graphSignature(TopologyGraph graph) {
+  final String nodes = graph.nodes
+      .map(
+        (TopologyNode node) =>
+            '${node.id}=[${node.terminalIds.map((TerminalId id) => id.value).join(',')}]',
+      )
+      .join('|');
+  final String enabled = graph.enabledConnectionIds.map((ConnectionId id) => id.value).join(',');
+  final String findings = graph.findings
+      .map((TopologyFinding f) => '${f.code.name}:${f.nodeId ?? ''}:${f.connectionId?.value ?? ''}')
+      .join('|');
+  return '$nodes#$enabled#$findings';
+
 
 }

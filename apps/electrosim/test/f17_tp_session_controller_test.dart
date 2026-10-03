@@ -11,7 +11,7 @@ void main() {
     expect(controller.createDraft().lifecycle, TpLifecycle.draft);
     expect(controller.publish().lifecycle, TpLifecycle.published);
 
-    final TpSession started = controller.startStudent();
+    final TpSession started = controller.startTeacher();
     expect(started.lifecycle, TpLifecycle.started);
     expect(started.diagnosticSheetVisibleFor(TpRole.student), isTrue);
 
@@ -39,6 +39,22 @@ void main() {
 
     expect(
       () => controller.updateStudentCircuit(started.studentCircuit),
+      throwsStateError,
+    );
+  });
+  test('M10 teacher can cancel a non-submitted TP and it becomes read-only', () {
+    final ElectroSimTpSessionController controller =
+        ElectroSimTpSessionController();
+    controller.createDraft();
+    controller.publish();
+    controller.startTeacher();
+
+    final TpSession cancelled = controller.cancelTeacher();
+    expect(cancelled.lifecycle, TpLifecycle.closed);
+    expect(cancelled.evaluation, isNull);
+    expect(cancelled.readOnly, isTrue);
+    expect(
+      () => controller.updateStudentCircuit(cancelled.studentCircuit),
       throwsStateError,
     );
   });

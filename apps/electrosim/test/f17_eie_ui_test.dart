@@ -23,7 +23,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('F17-R5 EIE exposes solver-backed open-branch evidence',
+  testWidgets('Post-M13 normally open switching device does not create false EIE anomaly',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -43,9 +43,10 @@ void main() {
     await tester.tap(find.text('EIE'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Anomalie étayée détectée'), findsOneWidget);
-    expect(find.byKey(const Key('eie-advice-openBranch')), findsOneWidget);
-    expect(find.text('Branche ouverte observée'), findsOneWidget);
+    expect(find.text('Aucune anomalie étayée'), findsOneWidget);
+    expect(find.byKey(const Key('eie-no-advice')), findsOneWidget);
+    expect(find.byKey(const Key('eie-advice-openBranch')), findsNothing);
+    expect(find.text('Branche ouverte observée'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

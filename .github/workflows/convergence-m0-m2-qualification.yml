@@ -8,6 +8,7 @@ on:
       - '.github/workflows/convergence-m0-m2-qualification.yml'
       - 'packages/electrosim_domain/**'
       - 'packages/electrosim_controls/**'
+      - 'packages/electrosim_protection/**'
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'
       - 'packages/electrosim_solver_ac/**'
@@ -109,6 +110,13 @@ jobs:
 
       - name: Electromechanical controls analyze and tests
         working-directory: packages/electrosim_controls
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Protection coordination analyze and tests
+        working-directory: packages/electrosim_protection
         run: |
           dart pub get
           dart analyze

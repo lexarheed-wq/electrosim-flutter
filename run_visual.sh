@@ -78,6 +78,11 @@ cp "$ROOT/apps/electrosim/pubspec.yaml" "$APP/pubspec.yaml"
 python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos
 python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos --check
 "$FLUTTER_BIN" pub get
+echo "Building offline ElectroSim student Web client..."
+rm -rf "$APP/build/student_web"
+"$FLUTTER_BIN" build web --release -t lib/student_web_main.dart
+mv "$APP/build/web" "$APP/build/student_web"
+export ELECTROSIM_STUDENT_WEB_ROOT="$APP/build/student_web"
 echo "Launching ElectroSim F9 FINAL. Source candidate remains untouched."
 echo "Flutter run keys: r=hot reload, R=hot restart, q=quit"
 "$FLUTTER_BIN" run -d macos

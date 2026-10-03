@@ -11,7 +11,7 @@ import 'ac1_solver_options.dart';
 final class SolverAC1 {
   const SolverAC1({this.options = const Ac1SolverOptions()});
 
-  static const String engineVersion = 'solver-ac1/0.2.0';
+  static const String engineVersion = 'solver-ac1/0.3.0';
 
   final Ac1SolverOptions options;
 
@@ -339,6 +339,15 @@ _CompiledAc1Model _compileModel(
     }
 
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    if (_compileElectromechanicalAc1(
+      component: component,
+      branches: topologyBranches,
+      frequencyHz: frequencyHz,
+      elements: elements,
+      diagnostics: diagnostics,
+    )) {
+      continue;
+    }
     if (topologyBranches.length != 1) {
       diagnostics.add(
         Ac1SolverDiagnostic(
@@ -582,6 +591,187 @@ _CompiledAc1Model _compileModel(
 
   return _CompiledAc1Model(elements, diagnostics.any(_isError));
 }
+
+
+bool _compileElectromechanicalAc1({
+  required ComponentInstance component,
+  required List<TopologyBranch> branches,
+  required double frequencyHz,
+  required List<_Ac1Element> elements,
+  required List<Ac1SolverDiagnostic> diagnostics,
+}) {
+  final bool isContactor = component.modelType == 'contactor_ac1';
+  final bool isAuxNo = component.modelType == 'contactor_aux_no';
+  final bool isAuxNc = component.modelType == 'contactor_aux_nc';
+  if (!isContactor && !isAuxNo && !isAuxNc) {
+    return false;
+  }
+
+  final Object? rawActuated = component.controlState['actuated'];
+  if (rawActuated != null && rawActuated is! bool) {
+    diagnostics.add(
+      Ac1SolverDiagnostic(
+        code: Ac1DiagnosticCode.invalidParameter,
+        severity: Ac1DiagnosticSeverity.error,
+        message:
+            'Electromechanical controlState.actuated must be boolean when provided.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+  final bool actuated = (rawActuated as bool?) ?? false;
+
+  if (component.condition != ComponentCondition.normal &&
+      component.condition != ComponentCondition.openCircuit &&
+      component.condition != ComponentCondition.disabled) {
+    diagnostics.add(
+      Ac1SolverDiagnostic(
+        code: Ac1DiagnosticCode.unsupportedComponentCondition,
+        severity: Ac1DiagnosticSeverity.error,
+        message:
+            'Unsupported AC1 electromechanical condition ${component.condition.name}.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  if (isAuxNo || isAuxNc) {
+    if (branches.length != 1) {
+      diagnostics.add(
+        Ac1SolverDiagnostic(
+          code: Ac1DiagnosticCode.invalidTerminalCount,
+          severity: Ac1DiagnosticSeverity.error,
+          message:
+              'Auxiliary contact ${component.id.value} must expose one topology branch.',
+          componentId: component.id,
+        ),
+      );
+      return true;
+    }
+    final TopologyBranch branch = branches.single;
+    final bool forcedOpen =
+        component.condition == ComponentCondition.openCircuit ||
+        component.condition == ComponentCondition.disabled;
+    final bool closed = !forcedOpen && (isAuxNo ? actuated : !actuated);
+    elements.add(
+      _Ac1Element(
+        id: _componentBranchElementId(component, branch, branches.length),
+        modelType: component.modelType,
+        kind: closed
+            ? _Ac1ElementKind.idealVoltage
+            : _Ac1ElementKind.impedance,
+        branchKind: Ac1BranchKind.contactorContact,
+        fromNodeId: branch.fromNodeId,
+        toNodeId: branch.toNodeId,
+        value: closed ? AcComplex.zero : const AcComplex(1e300, 0.0),
+        isOpen: !closed,
+      ),
+    );
+    return true;
+  }
+
+  final TopologyBranch? coil = _branchWithRole(
+    branches,
+    ElectricalBranchRole.controlCoil,
+  );
+  final List<TopologyBranch> powerPoles = branches
+      .where((TopologyBranch branch) =>
+          branch.role == ElectricalBranchRole.powerPole)
+      .toList(growable: false);
+  if (coil == null || powerPoles.length != 1 || branches.length != 2) {
+    diagnostics.add(
+      Ac1SolverDiagnostic(
+        code: Ac1DiagnosticCode.invalidTerminalCount,
+        severity: Ac1DiagnosticSeverity.error,
+        message:
+            'contactor_ac1 must expose one power pole and one control coil.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final double? coilResistance =
+      _positiveParameter(component.parameters, 'coilResistanceOhm');
+  final Object? inductanceRaw = component.parameters['coilInductanceH'];
+  final double coilInductance = inductanceRaw == null
+      ? 0.0
+      : inductanceRaw is num
+          ? inductanceRaw.toDouble()
+          : double.nan;
+  if (coilResistance == null ||
+      !coilInductance.isFinite ||
+      coilInductance < 0.0) {
+    diagnostics.add(
+      Ac1SolverDiagnostic(
+        code: Ac1DiagnosticCode.invalidParameter,
+        severity: Ac1DiagnosticSeverity.error,
+        message:
+            'contactor_ac1 requires coilResistanceOhm > 0 and optional coilInductanceH >= 0.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final bool forcedOpen =
+      component.condition == ComponentCondition.openCircuit ||
+      component.condition == ComponentCondition.disabled;
+  final double omega = 2.0 * math.pi * frequencyHz;
+  elements.add(
+    _Ac1Element(
+      id: _componentBranchElementId(component, coil, branches.length),
+      modelType: component.modelType,
+      kind: _Ac1ElementKind.impedance,
+      branchKind: Ac1BranchKind.controlCoil,
+      fromNodeId: coil.fromNodeId,
+      toNodeId: coil.toNodeId,
+      value: forcedOpen
+          ? const AcComplex(1e300, 0.0)
+          : AcComplex(coilResistance, omega * coilInductance),
+      isOpen: forcedOpen,
+    ),
+  );
+
+  final TopologyBranch pole = powerPoles.single;
+  final bool poleClosed = actuated && !forcedOpen;
+  elements.add(
+    _Ac1Element(
+      id: _componentBranchElementId(component, pole, branches.length),
+      modelType: component.modelType,
+      kind: poleClosed
+          ? _Ac1ElementKind.idealVoltage
+          : _Ac1ElementKind.impedance,
+      branchKind: Ac1BranchKind.contactorContact,
+      fromNodeId: pole.fromNodeId,
+      toNodeId: pole.toNodeId,
+      value: poleClosed ? AcComplex.zero : const AcComplex(1e300, 0.0),
+      isOpen: !poleClosed,
+    ),
+  );
+  return true;
+}
+
+TopologyBranch? _branchWithRole(
+  Iterable<TopologyBranch> branches,
+  ElectricalBranchRole role,
+) {
+  for (final TopologyBranch branch in branches) {
+    if (branch.role == role) return branch;
+  }
+  return null;
+}
+
+String _componentBranchElementId(
+  ComponentInstance component,
+  TopologyBranch branch,
+  int branchCount,
+) =>
+    branchCount == 1
+        ? 'component:${component.id.value}'
+        : 'component:${component.id.value}:${branch.branchId}';
 
 AcComplex? _componentImpedance(
   ComponentInstance component,
@@ -877,6 +1067,9 @@ const Set<String> _supportedAc1ComponentModels = <String>{
   'switch_spst',
   'breaker_ac1',
   'fuse_ac1',
+  'contactor_ac1',
+  'contactor_aux_no',
+  'contactor_aux_nc',
 };
 
 bool _isError(Ac1SolverDiagnostic diagnostic) => diagnostic.severity == Ac1DiagnosticSeverity.error;

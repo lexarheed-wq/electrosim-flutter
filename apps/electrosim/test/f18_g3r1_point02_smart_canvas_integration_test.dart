@@ -3,6 +3,23 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Future<void> _waitForClassroomQr(
+  WidgetTester tester, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  final Finder qr = find.byKey(const Key('session-waiting-qr'));
+  final Stopwatch stopwatch = Stopwatch()..start();
+  while (qr.evaluate().isEmpty) {
+    if (stopwatch.elapsed > timeout) {
+      fail('Timed out waiting for the classroom QR code.');
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+  }
+}
+
 Future<SimulatorCanvas> _openDesignWorkspace(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
@@ -52,6 +69,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('session-create-confirm')));
     await tester.pumpAndSettle();
+    await _waitForClassroomQr(tester);
     await tester.tap(find.byKey(const Key('session-waiting-continue')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dashboard-wiring')));

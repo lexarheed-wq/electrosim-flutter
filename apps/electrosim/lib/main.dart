@@ -147,25 +147,12 @@ class F9HomePage extends StatelessWidget {
           onHome: () => Navigator.of(routeContext).popUntil(
             (Route<dynamic> route) => route.isFirst,
           ),
-          onWiring: () => Navigator.of(routeContext).push(
-            MaterialPageRoute<void>(
-              settings: const RouteSettings(name: 'design-cabling-setup'),
-              builder: (BuildContext setupContext) => F18ActivitySetupPage(
-                pageKey: const Key('design-cabling-setup-page'),
-                title: 'Préparer une activité de câblage',
-                description:
-                    'Préparez l’activité avant d’ouvrir l’atelier de conception.',
-                parentLabel: 'centre de conception',
-                onBack: () => Navigator.of(setupContext).pop(),
-                onOpenWorkshop: () => _openWorkspace(
-                  setupContext,
-                  'Centre de conception',
-                  initialWorkspace: 'Câblage',
-                  persistenceController: persistenceController,
-                  parentRouteName: 'design-center',
-                ),
-              ),
-            ),
+          onWiring: () => _openWorkspace(
+            routeContext,
+            'Centre de conception',
+            initialWorkspace: 'Câblage',
+            persistenceController: persistenceController,
+            parentRouteName: 'design-center',
           ),
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(

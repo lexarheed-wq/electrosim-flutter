@@ -23,6 +23,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+    await tester.pumpAndSettle();
 
     final SimulatorCanvas canvas =
         tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));

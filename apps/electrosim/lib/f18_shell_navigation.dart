@@ -26,10 +26,10 @@ class F18DesignCenterPage extends StatelessWidget {
         _F18CenterAction(
           key: const Key('design-wiring'),
           icon: Icons.account_tree_outlined,
-          title: 'Câblage',
+          title: 'Préparer une activité',
           description:
-              'Construire et raccorder un circuit électrique dans le simulateur.',
-          actionLabel: 'Ouvrir le câblage',
+              'Créer un nouveau montage et ouvrir directement l’atelier de conception.',
+          actionLabel: 'Ouvrir l’atelier',
           onTap: onWiring,
         ),
         _F18CenterAction(

@@ -1,0 +1,177 @@
+name: V1 parity point 4 teacher TP supervision
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "apps/electrosim/lib/f17_tp_session_dialog.dart"
+      - "apps/electrosim/lib/f17_tp_supervision_panel.dart"
+      - "apps/electrosim/lib/f18_session_coordinator.dart"
+      - "apps/electrosim/lib/runtime/electrosim_lan_sync.dart"
+      - "apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart"
+      - "apps/electrosim/lib/point4_proof_main.dart"
+      - "apps/electrosim/test/f17_lan_sync_test.dart"
+      - "apps/electrosim/test/f17_diagnostic_supervision_test.dart"
+      - "apps/electrosim/test/f18_g3_session_dashboard_test.dart"
+      - "apps/electrosim/test/f18_point4_teacher_tp_supervision_test.dart"
+      - ".github/workflows/v1-parity-point4-teacher-tp-supervision.yml"
+  pull_request:
+    branches:
+      - v1-parity
+
+permissions:
+  contents: read
+
+jobs:
+  teacher-tp-supervision:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep "3.10.9"
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Run Point 4 targeted regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/point4
+          flutter test test/f18_point4_teacher_tp_supervision_test.dart 2>&1 |
+            tee ../../audit/point4/point4-teacher-tp-supervision.log
+          flutter test test/f17_lan_sync_test.dart 2>&1 |
+            tee ../../audit/point4/f17-lan-sync.log
+          flutter test test/f17_diagnostic_supervision_test.dart 2>&1 |
+            tee ../../audit/point4/f17-diagnostic-supervision.log
+          flutter test test/f18_g3_session_dashboard_test.dart 2>&1 |
+            tee ../../audit/point4/f18-g3-session-dashboard.log
+
+      - name: Upload targeted diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point4-targeted-logs
+          path: audit/point4
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run full application non-golden regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
+            xargs -0 flutter test 2>&1 |
+            tee ../../audit/point4/full-non-golden-regression.log
+
+      - name: Build Point 4 Chromium proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          flutter build web --release -t lib/point4_proof_main.dart 2>&1 |
+            tee ../../audit/point4/web-build.log
+          rm -rf ../../audit/point4/web
+          cp -R build/web ../../audit/point4/web
+
+      - name: Capture real Chromium Point 4 proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/point4/chromium
+          python3 -m http.server 8774 --directory ../../audit/point4/web             > ../../audit/point4/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8774/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8774/ >/dev/null
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$chrome" ]; then
+            echo "CHROMIUM_NOT_FOUND" >&2
+            exit 70
+          fi
+          "$chrome" --version |
+            tee ../../audit/point4/chromium/chromium-version.txt
+
+          screens=(manage-published manage-closed supervision)
+          for screen in "${screens[@]}"; do
+            out="../../audit/point4/chromium/${screen}.png"
+            timeout 45s "$chrome"               --headless=new               --no-sandbox               --disable-gpu               --disable-dev-shm-usage               --disable-background-networking               --disable-default-apps               --disable-extensions               --disable-sync               --no-first-run               --hide-scrollbars               --enable-unsafe-swiftshader               --window-size=1440,900               --virtual-time-budget=5000               --screenshot="$out"               "http://127.0.0.1:8774/?screen=${screen}"
+            test -s "$out"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import struct
+
+          root = Path('../../audit/point4/chromium')
+          expected = {'manage-published', 'manage-closed', 'supervision'}
+          found = {p.stem for p in root.glob('*.png')}
+          if found != expected:
+              raise SystemExit(
+                  f'POINT4_SCREEN_SET_MISMATCH expected={sorted(expected)} found={sorted(found)}'
+              )
+
+          hashes = {}
+          for path in sorted(root.glob('*.png')):
+              data = path.read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'INVALID_PNG:{path}')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (1440, 900):
+                  raise SystemExit(f'PNG_SIZE_MISMATCH:{path}:{width}x{height}')
+              if len(data) < 5000:
+                  raise SystemExit(f'PNG_SUSPICIOUSLY_SMALL:{path}:{len(data)}')
+              digest = hashlib.sha256(data).hexdigest()
+              if digest in hashes:
+                  raise SystemExit(
+                      f'DUPLICATE_POINT4_STATE:{hashes[digest]}={path.name}:{digest}'
+                  )
+              hashes[digest] = path.name
+              print(
+                  f'POINT4_CHROMIUM_PASS {path.name} '
+                  f'{width}x{height} {len(data)} bytes {digest}'
+              )
+
+          print(f'POINT4_CHROMIUM_UNIQUE_STATES_PASS {len(hashes)}')
+          PY
+
+      - name: Upload Point 4 Chromium screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point4-chromium-screenshots
+          path: audit/point4/chromium
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Gate
+        run: echo V1_PARITY_POINT4_TEACHER_TP_SUPERVISION_PASS

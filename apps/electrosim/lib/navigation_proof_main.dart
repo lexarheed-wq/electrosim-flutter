@@ -42,10 +42,17 @@ class _ProofScreenState extends State<_ProofScreen> {
         return F18SessionWaitingRoomPage(
           sessionName: 'Atelier BEP1',
           sessionCode: 'ABC234',
-          connectedStudents: 2,
+          connectedStudents: 3,
+          connectedStudentNames: const <String>[
+            'Awa Ouédraogo',
+            'Moussa Traoré',
+            'Fatimata Kaboré',
+          ],
+          joinUrl: Uri.parse('http://192.168.4.1:8080/join/ABC234'),
           onHome: () {},
           onContinue: () {},
-          sharingStatus: 'Partage réseau prêt pour la session.',
+          sharingStatus:
+              'Serveur local prêt — aucune connexion Internet nécessaire.',
         );
       case 'dashboard':
         return F18SessionShellPage(

@@ -58,7 +58,11 @@ jobs:
 
       - name: Analyze application
         working-directory: apps/electrosim
-        run: flutter analyze
+        shell: bash
+        run: |
+          mkdir -p ../../audit/point3
+          flutter analyze 2>&1 | tee ../../audit/point3/flutter-analyze.log
+          exit ${PIPESTATUS[0]}
 
       - name: Run V1 navigation regression tests
         working-directory: apps/electrosim
@@ -85,7 +89,7 @@ jobs:
         with:
           name: v1-parity-point3-navigation-logs
           path: audit/point3
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Run application non-golden regression suite

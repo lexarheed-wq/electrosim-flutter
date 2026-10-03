@@ -279,7 +279,29 @@ final class CoreComponentModelContracts {
         modelType: 'push_button_no',
         family: ComponentFamily.switching,
         terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'push_button_nc',
+        family: ComponentFamily.switching,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
         branches: <ComponentBranchDefinition>[
           ComponentBranchDefinition(
             id: 'main',

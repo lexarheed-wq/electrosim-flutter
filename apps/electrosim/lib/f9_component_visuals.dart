@@ -217,6 +217,46 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       color,
     );
     canvas.restore();
+
+    if (viewport.scale >= 0.72) {
+      final String label = _boardLabel(modelType);
+      final TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            color: ElectroSimColors.textPrimary,
+            fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout(maxWidth: visualWidth + 40);
+      painter.paint(
+        canvas,
+        Offset(
+          center.dx - painter.width / 2,
+          center.dy + visualHeight / 2 + 7,
+        ),
+      );
+    }
+  }
+
+  String _boardLabel(String modelType) {
+    return switch (modelType.toLowerCase()) {
+      'dc_voltage_source' || 'voltage_source' => 'Alim. 24 V',
+      'push_button_no' => 'BP NO',
+      'switch' || 'switch_spst' => 'Interrupteur',
+      'lamp' => 'Lampe',
+      'resistor' => 'Résistance',
+      'breaker_dc' || 'breaker_ac1' || 'breaker' => 'Disjoncteur',
+      'fuse_dc' || 'fuse_ac1' || 'fuse' => 'Fusible',
+      'motor_dc' => 'Moteur CC',
+      'fan_dc' => 'Ventilateur',
+      'relay_coil' => 'Bobine',
+      'buzzer' => 'Buzzer',
+      _ => modelType.replaceAll('_', ' '),
+    };
   }
 
   @override

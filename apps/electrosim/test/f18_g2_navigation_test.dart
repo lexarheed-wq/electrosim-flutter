@@ -8,6 +8,20 @@ void _desktop(WidgetTester tester) {
   tester.view.devicePixelRatio = 1;
 }
 
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  final Stopwatch stopwatch = Stopwatch()..start();
+  while (finder.evaluate().isEmpty) {
+    if (stopwatch.elapsed > timeout) {
+      fail('Timed out waiting for widget: $finder');
+    }
+    await tester.pump(const Duration(milliseconds: 25));
+  }
+}
+
 Future<void> _createSessionToDashboard(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('home-create-session')));
   await tester.pumpAndSettle();
@@ -18,6 +32,12 @@ Future<void> _createSessionToDashboard(WidgetTester tester) async {
   expect(find.byKey(const Key('session-waiting-code')), findsOneWidget);
   expect(find.byKey(const Key('session-waiting-connected')), findsOneWidget);
   expect(find.byType(SimulatorCanvas), findsNothing);
+  await _pumpUntil(tester, find.byKey(const Key('session-waiting-qr')));
+  expect(find.byKey(const Key('session-waiting-browser-url')), findsOneWidget);
+  final FilledButton startButton = tester.widget<FilledButton>(
+    find.byKey(const Key('session-waiting-continue')),
+  );
+  expect(startButton.onPressed, isNotNull);
   await tester.tap(find.byKey(const Key('session-waiting-continue')));
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('session-shell-page')), findsOneWidget);

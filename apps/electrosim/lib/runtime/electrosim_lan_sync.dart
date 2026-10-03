@@ -107,7 +107,7 @@ final class ElectroSimLanHostInfo {
   Uri get preferredEndpoint => endpoints.first;
 }
 
-final class ElectroSimLanSyncHost {
+final class ElectroSimLanSyncHost extends ChangeNotifier {
   ElectroSimLanSyncHost({
     required this.controller,
     required String sessionCode,
@@ -120,12 +120,45 @@ final class ElectroSimLanSyncHost {
 
   HttpServer? _server;
   final Map<String, WebSocket> _clients = <String, WebSocket>{};
+  final Map<String, ElectroSimTpSessionController> _studentControllers =
+      <String, ElectroSimTpSessionController>{};
   final Map<String, int> _lastClientSequence = <String, int>{};
   int _serverSequence = 0;
   bool _reconciling = false;
   bool _closed = false;
 
   bool get isRunning => _server != null && !_closed;
+
+  List<String> get connectedClientIds =>
+      List<String>.unmodifiable(_clients.keys.toList()..sort());
+
+  Map<String, TpSession?> get studentSessions =>
+      Map<String, TpSession?>.unmodifiable(
+        <String, TpSession?>{
+          for (final MapEntry<String, ElectroSimTpSessionController> entry
+              in _studentControllers.entries)
+            entry.key: entry.value.session,
+        },
+      );
+
+  ElectroSimTpSessionController _studentController(String clientId) =>
+      _studentControllers.putIfAbsent(
+        clientId,
+        controller.createStudentReplica,
+      );
+
+  TpSession evaluateStudent(String clientId, {int? score}) {
+    final ElectroSimTpSessionController? student =
+        _studentControllers[clientId];
+    if (student == null) {
+      throw StateError('Unknown student: $clientId');
+    }
+    final TpSession evaluated = student.evaluateTeacher(score: score);
+    final WebSocket? socket = _clients[clientId];
+    if (socket != null) _sendSnapshot(socket, clientId);
+    notifyListeners();
+    return evaluated;
+  }
 
   static String generateSessionCode({Random? random}) {
     final Random source = random ?? Random.secure();
@@ -237,6 +270,7 @@ final class ElectroSimLanSyncHost {
 
     final WebSocket socket = await WebSocketTransformer.upgrade(request);
     final String id = clientId!;
+    _studentController(id);
     final WebSocket? previous = _clients[id];
     _clients[id] = socket;
     if (previous != null) {
@@ -254,14 +288,21 @@ final class ElectroSimLanSyncHost {
         }
       },
       onError: (_) {
-        if (identical(_clients[id], socket)) _clients.remove(id);
+        if (identical(_clients[id], socket)) {
+          _clients.remove(id);
+          notifyListeners();
+        }
       },
       onDone: () {
-        if (identical(_clients[id], socket)) _clients.remove(id);
+        if (identical(_clients[id], socket)) {
+          _clients.remove(id);
+          notifyListeners();
+        }
       },
       cancelOnError: false,
     );
-    _sendSnapshot(socket);
+    _sendSnapshot(socket, id);
+    notifyListeners();
   }
 
   Future<void> _handleClientMessage(
@@ -294,6 +335,7 @@ final class ElectroSimLanSyncHost {
       _reconciling = true;
       try {
         _reconcileStudentState(
+          clientId,
           raw.map(
             (String key, dynamic value) =>
                 MapEntry<String, Object?>(key, value),
@@ -313,14 +355,20 @@ final class ElectroSimLanSyncHost {
           payload: <String, Object?>{'acceptedSequence': envelope.sequence},
         ),
       );
-      _broadcastSnapshot();
+      _sendSnapshot(socket, clientId);
+      notifyListeners();
     } on Object catch (error) {
       _sendError(socket, error.toString());
-      _sendSnapshot(socket);
+      _sendSnapshot(socket, clientId);
     }
   }
 
-  void _reconcileStudentState(Map<String, Object?> state) {
+  void _reconcileStudentState(
+    String clientId,
+    Map<String, Object?> state,
+  ) {
+    final ElectroSimTpSessionController student =
+        _studentController(clientId);
     if (state['hasSession'] != true) {
       throw const FormatException('Student state has no TP session.');
     }

@@ -295,6 +295,8 @@ final class ElectroSimRuntimeEngine {
     CircuitState circuit, {
     required Duration elapsed,
     ProtectionRuntimeState? previousProtectionState,
+    Map<ComponentId, bool> previousContactorStates =
+        const <ComponentId, bool>{},
   }) {
     final TopologyGraph topology = topologyEngine.compile(circuit);
     switch (circuit.mode) {
@@ -331,6 +333,7 @@ final class ElectroSimRuntimeEngine {
           previous: previousProtectionState,
           solver: solverAC1,
           controlsEngine: electromechanicalControlEngine,
+          previousContactorStates: previousContactorStates,
         );
         final Ac1SolveResult ac1 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(

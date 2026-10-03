@@ -37,7 +37,7 @@ void main() {
       final DcSolveResult released = solve(
         _componentCircuit(
           modelType: 'push_button_no',
-          controlState: const <String, Object?>{'closed': false},
+          controlState: const <String, Object?>{'pressed': false},
         ),
       );
       expect(released.status, DcSolveStatus.solved);
@@ -47,7 +47,7 @@ void main() {
       final DcSolveResult pressed = solve(
         _componentCircuit(
           modelType: 'push_button_no',
-          controlState: const <String, Object?>{'closed': true},
+          controlState: const <String, Object?>{'pressed': true},
         ),
       );
       expect(pressed.status, DcSolveStatus.solved);
@@ -93,9 +93,9 @@ CircuitState _componentCircuit({
   Map<String, Object?> parameters = const <String, Object?>{},
   Map<String, Object?> controlState = const <String, Object?>{},
 }) {
-  final bool switching = modelType == 'push_button_no';
+  final bool switching = modelType == 'push_button_no' || modelType == 'push_button_nc';
   return CircuitState(
-    circuitId: CircuitId('m3b-$modelType-${controlState['closed'] ?? 'load'}'),
+    circuitId: CircuitId('m3b-$modelType-${controlState['pressed'] ?? controlState['closed'] ?? 'load'}'),
     revision: 0,
     mode: ElectricalMode.dc,
     components: <ComponentInstance>[

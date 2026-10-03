@@ -15,6 +15,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
+import 'f18_v1_navigation_flow.dart';
 import 'f18_workspace_wire_safety.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -141,18 +142,34 @@ class F9HomePage extends StatelessWidget {
   ) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'design-center'),
         builder: (BuildContext routeContext) => F18DesignCenterPage(
           onHome: () => Navigator.of(routeContext).popUntil(
             (Route<dynamic> route) => route.isFirst,
           ),
-          onWiring: () => _openWorkspace(
-            routeContext,
-            'Centre de conception',
-            initialWorkspace: 'Câblage',
-            persistenceController: persistenceController,
+          onWiring: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'design-cabling-setup'),
+              builder: (BuildContext setupContext) => F18ActivitySetupPage(
+                pageKey: const Key('design-cabling-setup-page'),
+                title: 'Préparer une activité de câblage',
+                description:
+                    'Préparez l’activité avant d’ouvrir l’atelier de conception.',
+                parentLabel: 'centre de conception',
+                onBack: () => Navigator.of(setupContext).pop(),
+                onOpenWorkshop: () => _openWorkspace(
+                  setupContext,
+                  'Centre de conception',
+                  initialWorkspace: 'Câblage',
+                  persistenceController: persistenceController,
+                  parentRouteName: 'design-center',
+                ),
+              ),
+            ),
           ),
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'design-schema-library'),
               builder: (BuildContext context) => const F18PlaceholderPage(
                 pageKey: Key('design-schema-library-page'),
                 title: 'Bibliothèque de schémas',
@@ -172,18 +189,35 @@ class F9HomePage extends StatelessWidget {
   ) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'maintenance-center'),
         builder: (BuildContext routeContext) => F18MaintenanceCenterPage(
           onHome: () => Navigator.of(routeContext).popUntil(
             (Route<dynamic> route) => route.isFirst,
           ),
-          onTroubleshooting: () => _openWorkspace(
-            routeContext,
-            'Centre de maintenance',
-            initialWorkspace: 'Recherche de dérangement',
-            persistenceController: persistenceController,
+          onTroubleshooting: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings:
+                  const RouteSettings(name: 'maintenance-troubleshooting-setup'),
+              builder: (BuildContext setupContext) => F18ActivitySetupPage(
+                pageKey: const Key('maintenance-troubleshooting-setup-page'),
+                title: 'Préparer une recherche de dérangement',
+                description:
+                    'Préparez le diagnostic avant d’ouvrir l’atelier de maintenance.',
+                parentLabel: 'centre de maintenance',
+                onBack: () => Navigator.of(setupContext).pop(),
+                onOpenWorkshop: () => _openWorkspace(
+                  setupContext,
+                  'Centre de maintenance',
+                  initialWorkspace: 'Recherche de dérangement',
+                  persistenceController: persistenceController,
+                  parentRouteName: 'maintenance-center',
+                ),
+              ),
+            ),
           ),
           onFaultLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'maintenance-fault-library'),
               builder: (BuildContext context) => const F18PlaceholderPage(
                 pageKey: Key('maintenance-fault-library-page'),
                 title: 'Bibliothèque de pannes',
@@ -192,19 +226,50 @@ class F9HomePage extends StatelessWidget {
               ),
             ),
           ),
+          onStudentValidation: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings:
+                  const RouteSettings(name: 'student-situation-validation'),
+              builder: (BuildContext validationContext) =>
+                  F18StudentSituationValidationPage(
+                onBack: () => Navigator.of(validationContext).pop(),
+                onLaunch: (String referenceCircuit, String faultScenario) {
+                  _openWorkspace(
+                    validationContext,
+                    'Validation en situation élève',
+                    initialWorkspace: 'Recherche de dérangement',
+                    persistenceController: persistenceController,
+                    parentRouteName: 'maintenance-center',
+                  );
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  static void _openSessionShell(
+  static Future<void> _openSessionShell(
     BuildContext context,
     ElectroSimPersistenceController? persistenceController,
-  ) {
+  ) async {
+    final F18SessionCreationDraft? draft =
+        await showDialog<F18SessionCreationDraft>(
+      context: context,
+      builder: (BuildContext dialogContext) =>
+          const F18CreateSessionDialog(),
+    );
+    if (draft == null || !context.mounted) return;
+
+    final String sessionCode = ElectroSimLanSyncHost.generateSessionCode();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'teacher-session'),
         builder: (BuildContext routeContext) =>
             F18TeacherSessionCoordinatorPage(
+          sessionName: draft.name,
+          sessionCode: sessionCode,
           workspaceBuilder: (
             BuildContext workspaceContext,
             ElectroSimTpSessionController controller,
@@ -232,14 +297,26 @@ class F9HomePage extends StatelessWidget {
     required String initialWorkspace,
     bool sessionNavigation = false,
     ElectroSimPersistenceController? persistenceController,
+    String? parentRouteName,
   }) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (BuildContext context) => F18WorkspacePage(
+        settings: RouteSettings(
+          name: initialWorkspace == 'Câblage'
+              ? 'cabling-workspace'
+              : 'troubleshooting-workspace',
+        ),
+        builder: (BuildContext workspaceContext) => F18WorkspacePage(
           entryLabel: entryLabel,
           initialWorkspace: initialWorkspace,
           sessionNavigation: sessionNavigation,
           persistenceController: persistenceController,
+          onExitWorkspace: parentRouteName == null
+              ? null
+              : () => Navigator.of(workspaceContext).popUntil(
+                    (Route<dynamic> route) =>
+                        route.settings.name == parentRouteName,
+                  ),
         ),
       ),
     );
@@ -374,6 +451,7 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.syncClient,
     super.onSessionDashboard,
     super.onSessionManage,
+    super.onExitWorkspace,
   });
 }
 
@@ -391,6 +469,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.syncClient,
     this.onSessionDashboard,
     this.onSessionManage,
+    this.onExitWorkspace,
   });
 
   final String entryLabel;
@@ -404,6 +483,7 @@ class F18WorkspacePage extends StatefulWidget {
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
   final VoidCallback? onSessionManage;
+  final VoidCallback? onExitWorkspace;
 
   @override
   State<F18WorkspacePage> createState() => _F18WorkspacePageState();
@@ -515,6 +595,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             onManageSession: widget.sessionNavigation
                 ? (widget.onSessionManage ?? _showManageSession)
                 : null,
+            onExitWorkspace: widget.onExitWorkspace,
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
             onRotateSelected:
@@ -1766,6 +1847,7 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onHome,
     required this.onDashboard,
     required this.onManageSession,
+    required this.onExitWorkspace,
     required this.onSave,
     required this.onOpen,
     required this.onRotateSelected,
@@ -1783,6 +1865,7 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback onHome;
   final VoidCallback? onDashboard;
   final VoidCallback? onManageSession;
+  final VoidCallback? onExitWorkspace;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
   final VoidCallback? onRotateSelected;
@@ -1817,6 +1900,13 @@ class _WorkspaceTopBar extends StatelessWidget {
                     onPressed: onHome,
                     icon: const Icon(Icons.home_outlined),
                   ),
+                  if (onExitWorkspace != null)
+                    IconButton(
+                      key: const Key('workspace-exit-action'),
+                      tooltip: 'Quitter l’atelier',
+                      onPressed: onExitWorkspace,
+                      icon: const Icon(Icons.arrow_back_outlined),
+                    ),
                   const SizedBox(width: ElectroSimSpacing.xxs),
                   Expanded(
                     child: Column(

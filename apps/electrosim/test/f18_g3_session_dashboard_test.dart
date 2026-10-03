@@ -33,7 +33,10 @@ Future<void> _pumpUntil(
     if (stopwatch.elapsed > timeout) {
       fail('Timed out waiting for widget: $finder');
     }
-    await tester.pump(const Duration(milliseconds: 20));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
   }
 }
 

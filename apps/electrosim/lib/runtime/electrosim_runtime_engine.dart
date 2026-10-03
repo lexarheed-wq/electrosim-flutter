@@ -24,8 +24,6 @@ final class ElectroSimRuntimeSnapshot {
     this.controlIssues = const <ElectromechanicalControlIssue>[],
     this.measurementEngine = const MeasurementEngine(),
     this.energyEngine = const EnergyEngine(),
-    this.electromechanicalControlEngine =
-        const ElectromechanicalControlEngine(),
   });
 
   final CircuitState circuit;
@@ -266,6 +264,8 @@ final class ElectroSimRuntimeEngine {
     this.diagnosticEngine = const DiagnosticEngine(),
     this.measurementEngine = const MeasurementEngine(),
     this.energyEngine = const EnergyEngine(),
+    this.electromechanicalControlEngine =
+        const ElectromechanicalControlEngine(),
   });
 
   final TopologyEngine topologyEngine;

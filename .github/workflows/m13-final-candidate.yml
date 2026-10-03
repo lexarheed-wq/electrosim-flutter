@@ -1,0 +1,171 @@
+name: M13 final candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-v1-v2-convergence
+    paths:
+      - '.github/workflows/m13-final-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mac-final:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          flutter config --enable-macos-desktop
+
+      - name: Re-run qualified macOS target gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/f15_qualify_target.sh macos
+          python3 tools/f15_validate_evidence_file.py macos docs/f15/evidence/macos.json
+
+      - name: Build release application
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter build macos --release
+
+      - name: Package candidate and handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE"
+          OUT="$ROOT/distribution/m13"
+          HANDOFF="$OUT/PASSATION_ELECTROSIM_M13"
+          mkdir -p "$OUT" "$HANDOFF/01_CANDIDAT_MAC" "$HANDOFF/02_SOURCE" "$HANDOFF/03_PREUVES" "$HANDOFF/04_DOCUMENTATION"
+
+          APP_PATH="$(find "$ROOT/apps/electrosim/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          test -d "$APP_PATH"
+
+          CANDIDATE="$OUT/ElectroSim-M13-Final-Mac.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$CANDIDATE"
+
+          SOURCE_ZIP="$OUT/ElectroSim-M13-Source.zip"
+          git archive --format=zip --prefix=ElectroSim-M13-Source/ HEAD -o "$SOURCE_ZIP"
+
+          APP_SHA="$(python3 - "$APP_PATH" <<'PY'
+          from pathlib import Path
+          import hashlib, sys
+          root=Path(sys.argv[1]); h=hashlib.sha256()
+          for f in sorted(x for x in root.rglob('*') if x.is_file()):
+              h.update(f.relative_to(root).as_posix().encode())
+              h.update(b'\0')
+              h.update(f.read_bytes())
+          print(h.hexdigest())
+          PY
+          )"
+          ZIP_SHA="$(shasum -a 256 "$CANDIDATE" | awk '{print $1}')"
+          SOURCE_SHA="$(shasum -a 256 "$SOURCE_ZIP" | awk '{print $1}')"
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          FLUTTER_VERSION="$(flutter --version | head -1 | tr -d '\r')"
+          DART_VERSION="$(dart --version 2>&1 | head -1 | tr -d '\r')"
+          EXECUTABLE="$(find "$APP_PATH/Contents/MacOS" -maxdepth 1 -type f -print -quit)"
+          ARCH_INFO="$(file "$EXECUTABLE" | sed 's/"/\\"/g')"
+
+          python3 - "$OUT/M13_MANIFEST.json" "$COMMIT_SHA" "$FLUTTER_VERSION" "$DART_VERSION" "$APP_SHA" "$ZIP_SHA" "$SOURCE_SHA" "$ARCH_INFO" <<'PY'
+          import datetime, json, sys
+          out, commit, flutter, dart, app_sha, zip_sha, source_sha, arch = sys.argv[1:]
+          data = {
+              "schemaVersion": 1,
+              "phase": "M13",
+              "status": "PASS",
+              "branch": "f18-v1-v2-convergence",
+              "commitSha": commit,
+              "toolchain": {"flutter": flutter, "dart": dart},
+              "macCandidate": {
+                  "file": "ElectroSim-M13-Final-Mac.zip",
+                  "appContentSha256": app_sha,
+                  "zipSha256": zip_sha,
+                  "architecture": arch,
+              },
+              "source": {
+                  "file": "ElectroSim-M13-Source.zip",
+                  "sha256": source_sha,
+              },
+              "f15MacEvidence": "docs/f15/evidence/macos.json",
+              "createdAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          open(out, "w", encoding="utf-8").write(json.dumps(data, indent=2, sort_keys=True) + "\n")
+          PY
+
+          {
+            echo "$ZIP_SHA  ElectroSim-M13-Final-Mac.zip"
+            echo "$SOURCE_SHA  ElectroSim-M13-Source.zip"
+          } > "$OUT/SHA256SUMS.txt"
+
+          cat > "$OUT/TEST_MAC.txt" <<'EOF'
+          ElectroSim M13 — validation physique finale Mac
+
+          1. Décompresser ElectroSim-M13-Final-Mac.zip.
+          2. Ouvrir l'application ElectroSim.
+          3. Vérifier l'accueil : Nouvelle session / Centre de maintenance / Centre de conception.
+          4. Créer une session et ouvrir le tableau de bord.
+          5. Ouvrir le simulateur puis vérifier drag/drop, fils orthogonaux, pan et zoom trackpad.
+          6. Vérifier Rotation et Supprimer dans la barre supérieure.
+          7. Vérifier la palette courte et Voir tous / recherche.
+          8. Lancer un TP professeur puis connecter un élève sur le LAN local.
+          9. Vérifier que le professeur démarre le TP et que l'élève ne peut pas s'auto-noter.
+          10. Vérifier qu'un TP remis reste en lecture seule.
+
+          Les bibliothèques Schémas V1 et Pannes V1 ne sont pas migrées.
+          EOF
+
+          cp "$CANDIDATE" "$HANDOFF/01_CANDIDAT_MAC/"
+          cp "$OUT/TEST_MAC.txt" "$HANDOFF/01_CANDIDAT_MAC/"
+          cp "$SOURCE_ZIP" "$HANDOFF/02_SOURCE/"
+          cp "$OUT/M13_MANIFEST.json" "$HANDOFF/03_PREUVES/"
+          cp "$OUT/SHA256SUMS.txt" "$HANDOFF/03_PREUVES/"
+          cp "$ROOT/docs/f15/evidence/macos.json" "$HANDOFF/03_PREUVES/F15_MACOS_EVIDENCE.json"
+          cp -R "$ROOT/docs/convergence" "$HANDOFF/04_DOCUMENTATION/"
+          cp "$ROOT/CONVERGENCE_VERSION" "$HANDOFF/04_DOCUMENTATION/"
+
+          PASSATION="$OUT/PASSATION_ELECTROSIM_M13_FINAL.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$HANDOFF" "$PASSATION"
+          shasum -a 256 "$PASSATION" > "$OUT/PASSATION_SHA256.txt"
+
+      - name: Upload Mac candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-M13-Final-Mac
+          path: |
+            distribution/m13/ElectroSim-M13-Final-Mac.zip
+            distribution/m13/M13_MANIFEST.json
+            distribution/m13/SHA256SUMS.txt
+            distribution/m13/TEST_MAC.txt
+          if-no-files-found: error
+
+      - name: Upload final handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: PASSATION_ELECTROSIM_M13_FINAL
+          path: |
+            distribution/m13/PASSATION_ELECTROSIM_M13_FINAL.zip
+            distribution/m13/PASSATION_SHA256.txt
+          if-no-files-found: error

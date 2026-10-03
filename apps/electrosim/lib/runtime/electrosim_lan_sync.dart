@@ -160,6 +160,53 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     return evaluated;
   }
 
+  void closeClassroomSession() {
+    _reconciling = true;
+    try {
+      for (final ElectroSimTpSessionController student
+          in _studentControllers.values) {
+        final TpSession? session = student.session;
+        if (session == null || session.lifecycle == TpLifecycle.closed) {
+          continue;
+        }
+        switch (session.lifecycle) {
+          case TpLifecycle.draft:
+          case TpLifecycle.published:
+          case TpLifecycle.started:
+            student.cancelTeacher();
+          case TpLifecycle.submitted:
+            student.evaluateTeacher();
+            student.closeTeacher();
+          case TpLifecycle.evaluated:
+            student.closeTeacher();
+          case TpLifecycle.closed:
+            break;
+        }
+      }
+
+      final TpSession? teacher = controller.session;
+      if (teacher != null && teacher.lifecycle != TpLifecycle.closed) {
+        switch (teacher.lifecycle) {
+          case TpLifecycle.draft:
+          case TpLifecycle.published:
+          case TpLifecycle.started:
+            controller.cancelTeacher();
+          case TpLifecycle.submitted:
+            controller.evaluateTeacher();
+            controller.closeTeacher();
+          case TpLifecycle.evaluated:
+            controller.closeTeacher();
+          case TpLifecycle.closed:
+            break;
+        }
+      }
+    } finally {
+      _reconciling = false;
+    }
+    _broadcastSnapshot();
+    notifyListeners();
+  }
+
   static String generateSessionCode({Random? random}) {
     final Random source = random ?? Random.secure();
     const String alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

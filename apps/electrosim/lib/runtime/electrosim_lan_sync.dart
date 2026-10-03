@@ -923,6 +923,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
     required this.controller,
     required String sessionCode,
     required this.clientId,
+    this.displayName,
     this.autoReconnect = true,
   }) : sessionCode = sessionCode.trim().toUpperCase() {
     if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$')
@@ -935,6 +936,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
   final ElectroSimTpSessionController controller;
   final String sessionCode;
   final String clientId;
+  final String? displayName;
   final bool autoReconnect;
 
   WebSocket? _socket;
@@ -1023,6 +1025,8 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
         ...target.queryParameters,
         'code': sessionCode,
         'clientId': clientId,
+        if (displayName != null && displayName!.trim().isNotEmpty)
+          'displayName': displayName!.trim(),
       },
     );
     try {

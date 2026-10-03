@@ -774,7 +774,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       for (final ElectroSimTpSessionController student
           in _studentControllers.values) {
         TpSession? current = student.session;
-        if (current == null) {
+        if (current == null &&
+            teacherSession.lifecycle != TpLifecycle.draft) {
           student.restoreFromPersistenceJson(controller.toPersistenceJson());
           current = student.session;
         }

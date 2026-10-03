@@ -1,0 +1,55 @@
+name: V1 parity baseline guard
+
+on:
+  push:
+    branches:
+      - v1-parity
+  pull_request:
+    branches:
+      - v1-parity
+
+permissions:
+  contents: read
+
+jobs:
+  guard-m13r2-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify immutable reference branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="9a7fde0d7be8ed4f90e805dc9acb736fe2b35f91"
+          actual="$(git ls-remote origin refs/heads/m13-r2-baseline | awk '{print $1}')"
+          test "$actual" = "$expected"
+
+      - name: Verify V1 parity history descends from M13-R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "9a7fde0d7be8ed4f90e805dc9acb736fe2b35f91" HEAD
+
+      - name: Verify frozen M13-R2 technical core
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline="9a7fde0d7be8ed4f90e805dc9acb736fe2b35f91"
+          frozen_roots=(
+          "packages/electrosim_domain"
+          "packages/electrosim_topology"
+          "packages/electrosim_solver_dc"
+          "packages/electrosim_solver_ac"
+          "packages/electrosim_measurements"
+          "packages/electrosim_protection"
+          "packages/electrosim_controls"
+          "packages/electrosim_energy"
+          "packages/electrosim_pv"
+          "packages/electrosim_diagnostics"
+          "packages/electrosim_storage"
+          )
+          git diff --exit-code "$baseline" HEAD -- "${frozen_roots[@]}"

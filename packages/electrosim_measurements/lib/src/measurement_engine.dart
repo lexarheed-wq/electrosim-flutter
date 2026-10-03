@@ -1,4 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 
@@ -32,7 +33,221 @@ final class MeasurementEngine {
         return _measureCurrent(request, simulation);
       case MeasurementKind.resistance:
         return _measureResistance(request, circuit);
+      case MeasurementKind.voltageAcRms:
+      case MeasurementKind.currentAcRms:
+      case MeasurementKind.frequency:
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: MeasurementErrorCode.wrongElectricalMode,
+          message: 'Use measureAc1 or measureAc3 for AC measurements.',
+        );
     }
+  }
+
+  MeasurementResult measureAc1({
+    required MeasurementRequest request,
+    required CircuitState circuit,
+    required TopologyGraph topology,
+    required Ac1SolveResult simulation,
+  }) {
+    final MeasurementResult? invalid = _preflightAc(
+      request: request,
+      circuit: circuit,
+      topology: topology,
+      solved: simulation.isSolved,
+      resultCircuitId: simulation.circuitId,
+      resultRevision: simulation.circuitRevision,
+      expectedMode: ElectricalMode.ac1,
+    );
+    if (invalid != null) return invalid;
+    switch (request.kind) {
+      case MeasurementKind.voltageAcRms:
+        return _measureAcVoltage(
+          request: request,
+          topology: topology,
+          nodeVoltages: simulation.nodeVoltages,
+        );
+      case MeasurementKind.currentAcRms:
+        Ac1BranchResult? branch;
+        for (final Ac1BranchResult candidate in simulation.branchResults) {
+          if (candidate.id == request.branchId) {
+            branch = candidate;
+            break;
+          }
+        }
+        return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
+      case MeasurementKind.frequency:
+        return _frequencyResult(request, simulation.frequencyHz);
+      case MeasurementKind.voltageDc:
+      case MeasurementKind.currentDc:
+      case MeasurementKind.resistance:
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: MeasurementErrorCode.wrongElectricalMode,
+          message: 'This request is not an AC1 measurement.',
+        );
+    }
+  }
+
+  MeasurementResult measureAc3({
+    required MeasurementRequest request,
+    required CircuitState circuit,
+    required TopologyGraph topology,
+    required Ac3SolveResult simulation,
+  }) {
+    final MeasurementResult? invalid = _preflightAc(
+      request: request,
+      circuit: circuit,
+      topology: topology,
+      solved: simulation.isSolved,
+      resultCircuitId: simulation.circuitId,
+      resultRevision: simulation.circuitRevision,
+      expectedMode: ElectricalMode.ac3,
+    );
+    if (invalid != null) return invalid;
+    switch (request.kind) {
+      case MeasurementKind.voltageAcRms:
+        return _measureAcVoltage(
+          request: request,
+          topology: topology,
+          nodeVoltages: simulation.nodeVoltages,
+        );
+      case MeasurementKind.currentAcRms:
+        Ac3BranchResult? branch;
+        for (final Ac3BranchResult candidate in simulation.branchResults) {
+          if (candidate.id == request.branchId) {
+            branch = candidate;
+            break;
+          }
+        }
+        return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
+      case MeasurementKind.frequency:
+        return _frequencyResult(request, simulation.frequencyHz);
+      case MeasurementKind.voltageDc:
+      case MeasurementKind.currentDc:
+      case MeasurementKind.resistance:
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: MeasurementErrorCode.wrongElectricalMode,
+          message: 'This request is not an AC3 measurement.',
+        );
+    }
+  }
+
+  MeasurementResult? _preflightAc({
+    required MeasurementRequest request,
+    required CircuitState circuit,
+    required TopologyGraph topology,
+    required bool solved,
+    required CircuitId resultCircuitId,
+    required int resultRevision,
+    required ElectricalMode expectedMode,
+  }) {
+    if (circuit.mode != expectedMode || topology.mode != expectedMode) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.wrongElectricalMode,
+        message: 'AC measurement mode does not match CircuitState/TopologyGraph.',
+      );
+    }
+    if (topology.circuitId != circuit.circuitId ||
+        topology.circuitRevision != circuit.revision ||
+        resultCircuitId != circuit.circuitId ||
+        resultRevision != circuit.revision) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.identityMismatch,
+        message: 'CircuitState, TopologyGraph and AC solve result must share identity and revision.',
+      );
+    }
+    if (!solved) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.simulationNotSolved,
+        message: 'An AC measurement cannot be reported from an unsolved result.',
+      );
+    }
+    return null;
+  }
+
+  MeasurementResult _measureAcVoltage({
+    required MeasurementRequest request,
+    required TopologyGraph topology,
+    required Map<String, AcComplex> nodeVoltages,
+  }) {
+    final TerminalId positive = request.positiveProbe!;
+    final TerminalId negative = request.negativeProbe!;
+    final String? positiveNode = topology.terminalToNode[positive];
+    final String? negativeNode = topology.terminalToNode[negative];
+    if (positiveNode == null || negativeNode == null) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.unknownTerminal,
+        message: 'At least one AC voltage probe terminal is absent from the topology.',
+      );
+    }
+    final AcComplex? positiveVoltage = nodeVoltages[positiveNode];
+    final AcComplex? negativeVoltage = nodeVoltages[negativeNode];
+    if (positiveVoltage == null || negativeVoltage == null) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.unknownTerminal,
+        message: 'A probe node has no phasor voltage in the solved result.',
+      );
+    }
+    return MeasurementResult.valid(
+      kind: request.kind,
+      value: (positiveVoltage - negativeVoltage).magnitude,
+      unit: ElectricalUnit.volt,
+      evidenceIds: <String>['node:' + positiveNode, 'node:' + negativeNode],
+    );
+  }
+
+  MeasurementResult _acCurrentResult(
+    MeasurementRequest request,
+    double? currentA,
+    bool branchExists,
+  ) {
+    if (!branchExists) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.unknownBranch,
+        message: 'AC current measurement branch does not exist in the solved result.',
+      );
+    }
+    if (currentA == null) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.branchCurrentUnavailable,
+        message: 'AC branch current is mathematically indeterminate.',
+        evidenceIds: <String>['branch:' + request.branchId!],
+      );
+    }
+    return MeasurementResult.valid(
+      kind: request.kind,
+      value: currentA,
+      unit: ElectricalUnit.ampere,
+      evidenceIds: <String>['branch:' + request.branchId!],
+    );
+  }
+
+  MeasurementResult _frequencyResult(
+    MeasurementRequest request,
+    double? frequencyHz,
+  ) {
+    if (frequencyHz == null || !frequencyHz.isFinite || frequencyHz <= 0) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.simulationNotSolved,
+        message: 'Solved AC result does not expose a valid frequency.',
+      );
+    }
+    return MeasurementResult.valid(
+      kind: request.kind,
+      value: frequencyHz,
+      unit: ElectricalUnit.hertz,
+      evidenceIds: const <String>['solver:frequency'],
+    );
   }
 
   MeasurementResult? _preflight({

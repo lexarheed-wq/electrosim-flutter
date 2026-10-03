@@ -11,7 +11,7 @@ import 'ac1_solver_options.dart';
 final class SolverAC1 {
   const SolverAC1({this.options = const Ac1SolverOptions()});
 
-  static const String engineVersion = 'solver-ac1/0.3.0';
+  static const String engineVersion = 'solver-ac1/0.3.1';
 
   final Ac1SolverOptions options;
 
@@ -623,7 +623,10 @@ _CompiledAc1Model _compileModel(
     }
   }
 
-  return _CompiledAc1Model(elements, diagnostics.any(_isError));
+  return _CompiledAc1Model(
+    _suppressRedundantAc1ControlConstraints(elements),
+    diagnostics.any(_isError),
+  );
 }
 
 
@@ -1091,6 +1094,44 @@ double _maxMatrixResidual(
   return maximum;
 }
 
+
+List<_Ac1Element> _suppressRedundantAc1ControlConstraints(
+  List<_Ac1Element> elements,
+) {
+  final Set<String> constrainedPairs = <String>{};
+  final List<_Ac1Element> result = <_Ac1Element>[];
+
+  for (final _Ac1Element element in elements) {
+    final bool eligible =
+        !element.isOpen &&
+        element.kind == _Ac1ElementKind.idealVoltage &&
+        element.value.magnitude <= 1e-15 &&
+        (element.branchKind == Ac1BranchKind.idealSwitch ||
+            element.branchKind == Ac1BranchKind.contactorContact ||
+            element.branchKind == Ac1BranchKind.idealProtection);
+
+    if (!eligible) {
+      result.add(element);
+      continue;
+    }
+
+    final String first = element.fromNodeId.compareTo(element.toNodeId) <= 0
+        ? element.fromNodeId
+        : element.toNodeId;
+    final String second = first == element.fromNodeId
+        ? element.toNodeId
+        : element.fromNodeId;
+    final String key = '$first|$second';
+
+    if (constrainedPairs.add(key)) {
+      result.add(element);
+    } else {
+      result.add(element.copyWith(excludeFromMna: true));
+    }
+  }
+  return result;
+}
+
 const Set<String> _supportedAc1ComponentModels = <String>{
   'resistor',
   'lamp',
@@ -1142,6 +1183,7 @@ final class _Ac1Element {
     required this.toNodeId,
     required this.value,
     this.isOpen = false,
+    this.excludeFromMna = false,
   });
 
   final String id;
@@ -1152,6 +1194,23 @@ final class _Ac1Element {
   final String toNodeId;
   final AcComplex value;
   final bool isOpen;
+  final bool excludeFromMna;
+
+  _Ac1Element copyWith({
+    bool? isOpen,
+    bool? excludeFromMna,
+  }) =>
+      _Ac1Element(
+        id: id,
+        modelType: modelType,
+        kind: kind,
+        branchKind: branchKind,
+        fromNodeId: fromNodeId,
+        toNodeId: toNodeId,
+        value: value,
+        isOpen: isOpen ?? this.isOpen,
+        excludeFromMna: excludeFromMna ?? this.excludeFromMna,
+      );
 }
 
 final class _CompiledAc1Model {
@@ -1160,7 +1219,10 @@ final class _CompiledAc1Model {
   final List<_Ac1Element> allElements;
   final bool hasErrors;
 
-  Iterable<_Ac1Element> get activeElements => allElements.where((_Ac1Element element) => !element.isOpen);
+  Iterable<_Ac1Element> get activeElements => allElements.where(
+        (_Ac1Element element) =>
+            !element.isOpen && !element.excludeFromMna,
+      );
 }
 
 final class _Ac1LinearSolveOutcome {

@@ -78,6 +78,26 @@ void main() {
     expect(report.advice.single.evidenceIds.single, startsWith('solver:singularMatrix:'));
   });
 
+  test('intentionally open switch stays silent in EIE', () {
+    final report = const DiagnosticEngine().analyze(
+      topology: topology(),
+      simulation: result(branches: const <DcBranchResult>[
+        DcBranchResult(
+          id: 'component:s1',
+          modelType: 'push_button_no',
+          kind: DcBranchKind.openCircuit,
+          fromNodeId: 'node:a',
+          toNodeId: 'node:b',
+          voltageV: 24,
+          currentA: 0,
+          powerW: 0,
+        ),
+      ]),
+    );
+    expect(report.advice, isEmpty);
+    expect(report.status, DiagnosticReportStatus.insufficientEvidence);
+  });
+
   test('open branch comes from simulation result and is locatable', () {
     final report = const DiagnosticEngine().analyze(
       topology: topology(),

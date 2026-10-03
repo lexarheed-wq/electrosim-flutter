@@ -45,6 +45,30 @@ void main() {
       expect(result.inverterOutputVoltageRmsV, greaterThan(0.0));
     });
 
+    test('M8 shading reduces effective irradiance without changing raw setting semantics', () {
+      final PvSolveResult result = solve(
+        _pvCircuit(
+          loadPowerAt230W: 3000.0,
+          irradianceWm2: 800.0,
+          shadingPct: 25.0,
+        ),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.irradianceWm2, closeTo(600.0, 1e-9));
+      expect(result.pvAvailablePowerW, closeTo(2400.0, 1e-7));
+    });
+
+    test('M8 invalid shading fails explicitly', () {
+      final PvSolveResult result = solve(
+        _pvCircuit(invalidShadingSetting: true),
+      );
+      expect(result.status, PvSolveStatus.invalid);
+      expect(
+        result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.invalidPvParameter),
+      );
+    });
+
     test('PV-003 temperature coefficients are applied explicitly', () {
       final PvSolveResult result = solve(
         _pvCircuit(
@@ -305,6 +329,8 @@ CircuitState _pvCircuit({
   bool omitEnvironmentalSettings = false,
   bool invalidIrradianceSetting = false,
   bool invalidTemperatureSetting = false,
+  double shadingPct = 0.0,
+  bool invalidShadingSetting = false,
 }) {
   final double resistance =
       loadResistanceOverride ?? (230.0 * 230.0 / loadPowerAt230W);
@@ -419,6 +445,7 @@ CircuitState _pvCircuit({
         ? const <String, Object?>{}
         : <String, Object?>{
             'irradianceWm2': invalidIrradianceSetting ? -1.0 : irradianceWm2,
+            'shadingPct': invalidShadingSetting ? 101.0 : shadingPct,
             'cellTemperatureC': invalidTemperatureSetting
                 ? 'invalid-temperature'
                 : cellTemperatureC,

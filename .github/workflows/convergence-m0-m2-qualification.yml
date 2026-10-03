@@ -1,4 +1,4 @@
-name: Convergence M0-M6 qualification
+name: Convergence M0-M7 qualification
 
 on:
   push:
@@ -52,6 +52,7 @@ jobs:
             tools/test_convergence_m4_ac1_contract.py \
             tools/test_convergence_m5_ac3_contract.py \
             tools/test_convergence_m6_device_protection_contract.py \
+            tools/test_convergence_m7_measurement_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -105,4 +106,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M6_DEVICE_PROTECTION_CONVERGENCE_PASS
+        run: echo M7_MEASUREMENT_CONVERGENCE_PASS

@@ -106,7 +106,8 @@ void main() {
     expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
-  testWidgets('session management exposes teacher LAN sharing from the F18 shell',
+  testWidgets(
+      'session management exposes the automatically active teacher LAN session',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1100, 900);
     tester.view.devicePixelRatio = 1;
@@ -117,15 +118,7 @@ void main() {
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tp-network-share')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('tp-network-share')));
-    await tester.pump();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 150));
-    });
-    await tester.pumpAndSettle();
-    await _pumpUntil(tester, find.byKey(const Key('tp-network-code')));
-
+    expect(find.byKey(const Key('tp-network-share')), findsNothing);
     expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
     expect(find.byKey(const Key('tp-network-endpoint')), findsOneWidget);
     expect(tester.takeException(), isNull);

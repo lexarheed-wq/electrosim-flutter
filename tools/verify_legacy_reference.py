@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import hashlib,json,pathlib,re,sys,zipfile,collections
+import hashlib,json,pathlib,re,sys,zipfile,collections,subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ZIP=ROOT/'reference/legacy/ElectroSim-FIELDFIX01-R1.zip'
 BASE=ROOT/'reference/REFERENCE_BASELINE.json'
@@ -15,6 +15,18 @@ base=json.loads(BASE.read_text())
 expected=base['legacy_zip']['sha256']
 actual=sha(ZIP)
 if actual!=expected: errors.append('legacy-sha-mismatch')
+
+# The distributable/source package may omit generated audit outputs. Rebuild the
+# deterministic audit from the frozen legacy ZIP when it is absent, then verify
+# the regenerated data against the immutable reference below.
+if not AUD.is_file():
+    analyzer=ROOT/'tools/analyze_legacy_reference.py'
+    completed=subprocess.run([sys.executable,str(analyzer)],capture_output=True,text=True)
+    if completed.returncode!=0:
+        errors.append(
+            f'audit-regeneration-failed:{completed.returncode}:'
+            f'{completed.stdout}{completed.stderr}'
+        )
 try: stored=json.loads(AUD.read_text())
 except Exception as exc:
     stored={}; errors.append(f'audit-unreadable:{exc}')

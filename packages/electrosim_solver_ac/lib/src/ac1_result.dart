@@ -16,6 +16,8 @@ enum Ac1BranchKind {
   currentSource,
   openCircuit,
   idealShort,
+  idealSwitch,
+  idealProtection,
 }
 
 final class Ac1BranchResult {

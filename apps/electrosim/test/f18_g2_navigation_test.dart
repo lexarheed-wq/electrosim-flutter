@@ -277,6 +277,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('session-waiting-room-page')), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await _pumpUntil(tester, find.byKey(const Key('session-waiting-qr')));
     await tester.tap(find.byKey(const Key('session-waiting-continue')));
     await tester.pumpAndSettle();
 

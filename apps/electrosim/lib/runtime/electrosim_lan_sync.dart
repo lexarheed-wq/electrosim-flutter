@@ -98,39 +98,84 @@ final class ElectroSimLanHostInfo {
     required this.sessionCode,
     required this.port,
     required this.endpoints,
+    required this.joinUrls,
   });
 
   final String sessionCode;
   final int port;
   final List<Uri> endpoints;
+  final List<Uri> joinUrls;
 
   Uri get preferredEndpoint => endpoints.first;
+  Uri get preferredJoinUrl => joinUrls.first;
+}
+
+final class ElectroSimConnectedStudent {
+  const ElectroSimConnectedStudent({
+    required this.clientId,
+    required this.displayName,
+  });
+
+  final String clientId;
+  final String displayName;
 }
 
 final class ElectroSimLanSyncHost extends ChangeNotifier {
   ElectroSimLanSyncHost({
     required this.controller,
     required String sessionCode,
+    this.sessionName = 'Session ElectroSim',
     this.hostId = 'teacher',
+    this.studentWebRoot,
   }) : sessionCode = sessionCode.trim().toUpperCase();
 
   final ElectroSimTpSessionController controller;
   final String sessionCode;
+  final String sessionName;
   final String hostId;
+  final Directory? studentWebRoot;
 
   HttpServer? _server;
   final Map<String, WebSocket> _clients = <String, WebSocket>{};
+  final Map<String, String> _clientDisplayNames = <String, String>{};
   final Map<String, ElectroSimTpSessionController> _studentControllers =
       <String, ElectroSimTpSessionController>{};
   final Map<String, int> _lastClientSequence = <String, int>{};
   int _serverSequence = 0;
   bool _reconciling = false;
   bool _closed = false;
+  bool _sessionStarted = false;
 
   bool get isRunning => _server != null && !_closed;
+  bool get sessionStarted => _sessionStarted;
 
   List<String> get connectedClientIds =>
       List<String>.unmodifiable(_clients.keys.toList()..sort());
+
+  List<ElectroSimConnectedStudent> get connectedStudents {
+    final List<ElectroSimConnectedStudent> students = _clients.keys
+        .map(
+          (String id) => ElectroSimConnectedStudent(
+            clientId: id,
+            displayName: _clientDisplayNames[id] ?? id,
+          ),
+        )
+        .toList(growable: false)
+      ..sort(
+        (ElectroSimConnectedStudent a, ElectroSimConnectedStudent b) =>
+            a.displayName.toLowerCase().compareTo(
+                  b.displayName.toLowerCase(),
+                ),
+      );
+    return List<ElectroSimConnectedStudent>.unmodifiable(students);
+  }
+
+  void setSessionStarted(bool value) {
+    if (_sessionStarted == value) return;
+    _sessionStarted = value;
+    _broadcastSnapshot();
+    notifyListeners();
+  }
 
   Map<String, TpSession?> get studentSessions =>
       Map<String, TpSession?>.unmodifiable(
@@ -277,10 +322,21 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       }
     }
     endpoints.sort((Uri a, Uri b) => a.toString().compareTo(b.toString()));
+    final List<Uri> joinUrls = endpoints
+        .map(
+          (Uri endpoint) => endpoint.replace(
+            scheme: 'http',
+            path: '/join/$sessionCode',
+            query: null,
+            fragment: null,
+          ),
+        )
+        .toList(growable: false);
     return ElectroSimLanHostInfo(
       sessionCode: sessionCode,
       port: server.port,
       endpoints: List<Uri>.unmodifiable(endpoints),
+      joinUrls: List<Uri>.unmodifiable(joinUrls),
     );
   }
 
@@ -295,6 +351,30 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   }
 
   Future<void> _handleRequest(HttpRequest request) async {
+    if (request.method == 'GET' &&
+        request.uri.path.startsWith('/join/')) {
+      final String requestedCode =
+          request.uri.pathSegments.length >= 2
+              ? request.uri.pathSegments[1].trim().toUpperCase()
+              : '';
+      if (requestedCode != sessionCode) {
+        request.response.statusCode = HttpStatus.forbidden;
+        await request.response.close();
+        return;
+      }
+      await _serveStudentWebAsset(request, 'index.html');
+      return;
+    }
+
+    if (request.method == 'GET' &&
+        request.uri.path != '/electrosim-sync') {
+      final String relativePath = request.uri.path == '/'
+          ? 'index.html'
+          : request.uri.path.substring(1);
+      await _serveStudentWebAsset(request, relativePath);
+      return;
+    }
+
     if (request.uri.path != '/electrosim-sync') {
       request.response.statusCode = HttpStatus.notFound;
       await request.response.close();
@@ -307,6 +387,10 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
     final String? code = request.uri.queryParameters['code'];
     final String? clientId = request.uri.queryParameters['clientId'];
+    final String displayName = _safeDisplayName(
+      request.uri.queryParameters['displayName'],
+      fallback: clientId ?? 'Élève',
+    );
     if (code == null ||
         code.trim().toUpperCase() != sessionCode ||
         !_safeClientId(clientId)) {
@@ -318,6 +402,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     final WebSocket socket = await WebSocketTransformer.upgrade(request);
     final String id = clientId!;
     _studentController(id);
+    _clientDisplayNames[id] = displayName;
     final WebSocket? previous = _clients[id];
     _clients[id] = socket;
     if (previous != null) {
@@ -337,12 +422,14 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       onError: (_) {
         if (identical(_clients[id], socket)) {
           _clients.remove(id);
+          _clientDisplayNames.remove(id);
           notifyListeners();
         }
       },
       onDone: () {
         if (identical(_clients[id], socket)) {
           _clients.remove(id);
+          _clientDisplayNames.remove(id);
           notifyListeners();
         }
       },
@@ -350,6 +437,67 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     );
     _sendSnapshot(socket, id);
     notifyListeners();
+  }
+
+  Future<void> _serveStudentWebAsset(
+    HttpRequest request,
+    String requestedPath,
+  ) async {
+    final Directory? root = studentWebRoot;
+    if (root == null || !root.existsSync()) {
+      request.response
+        ..statusCode = HttpStatus.serviceUnavailable
+        ..headers.contentType = ContentType.html
+        ..write(
+          '<!doctype html><html><body><h1>ElectroSim Élève</h1>'
+          '<p>Le client Web élève n’est pas disponible dans ce candidat.</p>'
+          '</body></html>',
+        );
+      await request.response.close();
+      return;
+    }
+
+    String relative = requestedPath.replaceAll('\\', '/');
+    if (relative.isEmpty) relative = 'index.html';
+    if (relative.startsWith('/') ||
+        relative.split('/').contains('..')) {
+      request.response.statusCode = HttpStatus.forbidden;
+      await request.response.close();
+      return;
+    }
+    File file = File('${root.path}/$relative');
+    if (!file.existsSync() && !relative.split('/').last.contains('.')) {
+      file = File('${root.path}/index.html');
+    }
+    if (!file.existsSync()) {
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return;
+    }
+
+    request.response.headers
+      ..set(HttpHeaders.cacheControlHeader, 'no-store')
+      ..contentType = _contentTypeFor(file.path);
+    await request.response.addStream(file.openRead());
+    await request.response.close();
+  }
+
+  static ContentType _contentTypeFor(String path) {
+    final String lower = path.toLowerCase();
+    if (lower.endsWith('.html')) return ContentType.html;
+    if (lower.endsWith('.js')) {
+      return ContentType('application', 'javascript', charset: 'utf-8');
+    }
+    if (lower.endsWith('.json')) return ContentType.json;
+    if (lower.endsWith('.css')) {
+      return ContentType('text', 'css', charset: 'utf-8');
+    }
+    if (lower.endsWith('.svg')) {
+      return ContentType('image', 'svg+xml');
+    }
+    if (lower.endsWith('.png')) return ContentType('image', 'png');
+    if (lower.endsWith('.woff2')) return ContentType('font', 'woff2');
+    return ContentType.binary;
   }
 
   Future<void> _handleClientMessage(
@@ -594,6 +742,12 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         sequence: _serverSequence++,
         payload: <String, Object?>{
           'state': source.toPersistenceJson(),
+          'session': <String, Object?>{
+            'name': sessionName,
+            'code': sessionCode,
+            'started': _sessionStarted,
+            'simulatorEnabled': _sessionStarted,
+          },
         },
       ),
     );
@@ -627,6 +781,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     final List<WebSocket> sockets =
         _clients.values.toList(growable: false);
     _clients.clear();
+    _clientDisplayNames.clear();
     for (final WebSocket socket in sockets) {
       await socket.close(
         WebSocketStatus.normalClosure,
@@ -646,7 +801,306 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
 
   static bool _safeClientId(String? value) =>
       value != null &&
-      RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$').hasMatch(value);
+      RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}
+final class ElectroSimLanSyncClient extends ChangeNotifier {
+  ElectroSimLanSyncClient({
+    required this.controller,
+    required String sessionCode,
+    required this.clientId,
+    this.autoReconnect = true,
+  }) : sessionCode = sessionCode.trim().toUpperCase() {
+    if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$')
+        .hasMatch(clientId)) {
+      throw ArgumentError.value(clientId, 'clientId', 'Invalid client ID.');
+    }
+    controller.addListener(_onLocalControllerChanged);
+  }
+
+  final ElectroSimTpSessionController controller;
+  final String sessionCode;
+  final String clientId;
+  final bool autoReconnect;
+
+  WebSocket? _socket;
+  Uri? _endpoint;
+  Timer? _reconnectTimer;
+  Completer<void>? _firstSnapshot;
+  int _clientSequence = 0;
+  int _lastServerSequence = -1;
+  bool _applyingRemote = false;
+  bool _closed = false;
+  bool _manualDisconnect = false;
+  ElectroSimLanSyncStatus _status = ElectroSimLanSyncStatus.disconnected;
+  String? _lastError;
+
+  ElectroSimLanSyncStatus get status => _status;
+  String? get lastError => _lastError;
+  bool get synchronized => _status == ElectroSimLanSyncStatus.synchronized;
+  Uri? get endpoint => _endpoint;
+
+  static String generateClientId({Random? random}) {
+    final Random source = random ?? Random.secure();
+    final int value = source.nextInt(0x7fffffff);
+    return 'student-${value.toRadixString(16).padLeft(8, '0')}';
+  }
+
+  Future<void> connect(
+    Uri endpoint, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (_closed) {
+      throw StateError('A closed LAN sync client cannot reconnect.');
+    }
+    _endpoint = _normalizeEndpoint(endpoint);
+    _manualDisconnect = false;
+    _reconnectTimer?.cancel();
+    _lastServerSequence = -1;
+    _setStatus(ElectroSimLanSyncStatus.connecting);
+    final Completer<void> first = Completer<void>();
+    _firstSnapshot = first;
+    await _openSocket();
+    await first.future.timeout(timeout);
+  }
+
+  Future<void> disconnect() async {
+    if (_closed) return;
+    _manualDisconnect = true;
+    _reconnectTimer?.cancel();
+    final WebSocket? socket = _socket;
+    _socket = null;
+    await socket?.close(
+      WebSocketStatus.goingAway,
+      'Student disconnected.',
+    );
+    _setStatus(ElectroSimLanSyncStatus.disconnected);
+  }
+
+  Future<void> reconnect({
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (_closed) {
+      throw StateError('A closed LAN sync client cannot reconnect.');
+    }
+    if (_endpoint == null) {
+      throw StateError('No previous LAN endpoint is available.');
+    }
+    _manualDisconnect = false;
+    _reconnectTimer?.cancel();
+    await _socket?.close(
+      WebSocketStatus.goingAway,
+      'Manual reconnect.',
+    );
+    _socket = null;
+    _lastServerSequence = -1;
+    _setStatus(ElectroSimLanSyncStatus.reconnecting);
+    final Completer<void> first = Completer<void>();
+    _firstSnapshot = first;
+    await _openSocket();
+    await first.future.timeout(timeout);
+  }
+
+  Future<void> _openSocket() async {
+    final Uri target =
+        _endpoint ?? (throw StateError('No LAN endpoint configured.'));
+    final Uri uri = target.replace(
+      queryParameters: <String, String>{
+        ...target.queryParameters,
+        'code': sessionCode,
+        'clientId': clientId,
+      },
+    );
+    try {
+      final WebSocket socket = await WebSocket.connect(uri.toString());
+      if (_closed) {
+        await socket.close();
+        return;
+      }
+      _socket = socket;
+      socket.listen(
+        (dynamic data) {
+          if (data is String) _handleServerMessage(data);
+        },
+        onError: (Object error) {
+          _lastError = error.toString();
+          _handleDisconnected();
+        },
+        onDone: _handleDisconnected,
+        cancelOnError: false,
+      );
+    } on Object catch (error) {
+      _lastError = error.toString();
+      _firstSnapshot = null;
+      _handleDisconnected();
+      rethrow;
+    }
+  }
+
+  void _handleServerMessage(String source) {
+    try {
+      final ElectroSimSyncEnvelope envelope =
+          ElectroSimSyncEnvelope.fromJsonString(source);
+      if (envelope.sessionCode != sessionCode) {
+        throw const FormatException('Server session code mismatch.');
+      }
+      if (envelope.sequence <= _lastServerSequence) return;
+      _lastServerSequence = envelope.sequence;
+
+      switch (envelope.type) {
+        case ElectroSimSyncMessageType.snapshot:
+          final Object? raw = envelope.payload['state'];
+          if (raw is! Map<String, dynamic>) {
+            throw const FormatException('Server snapshot is missing state.');
+          }
+          _applyingRemote = true;
+          try {
+            controller.restoreFromPersistenceJson(
+              raw.map(
+                (String key, dynamic value) =>
+                    MapEntry<String, Object?>(key, value),
+              ),
+            );
+          } finally {
+            _applyingRemote = false;
+          }
+          _setStatus(ElectroSimLanSyncStatus.synchronized);
+          final Completer<void>? first = _firstSnapshot;
+          _firstSnapshot = null;
+          if (first != null && !first.isCompleted) first.complete();
+          notifyListeners();
+          break;
+        case ElectroSimSyncMessageType.ack:
+          _lastError = null;
+          notifyListeners();
+          break;
+        case ElectroSimSyncMessageType.error:
+          _lastError = envelope.payload['message']?.toString();
+          notifyListeners();
+          break;
+        case ElectroSimSyncMessageType.studentState:
+          throw const FormatException(
+            'Server cannot send studentState messages.',
+          );
+      }
+    } on Object catch (error) {
+      _lastError = error.toString();
+      notifyListeners();
+    }
+  }
+
+  void _onLocalControllerChanged() {
+    if (_applyingRemote || _closed) return;
+    final WebSocket? socket = _socket;
+    if (socket == null) return;
+    final ElectroSimSyncEnvelope envelope = ElectroSimSyncEnvelope(
+      type: ElectroSimSyncMessageType.studentState,
+      sessionCode: sessionCode,
+      senderId: clientId,
+      sequence: _clientSequence++,
+      payload: <String, Object?>{
+        'state': controller.toPersistenceJson(),
+      },
+    );
+    try {
+      socket.add(envelope.toJsonString());
+    } on Object catch (error) {
+      _lastError = error.toString();
+      notifyListeners();
+    }
+  }
+
+  void _handleDisconnected() {
+    _socket = null;
+    final Completer<void>? first = _firstSnapshot;
+    _firstSnapshot = null;
+    if (first != null && !first.isCompleted) {
+      first.completeError(
+        StateError('LAN connection closed before initial synchronization.'),
+      );
+    }
+    if (_closed) {
+      _setStatus(ElectroSimLanSyncStatus.closed);
+      return;
+    }
+    _setStatus(ElectroSimLanSyncStatus.disconnected);
+    if (!_manualDisconnect && autoReconnect && _endpoint != null) {
+      _scheduleReconnect();
+    }
+  }
+
+  void _scheduleReconnect() {
+    if (_closed ||
+        _manualDisconnect ||
+        _reconnectTimer?.isActive == true) {
+      return;
+    }
+    _reconnectTimer = Timer(const Duration(seconds: 1), () async {
+      if (_closed || _manualDisconnect) return;
+      _lastServerSequence = -1;
+      _setStatus(ElectroSimLanSyncStatus.reconnecting);
+      try {
+        await _openSocket();
+      } on Object {
+        if (!_closed && !_manualDisconnect) _scheduleReconnect();
+      }
+    });
+  }
+
+  void _setStatus(ElectroSimLanSyncStatus value) {
+    if (_status == value) return;
+    _status = value;
+    notifyListeners();
+  }
+
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    _manualDisconnect = true;
+    _reconnectTimer?.cancel();
+    controller.removeListener(_onLocalControllerChanged);
+    final WebSocket? socket = _socket;
+    _socket = null;
+    await socket?.close(
+      WebSocketStatus.normalClosure,
+      'Student client closed.',
+    );
+    _setStatus(ElectroSimLanSyncStatus.closed);
+  }
+
+  static Uri _normalizeEndpoint(Uri endpoint) {
+    if (endpoint.scheme != 'ws' && endpoint.scheme != 'wss') {
+      throw ArgumentError.value(
+        endpoint,
+        'endpoint',
+        'LAN endpoint must use ws:// or wss://.',
+      );
+    }
+    if (endpoint.host.isEmpty) {
+      throw ArgumentError.value(
+        endpoint,
+        'endpoint',
+        'LAN endpoint must include a host.',
+      );
+    }
+    return endpoint.replace(
+      path: endpoint.path.isEmpty || endpoint.path == '/'
+          ? '/electrosim-sync'
+          : endpoint.path,
+    );
+  }
+}
+).hasMatch(value);
+
+  static String _safeDisplayName(
+    String? value, {
+    required String fallback,
+  }) {
+    final String normalized =
+        (value ?? '').replaceAll(RegExp(r'\\s+'), ' ').trim();
+    if (normalized.length >= 2 && normalized.length <= 80) {
+      return normalized;
+    }
+    return fallback;
+  }
 }
 
 final class ElectroSimLanSyncClient extends ChangeNotifier {

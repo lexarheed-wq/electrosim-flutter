@@ -112,19 +112,27 @@ void main() {
 
       await _waitFor(
         () =>
-            teacher.studentCircuit?.revision == edited.revision &&
-            teacher.session!.diagnosticSheet.entries.length == 1,
+            host.studentSessions['student-001']?.studentCircuit.revision ==
+                edited.revision &&
+            host.studentSessions['student-001']!
+                    .diagnosticSheet.entries.length ==
+                1,
       );
       expect(
-        teacher.session!.diagnosticSheet.entries.single.answer,
+        host.studentSessions['student-001']!
+            .diagnosticSheet.entries.single.answer,
         'La lampe reste éteinte.',
       );
+      expect(teacher.lifecycle, TpLifecycle.started);
 
       student.submitStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.submitted);
-      expect(teacher.readOnly, isTrue);
+      await _waitFor(
+        () => host.studentSessions['student-001']?.lifecycle ==
+            TpLifecycle.submitted,
+      );
+      expect(teacher.lifecycle, TpLifecycle.started);
 
-      teacher.evaluateTeacher(score: 81);
+      host.evaluateStudent('student-001', score: 81);
       await _waitFor(
         () =>
             student.lifecycle == TpLifecycle.evaluated &&
@@ -132,9 +140,10 @@ void main() {
       );
       expect(student.readOnly, isTrue);
 
-      teacher.closeTeacher();
+      host.closeClassroomSession();
       await _waitFor(() => student.lifecycle == TpLifecycle.closed);
       expect(student.readOnly, isTrue);
+      expect(teacher.lifecycle, TpLifecycle.closed);
     });
 
     test('student cannot inject teacher evaluation or score', () async {
@@ -166,7 +175,11 @@ void main() {
       teacher.startTeacher();
       await _waitFor(() => student.lifecycle == TpLifecycle.started);
       student.submitStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.submitted);
+      await _waitFor(
+        () => host.studentSessions['student-safe']?.lifecycle ==
+            TpLifecycle.submitted,
+      );
+      expect(teacher.lifecycle, TpLifecycle.started);
 
       student.evaluateTeacher(score: 100);
 
@@ -175,8 +188,8 @@ void main() {
             client.lastError != null &&
             student.lifecycle == TpLifecycle.submitted,
       );
-      expect(teacher.lifecycle, TpLifecycle.submitted);
-      expect(teacher.evaluation?.score, isNot(100));
+      expect(teacher.lifecycle, TpLifecycle.started);
+      expect(host.studentSessions['student-safe']?.evaluation, isNull);
     });
 
     test('manual reconnect catches up to the latest authoritative teacher state',
@@ -209,20 +222,103 @@ void main() {
       teacher.startTeacher();
       await _waitFor(() => student.lifecycle == TpLifecycle.started);
       student.submitStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.submitted);
+      await _waitFor(
+        () => host.studentSessions['student-reconnect']?.lifecycle ==
+            TpLifecycle.submitted,
+      );
 
       await client.disconnect();
       expect(client.status, ElectroSimLanSyncStatus.disconnected);
       expect(student.lifecycle, TpLifecycle.submitted);
 
-      teacher.evaluateTeacher(score: 73);
-      expect(teacher.lifecycle, TpLifecycle.evaluated);
+      host.evaluateStudent('student-reconnect', score: 73);
+      expect(
+        host.studentSessions['student-reconnect']?.lifecycle,
+        TpLifecycle.evaluated,
+      );
       expect(student.lifecycle, TpLifecycle.submitted);
 
       await client.reconnect();
       expect(client.synchronized, isTrue);
       expect(student.lifecycle, TpLifecycle.evaluated);
       expect(student.evaluation?.score, 73);
+    });
+
+    test('two LAN students keep independent circuit and submission state',
+        () async {
+      final ElectroSimTpSessionController teacher =
+          ElectroSimTpSessionController();
+      teacher.createDraft();
+      teacher.publish();
+
+      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+        controller: teacher,
+        sessionCode: 'CLASS2',
+      );
+      final ElectroSimLanHostInfo info = await host.start(
+        address: InternetAddress.loopbackIPv4,
+      );
+
+      final ElectroSimTpSessionController a =
+          ElectroSimTpSessionController();
+      final ElectroSimTpSessionController b =
+          ElectroSimTpSessionController();
+      final ElectroSimLanSyncClient clientA = ElectroSimLanSyncClient(
+        controller: a,
+        sessionCode: 'CLASS2',
+        clientId: 'student-a',
+        autoReconnect: false,
+      );
+      final ElectroSimLanSyncClient clientB = ElectroSimLanSyncClient(
+        controller: b,
+        sessionCode: 'CLASS2',
+        clientId: 'student-b',
+        autoReconnect: false,
+      );
+
+      addTearDown(clientA.close);
+      addTearDown(clientB.close);
+      addTearDown(host.close);
+
+      await clientA.connect(info.preferredEndpoint);
+      await clientB.connect(info.preferredEndpoint);
+      expect(host.connectedClientIds, <String>['student-a', 'student-b']);
+
+      teacher.startTeacher();
+      await _waitFor(
+        () =>
+            a.lifecycle == TpLifecycle.started &&
+            b.lifecycle == TpLifecycle.started,
+      );
+
+      final int bRevision = b.studentCircuit!.revision;
+      final CircuitState editedA = _nextRevision(a.studentCircuit!);
+      a.updateStudentCircuit(editedA);
+      a.addDiagnosticEntry(promptId: 'a', answer: 'A only');
+
+      await _waitFor(
+        () => host.studentSessions['student-a']?.studentCircuit.revision ==
+            editedA.revision,
+      );
+      expect(
+        host.studentSessions['student-b']?.studentCircuit.revision,
+        bRevision,
+      );
+      expect(
+        host.studentSessions['student-b']?.diagnosticSheet.entries,
+        isEmpty,
+      );
+
+      a.submitStudent();
+      await _waitFor(
+        () => host.studentSessions['student-a']?.lifecycle ==
+            TpLifecycle.submitted,
+      );
+      expect(
+        host.studentSessions['student-b']?.lifecycle,
+        TpLifecycle.started,
+      );
+      expect(teacher.lifecycle, TpLifecycle.started);
     });
 
     testWidgets('teacher can expose a LAN code and endpoint from session management',

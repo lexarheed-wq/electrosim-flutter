@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
@@ -161,23 +159,18 @@ final class CircuitScenePainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    final TextPainter label = TextPainter(
-      text: TextSpan(
-        text: modelType,
-        style: TextStyle(
-          color: const Color(0xFF0F172A),
-          fontSize: (13 * viewport.scale).clamp(10, 18).toDouble(),
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-      ellipsis: '…',
-    )..layout(maxWidth: math.max(32.0, rect.width - 14).toDouble());
-    label.paint(
-      canvas,
-      Offset(rect.center.dx - label.width / 2, rect.center.dy - label.height / 2),
-    );
+    // The application-level F18 overlay owns the model-specific electrical
+    // symbol. The canvas base layer intentionally does not paint raw model
+    // identifiers such as "motor_dc" behind that symbol.
+    if (selected) {
+      final double markerRadius =
+          (3.5 * viewport.scale).clamp(2.5, 5.0).toDouble();
+      canvas.drawCircle(
+        Offset(rect.right - markerRadius * 2, rect.top + markerRadius * 2),
+        markerRadius,
+        Paint()..color = selectionColor,
+      );
+    }
   }
 
   void _paintNonJunctionCrossingGaps(

@@ -260,7 +260,33 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           ),
         ];
       case TpLifecycle.published:
+        return <Widget>[
+          FilledButton.icon(
+            key: const Key('tp-teacher-start'),
+            onPressed: () {
+              final TpSession started = widget.controller.startTeacher();
+              widget.onStudentStarted(started);
+            },
+            icon: const Icon(Icons.play_arrow_outlined),
+            label: const Text('Démarrer le TP'),
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          OutlinedButton.icon(
+            key: const Key('tp-teacher-cancel'),
+            onPressed: widget.controller.cancelTeacher,
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('Annuler le TP'),
+          ),
+        ];
       case TpLifecycle.started:
+        return <Widget>[
+          OutlinedButton.icon(
+            key: const Key('tp-teacher-cancel'),
+            onPressed: widget.controller.cancelTeacher,
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('Annuler le TP'),
+          ),
+        ];
       case TpLifecycle.closed:
         return const <Widget>[];
     }
@@ -274,15 +300,10 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
     }
     switch (session.lifecycle) {
       case TpLifecycle.published:
-        return <Widget>[
-          FilledButton.icon(
-            key: const Key('tp-student-start'),
-            onPressed: () {
-              final TpSession started = widget.controller.startStudent();
-              widget.onStudentStarted(started);
-            },
-            icon: const Icon(Icons.play_arrow_outlined),
-            label: const Text('Commencer le TP'),
+        return const <Widget>[
+          Text(
+            'Prêt — en attente du démarrage collectif par le professeur.',
+            key: Key('tp-student-waiting-start'),
           ),
         ];
       case TpLifecycle.started:

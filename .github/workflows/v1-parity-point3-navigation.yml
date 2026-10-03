@@ -83,9 +83,23 @@ jobs:
         working-directory: apps/electrosim
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
-            xargs -0 flutter test
+            xargs -0 flutter test 2>&1 | tee ../../audit/point3/full-non-golden-regression.log
+          status=${PIPESTATUS[1]}
+          echo "$status" > ../../audit/point3/full-non-golden-status.txt
+          exit "$status"
+
+      - name: Upload full regression diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point3-full-regression-logs
+          path: |
+            audit/point3/full-non-golden-regression.log
+            audit/point3/full-non-golden-status.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Build Chromium navigation proof
         working-directory: apps/electrosim

@@ -1,0 +1,25 @@
+name: electrosim_protection
+description: Pure Dart protection coordination and trip-state engine for ElectroSim.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
+  electrosim_solver_ac:
+    path: ../electrosim_solver_ac
+  electrosim_measurements:
+    path: ../electrosim_measurements
+  electrosim_controls:
+    path: ../electrosim_controls
+
+dev_dependencies:
+  test: ^1.25.8
+  lints: ^5.1.1

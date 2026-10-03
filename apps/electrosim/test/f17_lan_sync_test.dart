@@ -180,6 +180,8 @@ void main() {
             TpLifecycle.submitted,
       );
       expect(teacher.lifecycle, TpLifecycle.started);
+      final int authoritativeScore =
+          host.studentSessions['student-safe']!.evaluation!.score;
 
       student.evaluateTeacher(score: 100);
 
@@ -189,7 +191,14 @@ void main() {
             student.lifecycle == TpLifecycle.submitted,
       );
       expect(teacher.lifecycle, TpLifecycle.started);
-      expect(host.studentSessions['student-safe']?.evaluation, isNull);
+      expect(
+        host.studentSessions['student-safe']?.lifecycle,
+        TpLifecycle.submitted,
+      );
+      expect(
+        host.studentSessions['student-safe']?.evaluation?.score,
+        authoritativeScore,
+      );
     });
 
     test('manual reconnect catches up to the latest authoritative teacher state',

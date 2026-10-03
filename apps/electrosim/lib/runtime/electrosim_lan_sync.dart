@@ -376,9 +376,17 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         state['title'] != controller.title) {
       throw const FormatException('Student TP identity mismatch.');
     }
-    final TpSession? initial = controller.session;
-    if (initial == null) {
+    final TpSession? teacherSession = controller.session;
+    if (teacherSession == null) {
       throw StateError('Teacher has no TP to synchronize.');
+    }
+    TpSession? initial = student.session;
+    if (initial == null) {
+      student.restoreFromPersistenceJson(controller.toPersistenceJson());
+      initial = student.session;
+    }
+    if (initial == null) {
+      throw StateError('Student replica has no TP to synchronize.');
     }
     final Object? lifecycleRaw = state['lifecycle'];
     if (lifecycleRaw is! String) {
@@ -391,13 +399,22 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     );
 
     TpSession current = initial;
-    if (current.lifecycle == TpLifecycle.draft) {
+    if (teacherSession.lifecycle == TpLifecycle.draft) {
       throw StateError('Teacher TP is not published yet.');
     }
-    if (current.lifecycle == TpLifecycle.published) {
+    if (teacherSession.lifecycle == TpLifecycle.published) {
       if (desired == TpLifecycle.published) return;
       throw StateError(
         'Le professeur doit démarrer le TP avant toute mutation élève.',
+      );
+    }
+    if (teacherSession.lifecycle == TpLifecycle.started &&
+        current.lifecycle == TpLifecycle.published) {
+      current = student.startStudent();
+    }
+    if (teacherSession.lifecycle == TpLifecycle.closed) {
+      throw StateError(
+        'Teacher session is closed; student state is read-only.',
       );
     }
 
@@ -420,7 +437,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         throw StateError('Student circuit revision cannot go backwards.');
       }
       if (candidate.revision > current.studentCircuit.revision) {
-        current = controller.updateStudentCircuit(candidate);
+        current = student.updateStudentCircuit(candidate);
       }
 
       final Object? entriesRaw = state['diagnosticEntries'];
@@ -459,13 +476,13 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
           index < candidates.length;
           index++) {
         final DiagnosticEntry entry = candidates[index];
-        current = controller.addDiagnosticEntry(
+        current = student.addDiagnosticEntry(
           promptId: entry.promptId,
           answer: entry.answer,
         );
       }
       if (desired == TpLifecycle.submitted) {
-        controller.submitStudent();
+        student.submitStudent();
       }
       return;
     }
@@ -478,16 +495,42 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   }
 
   void _onControllerChanged() {
-    if (!_reconciling) _broadcastSnapshot();
+    if (_reconciling) return;
+    final TpSession? teacherSession = controller.session;
+    if (teacherSession != null) {
+      for (final ElectroSimTpSessionController student
+          in _studentControllers.values) {
+        final TpSession? current = student.session;
+        if (current == null) {
+          student.restoreFromPersistenceJson(controller.toPersistenceJson());
+          continue;
+        }
+        if (teacherSession.lifecycle == TpLifecycle.started &&
+            current.lifecycle == TpLifecycle.published) {
+          student.startStudent();
+        } else if (teacherSession.lifecycle == TpLifecycle.closed &&
+            (current.lifecycle == TpLifecycle.draft ||
+                current.lifecycle == TpLifecycle.published ||
+                current.lifecycle == TpLifecycle.started)) {
+          student.cancelTeacher();
+        }
+      }
+    }
+    _broadcastSnapshot();
+    notifyListeners();
   }
 
   void _broadcastSnapshot() {
-    for (final WebSocket socket in _clients.values.toList(growable: false)) {
-      _sendSnapshot(socket);
+    for (final MapEntry<String, WebSocket> entry
+        in _clients.entries.toList(growable: false)) {
+      _sendSnapshot(entry.value, entry.key);
     }
   }
 
-  void _sendSnapshot(WebSocket socket) {
+  void _sendSnapshot(WebSocket socket, [String? clientId]) {
+    final ElectroSimTpSessionController source = clientId == null
+        ? controller
+        : _studentController(clientId);
     _send(
       socket,
       ElectroSimSyncEnvelope(
@@ -496,7 +539,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         senderId: hostId,
         sequence: _serverSequence++,
         payload: <String, Object?>{
-          'state': controller.toPersistenceJson(),
+          'state': source.toPersistenceJson(),
         },
       ),
     );
@@ -539,6 +582,12 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     final HttpServer? server = _server;
     _server = null;
     await server?.close(force: true);
+    for (final ElectroSimTpSessionController student
+        in _studentControllers.values) {
+      student.dispose();
+    }
+    _studentControllers.clear();
+    notifyListeners();
   }
 
   static bool _safeClientId(String? value) =>

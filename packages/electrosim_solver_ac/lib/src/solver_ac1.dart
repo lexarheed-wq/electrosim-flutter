@@ -11,7 +11,7 @@ import 'ac1_solver_options.dart';
 final class SolverAC1 {
   const SolverAC1({this.options = const Ac1SolverOptions()});
 
-  static const String engineVersion = 'solver-ac1/0.1.0';
+  static const String engineVersion = 'solver-ac1/0.2.0';
 
   final Ac1SolverOptions options;
 
@@ -323,21 +323,38 @@ _CompiledAc1Model _compileModel(
   List<Ac1SolverDiagnostic> diagnostics,
 ) {
   final List<_Ac1Element> elements = <_Ac1Element>[];
-  for (final ComponentInstance component in circuit.components) {
-    if (component.terminals.length != 2) {
+  final List<ComponentInstance> components = circuit.components.toList(growable: false)
+    ..sort((ComponentInstance a, ComponentInstance b) => a.id.value.compareTo(b.id.value));
+  for (final ComponentInstance component in components) {
+    if (!_supportedAc1ComponentModels.contains(component.modelType)) {
       diagnostics.add(
         Ac1SolverDiagnostic(
-          code: Ac1DiagnosticCode.invalidTerminalCount,
+          code: Ac1DiagnosticCode.unsupportedComponentModel,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'AC1 component ${component.id.value} must expose exactly two terminals.',
+          message: 'Unsupported M4 AC1 component model ${component.modelType}.',
           componentId: component.id,
         ),
       );
       continue;
     }
-    final String fromNode = topology.terminalToNode[component.terminals[0].id]!;
-    final String toNode = topology.terminalToNode[component.terminals[1].id]!;
-    if (component.condition == ComponentCondition.openCircuit || component.condition == ComponentCondition.disabled) {
+
+    final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    if (topologyBranches.length != 1) {
+      diagnostics.add(
+        Ac1SolverDiagnostic(
+          code: Ac1DiagnosticCode.invalidTerminalCount,
+          severity: Ac1DiagnosticSeverity.error,
+          message: 'Canonical AC1 component ${component.id.value} must expose exactly one topology branch.',
+          componentId: component.id,
+        ),
+      );
+      continue;
+    }
+    final TopologyBranch topologyBranch = topologyBranches.single;
+    final String fromNode = topologyBranch.fromNodeId;
+    final String toNode = topologyBranch.toNodeId;
+
+    void addOpen() {
       elements.add(
         _Ac1Element(
           id: 'component:${component.id.value}',
@@ -350,6 +367,11 @@ _CompiledAc1Model _compileModel(
           isOpen: true,
         ),
       );
+    }
+
+    if (component.condition == ComponentCondition.openCircuit ||
+        component.condition == ComponentCondition.disabled) {
+      addOpen();
       continue;
     }
     if (component.condition == ComponentCondition.shortCircuit) {
@@ -378,35 +400,114 @@ _CompiledAc1Model _compileModel(
       continue;
     }
 
-    final AcComplex? impedance = _componentImpedance(component, frequencyHz, diagnostics);
-    if (impedance == null) {
-      continue;
+    switch (component.modelType) {
+      case 'switch':
+      case 'switch_spst':
+        final Object? rawClosed = component.controlState['closed'];
+        if (rawClosed is! bool) {
+          diagnostics.add(
+            Ac1SolverDiagnostic(
+              code: Ac1DiagnosticCode.invalidParameter,
+              severity: Ac1DiagnosticSeverity.error,
+              message: 'AC1 switch requires boolean controlState.closed.',
+              componentId: component.id,
+            ),
+          );
+        } else if (rawClosed) {
+          elements.add(
+            _Ac1Element(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              kind: _Ac1ElementKind.idealVoltage,
+              branchKind: Ac1BranchKind.idealSwitch,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              value: AcComplex.zero,
+            ),
+          );
+        } else {
+          addOpen();
+        }
+        continue;
+      case 'breaker_ac1':
+      case 'fuse_ac1':
+        final double? ratedCurrent =
+            _positiveParameter(component.parameters, ProtectionRating.ratedCurrentKey);
+        if (ratedCurrent == null) {
+          diagnostics.add(
+            Ac1SolverDiagnostic(
+              code: Ac1DiagnosticCode.invalidParameter,
+              severity: Ac1DiagnosticSeverity.error,
+              message: 'AC1 protection requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
+              componentId: component.id,
+            ),
+          );
+          continue;
+        }
+        final Object? rawClosed = component.controlState['closed'];
+        final Object? rawTripped = component.controlState['tripped'];
+        if ((rawClosed != null && rawClosed is! bool) ||
+            (rawTripped != null && rawTripped is! bool)) {
+          diagnostics.add(
+            Ac1SolverDiagnostic(
+              code: Ac1DiagnosticCode.invalidParameter,
+              severity: Ac1DiagnosticSeverity.error,
+              message: 'AC1 protection controlState.closed/tripped must be boolean when provided.',
+              componentId: component.id,
+            ),
+          );
+          continue;
+        }
+        final bool closed = (rawClosed as bool?) ?? true;
+        final bool tripped = (rawTripped as bool?) ?? false;
+        if (closed && !tripped) {
+          elements.add(
+            _Ac1Element(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              kind: _Ac1ElementKind.idealVoltage,
+              branchKind: Ac1BranchKind.idealProtection,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              value: AcComplex.zero,
+            ),
+          );
+        } else {
+          addOpen();
+        }
+        continue;
+      default:
+        final AcComplex? impedance =
+            _componentImpedance(component, frequencyHz, diagnostics);
+        if (impedance == null) {
+          continue;
+        }
+        if (impedance.magnitude <= 1e-15) {
+          elements.add(
+            _Ac1Element(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              kind: _Ac1ElementKind.idealVoltage,
+              branchKind: Ac1BranchKind.idealShort,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              value: AcComplex.zero,
+            ),
+          );
+          continue;
+        }
+        elements.add(
+          _Ac1Element(
+            id: 'component:${component.id.value}',
+            modelType: component.modelType,
+            kind: _Ac1ElementKind.impedance,
+            branchKind: _branchKindForModel(component.modelType),
+            fromNodeId: fromNode,
+            toNodeId: toNode,
+            value: impedance,
+          ),
+        );
     }
-    if (impedance.magnitude <= 1e-15) {
-      elements.add(
-        _Ac1Element(
-          id: 'component:${component.id.value}',
-          modelType: component.modelType,
-          kind: _Ac1ElementKind.idealVoltage,
-          branchKind: Ac1BranchKind.idealShort,
-          fromNodeId: fromNode,
-          toNodeId: toNode,
-          value: AcComplex.zero,
-        ),
-      );
-      continue;
-    }
-    elements.add(
-      _Ac1Element(
-        id: 'component:${component.id.value}',
-        modelType: component.modelType,
-        kind: _Ac1ElementKind.impedance,
-        branchKind: _branchKindForModel(component.modelType),
-        fromNodeId: fromNode,
-        toNodeId: toNode,
-        value: impedance,
-      ),
-    );
   }
 
   for (final SourceInstance source in circuit.sources) {
@@ -490,6 +591,7 @@ AcComplex? _componentImpedance(
   final double omega = 2.0 * math.pi * frequencyHz;
   switch (component.modelType) {
     case 'resistor':
+    case 'lamp':
       final double? resistance = _positiveParameter(component.parameters, 'resistanceOhm');
       if (resistance != null) {
         return AcComplex.real(resistance);
@@ -764,6 +866,18 @@ double _maxMatrixResidual(
   }
   return maximum;
 }
+
+const Set<String> _supportedAc1ComponentModels = <String>{
+  'resistor',
+  'lamp',
+  'inductor',
+  'capacitor',
+  'impedance',
+  'switch',
+  'switch_spst',
+  'breaker_ac1',
+  'fuse_ac1',
+};
 
 bool _isError(Ac1SolverDiagnostic diagnostic) => diagnostic.severity == Ac1DiagnosticSeverity.error;
 

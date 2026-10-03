@@ -348,13 +348,9 @@ final class ElectroSimLanSyncHost {
     }
     if (current.lifecycle == TpLifecycle.published) {
       if (desired == TpLifecycle.published) return;
-      if (desired != TpLifecycle.started &&
-          desired != TpLifecycle.submitted) {
-        throw StateError(
-          'Student cannot transition published TP to ${desired.name}.',
-        );
-      }
-      current = controller.startStudent();
+      throw StateError(
+        'Le professeur doit démarrer le TP avant toute mutation élève.',
+      );
     }
 
     if (current.lifecycle == TpLifecycle.started) {

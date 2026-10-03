@@ -389,6 +389,40 @@ final class CoreComponentModelContracts {
         branches: _threePowerPoles,
       ),
       ComponentModelContract(
+        modelType: 'contactor_aux_no',
+        family: ComponentFamily.electromechanicalControl,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'aux:no',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.auxiliaryNormallyOpen,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'contactor_aux_nc',
+        family: ComponentFamily.electromechanicalControl,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'aux:nc',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.auxiliaryNormallyClosed,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'contactor_ac1',
         family: ComponentFamily.electromechanicalControl,
         terminalCount: 4,

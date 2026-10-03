@@ -184,24 +184,42 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: ElectroSimSpacing.xl),
-                Wrap(
-                  spacing: ElectroSimSpacing.sm,
-                  runSpacing: ElectroSimSpacing.sm,
-                  children: <Widget>[
-                    if (browserUrl == null && onEnableSharing != null)
-                      OutlinedButton.icon(
-                        key: const Key('session-waiting-enable-sharing'),
-                        onPressed: onEnableSharing,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Réessayer le serveur local'),
-                      ),
-                    FilledButton.icon(
-                      key: const Key('session-waiting-continue'),
-                      onPressed: canStart ? onContinue : null,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Démarrer la séance'),
-                    ),
-                  ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: ElectroSimColors.surfaceElevated,
+            border: Border(
+              top: BorderSide(color: ElectroSimColors.outline),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ElectroSimSpacing.xl,
+              vertical: ElectroSimSpacing.md,
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: ElectroSimSpacing.sm,
+              runSpacing: ElectroSimSpacing.sm,
+              children: <Widget>[
+                if (browserUrl == null && onEnableSharing != null)
+                  OutlinedButton.icon(
+                    key: const Key('session-waiting-enable-sharing'),
+                    onPressed: onEnableSharing,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Réessayer le serveur local'),
+                  ),
+                FilledButton.icon(
+                  key: const Key('session-waiting-continue'),
+                  onPressed: canStart ? onContinue : null,
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Démarrer la séance'),
                 ),
               ],
             ),

@@ -438,6 +438,40 @@ _CompiledAc1Model _compileModel(
           addOpen();
         }
         continue;
+      case 'push_button_no':
+      case 'push_button_nc':
+        final Object? rawPressed = component.controlState['pressed'];
+        if (rawPressed is! bool) {
+          diagnostics.add(
+            Ac1SolverDiagnostic(
+              code: Ac1DiagnosticCode.invalidParameter,
+              severity: Ac1DiagnosticSeverity.error,
+              message:
+                  'AC1 push-button requires boolean controlState.pressed.',
+              componentId: component.id,
+            ),
+          );
+          continue;
+        }
+        final bool closed = component.modelType == 'push_button_no'
+            ? rawPressed
+            : !rawPressed;
+        if (closed) {
+          elements.add(
+            _Ac1Element(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              kind: _Ac1ElementKind.idealVoltage,
+              branchKind: Ac1BranchKind.idealSwitch,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              value: AcComplex.zero,
+            ),
+          );
+        } else {
+          addOpen();
+        }
+        continue;
       case 'breaker_ac1':
       case 'fuse_ac1':
         final double? ratedCurrent =
@@ -1065,6 +1099,8 @@ const Set<String> _supportedAc1ComponentModels = <String>{
   'impedance',
   'switch',
   'switch_spst',
+  'push_button_no',
+  'push_button_nc',
   'breaker_ac1',
   'fuse_ac1',
   'contactor_ac1',

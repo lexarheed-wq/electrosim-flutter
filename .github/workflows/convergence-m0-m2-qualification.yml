@@ -77,6 +77,7 @@ jobs:
             tools/test_convergence_m11_visual_contract.py \
             tools/test_convergence_m12_ui_contract.py \
             tools/test_convergence_controls_contract.py \
+            tools/test_convergence_protection_runtime_contract.py \
             tools/test_figma_asset_pipeline_contract.py \
             tools/test_f18_g0_tooling.py
 
@@ -166,7 +167,8 @@ jobs:
             test/f18_g3r1_point08_visual_archetypes_test.dart \
             test/m11_component_visuals_test.dart \
             test/m12_workspace_responsive_test.dart \
-            test/controls_runtime_integration_test.dart
+            test/controls_runtime_integration_test.dart \
+            test/protection_runtime_integration_test.dart
 
       - name: Scenario non-migration guards
         run: |

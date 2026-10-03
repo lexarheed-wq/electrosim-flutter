@@ -595,6 +595,41 @@ _CompiledAc3Model _compileModel(
           addOpen();
         }
         continue;
+      case 'push_button_no':
+      case 'push_button_nc':
+        final Object? rawPressed = component.controlState['pressed'];
+        if (rawPressed is! bool) {
+          diagnostics.add(
+            Ac3SolverDiagnostic(
+              code: Ac3DiagnosticCode.invalidParameter,
+              severity: Ac3DiagnosticSeverity.error,
+              message:
+                  'AC3 push-button requires boolean controlState.pressed.',
+              componentId: component.id,
+            ),
+          );
+          continue;
+        }
+        final bool closed = component.modelType == 'push_button_no'
+            ? rawPressed
+            : !rawPressed;
+        if (closed) {
+          elements.add(
+            _Ac3Element(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              kind: _Ac3ElementKind.idealVoltage,
+              branchKind: Ac3BranchKind.idealSwitch,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              value: AcComplex.zero,
+              phase: phase,
+            ),
+          );
+        } else {
+          addOpen();
+        }
+        continue;
       default:
         final AcComplex? impedance = _componentImpedance(
           component,
@@ -1371,6 +1406,8 @@ const Set<String> _supportedAc3ComponentModels = <String>{
   'impedance',
   'switch',
   'switch_spst',
+  'push_button_no',
+  'push_button_nc',
   'contactor_3p',
   'contactor_aux_no',
   'contactor_aux_nc',

@@ -212,12 +212,15 @@ final class ProtectionCoordinator {
     required Duration elapsed,
     ProtectionRuntimeState? previous,
     SolverAC1 solver = const SolverAC1(),
+    ElectromechanicalControlEngine? controlsEngine,
   }) {
     _validateElapsed(elapsed);
+    final ElectromechanicalControlEngine controlEngine =
+        controlsEngine ?? controls;
     final ProtectionRuntimeState baseline =
         _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
     CircuitState effective = _applyTrips(circuit, baseline);
-    ElectromechanicalAc1Outcome control = controls.solveAc1(
+    ElectromechanicalAc1Outcome control = controlEngine.solveAc1(
       circuit: effective,
       topology: topology,
       solver: solver,
@@ -253,7 +256,7 @@ final class ProtectionCoordinator {
 
     if (_tripSetChanged(baseline, next)) {
       effective = _applyTrips(circuit, next);
-      control = controls.solveAc1(
+      control = controlEngine.solveAc1(
         circuit: effective,
         topology: topology,
         solver: solver,
@@ -285,12 +288,15 @@ final class ProtectionCoordinator {
     required Duration elapsed,
     ProtectionRuntimeState? previous,
     SolverAC3 solver = const SolverAC3(),
+    ElectromechanicalControlEngine? controlsEngine,
   }) {
     _validateElapsed(elapsed);
+    final ElectromechanicalControlEngine controlEngine =
+        controlsEngine ?? controls;
     final ProtectionRuntimeState baseline =
         _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
     CircuitState effective = _applyTrips(circuit, baseline);
-    ElectromechanicalAc3Outcome control = controls.solveAc3(
+    ElectromechanicalAc3Outcome control = controlEngine.solveAc3(
       circuit: effective,
       topology: topology,
       solver: solver,
@@ -326,7 +332,7 @@ final class ProtectionCoordinator {
 
     if (_tripSetChanged(baseline, next)) {
       effective = _applyTrips(circuit, next);
-      control = controls.solveAc3(
+      control = controlEngine.solveAc3(
         circuit: effective,
         topology: topology,
         solver: solver,

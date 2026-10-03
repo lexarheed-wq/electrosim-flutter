@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('F17-R6 teacher publishes and student starts/submits the same TP session',
+  testWidgets('M10 teacher publishes, starts collectively, and student submits the same TP session',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
@@ -35,6 +35,10 @@ void main() {
     await tester.tap(find.byKey(const Key('tp-publish')));
     await tester.pumpAndSettle();
     expect(controller.lifecycle, TpLifecycle.published);
+    expect(find.byKey(const Key('tp-teacher-start')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('tp-teacher-start')));
+    await tester.pumpAndSettle();
+    expect(controller.lifecycle, TpLifecycle.started);
 
     await tester.tap(find.text('Fermer'));
     await tester.pumpAndSettle();
@@ -52,8 +56,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('tp-student-start')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tp-student-start')), findsNothing);
     expect(controller.lifecycle, TpLifecycle.started);
     expect(find.text('Recherche de dérangement'), findsWidgets);
 
@@ -76,7 +79,7 @@ void main() {
         ElectroSimTpSessionController();
     controller.createDraft();
     controller.publish();
-    controller.startStudent();
+    controller.startTeacher();
     controller.submitStudent();
 
     await tester.pumpWidget(
@@ -106,4 +109,34 @@ void main() {
     expect(controller.lifecycle, TpLifecycle.closed);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('M10 published student waits for collective teacher start',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final ElectroSimTpSessionController controller =
+        ElectroSimTpSessionController();
+    controller.createDraft();
+    controller.publish();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          sessionNavigation: true,
+          role: F9UserRole.student,
+          tpSessionController: controller,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-manage-action')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('tp-student-waiting-start')), findsOneWidget);
+    expect(find.byKey(const Key('tp-student-start')), findsNothing);
+    expect(controller.lifecycle, TpLifecycle.published);
+  });
+
 }

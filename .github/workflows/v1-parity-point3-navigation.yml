@@ -1,0 +1,78 @@
+name: V1 parity point 3 navigation
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "apps/electrosim/lib/main.dart"
+      - "apps/electrosim/lib/f18_home.dart"
+      - "apps/electrosim/lib/f18_shell_navigation.dart"
+      - "apps/electrosim/lib/f18_session_coordinator.dart"
+      - "apps/electrosim/lib/f18_v1_navigation_flow.dart"
+      - "apps/electrosim/lib/navigation_proof_main.dart"
+      - "apps/electrosim/test/**"
+      - ".github/workflows/v1-parity-point3-navigation.yml"
+  pull_request:
+    branches:
+      - v1-parity
+
+permissions:
+  contents: read
+
+jobs:
+  navigation-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep "3.10.9"
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Run V1 navigation regression tests
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f18_g2_navigation_test.dart
+          flutter test test/f18_g3_session_dashboard_test.dart
+          flutter test test/f9_shell_test.dart
+
+      - name: Run application non-golden regression suite
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
+            xargs -0 flutter test
+
+      - name: Build Chromium navigation proof
+        working-directory: apps/electrosim
+        run: flutter build web --release -t lib/navigation_proof_main.dart
+
+      - name: Upload Chromium proof build
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point3-navigation-web
+          path: apps/electrosim/build/web
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo V1_PARITY_POINT3_NAVIGATION_PASS

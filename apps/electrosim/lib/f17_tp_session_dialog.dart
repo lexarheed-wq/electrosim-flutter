@@ -14,6 +14,7 @@ class F17TpSessionDialog extends StatefulWidget {
     required this.onStudentStarted,
     this.onEnableLanSharing,
     this.initialLanHostInfo,
+    this.onCloseClassroomSession,
   });
 
   final ElectroSimTpSessionController controller;
@@ -21,6 +22,7 @@ class F17TpSessionDialog extends StatefulWidget {
   final ValueChanged<TpSession> onStudentStarted;
   final Future<ElectroSimLanHostInfo> Function()? onEnableLanSharing;
   final ElectroSimLanHostInfo? initialLanHostInfo;
+  final VoidCallback? onCloseClassroomSession;
 
   @override
   State<F17TpSessionDialog> createState() => _F17TpSessionDialogState();
@@ -105,6 +107,16 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
         ),
       ),
       actions: <Widget>[
+        if (_teacher && widget.onCloseClassroomSession != null)
+          TextButton.icon(
+            key: const Key('tp-close-classroom-session'),
+            onPressed: () {
+              widget.onCloseClassroomSession!();
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: const Text('Terminer la séance'),
+          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Fermer'),
@@ -149,8 +161,12 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               ),
               const SizedBox(height: ElectroSimSpacing.xxs),
               SelectableText(
-                info.preferredEndpoint.toString(),
+                info.preferredJoinUrl.toString(),
                 key: const Key('tp-network-endpoint'),
+              ),
+              const SizedBox(height: ElectroSimSpacing.xxs),
+              const Text(
+                'Les élèves ouvrent cette adresse dans leur navigateur ou scannent le QR code de la salle d’attente.',
               ),
               if (info.endpoints.length > 1)
                 Text(
@@ -216,6 +232,13 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
             icon: const Icon(Icons.publish_outlined),
             label: const Text('Publier'),
           ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          OutlinedButton.icon(
+            key: const Key('tp-delete'),
+            onPressed: widget.controller.deleteTeacherActivity,
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Supprimer l’activité'),
+          ),
         ];
       case TpLifecycle.submitted:
         return <Widget>[
@@ -277,6 +300,13 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
             icon: const Icon(Icons.cancel_outlined),
             label: const Text('Annuler le TP'),
           ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          OutlinedButton.icon(
+            key: const Key('tp-delete'),
+            onPressed: widget.controller.deleteTeacherActivity,
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Supprimer l’activité'),
+          ),
         ];
       case TpLifecycle.started:
         return <Widget>[
@@ -288,7 +318,14 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           ),
         ];
       case TpLifecycle.closed:
-        return const <Widget>[];
+        return <Widget>[
+          OutlinedButton.icon(
+            key: const Key('tp-delete'),
+            onPressed: widget.controller.deleteTeacherActivity,
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Supprimer l’activité terminée'),
+          ),
+        ];
     }
   }
 

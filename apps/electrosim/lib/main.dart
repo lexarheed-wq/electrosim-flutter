@@ -1003,7 +1003,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Map<String, Object?> _defaultControlStateFor(String keyName) => switch (keyName) {
     'switch-no' => const <String, Object?>{'closed': false},
-    'push-button-no' => const <String, Object?>{'closed': false},
+    'push-button-no' => const <String, Object?>{'pressed': false},
+    'push-button-nc' => const <String, Object?>{'pressed': false},
     'breaker' => const <String, Object?>{'closed': true, 'tripped': false},
     'fuse' => const <String, Object?>{'closed': true, 'tripped': false},
     _ => const <String, Object?>{},

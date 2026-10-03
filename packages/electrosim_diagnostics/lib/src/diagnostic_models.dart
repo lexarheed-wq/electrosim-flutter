@@ -13,6 +13,14 @@ enum EieAdviceCode {
   singularNetwork,
   numericalResidual,
   openBranch,
+  componentContractMismatch,
+  componentModeMismatch,
+  sourceCurrentLimited,
+  sourceLimitConvergence,
+  receiverOverload,
+  severeReceiverOverload,
+  phaseLoss,
+  invalidFrequency,
 }
 
 final class DiagnosticEvidence {

@@ -1,5 +1,6 @@
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 final class F18SessionCreationDraft {
   const F18SessionCreationDraft({required this.name});
@@ -89,20 +90,27 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
     required this.connectedStudents,
     required this.onHome,
     required this.onContinue,
+    this.joinUrl,
+    this.connectedStudentNames = const <String>[],
     this.onEnableSharing,
     this.sharingStatus,
+    this.canStart = true,
   });
 
   final String sessionName;
   final String sessionCode;
   final int connectedStudents;
+  final Uri? joinUrl;
+  final List<String> connectedStudentNames;
   final VoidCallback onHome;
   final VoidCallback onContinue;
   final VoidCallback? onEnableSharing;
   final String? sharingStatus;
+  final bool canStart;
 
   @override
   Widget build(BuildContext context) {
+    final Uri? browserUrl = joinUrl;
     return Scaffold(
       key: const Key('session-waiting-room-page'),
       backgroundColor: ElectroSimColors.background,
@@ -118,7 +126,7 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: const BoxConstraints(maxWidth: 980),
             child: ListView(
               padding: const EdgeInsets.all(ElectroSimSpacing.xl),
               shrinkWrap: true,
@@ -129,24 +137,43 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
                 ),
                 const SizedBox(height: ElectroSimSpacing.sm),
                 Text(
-                  'La session est créée. Les élèves peuvent rejoindre avant le démarrage de l’activité.',
+                  browserUrl == null
+                      ? 'Préparation du serveur local ElectroSim…'
+                      : 'Les élèves rejoignent directement avec leur navigateur. Aucune application n’est à installer et Internet n’est pas nécessaire.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: ElectroSimColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
-                _WaitingInfoCard(
-                  icon: Icons.key_outlined,
-                  label: 'Code de session',
-                  value: sessionCode,
-                  valueKey: const Key('session-waiting-code'),
-                ),
-                const SizedBox(height: ElectroSimSpacing.md),
-                _WaitingInfoCard(
-                  icon: Icons.people_outline,
-                  label: 'Élèves connectés',
-                  value: '$connectedStudents',
-                  valueKey: const Key('session-waiting-connected'),
+                LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final bool compact = constraints.maxWidth < 720;
+                    final Widget access = _StudentBrowserAccessCard(
+                      sessionCode: sessionCode,
+                      joinUrl: browserUrl,
+                    );
+                    final Widget roster = _ConnectedStudentsCard(
+                      count: connectedStudents,
+                      names: connectedStudentNames,
+                    );
+                    if (compact) {
+                      return Column(
+                        children: <Widget>[
+                          access,
+                          const SizedBox(height: ElectroSimSpacing.md),
+                          roster,
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(child: access),
+                        const SizedBox(width: ElectroSimSpacing.md),
+                        Expanded(child: roster),
+                      ],
+                    );
+                  },
                 ),
                 if (sharingStatus != null) ...<Widget>[
                   const SizedBox(height: ElectroSimSpacing.md),
@@ -161,24 +188,170 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
                   spacing: ElectroSimSpacing.sm,
                   runSpacing: ElectroSimSpacing.sm,
                   children: <Widget>[
-                    if (onEnableSharing != null)
+                    if (browserUrl == null && onEnableSharing != null)
                       OutlinedButton.icon(
                         key: const Key('session-waiting-enable-sharing'),
                         onPressed: onEnableSharing,
-                        icon: const Icon(Icons.wifi_tethering_outlined),
-                        label: const Text('Activer le partage réseau'),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Réessayer le serveur local'),
                       ),
                     FilledButton.icon(
                       key: const Key('session-waiting-continue'),
-                      onPressed: onContinue,
-                      icon: const Icon(Icons.dashboard_outlined),
-                      label: const Text('Ouvrir le tableau de bord'),
+                      onPressed: canStart ? onContinue : null,
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Démarrer la séance'),
                     ),
                   ],
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StudentBrowserAccessCard extends StatelessWidget {
+  const _StudentBrowserAccessCard({
+    required this.sessionCode,
+    required this.joinUrl,
+  });
+
+  final String sessionCode;
+  final Uri? joinUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final Uri? url = joinUrl;
+    return DecoratedBox(
+      key: const Key('session-browser-access-card'),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        border: Border.all(color: ElectroSimColors.outline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(ElectroSimSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Connexion élève',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            const Text(
+              '1. Connectez le téléphone au même Wi-Fi que le professeur.\n'
+              '2. Scannez le QR code.\n'
+              '3. Le navigateur charge automatiquement ElectroSim Élève.',
+            ),
+            const SizedBox(height: ElectroSimSpacing.lg),
+            Center(
+              child: url == null
+                  ? const SizedBox(
+                      width: 180,
+                      height: 180,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: QrImageView(
+                          key: const Key('session-waiting-qr'),
+                          data: url.toString(),
+                          size: 180,
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(height: ElectroSimSpacing.md),
+            _WaitingInfoCard(
+              icon: Icons.key_outlined,
+              label: 'Code de secours',
+              value: sessionCode,
+              valueKey: const Key('session-waiting-code'),
+            ),
+            if (url != null) ...<Widget>[
+              const SizedBox(height: ElectroSimSpacing.sm),
+              SelectableText(
+                url.toString(),
+                key: const Key('session-waiting-browser-url'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConnectedStudentsCard extends StatelessWidget {
+  const _ConnectedStudentsCard({
+    required this.count,
+    required this.names,
+  });
+
+  final int count;
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      key: const Key('session-connected-students-card'),
+      decoration: BoxDecoration(
+        color: ElectroSimColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        border: Border.all(color: ElectroSimColors.outline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(ElectroSimSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Icon(Icons.people_outline, color: ElectroSimColors.primary),
+                const SizedBox(width: ElectroSimSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Élèves connectés',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Text(
+                  '$count',
+                  key: const Key('session-waiting-connected'),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: ElectroSimSpacing.md),
+            if (names.isEmpty)
+              const Text(
+                'En attente des élèves…',
+                key: Key('session-waiting-no-students'),
+              )
+            else
+              ...names.map(
+                (String name) => Padding(
+                  padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(Icons.check_circle_outline, size: 18),
+                      const SizedBox(width: ElectroSimSpacing.xs),
+                      Expanded(child: Text(name)),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -202,12 +375,12 @@ class _WaitingInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: ElectroSimColors.surfaceElevated,
+        color: ElectroSimColors.background,
         borderRadius: BorderRadius.circular(ElectroSimRadii.card),
         border: Border.all(color: ElectroSimColors.outline),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(ElectroSimSpacing.lg),
+        padding: const EdgeInsets.all(ElectroSimSpacing.md),
         child: Row(
           children: <Widget>[
             Icon(icon, color: ElectroSimColors.primary),

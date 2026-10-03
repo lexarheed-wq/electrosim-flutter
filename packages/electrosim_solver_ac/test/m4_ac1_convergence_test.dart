@@ -114,7 +114,7 @@ CircuitState _switchCircuit({required bool closed}) => CircuitState(
     ),
     _resistor(),
   ],
-  connections: const <Connection>[
+  connections: <Connection>[
     Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('l'), toTerminalId: TerminalId('s1a')),
     Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('s1b'), toTerminalId: TerminalId('r1a')),
     Connection(id: ConnectionId('w3'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('n')),
@@ -137,7 +137,7 @@ CircuitState _breakerCircuit({required bool tripped}) => CircuitState(
     ),
     _resistor(),
   ],
-  connections: const <Connection>[
+  connections: <Connection>[
     Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('l'), toTerminalId: TerminalId('q1a')),
     Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('q1b'), toTerminalId: TerminalId('r1a')),
     Connection(id: ConnectionId('w3'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('n')),

@@ -909,13 +909,12 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     required String fallback,
   }) {
     final String normalized =
-        (value ?? '').replaceAll(RegExp(r'\\s+'), ' ').trim();
+        (value ?? '').replaceAll(RegExp(r'\s+'), ' ').trim();
     if (normalized.length >= 2 && normalized.length <= 80) {
       return normalized;
     }
     return fallback;
   }
-
 }
 
 final class ElectroSimLanSyncClient extends ChangeNotifier {

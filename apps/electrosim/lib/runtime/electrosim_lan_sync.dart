@@ -445,6 +445,13 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
           throw FormatException('Unknown student lifecycle: $lifecycleRaw'),
     );
 
+    if (desired == TpLifecycle.evaluated ||
+        desired == TpLifecycle.closed) {
+      throw StateError(
+        'Student cannot set teacher evaluation or close the TP.',
+      );
+    }
+
     TpSession current = initial;
     if (teacherSession.lifecycle == TpLifecycle.draft) {
       throw StateError('Teacher TP is not published yet.');

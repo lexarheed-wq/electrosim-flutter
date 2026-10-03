@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:electrosim/main.dart' as app;
@@ -367,7 +368,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('validated home exposes a student join form without adding a fourth entry',
+    testWidgets(
+        'teacher home directs students to QR browser access without installed join form',
         (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1100, 900);
       tester.view.devicePixelRatio = 1;
@@ -378,31 +380,111 @@ void main() {
       expect(find.text('Créer une nouvelle session'), findsOneWidget);
       expect(find.text('Centre de maintenance'), findsOneWidget);
       expect(find.text('Centre de conception'), findsOneWidget);
-
-      final Finder joinSession =
-          find.byKey(const Key('home-join-session'));
-      await tester.ensureVisible(joinSession);
-      await tester.pumpAndSettle();
-      await tester.tap(joinSession);
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('join-session-submit')), findsOneWidget);
-      expect(find.byKey(const Key('join-session-endpoint')), findsOneWidget);
-      expect(find.byKey(const Key('join-session-code')), findsOneWidget);
-
-      await tester.enterText(
-        find.byKey(const Key('join-session-endpoint')),
-        '192.168.1.20:8765',
-      );
-      await tester.enterText(
-        find.byKey(const Key('join-session-code')),
-        'BAD',
-      );
-      await tester.tap(find.byKey(const Key('join-session-submit')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('join-session-error')), findsOneWidget);
+      expect(find.byKey(const Key('home-join-panel')), findsOneWidget);
+      expect(find.text('Accès élèves sans installation'), findsOneWidget);
+      expect(find.byKey(const Key('home-join-session')), findsNothing);
+      expect(find.byKey(const Key('join-session-endpoint')), findsNothing);
       expect(tester.takeException(), isNull);
+    });
+
+    test(
+        'teacher server serves offline student Web bundle and tracks browser identity',
+        () async {
+      final Directory webRoot =
+          await Directory.systemTemp.createTemp('electrosim-student-web-');
+      await File('${webRoot.path}/index.html').writeAsString(
+        '<!doctype html><title>ElectroSim Élève</title>',
+      );
+      await File('${webRoot.path}/main.dart.js').writeAsString(
+        'console.log("student");',
+      );
+
+      final ElectroSimTpSessionController teacher =
+          ElectroSimTpSessionController();
+      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+        controller: teacher,
+        sessionCode: 'WEB234',
+        sessionName: 'Atelier BEP1',
+        studentWebRoot: webRoot,
+      );
+      final ElectroSimLanHostInfo info = await host.start(
+        address: InternetAddress.loopbackIPv4,
+      );
+      final HttpClient http = HttpClient();
+      WebSocket? browserSocket;
+      StreamSubscription<dynamic>? browserSubscription;
+      final List<Map<String, dynamic>> messages =
+          <Map<String, dynamic>>[];
+
+      addTearDown(() async {
+        await browserSubscription?.cancel();
+        await browserSocket?.close();
+        http.close(force: true);
+        await host.close();
+        teacher.dispose();
+        await webRoot.delete(recursive: true);
+      });
+
+      expect(info.preferredJoinUrl.scheme, 'http');
+      expect(info.preferredJoinUrl.path, '/join/WEB234');
+
+      final HttpClientRequest request =
+          await http.getUrl(info.preferredJoinUrl);
+      final HttpClientResponse response = await request.close();
+      final String html = await utf8.decoder.bind(response).join();
+      expect(response.statusCode, HttpStatus.ok);
+      expect(html, contains('ElectroSim Élève'));
+
+      final Uri socketUri = info.preferredEndpoint.replace(
+        queryParameters: <String, String>{
+          'code': 'WEB234',
+          'clientId': 'browser-awa',
+          'displayName': 'Awa Ouédraogo',
+        },
+      );
+      browserSocket = await WebSocket.connect(socketUri.toString());
+      browserSubscription = browserSocket!.listen((dynamic data) {
+        if (data is String) {
+          final Object? decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            messages.add(decoded);
+          }
+        }
+      });
+
+      await _waitFor(() => host.connectedStudents.length == 1);
+      expect(host.connectedStudents.single.clientId, 'browser-awa');
+      expect(host.connectedStudents.single.displayName, 'Awa Ouédraogo');
+
+      await _waitFor(() => messages.isNotEmpty);
+      expect(
+        (messages.last['payload'] as Map<String, dynamic>)['session'],
+        isA<Map<String, dynamic>>(),
+      );
+
+      host.setSessionStarted(true);
+      await _waitFor(
+        () => messages.any((Map<String, dynamic> envelope) {
+          final Object? payload = envelope['payload'];
+          if (payload is! Map<String, dynamic>) return false;
+          final Object? session = payload['session'];
+          return session is Map<String, dynamic> &&
+              session['started'] == true &&
+              session['simulatorEnabled'] == true;
+        }),
+      );
+
+      host.closeClassroomSession();
+      await _waitFor(
+        () => messages.any((Map<String, dynamic> envelope) {
+          final Object? payload = envelope['payload'];
+          if (payload is! Map<String, dynamic>) return false;
+          final Object? session = payload['session'];
+          return session is Map<String, dynamic> &&
+              session['closed'] == true &&
+              session['simulatorEnabled'] == false;
+        }),
+      );
     });
 
     test('wrong session code is rejected before synchronization', () async {

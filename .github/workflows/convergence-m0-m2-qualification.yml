@@ -16,6 +16,7 @@ on:
       - 'packages/electrosim_pv/**'
       - 'packages/electrosim_energy/**'
       - 'packages/electrosim_tp/**'
+      - 'apps/electrosim/lib/runtime/electrosim_runtime_engine.dart'
       - 'apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart'
       - 'apps/electrosim/lib/runtime/electrosim_lan_sync.dart'
       - 'apps/electrosim/lib/f17_tp_session_dialog.dart'

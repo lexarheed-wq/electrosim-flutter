@@ -43,11 +43,40 @@ for source_root in authored_roots:
         if p.suffix.lower() in {'.js', '.ts'}:
             errors.append(f'legacy-code-outside-reference:{rel.as_posix()}')
 
-# No catalog items in scenario package during F0.
+# Historical F0 forbids scenario catalog content. On the convergence branch,
+# F18 already contains V2 scenario contract fixtures, so the relevant
+# invariant is stricter and more precise: no dependency on V1/legacy data.
 scen = ROOT / 'packages/electrosim_scenarios'
-for p in scen.rglob('*'):
-    if p.is_file() and p.name != 'README.md':
-        errors.append(f'scenario-content-in-f0:{p.relative_to(ROOT).as_posix()}')
+convergence_mode = (ROOT / 'CONVERGENCE_VERSION').is_file()
+if convergence_mode:
+    policy = scen / 'REBUILD_POLICY.md'
+    if not policy.is_file():
+        errors.append('missing:packages/electrosim_scenarios/REBUILD_POLICY.md')
+    forbidden_tokens = (
+        'reference/legacy/',
+        'electrosim-fieldfix',
+        'fieldfix01',
+        'exampleid',
+        'example_id',
+    )
+    fixture_names = {'f10_examples.dart', 'f11_fault_scenarios.dart', 'f16_catalog.dart'}
+    for p in scen.rglob('*'):
+        if not p.is_file():
+            continue
+        rel = p.relative_to(ROOT).as_posix()
+        if p.suffix == '.dart':
+            text = p.read_text(encoding='utf-8').lower()
+            for token in forbidden_tokens:
+                if token in text:
+                    errors.append(f'legacy-scenario-dependency:{rel}:{token}')
+        if p.name in fixture_names:
+            first = p.read_text(encoding='utf-8').splitlines()[0] if p.read_text(encoding='utf-8') else ''
+            if 'BOOTSTRAP_FIXTURE_ONLY' not in first:
+                errors.append(f'unmarked-scenario-fixture:{rel}')
+else:
+    for p in scen.rglob('*'):
+        if p.is_file() and p.name != 'README.md':
+            errors.append(f'scenario-content-in-f0:{p.relative_to(ROOT).as_posix()}')
 
 # Verify frozen ZIP hash. The distributable must be self-contained: a missing
 # immutable legacy oracle is a structured gate failure, never an uncaught

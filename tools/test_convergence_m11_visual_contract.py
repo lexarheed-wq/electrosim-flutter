@@ -24,5 +24,13 @@ class M11VisualContractTest(unittest.TestCase):
         self.assertNotIn('text: modelType', text)
         self.assertIn('does not paint raw model', text)
 
+    def test_f18_app_owns_component_chrome_once(self):
+        app = (ROOT / 'apps/electrosim/lib/main.dart').read_text(encoding='utf-8')
+        painter = (ROOT / 'apps/electrosim/lib/f18_component_archetypes.dart').read_text(encoding='utf-8')
+        overlay = (ROOT / 'apps/electrosim/lib/f9_component_visuals.dart').read_text(encoding='utf-8')
+        self.assertIn('paintElementChrome: false', app)
+        self.assertIn('_paintIndustrialModel', painter)
+        self.assertIn('worldRect.width * scale', overlay)
+
 if __name__ == '__main__':
     unittest.main()

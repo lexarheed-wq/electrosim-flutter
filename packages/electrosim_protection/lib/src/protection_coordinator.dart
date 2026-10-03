@@ -310,6 +310,7 @@ final class ProtectionCoordinator {
       circuit: effective,
       topology: topology,
       solver: solver,
+      previousStates: previousContactorStates,
     );
     Ac3SolveResult result = control.result;
     final List<ProtectionCoordinationIssue> issues =

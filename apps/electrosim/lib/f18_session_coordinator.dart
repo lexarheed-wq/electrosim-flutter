@@ -156,6 +156,7 @@ class _F18TeacherSessionCoordinatorPageState
       MaterialPageRoute<void>(
         builder: (BuildContext context) => F18SessionSupervisionPage(
           controller: _controller,
+          lanHost: _lanHost,
         ),
       ),
     );
@@ -173,8 +174,14 @@ class _F18TeacherSessionCoordinatorPageState
         initialLanHostInfo: _lanInfo,
         onEnableLanSharing: _enableLanSharing,
         onStudentStarted: (_) {},
+        onCloseClassroomSession: _closeClassroomSession,
       ),
     );
+  }
+
+  void _closeClassroomSession() {
+    _lanHost?.closeClassroomSession();
+    _goHome();
   }
 
   Future<void> _enableWaitingRoomSharing() async {
@@ -253,12 +260,20 @@ class F18SessionSupervisionPage extends StatelessWidget {
   const F18SessionSupervisionPage({
     super.key,
     required this.controller,
+    this.lanHost,
+    this.proofStudents,
   });
 
   final ElectroSimTpSessionController controller;
+  final ElectroSimLanSyncHost? lanHost;
+  final List<F17StudentSupervisionItem>? proofStudents;
 
   @override
   Widget build(BuildContext context) {
+    final List<Listenable> listenables = <Listenable>[
+      controller,
+      if (lanHost != null) lanHost!,
+    ];
     return Scaffold(
       key: const Key('session-supervision-page'),
       backgroundColor: ElectroSimColors.background,
@@ -274,7 +289,7 @@ class F18SessionSupervisionPage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 920),
+            constraints: const BoxConstraints(maxWidth: 1040),
             child: Padding(
               padding: const EdgeInsets.all(ElectroSimSpacing.md),
               child: DecoratedBox(
@@ -286,7 +301,44 @@ class F18SessionSupervisionPage extends StatelessWidget {
                   ),
                   boxShadow: ElectroSimComponentTokens.cardElevation,
                 ),
-                child: F17TpSupervisionPanel(controller: controller),
+                child: AnimatedBuilder(
+                  animation: Listenable.merge(listenables),
+                  builder: (BuildContext context, Widget? child) {
+                    final ElectroSimLanSyncHost? host = lanHost;
+                    final List<F17StudentSupervisionItem> students =
+                        proofStudents ??
+                            host?.studentSupervisionStates
+                                .map(
+                                  (ElectroSimStudentSupervisionState state) =>
+                                      F17StudentSupervisionItem(
+                                    clientId: state.clientId,
+                                    displayName: state.displayName,
+                                    connected: state.connected,
+                                    session: state.session,
+                                  ),
+                                )
+                                .toList(growable: false) ??
+                            const <F17StudentSupervisionItem>[];
+
+                    return F17TpSupervisionPanel(
+                      controller: controller,
+                      students: students,
+                      onGradeStudent: host == null
+                          ? null
+                          : (F17StudentGradeRequest request) {
+                              host.evaluateStudent(
+                                request.clientId,
+                                score: request.score,
+                              );
+                            },
+                      onCloseStudent: host == null
+                          ? null
+                          : (String clientId) {
+                              host.closeStudent(clientId);
+                            },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -295,3 +347,4 @@ class F18SessionSupervisionPage extends StatelessWidget {
     );
   }
 }
+

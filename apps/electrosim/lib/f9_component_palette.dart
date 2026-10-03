@@ -237,21 +237,30 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               ),
             ),
             const SizedBox(height: ElectroSimSpacing.sm),
-            Wrap(
-              spacing: ElectroSimSpacing.xs,
-              runSpacing: ElectroSimSpacing.xs,
-              children: <Widget>[
+            DropdownButtonFormField<String>(
+              key: const Key('palette-category-selector'),
+              initialValue: _category,
+              decoration: const InputDecoration(
+                labelText: 'Catégorie',
+                prefixIcon: Icon(Icons.category_outlined),
+                isDense: true,
+              ),
+              items: <DropdownMenuItem<String>>[
                 for (final String category in _categories)
-                  ChoiceChip(
-                    key: Key('palette-category-${_slug(category)}'),
-                    label: Text(category),
-                    selected: _category == category,
-                    onSelected: (_) => setState(() {
-                      _category = category;
-                      _expanded = false;
-                    }),
+                  DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
                   ),
               ],
+              onChanged: (String? category) {
+                if (category == null) {
+                  return;
+                }
+                setState(() {
+                  _category = category;
+                  _expanded = false;
+                });
+              },
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             Expanded(

@@ -61,6 +61,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+    await tester.pumpAndSettle();
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byType(app.F9WorkspaceDemoPage), findsNothing);
@@ -78,6 +80,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('maintenance-troubleshooting')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+    await tester.pumpAndSettle();
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byType(app.F9WorkspaceDemoPage), findsNothing);
@@ -93,7 +97,13 @@ void main() {
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.byKey(const Key('home-create-session')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-create-confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-waiting-continue')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dashboard-wiring')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
     await tester.pumpAndSettle();
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);

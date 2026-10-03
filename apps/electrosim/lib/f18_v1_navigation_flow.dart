@@ -252,7 +252,13 @@ class _StudentBrowserAccessCard extends StatelessWidget {
                   ? const SizedBox(
                       width: 180,
                       height: 180,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: Icon(
+                          Icons.qr_code_2_outlined,
+                          size: 96,
+                          color: ElectroSimColors.textSecondary,
+                        ),
+                      ),
                     )
                   : DecoratedBox(
                       decoration: BoxDecoration(

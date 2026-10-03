@@ -124,14 +124,30 @@ void main() {
       closeTo(5.0, 1e-9),
     );
     expect(snapshot.dcResult, isNull);
-    expect(snapshot.diagnosticsAvailable, isFalse);
+    expect(snapshot.diagnosticsAvailable, isTrue);
 
-    final MeasurementResult measurement = snapshot.measureVoltage(
+    final MeasurementResult dcMeasurement = snapshot.measureVoltage(
       positiveProbe: TerminalId('ac1-load-a'),
       negativeProbe: TerminalId('ac1-load-b'),
     );
-    expect(measurement.isValid, isFalse);
-    expect(measurement.errorCode, MeasurementErrorCode.wrongElectricalMode);
+    expect(dcMeasurement.isValid, isFalse);
+    expect(dcMeasurement.errorCode, MeasurementErrorCode.wrongElectricalMode);
+
+    final MeasurementResult acVoltage = snapshot.measureAcVoltage(
+      positiveProbe: TerminalId('ac1-load-a'),
+      negativeProbe: TerminalId('ac1-load-b'),
+    );
+    expect(acVoltage.isValid, isTrue);
+    expect(acVoltage.reading!.value, closeTo(230.0, 1e-8));
+
+    final MeasurementResult acCurrent =
+        snapshot.measureAcCurrent(branchId: 'component:load');
+    expect(acCurrent.isValid, isTrue);
+    expect(acCurrent.reading!.value, closeTo(5.0, 1e-9));
+
+    final MeasurementResult frequency = snapshot.measureFrequency();
+    expect(frequency.isValid, isTrue);
+    expect(frequency.reading!.value, closeTo(50.0, 1e-12));
   });
 
   test('F17-R9 runtime routes balanced AC3 to SolverAC3', () {
@@ -149,7 +165,11 @@ void main() {
       snapshot.ac3.lineCurrent(PhaseTag.l1).magnitude,
       closeTo(10.0, 1e-8),
     );
-    expect(snapshot.diagnosticsAvailable, isFalse);
+    expect(snapshot.diagnosticsAvailable, isTrue);
+
+    final MeasurementResult frequency = snapshot.measureFrequency();
+    expect(frequency.isValid, isTrue);
+    expect(frequency.reading!.value, closeTo(50.0, 1e-12));
   });
 
   test('F17-R10 routes even invalid PV circuits through SolverPV without throwing', () {

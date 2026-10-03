@@ -203,10 +203,17 @@ class _F18TeacherSessionCoordinatorPageState
       }
       _lanHost = host;
       _lanInfo = info;
+      host.addListener(_onLanHostChanged);
       return info;
     } on Object {
       await host.close();
       rethrow;
+    }
+  }
+
+  void _onLanHostChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -216,6 +223,7 @@ class _F18TeacherSessionCoordinatorPageState
     _lanHost = null;
     _lanInfo = null;
     if (host != null) {
+      host.removeListener(_onLanHostChanged);
       unawaited(host.close());
     }
     if (_ownsController) {

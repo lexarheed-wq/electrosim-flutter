@@ -126,6 +126,21 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     return _session!;
   }
 
+  void deleteTeacherActivity() {
+    final TpSession? current = _session;
+    if (current == null) return;
+    if (current.lifecycle == TpLifecycle.started ||
+        current.lifecycle == TpLifecycle.submitted ||
+        current.lifecycle == TpLifecycle.evaluated) {
+      throw StateError(
+        'Active, submitted or evaluated TP must be closed before deletion.',
+      );
+    }
+    _engine = _buildEngine();
+    _session = null;
+    notifyListeners();
+  }
+
   CircuitState? get studentCircuit => _session?.studentCircuit;
   TpEvaluation? get evaluation => _session?.evaluation;
 

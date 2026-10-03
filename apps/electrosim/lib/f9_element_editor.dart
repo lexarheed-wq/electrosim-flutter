@@ -34,17 +34,32 @@ abstract final class F9ElementEditor {
         continue;
       }
       final Object? closed = component.controlState['closed'];
+      final Object? pressed = component.controlState['pressed'];
+      final bool isPushButton =
+          component.modelType == 'push_button_no' ||
+          component.modelType == 'push_button_nc';
+      final bool? primaryValue = isPushButton
+          ? (pressed is bool ? pressed : null)
+          : (closed is bool ? closed : null);
       return F9ElementDetails(
         kind: F9ElementKind.component,
         id: component.id.value,
         modelType: component.modelType,
-        terminalLabels: component.terminals.map((Terminal item) => item.name).toList(growable: false),
+        terminalLabels: component.terminals
+            .map((Terminal item) => item.name)
+            .toList(growable: false),
         parameters: component.parameters,
-        stateLabel: component.condition == ComponentCondition.normal && closed is bool
-            ? (closed ? 'fermé' : 'ouvert')
-            : component.condition.name,
-        primaryToggleLabel: closed is bool ? 'Fermé' : null,
-        primaryToggleValue: closed is bool ? closed : null,
+        stateLabel: component.condition != ComponentCondition.normal
+            ? component.condition.name
+            : isPushButton && pressed is bool
+                ? (pressed ? 'appuyé' : 'relâché')
+                : closed is bool
+                    ? (closed ? 'fermé' : 'ouvert')
+                    : component.condition.name,
+        primaryToggleLabel: isPushButton
+            ? (pressed is bool ? 'Appuyé' : null)
+            : (closed is bool ? 'Fermé' : null),
+        primaryToggleValue: primaryValue,
       );
     }
     for (final SourceInstance source in circuit.sources) {
@@ -71,6 +86,27 @@ abstract final class F9ElementEditor {
       if (component.id.value != elementId) {
         return component;
       }
+      final bool isPushButton =
+          component.modelType == 'push_button_no' ||
+          component.modelType == 'push_button_nc';
+      if (isPushButton) {
+        final Object? pressed = component.controlState['pressed'];
+        if (pressed is! bool) {
+          return component;
+        }
+        changed = true;
+        return ComponentInstance(
+          id: component.id,
+          modelType: component.modelType,
+          terminals: component.terminals,
+          parameters: component.parameters,
+          condition: component.condition,
+          controlState: <String, Object?>{
+            ...component.controlState,
+            'pressed': !pressed,
+          },
+        );
+      }
       final Object? closed = component.controlState['closed'];
       if (closed is! bool) {
         return component;
@@ -82,7 +118,10 @@ abstract final class F9ElementEditor {
         terminals: component.terminals,
         parameters: component.parameters,
         condition: component.condition,
-        controlState: <String, Object?>{...component.controlState, 'closed': !closed},
+        controlState: <String, Object?>{
+          ...component.controlState,
+          'closed': !closed,
+        },
       );
     }).toList(growable: false);
 

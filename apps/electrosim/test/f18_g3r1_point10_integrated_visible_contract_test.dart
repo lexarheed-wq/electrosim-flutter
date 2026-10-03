@@ -26,6 +26,8 @@ Future<void> _openDesignWorkspace(
   await tester.pumpAndSettle();
   await tester.tap(wiring);
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+  await tester.pumpAndSettle();
 }
 
 void _expectOrthogonalCommittedRoutes(SimulatorCanvas canvas) {

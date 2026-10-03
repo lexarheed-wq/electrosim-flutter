@@ -477,4 +477,100 @@ String _graphSignature(TopologyGraph graph) {
       .map((TopologyFinding f) => '${f.code.name}:${f.nodeId ?? ''}:${f.connectionId?.value ?? ''}')
       .join('|');
   return '$nodes#$enabled#$findings';
+
+  test('current-limited DC source direct short is warning not topology error', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('limited-direct-short-topology'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('short'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('vp'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('vn'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{
+            'voltageV': 24.0,
+            'currentLimitA': 5.0,
+          },
+        ),
+      ],
+    );
+
+    final TopologyGraph graph = const TopologyEngine().compile(circuit);
+    final Iterable<TopologyFinding> conflicts = graph.findings.where(
+      (TopologyFinding finding) =>
+          finding.code == TopologyFindingCode.conflictingPhases,
+    );
+    expect(conflicts, isNotEmpty);
+    expect(
+      conflicts.every(
+        (TopologyFinding finding) =>
+            finding.severity == TopologyFindingSeverity.warning,
+      ),
+      isTrue,
+    );
+  });
+
+  test('ideal DC source direct short remains a topology error', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('ideal-direct-short-topology'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('short'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('vp'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('vn'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        ),
+      ],
+    );
+
+    final TopologyGraph graph = const TopologyEngine().compile(circuit);
+    expect(
+      graph.findings.any(
+        (TopologyFinding finding) =>
+            finding.code == TopologyFindingCode.conflictingPhases &&
+            finding.severity == TopologyFindingSeverity.error,
+      ),
+      isTrue,
+    );
+  });
+
 }

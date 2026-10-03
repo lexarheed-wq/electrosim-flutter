@@ -127,7 +127,6 @@ void main() {
       );
     });
 
-  });
     test('M10 cancellation closes a non-submitted activity without fabricating an evaluation', () {
       final TpEngine engine = TpEngine(faultScenarios: scenarios);
       final TpDefinition def = TpDefinition.troubleshooting(
@@ -144,5 +143,5 @@ void main() {
       expect(cancelled.readOnly, isTrue);
       expect(() => engine.submit(def.id), throwsStateError);
     });
-
+  });
 }

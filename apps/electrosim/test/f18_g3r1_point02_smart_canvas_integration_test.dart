@@ -14,6 +14,8 @@ Future<SimulatorCanvas> _openDesignWorkspace(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('design-wiring')));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+  await tester.pumpAndSettle();
 
   return tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
 }
@@ -50,7 +52,13 @@ void main() {
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.byKey(const Key('home-create-session')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-create-confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('session-waiting-continue')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('dashboard-wiring')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
     await tester.pumpAndSettle();
 
     final SimulatorCanvas canvas =

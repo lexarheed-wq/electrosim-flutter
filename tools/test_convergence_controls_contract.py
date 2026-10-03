@@ -17,10 +17,11 @@ class ControlsConvergenceContractTest(unittest.TestCase):
         self.assertIn('voltageV > thresholds.dropout', text)
         self.assertIn('voltageV >= thresholds.pickup', text)
 
-    def test_runtime_uses_coordinator_for_ac(self):
+    def test_runtime_uses_protection_coordinator_for_ac(self):
         text = (ROOT / 'apps/electrosim/lib/runtime/electrosim_runtime_engine.dart').read_text(encoding='utf-8')
-        self.assertIn('electromechanicalControlEngine.solveAc1', text)
-        self.assertIn('electromechanicalControlEngine.solveAc3', text)
+        self.assertIn('protectionCoordinator.advanceAc1', text)
+        self.assertIn('protectionCoordinator.advanceAc3', text)
+        self.assertIn('controlsEngine: electromechanicalControlEngine', text)
         self.assertIn('contactorStates: coordinated.contactors', text)
 
     def test_push_buttons_have_momentary_semantics(self):

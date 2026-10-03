@@ -433,15 +433,15 @@ void main() {
         info.preferredJoinUrl.host,
         info.preferredJoinUrl.port,
       );
-      httpSocket!.write(
+      httpSocket.write(
         'GET ${info.preferredJoinUrl.path} HTTP/1.1\r\n'
         'Host: ${info.preferredJoinUrl.host}\r\n'
         'Connection: close\r\n'
         '\r\n',
       );
-      await httpSocket!.flush();
+      await httpSocket.flush();
       final String rawHttp =
-          await utf8.decoder.bind(httpSocket!).join();
+          await utf8.decoder.bind(httpSocket).join();
       expect(rawHttp, startsWith('HTTP/1.1 200'));
       expect(rawHttp, contains('ElectroSim Élève'));
 

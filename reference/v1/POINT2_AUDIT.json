@@ -1,0 +1,27 @@
+{
+  "point": 2,
+  "name": "V1 functional/navigation reference",
+  "status": "PASS_PENDING_CI",
+  "source_video_sha256": "5727d0e521d04590c3c3ffdca3c054f64e481d3aac6617858bb527681abde704",
+  "canonical_states": 10,
+  "observed_transitions": 14,
+  "frame_reproduction": {
+    "status": "PASS",
+    "method": "ffmpeg exact timestamp extraction + SHA-256",
+    "frames_verified": 10
+  },
+  "scope": "functional_navigation",
+  "theme": "current Flutter theme retained",
+  "m13r2_core_modified": false,
+  "application_runtime_modified": false,
+  "global_tools_restored_to_m13r2": true,
+  "ci_scope_correction": "V1 reference utilities isolated under reference/v1/tools to avoid triggering obsolete phase gates",
+  "acceptance": [
+    "source fingerprint fixed",
+    "canonical state fingerprints fixed",
+    "navigation graph machine-readable",
+    "visible but unexercised controls separated from observed behavior",
+    "M13-R2 baseline guard required",
+    "V1 reference contract gate required"
+  ]
+}

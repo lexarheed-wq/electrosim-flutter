@@ -1,0 +1,26 @@
+name: V1 functional navigation reference
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "reference/v1/**"
+      - "docs/V1_FUNCTIONAL_NAVIGATION_REFERENCE.md"
+      - "tools/test_v1_functional_navigation_reference.py"
+      - "tools/extract_v1_reference_frames.py"
+      - ".github/workflows/v1-functional-navigation-reference.yml"
+  pull_request:
+    branches:
+      - v1-parity
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reference-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate V1 functional/navigation reference
+        run: python3 -m unittest tools/test_v1_functional_navigation_reference.py

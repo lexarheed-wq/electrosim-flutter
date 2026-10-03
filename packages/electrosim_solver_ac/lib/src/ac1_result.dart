@@ -18,6 +18,8 @@ enum Ac1BranchKind {
   idealShort,
   idealSwitch,
   idealProtection,
+  controlCoil,
+  contactorContact,
 }
 
 final class Ac1BranchResult {

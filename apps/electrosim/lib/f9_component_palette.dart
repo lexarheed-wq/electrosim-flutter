@@ -240,16 +240,20 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
             DropdownButtonFormField<String>(
               key: const Key('palette-category-selector'),
               initialValue: _category,
+              isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'Catégorie',
-                prefixIcon: Icon(Icons.category_outlined),
                 isDense: true,
               ),
               items: <DropdownMenuItem<String>>[
                 for (final String category in _categories)
                   DropdownMenuItem<String>(
                     value: category,
-                    child: Text(category),
+                    child: Text(
+                      category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
               ],
               onChanged: (String? category) {

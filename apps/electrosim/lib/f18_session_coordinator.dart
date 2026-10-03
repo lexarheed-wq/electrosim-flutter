@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_shell_navigation.dart';
+import 'f18_v1_navigation_flow.dart';
 import 'f9_ui_context.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -22,10 +23,14 @@ class F18TeacherSessionCoordinatorPage extends StatefulWidget {
   const F18TeacherSessionCoordinatorPage({
     super.key,
     required this.workspaceBuilder,
+    required this.sessionName,
+    required this.sessionCode,
     this.controller,
   });
 
   final F18SessionWorkspaceBuilder workspaceBuilder;
+  final String sessionName;
+  final String sessionCode;
   final ElectroSimTpSessionController? controller;
 
   @override
@@ -39,6 +44,8 @@ class _F18TeacherSessionCoordinatorPageState
   late final bool _ownsController;
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanInfo;
+  bool _waitingRoom = true;
+  String? _waitingRoomNetworkStatus;
 
   @override
   void initState() {
@@ -49,10 +56,28 @@ class _F18TeacherSessionCoordinatorPageState
 
   @override
   Widget build(BuildContext context) {
+    if (_waitingRoom) {
+      return F18SessionWaitingRoomPage(
+        sessionName: widget.sessionName,
+        sessionCode: widget.sessionCode,
+        connectedStudents: _lanHost?.connectedClientIds.length ?? 0,
+        sharingStatus: _waitingRoomNetworkStatus,
+        onHome: _goHome,
+        onEnableSharing: () {
+          unawaited(_enableWaitingRoomSharing());
+        },
+        onContinue: () {
+          setState(() {
+            _waitingRoom = false;
+          });
+        },
+      );
+    }
     return F18SessionShellPage(
+      sessionName: widget.sessionName,
       onHome: _goHome,
-      onWiring: () => _openWorkspace('Câblage'),
-      onTroubleshooting: () => _openWorkspace('Recherche de dérangement'),
+      onWiring: () => _openActivitySetup('Câblage'),
+      onTroubleshooting: () => _openActivitySetup('Recherche de dérangement'),
       onSupervision: _openSupervision,
       onManageSession: () {
         unawaited(_showManageSession());
@@ -64,14 +89,46 @@ class _F18TeacherSessionCoordinatorPageState
     Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
   }
 
-  void _openWorkspace(String workspace) {
+  void _openActivitySetup(String workspace) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
+        settings: RouteSettings(
+          name: 'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-setup',
+        ),
+        builder: (BuildContext setupContext) => F18ActivitySetupPage(
+          pageKey: Key(
+            workspace == 'Câblage'
+                ? 'session-cabling-setup-page'
+                : 'session-troubleshooting-setup-page',
+          ),
+          title: workspace == 'Câblage'
+              ? 'Préparer l’activité de câblage'
+              : 'Préparer la recherche de dérangement',
+          description: workspace == 'Câblage'
+              ? 'Préparez l’activité avant d’ouvrir l’atelier de câblage.'
+              : 'Préparez la situation de diagnostic avant d’ouvrir l’atelier.',
+          parentLabel: 'tableau de bord',
+          onBack: () => Navigator.of(setupContext).pop(),
+          onOpenWorkshop: () => _openWorkspace(setupContext, workspace),
+        ),
+      ),
+    );
+  }
+
+  void _openWorkspace(BuildContext setupContext, String workspace) {
+    Navigator.of(setupContext).push(
+      MaterialPageRoute<void>(
+        settings: RouteSettings(
+          name: 'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-workspace',
+        ),
         builder: (BuildContext routeContext) => widget.workspaceBuilder(
           routeContext,
           _controller,
           workspace,
-          () => Navigator.of(routeContext).pop(),
+          () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) =>
+                route.settings.name == 'teacher-session',
+          ),
           () {
             unawaited(_showManageSession());
           },
@@ -106,6 +163,25 @@ class _F18TeacherSessionCoordinatorPageState
     );
   }
 
+  Future<void> _enableWaitingRoomSharing() async {
+    setState(() {
+      _waitingRoomNetworkStatus = 'Activation du partage réseau…';
+    });
+    try {
+      final ElectroSimLanHostInfo info = await _enableLanSharing();
+      if (!mounted) return;
+      setState(() {
+        _waitingRoomNetworkStatus =
+            'Partage actif : ${info.preferredEndpoint}';
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _waitingRoomNetworkStatus = 'Partage réseau indisponible : $error';
+      });
+    }
+  }
+
   Future<ElectroSimLanHostInfo> _enableLanSharing() async {
     final ElectroSimLanSyncHost? existingHost = _lanHost;
     final ElectroSimLanHostInfo? existingInfo = _lanInfo;
@@ -117,7 +193,7 @@ class _F18TeacherSessionCoordinatorPageState
 
     final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
       controller: _controller,
-      sessionCode: ElectroSimLanSyncHost.generateSessionCode(),
+      sessionCode: widget.sessionCode,
     );
     try {
       final ElectroSimLanHostInfo info = await host.start();

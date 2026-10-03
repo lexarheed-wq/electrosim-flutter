@@ -411,7 +411,7 @@ void main() {
       final ElectroSimLanHostInfo info = await host.start(
         address: InternetAddress.loopbackIPv4,
       );
-      final HttpClient http = HttpClient();
+      Socket? httpSocket;
       WebSocket? browserSocket;
       StreamSubscription<dynamic>? browserSubscription;
       final List<Map<String, dynamic>> messages =
@@ -420,7 +420,7 @@ void main() {
       addTearDown(() async {
         await browserSubscription?.cancel();
         await browserSocket?.close();
-        http.close(force: true);
+        httpSocket?.destroy();
         await host.close();
         teacher.dispose();
         await webRoot.delete(recursive: true);
@@ -429,12 +429,21 @@ void main() {
       expect(info.preferredJoinUrl.scheme, 'http');
       expect(info.preferredJoinUrl.path, '/join/WEB234');
 
-      final HttpClientRequest request =
-          await http.getUrl(info.preferredJoinUrl);
-      final HttpClientResponse response = await request.close();
-      final String html = await utf8.decoder.bind(response).join();
-      expect(response.statusCode, HttpStatus.ok);
-      expect(html, contains('ElectroSim Élève'));
+      httpSocket = await Socket.connect(
+        info.preferredJoinUrl.host,
+        info.preferredJoinUrl.port,
+      );
+      httpSocket!.write(
+        'GET ${info.preferredJoinUrl.path} HTTP/1.1\r\n'
+        'Host: ${info.preferredJoinUrl.host}\r\n'
+        'Connection: close\r\n'
+        '\r\n',
+      );
+      await httpSocket!.flush();
+      final String rawHttp =
+          await utf8.decoder.bind(httpSocket!).join();
+      expect(rawHttp, startsWith('HTTP/1.1 200'));
+      expect(rawHttp, contains('ElectroSim Élève'));
 
       final Uri socketUri = info.preferredEndpoint.replace(
         queryParameters: <String, String>{

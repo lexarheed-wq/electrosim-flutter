@@ -8,6 +8,7 @@ on:
       - "apps/electrosim/lib/f17_tp_session_dialog.dart"
       - "apps/electrosim/lib/f17_tp_supervision_panel.dart"
       - "apps/electrosim/lib/f18_session_coordinator.dart"
+      - "apps/electrosim/lib/student_web_main.dart"
       - "apps/electrosim/lib/runtime/electrosim_lan_sync.dart"
       - "apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart"
       - "apps/electrosim/lib/point4_proof_main.dart"

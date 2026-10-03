@@ -1,4 +1,4 @@
-name: Convergence M0-M11 qualification
+name: Convergence M0-M12 qualification
 
 on:
   push:
@@ -67,6 +67,7 @@ jobs:
             tools/test_convergence_m9_diagnostic_contract.py \
             tools/test_convergence_m10_tp_flow_contract.py \
             tools/test_convergence_m11_visual_contract.py \
+            tools/test_convergence_m12_ui_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -139,7 +140,8 @@ jobs:
             test/f17_diagnostic_supervision_test.dart \
             test/f17_lan_sync_test.dart \
             test/f18_g3r1_point08_visual_archetypes_test.dart \
-            test/m11_component_visuals_test.dart
+            test/m11_component_visuals_test.dart \
+            test/m12_workspace_responsive_test.dart
 
       - name: Scenario non-migration guards
         run: |
@@ -147,4 +149,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M11_COMPONENT_VISUALS_CONVERGENCE_PASS
+        run: echo M12_UI_CONVERGENCE_PASS

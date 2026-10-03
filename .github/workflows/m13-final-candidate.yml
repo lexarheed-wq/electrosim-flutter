@@ -1,4 +1,4 @@
-name: M13 final candidate
+name: M13-R2 final convergence candidate
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ permissions:
 jobs:
   mac-final:
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,13 +26,19 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Verify toolchain
+      - name: Verify exact toolchain
         shell: bash
         run: |
           set -euo pipefail
           flutter --version
           dart --version 2>&1 | grep '3.10.9'
           flutter config --enable-macos-desktop
+
+      - name: Verify convergence contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest             tools/test_convergence_m0_contract.py             tools/test_convergence_m1_contract.py             tools/test_convergence_m2_contract.py             tools/test_convergence_m3a_contract.py             tools/test_convergence_m3b_contract.py             tools/test_convergence_m4_ac1_contract.py             tools/test_convergence_m5_ac3_contract.py             tools/test_convergence_m6_contract.py             tools/test_convergence_m7_measurements_contract.py             tools/test_convergence_m8_pv_energy_contract.py             tools/test_convergence_m9_diagnostics_contract.py             tools/test_convergence_m10_tp_contract.py             tools/test_convergence_m11_visual_contract.py             tools/test_convergence_m12_ui_contract.py             tools/test_convergence_controls_contract.py             tools/test_convergence_protection_runtime_contract.py             tools/test_convergence_simulation_clock_contract.py             tools/test_figma_asset_pipeline_contract.py             tools/test_f18_g0_tooling.py
 
       - name: Re-run qualified macOS target gate
         shell: bash
@@ -42,18 +48,20 @@ jobs:
           ./tools/f15_qualify_target.sh macos
           python3 tools/f15_validate_evidence_file.py macos docs/f15/evidence/macos.json
 
-      - name: Build release application
+      - name: Build and test release application
         shell: bash
         run: |
           set -euo pipefail
-          PREP_OUT="$(./tools/f15_prepare_runner.sh macos "$RUNNER_TEMP/electrosim-m13-release")"
+          PREP_OUT="$(./tools/f15_prepare_runner.sh macos "$RUNNER_TEMP/electrosim-m13r2-release")"
           case "$PREP_OUT" in
             F15_RUNNER_PATH=*) M13_TMP="${PREP_OUT#F15_RUNNER_PATH=}" ;;
-            *) echo "M13_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
+            *) echo "M13R2_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
           esac
           APP_DIR="$M13_TMP/apps/electrosim"
+          python3 tools/m14_patch_macos_window.py "$APP_DIR/macos/Runner/MainFlutterWindow.swift"
           cd "$APP_DIR"
           flutter analyze
+          flutter test             test/controls_runtime_integration_test.dart             test/protection_runtime_integration_test.dart             test/simulation_clock_test.dart             test/f17_lan_sync_test.dart             test/m11_component_visuals_test.dart             test/m12_workspace_responsive_test.dart             test/f17_eie_ui_test.dart
           flutter build macos --release
           APP_PATH="$(find "$APP_DIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$APP_PATH"
@@ -65,19 +73,16 @@ jobs:
         run: |
           set -euo pipefail
           ROOT="$GITHUB_WORKSPACE"
-          OUT="$ROOT/distribution/m13"
-          HANDOFF="$OUT/PASSATION_ELECTROSIM_M13"
+          OUT="$ROOT/distribution/m13r2"
+          HANDOFF="$OUT/PASSATION_ELECTROSIM_M13R2"
           mkdir -p "$OUT" "$HANDOFF/01_CANDIDAT_MAC" "$HANDOFF/02_SOURCE" "$HANDOFF/03_PREUVES" "$HANDOFF/04_DOCUMENTATION"
 
           APP_PATH="$M13_APP_PATH"
-          test -n "$APP_PATH"
-          test -d "$APP_PATH"
-
-          CANDIDATE="$OUT/ElectroSim-M13-Final-Mac.zip"
+          CANDIDATE="$OUT/ElectroSim-M13R2-Convergence-Final-Mac.zip"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$CANDIDATE"
 
-          SOURCE_ZIP="$OUT/ElectroSim-M13-Source.zip"
-          git archive --format=zip --prefix=ElectroSim-M13-Source/ HEAD -o "$SOURCE_ZIP"
+          SOURCE_ZIP="$OUT/ElectroSim-M13R2-Source.zip"
+          git archive --format=zip --prefix=ElectroSim-M13R2-Source/ HEAD -o "$SOURCE_ZIP"
 
           APP_SHA="$(python3 - "$APP_PATH" <<'PY'
           from pathlib import Path
@@ -98,24 +103,33 @@ jobs:
           EXECUTABLE="$(find "$APP_PATH/Contents/MacOS" -maxdepth 1 -type f -print -quit)"
           ARCH_INFO="$(file "$EXECUTABLE" | sed 's/"/\\"/g')"
 
-          python3 - "$OUT/M13_MANIFEST.json" "$COMMIT_SHA" "$FLUTTER_VERSION" "$DART_VERSION" "$APP_SHA" "$ZIP_SHA" "$SOURCE_SHA" "$ARCH_INFO" <<'PY'
+          python3 - "$OUT/M13R2_MANIFEST.json" "$COMMIT_SHA" "$FLUTTER_VERSION" "$DART_VERSION" "$APP_SHA" "$ZIP_SHA" "$SOURCE_SHA" "$ARCH_INFO" <<'PY'
           import datetime, json, sys
           out, commit, flutter, dart, app_sha, zip_sha, source_sha, arch = sys.argv[1:]
           data = {
-              "schemaVersion": 1,
-              "phase": "M13",
+              "schemaVersion": 2,
+              "phase": "M13-R2",
               "status": "PASS",
               "branch": "f18-v1-v2-convergence",
               "commitSha": commit,
               "toolchain": {"flutter": flutter, "dart": dart},
+              "qualifiedFeatures": [
+                  "AC1/AC3 contactors and auxiliary NO/NC contacts",
+                  "start-stop self-hold and contactor hysteresis",
+                  "explicit simulation clock",
+                  "DC/AC1/AC3 protection dynamics and thermal trip",
+                  "current-limited DC source into direct/ideal short",
+                  "multi-student TP/LAN isolation",
+                  "V1 schema/fault libraries not migrated"
+              ],
               "macCandidate": {
-                  "file": "ElectroSim-M13-Final-Mac.zip",
+                  "file": "ElectroSim-M13R2-Convergence-Final-Mac.zip",
                   "appContentSha256": app_sha,
                   "zipSha256": zip_sha,
                   "architecture": arch,
               },
               "source": {
-                  "file": "ElectroSim-M13-Source.zip",
+                  "file": "ElectroSim-M13R2-Source.zip",
                   "sha256": source_sha,
               },
               "f15MacEvidence": "docs/f15/evidence/macos.json",
@@ -125,56 +139,58 @@ jobs:
           PY
 
           {
-            echo "$ZIP_SHA  ElectroSim-M13-Final-Mac.zip"
-            echo "$SOURCE_SHA  ElectroSim-M13-Source.zip"
+            echo "$ZIP_SHA  ElectroSim-M13R2-Convergence-Final-Mac.zip"
+            echo "$SOURCE_SHA  ElectroSim-M13R2-Source.zip"
           } > "$OUT/SHA256SUMS.txt"
 
           cat > "$OUT/TEST_MAC.txt" <<'EOF'
-          ElectroSim M13 — validation physique finale Mac
+          ElectroSim M13-R2 — validation physique Mac
 
-          1. Décompresser ElectroSim-M13-Final-Mac.zip.
-          2. Ouvrir l'application ElectroSim.
-          3. Vérifier l'accueil : Nouvelle session / Centre de maintenance / Centre de conception.
-          4. Créer une session et ouvrir le tableau de bord.
-          5. Ouvrir le simulateur puis vérifier drag/drop, fils orthogonaux, pan et zoom trackpad.
-          6. Vérifier Rotation et Supprimer dans la barre supérieure.
-          7. Vérifier la palette courte et Voir tous / recherche.
-          8. Lancer un TP professeur puis connecter un élève sur le LAN local.
-          9. Vérifier que le professeur démarre le TP et que l'élève ne peut pas s'auto-noter.
-          10. Vérifier qu'un TP remis reste en lecture seule.
+          1. Décompresser le ZIP puis ouvrir ElectroSim.
+          2. Vérifier l'accueil et la création de session.
+          3. Vérifier palette, drag/drop, fils orthogonaux, pan/zoom trackpad.
+          4. Vérifier Lecture/Pause simulation et le temps t=... s dans la barre d'état.
+          5. Tester un contacteur : A1/A2, Marche NO, Arrêt NC et auto-maintien 13-14.
+          6. Vérifier qu'un contacteur reste collé après relâchement de Marche puis décolle sur Arrêt.
+          7. Tester une protection temporisée et vérifier que le déclenchement ouvre réellement le circuit.
+          8. Tester une source CC avec currentLimitA sur court-circuit : simulation doit rester résolue et limitée.
+          9. Vérifier EIE silencieux quand aucune anomalie étayée n'existe.
+          10. Vérifier TP professeur/élève, LAN, remise en lecture seule et impossibilité d'auto-notation.
 
-          Les bibliothèques Schémas V1 et Pannes V1 ne sont pas migrées.
+          Important :
+          - Les bibliothèques Schémas V1 et Pannes V1 ne sont pas migrées.
+          - Les vrais assets Figma ne sont pas inclus tant que le quota Figma MCP reste indisponible.
           EOF
 
           cp "$CANDIDATE" "$HANDOFF/01_CANDIDAT_MAC/"
           cp "$OUT/TEST_MAC.txt" "$HANDOFF/01_CANDIDAT_MAC/"
           cp "$SOURCE_ZIP" "$HANDOFF/02_SOURCE/"
-          cp "$OUT/M13_MANIFEST.json" "$HANDOFF/03_PREUVES/"
+          cp "$OUT/M13R2_MANIFEST.json" "$HANDOFF/03_PREUVES/"
           cp "$OUT/SHA256SUMS.txt" "$HANDOFF/03_PREUVES/"
           cp "$ROOT/docs/f15/evidence/macos.json" "$HANDOFF/03_PREUVES/F15_MACOS_EVIDENCE.json"
           cp -R "$ROOT/docs/convergence" "$HANDOFF/04_DOCUMENTATION/"
           cp "$ROOT/CONVERGENCE_VERSION" "$HANDOFF/04_DOCUMENTATION/"
 
-          PASSATION="$OUT/PASSATION_ELECTROSIM_M13_FINAL.zip"
+          PASSATION="$OUT/PASSATION_ELECTROSIM_M13R2_FINAL.zip"
           ditto -c -k --sequesterRsrc --keepParent "$HANDOFF" "$PASSATION"
           shasum -a 256 "$PASSATION" > "$OUT/PASSATION_SHA256.txt"
 
       - name: Upload Mac candidate
         uses: actions/upload-artifact@v4
         with:
-          name: ElectroSim-M13-Final-Mac
+          name: ElectroSim-M13R2-Convergence-Final-Mac
           path: |
-            distribution/m13/ElectroSim-M13-Final-Mac.zip
-            distribution/m13/M13_MANIFEST.json
-            distribution/m13/SHA256SUMS.txt
-            distribution/m13/TEST_MAC.txt
+            distribution/m13r2/ElectroSim-M13R2-Convergence-Final-Mac.zip
+            distribution/m13r2/M13R2_MANIFEST.json
+            distribution/m13r2/SHA256SUMS.txt
+            distribution/m13r2/TEST_MAC.txt
           if-no-files-found: error
 
       - name: Upload final handoff
         uses: actions/upload-artifact@v4
         with:
-          name: PASSATION_ELECTROSIM_M13_FINAL
+          name: PASSATION_ELECTROSIM_M13R2_FINAL
           path: |
-            distribution/m13/PASSATION_ELECTROSIM_M13_FINAL.zip
-            distribution/m13/PASSATION_SHA256.txt
+            distribution/m13r2/PASSATION_ELECTROSIM_M13R2_FINAL.zip
+            distribution/m13r2/PASSATION_SHA256.txt
           if-no-files-found: error

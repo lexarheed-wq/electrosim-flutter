@@ -215,6 +215,48 @@ final class CoreComponentModelContracts {
         ],
       ),
       ComponentModelContract(
+        modelType: 'inductor',
+        family: ComponentFamily.passive,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'capacitor',
+        family: ComponentFamily.passive,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'impedance',
+        family: ComponentFamily.passive,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'lamp',
         family: ComponentFamily.receiver,
         terminalCount: 2,

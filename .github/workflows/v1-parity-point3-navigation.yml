@@ -12,7 +12,12 @@ on:
       - "apps/electrosim/lib/f18_v1_navigation_flow.dart"
       - "apps/electrosim/lib/f17_tp_supervision_panel.dart"
       - "apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart"
+      - "apps/electrosim/lib/runtime/electrosim_lan_sync.dart"
+      - "apps/electrosim/lib/runtime/electrosim_student_web_bundle.dart"
+      - "apps/electrosim/lib/runtime/electrosim_student_web_sync.dart"
       - "apps/electrosim/lib/navigation_proof_main.dart"
+      - "apps/electrosim/lib/student_web_main.dart"
+      - "apps/electrosim/pubspec.yaml"
       - "apps/electrosim/test/**"
       - "run_visual.sh"
       - "tools/run_macos_test.sh"
@@ -67,8 +72,10 @@ jobs:
           s2=${PIPESTATUS[0]}
           flutter test test/f9_shell_test.dart 2>&1 | tee ../../audit/point3/f9_shell_test.log
           s3=${PIPESTATUS[0]}
-          printf 'f18_g2=%s\nf18_g3=%s\nf9_shell=%s\n' "$s1" "$s2" "$s3" | tee ../../audit/point3/navigation-status.txt
-          if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ] || [ "$s3" -ne 0 ]; then
+          flutter test test/f17_lan_sync_test.dart 2>&1 | tee ../../audit/point3/f17_lan_sync_test.log
+          s4=${PIPESTATUS[0]}
+          printf 'f18_g2=%s\nf18_g3=%s\nf9_shell=%s\nf17_lan=%s\n' "$s1" "$s2" "$s3" "$s4" | tee ../../audit/point3/navigation-status.txt
+          if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ] || [ "$s3" -ne 0 ] || [ "$s4" -ne 0 ]; then
             exit 1
           fi
 
@@ -103,7 +110,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Build Chromium navigation proof
+      - name: Build Chromium teacher and student Web proofs
         working-directory: apps/electrosim
         shell: bash
         run: |
@@ -116,11 +123,28 @@ jobs:
             echo "$create_status" > ../../audit/point3/web-build-status.txt
             exit "$create_status"
           fi
+
+          rm -rf ../../audit/point3/navigation-web ../../audit/point3/student-web
           flutter build web --release -t lib/navigation_proof_main.dart 2>&1 |
+            tee ../../audit/point3/navigation-web-build.log
+          teacher_status=${PIPESTATUS[0]}
+          if [ "$teacher_status" -ne 0 ]; then
+            echo "$teacher_status" > ../../audit/point3/web-build-status.txt
+            exit "$teacher_status"
+          fi
+          cp -R build/web ../../audit/point3/navigation-web
+
+          rm -rf build/web
+          flutter build web --release -t lib/student_web_main.dart 2>&1 |
+            tee ../../audit/point3/student-web-build.log
+          student_status=${PIPESTATUS[0]}
+          echo "$student_status" > ../../audit/point3/web-build-status.txt
+          if [ "$student_status" -ne 0 ]; then
+            exit "$student_status"
+          fi
+          cp -R build/web ../../audit/point3/student-web
+          printf 'teacher=%s\nstudent=%s\n' "$teacher_status" "$student_status" |
             tee ../../audit/point3/web-build.log
-          status=${PIPESTATUS[0]}
-          echo "$status" > ../../audit/point3/web-build-status.txt
-          exit "$status"
 
       - name: Upload Chromium proof build diagnostics
         if: always()
@@ -139,17 +163,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ../../audit/point3/chromium
-          python3 -m http.server 8765 --directory build/web > ../../audit/point3/chromium/http.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python3 -m http.server 8765 --directory ../../audit/point3/navigation-web > ../../audit/point3/chromium/http-teacher.log 2>&1 &
+          teacher_pid=$!
+          python3 -m http.server 8766 --directory ../../audit/point3/student-web > ../../audit/point3/chromium/http-student.log 2>&1 &
+          student_pid=$!
+          trap 'kill "$teacher_pid" "$student_pid" 2>/dev/null || true' EXIT
 
-          for attempt in {1..50}; do
-            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then
-              break
-            fi
-            sleep 0.2
+          for port in 8765 8766; do
+            for attempt in {1..50}; do
+              if curl -fsS "http://127.0.0.1:${port}/" >/dev/null; then
+                break
+              fi
+              sleep 0.2
+            done
+            curl -fsS "http://127.0.0.1:${port}/" >/dev/null
           done
-          curl -fsS http://127.0.0.1:8765/ >/dev/null
 
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           if [ -z "$chrome" ]; then
@@ -165,6 +193,13 @@ jobs:
             test -s "$out"
           done
 
+          student_screens=(join waiting hub closed)
+          for screen in "${student_screens[@]}"; do
+            out="../../audit/point3/chromium/student_${screen}.png"
+            timeout 45s "$chrome"               --headless=new               --no-sandbox               --disable-gpu               --disable-dev-shm-usage               --disable-background-networking               --disable-default-apps               --disable-extensions               --disable-sync               --no-first-run               --hide-scrollbars               --window-size=390,844               --force-device-scale-factor=1               --virtual-time-budget=5000               --screenshot="$out"               "http://127.0.0.1:8766/?proof=${screen}"
+            test -s "$out"
+          done
+
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
@@ -174,6 +209,7 @@ jobs:
           expected = {
               'home', 'create', 'waiting', 'dashboard', 'setup',
               'supervision', 'maintenance', 'validation', 'design', 'workshop',
+              'student_join', 'student_waiting', 'student_hub', 'student_closed',
           }
           found = {p.stem for p in root.glob('*.png')}
           if found != expected:
@@ -183,8 +219,9 @@ jobs:
               if data[:8] != b'\x89PNG\r\n\x1a\n':
                   raise SystemExit(f'INVALID_PNG:{path}')
               width, height = struct.unpack('>II', data[16:24])
-              if (width, height) != (1440, 900):
-                  raise SystemExit(f'PNG_SIZE_MISMATCH:{path}:{width}x{height}')
+              expected_size = (390, 844) if path.stem.startswith('student_') else (1440, 900)
+              if (width, height) != expected_size:
+                  raise SystemExit(f'PNG_SIZE_MISMATCH:{path}:{width}x{height}:expected={expected_size}')
               if len(data) < 15000:
                   raise SystemExit(f'PNG_TOO_SMALL:{path}:{len(data)}')
               print(f'CHROMIUM_PROOF_PASS {path.name} {width}x{height} {len(data)} bytes')
@@ -212,7 +249,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: v1-parity-point3-navigation-web
-          path: apps/electrosim/build/web
+          path: |
+            audit/point3/navigation-web
+            audit/point3/student-web
           if-no-files-found: error
           retention-days: 14
 

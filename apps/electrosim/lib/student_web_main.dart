@@ -2,6 +2,7 @@
 
 import 'dart:html' as html;
 
+import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
@@ -264,8 +265,14 @@ class _StudentHubPage extends StatelessWidget {
         ),
       );
     }
-    final bool tpAvailable = controller.hasSession &&
-        controller.lifecycle?.name != 'draft';
+    final TpLifecycle? tpLifecycle = controller.lifecycle;
+    final bool tpVisible =
+        tpLifecycle != null && tpLifecycle != TpLifecycle.draft;
+    final bool tpOpenable =
+        tpLifecycle == TpLifecycle.started ||
+        tpLifecycle == TpLifecycle.submitted ||
+        tpLifecycle == TpLifecycle.evaluated ||
+        tpLifecycle == TpLifecycle.closed;
     return Scaffold(
       key: const Key('student-web-hub-page'),
       backgroundColor: ElectroSimColors.background,
@@ -318,11 +325,19 @@ class _StudentHubPage extends StatelessWidget {
                 _StudentActionCard(
                   key: const Key('student-web-tp-card'),
                   icon: Icons.assignment_outlined,
-                  title: tpAvailable ? controller.title : 'TP publié',
-                  description: tpAvailable
-                      ? 'Ouvrir le TP actuellement publié par le professeur.'
-                      : 'Aucun TP n’est publié pour le moment.',
-                  enabled: tpAvailable,
+                  title: tpVisible ? controller.title : 'TP publié',
+                  description: switch (tpLifecycle) {
+                    TpLifecycle.published =>
+                      'TP publié — en attente du démarrage par le professeur.',
+                    TpLifecycle.started =>
+                      'TP en cours — ouvrir ou reprendre le travail.',
+                    TpLifecycle.submitted ||
+                    TpLifecycle.evaluated ||
+                    TpLifecycle.closed =>
+                      'Travail remis — consulter le résultat en lecture seule.',
+                    _ => 'Aucun TP n’est publié pour le moment.',
+                  },
+                  enabled: tpOpenable,
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (BuildContext context) => _StudentSessionGuard(

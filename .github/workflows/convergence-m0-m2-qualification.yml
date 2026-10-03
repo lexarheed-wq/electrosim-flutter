@@ -18,6 +18,7 @@ on:
       - 'packages/electrosim_energy/**'
       - 'packages/electrosim_tp/**'
       - 'apps/electrosim/lib/runtime/electrosim_runtime_engine.dart'
+      - 'apps/electrosim/lib/runtime/electrosim_simulation_controller.dart'
       - 'apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart'
       - 'apps/electrosim/lib/runtime/electrosim_lan_sync.dart'
       - 'apps/electrosim/lib/f17_tp_session_dialog.dart'
@@ -78,6 +79,7 @@ jobs:
             tools/test_convergence_m12_ui_contract.py \
             tools/test_convergence_controls_contract.py \
             tools/test_convergence_protection_runtime_contract.py \
+            tools/test_convergence_simulation_clock_contract.py \
             tools/test_figma_asset_pipeline_contract.py \
             tools/test_f18_g0_tooling.py
 
@@ -168,7 +170,8 @@ jobs:
             test/m11_component_visuals_test.dart \
             test/m12_workspace_responsive_test.dart \
             test/controls_runtime_integration_test.dart \
-            test/protection_runtime_integration_test.dart
+            test/protection_runtime_integration_test.dart \
+            test/simulation_clock_test.dart
 
       - name: Scenario non-migration guards
         run: |

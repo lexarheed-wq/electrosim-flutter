@@ -25,7 +25,8 @@ final class DiagnosticEngine {
       builder.addMapped(_fromDcSolver(diagnostic));
     }
     for (final DcBranchResult branch in simulation.branchResults) {
-      if (branch.kind == DcBranchKind.openCircuit) {
+      if (branch.kind == DcBranchKind.openCircuit &&
+          _shouldReportOpenBranch(branch.modelType)) {
         builder.addOpenBranch(branch.id);
       }
     }
@@ -49,7 +50,8 @@ final class DiagnosticEngine {
       builder.addMapped(_fromAc1Solver(diagnostic));
     }
     for (final Ac1BranchResult branch in simulation.branchResults) {
-      if (branch.kind == Ac1BranchKind.openCircuit) {
+      if (branch.kind == Ac1BranchKind.openCircuit &&
+          _shouldReportOpenBranch(branch.modelType)) {
         builder.addOpenBranch(branch.id);
       }
     }
@@ -73,13 +75,21 @@ final class DiagnosticEngine {
       builder.addMapped(_fromAc3Solver(diagnostic));
     }
     for (final Ac3BranchResult branch in simulation.branchResults) {
-      if (branch.kind == Ac3BranchKind.openCircuit) {
+      if (branch.kind == Ac3BranchKind.openCircuit &&
+          _shouldReportOpenBranch(branch.modelType)) {
         builder.addOpenBranch(branch.id);
       }
     }
     builder.addReceiverStates(receiverLoadStates);
     return builder.build();
   }
+}
+
+bool _shouldReportOpenBranch(String modelType) {
+  final String type = modelType.toLowerCase();
+  return type != 'switch' &&
+      type != 'switch_spst' &&
+      type != 'push_button_no';
 }
 
 void _requireIdentity(

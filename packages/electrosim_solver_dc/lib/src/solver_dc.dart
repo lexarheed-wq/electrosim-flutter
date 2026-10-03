@@ -10,7 +10,7 @@ import 'dc_solver_options.dart';
 final class SolverDC {
   const SolverDC({this.options = const DcSolverOptions()});
 
-  static const String engineVersion = 'solver-dc/0.2.0';
+  static const String engineVersion = 'solver-dc/0.3.0';
 
   final DcSolverOptions options;
 
@@ -90,7 +90,11 @@ final class SolverDC {
       );
     }
 
-    var activeElements = List<_Element>.from(compiled.activeElements);
+    var activeElements = _preLimitShortedVoltageSources(
+      compiled.activeElements,
+      diagnostics,
+      options.residualTolerance,
+    );
     _MnaSolveOutcome? network;
     var currentLimitIteration = 0;
     while (true) {
@@ -568,6 +572,30 @@ final class SolverDC {
             }
           }
           if (fromNode == toNode && voltage.abs() > options.residualTolerance) {
+            if (currentLimitA != null) {
+              diagnostics.add(
+                DcSolverDiagnostic(
+                  code: DcDiagnosticCode.sourceCurrentLimited,
+                  severity: DcDiagnosticSeverity.warning,
+                  message:
+                      'DC voltage source entered current-limited regulation into a direct short at $currentLimitA A.',
+                  sourceId: source.id,
+                  nodeIds: <String>[fromNode],
+                ),
+              );
+              active.add(
+                _Element.currentSource(
+                  id: 'source:${source.id.value}',
+                  modelType: source.modelType,
+                  fromNodeId: fromNode,
+                  toNodeId: toNode,
+                  currentA: _limitedSourceCurrent(voltage, currentLimitA),
+                  publicKind: DcBranchKind.voltageSource,
+                  sourceId: source.id,
+                ),
+              );
+              continue;
+            }
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.contradictoryIdealSource,
@@ -644,6 +672,58 @@ final class SolverDC {
       inactiveElements: inactive,
       hasErrors: diagnostics.any(_isError),
     );
+  }
+
+  List<_Element> _preLimitShortedVoltageSources(
+    List<_Element> elements,
+    List<DcSolverDiagnostic> diagnostics,
+    double tolerance,
+  ) {
+    final Set<String> nodeIds = <String>{
+      for (final _Element element in elements) ...<String>[
+        element.fromNodeId,
+        element.toNodeId,
+      ],
+    };
+    final _StringUnionFind zeroPath = _StringUnionFind(nodeIds);
+    for (final _Element element in elements) {
+      if (element.kind == _ElementKind.idealVoltage &&
+          element.value.abs() <= tolerance) {
+        zeroPath.union(element.fromNodeId, element.toNodeId);
+      }
+    }
+
+    final List<_Element> result = <_Element>[];
+    for (final _Element element in elements) {
+      final bool limitedVoltageSource =
+          element.kind == _ElementKind.idealVoltage &&
+          element.currentLimitA != null &&
+          element.value.abs() > tolerance;
+      final bool shorted = limitedVoltageSource &&
+          zeroPath.find(element.fromNodeId) == zeroPath.find(element.toNodeId);
+      if (!shorted) {
+        result.add(element);
+        continue;
+      }
+
+      final double limit = element.currentLimitA!;
+      diagnostics.add(
+        DcSolverDiagnostic(
+          code: DcDiagnosticCode.sourceCurrentLimited,
+          severity: DcDiagnosticSeverity.warning,
+          message:
+              'DC voltage source entered current-limited regulation before MNA because a zero-volt short path is present at $limit A.',
+          sourceId: element.sourceId,
+          nodeIds: <String>[element.fromNodeId, element.toNodeId],
+        ),
+      );
+      result.add(
+        element.asCurrentLimited(
+          _limitedSourceCurrent(element.value, limit),
+        ),
+      );
+    }
+    return result;
   }
 
   String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
@@ -1073,6 +1153,9 @@ List<String>? _treePath(Map<String, List<String>> tree, String start, String tar
   }
   return null;
 }
+
+double _limitedSourceCurrent(double voltageV, double currentLimitA) =>
+    voltageV >= 0.0 ? -currentLimitA : currentLimitA;
 
 double _clean(double value, double tolerance) => value.abs() <= tolerance ? 0.0 : value;
 

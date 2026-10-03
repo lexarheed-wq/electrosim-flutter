@@ -61,8 +61,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
-    await tester.pumpAndSettle();
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byType(app.F9WorkspaceDemoPage), findsNothing);

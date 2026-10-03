@@ -86,6 +86,8 @@ _MappedEvidence? _fromTopology(TopologyFinding finding) {
     TopologyFindingCode.isolatedSource => EieAdviceCode.isolatedSource,
     TopologyFindingCode.conflictingPhases => EieAdviceCode.conflictingPhases,
     TopologyFindingCode.disabledConnection => null,
+    TopologyFindingCode.componentContractMismatch => null,
+    TopologyFindingCode.componentModeMismatch => null,
   };
   if (code == null) return null;
   final String key = finding.nodeId ??

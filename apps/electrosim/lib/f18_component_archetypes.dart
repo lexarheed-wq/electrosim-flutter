@@ -234,6 +234,16 @@ void _paintArchetypeMark(
   final double w = rect.width;
   final double h = rect.height;
 
+  if (_paintSpecificElectricalModel(
+    canvas,
+    rect,
+    type,
+    stroke,
+    color,
+  )) {
+    return;
+  }
+
   if (type.contains('lamp') || type.contains('lampe')) {
     canvas.drawCircle(c, rect.shortestSide * .30, stroke);
     canvas.drawLine(
@@ -354,6 +364,307 @@ void _paintArchetypeMark(
       );
       break;
   }
+}
+
+bool _paintSpecificElectricalModel(
+  Canvas canvas,
+  Rect rect,
+  String type,
+  Paint stroke,
+  Color color,
+) {
+  final Offset c = rect.center;
+  final double w = rect.width;
+  final double h = rect.height;
+  final Paint fill = Paint()
+    ..color = color
+    ..style = PaintingStyle.fill;
+
+  if (type == 'dc_voltage_source' || type == 'voltage_source') {
+    canvas.drawLine(
+      Offset(c.dx - w * .12, rect.top + h * .06),
+      Offset(c.dx - w * .12, rect.bottom - h * .06),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(c.dx + w * .10, rect.top + h * .24),
+      Offset(c.dx + w * .10, rect.bottom - h * .24),
+      stroke,
+    );
+    _paintLetter(
+      canvas,
+      Offset(rect.left + w * .10, rect.top + h * .08),
+      '+',
+      color,
+      h * .24,
+    );
+    _paintLetter(
+      canvas,
+      Offset(rect.right - w * .10, rect.bottom - h * .08),
+      '−',
+      color,
+      h * .24,
+    );
+    return true;
+  }
+
+  if (type == 'resistor') {
+    final Path path = Path()..moveTo(rect.left + w * .02, c.dy);
+    const int peaks = 6;
+    for (var i = 0; i < peaks; i++) {
+      final double x = rect.left + w * (.15 + i * .12);
+      path.lineTo(
+        x,
+        c.dy + (i.isEven ? -h * .24 : h * .24),
+      );
+    }
+    path.lineTo(rect.right - w * .02, c.dy);
+    canvas.drawPath(path, stroke);
+    return true;
+  }
+
+  if (type == 'lamp') {
+    final double r = rect.shortestSide * .34;
+    canvas.drawCircle(c, r, stroke);
+    canvas.drawLine(
+      Offset(c.dx - r * .68, c.dy - r * .68),
+      Offset(c.dx + r * .68, c.dy + r * .68),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(c.dx + r * .68, c.dy - r * .68),
+      Offset(c.dx - r * .68, c.dy + r * .68),
+      stroke,
+    );
+    return true;
+  }
+
+  if (type == 'switch' ||
+      type == 'switch_spst' ||
+      type == 'push_button_no') {
+    final Offset left = Offset(rect.left + w * .14, c.dy);
+    final Offset right = Offset(rect.right - w * .14, c.dy);
+    canvas.drawCircle(left, w * .045, fill);
+    canvas.drawCircle(right, w * .045, fill);
+    if (type == 'push_button_no') {
+      canvas.drawLine(
+        Offset(c.dx, rect.top + h * .03),
+        Offset(c.dx, c.dy - h * .16),
+        stroke,
+      );
+      canvas.drawLine(
+        Offset(c.dx - w * .10, rect.top + h * .03),
+        Offset(c.dx + w * .10, rect.top + h * .03),
+        stroke,
+      );
+    }
+    canvas.drawLine(
+      Offset(left.dx + w * .04, left.dy),
+      Offset(right.dx - w * .04, rect.top + h * .18),
+      stroke,
+    );
+    return true;
+  }
+
+  if (type == 'breaker_dc' ||
+      type == 'breaker_ac1' ||
+      type == 'breaker') {
+    final Rect housing = Rect.fromCenter(
+      center: c,
+      width: w * .58,
+      height: h * .58,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(housing, Radius.circular(h * .08)),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(housing.left + w * .10, housing.bottom - h * .10),
+      Offset(housing.right - w * .10, housing.top + h * .10),
+      stroke,
+    );
+    canvas.drawCircle(
+      Offset(housing.left + w * .10, housing.bottom - h * .10),
+      w * .035,
+      fill,
+    );
+    canvas.drawCircle(
+      Offset(housing.right - w * .10, housing.top + h * .10),
+      w * .035,
+      fill,
+    );
+    return true;
+  }
+
+  if (type == 'fuse_dc' || type == 'fuse_ac1' || type == 'fuse') {
+    final Rect fuse = Rect.fromCenter(
+      center: c,
+      width: w * .52,
+      height: h * .28,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(fuse, Radius.circular(h * .08)),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(fuse.left + w * .06, c.dy),
+      Offset(fuse.right - w * .06, c.dy),
+      stroke,
+    );
+    return true;
+  }
+
+  if (type == 'diode') {
+    final Path triangle = Path()
+      ..moveTo(c.dx - w * .18, c.dy - h * .25)
+      ..lineTo(c.dx - w * .18, c.dy + h * .25)
+      ..lineTo(c.dx + w * .10, c.dy)
+      ..close();
+    canvas.drawPath(triangle, stroke);
+    canvas.drawLine(
+      Offset(c.dx + w * .12, c.dy - h * .25),
+      Offset(c.dx + w * .12, c.dy + h * .25),
+      stroke,
+    );
+    return true;
+  }
+
+  if (type == 'relay_coil') {
+    final Rect coilRect = Rect.fromCenter(
+      center: c,
+      width: w * .54,
+      height: h * .50,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(coilRect, Radius.circular(h * .18)),
+      stroke,
+    );
+    _paintLetter(canvas, c, 'K', color, h * .36);
+    _paintLetter(
+      canvas,
+      Offset(rect.left + w * .08, rect.top + h * .06),
+      'A1',
+      color,
+      h * .16,
+    );
+    _paintLetter(
+      canvas,
+      Offset(rect.right - w * .08, rect.bottom - h * .06),
+      'A2',
+      color,
+      h * .16,
+    );
+    return true;
+  }
+
+  if (type == 'motor_dc' || type == 'fan_dc') {
+    final double radius = rect.shortestSide * .34;
+    canvas.drawCircle(c, radius, stroke);
+    if (type == 'motor_dc') {
+      _paintLetter(canvas, c, 'M', color, h * .42);
+    } else {
+      for (var i = 0; i < 3; i++) {
+        final double angle = -math.pi / 2 + i * 2 * math.pi / 3;
+        final Offset tip = Offset(
+          c.dx + math.cos(angle) * radius * .82,
+          c.dy + math.sin(angle) * radius * .82,
+        );
+        canvas.drawLine(c, tip, stroke);
+        canvas.drawCircle(tip, radius * .16, stroke);
+      }
+    }
+    return true;
+  }
+
+  if (type == 'buzzer') {
+    final Path body = Path()
+      ..moveTo(rect.left + w * .22, c.dy - h * .16)
+      ..lineTo(c.dx - w * .02, c.dy - h * .16)
+      ..lineTo(c.dx + w * .12, c.dy - h * .30)
+      ..lineTo(c.dx + w * .12, c.dy + h * .30)
+      ..lineTo(c.dx - w * .02, c.dy + h * .16)
+      ..lineTo(rect.left + w * .22, c.dy + h * .16);
+    canvas.drawPath(body, stroke);
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: Offset(c.dx + w * .20, c.dy),
+        width: w * .24,
+        height: h * .50,
+      ),
+      -math.pi / 3,
+      2 * math.pi / 3,
+      false,
+      stroke,
+    );
+    return true;
+  }
+
+  if (type.contains('voltmeter') || type.contains('ammeter')) {
+    canvas.drawCircle(c, rect.shortestSide * .34, stroke);
+    _paintLetter(
+      canvas,
+      c,
+      type.contains('ammeter') ? 'A' : 'V',
+      color,
+      h * .42,
+    );
+    return true;
+  }
+
+  if (type.contains('pv_panel') || type == 'pv_array') {
+    final Rect panel = Rect.fromCenter(
+      center: c,
+      width: w * .62,
+      height: h * .56,
+    );
+    canvas.drawRect(panel, stroke);
+    for (final double ratio in <double>[.33, .66]) {
+      canvas.drawLine(
+        Offset(panel.left + panel.width * ratio, panel.top),
+        Offset(panel.left + panel.width * ratio, panel.bottom),
+        stroke,
+      );
+    }
+    canvas.drawLine(
+      Offset(panel.left, panel.center.dy),
+      Offset(panel.right, panel.center.dy),
+      stroke,
+    );
+    return true;
+  }
+
+  if (type.contains('inverter')) {
+    final Rect box = Rect.fromCenter(
+      center: c,
+      width: w * .60,
+      height: h * .54,
+    );
+    canvas.drawRect(box, stroke);
+    canvas.drawLine(
+      Offset(box.center.dx, box.top),
+      Offset(box.center.dx, box.bottom),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(box.left + w * .08, c.dy),
+      Offset(box.center.dx - w * .06, c.dy),
+      stroke,
+    );
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: Offset(box.right - w * .14, c.dy),
+        width: w * .22,
+        height: h * .26,
+      ),
+      -math.pi,
+      math.pi,
+      false,
+      stroke,
+    );
+    return true;
+  }
+
+  return false;
 }
 
 void _paintLetter(

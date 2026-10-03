@@ -16,6 +16,8 @@ Future<void> _openSession(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('session-create-confirm')));
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('session-waiting-room-page')), findsOneWidget);
+  await _pumpUntil(tester, find.byKey(const Key('session-waiting-qr')));
+  expect(find.byKey(const Key('session-waiting-browser-url')), findsOneWidget);
   await tester.tap(find.byKey(const Key('session-waiting-continue')));
   await tester.pumpAndSettle();
   expect(find.byKey(const Key('session-shell-page')), findsOneWidget);

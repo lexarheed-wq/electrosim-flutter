@@ -98,14 +98,21 @@ void main() {
         ),
       );
 
+      expect(
+        find.byKey(const Key('workspace-more-actions')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+
       final Finder saveAction =
           find.byKey(const Key('workspace-save-action'));
       final Finder openAction =
           find.byKey(const Key('workspace-open-action'));
       expect(saveAction, findsOneWidget);
       expect(openAction, findsOneWidget);
-      expect(tester.widget<IconButton>(saveAction).onPressed, isNotNull);
-      expect(tester.widget<IconButton>(openAction).onPressed, isNotNull);
+      expect(find.text('Sauvegarder'), findsOneWidget);
+      expect(find.text('Reprendre'), findsOneWidget);
     });
   });
 }

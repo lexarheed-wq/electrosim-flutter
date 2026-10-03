@@ -187,12 +187,20 @@ final class SolverPV {
       return _failure(circuit, diagnostics);
     }
 
-    final double irradianceWm2 = _nonNegativeSetting(
+    final double rawIrradianceWm2 = _nonNegativeSetting(
       circuit,
       'irradianceWm2',
       options.referenceIrradianceWm2,
       diagnostics,
     );
+    final double shadingPct = _boundedPercentageSetting(
+      circuit,
+      'shadingPct',
+      0.0,
+      diagnostics,
+    );
+    final double irradianceWm2 =
+        rawIrradianceWm2 * (1.0 - shadingPct / 100.0);
     final double cellTemperatureC = _finiteSetting(
       circuit,
       'cellTemperatureC',
@@ -629,7 +637,39 @@ final class SolverPV {
     return raw.toDouble();
   }
 
-  double _finiteSetting(
+  double _boundedPercentageSetting(
+  CircuitState circuit,
+  String key,
+  double fallback,
+  List<PvSolverDiagnostic> diagnostics,
+) {
+  final Object? raw = circuit.settings[key];
+  if (raw == null) return fallback;
+  if (raw is! num) {
+    diagnostics.add(
+      PvSolverDiagnostic(
+        code: PvDiagnosticCode.invalidPvParameter,
+        severity: PvDiagnosticSeverity.error,
+        message: '$key must be numeric.',
+      ),
+    );
+    return fallback;
+  }
+  final double value = raw.toDouble();
+  if (!value.isFinite || value < 0.0 || value > 100.0) {
+    diagnostics.add(
+      PvSolverDiagnostic(
+        code: PvDiagnosticCode.invalidPvParameter,
+        severity: PvDiagnosticSeverity.error,
+        message: '$key must be finite and between 0 and 100.',
+      ),
+    );
+    return fallback;
+  }
+  return value;
+}
+
+double _finiteSetting(
     CircuitState circuit,
     String key,
     double fallback,

@@ -52,11 +52,13 @@ class F18MaintenanceCenterPage extends StatelessWidget {
     required this.onHome,
     required this.onTroubleshooting,
     required this.onFaultLibrary,
+    required this.onStudentValidation,
   });
 
   final VoidCallback onHome;
   final VoidCallback onTroubleshooting;
   final VoidCallback onFaultLibrary;
+  final VoidCallback onStudentValidation;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +88,15 @@ class F18MaintenanceCenterPage extends StatelessWidget {
           actionLabel: 'Ouvrir la bibliothèque',
           onTap: onFaultLibrary,
         ),
+        _F18CenterAction(
+          key: const Key('maintenance-student-validation'),
+          icon: Icons.fact_check_outlined,
+          title: 'Validation en situation élève',
+          description:
+              'Préparer un circuit de référence et une panne avant de lancer la situation de diagnostic.',
+          actionLabel: 'Préparer la situation',
+          onTap: onStudentValidation,
+        ),
       ],
     );
   }
@@ -99,8 +110,10 @@ class F18SessionShellPage extends StatelessWidget {
     required this.onTroubleshooting,
     required this.onSupervision,
     required this.onManageSession,
+    this.sessionName,
   });
 
+  final String? sessionName;
   final VoidCallback onHome;
   final VoidCallback onWiring;
   final VoidCallback onTroubleshooting;
@@ -147,8 +160,22 @@ class F18SessionShellPage extends StatelessWidget {
                               eyebrow: 'SESSION PROFESSEUR',
                               title: 'Tableau de bord',
                               description:
-                                  'Choisissez l’espace de travail à ouvrir pour cette session. Le simulateur ne démarre qu’après ce choix.',
+                                  'Choisissez l’espace de travail à préparer pour cette session. Le simulateur ne démarre qu’après la préparation de l’activité.',
                             ),
+                            if (sessionName != null &&
+                                sessionName!.trim().isNotEmpty) ...<Widget>[
+                              const SizedBox(height: ElectroSimSpacing.sm),
+                              Text(
+                                sessionName!,
+                                key: const Key('session-dashboard-name'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      color: ElectroSimColors.textSecondary,
+                                    ),
+                              ),
+                            ],
                             const SizedBox(height: ElectroSimSpacing.xl),
                             _F18ActionGrid(
                               actions: <_F18CenterAction>[

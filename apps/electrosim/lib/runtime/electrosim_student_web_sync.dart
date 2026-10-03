@@ -143,11 +143,15 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
           final Object? name = sessionRaw['name'];
           final Object? started = sessionRaw['started'];
           final Object? simulator = sessionRaw['simulatorEnabled'];
+          final bool closed = sessionRaw['closed'] == true;
           if (name is String && name.trim().isNotEmpty) {
             _sessionName = name.trim();
           }
           _sessionStarted = started == true;
           _simulatorEnabled = simulator == true;
+          if (closed) {
+            _setStatus(ElectroSimBrowserSessionStatus.ended);
+          }
         }
         _applyingRemote = true;
         try {
@@ -160,7 +164,9 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         } finally {
           _applyingRemote = false;
         }
-        _setStatus(ElectroSimBrowserSessionStatus.connected);
+        if (_status != ElectroSimBrowserSessionStatus.ended) {
+          _setStatus(ElectroSimBrowserSessionStatus.connected);
+        }
         final Completer<void>? first = _firstSnapshot;
         _firstSnapshot = null;
         if (first != null && !first.isCompleted) {

@@ -20,6 +20,9 @@ on:
       - 'apps/electrosim/lib/f17_tp_session_dialog.dart'
       - 'apps/electrosim/lib/f17_tp_supervision_panel.dart'
       - 'apps/electrosim/test/**'
+      - 'apps/electrosim/lib/figma_component_asset_registry.dart'
+      - 'apps/electrosim/assets/figma/**'
+      - 'docs/figma/**'
       - 'apps/electrosim/lib/f18_component_archetypes.dart'
       - 'apps/electrosim/lib/f9_component_visuals.dart'
       - 'packages/electrosim_canvas/**'
@@ -69,6 +72,7 @@ jobs:
             tools/test_convergence_m10_tp_flow_contract.py \
             tools/test_convergence_m11_visual_contract.py \
             tools/test_convergence_m12_ui_contract.py \
+            tools/test_figma_asset_pipeline_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests

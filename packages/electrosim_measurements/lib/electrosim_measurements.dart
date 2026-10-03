@@ -4,3 +4,6 @@ export 'src/device_state_engine.dart';
 export 'src/measurement_engine.dart';
 export 'src/measurement_models.dart';
 export 'src/operating_state.dart';
+
+export 'src/protection_dynamics.dart';
+export 'src/receiver_load_state.dart';

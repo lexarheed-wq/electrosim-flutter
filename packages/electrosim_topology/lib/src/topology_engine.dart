@@ -162,11 +162,19 @@ final class TopologyEngine {
           if (terminalById[id]!.phase != PhaseTag.none) terminalById[id]!.phase,
       };
       if (_hasConflictingPhases(phases)) {
+        final bool allowedLimitedDcShort = _isLimitedDcSourceShortNode(
+          circuit,
+          node,
+        );
         findings.add(
           TopologyFinding(
             code: TopologyFindingCode.conflictingPhases,
-            severity: TopologyFindingSeverity.error,
-            message: 'Node ${node.id} merges incompatible phase/polarity tags.',
+            severity: allowedLimitedDcShort
+                ? TopologyFindingSeverity.warning
+                : TopologyFindingSeverity.error,
+            message: allowedLimitedDcShort
+                ? 'Node ${node.id} directly shorts a current-limited DC source; solver current limiting is required.'
+                : 'Node ${node.id} merges incompatible phase/polarity tags.',
             nodeId: node.id,
             terminalIds: node.terminalIds,
           ),
@@ -236,6 +244,35 @@ bool _ownerIsIsolated(
   Iterable<Terminal> terminals,
   Map<TerminalId, int> enabledConnectionDegree,
 ) => terminals.every((Terminal terminal) => enabledConnectionDegree[terminal.id] == 0);
+
+bool _isLimitedDcSourceShortNode(
+  CircuitState circuit,
+  TopologyNode node,
+) {
+  if (circuit.mode != ElectricalMode.dc) {
+    return false;
+  }
+  final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
+  for (final SourceInstance source in circuit.sources) {
+    if (!source.enabled ||
+        (source.modelType != 'dc_voltage_source' &&
+            source.modelType != 'voltage_source') ||
+        source.terminals.length != 2) {
+      continue;
+    }
+    final Object? rawLimit = source.parameters['currentLimitA'];
+    if (rawLimit is! num ||
+        !rawLimit.toDouble().isFinite ||
+        rawLimit.toDouble() <= 0.0) {
+      continue;
+    }
+    if (nodeTerminals.contains(source.terminals[0].id) &&
+        nodeTerminals.contains(source.terminals[1].id)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 bool _hasConflictingPhases(Set<PhaseTag> phases) {
   if (phases.length < 2) {

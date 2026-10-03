@@ -1,4 +1,4 @@
-name: Convergence M0-M5 qualification
+name: Convergence M0-M6 qualification
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - 'packages/electrosim_solver_dc/**'
       - 'packages/electrosim_solver_ac/**'
       - 'packages/electrosim_diagnostics/**'
+      - 'packages/electrosim_measurements/**'
       - 'docs/convergence/**'
       - 'tools/test_convergence_*.py'
       - 'apps/electrosim/lib/f9_component_palette.dart'
@@ -50,6 +51,7 @@ jobs:
             tools/test_convergence_m3b_palette_engine_contract.py \
             tools/test_convergence_m4_ac1_contract.py \
             tools/test_convergence_m5_ac3_contract.py \
+            tools/test_convergence_m6_device_protection_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -80,6 +82,13 @@ jobs:
           dart analyze
           dart test
 
+      - name: Measurement/device-state analyze and tests
+        working-directory: packages/electrosim_measurements
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
       - name: App analyze and targeted palette/runtime tests
         working-directory: apps/electrosim
         run: |
@@ -96,4 +105,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M5_AC3_CONVERGENCE_PASS
+        run: echo M6_DEVICE_PROTECTION_CONVERGENCE_PASS

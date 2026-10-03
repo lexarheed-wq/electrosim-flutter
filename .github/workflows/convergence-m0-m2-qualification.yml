@@ -1,4 +1,4 @@
-name: Convergence M0-M8 qualification
+name: Convergence M0-M9 qualification
 
 on:
   push:
@@ -56,6 +56,7 @@ jobs:
             tools/test_convergence_m6_device_protection_contract.py \
             tools/test_convergence_m7_measurement_contract.py \
             tools/test_convergence_m8_pv_energy_contract.py \
+            tools/test_convergence_m9_diagnostic_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -100,6 +101,13 @@ jobs:
           (cd packages/electrosim_pv && dart pub get && dart analyze && dart test)
           (cd packages/electrosim_energy && dart pub get && dart analyze && dart test)
 
+      - name: Diagnostics analyze and tests
+        working-directory: packages/electrosim_diagnostics
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
       - name: App analyze and targeted palette/runtime tests
         working-directory: apps/electrosim
         run: |
@@ -116,4 +124,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M8_PV_ENERGY_CONVERGENCE_PASS
+        run: echo M9_EIE_DIAGNOSTIC_CONVERGENCE_PASS

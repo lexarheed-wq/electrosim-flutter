@@ -167,6 +167,7 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
+          import hashlib
           import struct
 
           root = Path('../../audit/point3/chromium')
@@ -187,6 +188,16 @@ jobs:
               if len(data) < 15000:
                   raise SystemExit(f'PNG_TOO_SMALL:{path}:{len(data)}')
               print(f'CHROMIUM_PROOF_PASS {path.name} {width}x{height} {len(data)} bytes')
+
+          fingerprints = {}
+          for path in sorted(root.glob('*.png')):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if digest in fingerprints:
+                  raise SystemExit(
+                      f'DUPLICATE_CHROMIUM_STATE:{fingerprints[digest]}={path.name}:{digest}'
+                  )
+              fingerprints[digest] = path.name
+          print(f'CHROMIUM_UNIQUE_STATES_PASS {len(fingerprints)}')
           PY
 
       - name: Upload Chromium screenshots

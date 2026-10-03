@@ -35,21 +35,6 @@ class _ProofScreen extends StatefulWidget {
 
 class _ProofScreenState extends State<_ProofScreen> {
   @override
-  void initState() {
-    super.initState();
-    if (widget.screen == 'create') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        showDialog<F18SessionCreationDraft>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) => const F18CreateSessionDialog(),
-        );
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     switch (widget.screen) {
       case 'waiting':
@@ -103,6 +88,21 @@ class _ProofScreenState extends State<_ProofScreen> {
       case 'workshop':
         return const _ProofWorkshopPage();
       case 'create':
+        return Stack(
+          children: <Widget>[
+            F18HomeSurface(
+              onCreateSession: () {},
+              onMaintenance: () {},
+              onDesign: () {},
+              onJoinSession: () {},
+            ),
+            const ModalBarrier(
+              dismissible: false,
+              color: Color(0x73000000),
+            ),
+            const Center(child: F18CreateSessionDialog()),
+          ],
+        );
       case 'home':
       default:
         return F18HomeSurface(

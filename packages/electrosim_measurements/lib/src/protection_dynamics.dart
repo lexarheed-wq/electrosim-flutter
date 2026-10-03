@@ -80,8 +80,9 @@ final class ProtectionDynamicsEngine {
       );
     }
 
+    final Object? rawTripCurve = component.parameters['tripCurve'];
     final String rawCurve =
-        (component.parameters['tripCurve'] as String? ?? 'C').toUpperCase();
+        (rawTripCurve is String ? rawTripCurve : 'C').toUpperCase();
     return switch (rawCurve) {
       'B' => const ProtectionProfile(
           family: ProtectionCurveFamily.breaker,

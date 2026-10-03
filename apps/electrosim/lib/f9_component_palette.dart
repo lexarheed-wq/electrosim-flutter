@@ -313,10 +313,6 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     super.dispose();
   }
 
-  static String _slug(String input) => input
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-      .replaceAll(RegExp(r'^-+|-+$'), '');
 }
 
 class _PaletteDraggableTile extends StatelessWidget {

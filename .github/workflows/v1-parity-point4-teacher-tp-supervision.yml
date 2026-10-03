@@ -51,19 +51,37 @@ jobs:
         working-directory: apps/electrosim
         run: flutter analyze
 
-      - name: Run Point 4 targeted regression
+      - name: Run Point 4 teacher TP contract
         working-directory: apps/electrosim
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ../../audit/point4
-          flutter test test/f18_point4_teacher_tp_supervision_test.dart 2>&1 |
+          timeout 90s flutter test test/f18_point4_teacher_tp_supervision_test.dart 2>&1 |
             tee ../../audit/point4/point4-teacher-tp-supervision.log
-          flutter test test/f17_lan_sync_test.dart 2>&1 |
+
+      - name: Run LAN synchronization regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90s flutter test test/f17_lan_sync_test.dart 2>&1 |
             tee ../../audit/point4/f17-lan-sync.log
-          flutter test test/f17_diagnostic_supervision_test.dart 2>&1 |
+
+      - name: Run diagnostic supervision regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90s flutter test test/f17_diagnostic_supervision_test.dart 2>&1 |
             tee ../../audit/point4/f17-diagnostic-supervision.log
-          flutter test test/f18_g3_session_dashboard_test.dart 2>&1 |
+
+      - name: Run session dashboard regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 90s flutter test test/f18_g3_session_dashboard_test.dart 2>&1 |
             tee ../../audit/point4/f18-g3-session-dashboard.log
 
       - name: Upload targeted diagnostics

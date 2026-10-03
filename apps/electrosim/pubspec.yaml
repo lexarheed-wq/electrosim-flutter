@@ -11,6 +11,8 @@ dependencies:
     path: ../../packages/electrosim_domain
   electrosim_controls:
     path: ../../packages/electrosim_controls
+  electrosim_protection:
+    path: ../../packages/electrosim_protection
   electrosim_canvas:
     path: ../../packages/electrosim_canvas
   electrosim_ui_kit:

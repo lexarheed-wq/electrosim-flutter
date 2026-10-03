@@ -246,6 +246,7 @@ jobs:
           PY
 
       - name: Upload Chromium screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: v1-parity-point3-chromium-screenshots

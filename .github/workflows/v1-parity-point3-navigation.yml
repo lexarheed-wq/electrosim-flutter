@@ -12,6 +12,9 @@ on:
       - "apps/electrosim/lib/f18_v1_navigation_flow.dart"
       - "apps/electrosim/lib/navigation_proof_main.dart"
       - "apps/electrosim/test/**"
+      - "run_visual.sh"
+      - "tools/run_macos_test.sh"
+      - "reference/v1/tools/test_point3_macos_launcher_contract.py"
       - ".github/workflows/v1-parity-point3-navigation.yml"
   pull_request:
     branches:
@@ -38,6 +41,9 @@ jobs:
         run: |
           flutter --version
           dart --version 2>&1 | grep "3.10.9"
+
+      - name: Validate macOS launcher LAN permissions
+        run: python3 -m unittest reference/v1/tools/test_point3_macos_launcher_contract.py
 
       - name: Resolve application
         working-directory: apps/electrosim

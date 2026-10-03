@@ -38,7 +38,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m unittest             tools/test_convergence_m0_contract.py             tools/test_convergence_m1_contract.py             tools/test_convergence_m2_contract.py             tools/test_convergence_m3a_contract.py             tools/test_convergence_m3b_contract.py             tools/test_convergence_m4_ac1_contract.py             tools/test_convergence_m5_ac3_contract.py             tools/test_convergence_m6_contract.py             tools/test_convergence_m7_measurements_contract.py             tools/test_convergence_m8_pv_energy_contract.py             tools/test_convergence_m9_diagnostics_contract.py             tools/test_convergence_m10_tp_contract.py             tools/test_convergence_m11_visual_contract.py             tools/test_convergence_m12_ui_contract.py             tools/test_convergence_controls_contract.py             tools/test_convergence_protection_runtime_contract.py             tools/test_convergence_simulation_clock_contract.py             tools/test_figma_asset_pipeline_contract.py             tools/test_f18_g0_tooling.py
+          python3 -m unittest \
+            tools/test_convergence_m0_contract.py \
+            tools/test_convergence_m1_domain_contract.py \
+            tools/test_convergence_m1b_m2_contract.py \
+            tools/test_convergence_m3a_dc_contract.py \
+            tools/test_convergence_m3b_palette_engine_contract.py \
+            tools/test_convergence_m4_ac1_contract.py \
+            tools/test_convergence_m5_ac3_contract.py \
+            tools/test_convergence_m6_device_protection_contract.py \
+            tools/test_convergence_m7_measurement_contract.py \
+            tools/test_convergence_m8_pv_energy_contract.py \
+            tools/test_convergence_m9_diagnostic_contract.py \
+            tools/test_convergence_m10_tp_flow_contract.py \
+            tools/test_convergence_m11_visual_contract.py \
+            tools/test_convergence_m12_ui_contract.py \
+            tools/test_convergence_controls_contract.py \
+            tools/test_convergence_protection_runtime_contract.py \
+            tools/test_convergence_simulation_clock_contract.py \
+            tools/test_figma_asset_pipeline_contract.py \
+            tools/test_f18_g0_tooling.py
 
       - name: Re-run qualified macOS target gate
         shell: bash

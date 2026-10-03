@@ -30,6 +30,7 @@ on:
       - 'packages/electrosim_canvas/**'
       - 'docs/convergence/**'
       - 'tools/test_convergence_*.py'
+      - 'tools/test_f18_g0_tooling.py'
       - 'apps/electrosim/lib/f9_component_palette.dart'
       - 'apps/electrosim/lib/main.dart'
       - 'apps/electrosim/test/m3b_palette_canonical_models_test.dart'
@@ -74,6 +75,7 @@ jobs:
             tools/test_convergence_m10_tp_flow_contract.py \
             tools/test_convergence_m11_visual_contract.py \
             tools/test_convergence_m12_ui_contract.py \
+            tools/test_convergence_controls_contract.py \
             tools/test_figma_asset_pipeline_contract.py \
             tools/test_f18_g0_tooling.py
 
@@ -155,7 +157,8 @@ jobs:
             test/f17_lan_sync_test.dart \
             test/f18_g3r1_point08_visual_archetypes_test.dart \
             test/m11_component_visuals_test.dart \
-            test/m12_workspace_responsive_test.dart
+            test/m12_workspace_responsive_test.dart \
+            test/controls_runtime_integration_test.dart
 
       - name: Scenario non-migration guards
         run: |

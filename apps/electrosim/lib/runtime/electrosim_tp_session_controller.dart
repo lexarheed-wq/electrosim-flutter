@@ -35,7 +35,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   TpLifecycle? get lifecycle => _session?.lifecycle;
   bool get readOnly => _session?.readOnly ?? false;
 
-  ElectroSimTpSessionController createStudentReplica() {
+  ElectroSimTpSessionController createStudentReplica({
+    bool includeDraft = false,
+  }) {
     final ElectroSimTpSessionController replica =
         ElectroSimTpSessionController(
       catalog: _catalog,
@@ -43,7 +45,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       title: title,
       scenarioId: _scenarioId.value,
     );
-    if (_session != null) {
+    final TpSession? current = _session;
+    if (current != null &&
+        (includeDraft || current.lifecycle != TpLifecycle.draft)) {
       replica.restoreFromPersistenceJson(toPersistenceJson());
     }
     return replica;

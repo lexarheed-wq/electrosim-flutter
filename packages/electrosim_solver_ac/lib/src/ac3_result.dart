@@ -19,6 +19,8 @@ enum Ac3BranchKind {
   openCircuit,
   idealShort,
   idealSwitch,
+  controlCoil,
+  contactorContact,
 }
 
 final class Ac3BranchResult {

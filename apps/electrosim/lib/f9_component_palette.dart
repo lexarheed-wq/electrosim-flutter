@@ -90,6 +90,16 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'Commande momentanée',
   ),
   F9PaletteDefinition(
+    keyName: 'push-button-nc',
+    title: 'Bouton-poussoir NC',
+    category: 'Commande',
+    modelType: 'push_button_nc',
+    icon: Icons.radio_button_unchecked,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['21', '22'],
+    subtitle: 'Arrêt momentanée NC',
+  ),
+  F9PaletteDefinition(
     keyName: 'buzzer',
     title: 'Buzzer',
     category: 'Récepteurs',

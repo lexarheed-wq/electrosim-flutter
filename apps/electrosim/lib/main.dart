@@ -1700,30 +1700,27 @@ class _WorkspaceTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: ElectroSimColors.surfaceElevated,
-      child: SizedBox(
-        height: 64,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool compact = constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.xs),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          return SizedBox(
+            height: compact
+                ? ElectroSimGeometry.compactTopBarHeight
+                : ElectroSimGeometry.desktopTopBarHeight,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ElectroSimSpacing.xs,
+              ),
               child: Row(
                 children: <Widget>[
-                  if (sessionNavigation && !compact)
-                    TextButton.icon(
-                      key: const Key('session-home-action'),
-                      onPressed: onHome,
-                      icon: const Icon(Icons.home_outlined),
-                      label: const Text('Accueil'),
-                    )
-                  else
-                    IconButton(
-                      key: const Key('session-home-action'),
-                      tooltip: 'Accueil',
-                      onPressed: onHome,
-                      icon: const Icon(Icons.home_outlined),
-                    ),
-                  const SizedBox(width: ElectroSimSpacing.xs),
+                  IconButton(
+                    key: const Key('session-home-action'),
+                    tooltip: 'Accueil',
+                    onPressed: onHome,
+                    icon: const Icon(Icons.home_outlined),
+                  ),
+                  const SizedBox(width: ElectroSimSpacing.xxs),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1733,70 +1730,37 @@ class _WorkspaceTopBar extends StatelessWidget {
                           entryLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                        Text(
-                          workspace,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: ElectroSimColors.textSecondary,
+                        if (!compact)
+                          Text(
+                            workspace,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: ElectroSimColors.textSecondary,
+                                    ),
                           ),
-                        ),
                       ],
                     ),
                   ),
                   if (sessionNavigation) ...<Widget>[
-                    if (compact)
-                      IconButton(
-                        key: const Key('session-dashboard-action'),
-                        tooltip: 'Tableau de bord',
-                        onPressed: onDashboard,
-                        icon: const Icon(Icons.dashboard_outlined),
-                      )
-                    else
-                      TextButton.icon(
-                        key: const Key('session-dashboard-action'),
-                        onPressed: onDashboard,
-                        icon: const Icon(Icons.dashboard_outlined),
-                        label: const Text('Tableau de bord'),
-                      ),
-                    if (compact)
-                      IconButton(
-                        key: const Key('session-manage-action'),
-                        tooltip: 'Gérer la session',
-                        onPressed: onManageSession,
-                        icon: const Icon(Icons.settings_outlined),
-                      )
-                    else
-                      TextButton.icon(
-                        key: const Key('session-manage-action'),
-                        onPressed: onManageSession,
-                        icon: const Icon(Icons.settings_outlined),
-                        label: const Text('Gérer la session'),
-                      ),
+                    IconButton(
+                      key: const Key('session-dashboard-action'),
+                      tooltip: 'Tableau de bord',
+                      onPressed: onDashboard,
+                      icon: const Icon(Icons.dashboard_outlined),
+                    ),
+                    IconButton(
+                      key: const Key('session-manage-action'),
+                      tooltip: 'Gérer la session',
+                      onPressed: onManageSession,
+                      icon: const Icon(Icons.settings_outlined),
+                    ),
                   ],
-                  if (onSave != null)
-                    IconButton(
-                      key: const Key('workspace-save-action'),
-                      tooltip: 'Sauvegarder localement',
-                      onPressed: onSave,
-                      icon: const Icon(Icons.save_outlined),
-                    ),
-                  if (onOpen != null)
-                    IconButton(
-                      key: const Key('workspace-open-action'),
-                      tooltip: 'Reprendre la dernière sauvegarde',
-                      onPressed: onOpen,
-                      icon: const Icon(Icons.restore_outlined),
-                    ),
-                  if (!sessionNavigation && !compact)
-                    ElectroSimStatusChip(
-                      key: const Key('direct-entry-status'),
-                      label: 'Accès direct',
-                      icon: Icons.open_in_new_outlined,
-                      emphasized: true,
-                    ),
                   IconButton(
                     key: const Key('workspace-rotate-action'),
                     tooltip: 'Rotation 90°',
@@ -1809,20 +1773,64 @@ class _WorkspaceTopBar extends StatelessWidget {
                     onPressed: onDeleteSelected,
                     icon: const Icon(Icons.delete_outline),
                   ),
-                  IconButton(
-                    tooltip: 'Recentrer le Canvas',
-                    onPressed: onRecenter,
-                    icon: const Icon(Icons.center_focus_strong),
+                  PopupMenuButton<_WorkspaceSecondaryAction>(
+                    key: const Key('workspace-more-actions'),
+                    tooltip: 'Plus d’actions',
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (_WorkspaceSecondaryAction action) {
+                      switch (action) {
+                        case _WorkspaceSecondaryAction.save:
+                          onSave?.call();
+                        case _WorkspaceSecondaryAction.open:
+                          onOpen?.call();
+                        case _WorkspaceSecondaryAction.recenter:
+                          onRecenter();
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<_WorkspaceSecondaryAction>>[
+                      if (onSave != null)
+                        const PopupMenuItem<_WorkspaceSecondaryAction>(
+                          key: Key('workspace-save-action'),
+                          value: _WorkspaceSecondaryAction.save,
+                          child: ListTile(
+                            leading: Icon(Icons.save_outlined),
+                            title: Text('Sauvegarder'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      if (onOpen != null)
+                        const PopupMenuItem<_WorkspaceSecondaryAction>(
+                          key: Key('workspace-open-action'),
+                          value: _WorkspaceSecondaryAction.open,
+                          child: ListTile(
+                            leading: Icon(Icons.restore_outlined),
+                            title: Text('Reprendre'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      const PopupMenuItem<_WorkspaceSecondaryAction>(
+                        key: Key('workspace-recenter-action'),
+                        value: _WorkspaceSecondaryAction.recenter,
+                        child: ListTile(
+                          leading: Icon(Icons.center_focus_strong),
+                          title: Text('Recentrer la platine'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 }
+
+enum _WorkspaceSecondaryAction { save, open, recenter }
 
 class _DashboardDestination extends StatelessWidget {
   const _DashboardDestination({

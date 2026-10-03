@@ -10,6 +10,8 @@ on:
       - "apps/electrosim/lib/f18_shell_navigation.dart"
       - "apps/electrosim/lib/f18_session_coordinator.dart"
       - "apps/electrosim/lib/f18_v1_navigation_flow.dart"
+      - "apps/electrosim/lib/f17_tp_supervision_panel.dart"
+      - "apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart"
       - "apps/electrosim/lib/navigation_proof_main.dart"
       - "apps/electrosim/test/**"
       - "run_visual.sh"
@@ -129,6 +131,70 @@ jobs:
             audit/point3/web-build.log
             audit/point3/web-build-status.txt
           if-no-files-found: warn
+          retention-days: 14
+
+      - name: Capture real Chromium proof for all canonical states
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/point3/chromium
+          python3 -m http.server 8765 --directory build/web > ../../audit/point3/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8765/ >/dev/null
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$chrome" ]; then
+            echo "CHROMIUM_NOT_FOUND" >&2
+            exit 70
+          fi
+          "$chrome" --version | tee ../../audit/point3/chromium/chromium-version.txt
+
+          screens=(home create waiting dashboard setup supervision maintenance validation design workshop)
+          for screen in "${screens[@]}"; do
+            out="../../audit/point3/chromium/${screen}.png"
+            timeout 45s "$chrome"               --headless=new               --no-sandbox               --disable-gpu               --disable-dev-shm-usage               --disable-background-networking               --disable-default-apps               --disable-extensions               --disable-sync               --no-first-run               --hide-scrollbars               --window-size=1440,900               --virtual-time-budget=5000               --screenshot="$out"               "http://127.0.0.1:8765/?screen=${screen}"
+            test -s "$out"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+
+          root = Path('../../audit/point3/chromium')
+          expected = {
+              'home', 'create', 'waiting', 'dashboard', 'setup',
+              'supervision', 'maintenance', 'validation', 'design', 'workshop',
+          }
+          found = {p.stem for p in root.glob('*.png')}
+          if found != expected:
+              raise SystemExit(f'CHROMIUM_SCREEN_SET_MISMATCH expected={sorted(expected)} found={sorted(found)}')
+          for path in sorted(root.glob('*.png')):
+              data = path.read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'INVALID_PNG:{path}')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (1440, 900):
+                  raise SystemExit(f'PNG_SIZE_MISMATCH:{path}:{width}x{height}')
+              if len(data) < 15000:
+                  raise SystemExit(f'PNG_TOO_SMALL:{path}:{len(data)}')
+              print(f'CHROMIUM_PROOF_PASS {path.name} {width}x{height} {len(data)} bytes')
+          PY
+
+      - name: Upload Chromium screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point3-chromium-screenshots
+          path: audit/point3/chromium
+          if-no-files-found: error
           retention-days: 14
 
       - name: Upload Chromium proof build

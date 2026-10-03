@@ -136,7 +136,7 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
                 _WaitingInfoCard(
-                  icon: Icons.pin_outlined,
+                  icon: Icons.key_outlined,
                   label: 'Code de session',
                   value: sessionCode,
                   valueKey: const Key('session-waiting-code'),

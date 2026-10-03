@@ -264,7 +264,8 @@ class _StudentHubPage extends StatelessWidget {
         ),
       );
     }
-    final bool tpAvailable = controller.hasSession &&\n        controller.lifecycle?.name != 'draft';
+    final bool tpAvailable = controller.hasSession &&
+        controller.lifecycle?.name != 'draft';
     return Scaffold(
       key: const Key('student-web-hub-page'),
       backgroundColor: ElectroSimColors.background,

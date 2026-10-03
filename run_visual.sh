@@ -65,9 +65,9 @@ if ! command -v xcodebuild >/dev/null 2>&1; then echo "Xcode is unavailable." >&
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/electrosim-f9-final-visual.XXXXXX")"
 cleanup(){ rm -rf "$TMP_ROOT"; }
 trap cleanup EXIT INT TERM
-mkdir -p "$TMP_ROOT/apps" "$TMP_ROOT/packages"
+mkdir -p "$TMP_ROOT/apps"
 cp -R "$ROOT/apps/electrosim" "$TMP_ROOT/apps/electrosim"
-for PKG in electrosim_domain electrosim_canvas electrosim_ui_kit; do cp -R "$ROOT/packages/$PKG" "$TMP_ROOT/packages/$PKG"; done
+cp -R "$ROOT/packages" "$TMP_ROOT/packages"
 find "$TMP_ROOT" -type d \( -name .dart_tool -o -name build -o -name coverage \) -prune -exec rm -rf {} + 2>/dev/null || true
 find "$TMP_ROOT" -name pubspec.lock -delete 2>/dev/null || true
 APP="$TMP_ROOT/apps/electrosim"
@@ -75,6 +75,8 @@ cd "$APP"
 echo "Preparing disposable F9 final macOS runner in: $TMP_ROOT"
 "$FLUTTER_BIN" create --platforms=macos --project-name electrosim . >/dev/null
 cp "$ROOT/apps/electrosim/pubspec.yaml" "$APP/pubspec.yaml"
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos
+python3 "$ROOT/tools/f17_apply_lan_platform_config.py" "$APP" macos --check
 "$FLUTTER_BIN" pub get
 echo "Launching ElectroSim F9 FINAL. Source candidate remains untouched."
 echo "Flutter run keys: r=hot reload, R=hot restart, q=quit"

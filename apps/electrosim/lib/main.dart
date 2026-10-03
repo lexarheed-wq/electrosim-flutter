@@ -601,6 +601,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           });
                         },
                         enableInteraction: false,
+                        paintElementChrome: false,
                         wireLayoutEngine: _g2aWireLayoutEngine,
                         wirePreviewPlanner: _g2aWirePreviewPlanner,
                       ),

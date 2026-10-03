@@ -207,7 +207,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           children: <Widget>[
             const ElectroSimSectionTitle(
               title: 'Composants',
-              subtitle: 'Palette F18 — recherche, catégories et placement sûr',
+              subtitle: 'Recherchez puis ajoutez un composant à la platine',
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             TextField(
@@ -237,24 +237,21 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               ),
             ),
             const SizedBox(height: ElectroSimSpacing.sm),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (final String category in _categories) ...<Widget>[
-                    ChoiceChip(
-                      key: Key('palette-category-${_slug(category)}'),
-                      label: Text(category),
-                      selected: _category == category,
-                      onSelected: (_) => setState(() {
-                        _category = category;
-                        _expanded = false;
-                      }),
-                    ),
-                    const SizedBox(width: ElectroSimSpacing.xs),
-                  ],
-                ],
-              ),
+            Wrap(
+              spacing: ElectroSimSpacing.xs,
+              runSpacing: ElectroSimSpacing.xs,
+              children: <Widget>[
+                for (final String category in _categories)
+                  ChoiceChip(
+                    key: Key('palette-category-${_slug(category)}'),
+                    label: Text(category),
+                    selected: _category == category,
+                    onSelected: (_) => setState(() {
+                      _category = category;
+                      _expanded = false;
+                    }),
+                  ),
+              ],
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             Expanded(

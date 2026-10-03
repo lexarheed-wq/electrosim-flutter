@@ -19,6 +19,7 @@ on:
       - 'apps/electrosim/lib/runtime/electrosim_lan_sync.dart'
       - 'apps/electrosim/lib/f17_tp_session_dialog.dart'
       - 'apps/electrosim/lib/f17_tp_supervision_panel.dart'
+      - 'apps/electrosim/test/**'
       - 'apps/electrosim/lib/f18_component_archetypes.dart'
       - 'apps/electrosim/lib/f9_component_visuals.dart'
       - 'packages/electrosim_canvas/**'

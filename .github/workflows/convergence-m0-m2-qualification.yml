@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/convergence-m0-m2-qualification.yml'
       - 'packages/electrosim_domain/**'
+      - 'packages/electrosim_controls/**'
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'
       - 'packages/electrosim_solver_ac/**'
@@ -98,6 +99,13 @@ jobs:
 
       - name: AC solver analyze and tests
         working-directory: packages/electrosim_solver_ac
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Electromechanical controls analyze and tests
+        working-directory: packages/electrosim_controls
         run: |
           dart pub get
           dart analyze

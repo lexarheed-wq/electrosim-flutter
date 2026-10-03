@@ -19,6 +19,7 @@ enum Ac3BranchKind {
   openCircuit,
   idealShort,
   idealSwitch,
+  idealProtection,
   controlCoil,
   contactorContact,
 }

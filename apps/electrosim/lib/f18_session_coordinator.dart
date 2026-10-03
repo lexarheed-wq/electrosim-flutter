@@ -248,6 +248,7 @@ class F18SessionSupervisionPage extends StatelessWidget {
       backgroundColor: ElectroSimColors.background,
       appBar: AppBar(
         leading: IconButton(
+          key: const Key('session-supervision-back'),
           onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Retour au tableau de bord',
           icon: const Icon(Icons.arrow_back),

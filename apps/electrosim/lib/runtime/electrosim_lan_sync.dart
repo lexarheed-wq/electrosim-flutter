@@ -120,6 +120,20 @@ final class ElectroSimConnectedStudent {
   final String displayName;
 }
 
+final class ElectroSimStudentSupervisionState {
+  const ElectroSimStudentSupervisionState({
+    required this.clientId,
+    required this.displayName,
+    required this.connected,
+    required this.session,
+  });
+
+  final String clientId;
+  final String displayName;
+  final bool connected;
+  final TpSession? session;
+}
+
 final class ElectroSimLanSyncHost extends ChangeNotifier {
   ElectroSimLanSyncHost({
     required this.controller,
@@ -171,6 +185,31 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     return List<ElectroSimConnectedStudent>.unmodifiable(students);
   }
 
+  List<ElectroSimStudentSupervisionState> get studentSupervisionStates {
+    final Set<String> ids = <String>{
+      ..._studentControllers.keys,
+      ..._clients.keys,
+    };
+    final List<ElectroSimStudentSupervisionState> states = ids
+        .map(
+          (String id) => ElectroSimStudentSupervisionState(
+            clientId: id,
+            displayName: _clientDisplayNames[id] ?? id,
+            connected: _clients.containsKey(id),
+            session: _studentControllers[id]?.session,
+          ),
+        )
+        .toList(growable: false)
+      ..sort(
+        (ElectroSimStudentSupervisionState a,
+                ElectroSimStudentSupervisionState b) =>
+            a.displayName.toLowerCase().compareTo(
+                  b.displayName.toLowerCase(),
+                ),
+      );
+    return List<ElectroSimStudentSupervisionState>.unmodifiable(states);
+  }
+
   void setSessionStarted(bool value) {
     if (_classroomClosed) return;
     if (_sessionStarted == value) return;
@@ -205,6 +244,35 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     if (socket != null) _sendSnapshot(socket, clientId);
     notifyListeners();
     return evaluated;
+  }
+
+  TpSession closeStudent(String clientId) {
+    final ElectroSimTpSessionController? student =
+        _studentControllers[clientId];
+    if (student == null) {
+      throw StateError('Unknown student: $clientId');
+    }
+    final TpSession closed = student.closeTeacher();
+    final WebSocket? socket = _clients[clientId];
+    if (socket != null) _sendSnapshot(socket, clientId);
+    notifyListeners();
+    return closed;
+  }
+
+  void resetClassroomActivity() {
+    _reconciling = true;
+    try {
+      for (final ElectroSimTpSessionController student
+          in _studentControllers.values) {
+        student.dispose();
+      }
+      _studentControllers.clear();
+      _lastClientSequence.clear();
+    } finally {
+      _reconciling = false;
+    }
+    _broadcastSnapshot();
+    notifyListeners();
   }
 
   void closeClassroomSession() {
@@ -422,14 +490,12 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       onError: (_) {
         if (identical(_clients[id], socket)) {
           _clients.remove(id);
-          _clientDisplayNames.remove(id);
           notifyListeners();
         }
       },
       onDone: () {
         if (identical(_clients[id], socket)) {
           _clients.remove(id);
-          _clientDisplayNames.remove(id);
           notifyListeners();
         }
       },
@@ -697,24 +763,59 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   void _onControllerChanged() {
     if (_reconciling) return;
     final TpSession? teacherSession = controller.session;
-    if (teacherSession != null) {
+
+    if (teacherSession == null) {
+      resetClassroomActivity();
+      return;
+    }
+
+    _reconciling = true;
+    try {
       for (final ElectroSimTpSessionController student
           in _studentControllers.values) {
-        final TpSession? current = student.session;
+        TpSession? current = student.session;
         if (current == null) {
           student.restoreFromPersistenceJson(controller.toPersistenceJson());
-          continue;
+          current = student.session;
         }
-        if (teacherSession.lifecycle == TpLifecycle.started &&
-            current.lifecycle == TpLifecycle.published) {
-          student.startStudent();
-        } else if (teacherSession.lifecycle == TpLifecycle.closed &&
-            (current.lifecycle == TpLifecycle.draft ||
-                current.lifecycle == TpLifecycle.published ||
-                current.lifecycle == TpLifecycle.started)) {
-          student.cancelTeacher();
+        if (current == null) continue;
+
+        if (teacherSession.lifecycle == TpLifecycle.published &&
+            current.lifecycle == TpLifecycle.draft) {
+          student.publish();
+          current = student.session;
+        }
+
+        if (teacherSession.lifecycle == TpLifecycle.started) {
+          if (current?.lifecycle == TpLifecycle.draft) {
+            student.publish();
+            current = student.session;
+          }
+          if (current?.lifecycle == TpLifecycle.published) {
+            student.startStudent();
+            current = student.session;
+          }
+        }
+
+        if (teacherSession.lifecycle == TpLifecycle.closed &&
+            current?.lifecycle != TpLifecycle.closed) {
+          switch (current!.lifecycle) {
+            case TpLifecycle.draft:
+            case TpLifecycle.published:
+            case TpLifecycle.started:
+              student.cancelTeacher();
+            case TpLifecycle.submitted:
+              student.evaluateTeacher();
+              student.closeTeacher();
+            case TpLifecycle.evaluated:
+              student.closeTeacher();
+            case TpLifecycle.closed:
+              break;
+          }
         }
       }
+    } finally {
+      _reconciling = false;
     }
     _broadcastSnapshot();
     notifyListeners();

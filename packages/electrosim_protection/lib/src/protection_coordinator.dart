@@ -213,6 +213,8 @@ final class ProtectionCoordinator {
     ProtectionRuntimeState? previous,
     SolverAC1 solver = const SolverAC1(),
     ElectromechanicalControlEngine? controlsEngine,
+    Map<ComponentId, bool> previousContactorStates =
+        const <ComponentId, bool>{},
   }) {
     _validateElapsed(elapsed);
     final ElectromechanicalControlEngine controlEngine =
@@ -224,6 +226,7 @@ final class ProtectionCoordinator {
       circuit: effective,
       topology: topology,
       solver: solver,
+      previousStates: previousContactorStates,
     );
     Ac1SolveResult result = control.result;
     final List<ProtectionCoordinationIssue> issues =
@@ -260,6 +263,11 @@ final class ProtectionCoordinator {
         circuit: effective,
         topology: topology,
         solver: solver,
+        previousStates: <ComponentId, bool>{
+          for (final MapEntry<ComponentId, ContactorActuationState> entry
+              in control.contactors.entries)
+            entry.key: entry.value.actuated,
+        },
       );
       result = control.result;
       if (!result.isSolved) {
@@ -289,6 +297,8 @@ final class ProtectionCoordinator {
     ProtectionRuntimeState? previous,
     SolverAC3 solver = const SolverAC3(),
     ElectromechanicalControlEngine? controlsEngine,
+    Map<ComponentId, bool> previousContactorStates =
+        const <ComponentId, bool>{},
   }) {
     _validateElapsed(elapsed);
     final ElectromechanicalControlEngine controlEngine =
@@ -336,6 +346,11 @@ final class ProtectionCoordinator {
         circuit: effective,
         topology: topology,
         solver: solver,
+        previousStates: <ComponentId, bool>{
+          for (final MapEntry<ComponentId, ContactorActuationState> entry
+              in control.contactors.entries)
+            entry.key: entry.value.actuated,
+        },
       );
       result = control.result;
       if (!result.isSolved) {

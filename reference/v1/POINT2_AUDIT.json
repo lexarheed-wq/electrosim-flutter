@@ -1,7 +1,7 @@
 {
   "point": 2,
   "name": "V1 functional/navigation reference",
-  "status": "PASS_PENDING_CI",
+  "status": "PASS",
   "source_video_sha256": "5727d0e521d04590c3c3ffdca3c054f64e481d3aac6617858bb527681abde704",
   "canonical_states": 10,
   "observed_transitions": 14,
@@ -23,5 +23,10 @@
     "visible but unexercised controls separated from observed behavior",
     "M13-R2 baseline guard required",
     "V1 reference contract gate required"
-  ]
+  ],
+  "final_verified_head": "63fa385b7307c9ea473ed01cc964116d0cf15fd6",
+  "final_gate_evidence": {
+    "baseline_guard_run": 37148980679,
+    "v1_reference_run": 37148980687
+  }
 }

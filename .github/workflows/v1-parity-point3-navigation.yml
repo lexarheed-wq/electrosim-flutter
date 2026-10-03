@@ -55,10 +55,29 @@ jobs:
 
       - name: Run V1 navigation regression tests
         working-directory: apps/electrosim
+        shell: bash
         run: |
-          flutter test test/f18_g2_navigation_test.dart
-          flutter test test/f18_g3_session_dashboard_test.dart
-          flutter test test/f9_shell_test.dart
+          set +e
+          mkdir -p ../../audit/point3
+          flutter test test/f18_g2_navigation_test.dart 2>&1 | tee ../../audit/point3/f18_g2_navigation_test.log
+          s1=${PIPESTATUS[0]}
+          flutter test test/f18_g3_session_dashboard_test.dart 2>&1 | tee ../../audit/point3/f18_g3_session_dashboard_test.log
+          s2=${PIPESTATUS[0]}
+          flutter test test/f9_shell_test.dart 2>&1 | tee ../../audit/point3/f9_shell_test.log
+          s3=${PIPESTATUS[0]}
+          printf 'f18_g2=%s\nf18_g3=%s\nf9_shell=%s\n' "$s1" "$s2" "$s3" | tee ../../audit/point3/navigation-status.txt
+          if [ "$s1" -ne 0 ] || [ "$s2" -ne 0 ] || [ "$s3" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Upload navigation diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point3-navigation-logs
+          path: audit/point3
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Run application non-golden regression suite
         working-directory: apps/electrosim

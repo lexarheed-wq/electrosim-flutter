@@ -11,6 +11,10 @@ dependencies:
     path: ../electrosim_topology
   electrosim_solver_dc:
     path: ../electrosim_solver_dc
+  electrosim_solver_ac:
+    path: ../electrosim_solver_ac
+  electrosim_measurements:
+    path: ../electrosim_measurements
 dev_dependencies:
   electrosim_scenarios:
     path: ../electrosim_scenarios

@@ -78,7 +78,7 @@ void main() {
     expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
-  testWidgets('design wiring requires setup before simulator',
+  testWidgets('design preparation opens workshop directly like V1',
       (WidgetTester tester) async {
     _desktop(tester);
     addTearDown(tester.view.resetPhysicalSize);
@@ -87,14 +87,12 @@ void main() {
     await tester.pumpWidget(const app.ElectroSimApp());
     await tester.tap(find.byKey(const Key('home-design')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('design-center-page')), findsOneWidget);
+
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('design-cabling-setup-page')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsNothing);
-
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('design-cabling-setup-page')), findsNothing);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
     expect(find.byKey(const Key('workspace-exit-action')), findsOneWidget);
 
@@ -102,6 +100,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('design-center-page')), findsOneWidget);
     expect(find.byType(SimulatorCanvas), findsNothing);
+
+    await tester.tap(find.byKey(const Key('center-home-action')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-design')), findsOneWidget);
+    expect(find.byKey(const Key('design-center-page')), findsNothing);
   });
 
   testWidgets('maintenance troubleshooting requires setup before workspace',
@@ -181,6 +184,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
     expect(find.byKey(const Key('session-dashboard-action')), findsOneWidget);
+  });
+
+  testWidgets('session cabling setup can return to dashboard',
+      (WidgetTester tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await _createSessionToDashboard(tester);
+    await tester.tap(find.byKey(const Key('dashboard-wiring')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-cabling-setup-page')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('activity-setup-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
+  });
+
+  testWidgets('student validation returns to maintenance center',
+      (WidgetTester tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await tester.tap(find.byKey(const Key('home-maintenance')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('maintenance-student-validation')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('student-situation-validation-page')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('student-validation-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
   });
 
   testWidgets('session shell tolerates compact viewport without overflow',

@@ -37,7 +37,7 @@ final class FigmaComponentAssetSpec {
   final String displayName;
 
   /// File stem only. Actual files are expected under
-  /// assets/figma/components/<assetBaseName>__<state>.svg.
+  /// `assets/figma/components/{assetBaseName}__{state}.svg`.
   final String assetBaseName;
 
   /// Native artboard size exported from Figma.

@@ -85,7 +85,12 @@ void main() {
       expect(host.studentSupervisionStates.single.displayName, 'Awa Ouédraogo');
 
       teacher.createDraft();
-      await _waitFor(() => student.lifecycle == TpLifecycle.draft);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(
+        student.session,
+        isNull,
+        reason: 'Teacher draft must remain private until publication.',
+      );
 
       teacher.publish();
       await _waitFor(() => student.lifecycle == TpLifecycle.published);

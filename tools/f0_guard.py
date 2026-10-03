@@ -52,17 +52,12 @@ if convergence_mode:
     policy = scen / 'REBUILD_POLICY.md'
     if not policy.is_file():
         errors.append('missing:packages/electrosim_scenarios/REBUILD_POLICY.md')
-
-    # Legacy source/data references are forbidden anywhere in the V2 scenario
-    # package. Example identifiers are legitimate inside the healthy-example
-    # subsystem and inside the fault validator that explicitly rejects
-    # cross-library references. Enforce the architecture invariant structurally:
-    # FaultScenarioDefinition must not expose an example bridge, while the
-    # validator must keep rejecting one in serialized payloads.
-    forbidden_legacy_tokens = (
+    forbidden_tokens = (
         'reference/legacy/',
         'electrosim-fieldfix',
         'fieldfix01',
+        'exampleid',
+        'example_id',
     )
     fixture_names = {'f10_examples.dart', 'f11_fault_scenarios.dart', 'f16_catalog.dart'}
     for p in scen.rglob('*'):
@@ -71,36 +66,13 @@ if convergence_mode:
         rel = p.relative_to(ROOT).as_posix()
         if p.suffix == '.dart':
             text = p.read_text(encoding='utf-8').lower()
-            for token in forbidden_legacy_tokens:
+            for token in forbidden_tokens:
                 if token in text:
                     errors.append(f'legacy-scenario-dependency:{rel}:{token}')
         if p.name in fixture_names:
-            source = p.read_text(encoding='utf-8')
-            first = source.splitlines()[0] if source else ''
+            first = p.read_text(encoding='utf-8').splitlines()[0] if p.read_text(encoding='utf-8') else ''
             if 'BOOTSTRAP_FIXTURE_ONLY' not in first:
                 errors.append(f'unmarked-scenario-fixture:{rel}')
-
-    fault_definition = scen / 'lib/src/fault_scenario_definition.dart'
-    if not fault_definition.is_file():
-        errors.append('missing:packages/electrosim_scenarios/lib/src/fault_scenario_definition.dart')
-    else:
-        definition_text = fault_definition.read_text(encoding='utf-8').lower()
-        for token in ('exampleid', 'example_id', 'examplecircuit'):
-            if token in definition_text:
-                errors.append(
-                    f'fault-scenario-example-bridge:'
-                    f'{fault_definition.relative_to(ROOT).as_posix()}:{token}'
-                )
-
-    fault_validator = scen / 'lib/src/fault_scenario_validator.dart'
-    if not fault_validator.is_file():
-        errors.append('missing:packages/electrosim_scenarios/lib/src/fault_scenario_validator.dart')
-    else:
-        validator_text = fault_validator.read_text(encoding='utf-8').lower()
-        required_rejections = ('exampleid', 'example_id', 'examplecircuit')
-        for token in required_rejections:
-            if token not in validator_text:
-                errors.append(f'missing-fault-example-rejection:{token}')
 else:
     for p in scen.rglob('*'):
         if p.is_file() and p.name != 'README.md':

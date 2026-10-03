@@ -50,7 +50,10 @@ final class ElectroSimRuntimeSnapshot {
         ElectroSimRuntimeSolverKind.pv => pvResult?.isSolved ?? false,
       };
 
-  bool get diagnosticsAvailable => solverKind == ElectroSimRuntimeSolverKind.dc;
+  bool get diagnosticsAvailable =>
+      solverKind == ElectroSimRuntimeSolverKind.dc ||
+      solverKind == ElectroSimRuntimeSolverKind.ac1 ||
+      solverKind == ElectroSimRuntimeSolverKind.ac3;
   bool get dcMeasurementsAvailable =>
       solverKind == ElectroSimRuntimeSolverKind.dc &&
       (dcResult?.isSolved ?? false);
@@ -115,6 +118,97 @@ final class ElectroSimRuntimeSnapshot {
       circuit: circuit,
       topology: topology,
       simulation: result,
+    );
+  }
+
+  MeasurementResult measureAcVoltage({
+    required TerminalId positiveProbe,
+    required TerminalId negativeProbe,
+  }) {
+    final MeasurementRequest request = MeasurementRequest.voltageAcRms(
+      positiveProbe: positiveProbe,
+      negativeProbe: negativeProbe,
+    );
+    final Ac1SolveResult? ac1ResultLocal = ac1Result;
+    if (ac1ResultLocal != null) {
+      return measurementEngine.measureAc1(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac1ResultLocal,
+      );
+    }
+    final Ac3SolveResult? ac3ResultLocal = ac3Result;
+    if (ac3ResultLocal != null) {
+      return measurementEngine.measureAc3(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac3ResultLocal,
+      );
+    }
+    return MeasurementResult.invalid(
+      kind: MeasurementKind.voltageAcRms,
+      errorCode: MeasurementErrorCode.wrongElectricalMode,
+      message:
+          'La mesure de tension AC n’est pas disponible en mode ${circuit.mode.name.toUpperCase()}.',
+    );
+  }
+
+  MeasurementResult measureAcCurrent({required String branchId}) {
+    final MeasurementRequest request =
+        MeasurementRequest.currentAcRms(branchId: branchId);
+    final Ac1SolveResult? ac1ResultLocal = ac1Result;
+    if (ac1ResultLocal != null) {
+      return measurementEngine.measureAc1(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac1ResultLocal,
+      );
+    }
+    final Ac3SolveResult? ac3ResultLocal = ac3Result;
+    if (ac3ResultLocal != null) {
+      return measurementEngine.measureAc3(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac3ResultLocal,
+      );
+    }
+    return MeasurementResult.invalid(
+      kind: MeasurementKind.currentAcRms,
+      errorCode: MeasurementErrorCode.wrongElectricalMode,
+      message:
+          'La mesure de courant AC n’est pas disponible en mode ${circuit.mode.name.toUpperCase()}.',
+    );
+  }
+
+  MeasurementResult measureFrequency() {
+    final MeasurementRequest request = MeasurementRequest.frequency();
+    final Ac1SolveResult? ac1ResultLocal = ac1Result;
+    if (ac1ResultLocal != null) {
+      return measurementEngine.measureAc1(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac1ResultLocal,
+      );
+    }
+    final Ac3SolveResult? ac3ResultLocal = ac3Result;
+    if (ac3ResultLocal != null) {
+      return measurementEngine.measureAc3(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac3ResultLocal,
+      );
+    }
+    return MeasurementResult.invalid(
+      kind: MeasurementKind.frequency,
+      errorCode: MeasurementErrorCode.wrongElectricalMode,
+      message:
+          'La mesure de fréquence n’est pas disponible en mode ${circuit.mode.name.toUpperCase()}.',
     );
   }
 
@@ -193,10 +287,14 @@ final class ElectroSimRuntimeEngine {
         );
       case ElectricalMode.ac1:
         final Ac1SolveResult ac1 = solverAC1.solve(circuit, topology);
+        final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(
+          topology: topology,
+          simulation: ac1,
+        );
         return ElectroSimRuntimeSnapshot(
           circuit: circuit,
           topology: topology,
-          diagnostics: _noDcDiagnostics(circuit),
+          diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac1,
           ac1Result: ac1,
           measurementEngine: measurementEngine,
@@ -204,10 +302,14 @@ final class ElectroSimRuntimeEngine {
         );
       case ElectricalMode.ac3:
         final Ac3SolveResult ac3 = solverAC3.solve(circuit, topology);
+        final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(
+          topology: topology,
+          simulation: ac3,
+        );
         return ElectroSimRuntimeSnapshot(
           circuit: circuit,
           topology: topology,
-          diagnostics: _noDcDiagnostics(circuit),
+          diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac3,
           ac3Result: ac3,
           measurementEngine: measurementEngine,

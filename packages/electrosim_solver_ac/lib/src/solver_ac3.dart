@@ -11,7 +11,7 @@ import 'ac3_solver_options.dart';
 final class SolverAC3 {
   const SolverAC3({this.options = const Ac3SolverOptions()});
 
-  static const String engineVersion = 'solver-ac3/0.3.0';
+  static const String engineVersion = 'solver-ac3/0.4.0';
 
   final Ac3SolverOptions options;
 
@@ -492,6 +492,14 @@ _CompiledAc3Model _compileModel(
     }
 
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    if (_compileThreePoleProtectionAc3(
+      component: component,
+      branches: topologyBranches,
+      elements: elements,
+      diagnostics: diagnostics,
+    )) {
+      continue;
+    }
     if (_compileElectromechanicalAc3(
       component: component,
       branches: topologyBranches,
@@ -783,6 +791,110 @@ _CompiledAc3Model _compileModel(
   );
 }
 
+
+
+bool _compileThreePoleProtectionAc3({
+  required ComponentInstance component,
+  required List<TopologyBranch> branches,
+  required List<_Ac3Element> elements,
+  required List<Ac3SolverDiagnostic> diagnostics,
+}) {
+  final bool supported =
+      component.modelType == 'breaker_3p' ||
+      component.modelType == 'thermal_overload_3p';
+  if (!supported) return false;
+
+  if (branches.length != 3 ||
+      branches.any((TopologyBranch branch) =>
+          branch.role != ElectricalBranchRole.powerPole)) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidTerminalCount,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} must expose exactly three power poles.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final Object? rawRating =
+      component.parameters[ProtectionRating.ratedCurrentKey];
+  if (rawRating is! num ||
+      !rawRating.toDouble().isFinite ||
+      rawRating.toDouble() <= 0.0) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidParameter,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final Object? rawClosed = component.controlState['closed'];
+  final Object? rawTripped = component.controlState['tripped'];
+  if ((rawClosed != null && rawClosed is! bool) ||
+      (rawTripped != null && rawTripped is! bool)) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidParameter,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            'AC3 protection controlState.closed/tripped must be boolean when provided.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  if (component.condition != ComponentCondition.normal &&
+      component.condition != ComponentCondition.openCircuit &&
+      component.condition != ComponentCondition.disabled) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.unsupportedComponentCondition,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            'Unsupported AC3 protection condition ${component.condition.name}.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final bool closed = (rawClosed as bool?) ?? true;
+  final bool tripped = (rawTripped as bool?) ?? false;
+  final bool conducting =
+      component.condition == ComponentCondition.normal &&
+      closed &&
+      !tripped;
+
+  for (final TopologyBranch branch in branches) {
+    elements.add(
+      _Ac3Element(
+        id: _componentBranchElementIdAc3(component, branch, branches.length),
+        modelType: component.modelType,
+        kind: conducting
+            ? _Ac3ElementKind.idealVoltage
+            : _Ac3ElementKind.impedance,
+        branchKind: conducting
+            ? Ac3BranchKind.idealProtection
+            : Ac3BranchKind.openCircuit,
+        fromNodeId: branch.fromNodeId,
+        toNodeId: branch.toNodeId,
+        value: conducting ? AcComplex.zero : const AcComplex(1e300, 0.0),
+        isOpen: !conducting,
+        phase: _phaseForBranch(component, branch),
+      ),
+    );
+  }
+  return true;
+}
 
 bool _compileElectromechanicalAc3({
   required ComponentInstance component,
@@ -1411,6 +1523,8 @@ const Set<String> _supportedAc3ComponentModels = <String>{
   'contactor_3p',
   'contactor_aux_no',
   'contactor_aux_nc',
+  'breaker_3p',
+  'thermal_overload_3p',
 };
 
 bool _isError(Ac3SolverDiagnostic diagnostic) =>

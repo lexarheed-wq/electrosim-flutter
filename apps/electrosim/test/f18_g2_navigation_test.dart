@@ -222,6 +222,24 @@ void main() {
     expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
   });
 
+  testWidgets('supervision returns to teacher dashboard',
+      (WidgetTester tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const app.ElectroSimApp());
+    await _createSessionToDashboard(tester);
+    await tester.tap(find.byKey(const Key('dashboard-supervision')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-supervision-page')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('session-supervision-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+    expect(find.byKey(const Key('dashboard-supervision')), findsOneWidget);
+  });
+
   testWidgets('session shell tolerates compact viewport without overflow',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);

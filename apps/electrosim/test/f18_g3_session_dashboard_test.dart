@@ -12,6 +12,12 @@ Future<void> _openSession(WidgetTester tester) async {
   await tester.pumpWidget(const app.ElectroSimApp());
   await tester.tap(find.byKey(const Key('home-create-session')));
   await tester.pumpAndSettle();
+  expect(find.byKey(const Key('session-create-dialog')), findsOneWidget);
+  await tester.tap(find.byKey(const Key('session-create-confirm')));
+  await tester.pumpAndSettle();
+  expect(find.byKey(const Key('session-waiting-room-page')), findsOneWidget);
+  await tester.tap(find.byKey(const Key('session-waiting-continue')));
+  await tester.pumpAndSettle();
   expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
 }
 
@@ -74,6 +80,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('dashboard-wiring')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-cabling-setup-page')), findsOneWidget);
+    expect(find.byType(SimulatorCanvas), findsNothing);
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
 

@@ -13,7 +13,7 @@ This contract is intentionally about **functions, workflow and navigation**. The
 - Duration: 118.05 s
 - Native frame: 2880 × 1800
 
-`reference/v1/v1_functional_navigation_contract.json` is the machine-readable authority. `tools/extract_v1_reference_frames.py` can reproduce the exact canonical stills from the recording and rejects a different source video.
+`reference/v1/v1_functional_navigation_contract.json` is the machine-readable authority. `reference/v1/tools/extract_v1_reference_frames.py` reproduces the exact canonical stills from the recording and rejects a different source video.
 
 ## Canonical navigation states
 
@@ -65,6 +65,10 @@ They remain required controls. The contract deliberately does **not** invent des
 - Maintenance and Design remain separate centers.
 - The Workshop remains an activity/design child screen and exposes an explicit exit path.
 - Current Flutter styling can remain; navigation equivalence is the blocking criterion for this phase.
+
+## CI isolation
+
+The V1 reference utilities live under `reference/v1/tools/`, not the repository-wide `tools/` directory. This prevents a documentation/reference-only change from incorrectly triggering legacy F0–F3 architecture gates. Those legacy gates currently report pre-existing `packages/electrosim_scenarios` findings unrelated to this point.
 
 ## Point-2 acceptance gate
 

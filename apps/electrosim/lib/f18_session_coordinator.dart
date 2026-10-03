@@ -262,11 +262,15 @@ class F18SessionSupervisionPage extends StatelessWidget {
     required this.controller,
     this.lanHost,
     this.proofStudents,
+    this.onGradeStudentOverride,
+    this.onCloseStudentOverride,
   });
 
   final ElectroSimTpSessionController controller;
   final ElectroSimLanSyncHost? lanHost;
   final List<F17StudentSupervisionItem>? proofStudents;
+  final ValueChanged<F17StudentGradeRequest>? onGradeStudentOverride;
+  final ValueChanged<String>? onCloseStudentOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -323,19 +327,21 @@ class F18SessionSupervisionPage extends StatelessWidget {
                     return F17TpSupervisionPanel(
                       controller: controller,
                       students: students,
-                      onGradeStudent: host == null
-                          ? null
-                          : (F17StudentGradeRequest request) {
-                              host.evaluateStudent(
-                                request.clientId,
-                                score: request.score,
-                              );
-                            },
-                      onCloseStudent: host == null
-                          ? null
-                          : (String clientId) {
-                              host.closeStudent(clientId);
-                            },
+                      onGradeStudent: onGradeStudentOverride ??
+                          (host == null
+                              ? null
+                              : (F17StudentGradeRequest request) {
+                                  host.evaluateStudent(
+                                    request.clientId,
+                                    score: request.score,
+                                  );
+                                }),
+                      onCloseStudent: onCloseStudentOverride ??
+                          (host == null
+                              ? null
+                              : (String clientId) {
+                                  host.closeStudent(clientId);
+                                }),
                     );
                   },
                 ),

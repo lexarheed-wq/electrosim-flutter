@@ -7,7 +7,7 @@ TARGET="${1:?target required}"
 TMP_ROOT="${2:-$(mktemp -d "${TMPDIR:-/tmp}/electrosim-f15-${TARGET}.XXXXXX")}" 
 mkdir -p "$TMP_ROOT/apps" "$TMP_ROOT/packages"
 cp -R "$ROOT/apps/electrosim" "$TMP_ROOT/apps/electrosim"
-for PKG in electrosim_domain electrosim_topology electrosim_solver_dc electrosim_solver_ac electrosim_measurement electrosim_measurements electrosim_pv electrosim_energy electrosim_canvas electrosim_ui_kit electrosim_scenarios electrosim_tp electrosim_diagnostics electrosim_storage; do
+for PKG in electrosim_domain electrosim_topology electrosim_solver_dc electrosim_solver_ac electrosim_controls electrosim_protection electrosim_measurement electrosim_measurements electrosim_pv electrosim_energy electrosim_canvas electrosim_ui_kit electrosim_scenarios electrosim_tp electrosim_diagnostics electrosim_storage; do
   [ -d "$ROOT/packages/$PKG" ] && cp -R "$ROOT/packages/$PKG" "$TMP_ROOT/packages/$PKG"
 done
 cd "$TMP_ROOT/apps/electrosim"

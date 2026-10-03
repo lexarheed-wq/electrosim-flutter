@@ -43,13 +43,22 @@ jobs:
           python3 tools/f15_validate_evidence_file.py macos docs/f15/evidence/macos.json
 
       - name: Build release application
-        working-directory: apps/electrosim
         shell: bash
         run: |
           set -euo pipefail
-          flutter pub get
+          PREP_OUT="$(./tools/f15_prepare_runner.sh macos "$RUNNER_TEMP/electrosim-m13-release")"
+          case "$PREP_OUT" in
+            F15_RUNNER_PATH=*) M13_TMP="${PREP_OUT#F15_RUNNER_PATH=}" ;;
+            *) echo "M13_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
+          esac
+          APP_DIR="$M13_TMP/apps/electrosim"
+          cd "$APP_DIR"
           flutter analyze
           flutter build macos --release
+          APP_PATH="$(find "$APP_DIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          test -d "$APP_PATH"
+          echo "M13_APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
 
       - name: Package candidate and handoff
         shell: bash
@@ -60,7 +69,7 @@ jobs:
           HANDOFF="$OUT/PASSATION_ELECTROSIM_M13"
           mkdir -p "$OUT" "$HANDOFF/01_CANDIDAT_MAC" "$HANDOFF/02_SOURCE" "$HANDOFF/03_PREUVES" "$HANDOFF/04_DOCUMENTATION"
 
-          APP_PATH="$(find "$ROOT/apps/electrosim/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' -print -quit)"
+          APP_PATH="$M13_APP_PATH"
           test -n "$APP_PATH"
           test -d "$APP_PATH"
 

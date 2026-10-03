@@ -98,12 +98,14 @@ class F18G0ParityTests(unittest.TestCase):
         source = (pathlib.Path("apps/electrosim/lib/f9_component_palette.dart")
                   .read_text(encoding="utf-8"))
         items = extract_palette_definitions(source)
-        self.assertEqual(len(items), 12)
-        self.assertEqual(len({item["keyName"] for item in items}), 12)
-        self.assertEqual(len({item["modelType"] for item in items}), 12)
+        self.assertEqual(len(items), 13)
+        self.assertEqual(len({item["keyName"] for item in items}), 13)
+        self.assertEqual(len({item["modelType"] for item in items}), 13)
         self.assertEqual(items[0]["keyName"], "source-dc-24v")
         self.assertEqual(items[0]["modelType"], "dc_voltage_source")
-        self.assertIn("relay_coil", {item["modelType"] for item in items})
+        models = {item["modelType"] for item in items}
+        self.assertIn("relay_coil", models)
+        self.assertIn("push_button_nc", models)
 
     def test_extract_palette_definitions_rejects_duplicate_keys(self) -> None:
         block = """

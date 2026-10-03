@@ -106,6 +106,14 @@ jobs:
         shell: bash
         run: |
           set +e
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          create_status=$?
+          if [ "$create_status" -ne 0 ]; then
+            echo "flutter create web failed with status $create_status" |
+              tee ../../audit/point3/web-build.log
+            echo "$create_status" > ../../audit/point3/web-build-status.txt
+            exit "$create_status"
+          fi
           flutter build web --release -t lib/navigation_proof_main.dart 2>&1 |
             tee ../../audit/point3/web-build.log
           status=${PIPESTATUS[0]}

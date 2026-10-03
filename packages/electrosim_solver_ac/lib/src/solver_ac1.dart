@@ -11,7 +11,7 @@ import 'ac1_solver_options.dart';
 final class SolverAC1 {
   const SolverAC1({this.options = const Ac1SolverOptions()});
 
-  static const String engineVersion = 'solver-ac1/0.3.1';
+  static const String engineVersion = 'solver-ac1/0.3.2';
 
   final Ac1SolverOptions options;
 
@@ -74,8 +74,11 @@ final class SolverAC1 {
     }
 
     final String referenceNodeId = _selectReferenceNode(circuit, topology);
+    final Set<String> participatingNodes =
+        _participatingAc1Nodes(compiled.activeElements)
+          ..add(referenceNodeId);
     final List<String> floatingNodes = _findFloatingNodes(
-      topology.nodes.map((TopologyNode node) => node.id),
+      participatingNodes,
       referenceNodeId,
       compiled.activeElements,
     );
@@ -97,8 +100,7 @@ final class SolverAC1 {
       );
     }
 
-    final List<String> unknownNodes = topology.nodes
-        .map((TopologyNode node) => node.id)
+    final List<String> unknownNodes = participatingNodes
         .where((String nodeId) => nodeId != referenceNodeId)
         .toList(growable: false)
       ..sort();
@@ -198,7 +200,10 @@ final class SolverAC1 {
       );
     }
 
-    final Map<String, AcComplex> nodeVoltages = <String, AcComplex>{referenceNodeId: AcComplex.zero};
+    final Map<String, AcComplex> nodeVoltages = <String, AcComplex>{
+      for (final TopologyNode node in topology.nodes) node.id: AcComplex.zero,
+      referenceNodeId: AcComplex.zero,
+    };
     for (final MapEntry<String, int> entry in nodeIndex.entries) {
       nodeVoltages[entry.key] = solution[entry.value];
     }
@@ -934,6 +939,18 @@ String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
   }
   final List<String> ids = topology.nodes.map((TopologyNode node) => node.id).toList(growable: false)..sort();
   return ids.first;
+}
+
+Set<String> _participatingAc1Nodes(
+  Iterable<_Ac1Element> elements,
+) {
+  final Set<String> nodes = <String>{};
+  for (final _Ac1Element element in elements) {
+    nodes
+      ..add(element.fromNodeId)
+      ..add(element.toNodeId);
+  }
+  return nodes;
 }
 
 List<String> _findFloatingNodes(

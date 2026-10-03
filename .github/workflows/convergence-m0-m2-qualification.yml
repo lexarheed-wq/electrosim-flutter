@@ -1,4 +1,4 @@
-name: Convergence M0-M4 qualification
+name: Convergence M0-M5 qualification
 
 on:
   push:
@@ -49,6 +49,7 @@ jobs:
             tools/test_convergence_m3a_dc_contract.py \
             tools/test_convergence_m3b_palette_engine_contract.py \
             tools/test_convergence_m4_ac1_contract.py \
+            tools/test_convergence_m5_ac3_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -95,4 +96,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M4_AC1_CONVERGENCE_PASS
+        run: echo M5_AC3_CONVERGENCE_PASS

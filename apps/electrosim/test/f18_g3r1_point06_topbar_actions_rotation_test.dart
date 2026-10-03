@@ -63,8 +63,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
-    await tester.pumpAndSettle();
 
     final SimulatorCanvas canvas =
         tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
@@ -125,8 +123,6 @@ void main() {
     await tester.tap(find.byKey(const Key('home-design')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('design-wiring')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);

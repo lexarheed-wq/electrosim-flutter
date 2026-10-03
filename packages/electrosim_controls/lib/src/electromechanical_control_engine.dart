@@ -100,6 +100,7 @@ final class ElectromechanicalControlEngine {
     required CircuitState circuit,
     required TopologyGraph topology,
     SolverAC1 solver = const SolverAC1(),
+    Map<ComponentId, bool> previousStates = const <ComponentId, bool>{},
   }) {
     if (circuit.mode != ElectricalMode.ac1 ||
         topology.mode != ElectricalMode.ac1) {
@@ -108,8 +109,12 @@ final class ElectromechanicalControlEngine {
 
     final List<ElectromechanicalControlIssue> issues =
         <ElectromechanicalControlIssue>[];
-    Map<ComponentId, bool> states =
-        _initialStates(circuit, 'contactor_ac1', issues);
+    Map<ComponentId, bool> states = _initialStates(
+      circuit,
+      'contactor_ac1',
+      issues,
+      previousStates,
+    );
     CircuitState effective = _applyStates(circuit, states, issues);
     Ac1SolveResult result = solver.solve(effective, topology);
 
@@ -181,6 +186,7 @@ final class ElectromechanicalControlEngine {
     required CircuitState circuit,
     required TopologyGraph topology,
     SolverAC3 solver = const SolverAC3(),
+    Map<ComponentId, bool> previousStates = const <ComponentId, bool>{},
   }) {
     if (circuit.mode != ElectricalMode.ac3 ||
         topology.mode != ElectricalMode.ac3) {
@@ -189,8 +195,12 @@ final class ElectromechanicalControlEngine {
 
     final List<ElectromechanicalControlIssue> issues =
         <ElectromechanicalControlIssue>[];
-    Map<ComponentId, bool> states =
-        _initialStates(circuit, 'contactor_3p', issues);
+    Map<ComponentId, bool> states = _initialStates(
+      circuit,
+      'contactor_3p',
+      issues,
+      previousStates,
+    );
     CircuitState effective = _applyStates(circuit, states, issues);
     Ac3SolveResult result = solver.solve(effective, topology);
 
@@ -263,6 +273,7 @@ Map<ComponentId, bool> _initialStates(
   CircuitState circuit,
   String contactorModel,
   List<ElectromechanicalControlIssue> issues,
+  Map<ComponentId, bool> previousStates,
 ) {
   final Map<ComponentId, bool> states = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
@@ -278,7 +289,11 @@ Map<ComponentId, bool> _initialStates(
         ),
       );
     }
-    states[component.id] = raw is bool ? raw : false;
+    states[component.id] = previousStates.containsKey(component.id)
+        ? previousStates[component.id]!
+        : raw is bool
+            ? raw
+            : false;
   }
   return states;
 }

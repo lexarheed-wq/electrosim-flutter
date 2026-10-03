@@ -128,7 +128,33 @@ final class TpEngine {
     _sessions[id] = next;
     return next;
   }
-  TpSession close(TpId id) => _transition(id, TpLifecycle.evaluated, TpLifecycle.closed, preserveEvaluation:true);
+  TpSession close(TpId id) =>
+      _transition(
+        id,
+        TpLifecycle.evaluated,
+        TpLifecycle.closed,
+        preserveEvaluation: true,
+      );
+
+  TpSession cancel(TpId id) {
+    final TpSession session = _require(id);
+    if (session.lifecycle != TpLifecycle.draft &&
+        session.lifecycle != TpLifecycle.published &&
+        session.lifecycle != TpLifecycle.started) {
+      throw StateError(
+        'Only a non-submitted TP can be cancelled.',
+      );
+    }
+    final TpSession next = TpSession(
+      definition: session.definition,
+      lifecycle: TpLifecycle.closed,
+      studentCircuit: session.studentCircuit,
+      diagnosticSheet: session.diagnosticSheet,
+    );
+    _sessions[id] = next;
+    if (_activeTp == id) _activeTp = null;
+    return next;
+  }
 
   TpSession get(TpId id) => _require(id);
 

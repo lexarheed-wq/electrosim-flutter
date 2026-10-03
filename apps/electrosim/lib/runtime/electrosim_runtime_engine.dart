@@ -1,3 +1,4 @@
+import 'package:electrosim_controls/electrosim_controls.dart';
 import 'package:electrosim_diagnostics/electrosim_diagnostics.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_energy/electrosim_energy.dart';
@@ -19,8 +20,12 @@ final class ElectroSimRuntimeSnapshot {
     this.ac1Result,
     this.ac3Result,
     this.pvResult,
+    this.contactorStates = const <ComponentId, ContactorActuationState>{},
+    this.controlIssues = const <ElectromechanicalControlIssue>[],
     this.measurementEngine = const MeasurementEngine(),
     this.energyEngine = const EnergyEngine(),
+    this.electromechanicalControlEngine =
+        const ElectromechanicalControlEngine(),
   });
 
   final CircuitState circuit;
@@ -31,6 +36,8 @@ final class ElectroSimRuntimeSnapshot {
   final Ac1SolveResult? ac1Result;
   final Ac3SolveResult? ac3Result;
   final PvSolveResult? pvResult;
+  final Map<ComponentId, ContactorActuationState> contactorStates;
+  final List<ElectromechanicalControlIssue> controlIssues;
   final MeasurementEngine measurementEngine;
   final EnergyEngine energyEngine;
 
@@ -42,6 +49,9 @@ final class ElectroSimRuntimeSnapshot {
       ac3Result ?? (throw StateError('Current runtime result is not AC3.'));
   PvSolveResult get pv =>
       pvResult ?? (throw StateError('Current runtime result is not PV.'));
+
+  bool contactorActuated(ComponentId componentId) =>
+      contactorStates[componentId]?.actuated ?? false;
 
   bool get solved => switch (solverKind) {
         ElectroSimRuntimeSolverKind.dc => dcResult?.isSolved ?? false,
@@ -266,6 +276,7 @@ final class ElectroSimRuntimeEngine {
   final DiagnosticEngine diagnosticEngine;
   final MeasurementEngine measurementEngine;
   final EnergyEngine energyEngine;
+  final ElectromechanicalControlEngine electromechanicalControlEngine;
 
   ElectroSimRuntimeSnapshot evaluate(CircuitState circuit) {
     final TopologyGraph topology = topologyEngine.compile(circuit);
@@ -286,7 +297,13 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac1:
-        final Ac1SolveResult ac1 = solverAC1.solve(circuit, topology);
+        final ElectromechanicalAc1Outcome coordinated =
+            electromechanicalControlEngine.solveAc1(
+          circuit: circuit,
+          topology: topology,
+          solver: solverAC1,
+        );
+        final Ac1SolveResult ac1 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(
           topology: topology,
           simulation: ac1,
@@ -297,11 +314,19 @@ final class ElectroSimRuntimeEngine {
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac1,
           ac1Result: ac1,
+          contactorStates: coordinated.contactors,
+          controlIssues: coordinated.issues,
           measurementEngine: measurementEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac3:
-        final Ac3SolveResult ac3 = solverAC3.solve(circuit, topology);
+        final ElectromechanicalAc3Outcome coordinated =
+            electromechanicalControlEngine.solveAc3(
+          circuit: circuit,
+          topology: topology,
+          solver: solverAC3,
+        );
+        final Ac3SolveResult ac3 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(
           topology: topology,
           simulation: ac3,
@@ -312,6 +337,8 @@ final class ElectroSimRuntimeEngine {
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac3,
           ac3Result: ac3,
+          contactorStates: coordinated.contactors,
+          controlIssues: coordinated.issues,
           measurementEngine: measurementEngine,
           energyEngine: energyEngine,
         );

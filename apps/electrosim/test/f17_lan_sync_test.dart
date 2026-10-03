@@ -364,7 +364,7 @@ void main() {
         tester.widget<SelectableText>(
           find.byKey(const Key('tp-network-endpoint')),
         ).data,
-        startsWith('ws://'),
+        startsWith('http://'),
       );
       expect(tester.takeException(), isNull);
     });

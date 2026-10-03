@@ -6,6 +6,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+Future<void> _waitForSessionReady(
+  WidgetTester tester, {
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  final Finder qr = find.byKey(const Key('session-waiting-qr'));
+  final Stopwatch stopwatch = Stopwatch()..start();
+  while (qr.evaluate().isEmpty) {
+    if (stopwatch.elapsed > timeout) {
+      fail('Timed out waiting for the classroom QR code.');
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+  }
+  expect(find.byKey(const Key('session-waiting-browser-url')), findsOneWidget);
+}
+
 void main() {
   testWidgets('home exposes exactly the three validated first-level entries', (WidgetTester tester) async {
     await tester.pumpWidget(const app.ElectroSimApp());
@@ -39,6 +57,7 @@ void main() {
     await tester.tap(find.byKey(const Key('session-create-confirm')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('session-waiting-room-page')), findsOneWidget);
+    await _waitForSessionReady(tester);
     await tester.tap(find.byKey(const Key('session-waiting-continue')));
     await tester.pumpAndSettle();
 
@@ -66,6 +85,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('session-create-confirm')));
     await tester.pumpAndSettle();
+    await _waitForSessionReady(tester);
     await tester.tap(find.byKey(const Key('session-waiting-continue')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('session-dashboard-action')));

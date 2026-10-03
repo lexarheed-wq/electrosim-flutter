@@ -145,6 +145,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   bool _reconciling = false;
   bool _closed = false;
   bool _sessionStarted = false;
+  bool _classroomClosed = false;
 
   bool get isRunning => _server != null && !_closed;
   bool get sessionStarted => _sessionStarted;
@@ -171,6 +172,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   }
 
   void setSessionStarted(bool value) {
+    if (_classroomClosed) return;
     if (_sessionStarted == value) return;
     _sessionStarted = value;
     _broadcastSnapshot();
@@ -248,6 +250,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     } finally {
       _reconciling = false;
     }
+    _classroomClosed = true;
+    _sessionStarted = false;
     _broadcastSnapshot();
     notifyListeners();
   }
@@ -746,7 +750,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
             'name': sessionName,
             'code': sessionCode,
             'started': _sessionStarted,
-            'simulatorEnabled': _sessionStarted,
+            'closed': _classroomClosed,
+            'simulatorEnabled': _sessionStarted && !_classroomClosed,
           },
         },
       ),

@@ -58,6 +58,34 @@ void main() {
       );
     });
 
+    test('DC-006A: current-limited source survives a direct wire short', () {
+      final DcSolveResult result = solve(
+        _directLimitedShortCircuit(currentLimitA: 5.0),
+      );
+      expect(result.status, DcSolveStatus.solved);
+      expect(result.branch('source:v1').voltageV, closeTo(0.0, 1e-12));
+      expect(result.branch('source:v1').currentA, closeTo(-5.0, 1e-12));
+      expect(
+        result.diagnostics.map((DcSolverDiagnostic d) => d.code),
+        contains(DcDiagnosticCode.sourceCurrentLimited),
+      );
+    });
+
+    test('DC-006B: current-limited source solves through an ideal short component', () {
+      final DcSolveResult result = solve(
+        _componentLimitedShortCircuit(currentLimitA: 5.0),
+      );
+      expect(result.status, DcSolveStatus.solved);
+      expect(result.branch('source:v1').currentA, closeTo(-5.0, 1e-10));
+      expect(result.branch('component:r1').kind, DcBranchKind.idealShort);
+      expect(result.branch('component:r1').currentA, closeTo(5.0, 1e-10));
+      expect(
+        result.diagnostics.map((DcSolverDiagnostic d) => d.code),
+        contains(DcDiagnosticCode.sourceCurrentLimited),
+      );
+      _expectPhysicalResiduals(result);
+    });
+
     test('DC-006: shorted non-zero ideal voltage source is invalid, never arbitrary', () {
       final DcSolveResult result = solve(_shortedIdealSourceCircuit());
       expect(result.status, DcSolveStatus.invalid);
@@ -433,6 +461,92 @@ CircuitState _floatingIslandCircuit() => CircuitState(
   ],
   sources: <SourceInstance>[_voltageSource(24)],
 );
+
+CircuitState _directLimitedShortCircuit({
+  required double currentLimitA,
+}) =>
+    CircuitState(
+      circuitId: CircuitId('dc-limited-direct-short'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('short'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            _terminal(
+              'vp',
+              '+',
+              role: TerminalRole.positive,
+              phase: PhaseTag.dcPositive,
+            ),
+            _terminal(
+              'vn',
+              '-',
+              role: TerminalRole.negative,
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: <String, Object?>{
+            'voltageV': 24.0,
+            'currentLimitA': currentLimitA,
+          },
+        ),
+      ],
+    );
+
+CircuitState _componentLimitedShortCircuit({
+  required double currentLimitA,
+}) {
+  final CircuitState base = _singleResistor(voltage: 24, resistance: 12);
+  final ComponentInstance resistor = base.components.single;
+  return CircuitState(
+    circuitId: CircuitId('dc-limited-component-short'),
+    revision: 0,
+    mode: ElectricalMode.dc,
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: resistor.id,
+        modelType: resistor.modelType,
+        terminals: resistor.terminals,
+        parameters: resistor.parameters,
+        condition: ComponentCondition.shortCircuit,
+      ),
+    ],
+    connections: base.connections,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('v1'),
+        modelType: 'dc_voltage_source',
+        terminals: <Terminal>[
+          _terminal(
+            'vp',
+            '+',
+            role: TerminalRole.positive,
+            phase: PhaseTag.dcPositive,
+          ),
+          _terminal(
+            'vn',
+            '-',
+            role: TerminalRole.negative,
+            phase: PhaseTag.dcNegative,
+          ),
+        ],
+        parameters: <String, Object?>{
+          'voltageV': 24.0,
+          'currentLimitA': currentLimitA,
+        },
+      ),
+    ],
+  );
+}
 
 CircuitState _shortedIdealSourceCircuit() => CircuitState(
   circuitId: CircuitId('dc006'),

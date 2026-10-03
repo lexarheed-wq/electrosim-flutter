@@ -87,7 +87,7 @@ class F18HomeSurface extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: ElectroSimSpacing.md),
-                            _JoinSessionPanel(onTap: onJoinSession),
+                            const _StudentAccessInfoPanel(),
                             const SizedBox(height: ElectroSimSpacing.lg),
                             const _HomeFooter(),
                           ],
@@ -436,10 +436,8 @@ class _HomeActionCard extends StatelessWidget {
   }
 }
 
-class _JoinSessionPanel extends StatelessWidget {
-  const _JoinSessionPanel({required this.onTap});
-
-  final VoidCallback onTap;
+class _StudentAccessInfoPanel extends StatelessWidget {
+  const _StudentAccessInfoPanel();
 
   @override
   Widget build(BuildContext context) {
@@ -449,76 +447,46 @@ class _JoinSessionPanel extends StatelessWidget {
       borderRadius: BorderRadius.circular(ElectroSimRadii.card),
       child: Padding(
         padding: const EdgeInsets.all(ElectroSimSpacing.md),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool compact =
-                constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
-            final Widget copy = Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F7FB),
-                    borderRadius:
-                        BorderRadius.circular(ElectroSimRadii.compact),
-                  ),
-                  child: const Icon(
-                    Icons.hub_outlined,
-                    color: ElectroSimColors.primary,
-                  ),
-                ),
-                const SizedBox(width: ElectroSimSpacing.sm),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Vous rejoignez une activité existante ?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: ElectroSimColors.textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: ElectroSimSpacing.xxs),
-                      Text(
-                        'Entrez l’adresse de la session et le code communiqué par l’enseignant.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: ElectroSimColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-            final Widget button = OutlinedButton.icon(
-              key: const Key('home-join-session'),
-              onPressed: onTap,
-              icon: const Icon(Icons.login_outlined),
-              label: const Text('Rejoindre une session'),
-            );
-            if (compact) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F7FB),
+                borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+              ),
+              child: const Icon(
+                Icons.qr_code_2_outlined,
+                color: ElectroSimColors.primary,
+              ),
+            ),
+            const SizedBox(width: ElectroSimSpacing.sm),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  copy,
-                  const SizedBox(height: ElectroSimSpacing.md),
-                  button,
+                  Text(
+                    'Accès élèves sans installation',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: ElectroSimColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: ElectroSimSpacing.xxs),
+                  Text(
+                    'Après création de la session, les élèves scannent le QR code de la salle d’attente et utilisent Safari, Chrome ou un autre navigateur sur le même réseau local. Internet n’est pas nécessaire.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: ElectroSimColors.textSecondary,
+                    ),
+                  ),
                 ],
-              );
-            }
-            return Row(
-              children: <Widget>[
-                Expanded(child: copy),
-                const SizedBox(width: ElectroSimSpacing.lg),
-                button,
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         ),
       ),
     );

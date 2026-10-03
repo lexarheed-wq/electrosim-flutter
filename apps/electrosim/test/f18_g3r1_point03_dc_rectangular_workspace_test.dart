@@ -14,6 +14,8 @@ Future<SimulatorCanvas> _openDcWorkspace(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('design-wiring')));
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+  await tester.pumpAndSettle();
   return tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
 }
 

@@ -9,6 +9,7 @@ import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'f9_ui_context.dart';
 import 'runtime/electrosim_lan_sync.dart';
+import 'runtime/electrosim_student_web_bundle.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
 typedef F18SessionWorkspaceBuilder = Widget Function(
@@ -52,21 +53,34 @@ class _F18TeacherSessionCoordinatorPageState
     super.initState();
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? ElectroSimTpSessionController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_enableWaitingRoomSharing());
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_waitingRoom) {
+      final ElectroSimLanSyncHost? host = _lanHost;
       return F18SessionWaitingRoomPage(
         sessionName: widget.sessionName,
         sessionCode: widget.sessionCode,
-        connectedStudents: _lanHost?.connectedClientIds.length ?? 0,
+        connectedStudents: host?.connectedStudents.length ?? 0,
+        connectedStudentNames: host?.connectedStudents
+                .map((ElectroSimConnectedStudent student) => student.displayName)
+                .toList(growable: false) ??
+            const <String>[],
+        joinUrl: _lanInfo?.preferredJoinUrl,
         sharingStatus: _waitingRoomNetworkStatus,
+        canStart: _lanInfo != null,
         onHome: _goHome,
         onEnableSharing: () {
           unawaited(_enableWaitingRoomSharing());
         },
         onContinue: () {
+          host?.setSessionStarted(true);
           setState(() {
             _waitingRoom = false;
           });
@@ -172,7 +186,7 @@ class _F18TeacherSessionCoordinatorPageState
       if (!mounted) return;
       setState(() {
         _waitingRoomNetworkStatus =
-            'Partage actif : ${info.preferredEndpoint}';
+            'Serveur local prêt : ${info.preferredJoinUrl}';
       });
     } on Object catch (error) {
       if (!mounted) return;
@@ -194,6 +208,8 @@ class _F18TeacherSessionCoordinatorPageState
     final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
       controller: _controller,
       sessionCode: widget.sessionCode,
+      sessionName: widget.sessionName,
+      studentWebRoot: ElectroSimStudentWebBundleLocator.resolve(),
     );
     try {
       final ElectroSimLanHostInfo info = await host.start();

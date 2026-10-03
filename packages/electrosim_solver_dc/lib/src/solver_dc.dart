@@ -382,7 +382,6 @@ final class SolverDC {
           }
         case 'switch':
         case 'switch_spst':
-        case 'push_button_no':
           final Object? rawClosed = component.controlState['closed'];
           if (rawClosed is! bool) {
             diagnostics.add(
@@ -394,6 +393,46 @@ final class SolverDC {
               ),
             );
           } else if (rawClosed) {
+            active.add(
+              _Element.idealVoltage(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                publicKind: DcBranchKind.idealSwitch,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+                voltageV: 0.0,
+                redundant: fromNode == toNode,
+              ),
+            );
+          } else {
+            inactive.add(
+              _InactiveElement(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+              ),
+            );
+          }
+        case 'push_button_no':
+        case 'push_button_nc':
+          final Object? rawPressed = component.controlState['pressed'];
+          if (rawPressed is! bool) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'Push-button requires boolean controlState.pressed.',
+                componentId: component.id,
+              ),
+            );
+            continue;
+          }
+          final bool closed = component.modelType == 'push_button_no'
+              ? rawPressed
+              : !rawPressed;
+          if (closed) {
             active.add(
               _Element.idealVoltage(
                 id: 'component:${component.id.value}',
@@ -780,6 +819,7 @@ const Set<String> _supportedDcComponentModels = <String>{
   'switch',
   'switch_spst',
   'push_button_no',
+  'push_button_nc',
   'buzzer',
   'fan_dc',
   'motor_dc',

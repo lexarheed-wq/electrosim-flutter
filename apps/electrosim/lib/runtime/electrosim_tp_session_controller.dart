@@ -55,6 +55,15 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     return _session!;
   }
 
+  TpSession startTeacher() {
+    _session = _engine.start(tpId);
+    notifyListeners();
+    return _session!;
+  }
+
+  /// Replays a teacher-authorized started state on a student replica.
+  ///
+  /// Interactive student UI must not call this to obtain authority.
   TpSession startStudent() {
     _session = _engine.start(tpId);
     notifyListeners();
@@ -93,6 +102,12 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
 
   TpSession closeTeacher() {
     _session = _engine.close(tpId);
+    notifyListeners();
+    return _session!;
+  }
+
+  TpSession cancelTeacher() {
+    _session = _engine.cancel(tpId);
     notifyListeners();
     return _session!;
   }

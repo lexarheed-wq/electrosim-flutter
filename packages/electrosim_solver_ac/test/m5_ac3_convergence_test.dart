@@ -112,42 +112,42 @@ List<Connection> _starConnections({required bool switched}) => <Connection>[
     toTerminalId: TerminalId(switched ? 's1-in' : 'l1-p'),
   ),
   if (switched)
-    const Connection(
+    Connection(
       id: ConnectionId('p1b'),
       fromTerminalId: TerminalId('s1-out'),
       toTerminalId: TerminalId('l1-p'),
     ),
-  const Connection(
+  Connection(
     id: ConnectionId('p2'),
     fromTerminalId: TerminalId('v2-p'),
     toTerminalId: TerminalId('l2-p'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('p3'),
     fromTerminalId: TerminalId('v3-p'),
     toTerminalId: TerminalId('l3-p'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('n1'),
     fromTerminalId: TerminalId('l1-n'),
     toTerminalId: TerminalId('v1-n'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('n2'),
     fromTerminalId: TerminalId('l2-n'),
     toTerminalId: TerminalId('v1-n'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('n3'),
     fromTerminalId: TerminalId('l3-n'),
     toTerminalId: TerminalId('v1-n'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('ns2'),
     fromTerminalId: TerminalId('v2-n'),
     toTerminalId: TerminalId('v1-n'),
   ),
-  const Connection(
+  Connection(
     id: ConnectionId('ns3'),
     fromTerminalId: TerminalId('v3-n'),
     toTerminalId: TerminalId('v1-n'),

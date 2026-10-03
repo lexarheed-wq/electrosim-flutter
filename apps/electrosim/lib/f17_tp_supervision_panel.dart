@@ -442,12 +442,10 @@ class _SupervisionLine extends StatelessWidget {
   const _SupervisionLine({
     required this.label,
     required this.value,
-    this.valueKey,
   });
 
   final String label;
   final String value;
-  final Key? valueKey;
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +462,7 @@ class _SupervisionLine extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(value, key: valueKey),
+            child: Text(value),
           ),
         ],
       ),

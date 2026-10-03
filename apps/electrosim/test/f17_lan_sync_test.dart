@@ -100,8 +100,8 @@ void main() {
       expect(client.synchronized, isTrue);
       expect(student.lifecycle, TpLifecycle.published);
 
-      student.startStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.started);
+      teacher.startTeacher();
+      await _waitFor(() => student.lifecycle == TpLifecycle.started);
 
       final CircuitState edited = _nextRevision(student.studentCircuit!);
       student.updateStudentCircuit(edited);
@@ -163,8 +163,8 @@ void main() {
       addTearDown(host.close);
 
       await client.connect(info.preferredEndpoint);
-      student.startStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.started);
+      teacher.startTeacher();
+      await _waitFor(() => student.lifecycle == TpLifecycle.started);
       student.submitStudent();
       await _waitFor(() => teacher.lifecycle == TpLifecycle.submitted);
 
@@ -206,8 +206,8 @@ void main() {
       addTearDown(host.close);
 
       await client.connect(info.preferredEndpoint);
-      student.startStudent();
-      await _waitFor(() => teacher.lifecycle == TpLifecycle.started);
+      teacher.startTeacher();
+      await _waitFor(() => student.lifecycle == TpLifecycle.started);
       student.submitStudent();
       await _waitFor(() => teacher.lifecycle == TpLifecycle.submitted);
 

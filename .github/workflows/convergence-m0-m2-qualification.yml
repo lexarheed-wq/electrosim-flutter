@@ -1,4 +1,4 @@
-name: Convergence M0-M10 qualification
+name: Convergence M0-M11 qualification
 
 on:
   push:
@@ -19,6 +19,9 @@ on:
       - 'apps/electrosim/lib/runtime/electrosim_lan_sync.dart'
       - 'apps/electrosim/lib/f17_tp_session_dialog.dart'
       - 'apps/electrosim/lib/f17_tp_supervision_panel.dart'
+      - 'apps/electrosim/lib/f18_component_archetypes.dart'
+      - 'apps/electrosim/lib/f9_component_visuals.dart'
+      - 'packages/electrosim_canvas/**'
       - 'docs/convergence/**'
       - 'tools/test_convergence_*.py'
       - 'apps/electrosim/lib/f9_component_palette.dart'
@@ -63,6 +66,7 @@ jobs:
             tools/test_convergence_m8_pv_energy_contract.py \
             tools/test_convergence_m9_diagnostic_contract.py \
             tools/test_convergence_m10_tp_flow_contract.py \
+            tools/test_convergence_m11_visual_contract.py \
             tools/test_f18_g0_tooling.py
 
       - name: Domain analyze and tests
@@ -133,7 +137,9 @@ jobs:
             test/f17_tp_session_controller_test.dart \
             test/f17_tp_session_ui_test.dart \
             test/f17_diagnostic_supervision_test.dart \
-            test/f17_lan_sync_test.dart
+            test/f17_lan_sync_test.dart \
+            test/f18_g3r1_point08_visual_archetypes_test.dart \
+            test/m11_component_visuals_test.dart
 
       - name: Scenario non-migration guards
         run: |
@@ -141,4 +147,4 @@ jobs:
           python3 tools/f11_security_static_check.py
 
       - name: Qualification gate
-        run: echo M10_TP_SESSION_CONVERGENCE_PASS
+        run: echo M11_COMPONENT_VISUALS_CONVERGENCE_PASS

@@ -27,6 +27,7 @@ import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_runtime_engine.dart';
+import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
 Future<void> main() async {
@@ -452,6 +453,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late final bool _ownsTpController;
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanHostInfo;
+  late final ElectroSimSimulationController _simulation;
 
   bool get _studentTpReadOnly =>
       widget.role == F9UserRole.student && _tpController.readOnly;
@@ -475,6 +477,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _workspace = 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
+    _simulation = ElectroSimSimulationController(circuit: _circuit)
+      ..addListener(_onSimulationChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fitCircuitToViewport();
@@ -484,8 +488,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ElectroSimRuntimeSnapshot runtimeSnapshot =
-        const ElectroSimRuntimeEngine().evaluate(_circuit);
+    final ElectroSimRuntimeSnapshot runtimeSnapshot = _simulation.snapshot;
     final F9ElementDetails? selectedDetails =
         F9ElementEditor.describe(_circuit, _selected);
     final bool canTransformSelection =
@@ -519,6 +522,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             onDeleteSelected:
                 canTransformSelection ? _deleteSelectedElement : null,
             onRecenter: _fitCircuitToViewport,
+            simulationRunning: _simulation.running,
+            simulatedTime: _simulation.simulatedTime,
+            onToggleSimulation: _simulation.toggle,
+            onResetSimulation: _simulation.resetDynamics,
           ),
           palette: F9ComponentPalette(
             onStatus: _setStatus,
@@ -546,7 +553,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                     ? _tpController
                     : null,
           ),
-          statusBar: _StatusBar(circuit: _circuit, status: _status),
+          statusBar: _StatusBar(
+            circuit: _circuit,
+            status: _status,
+            simulationRunning: _simulation.running,
+            simulatedTime: _simulation.simulatedTime,
+          ),
           canvas: KeyedSubtree(
             key: const Key('f18-canvas-drop-region'),
             child: DragTarget<F9PaletteDefinition>(
@@ -721,6 +733,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
       });
+      _simulation.updateCircuit(_circuit);
     } catch (error) {
       if (!mounted) return;
       _setStatus('Échec de reprise locale : $error');
@@ -772,6 +785,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       circuitChanged = true;
     }
 
+    if (circuitChanged) {
+      _simulation.updateCircuit(_circuit);
+    }
+
     setState(() {
       if (client.lastError != null) {
         _status = 'Synchronisation : ${client.lastError}';
@@ -802,6 +819,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             _workspace = 'Recherche de dérangement';
             _status = 'TP commencé — montage élève chargé.';
           });
+          _simulation.updateCircuit(_circuit);
         },
       ),
     );
@@ -920,6 +938,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
+    _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
   }
 
@@ -1329,6 +1348,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _wiringHoverTerminal = null;
       _status = decision.message;
     });
+    _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(decision.message);
   }
@@ -1431,6 +1451,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _layout = _routeWithG2A(_circuit, _layout);
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
+    _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
   }
@@ -1451,6 +1472,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _circuit = next;
       _status = 'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
     });
+    _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
   }
 
@@ -1548,6 +1570,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
+    _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
   }
 
@@ -1712,8 +1735,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
   }
 
+  void _onSimulationChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    _simulation.removeListener(_onSimulationChanged);
+    _simulation.dispose();
     widget.syncClient?.removeListener(_onLanSyncChanged);
     final ElectroSimLanSyncHost? host = _lanHost;
     if (host != null) unawaited(host.close());
@@ -1740,6 +1771,10 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onRotateSelected,
     required this.onDeleteSelected,
     required this.onRecenter,
+    required this.simulationRunning,
+    required this.simulatedTime,
+    required this.onToggleSimulation,
+    required this.onResetSimulation,
   });
 
   final String entryLabel;
@@ -1753,6 +1788,10 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onRotateSelected;
   final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
+  final bool simulationRunning;
+  final Duration simulatedTime;
+  final VoidCallback onToggleSimulation;
+  final VoidCallback onResetSimulation;
 
   @override
   Widget build(BuildContext context) {
@@ -1820,6 +1859,18 @@ class _WorkspaceTopBar extends StatelessWidget {
                     ),
                   ],
                   IconButton(
+                    key: const Key('workspace-simulation-toggle'),
+                    tooltip: simulationRunning
+                        ? 'Mettre la simulation en pause'
+                        : 'Démarrer la simulation',
+                    onPressed: onToggleSimulation,
+                    icon: Icon(
+                      simulationRunning
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline,
+                    ),
+                  ),
+                  IconButton(
                     key: const Key('workspace-rotate-action'),
                     tooltip: 'Rotation 90°',
                     onPressed: onRotateSelected,
@@ -1843,6 +1894,8 @@ class _WorkspaceTopBar extends StatelessWidget {
                           onOpen?.call();
                         case _WorkspaceSecondaryAction.recenter:
                           onRecenter();
+                        case _WorkspaceSecondaryAction.resetSimulation:
+                          onResetSimulation();
                       }
                     },
                     itemBuilder: (BuildContext context) =>
@@ -1868,6 +1921,15 @@ class _WorkspaceTopBar extends StatelessWidget {
                           ),
                         ),
                       const PopupMenuItem<_WorkspaceSecondaryAction>(
+                        key: Key('workspace-reset-simulation-action'),
+                        value: _WorkspaceSecondaryAction.resetSimulation,
+                        child: ListTile(
+                          leading: Icon(Icons.restart_alt),
+                          title: Text('Réinitialiser la simulation'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const PopupMenuItem<_WorkspaceSecondaryAction>(
                         key: Key('workspace-recenter-action'),
                         value: _WorkspaceSecondaryAction.recenter,
                         child: ListTile(
@@ -1888,7 +1950,7 @@ class _WorkspaceTopBar extends StatelessWidget {
   }
 }
 
-enum _WorkspaceSecondaryAction { save, open, recenter }
+enum _WorkspaceSecondaryAction { save, open, recenter, resetSimulation }
 
 class _DashboardDestination extends StatelessWidget {
   const _DashboardDestination({
@@ -1922,10 +1984,17 @@ class _DashboardDestination extends StatelessWidget {
 }
 
 class _StatusBar extends StatelessWidget {
-  const _StatusBar({required this.circuit, required this.status});
+  const _StatusBar({
+    required this.circuit,
+    required this.status,
+    required this.simulationRunning,
+    required this.simulatedTime,
+  });
 
   final CircuitState circuit;
   final String status;
+  final bool simulationRunning;
+  final Duration simulatedTime;
 
   @override
   Widget build(BuildContext context) {
@@ -1935,11 +2004,13 @@ class _StatusBar extends StatelessWidget {
         builder: (BuildContext context, BoxConstraints constraints) {
           final bool compact = constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
           final int elementCount = circuit.components.length + circuit.sources.length;
+          final String simulationLabel =
+              '${simulationRunning ? '▶' : 'Ⅱ'} t=${(simulatedTime.inMilliseconds / 1000).toStringAsFixed(1)} s';
           final String countLabel = compact
-              ? '$elementCount élém. · ${circuit.sources.length} src.'
+              ? '$elementCount élém. · $simulationLabel'
               : '$elementCount élément${elementCount == 1 ? '' : 's'} · '
                   '${circuit.sources.length} source${circuit.sources.length == 1 ? '' : 's'} · '
-                  '${circuit.mode.name.toUpperCase()} · Révision ${circuit.revision}';
+                  '${circuit.mode.name.toUpperCase()} · $simulationLabel · Révision ${circuit.revision}';
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.sm),
             child: Row(

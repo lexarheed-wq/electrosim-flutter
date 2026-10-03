@@ -4,6 +4,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_energy/electrosim_energy.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_pv/electrosim_pv.dart';
+import 'package:electrosim_protection/electrosim_protection.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
@@ -22,6 +23,8 @@ final class ElectroSimRuntimeSnapshot {
     this.pvResult,
     this.contactorStates = const <ComponentId, ContactorActuationState>{},
     this.controlIssues = const <ElectromechanicalControlIssue>[],
+    this.protectionState,
+    this.protectionIssues = const <ProtectionCoordinationIssue>[],
     this.measurementEngine = const MeasurementEngine(),
     this.energyEngine = const EnergyEngine(),
   });
@@ -36,6 +39,8 @@ final class ElectroSimRuntimeSnapshot {
   final PvSolveResult? pvResult;
   final Map<ComponentId, ContactorActuationState> contactorStates;
   final List<ElectromechanicalControlIssue> controlIssues;
+  final ProtectionRuntimeState? protectionState;
+  final List<ProtectionCoordinationIssue> protectionIssues;
   final MeasurementEngine measurementEngine;
   final EnergyEngine energyEngine;
 
@@ -50,6 +55,9 @@ final class ElectroSimRuntimeSnapshot {
 
   bool contactorActuated(ComponentId componentId) =>
       contactorStates[componentId]?.actuated ?? false;
+
+  bool protectionTripped(ComponentId componentId) =>
+      protectionState?.isTripped(componentId) ?? false;
 
   bool get solved => switch (solverKind) {
         ElectroSimRuntimeSolverKind.dc => dcResult?.isSolved ?? false,
@@ -266,6 +274,7 @@ final class ElectroSimRuntimeEngine {
     this.energyEngine = const EnergyEngine(),
     this.electromechanicalControlEngine =
         const ElectromechanicalControlEngine(),
+    this.protectionCoordinator = const ProtectionCoordinator(),
   });
 
   final TopologyEngine topologyEngine;
@@ -277,12 +286,27 @@ final class ElectroSimRuntimeEngine {
   final MeasurementEngine measurementEngine;
   final EnergyEngine energyEngine;
   final ElectromechanicalControlEngine electromechanicalControlEngine;
+  final ProtectionCoordinator protectionCoordinator;
 
-  ElectroSimRuntimeSnapshot evaluate(CircuitState circuit) {
+  ElectroSimRuntimeSnapshot evaluate(CircuitState circuit) =>
+      advance(circuit, elapsed: Duration.zero);
+
+  ElectroSimRuntimeSnapshot advance(
+    CircuitState circuit, {
+    required Duration elapsed,
+    ProtectionRuntimeState? previousProtectionState,
+  }) {
     final TopologyGraph topology = topologyEngine.compile(circuit);
     switch (circuit.mode) {
       case ElectricalMode.dc:
-        final DcSolveResult dc = solverDC.solve(circuit, topology);
+        final ProtectionDcOutcome coordinated = protectionCoordinator.advanceDc(
+          circuit: circuit,
+          topology: topology,
+          elapsed: elapsed,
+          previous: previousProtectionState,
+          solver: solverDC,
+        );
+        final DcSolveResult dc = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyze(
           topology: topology,
           simulation: dc,
@@ -293,15 +317,20 @@ final class ElectroSimRuntimeEngine {
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.dc,
           dcResult: dc,
+          protectionState: coordinated.state,
+          protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac1:
-        final ElectromechanicalAc1Outcome coordinated =
-            electromechanicalControlEngine.solveAc1(
+        final ProtectionAc1Outcome coordinated =
+            protectionCoordinator.advanceAc1(
           circuit: circuit,
           topology: topology,
+          elapsed: elapsed,
+          previous: previousProtectionState,
           solver: solverAC1,
+          controlsEngine: electromechanicalControlEngine,
         );
         final Ac1SolveResult ac1 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(
@@ -315,16 +344,21 @@ final class ElectroSimRuntimeEngine {
           solverKind: ElectroSimRuntimeSolverKind.ac1,
           ac1Result: ac1,
           contactorStates: coordinated.contactors,
-          controlIssues: coordinated.issues,
+          controlIssues: coordinated.controlIssues,
+          protectionState: coordinated.state,
+          protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac3:
-        final ElectromechanicalAc3Outcome coordinated =
-            electromechanicalControlEngine.solveAc3(
+        final ProtectionAc3Outcome coordinated =
+            protectionCoordinator.advanceAc3(
           circuit: circuit,
           topology: topology,
+          elapsed: elapsed,
+          previous: previousProtectionState,
           solver: solverAC3,
+          controlsEngine: electromechanicalControlEngine,
         );
         final Ac3SolveResult ac3 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(
@@ -338,7 +372,9 @@ final class ElectroSimRuntimeEngine {
           solverKind: ElectroSimRuntimeSolverKind.ac3,
           ac3Result: ac3,
           contactorStates: coordinated.contactors,
-          controlIssues: coordinated.issues,
+          controlIssues: coordinated.controlIssues,
+          protectionState: coordinated.state,
+          protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
           energyEngine: energyEngine,
         );

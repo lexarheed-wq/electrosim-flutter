@@ -1,10 +1,11 @@
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
-import 'f17_tp_supervision_panel.dart';
 import 'f18_home.dart';
+import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
+import 'main.dart' as product;
 import 'runtime/electrosim_tp_session_controller.dart';
 
 void main() {
@@ -86,7 +87,11 @@ class _ProofScreenState extends State<_ProofScreen> {
           onSchemaLibrary: () {},
         );
       case 'workshop':
-        return const _ProofWorkshopPage();
+        return product.F18WorkspacePage(
+          entryLabel: 'Centre de conception',
+          initialWorkspace: 'Câblage',
+          onExitWorkspace: () {},
+        );
       case 'create':
         return Stack(
           children: <Widget>[
@@ -133,132 +138,12 @@ class _ProofSupervisionPageState extends State<_ProofSupervisionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: const Key('proof-supervision-page'),
-      backgroundColor: ElectroSimColors.background,
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: const Text('Supervision'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 920),
-            child: Padding(
-              padding: const EdgeInsets.all(ElectroSimSpacing.md),
-              child: F17TpSupervisionPanel(controller: _controller),
-            ),
-          ),
-        ),
-      ),
-    );
+    return F18SessionSupervisionPage(controller: _controller);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-}
-
-class _ProofWorkshopPage extends StatelessWidget {
-  const _ProofWorkshopPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: const Key('proof-workshop-page'),
-      backgroundColor: ElectroSimColors.background,
-      appBar: AppBar(
-        title: const Text('Atelier · Câblage'),
-        actions: <Widget>[
-          TextButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.exit_to_app_outlined),
-            label: const Text('Quitter l’atelier'),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(ElectroSimSpacing.md),
-        child: Row(
-          children: <Widget>[
-            const SizedBox(
-              width: 220,
-              child: _ProofPanel(
-                title: 'Composants',
-                body: 'Palette de composants',
-                icon: Icons.view_list_outlined,
-              ),
-            ),
-            const SizedBox(width: ElectroSimSpacing.md),
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: ElectroSimColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-                  border: Border.all(color: ElectroSimColors.outline),
-                ),
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.grid_on_outlined, size: 46),
-                      SizedBox(height: ElectroSimSpacing.sm),
-                      Text('Canvas de simulation'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: ElectroSimSpacing.md),
-            const SizedBox(
-              width: 250,
-              child: _ProofPanel(
-                title: 'Propriétés',
-                body: 'Aucun composant sélectionné',
-                icon: Icons.tune_outlined,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProofPanel extends StatelessWidget {
-  const _ProofPanel({
-    required this.title,
-    required this.body,
-    required this.icon,
-  });
-
-  final String title;
-  final String body;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: ElectroSimColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-        border: Border.all(color: ElectroSimColors.outline),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ElectroSimSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Icon(icon, color: ElectroSimColors.primary),
-            const SizedBox(height: ElectroSimSpacing.sm),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: ElectroSimSpacing.xs),
-            Text(body),
-          ],
-        ),
-      ),
-    );
   }
 }

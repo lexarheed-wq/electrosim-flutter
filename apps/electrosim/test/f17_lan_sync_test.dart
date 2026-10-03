@@ -444,7 +444,7 @@ void main() {
         },
       );
       browserSocket = await WebSocket.connect(socketUri.toString());
-      browserSubscription = browserSocket!.listen((dynamic data) {
+      browserSubscription = browserSocket.listen((dynamic data) {
         if (data is String) {
           final Object? decoded = jsonDecode(data);
           if (decoded is Map<String, dynamic>) {

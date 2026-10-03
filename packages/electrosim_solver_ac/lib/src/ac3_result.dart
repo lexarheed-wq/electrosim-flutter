@@ -18,6 +18,7 @@ enum Ac3BranchKind {
   currentSource,
   openCircuit,
   idealShort,
+  idealSwitch,
 }
 
 final class Ac3BranchResult {

@@ -36,6 +36,11 @@ if [ -f test/widget_test.dart ] && grep -q "MyApp" test/widget_test.dart; then
 fi
 
 "$FLUTTER_BIN" pub get
+echo "Building offline ElectroSim student Web client..."
+rm -rf "$APP/build/student_web"
+"$FLUTTER_BIN" build web --release -t lib/student_web_main.dart
+mv "$APP/build/web" "$APP/build/student_web"
+export ELECTROSIM_STUDENT_WEB_ROOT="$APP/build/student_web"
 
 echo
 echo "============================================================"

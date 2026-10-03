@@ -111,6 +111,57 @@ void main() {
     }
   });
 
+
+  test('AC1 start stop self-hold follows industrial NO NC sequence', () {
+    final CircuitState startPressed = _ac1SelfHoldCircuit(
+      startPressed: true,
+      stopPressed: false,
+      initiallyActuated: false,
+    );
+    final first = controls.solveAc1(
+      circuit: startPressed,
+      topology: topologyEngine.compile(startPressed),
+    );
+    expect(first.converged, isTrue);
+    expect(first.contactors[ComponentId('k1')]!.actuated, isTrue);
+    expect(
+      first.result.branch('component:load').current!.magnitude,
+      closeTo(5.0, 1e-8),
+    );
+
+    final CircuitState startReleased = _ac1SelfHoldCircuit(
+      startPressed: false,
+      stopPressed: false,
+      initiallyActuated: true,
+    );
+    final held = controls.solveAc1(
+      circuit: startReleased,
+      topology: topologyEngine.compile(startReleased),
+    );
+    expect(held.converged, isTrue);
+    expect(held.contactors[ComponentId('k1')]!.actuated, isTrue);
+    expect(
+      held.result.branch('component:load').current!.magnitude,
+      closeTo(5.0, 1e-8),
+    );
+
+    final CircuitState stopPressed = _ac1SelfHoldCircuit(
+      startPressed: false,
+      stopPressed: true,
+      initiallyActuated: true,
+    );
+    final stopped = controls.solveAc1(
+      circuit: stopPressed,
+      topology: topologyEngine.compile(stopPressed),
+    );
+    expect(stopped.converged, isTrue);
+    expect(stopped.contactors[ComponentId('k1')]!.actuated, isFalse);
+    expect(
+      stopped.result.branch('component:load').current!.magnitude,
+      closeTo(0.0, 1e-12),
+    );
+  });
+
   test('invalid thresholds never invent a contactor state', () {
     final CircuitState circuit = _ac1Circuit(
       sourceVoltageV: 230.0,
@@ -129,6 +180,101 @@ void main() {
     );
   });
 }
+
+
+CircuitState _ac1SelfHoldCircuit({
+  required bool startPressed,
+  required bool stopPressed,
+  required bool initiallyActuated,
+}) =>
+    CircuitState(
+      circuitId: CircuitId(
+        'self-hold-$startPressed-$stopPressed-$initiallyActuated',
+      ),
+      revision: 0,
+      mode: ElectricalMode.ac1,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('stop'),
+          modelType: 'push_button_nc',
+          terminals: <Terminal>[
+            _t('stop-in', '21', phase: PhaseTag.l1),
+            _t('stop-out', '22', phase: PhaseTag.l1),
+          ],
+          controlState: <String, Object?>{'pressed': stopPressed},
+        ),
+        ComponentInstance(
+          id: ComponentId('start'),
+          modelType: 'push_button_no',
+          terminals: <Terminal>[
+            _t('start-in', '13', phase: PhaseTag.l1),
+            _t('start-out', '14', phase: PhaseTag.l1),
+          ],
+          controlState: <String, Object?>{'pressed': startPressed},
+        ),
+        ComponentInstance(
+          id: ComponentId('hold'),
+          modelType: 'contactor_aux_no',
+          terminals: <Terminal>[
+            _t('hold-in', '13', phase: PhaseTag.l1),
+            _t('hold-out', '14', phase: PhaseTag.l1),
+          ],
+          parameters: const <String, Object?>{'linkedContactorId': 'k1'},
+        ),
+        ComponentInstance(
+          id: ComponentId('k1'),
+          modelType: 'contactor_ac1',
+          terminals: <Terminal>[
+            _t('k1-in', '1', phase: PhaseTag.l1),
+            _t('k1-out', '2', phase: PhaseTag.l1),
+            _t(
+              'k1-a1',
+              'A1',
+              role: TerminalRole.coilA1,
+              phase: PhaseTag.l1,
+            ),
+            _t(
+              'k1-a2',
+              'A2',
+              role: TerminalRole.coilA2,
+              phase: PhaseTag.neutral,
+            ),
+          ],
+          parameters: const <String, Object?>{
+            'coilResistanceOhm': 1000.0,
+            'coilPickupVoltageV': 180.0,
+            'coilDropoutVoltageV': 100.0,
+          },
+          controlState: <String, Object?>{
+            'actuated': initiallyActuated,
+          },
+        ),
+        _resistor('load', PhaseTag.l1),
+      ],
+      connections: <Connection>[
+        _wire('control-l', 'v-l', 'stop-in'),
+        _wire('control-stop-start', 'stop-out', 'start-in'),
+        _wire('control-stop-hold', 'stop-out', 'hold-in'),
+        _wire('control-start-coil', 'start-out', 'k1-a1'),
+        _wire('control-hold-coil', 'hold-out', 'k1-a1'),
+        _wire('control-n', 'k1-a2', 'v-n'),
+        _wire('power-l', 'v-l', 'k1-in'),
+        _wire('power-load', 'k1-out', 'load-p'),
+        _wire('power-n', 'load-n', 'v-n'),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v'),
+          modelType: 'ac_voltage_source',
+          terminals: <Terminal>[
+            _t('v-l', 'L', phase: PhaseTag.l1),
+            _t('v-n', 'N', phase: PhaseTag.neutral),
+          ],
+          parameters: const <String, Object?>{'voltageRmsV': 230.0},
+        ),
+      ],
+      settings: const <String, Object?>{'frequencyHz': 50.0},
+    );
 
 CircuitState _ac1Circuit({
   required double sourceVoltageV,

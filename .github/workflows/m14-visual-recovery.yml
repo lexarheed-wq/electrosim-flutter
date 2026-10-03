@@ -1,0 +1,92 @@
+name: M14 visual recovery candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-v1-v2-convergence
+    paths:
+      - '.github/workflows/m14-visual-recovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mac-recovery:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          flutter config --enable-macos-desktop
+
+      - name: Re-run macOS target qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/f15_qualify_target.sh macos
+          python3 tools/f15_validate_evidence_file.py macos docs/f15/evidence/macos.json
+
+      - name: Build visual recovery release
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREP_OUT="$(./tools/f15_prepare_runner.sh macos "$RUNNER_TEMP/electrosim-m14-release")"
+          case "$PREP_OUT" in
+            F15_RUNNER_PATH=*) M14_TMP="${PREP_OUT#F15_RUNNER_PATH=}" ;;
+            *) echo "M14_RUNNER_PATH_PROTOCOL_ERROR: $PREP_OUT" >&2; exit 69 ;;
+          esac
+          APP_DIR="$M14_TMP/apps/electrosim"
+          python3 tools/m14_patch_macos_window.py "$APP_DIR/macos/Runner/MainFlutterWindow.swift"
+          cd "$APP_DIR"
+          flutter analyze
+          flutter test             test/f17_runtime_engine_test.dart             test/f18_g3r1_point08_visual_archetypes_test.dart             test/m11_component_visuals_test.dart             test/m12_workspace_responsive_test.dart             test/f17_eie_ui_test.dart
+          flutter build macos --release
+          APP_PATH="$(find "$APP_DIR/build/macos/Build/Products/Release" -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          test -d "$APP_PATH"
+          echo "M14_APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Package candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/distribution/m14"
+          mkdir -p "$OUT"
+          CANDIDATE="$OUT/ElectroSim-M14-Visual-Recovery-Mac.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$M14_APP_PATH" "$CANDIDATE"
+          ZIP_SHA="$(shasum -a 256 "$CANDIDATE" | awk '{print $1}')"
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          {
+            echo "commit=$COMMIT_SHA"
+            echo "sha256=$ZIP_SHA"
+            echo "flutter=$(flutter --version | head -1 | tr -d '\r')"
+            echo "dart=$(dart --version 2>&1 | head -1 | tr -d '\r')"
+            echo "visual-recovery=EIE silence + industrial components + fit-to-canvas + large macOS startup window"
+          } > "$OUT/M14_INFO.txt"
+          shasum -a 256 "$CANDIDATE" > "$OUT/M14_SHA256.txt"
+
+      - name: Upload visual recovery candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-M14-Visual-Recovery-Mac
+          path: |
+            distribution/m14/ElectroSim-M14-Visual-Recovery-Mac.zip
+            distribution/m14/M14_INFO.txt
+            distribution/m14/M14_SHA256.txt
+          if-no-files-found: error

@@ -9,6 +9,8 @@ dependencies:
     sdk: flutter
   electrosim_domain:
     path: ../../packages/electrosim_domain
+  electrosim_controls:
+    path: ../../packages/electrosim_controls
   electrosim_canvas:
     path: ../../packages/electrosim_canvas
   electrosim_ui_kit:

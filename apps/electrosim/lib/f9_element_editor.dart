@@ -1,6 +1,6 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-enum F9ElementKind { component, source }
+enum F9ElementKind { component, source, connection }
 
 final class F9ElementDetails {
   const F9ElementDetails({
@@ -75,6 +75,25 @@ abstract final class F9ElementEditor {
         stateLabel: source.enabled ? 'active' : 'inactive',
         primaryToggleLabel: 'Activée',
         primaryToggleValue: source.enabled,
+      );
+    }
+    for (final Connection connection in circuit.connections) {
+      if (connection.id.value != elementId) {
+        continue;
+      }
+      return F9ElementDetails(
+        kind: F9ElementKind.connection,
+        id: connection.id.value,
+        modelType: 'wire',
+        terminalLabels: <String>[
+          connection.fromTerminalId.value,
+          connection.toTerminalId.value,
+        ],
+        parameters: <String, Object?>{
+          'conductorType': connection.conductorType.name,
+          'phase': connection.phase.name,
+        },
+        stateLabel: connection.enabled ? 'raccordé' : 'désactivé',
       );
     }
     return null;
@@ -217,6 +236,19 @@ abstract final class F9ElementEditor {
       sources: sources,
       connections: connections,
     );
+  }
+
+  static CircuitState deleteConnection(
+    CircuitState circuit,
+    String connectionId,
+  ) {
+    final List<Connection> connections = circuit.connections
+        .where((Connection connection) => connection.id.value != connectionId)
+        .toList(growable: false);
+    if (connections.length == circuit.connections.length) {
+      return circuit;
+    }
+    return _rebuild(circuit, connections: connections);
   }
 
   static CircuitState _rebuild(

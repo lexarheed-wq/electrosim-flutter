@@ -6,6 +6,7 @@ on:
       - v1-parity
     paths:
       - "apps/electrosim/lib/f18_component_archetypes.dart"
+      - "apps/electrosim/lib/f18_industrial_component_visuals.dart"
       - "apps/electrosim/lib/f9_component_palette.dart"
       - "apps/electrosim/lib/f9_component_visuals.dart"
       - "apps/electrosim/lib/point5_component_identity_proof_main.dart"

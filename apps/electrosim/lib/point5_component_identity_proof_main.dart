@@ -85,12 +85,12 @@ class _Point5V1ParityProofPageState extends State<_Point5V1ParityProofPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Point 5D — composants vectoriels réalistes de face',
+                          'Point 5D-R2 — silhouettes réelles vectorielles de face',
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '5 composants pilotes · vue de face uniquement · formes réalistes · aucun raster/photo · courant piloté par le solveur',
+                          '5 composants pilotes · silhouettes libres · aucune boîte visible · vue de face · aucun raster/photo',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -269,7 +269,7 @@ class _PilotCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'Vectoriel réaliste · vue de face',
+              'Silhouette réelle · vectoriel de face',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: ElectroSimColors.textSecondary,
                   ),

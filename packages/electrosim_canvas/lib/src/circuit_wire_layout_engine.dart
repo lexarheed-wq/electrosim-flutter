@@ -30,6 +30,7 @@ final class CircuitWireLayoutEngine {
       layout: layout,
       geometry: geometry,
       orderedConnections: original,
+      preferPerimeterAligned: false,
     );
     if (primary.complete) {
       return primary.layout;
@@ -61,6 +62,7 @@ final class CircuitWireLayoutEngine {
         layout: layout,
         geometry: geometry,
         orderedConnections: order,
+        preferPerimeterAligned: true,
       );
       if (candidate.resolvedCount > best.resolvedCount) {
         best = candidate;
@@ -77,6 +79,7 @@ final class CircuitWireLayoutEngine {
     required CircuitVisualLayout layout,
     required CircuitGeometryIndex geometry,
     required List<Connection> orderedConnections,
+    required bool preferPerimeterAligned,
   }) {
     final Map<String, List<Offset>> nextRoutes =
         <String, List<Offset>>{...layout.wireRoutes};
@@ -132,6 +135,40 @@ final class CircuitWireLayoutEngine {
                 !_sharesEndpoint(path, end),
           )
           .toList(growable: false);
+
+      if (preferPerimeterAligned) {
+        final OrthogonalWirePath? preferredPerimeter =
+            _perimeterEscapePath(
+          start: startStub,
+          end: endStub,
+          geometry: geometry,
+        );
+        if (preferredPerimeter != null) {
+          final OrthogonalWirePath? path = _composeStubbedPath(
+            start: start,
+            startRouting: startRouting,
+            startStub: startStub,
+            routed: preferredPerimeter,
+            endStub: endStub,
+            endRouting: endRouting,
+            end: end,
+          );
+          if (path != null &&
+              !WireRouteSafety.hasDifferentNetCrossing(
+                candidate: path,
+                occupiedDifferentNetPaths: crossingObstacles,
+              )) {
+            nextRoutes[connection.id.value] = path.points.length <= 2
+                ? const <Offset>[]
+                : List<Offset>.unmodifiable(
+                    path.points.sublist(1, path.points.length - 1),
+                  );
+            occupied.add(path);
+            resolvedCount++;
+            continue;
+          }
+        }
+      }
 
       final WireRouteResult result = router.route(
         start: startStub,

@@ -155,6 +155,16 @@ class _PropertiesPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final F9ElementDetails? details = F9ElementEditor.describe(circuit, selectedId);
     final bool? primaryToggleValue = details?.primaryToggleValue;
+    final bool directCanvasControl = switch (details?.modelType.toLowerCase()) {
+      'switch' ||
+      'switch_spst' ||
+      'push_button_no' ||
+      'push_button_nc' ||
+      'breaker_dc' ||
+      'breaker_ac1' ||
+      'breaker' => true,
+      _ => false,
+    };
     return ListView(
       key: const Key('properties-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
@@ -221,7 +231,7 @@ class _PropertiesPanel extends StatelessWidget {
               (MapEntry<String, Object?> entry) => _PropertyLine(label: entry.key, value: '${entry.value}'),
             ),
           ],
-          if (primaryToggleValue != null) ...<Widget>[
+          if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             SwitchListTile.adaptive(
               key: const Key('properties-primary-toggle'),
@@ -230,6 +240,20 @@ class _PropertiesPanel extends StatelessWidget {
               subtitle: const Text('Commande explicite du CircuitState'),
               value: primaryToggleValue,
               onChanged: onTogglePrimaryState == null ? null : (_) => onTogglePrimaryState!(),
+            ),
+          ],
+          if (primaryToggleValue != null && directCanvasControl) ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            const ElectroSimStatusChip(
+              key: Key('properties-direct-control-hint'),
+              label: 'Commande directe sur la platine',
+              icon: Icons.ads_click_outlined,
+              emphasized: true,
+            ),
+            const SizedBox(height: ElectroSimSpacing.xs),
+            const Text(
+              'Double-cliquez sur la zone de commande du composant '
+              '(manette, bascule ou bouton-poussoir).',
             ),
           ],
           const SizedBox(height: ElectroSimSpacing.sm),

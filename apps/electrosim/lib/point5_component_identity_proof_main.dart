@@ -55,7 +55,7 @@ class _Point5IdentityProofPage extends StatelessWidget {
                     crossAxisCount: 4,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 1.48,
+                    childAspectRatio: 2.0,
                   ),
                   itemCount: f9PaletteCatalog.length,
                   itemBuilder: (BuildContext context, int index) {

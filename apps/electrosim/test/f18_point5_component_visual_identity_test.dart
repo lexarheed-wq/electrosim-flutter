@@ -126,6 +126,25 @@ void main() {
       }
     });
 
+    test('physical nodes remain distinct from invisible routing ports', () {
+      const Size designSize = Size(104, 64);
+      final Offset visible = TerminalVisualProfile.terminalOffset(
+        modelType: 'switch',
+        size: designSize,
+        index: 1,
+        count: 2,
+      );
+      final Offset routing = TerminalVisualProfile.routingOffset(
+        size: designSize,
+        index: 1,
+        count: 2,
+      );
+
+      expect(visible.dx, closeTo(31.2, 0.0001));
+      expect(routing, const Offset(52, 0));
+      expect(visible.dx, lessThan(routing.dx));
+    });
+
     test('generated raster assets are no longer the runtime renderer', () {
       final String wrapper =
           File('lib/f18_component_asset_visual.dart').readAsStringSync();

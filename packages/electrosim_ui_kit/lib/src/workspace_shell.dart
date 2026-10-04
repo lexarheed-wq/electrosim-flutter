@@ -410,23 +410,43 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               key: regionKey,
               elevation: 14,
               color: ElectroSimColors.surfaceElevated,
-              child: Stack(
-                alignment: Alignment.centerRight,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  child,
-                  Positioned(
-                    right: 4,
-                    top: top ? null : 2,
-                    bottom: top ? 2 : null,
-                    child: _pinButton(
+                  if (!top)
+                    _horizontalPinRail(
                       panel: panel,
-                      key: pinKey,
-                      compact: true,
+                      pinKey: pinKey,
                     ),
-                  ),
+                  child,
+                  if (top)
+                    _horizontalPinRail(
+                      panel: panel,
+                      pinKey: pinKey,
+                    ),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _horizontalPinRail({
+    required ElectroSimWorkspacePanel panel,
+    required Key pinKey,
+  }) {
+    return SizedBox(
+      height: 24,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _pinButton(
+            panel: panel,
+            key: pinKey,
+            compact: true,
           ),
         ),
       ),

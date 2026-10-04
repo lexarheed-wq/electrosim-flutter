@@ -117,6 +117,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required bool closed,
       required bool tripped,
       required bool pressed,
+      required bool actuated,
       required double currentA,
       required double voltageV,
       required double ratedCurrentA,
@@ -155,6 +156,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               closed: closed,
               tripped: tripped,
               pressed: pressed,
+              actuated: actuated,
               animationValue: _motion.value,
               showTerminals: true,
               currentA: currentA,
@@ -182,6 +184,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         closed: true,
         tripped: false,
         pressed: false,
+        actuated: false,
         currentA: currentA,
         voltageV: voltageV,
         ratedCurrentA: 1,
@@ -205,6 +208,14 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       };
       final bool tripped = (runtime?.protectionTripped(component.id) ?? false) ||
           component.controlState['tripped'] == true;
+      final Object? linkedContactorId = component.parameters['linkedContactorId'];
+      final bool actuated = (type == 'contactor_aux_no' ||
+                  type == 'contactor_aux_nc') &&
+              linkedContactorId is String
+          ? (runtime?.contactorActuated(ComponentId(linkedContactorId)) ??
+              (component.controlState['actuated'] == true))
+          : (runtime?.contactorActuated(component.id) ??
+              (component.controlState['actuated'] == true));
 
       addVisual(
         elementId: component.id.value,
@@ -214,6 +225,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         closed: closed,
         tripped: tripped,
         pressed: pressed,
+        actuated: actuated,
         currentA: currentA,
         voltageV: voltageV,
         ratedCurrentA:
@@ -230,12 +242,42 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     ElectroSimRuntimeSnapshot? runtime,
     ComponentId id,
   ) {
-    final result = runtime?.dcResult;
-    if (result == null || !result.isSolved) return 0;
-    for (final branch in result.branchResults) {
-      if (branch.id != 'component:${id.value}') continue;
-      final double? current = branch.currentA;
-      if (current != null && current.isFinite) return current;
+    if (runtime == null) return 0;
+    final String prefix = 'component:${id.value}';
+
+    final dc = runtime.dcResult;
+    if (dc != null && dc.isSolved) {
+      double value = 0;
+      for (final branch in dc.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        final double? current = branch.currentA;
+        if (current != null && current.isFinite && current.abs() > value.abs()) {
+          value = current;
+        }
+      }
+      return value;
+    }
+
+    final ac1 = runtime.ac1Result;
+    if (ac1 != null && ac1.isSolved) {
+      double value = 0;
+      for (final branch in ac1.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        final double? current = branch.current?.magnitude;
+        if (current != null && current.isFinite) value = math.max(value, current);
+      }
+      return value;
+    }
+
+    final ac3 = runtime.ac3Result;
+    if (ac3 != null && ac3.isSolved) {
+      double value = 0;
+      for (final branch in ac3.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        final double? current = branch.current?.magnitude;
+        if (current != null && current.isFinite) value = math.max(value, current);
+      }
+      return value;
     }
     return 0;
   }
@@ -244,12 +286,31 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     ElectroSimRuntimeSnapshot? runtime,
     SourceId id,
   ) {
-    final result = runtime?.dcResult;
-    if (result == null || !result.isSolved) return 0;
-    for (final branch in result.branchResults) {
-      if (branch.id != 'source:${id.value}') continue;
-      final double? current = branch.currentA;
-      if (current != null && current.isFinite) return current;
+    if (runtime == null) return 0;
+    final String target = 'source:${id.value}';
+    final dc = runtime.dcResult;
+    if (dc != null && dc.isSolved) {
+      for (final branch in dc.branchResults) {
+        if (branch.id != target) continue;
+        final double? current = branch.currentA;
+        if (current != null && current.isFinite) return current.abs();
+      }
+    }
+    final ac1 = runtime.ac1Result;
+    if (ac1 != null && ac1.isSolved) {
+      for (final branch in ac1.branchResults) {
+        if (branch.id != target) continue;
+        final double? current = branch.current?.magnitude;
+        if (current != null && current.isFinite) return current;
+      }
+    }
+    final ac3 = runtime.ac3Result;
+    if (ac3 != null && ac3.isSolved) {
+      for (final branch in ac3.branchResults) {
+        if (branch.id != target) continue;
+        final double? current = branch.current?.magnitude;
+        if (current != null && current.isFinite) return current;
+      }
     }
     return 0;
   }
@@ -258,11 +319,30 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     ElectroSimRuntimeSnapshot? runtime,
     SourceId id,
   ) {
-    final result = runtime?.dcResult;
-    if (result == null || !result.isSolved) return 0;
-    for (final branch in result.branchResults) {
-      if (branch.id == 'source:${id.value}' && branch.voltageV.isFinite) {
-        return branch.voltageV;
+    if (runtime == null) return 0;
+    final String target = 'source:${id.value}';
+    final dc = runtime.dcResult;
+    if (dc != null && dc.isSolved) {
+      for (final branch in dc.branchResults) {
+        if (branch.id == target && branch.voltageV.isFinite) {
+          return branch.voltageV.abs();
+        }
+      }
+    }
+    final ac1 = runtime.ac1Result;
+    if (ac1 != null && ac1.isSolved) {
+      for (final branch in ac1.branchResults) {
+        if (branch.id == target && branch.voltage.magnitude.isFinite) {
+          return branch.voltage.magnitude;
+        }
+      }
+    }
+    final ac3 = runtime.ac3Result;
+    if (ac3 != null && ac3.isSolved) {
+      for (final branch in ac3.branchResults) {
+        if (branch.id == target && branch.voltage.magnitude.isFinite) {
+          return branch.voltage.magnitude;
+        }
       }
     }
     return 0;
@@ -272,12 +352,30 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     ElectroSimRuntimeSnapshot? runtime,
     ComponentId id,
   ) {
-    final result = runtime?.dcResult;
-    if (result == null || !result.isSolved) return 0;
+    if (runtime == null) return 0;
+    final String prefix = 'component:${id.value}';
     double value = 0;
-    for (final branch in result.branchResults) {
-      if (branch.id == 'component:${id.value}' && branch.voltageV.isFinite) {
-        value = math.max(value, branch.voltageV.abs());
+    final dc = runtime.dcResult;
+    if (dc != null && dc.isSolved) {
+      for (final branch in dc.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        if (branch.voltageV.isFinite) value = math.max(value, branch.voltageV.abs());
+      }
+      return value;
+    }
+    final ac1 = runtime.ac1Result;
+    if (ac1 != null && ac1.isSolved) {
+      for (final branch in ac1.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        if (branch.voltage.magnitude.isFinite) value = math.max(value, branch.voltage.magnitude);
+      }
+      return value;
+    }
+    final ac3 = runtime.ac3Result;
+    if (ac3 != null && ac3.isSolved) {
+      for (final branch in ac3.branchResults) {
+        if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
+        if (branch.voltage.magnitude.isFinite) value = math.max(value, branch.voltage.magnitude);
       }
     }
     return value;
@@ -354,11 +452,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
 
   void _paintLiveWires(Canvas canvas, CircuitGeometryIndex geometry) {
     final ElectroSimRuntimeSnapshot? runtime = runtimeSnapshot;
-    final result = runtime?.dcResult;
-    if (!simulationRunning ||
-        runtime == null ||
-        result == null ||
-        !result.isSolved) {
+    if (!simulationRunning || runtime == null || !runtime.solved) {
       return;
     }
 
@@ -417,15 +511,37 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   ) {
     final String? nodeId =
         runtime.topology.terminalToNode[connection.fromTerminalId];
-    final result = runtime.dcResult;
-    if (nodeId == null || result == null) return 0;
+    if (nodeId == null) return 0;
 
     double current = 0;
-    for (final branch in result.branchResults) {
-      if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
-      final double? branchCurrent = branch.currentA;
-      if (branchCurrent == null || !branchCurrent.isFinite) continue;
-      current = math.max(current, branchCurrent.abs());
+    final dc = runtime.dcResult;
+    if (dc != null && dc.isSolved) {
+      for (final branch in dc.branchResults) {
+        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
+        final double? branchCurrent = branch.currentA;
+        if (branchCurrent == null || !branchCurrent.isFinite) continue;
+        current = math.max(current, branchCurrent.abs());
+      }
+      return current;
+    }
+    final ac1 = runtime.ac1Result;
+    if (ac1 != null && ac1.isSolved) {
+      for (final branch in ac1.branchResults) {
+        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
+        final double? branchCurrent = branch.current?.magnitude;
+        if (branchCurrent == null || !branchCurrent.isFinite) continue;
+        current = math.max(current, branchCurrent);
+      }
+      return current;
+    }
+    final ac3 = runtime.ac3Result;
+    if (ac3 != null && ac3.isSolved) {
+      for (final branch in ac3.branchResults) {
+        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
+        final double? branchCurrent = branch.current?.magnitude;
+        if (branchCurrent == null || !branchCurrent.isFinite) continue;
+        current = math.max(current, branchCurrent);
+      }
     }
     return current;
   }
@@ -686,6 +802,15 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       'fan_dc' => 'Ventilateur',
       'relay_coil' => 'Bobine',
       'buzzer' => 'Buzzer',
+      'capacitor' => 'Condensateur',
+      'inductor' => 'Inductance',
+      'impedance' => 'Impédance',
+      'contactor_aux_no' => 'Aux. NO',
+      'contactor_aux_nc' => 'Aux. NC',
+      'contactor_ac1' => 'Contacteur 1φ',
+      'contactor_3p' => 'Contacteur 3P',
+      'breaker_3p' => 'Disjoncteur 3P',
+      'thermal_overload_3p' => 'Relais thermique',
       _ => modelType.replaceAll('_', ' '),
     };
   }

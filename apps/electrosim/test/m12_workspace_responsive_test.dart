@@ -1,6 +1,12 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _openTop(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimTopEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('M12 compact workspace top bar fits a phone-width viewport',
@@ -43,6 +49,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('workspace-more-actions')), findsOneWidget);
+    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-more-actions')));
     await tester.pumpAndSettle();
 

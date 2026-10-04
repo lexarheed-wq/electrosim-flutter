@@ -1412,9 +1412,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _lastDirectControlTapLocal = null;
   }
 
-  bool _usesDirectCanvasControl(String modelType) => switch (
-        modelType.toLowerCase(),
-      ) {
+  bool _usesDirectCanvasControl(String modelType) =>
+      switch (modelType.toLowerCase()) {
         'switch' ||
         'switch_spst' ||
         'push_button_no' ||
@@ -1502,8 +1501,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     setState(() {
       _circuit = next;
       _selected = elementId;
-      _status = 'Commande directe : $elementId — ' +
-          (details?.stateLabel ?? 'mis à jour');
+      _status = 'Commande directe : $elementId — ${details?.stateLabel ?? 'mis à jour'}';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();

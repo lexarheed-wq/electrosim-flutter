@@ -1,6 +1,7 @@
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +10,16 @@ Terminal _terminal(String id, TerminalRole role) => Terminal(
       name: id,
       role: role,
     );
+
+Future<void> _openContext(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimContextEdgeKey));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openTop(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimTopEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   test('CircuitVisualLayout rotates terminal geometry by quarter turns', () {
@@ -130,6 +141,7 @@ void main() {
     expect(find.byKey(const Key('properties-delete-element')), findsNothing);
     expect(find.text('Supprimer du circuit'), findsNothing);
 
+    await _openContext(tester);
     await tester.tap(find.byKey(const Key('properties-element-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('switch-1').last);
@@ -144,12 +156,14 @@ void main() {
     expect(rotate.onPressed, isNotNull);
     expect(delete.onPressed, isNotNull);
 
+    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-rotate-action')));
     await tester.pumpAndSettle();
     SimulatorCanvas canvas =
         tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
     expect(canvas.layout.quarterTurnsOf('switch-1'), 1);
 
+    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
     canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));

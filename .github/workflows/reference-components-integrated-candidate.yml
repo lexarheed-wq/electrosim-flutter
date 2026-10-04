@@ -29,6 +29,10 @@ on:
       - "packages/electrosim_ui_kit/test/design_system_test.dart"
       - ".github/workflows/reference-components-integrated-candidate.yml"
 
+concurrency:
+  group: integrated-reference-components-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

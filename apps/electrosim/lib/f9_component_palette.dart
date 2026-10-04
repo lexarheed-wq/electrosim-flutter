@@ -440,62 +440,12 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double width = compact ? 72 : 112;
-    final double height = compact ? 48 : 72;
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          Positioned.fill(
-            left: 5,
-            right: 5,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: definition.kind == F9PaletteElementKind.source
-                    ? const Color(0xFFEFF6FF)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(compact ? 8 : 10),
-                border: Border.all(color: const Color(0xFF334155)),
-              ),
-              child: Center(
-                child: F18ComponentArchetypeGlyph(
-                  modelType: definition.modelType,
-                  size: compact ? 26 : 38,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            top: height / 2 - 5,
-            child: const _TerminalDot(),
-          ),
-          Positioned(
-            right: 0,
-            top: height / 2 - 5,
-            child: const _TerminalDot(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TerminalDot extends StatelessWidget {
-  const _TerminalDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF0F172A), width: 1.5),
-      ),
+    return F18ComponentIdentityVisual(
+      key: Key('component-identity-preview-${definition.keyName}'),
+      modelType: definition.modelType,
+      size: compact
+          ? F18ComponentIdentityMetrics.paletteSize
+          : F18ComponentIdentityMetrics.dragSize,
     );
   }
 }

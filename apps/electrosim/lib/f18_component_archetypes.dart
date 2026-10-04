@@ -201,32 +201,6 @@ class _F18IdentityPainter extends CustomPainter {
   }
 }
 
-class _F18ArchetypePainter extends CustomPainter {
-  const _F18ArchetypePainter({
-    required this.modelType,
-    required this.foreground,
-  });
-
-  final String modelType;
-  final Color foreground;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    paintF18ComponentIdentity(
-      canvas,
-      Offset.zero & size,
-      modelType,
-      foreground,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_F18ArchetypePainter oldDelegate) {
-    return oldDelegate.modelType != modelType ||
-        oldDelegate.foreground != foreground;
-  }
-}
-
 void paintF18ComponentIdentity(
   Canvas canvas,
   Rect bounds,

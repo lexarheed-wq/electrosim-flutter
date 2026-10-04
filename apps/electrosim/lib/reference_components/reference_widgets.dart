@@ -7,10 +7,20 @@ enum ReferenceDevice { supply, breaker, toggle, button, lamp }
 /// Device-specific geometry shared by the drawing and connection anchors.
 @immutable
 final class ReferenceComponentGeometry {
-  const ReferenceComponentGeometry(this.designSize, this.body, this.terminals);
+  const ReferenceComponentGeometry(
+    this.designSize,
+    this.body,
+    this.terminals, {
+    this.controlRegion,
+  });
+
   final Size designSize;
   final Rect body;
   final List<Offset> terminals;
+
+  /// Front-face zone operated directly by the user. This is interaction
+  /// geometry only; it does not alter the uploaded vector drawing.
+  final Rect? controlRegion;
 
   static ReferenceComponentGeometry forDevice(ReferenceDevice device) =>
       switch (device) {
@@ -21,14 +31,17 @@ final class ReferenceComponentGeometry {
         ReferenceDevice.breaker => const ReferenceComponentGeometry(
           Size(72, 160), Rect.fromLTWH(12, 8, 48, 144),
           [Offset(36, 23), Offset(36, 137)],
+          controlRegion: Rect.fromLTWH(20, 56, 32, 56),
         ),
         ReferenceDevice.toggle => const ReferenceComponentGeometry(
           Size(90, 140), Rect.fromLTWH(10, 8, 70, 124),
           [Offset(45, 20), Offset(45, 120)],
+          controlRegion: Rect.fromLTWH(20, 32, 50, 76),
         ),
         ReferenceDevice.button => const ReferenceComponentGeometry(
           Size(90, 140), Rect.fromLTWH(12, 8, 66, 124),
           [Offset(31, 119), Offset(59, 119)],
+          controlRegion: Rect.fromLTWH(15, 27, 60, 64),
         ),
         ReferenceDevice.lamp => const ReferenceComponentGeometry(
           Size(130, 160), Rect.fromLTWH(26, 120, 78, 30),
@@ -102,6 +115,39 @@ class ReferenceComponentView extends StatelessWidget {
       delta.dx * math.cos(angle) - delta.dy * math.sin(angle),
       delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
     );
+  }
+
+  /// True when [localPosition] lies on the physical actuator in an
+  /// unrotated widget rectangle. The uploaded drawing itself is unchanged.
+  static bool hitsControlRegion(
+    Size size,
+    Offset localPosition, {
+    required ReferenceDevice device,
+  }) {
+    if (size.isEmpty || !size.width.isFinite || !size.height.isFinite) {
+      return false;
+    }
+    final ReferenceComponentGeometry geometry =
+        ReferenceComponentGeometry.forDevice(device);
+    final Rect? controlRegion = geometry.controlRegion;
+    if (controlRegion == null) return false;
+
+    final double scale = math.min(
+      size.width / geometry.designSize.width,
+      size.height / geometry.designSize.height,
+    );
+    if (!scale.isFinite || scale <= 0) return false;
+    final Offset contentOrigin = Offset(
+      (size.width - geometry.designSize.width * scale) / 2,
+      (size.height - geometry.designSize.height * scale) / 2,
+    );
+    final Offset designPoint = (localPosition - contentOrigin) / scale;
+
+    if (device == ReferenceDevice.button) {
+      // The visible green head is circular; keep the click target faithful to it.
+      return (designPoint - const Offset(45, 58)).distance <= 31;
+    }
+    return controlRegion.contains(designPoint);
   }
 
   /// Unit direction for a wire leaving the housing from this terminal.

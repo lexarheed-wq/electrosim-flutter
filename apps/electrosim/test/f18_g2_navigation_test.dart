@@ -1,11 +1,21 @@
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void _desktop(WidgetTester tester) {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
+}
+
+Future<void> _ensureTopOpen(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _pumpUntil(
@@ -119,6 +129,7 @@ void main() {
     expect(find.byType(SimulatorCanvas), findsOneWidget);
     expect(find.byKey(const Key('workspace-exit-action')), findsOneWidget);
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('workspace-exit-action')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('design-center-page')), findsOneWidget);

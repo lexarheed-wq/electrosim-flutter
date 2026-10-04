@@ -1,0 +1,33 @@
+name: Passation exact source export
+
+on:
+  push:
+    branches:
+      - passation-export-20261004-p5c
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 4716d215387954b3880391fe5d63f9944d77ded7
+          fetch-depth: 0
+      - name: Export exact v1-parity source
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix=ElectroSim-V1Parity-Point5C-4716d215/ \
+            -o ElectroSim-V1Parity-Point5C-4716d215-Source.zip \
+            4716d215387954b3880391fe5d63f9944d77ded7
+          sha256sum ElectroSim-V1Parity-Point5C-4716d215-Source.zip > SOURCE_SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: electrosim-v1-parity-point5c-source
+          path: |
+            ElectroSim-V1Parity-Point5C-4716d215-Source.zip
+            SOURCE_SHA256.txt
+          if-no-files-found: error
+          retention-days: 14

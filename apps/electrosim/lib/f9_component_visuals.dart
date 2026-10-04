@@ -6,6 +6,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
+import 'f18_component_asset_visual.dart';
 import 'f9_wiring_policy.dart';
 
 class F9CanvasVisualOverlay extends StatelessWidget {
@@ -31,19 +32,83 @@ class F9CanvasVisualOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: CustomPaint(
-        painter: _F9CanvasOverlayPainter(
-          circuit: circuit,
-          layout: layout,
-          viewport: viewport,
-          pendingTerminalId: pendingTerminalId,
-          hoverTerminalId: hoverTerminalId,
-          pointerWorldPosition: pointerWorldPosition,
-          wirePreviewPlanner: wirePreviewPlanner,
-        ),
-        size: Size.infinite,
+      child: AnimatedBuilder(
+        animation: viewport,
+        builder: (BuildContext context, Widget? child) {
+          final CircuitGeometryIndex geometry =
+              CircuitGeometryIndex.build(circuit, layout);
+          return Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              ..._buildAdobeAssetVisuals(geometry),
+              CustomPaint(
+                painter: _F9CanvasOverlayPainter(
+                  circuit: circuit,
+                  layout: layout,
+                  viewport: viewport,
+                  pendingTerminalId: pendingTerminalId,
+                  hoverTerminalId: hoverTerminalId,
+                  pointerWorldPosition: pointerWorldPosition,
+                  wirePreviewPlanner: wirePreviewPlanner,
+                ),
+                size: Size.infinite,
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  List<Widget> _buildAdobeAssetVisuals(CircuitGeometryIndex geometry) {
+    final List<Widget> widgets = <Widget>[];
+
+    void addVisual(
+      String elementId,
+      String modelType,
+      bool active,
+    ) {
+      if (!F18AdobeComponentAssets.hasAsset(modelType)) {
+        return;
+      }
+      final Rect? worldRect = geometry.elementRects[elementId];
+      if (worldRect == null) {
+        return;
+      }
+      final Offset center = viewport.worldToScreen(worldRect.center);
+      final Size visualSize = _f9VisualSize(worldRect, viewport);
+      final int quarterTurns = layout.quarterTurnsOf(elementId);
+
+      widgets.add(
+        Positioned(
+          left: center.dx - visualSize.width / 2,
+          top: center.dy - visualSize.height / 2,
+          width: visualSize.width,
+          height: visualSize.height,
+          child: Transform.rotate(
+            angle: math.pi / 2 * quarterTurns,
+            child: F18ComponentAssetVisual(
+              key: ValueKey<String>('board-adobe-asset-$elementId'),
+              modelType: modelType,
+              size: visualSize,
+              active: active,
+            ),
+          ),
+        ),
+      );
+    }
+
+    for (final SourceInstance source in circuit.sources) {
+      addVisual(source.id.value, source.modelType, source.enabled);
+    }
+    for (final ComponentInstance component in circuit.components) {
+      final Object? closed = component.controlState['closed'];
+      final bool active =
+          component.condition != ComponentCondition.disabled &&
+          closed != false;
+      addVisual(component.id.value, component.modelType, active);
+    }
+    return widgets;
   }
 }
 
@@ -194,29 +259,29 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     int quarterTurns,
   ) {
     final Offset center = viewport.worldToScreen(worldRect.center);
-    final double scale = viewport.scale;
-    final double visualWidth =
-        (worldRect.width * scale * 0.96).clamp(72.0, 136.0).toDouble();
-    final double visualHeight =
-        (worldRect.height * scale * 0.96).clamp(46.0, 92.0).toDouble();
+    final Size visualSize = _f9VisualSize(worldRect, viewport);
+    final double visualWidth = visualSize.width;
+    final double visualHeight = visualSize.height;
     final Offset visualCenter = center;
     final Color color =
         active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
 
-    canvas.save();
-    canvas.translate(visualCenter.dx, visualCenter.dy);
-    canvas.rotate(math.pi / 2 * quarterTurns);
-    paintF18ComponentIdentity(
-      canvas,
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: visualWidth,
-        height: visualHeight,
-      ),
-      modelType,
-      color,
-    );
-    canvas.restore();
+    if (!F18AdobeComponentAssets.hasAsset(modelType)) {
+      canvas.save();
+      canvas.translate(visualCenter.dx, visualCenter.dy);
+      canvas.rotate(math.pi / 2 * quarterTurns);
+      paintF18ComponentIdentity(
+        canvas,
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: visualWidth,
+          height: visualHeight,
+        ),
+        modelType,
+        color,
+      );
+      canvas.restore();
+    }
 
     if (viewport.scale >= 0.72) {
       final String label = _boardLabel(modelType);
@@ -261,4 +326,16 @@ class _F9CanvasOverlayPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_F9CanvasOverlayPainter oldDelegate) => true;
+}
+
+
+Size _f9VisualSize(
+  Rect worldRect,
+  ViewportController viewport,
+) {
+  final double scale = viewport.scale;
+  return Size(
+    (worldRect.width * scale * 0.96).clamp(72.0, 136.0).toDouble(),
+    (worldRect.height * scale * 0.96).clamp(46.0, 92.0).toDouble(),
+  );
 }

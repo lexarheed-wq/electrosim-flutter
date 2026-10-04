@@ -1,6 +1,12 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _openContext(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimContextEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('F17-R5 healthy runtime keeps EIE neutral without speculative advice',
@@ -12,6 +18,7 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
+    await _openContext(tester);
 
     await tester.tap(find.text('EIE'));
     await tester.pumpAndSettle();
@@ -36,6 +43,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openContext(tester);
 
     await tester.tap(find.byKey(const Key('properties-primary-toggle')));
     await tester.pumpAndSettle();

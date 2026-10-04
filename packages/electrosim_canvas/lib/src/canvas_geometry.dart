@@ -4,83 +4,59 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'circuit_visual_layout.dart';
 
-final class CircuitGeometryIndex {
-  CircuitGeometryIndex._({
-    required this.elementRects,
-    required this.terminalPositions,
-    required this.terminalOwners,
-  });
+/// Presentation-only terminal anchors for component drawings.
+///
+/// Electrical topology still uses the same [TerminalId] objects; this profile
+/// only determines where those terminals are drawn and hit-tested on the
+/// canvas. The Point 5 V1 pilot uses model-specific anchors so a terminal is
+/// located at the physical connection lug instead of at the edge of a generic
+/// 104x64 bounding box.
+abstract final class TerminalVisualProfile {
+  static const double designWidth = 104;
 
-  factory CircuitGeometryIndex.build(
-    CircuitState circuit,
-    CircuitVisualLayout layout, {
-    Map<String, Offset> previewPositions = const <String, Offset>{},
+  /// Horizontal half-span, in the canonical 104x64 design coordinate system,
+  /// for the five Point 5 pilot families. Values are chosen so the visible
+  /// metal terminal is tangent or nearly tangent to the actual component body.
+  static const Map<String, double> _pilotHalfSpans = <String, double>{
+    'dc_voltage_source': 46.0,
+    'voltage_source': 46.0,
+    'switch': 31.2,
+    'switch_spst': 31.2,
+    'lamp': 27.0,
+    'breaker_dc': 37.2,
+    'breaker_ac1': 37.2,
+    'breaker': 37.2,
+    'push_button_no': 31.2,
+  };
+
+  static bool hasPhysicalPilotAnchor(String modelType) =>
+      _pilotHalfSpans.containsKey(modelType.toLowerCase());
+
+  static double? horizontalHalfSpanForModel(
+    String modelType, {
+    required Size size,
   }) {
-    final Map<String, Rect> elementRects = <String, Rect>{};
-    final Map<TerminalId, Offset> terminalPositions = <TerminalId, Offset>{};
-    final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
-    final Set<String> seenElementIds = <String>{};
-
-    void indexElement(String id, List<Terminal> terminals) {
-      if (!seenElementIds.add(id)) {
-        throw StateError(
-          'Canvas requires globally unique source/component visual IDs; duplicate: $id',
-        );
-      }
-      final Offset? center = previewPositions[id] ?? layout.positionOf(id);
-      if (center == null) {
-        return;
-      }
-      final Size baseSize = layout.sizeOf(id);
-      final int quarterTurns = layout.quarterTurnsOf(id);
-      final Size displaySize = quarterTurns.isOdd
-          ? Size(baseSize.height, baseSize.width)
-          : baseSize;
-      final Rect rect = Rect.fromCenter(
-        center: center,
-        width: displaySize.width,
-        height: displaySize.height,
-      );
-      elementRects[id] = rect;
-      for (var index = 0; index < terminals.length; index++) {
-        final Terminal terminal = terminals[index];
-        final Offset local = _terminalOffset(
-          baseSize,
-          index,
-          terminals.length,
-        );
-        terminalPositions[terminal.id] =
-            center + _rotateQuarterTurns(local, quarterTurns);
-        terminalOwners[terminal.id] = id;
-      }
-    }
-
-    for (final SourceInstance source in circuit.sources) {
-      indexElement(source.id.value, source.terminals);
-    }
-    for (final ComponentInstance component in circuit.components) {
-      indexElement(component.id.value, component.terminals);
-    }
-    for (final Connection connection in circuit.connections) {
-      if (!seenElementIds.add(connection.id.value)) {
-        throw StateError(
-          'Canvas requires globally unique visual IDs across sources, components, and connections; duplicate: ${connection.id.value}',
-        );
-      }
-    }
-
-    return CircuitGeometryIndex._(
-      elementRects: Map<String, Rect>.unmodifiable(elementRects),
-      terminalPositions: Map<TerminalId, Offset>.unmodifiable(terminalPositions),
-      terminalOwners: Map<TerminalId, String>.unmodifiable(terminalOwners),
-    );
+    final double? designSpan = _pilotHalfSpans[modelType.toLowerCase()];
+    if (designSpan == null) return null;
+    return designSpan * size.width / designWidth;
   }
 
-  final Map<String, Rect> elementRects;
-  final Map<TerminalId, Offset> terminalPositions;
-  final Map<TerminalId, String> terminalOwners;
+  static Offset terminalOffset({
+    required String modelType,
+    required Size size,
+    required int index,
+    required int count,
+  }) {
+    final double? halfSpan = count == 2
+        ? horizontalHalfSpanForModel(modelType, size: size)
+        : null;
+    if (halfSpan != null) {
+      return Offset(index == 0 ? -halfSpan : halfSpan, 0);
+    }
+    return _genericTerminalOffset(size, index, count);
+  }
 
-  static Offset _terminalOffset(Size size, int index, int count) {
+  static Offset _genericTerminalOffset(Size size, int index, int count) {
     final Rect rect = Rect.fromCenter(
       center: Offset.zero,
       width: size.width,
@@ -123,6 +99,92 @@ final class CircuitGeometryIndex {
         ),
     };
   }
+}
+
+final class CircuitGeometryIndex {
+  CircuitGeometryIndex._({
+    required this.elementRects,
+    required this.terminalPositions,
+    required this.terminalOwners,
+  });
+
+  factory CircuitGeometryIndex.build(
+    CircuitState circuit,
+    CircuitVisualLayout layout, {
+    Map<String, Offset> previewPositions = const <String, Offset>{},
+  }) {
+    final Map<String, Rect> elementRects = <String, Rect>{};
+    final Map<TerminalId, Offset> terminalPositions = <TerminalId, Offset>{};
+    final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
+    final Set<String> seenElementIds = <String>{};
+
+    void indexElement(
+      String id,
+      String modelType,
+      List<Terminal> terminals,
+    ) {
+      if (!seenElementIds.add(id)) {
+        throw StateError(
+          'Canvas requires globally unique source/component visual IDs; duplicate: $id',
+        );
+      }
+      final Offset? center = previewPositions[id] ?? layout.positionOf(id);
+      if (center == null) {
+        return;
+      }
+      final Size baseSize = layout.sizeOf(id);
+      final int quarterTurns = layout.quarterTurnsOf(id);
+      final Size displaySize = quarterTurns.isOdd
+          ? Size(baseSize.height, baseSize.width)
+          : baseSize;
+      final Rect rect = Rect.fromCenter(
+        center: center,
+        width: displaySize.width,
+        height: displaySize.height,
+      );
+      elementRects[id] = rect;
+      for (var index = 0; index < terminals.length; index++) {
+        final Terminal terminal = terminals[index];
+        final Offset local = TerminalVisualProfile.terminalOffset(
+          modelType: modelType,
+          size: baseSize,
+          index: index,
+          count: terminals.length,
+        );
+        terminalPositions[terminal.id] =
+            center + _rotateQuarterTurns(local, quarterTurns);
+        terminalOwners[terminal.id] = id;
+      }
+    }
+
+    for (final SourceInstance source in circuit.sources) {
+      indexElement(source.id.value, source.modelType, source.terminals);
+    }
+    for (final ComponentInstance component in circuit.components) {
+      indexElement(
+        component.id.value,
+        component.modelType,
+        component.terminals,
+      );
+    }
+    for (final Connection connection in circuit.connections) {
+      if (!seenElementIds.add(connection.id.value)) {
+        throw StateError(
+          'Canvas requires globally unique visual IDs across sources, components, and connections; duplicate: ${connection.id.value}',
+        );
+      }
+    }
+
+    return CircuitGeometryIndex._(
+      elementRects: Map<String, Rect>.unmodifiable(elementRects),
+      terminalPositions: Map<TerminalId, Offset>.unmodifiable(terminalPositions),
+      terminalOwners: Map<TerminalId, String>.unmodifiable(terminalOwners),
+    );
+  }
+
+  final Map<String, Rect> elementRects;
+  final Map<TerminalId, Offset> terminalPositions;
+  final Map<TerminalId, String> terminalOwners;
 
   static Offset _rotateQuarterTurns(Offset offset, int quarterTurns) {
     return switch (quarterTurns % 4) {

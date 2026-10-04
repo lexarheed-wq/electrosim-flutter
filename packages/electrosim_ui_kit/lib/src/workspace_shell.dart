@@ -154,7 +154,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                 ? ElectroSimGeometry.mediumPanelWidth
                 : ElectroSimGeometry.expandedPaletteWidth;
         final double contextWidth = compact
-            ? constraints.maxWidth * .92
+            ? constraints.maxWidth * .88
             : medium
                 ? ElectroSimGeometry.mediumPanelWidth
                 : ElectroSimGeometry.expandedContextWidth;

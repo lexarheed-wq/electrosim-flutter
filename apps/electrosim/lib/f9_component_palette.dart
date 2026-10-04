@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
-import 'f18_v1_component_visuals.dart';
 
 enum F9PaletteElementKind { source, component }
 
@@ -408,8 +407,8 @@ class _PaletteDraggableTile extends StatelessWidget {
           opacity: 0.94,
           child: F18ComponentAssetVisual(
             modelType: definition.modelType,
-            size: F18V1PilotVisuals.supports(definition.modelType)
-                ? F18PilotVisualMetrics.dragSizeFor(definition.modelType)
+            size: F18ReferenceComponentVisuals.supports(definition.modelType)
+                ? F18ReferenceComponentMetrics.dragSizeFor(definition.modelType)
                 : F18ComponentIdentityMetrics.dragSize,
           ),
         ),
@@ -438,10 +437,10 @@ class F9ComponentPreview extends StatelessWidget {
     return F18ComponentAssetVisual(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.modelType,
-      size: F18V1PilotVisuals.supports(definition.modelType)
+      size: F18ReferenceComponentVisuals.supports(definition.modelType)
           ? (compact
-              ? F18PilotVisualMetrics.paletteSizeFor(definition.modelType)
-              : F18PilotVisualMetrics.dragSizeFor(definition.modelType))
+              ? F18ReferenceComponentMetrics.paletteSizeFor(definition.modelType)
+              : F18ReferenceComponentMetrics.dragSizeFor(definition.modelType))
           : (compact
               ? F18ComponentIdentityMetrics.paletteSize
               : F18ComponentIdentityMetrics.dragSize),

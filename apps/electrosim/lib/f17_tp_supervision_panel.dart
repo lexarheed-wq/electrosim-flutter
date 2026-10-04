@@ -113,10 +113,32 @@ class F17TpSupervisionPanel extends StatelessWidget {
                       ? 'Recherche de dérangement'
                       : 'Câblage',
                 ),
-                _SupervisionLine(
-                  label: 'État global',
-                  value: _lifecycleLabel(session.lifecycle),
-                ),
+                if (session.evaluation != null) ...<Widget>[
+                  const Divider(height: ElectroSimSpacing.lg),
+                  Text(
+                    'Résultat global',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: ElectroSimSpacing.xs),
+                  _SupervisionLine(
+                    label: 'Note',
+                    value:
+                        '${session.evaluation!.score}/${session.definition.maxScore}',
+                    valueKey: const Key('supervision-score'),
+                  ),
+                  _SupervisionLine(
+                    label: 'Fonctionnel',
+                    value: session.evaluation!.functional ? 'Oui' : 'Non',
+                  ),
+                  _SupervisionLine(
+                    label: 'Sécurité',
+                    value: session.evaluation!.safetyOk ? 'Oui' : 'Non',
+                  ),
+                  _SupervisionLine(
+                    label: 'Mesures',
+                    value: session.evaluation!.measurementsOk ? 'Oui' : 'Non',
+                  ),
+                ],
               ],
               const Divider(height: ElectroSimSpacing.xl),
               Text(
@@ -442,10 +464,12 @@ class _SupervisionLine extends StatelessWidget {
   const _SupervisionLine({
     required this.label,
     required this.value,
+    this.valueKey,
   });
 
   final String label;
   final String value;
+  final Key? valueKey;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +486,7 @@ class _SupervisionLine extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(value),
+            child: Text(value, key: valueKey),
           ),
         ],
       ),

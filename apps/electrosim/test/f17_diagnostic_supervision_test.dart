@@ -4,8 +4,19 @@ import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _ensureContextOpen(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimContextRegionKey);
+  final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).left >= width) {
+    await tester.tap(find.byKey(electroSimContextEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
 
 void main() {
   testWidgets('F17-R7 diagnostic answers are persisted in TpEngine student payload only',
@@ -33,6 +44,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('diagnostic-tab')), findsOneWidget);
+    await _ensureContextOpen(tester);
     await tester.tap(find.byKey(const Key('diagnostic-tab')));
     await tester.pumpAndSettle();
 

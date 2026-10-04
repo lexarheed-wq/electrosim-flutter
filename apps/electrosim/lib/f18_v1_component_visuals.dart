@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
 
 /// Five-component pilot ported from the V1 C31 visual language.
@@ -172,18 +173,39 @@ class F18V1ComponentPainter extends CustomPainter {
     canvas.drawRRect(rr, _stroke(color: border, width: borderWidth));
   }
 
-  void _lead(Canvas canvas, double bodyLeft, double bodyRight) {
+  void _lead(
+    Canvas canvas,
+    double bodyLeft,
+    double bodyRight, {
+    required double terminalHalfSpan,
+  }) {
     final Paint base = _stroke(color: const Color(0xFF556970), width: 2.2);
-    canvas.drawLine(Offset(-52, 0), Offset(bodyLeft, 0), base);
-    canvas.drawLine(Offset(bodyRight, 0), const Offset(52, 0), base);
+    canvas.drawLine(Offset(-terminalHalfSpan, 0), Offset(bodyLeft, 0), base);
+    canvas.drawLine(Offset(bodyRight, 0), Offset(terminalHalfSpan, 0), base);
     final Paint highlight = _stroke(color: const Color(0xFFBAC8CC), width: .7);
-    canvas.drawLine(Offset(-48, -0.8), Offset(bodyLeft, -0.8), highlight);
-    canvas.drawLine(Offset(bodyRight, -0.8), const Offset(48, -0.8), highlight);
+    final double highlightInset = math.min(4, terminalHalfSpan - bodyRight);
+    canvas.drawLine(
+      Offset(-terminalHalfSpan + highlightInset, -0.8),
+      Offset(bodyLeft, -0.8),
+      highlight,
+    );
+    canvas.drawLine(
+      Offset(bodyRight, -0.8),
+      Offset(terminalHalfSpan - highlightInset, -0.8),
+      highlight,
+    );
     if (showTerminals) {
-      _terminal(canvas, const Offset(-52, 0));
-      _terminal(canvas, const Offset(52, 0));
+      _terminal(canvas, Offset(-terminalHalfSpan, 0));
+      _terminal(canvas, Offset(terminalHalfSpan, 0));
     }
   }
+
+  double _terminalHalfSpan() =>
+      TerminalVisualProfile.horizontalHalfSpanForModel(
+        modelType,
+        size: _designSize,
+      ) ??
+      _designSize.width / 2;
 
   void _terminal(Canvas canvas, Offset center) {
     canvas.drawCircle(
@@ -263,7 +285,12 @@ class F18V1ComponentPainter extends CustomPainter {
 
   void _paintSource(Canvas canvas) {
     const Rect body = Rect.fromLTWH(-41, -29, 82, 58);
-    _lead(canvas, body.left, body.right);
+    _lead(
+      canvas,
+      body.left,
+      body.right,
+      terminalHalfSpan: _terminalHalfSpan(),
+    );
     _round(canvas, body, 8, _metal(body));
 
     const Rect display = Rect.fromLTWH(-29, -21, 58, 22);
@@ -384,7 +411,12 @@ class F18V1ComponentPainter extends CustomPainter {
   void _paintLamp(Canvas canvas) {
     const double bulbR = 22;
     const Offset bulb = Offset(0, -7);
-    _lead(canvas, -bulbR, bulbR);
+    _lead(
+      canvas,
+      -bulbR,
+      bulbR,
+      terminalHalfSpan: _terminalHalfSpan(),
+    );
 
     final double phase = animationValue * math.pi * 2;
     final double pulse = .5 + .5 * math.sin(phase);

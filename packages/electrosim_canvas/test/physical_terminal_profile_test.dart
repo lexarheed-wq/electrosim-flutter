@@ -11,13 +11,22 @@ void main() {
         role: role,
       );
 
-  test('Point 5 pilot terminal anchors scale with each model proportion', () {
-    const Map<String, (Size, double)> cases = <String, (Size, double)>{
-      'dc_voltage_source': (Size(188, 106), .48),
-      'switch': (Size(142, 84), .46),
-      'lamp': (Size(102, 102), .44),
-      'breaker_dc': (Size(92, 158), .46),
-      'push_button_no': (Size(104, 104), .44),
+  test('reference component terminal anchors scale with each model geometry', () {
+    const Map<String, (Size, double)> cases =
+        <String, (Size, double)>{
+      'dc_voltage_source': (Size(240, 160), .455),
+      'switch': (Size(240, 160), .455),
+      'lamp': (Size(240, 160), .455),
+      'breaker_dc': (Size(240, 160), .455),
+      'push_button_no': (Size(240, 160), .455),
+      'resistor': (Size(280, 110), .4714285714),
+      'push_button_nc': (Size(180, 180), .4444444444),
+      'buzzer': (Size(190, 190), .4473684211),
+      'fuse_dc': (Size(300, 110), .4733333333),
+      'diode': (Size(270, 105), .4703703704),
+      'fan_dc': (Size(210, 210), .4523809524),
+      'motor_dc': (Size(230, 190), .4565217391),
+      'relay_coil': (Size(190, 230), .4473684211),
     };
 
     for (final MapEntry<String, (Size, double)> entry in cases.entries) {
@@ -51,7 +60,7 @@ void main() {
     }
   });
 
-  test('CircuitGeometryIndex uses the switch-specific physical size', () {
+  test('CircuitGeometryIndex uses uploaded switch terminal coordinates', () {
     final Terminal left = terminal('left', TerminalRole.input);
     final Terminal right = terminal('right', TerminalRole.output);
     final CircuitState circuit = CircuitState(
@@ -73,7 +82,7 @@ void main() {
         'switch-a': Offset(200, 100),
       },
       elementSizes: const <String, Size>{
-        'switch-a': Size(142, 84),
+        'switch-a': Size(240, 160),
       },
     );
 
@@ -82,48 +91,48 @@ void main() {
 
     expect(
       geometry.terminalPositions[left.id]!.dx,
-      closeTo(200 - 142 * .46, 0.0001),
+      closeTo(200 - 240 * .455, 0.0001),
     );
     expect(
       geometry.terminalPositions[right.id]!.dx,
-      closeTo(200 + 142 * .46, 0.0001),
+      closeTo(200 + 240 * .455, 0.0001),
     );
     expect(
       geometry.terminalRoutingPositions[left.id]!.dx,
-      closeTo(200 - 71, 0.0001),
+      closeTo(80, 0.0001),
     );
     expect(
       geometry.terminalRoutingPositions[right.id]!.dx,
-      closeTo(200 + 71, 0.0001),
+      closeTo(320, 0.0001),
     );
   });
 
-  test('physical pilot terminals keep generic invisible routing ports', () {
-    const Size size = Size(102, 102);
+  test('reference terminals keep generic invisible routing ports', () {
+    const Size size = Size(210, 210);
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 0, count: 2),
-      const Offset(-51, 0),
+      const Offset(-105, 0),
     );
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 1, count: 2),
-      const Offset(51, 0),
+      const Offset(105, 0),
     );
     expect(
       TerminalVisualProfile.terminalOffset(
-        modelType: 'lamp',
+        modelType: 'fan_dc',
         size: size,
         index: 0,
         count: 2,
       ).dx,
-      greaterThan(-51),
+      greaterThan(-105),
     );
   });
 
-  test('non-pilot two-terminal components keep the generic box-edge anchors', () {
+  test('unknown two-terminal models keep generic box-edge anchors', () {
     const Size size = Size(104, 64);
     expect(
       TerminalVisualProfile.terminalOffset(
-        modelType: 'resistor',
+        modelType: 'unknown_model',
         size: size,
         index: 0,
         count: 2,
@@ -132,7 +141,7 @@ void main() {
     );
     expect(
       TerminalVisualProfile.terminalOffset(
-        modelType: 'resistor',
+        modelType: 'unknown_model',
         size: size,
         index: 1,
         count: 2,

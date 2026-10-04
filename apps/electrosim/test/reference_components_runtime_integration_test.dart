@@ -37,27 +37,21 @@ void main() {
     test('push_button_nc conducts released and opens while pressed', () {
       final ElectroSimRuntimeSnapshot released =
           const ElectroSimRuntimeEngine().evaluate(
-        _singleLoadCircuit(
-          modelType: 'push_button_nc',
-          controlState: const <String, Object?>{'pressed': false},
-        ),
+        _pushNcCircuit(pressed: false),
       );
       expect(released.dc.status, DcSolveStatus.solved);
       expect(
-        (released.dc.branch('component:load').currentA ?? 0).abs(),
+        (released.dc.branch('component:button').currentA ?? 0).abs(),
         greaterThan(1e-6),
       );
 
       final ElectroSimRuntimeSnapshot pressed =
           const ElectroSimRuntimeEngine().evaluate(
-        _singleLoadCircuit(
-          modelType: 'push_button_nc',
-          controlState: const <String, Object?>{'pressed': true},
-        ),
+        _pushNcCircuit(pressed: true),
       );
       expect(pressed.dc.status, DcSolveStatus.solved);
       expect(
-        (pressed.dc.branch('component:load').currentA ?? 0).abs(),
+        (pressed.dc.branch('component:button').currentA ?? 0).abs(),
         closeTo(0, 1e-12),
       );
     });
@@ -124,6 +118,112 @@ void main() {
       expect(painter, contains('_paintMotor'));
     });
   });
+}
+
+CircuitState _pushNcCircuit({required bool pressed}) {
+  final Terminal sourcePositive = Terminal(
+    id: TerminalId('pn-source-positive'),
+    name: '+',
+    role: TerminalRole.positive,
+    phase: PhaseTag.dcPositive,
+  );
+  final Terminal sourceNegative = Terminal(
+    id: TerminalId('pn-source-negative'),
+    name: '-',
+    role: TerminalRole.negative,
+    phase: PhaseTag.dcNegative,
+  );
+  final Terminal buttonA = Terminal(
+    id: TerminalId('pn-button-a'),
+    name: '21',
+    role: TerminalRole.input,
+  );
+  final Terminal buttonB = Terminal(
+    id: TerminalId('pn-button-b'),
+    name: '22',
+    role: TerminalRole.output,
+  );
+  final Terminal bleederA = Terminal(
+    id: TerminalId('pn-bleeder-a'),
+    name: 'A',
+    role: TerminalRole.input,
+  );
+  final Terminal bleederB = Terminal(
+    id: TerminalId('pn-bleeder-b'),
+    name: 'B',
+    role: TerminalRole.output,
+  );
+  final Terminal loadA = Terminal(
+    id: TerminalId('pn-load-a'),
+    name: 'A',
+    role: TerminalRole.input,
+  );
+  final Terminal loadB = Terminal(
+    id: TerminalId('pn-load-b'),
+    name: 'B',
+    role: TerminalRole.output,
+  );
+
+  return CircuitState(
+    circuitId: CircuitId('reference-runtime-push-nc-$pressed'),
+    revision: 1,
+    mode: ElectricalMode.dc,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('source'),
+        modelType: 'dc_voltage_source',
+        terminals: <Terminal>[sourcePositive, sourceNegative],
+        parameters: const <String, Object?>{'voltageV': 24.0},
+      ),
+    ],
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId('button'),
+        modelType: 'push_button_nc',
+        terminals: <Terminal>[buttonA, buttonB],
+        controlState: <String, Object?>{'pressed': pressed},
+      ),
+      ComponentInstance(
+        id: ComponentId('bleeder'),
+        modelType: 'resistor',
+        terminals: <Terminal>[bleederA, bleederB],
+        parameters: const <String, Object?>{'resistanceOhm': 1000000.0},
+      ),
+      ComponentInstance(
+        id: ComponentId('load'),
+        modelType: 'resistor',
+        terminals: <Terminal>[loadA, loadB],
+        parameters: const <String, Object?>{'resistanceOhm': 24.0},
+      ),
+    ],
+    connections: <Connection>[
+      Connection(
+        id: ConnectionId('pn-source-to-button'),
+        fromTerminalId: sourcePositive.id,
+        toTerminalId: buttonA.id,
+      ),
+      Connection(
+        id: ConnectionId('pn-source-to-bleeder'),
+        fromTerminalId: sourcePositive.id,
+        toTerminalId: bleederA.id,
+      ),
+      Connection(
+        id: ConnectionId('pn-button-to-load'),
+        fromTerminalId: buttonB.id,
+        toTerminalId: loadA.id,
+      ),
+      Connection(
+        id: ConnectionId('pn-bleeder-to-load'),
+        fromTerminalId: bleederB.id,
+        toTerminalId: loadA.id,
+      ),
+      Connection(
+        id: ConnectionId('pn-load-return'),
+        fromTerminalId: loadB.id,
+        toTerminalId: sourceNegative.id,
+      ),
+    ],
+  );
 }
 
 CircuitState _singleLoadCircuit({

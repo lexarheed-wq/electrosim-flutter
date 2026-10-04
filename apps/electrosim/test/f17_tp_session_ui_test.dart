@@ -2,8 +2,18 @@ import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _ensureTopOpen(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
 
 void main() {
   testWidgets('M10 teacher publishes, starts collectively, and student submits the same TP session',
@@ -27,6 +37,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('tp-create-draft')));
@@ -54,6 +65,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tp-student-start')), findsNothing);
@@ -93,6 +105,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
 
@@ -131,6 +144,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
 

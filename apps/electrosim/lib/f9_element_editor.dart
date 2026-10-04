@@ -99,6 +99,74 @@ abstract final class F9ElementEditor {
     return null;
   }
 
+  static CircuitState setPushButtonPressed(
+    CircuitState circuit,
+    String elementId, {
+    required bool pressed,
+  }) {
+    var changed = false;
+    final List<ComponentInstance> components = circuit.components.map(
+      (ComponentInstance component) {
+        if (component.id.value != elementId ||
+            (component.modelType != 'push_button_no' &&
+                component.modelType != 'push_button_nc')) {
+          return component;
+        }
+        final Object? current = component.controlState['pressed'];
+        if (current == pressed) {
+          return component;
+        }
+        changed = true;
+        return ComponentInstance(
+          id: component.id,
+          modelType: component.modelType,
+          terminals: component.terminals,
+          parameters: component.parameters,
+          condition: component.condition,
+          controlState: <String, Object?>{
+            ...component.controlState,
+            'pressed': pressed,
+          },
+        );
+      },
+    ).toList(growable: false);
+    if (!changed) return circuit;
+    return _rebuild(circuit, components: components);
+  }
+
+  static CircuitState setComponentClosed(
+    CircuitState circuit,
+    String elementId, {
+    required bool closed,
+  }) {
+    var changed = false;
+    final List<ComponentInstance> components = circuit.components.map(
+      (ComponentInstance component) {
+        if (component.id.value != elementId) {
+          return component;
+        }
+        final Object? current = component.controlState['closed'];
+        if (current is! bool || current == closed) {
+          return component;
+        }
+        changed = true;
+        return ComponentInstance(
+          id: component.id,
+          modelType: component.modelType,
+          terminals: component.terminals,
+          parameters: component.parameters,
+          condition: component.condition,
+          controlState: <String, Object?>{
+            ...component.controlState,
+            'closed': closed,
+          },
+        );
+      },
+    ).toList(growable: false);
+    if (!changed) return circuit;
+    return _rebuild(circuit, components: components);
+  }
+
   static CircuitState togglePrimaryState(CircuitState circuit, String elementId) {
     var changed = false;
     final List<ComponentInstance> components = circuit.components.map((ComponentInstance component) {

@@ -120,35 +120,118 @@ void main() {
       }
     });
 
-    test('physical terminal anchors match the reference Dart painter coordinates',
-        () {
-      const Map<String, double> expectedFractions = <String, double>{
-        'dc_voltage_source': .455,
-        'switch': .455,
-        'lamp': .455,
-        'breaker_dc': .455,
-        'push_button_no': .455,
-        'resistor': .4714285714,
-        'push_button_nc': .4444444444,
-        'buzzer': .4473684211,
-        'fuse_dc': .4733333333,
-        'diode': .4703703704,
-        'fan_dc': .4523809524,
-        'motor_dc': .4565217391,
-        'relay_coil': .4473684211,
-      };
+    test('uploaded V2 five keep their exact native production sizes', () {
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('dc_voltage_source'),
+        const Size(140, 160),
+      );
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('breaker_dc'),
+        const Size(72, 160),
+      );
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('switch'),
+        const Size(90, 140),
+      );
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('push_button_no'),
+        const Size(90, 140),
+      );
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('lamp'),
+        const Size(130, 160),
+      );
+    });
 
-      for (final MapEntry<String, double> entry in expectedFractions.entries) {
-        final Size size = F18ReferenceComponentMetrics.boardSizeFor(entry.key);
-        expect(
-          TerminalVisualProfile.horizontalHalfSpanForModel(
-            entry.key,
-            size: size,
-          ),
-          closeTo(size.width * entry.value, 1e-6),
-          reason: entry.key,
-        );
-      }
+    test('uploaded V2 physical anchors match the exact Dart geometry', () {
+      expect(
+        TerminalVisualProfile.terminalOffset(
+          modelType: 'dc_voltage_source',
+          size: const Size(140, 160),
+          index: 0,
+          count: 2,
+        ),
+        const Offset(-28, 47),
+      );
+      expect(
+        TerminalVisualProfile.terminalOffset(
+          modelType: 'breaker_dc',
+          size: const Size(72, 160),
+          index: 0,
+          count: 2,
+        ),
+        const Offset(0, -57),
+      );
+      expect(
+        TerminalVisualProfile.terminalOffset(
+          modelType: 'switch',
+          size: const Size(90, 140),
+          index: 1,
+          count: 2,
+        ),
+        const Offset(0, 50),
+      );
+      expect(
+        TerminalVisualProfile.terminalOffset(
+          modelType: 'push_button_no',
+          size: const Size(90, 140),
+          index: 0,
+          count: 2,
+        ),
+        const Offset(-14, 49),
+      );
+      expect(
+        TerminalVisualProfile.terminalOffset(
+          modelType: 'lamp',
+          size: const Size(130, 160),
+          index: 1,
+          count: 2,
+        ),
+        const Offset(25, 59),
+      );
+    });
+
+    test('direct-control hit zones stay on the physical actuator only', () {
+      expect(
+        ReferenceComponentView.hitsControlRegion(
+          const Size(90, 140),
+          const Offset(45, 60),
+          device: ReferenceDevice.button,
+        ),
+        isTrue,
+      );
+      expect(
+        ReferenceComponentView.hitsControlRegion(
+          const Size(90, 140),
+          const Offset(8, 8),
+          device: ReferenceDevice.button,
+        ),
+        isFalse,
+      );
+      expect(
+        ReferenceComponentView.hitsControlRegion(
+          const Size(90, 140),
+          const Offset(45, 70),
+          device: ReferenceDevice.toggle,
+        ),
+        isTrue,
+      );
+      expect(
+        ReferenceComponentView.hitsControlRegion(
+          const Size(72, 160),
+          const Offset(36, 84),
+          device: ReferenceDevice.breaker,
+        ),
+        isTrue,
+      );
+      expect(
+        ReferenceComponentView.hitsControlRegion(
+          const Size(140, 160),
+          const Offset(70, 80),
+          device: ReferenceDevice.supply,
+        ),
+        isFalse,
+      );
     });
 
     test('renderer remains vector-only and front-view', () {

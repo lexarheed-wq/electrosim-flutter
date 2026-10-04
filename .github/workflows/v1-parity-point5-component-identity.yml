@@ -7,6 +7,7 @@ on:
     paths:
       - "apps/electrosim/lib/f18_component_archetypes.dart"
       - "apps/electrosim/lib/f18_component_asset_visual.dart"
+      - "apps/electrosim/lib/f18_v1_component_visuals.dart"
       - "apps/electrosim/lib/f18_industrial_component_visuals.dart"
       - "apps/electrosim/assets/components/adobe/**"
       - "apps/electrosim/lib/f9_component_palette.dart"
@@ -126,29 +127,46 @@ jobs:
           "$chrome" --version |
             tee ../../audit/point5/chromium/chromium-version.txt
 
-          out="../../audit/point5/chromium/component-identity.png"
-          timeout 45s "$chrome"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --disable-background-networking             --disable-default-apps             --disable-extensions             --disable-sync             --no-first-run             --hide-scrollbars             --enable-unsafe-swiftshader             --window-size=1440,900             --virtual-time-budget=5000             --screenshot="$out"             "http://127.0.0.1:8775/"
-          test -s "$out"
+          for spec in "5000:component-identity-a.png" "5600:component-identity-b.png"; do
+            budget="${spec%%:*}"
+            name="${spec#*:}"
+            out="../../audit/point5/chromium/${name}"
+            timeout 45s "$chrome"               --headless=new               --no-sandbox               --disable-gpu               --disable-dev-shm-usage               --disable-background-networking               --disable-default-apps               --disable-extensions               --disable-sync               --no-first-run               --hide-scrollbars               --enable-unsafe-swiftshader               --window-size=1440,900               --virtual-time-budget="$budget"               --screenshot="$out"               "http://127.0.0.1:8775/"
+            test -s "$out"
+          done
 
           python3 - <<'PY'
           from pathlib import Path
           import hashlib
           import struct
 
-          path = Path('../../audit/point5/chromium/component-identity.png')
-          data = path.read_bytes()
-          if data[:8] != b'\x89PNG\r\n\x1a\n':
-              raise SystemExit('INVALID_POINT5_PNG')
-          width, height = struct.unpack('>II', data[16:24])
-          if (width, height) != (1440, 900):
-              raise SystemExit(f'POINT5_PNG_SIZE_MISMATCH:{width}x{height}')
-          if len(data) < 30000:
-              raise SystemExit(f'POINT5_PNG_SUSPICIOUSLY_SMALL:{len(data)}')
-          digest = hashlib.sha256(data).hexdigest()
-          print(
-              f'POINT5_CHROMIUM_PASS {path.name} '
-              f'{width}x{height} {len(data)} bytes {digest}'
-          )
+          paths = [
+              Path('../../audit/point5/chromium/component-identity-a.png'),
+              Path('../../audit/point5/chromium/component-identity-b.png'),
+          ]
+          digests = []
+          for path in paths:
+              data = path.read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'INVALID_POINT5_PNG:{path.name}')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (1440, 900):
+                  raise SystemExit(
+                      f'POINT5_PNG_SIZE_MISMATCH:{path.name}:{width}x{height}'
+                  )
+              if len(data) < 30000:
+                  raise SystemExit(
+                      f'POINT5_PNG_SUSPICIOUSLY_SMALL:{path.name}:{len(data)}'
+                  )
+              digest = hashlib.sha256(data).hexdigest()
+              digests.append(digest)
+              print(
+                  f'POINT5_CHROMIUM_PASS {path.name} '
+                  f'{width}x{height} {len(data)} bytes {digest}'
+              )
+          if digests[0] == digests[1]:
+              raise SystemExit('POINT5_ANIMATION_PROOF_IDENTICAL_FRAMES')
+          print('POINT5_ANIMATION_FRAMES_DIFFER')
           PY
 
       - name: Upload Point 5 Chromium screenshot

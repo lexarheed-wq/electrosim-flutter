@@ -344,11 +344,7 @@ class _PaletteDraggableTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget tile = Material(
-      color: ElectroSimColors.surfaceElevated,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
-        side: const BorderSide(color: ElectroSimColors.outline),
-      ),
+      color: Colors.transparent,
       child: InkWell(
         key: Key('palette-item-${definition.keyName}'),
         borderRadius: BorderRadius.circular(ElectroSimRadii.card),
@@ -408,23 +404,10 @@ class _PaletteDraggableTile extends StatelessWidget {
       feedback: Material(
         color: Colors.transparent,
         child: Opacity(
-          opacity: 0.92,
-          child: SizedBox(
-            width: 210,
-            child: Card(
-              elevation: 8,
-              child: Padding(
-                padding: const EdgeInsets.all(ElectroSimSpacing.sm),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    F9ComponentPreview(definition: definition, compact: true),
-                    const SizedBox(width: ElectroSimSpacing.sm),
-                    Flexible(child: Text(definition.title)),
-                  ],
-                ),
-              ),
-            ),
+          opacity: 0.94,
+          child: F18ComponentAssetVisual(
+            modelType: definition.modelType,
+            size: F18ComponentIdentityMetrics.dragSize,
           ),
         ),
       ),

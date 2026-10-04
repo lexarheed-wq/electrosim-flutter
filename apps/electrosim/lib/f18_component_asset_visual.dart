@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
+import 'f18_v1_component_visuals.dart';
 
+/// Legacy generated assets are retained in the repository only for audit/history.
+/// The five Point 5 pilot families are rendered from the V1 C31 visual language.
+@Deprecated('Point 5 V1 parity uses F18V1PilotVisuals instead.')
 abstract final class F18AdobeComponentAssets {
   static const String _root = 'assets/components/adobe';
 
@@ -27,43 +31,58 @@ abstract final class F18AdobeComponentAssets {
       Set<String>.unmodifiable(_byModelType.keys);
 }
 
+/// Shared representation entry point used by palette, drag feedback and board.
+///
+/// Despite its historical name, the wrapper no longer renders the generated
+/// Adobe assets for the Point 5 pilot. Those models are painted natively from
+/// the V1 C31 visual contract so the same geometry remains crisp at every zoom.
 class F18ComponentAssetVisual extends StatelessWidget {
   const F18ComponentAssetVisual({
     super.key,
     required this.modelType,
     required this.size,
     this.active = true,
+    this.energized = false,
+    this.closed,
+    this.tripped = false,
+    this.pressed = false,
+    this.animationValue = 0,
+    this.showTerminals = true,
   });
 
   final String modelType;
   final Size size;
   final bool active;
+  final bool energized;
+  final bool? closed;
+  final bool tripped;
+  final bool pressed;
+  final double animationValue;
+  final bool showTerminals;
 
   @override
   Widget build(BuildContext context) {
-    final String? assetPath =
-        F18AdobeComponentAssets.pathForModelType(modelType);
-    if (assetPath == null) {
-      return F18ComponentIdentityVisual(
+    if (F18V1PilotVisuals.supports(modelType)) {
+      final String type = modelType.toLowerCase();
+      final bool defaultClosed =
+          type == 'breaker_dc' || type == 'breaker_ac1' || type == 'breaker';
+      return F18V1ComponentVisual(
         modelType: modelType,
         size: size,
-        active: active,
+        enabled: active,
+        energized: energized,
+        closed: closed ?? defaultClosed,
+        tripped: tripped,
+        pressed: pressed,
+        animationValue: animationValue,
+        showTerminals: showTerminals,
       );
     }
 
-    return SizedBox(
-      width: size.width,
-      height: size.height,
-      child: Opacity(
-        opacity: active ? 1 : .42,
-        child: Image.asset(
-          assetPath,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
-          gaplessPlayback: true,
-          semanticLabel: modelType,
-        ),
-      ),
+    return F18ComponentIdentityVisual(
+      modelType: modelType,
+      size: size,
+      active: active,
     );
   }
 }

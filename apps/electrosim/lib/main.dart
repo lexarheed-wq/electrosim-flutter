@@ -698,6 +698,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               ? null
                               : _viewport.screenToWorld(_lastCanvasPointerLocal!),
                           wirePreviewPlanner: _g2aWirePreviewPlanner,
+                          runtimeSnapshot: runtimeSnapshot,
+                          simulationRunning: _simulation.running,
                         ),
                       ),
                       ],

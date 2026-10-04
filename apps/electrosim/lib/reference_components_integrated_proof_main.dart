@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 
 import 'f18_component_asset_visual.dart';
 
-void main() => runApp(const MaterialApp(
+void main() {
+  final double? fixedPhase = double.tryParse(
+    Uri.base.queryParameters['phase'] ?? '',
+  );
+  runApp(
+    MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: IntegratedReferenceComponentsProof(),
-    ));
+      home: IntegratedReferenceComponentsProof(
+        fixedPhase: fixedPhase,
+      ),
+    ),
+  );
+}
 
 class IntegratedReferenceComponentsProof extends StatefulWidget {
-  const IntegratedReferenceComponentsProof({super.key});
+  const IntegratedReferenceComponentsProof({
+    super.key,
+    this.fixedPhase,
+  });
+
+  final double? fixedPhase;
 
   @override
   State<IntegratedReferenceComponentsProof> createState() =>
@@ -18,10 +32,25 @@ class IntegratedReferenceComponentsProof extends StatefulWidget {
 class _IntegratedReferenceComponentsProofState
     extends State<IntegratedReferenceComponentsProof>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _motion = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 1),
-  )..repeat();
+  late final AnimationController _motion;
+
+  @override
+  void initState() {
+    super.initState();
+    _motion = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    final double? fixedPhase = widget.fixedPhase;
+    if (fixedPhase == null) {
+      _motion.repeat();
+    } else {
+      _motion.value = fixedPhase.clamp(0.0, 1.0).toDouble();
+    }
+  }
+
+  double get _animationValue =>
+      widget.fixedPhase?.clamp(0.0, 1.0).toDouble() ?? _motion.value;
 
   Widget component(
     String label,
@@ -61,7 +90,7 @@ class _IntegratedReferenceComponentsProofState
             currentA: currentA,
             voltageV: voltageV,
             resistanceOhm: resistanceOhm,
-            animationValue: _motion.value,
+            animationValue: _animationValue,
             showTerminals: true,
           ),
           const SizedBox(height: 6),

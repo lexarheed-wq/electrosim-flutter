@@ -84,6 +84,9 @@ void main() {
       expect(client.synchronized, isTrue);
       expect(student.session, isNull);
       expect(host.studentSupervisionStates.single.displayName, 'Awa Ouédraogo');
+      final DateTime? connectedAt =
+          host.studentSupervisionStates.single.lastActivityAtUtc;
+      expect(connectedAt, isNotNull);
 
       teacher.createDraft();
       await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -99,12 +102,21 @@ void main() {
       teacher.startTeacher();
       await _waitFor(() => student.lifecycle == TpLifecycle.started);
 
+      await Future<void>.delayed(const Duration(milliseconds: 20));
       student.submitStudent();
       await _waitFor(
         () => host.studentSessions['awa-001']?.lifecycle ==
             TpLifecycle.submitted,
       );
       expect(student.readOnly, isTrue);
+      final DateTime? submittedAt =
+          host.studentSupervisionStates.single.lastActivityAtUtc;
+      expect(submittedAt, isNotNull);
+      expect(
+        submittedAt!.isAfter(connectedAt!) ||
+            submittedAt.isAtSameMomentAs(connectedAt),
+        isTrue,
+      );
 
       host.evaluateStudent('awa-001', score: 91);
       await _waitFor(
@@ -192,6 +204,7 @@ void main() {
                   displayName: 'Fatimata Kaboré',
                   connected: true,
                   session: student.session,
+                  lastActivityAtUtc: DateTime.utc(2026, 10, 4, 0, 12, 30),
                 ),
               ],
               onGradeStudentOverride: (F17StudentGradeRequest request) {
@@ -210,6 +223,25 @@ void main() {
 
       expect(find.text('Fatimata Kaboré'), findsOneWidget);
       expect(find.text('TP remis — à noter'), findsWidgets);
+      expect(
+        find.byKey(const Key('supervision-progress-fatimata-001')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('supervision-no-selection')), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('supervision-student-open-fatimata-001')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('supervision-student-detail-fatimata-001')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('supervision-live-circuit-fatimata-001')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const Key('supervision-grade-input-fatimata-001')),
         findsOneWidget,

@@ -13,11 +13,11 @@ void main() {
 
   test('Point 5 pilot terminal anchors scale with each model proportion', () {
     const Map<String, (Size, double)> cases = <String, (Size, double)>{
-      'dc_voltage_source': (Size(156, 88), .48),
-      'switch': (Size(118, 72), .46),
-      'lamp': (Size(86, 86), .44),
-      'breaker_dc': (Size(76, 132), .46),
-      'push_button_no': (Size(88, 88), .44),
+      'dc_voltage_source': (Size(188, 106), .48),
+      'switch': (Size(142, 84), .46),
+      'lamp': (Size(102, 102), .44),
+      'breaker_dc': (Size(92, 158), .46),
+      'push_button_no': (Size(104, 104), .44),
     };
 
     for (final MapEntry<String, (Size, double)> entry in cases.entries) {
@@ -73,7 +73,7 @@ void main() {
         'switch-a': Offset(200, 100),
       },
       elementSizes: const <String, Size>{
-        'switch-a': Size(118, 72),
+        'switch-a': Size(142, 84),
       },
     );
 
@@ -82,31 +82,31 @@ void main() {
 
     expect(
       geometry.terminalPositions[left.id]!.dx,
-      closeTo(200 - 118 * .46, 0.0001),
+      closeTo(200 - 142 * .46, 0.0001),
     );
     expect(
       geometry.terminalPositions[right.id]!.dx,
-      closeTo(200 + 118 * .46, 0.0001),
+      closeTo(200 + 142 * .46, 0.0001),
     );
     expect(
       geometry.terminalRoutingPositions[left.id]!.dx,
-      closeTo(200 - 59, 0.0001),
+      closeTo(200 - 71, 0.0001),
     );
     expect(
       geometry.terminalRoutingPositions[right.id]!.dx,
-      closeTo(200 + 59, 0.0001),
+      closeTo(200 + 71, 0.0001),
     );
   });
 
   test('physical pilot terminals keep generic invisible routing ports', () {
-    const Size size = Size(86, 86);
+    const Size size = Size(102, 102);
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 0, count: 2),
-      const Offset(-43, 0),
+      const Offset(-51, 0),
     );
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 1, count: 2),
-      const Offset(43, 0),
+      const Offset(51, 0),
     );
     expect(
       TerminalVisualProfile.terminalOffset(
@@ -115,7 +115,7 @@ void main() {
         index: 0,
         count: 2,
       ).dx,
-      greaterThan(-43),
+      greaterThan(-51),
     );
   });
 

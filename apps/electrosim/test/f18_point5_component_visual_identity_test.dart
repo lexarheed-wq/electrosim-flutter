@@ -171,6 +171,34 @@ void main() {
       }
     });
 
+    test('Point 5D-R2 uses free real silhouettes, never a visible generic box', () {
+      expect(F18V1PilotVisuals.renderingMode, 'free_silhouette_front_vector');
+      expect(F18V1PilotVisuals.visibleBoundingBoxAllowed, isFalse);
+
+      const Map<String, String> expected = <String, String>{
+        'dc_voltage_source': 'industrial_power_supply_front',
+        'switch': 'rocker_switch_front',
+        'push_button_no': 'round_pushbutton_front',
+        'breaker_dc': 'stepped_mcb_front',
+        'lamp': 'round_pilot_lamp_front',
+      };
+      for (final MapEntry<String, String> entry in expected.entries) {
+        expect(
+          F18V1PilotVisuals.silhouetteByModel[entry.key],
+          entry.value,
+          reason: entry.key,
+        );
+        expect(entry.value, isNot(contains('generic_box')));
+      }
+
+      final String painter =
+          File('lib/f18_v1_component_visuals.dart').readAsStringSync();
+      expect(painter, contains('Circular front only'));
+      expect(painter, contains('Only the real circular bezel is visible'));
+      expect(painter, contains('A stepped MCB outline'));
+      expect(painter, isNot(contains('generic visible component box')));
+    });
+
     test('generated raster assets are no longer the runtime renderer', () {
       final String wrapper =
           File('lib/f18_component_asset_visual.dart').readAsStringSync();

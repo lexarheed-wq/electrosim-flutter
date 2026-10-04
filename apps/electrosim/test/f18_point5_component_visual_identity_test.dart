@@ -178,7 +178,7 @@ void main() {
       }
     });
 
-    test('Point 5D-R2 uses free real silhouettes, never a visible generic box', () {
+    test('Point 5D-R3 keeps five dedicated silhouettes without a generic box', () {
       expect(F18V1PilotVisuals.renderingMode, 'per_model_front_vector');
       expect(F18V1PilotVisuals.visibleBoundingBoxAllowed, isFalse);
 
@@ -200,9 +200,12 @@ void main() {
 
       final String painter =
           File('lib/f18_v1_component_visuals.dart').readAsStringSync();
-      expect(painter, contains('Circular front only'));
-      expect(painter, contains('Only the real circular bezel is visible'));
-      expect(painter, contains('A stepped MCB outline'));
+      expect(painter, contains('_paintPowerSupply'));
+      expect(painter, contains('_paintRockerSwitch'));
+      expect(painter, contains('_paintPushButton'));
+      expect(painter, contains('_paintBreaker'));
+      expect(painter, contains('_paintPilotLamp'));
+      expect(painter, contains('F18PilotVisualMetrics'));
       expect(painter, isNot(contains('generic visible component box')));
     });
 

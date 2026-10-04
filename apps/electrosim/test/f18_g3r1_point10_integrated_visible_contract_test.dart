@@ -41,8 +41,12 @@ Future<void> _openContext(WidgetTester tester) async {
 }
 
 Future<void> _openTop(WidgetTester tester) async {
-  await tester.tap(find.byKey(electroSimTopEdgeKey));
-  await tester.pumpAndSettle();
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 void _expectOrthogonalCommittedRoutes(SimulatorCanvas canvas) {

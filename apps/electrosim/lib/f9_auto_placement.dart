@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 /// Pure visual placement helper used by F9 quick-add.
@@ -27,24 +28,39 @@ final class F9AutoPlacement {
       return null;
     }
 
-    final double stepX = elementSize.width + clearance * 2;
-    final double stepY = elementSize.height + clearance * 2;
+    // Sampling must not scale one-for-one with the component dimensions:
+    // large realistic components would otherwise skip viable gaps entirely.
+    // Keep a bounded world-space lattice, with a little adaptation for very
+    // small items, then rank candidates by distance from the preferred zone.
+    final double stepX = math.max(
+      24,
+      math.min(72, elementSize.width / 3),
+    );
+    final double stepY = math.max(
+      24,
+      math.min(72, elementSize.height / 3),
+    );
     final Offset preferred = Offset(
       safe.center.dx,
-      (safe.center.dy + stepY).clamp(safe.top, safe.bottom).toDouble(),
+      (safe.center.dy + math.min(120, stepY * 2))
+          .clamp(safe.top, safe.bottom)
+          .toDouble(),
     );
 
-    final List<Offset> candidates = <Offset>[];
-    final int maxX = (safe.width / stepX).ceil() + 1;
-    final int maxY = (safe.height / stepY).ceil() + 1;
-    for (int dy = -maxY; dy <= maxY; dy += 1) {
-      for (int dx = -maxX; dx <= maxX; dx += 1) {
-        final Offset candidate = preferred + Offset(dx * stepX, dy * stepY);
-        if (safe.contains(candidate)) {
-          candidates.add(candidate);
-        }
+    final List<Offset> candidates = <Offset>[
+      preferred,
+      safe.center,
+    ];
+    for (double y = safe.top; y <= safe.bottom + 1e-6; y += stepY) {
+      for (double x = safe.left; x <= safe.right + 1e-6; x += stepX) {
+        candidates.add(Offset(x, y));
       }
     }
+    candidates
+      ..add(Offset(safe.left, safe.bottom))
+      ..add(Offset(safe.right, safe.bottom))
+      ..add(Offset(safe.left, safe.top))
+      ..add(Offset(safe.right, safe.top));
     candidates.sort((Offset a, Offset b) {
       final double da = (a - preferred).distanceSquared;
       final double db = (b - preferred).distanceSquared;

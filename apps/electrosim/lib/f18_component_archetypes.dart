@@ -105,8 +105,8 @@ abstract final class F18ElectricalArchetypeClassifier {
 
 abstract final class F18ComponentIdentityMetrics {
   static const double aspectRatio = 104 / 64;
-  static const Size paletteSize = Size(96, 59);
-  static const Size dragSize = Size(112, 69);
+  static const Size paletteSize = Size(78, 48);
+  static const Size dragSize = Size(104, 64);
 
   static Rect fit(Rect bounds) {
     if (bounds.isEmpty) return bounds;

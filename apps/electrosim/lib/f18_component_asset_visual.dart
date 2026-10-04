@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'f14_library_components.dart';
 import 'f18_component_archetypes.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
@@ -33,6 +34,15 @@ abstract final class F18ReferenceComponentVisuals {
     'fan_dc',
     'motor_dc',
     'relay_coil',
+    'capacitor',
+    'inductor',
+    'impedance',
+    'contactor_aux_no',
+    'contactor_aux_nc',
+    'contactor_ac1',
+    'contactor_3p',
+    'breaker_3p',
+    'thermal_overload_3p',
   };
 
   static bool supports(String modelType) =>
@@ -77,6 +87,15 @@ abstract final class F18ReferenceComponentMetrics {
         'fan_dc' => const Size(210, 210),
         'motor_dc' => const Size(230, 190),
         'relay_coil' => const Size(190, 230),
+        'capacitor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.capacitor),
+        'inductor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.inductor),
+        'impedance' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.impedance),
+        'contactor_aux_no' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNo),
+        'contactor_aux_nc' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNc),
+        'contactor_ac1' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactorAc1),
+        'contactor_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactor3p),
+        'breaker_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.breaker3p),
+        'thermal_overload_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.thermalOverload3p),
         _ => const Size(104, 64),
       };
 
@@ -133,6 +152,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.closed,
     this.tripped = false,
     this.pressed = false,
+    this.actuated = false,
     this.animationValue = 0,
     this.showTerminals = true,
     this.currentA = 0,
@@ -149,6 +169,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final bool? closed;
   final bool tripped;
   final bool pressed;
+  final bool actuated;
   final double animationValue;
   final bool showTerminals;
   final double currentA;
@@ -232,6 +253,34 @@ class F18ComponentAssetVisual extends StatelessWidget {
           voltageV: voltageV,
           resistanceOhm: resistanceOhm,
           animationValue: animationValue,
+        ),
+      );
+    }
+
+    final F14LibraryDevice? libraryDevice = switch (type) {
+      'capacitor' => F14LibraryDevice.capacitor,
+      'inductor' => F14LibraryDevice.inductor,
+      'impedance' => F14LibraryDevice.impedance,
+      'contactor_aux_no' => F14LibraryDevice.auxiliaryNo,
+      'contactor_aux_nc' => F14LibraryDevice.auxiliaryNc,
+      'contactor_ac1' => F14LibraryDevice.contactorAc1,
+      'contactor_3p' => F14LibraryDevice.contactor3p,
+      'breaker_3p' => F14LibraryDevice.breaker3p,
+      'thermal_overload_3p' => F14LibraryDevice.thermalOverload3p,
+      _ => null,
+    };
+    if (libraryDevice != null) {
+      return F14LibraryComponentView(
+        device: libraryDevice,
+        size: size,
+        state: F14LibraryVisualState(
+          active: active,
+          energized: energized,
+          closed: closed ?? true,
+          tripped: tripped,
+          actuated: actuated,
+          currentA: currentA,
+          voltageV: voltageV,
         ),
       );
     }

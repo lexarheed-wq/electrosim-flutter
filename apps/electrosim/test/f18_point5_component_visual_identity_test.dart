@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:electrosim/f18_component_archetypes.dart';
+import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f18_industrial_component_visuals.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ void main() {
       expect(fitted.bottom, lessThanOrEqualTo(bounds.bottom));
     });
 
-    testWidgets('every palette model uses the canonical identity widget',
+    testWidgets('every palette model uses the canonical shared asset wrapper',
         (WidgetTester tester) async {
       for (final F9PaletteDefinition item in f9PaletteCatalog) {
         await tester.pumpWidget(
@@ -34,10 +35,10 @@ void main() {
         );
         await tester.pump();
 
-        final Finder finder = find.byType(F18ComponentIdentityVisual);
+        final Finder finder = find.byType(F18ComponentAssetVisual);
         expect(finder, findsOneWidget, reason: item.modelType);
-        final F18ComponentIdentityVisual visual =
-            tester.widget<F18ComponentIdentityVisual>(finder);
+        final F18ComponentAssetVisual visual =
+            tester.widget<F18ComponentAssetVisual>(finder);
         expect(visual.modelType, item.modelType);
         expect(visual.size, F18ComponentIdentityMetrics.paletteSize);
         expect(tester.takeException(), isNull, reason: item.modelType);
@@ -51,15 +52,35 @@ void main() {
       final String board =
           File('lib/f9_component_visuals.dart').readAsStringSync();
 
-      expect(palette, contains('F18ComponentIdentityVisual'));
+      expect(palette, contains('F18ComponentAssetVisual'));
       expect(palette, isNot(contains('class _TerminalDot')));
-      expect(
-        board,
-        contains('paintF18ComponentIdentity'),
-      );
+      expect(board, contains('F18ComponentAssetVisual'));
+      expect(board, contains('paintF18ComponentIdentity'));
       expect(
         board,
         isNot(contains('paintF18ElectricalArchetype(')),
+      );
+    });
+
+    test('first Adobe import batch covers the five validated component families', () {
+      const Set<String> expected = <String>{
+        'dc_voltage_source',
+        'switch',
+        'lamp',
+        'breaker_dc',
+        'push_button_no',
+      };
+      for (final String modelType in expected) {
+        expect(
+          F18AdobeComponentAssets.hasAsset(modelType),
+          isTrue,
+          reason: modelType,
+        );
+      }
+      expect(
+        F18AdobeComponentAssets.pathForModelType('resistor'),
+        isNull,
+        reason: 'Non-imported components must still use the local fallback.',
       );
     });
 

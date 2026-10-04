@@ -11,14 +11,54 @@ void main() {
         role: role,
       );
 
-  test('reference component terminal anchors scale with each model geometry', () {
+  test('uploaded V2 physical terminals match exact Dart design coordinates', () {
+    const Map<String, (Size, List<Offset>)> cases =
+        <String, (Size, List<Offset>)>{
+      'dc_voltage_source': (
+        Size(140, 160),
+        <Offset>[Offset(-28, 47), Offset(24, 47)],
+      ),
+      'breaker_dc': (
+        Size(72, 160),
+        <Offset>[Offset(0, -57), Offset(0, 57)],
+      ),
+      'switch': (
+        Size(90, 140),
+        <Offset>[Offset(0, -50), Offset(0, 50)],
+      ),
+      'push_button_no': (
+        Size(90, 140),
+        <Offset>[Offset(-14, 49), Offset(14, 49)],
+      ),
+      'lamp': (
+        Size(130, 160),
+        <Offset>[Offset(-25, 59), Offset(25, 59)],
+      ),
+    };
+
+    for (final MapEntry<String, (Size, List<Offset>)> entry
+        in cases.entries) {
+      final Size size = entry.value.$1;
+      final List<Offset> expected = entry.value.$2;
+      for (var index = 0; index < 2; index++) {
+        expect(
+          TerminalVisualProfile.terminalOffset(
+            modelType: entry.key,
+            size: size,
+            index: index,
+            count: 2,
+          ),
+          expected[index],
+          reason: '${entry.key} terminal $index',
+        );
+      }
+    }
+  });
+
+  test('extended reference components retain existing horizontal lug anchors',
+      () {
     const Map<String, (Size, double)> cases =
         <String, (Size, double)>{
-      'dc_voltage_source': (Size(240, 160), .455),
-      'switch': (Size(240, 160), .455),
-      'lamp': (Size(240, 160), .455),
-      'breaker_dc': (Size(240, 160), .455),
-      'push_button_no': (Size(240, 160), .455),
       'resistor': (Size(280, 110), .4714285714),
       'push_button_nc': (Size(180, 180), .4444444444),
       'buzzer': (Size(190, 190), .4473684211),
@@ -28,7 +68,6 @@ void main() {
       'motor_dc': (Size(230, 190), .4565217391),
       'relay_coil': (Size(190, 230), .4473684211),
     };
-
     for (final MapEntry<String, (Size, double)> entry in cases.entries) {
       final Size size = entry.value.$1;
       final double span = size.width * entry.value.$2;
@@ -39,9 +78,7 @@ void main() {
           index: 0,
           count: 2,
         ),
-        isA<Offset>()
-            .having((Offset value) => value.dx, 'dx', closeTo(-span, 0.0001))
-            .having((Offset value) => value.dy, 'dy', 0),
+        Offset(-span, 0),
         reason: entry.key,
       );
       expect(
@@ -51,80 +88,88 @@ void main() {
           index: 1,
           count: 2,
         ),
-        isA<Offset>()
-            .having((Offset value) => value.dx, 'dx', closeTo(span, 0.0001))
-            .having((Offset value) => value.dy, 'dy', 0),
+        Offset(span, 0),
         reason: entry.key,
       );
-      expect(span, lessThan(size.width / 2), reason: entry.key);
     }
   });
 
-  test('CircuitGeometryIndex uses uploaded switch terminal coordinates', () {
-    final Terminal left = terminal('left', TerminalRole.input);
-    final Terminal right = terminal('right', TerminalRole.output);
+  test('uploaded V2 routing ports follow each physical terminal exit side', () {
+    expect(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'switch',
+        size: const Size(90, 140),
+        index: 0,
+        count: 2,
+      ),
+      const Offset(0, -70),
+    );
+    expect(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'switch',
+        size: const Size(90, 140),
+        index: 1,
+        count: 2,
+      ),
+      const Offset(0, 70),
+    );
+    expect(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'dc_voltage_source',
+        size: const Size(140, 160),
+        index: 0,
+        count: 2,
+      ),
+      const Offset(-28, 80),
+    );
+    expect(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'push_button_no',
+        size: const Size(90, 140),
+        index: 1,
+        count: 2,
+      ),
+      const Offset(14, 70),
+    );
+  });
+
+  test('CircuitGeometryIndex rotates V2 switch anchors with the component', () {
+    final Terminal first = terminal('first', TerminalRole.input);
+    final Terminal second = terminal('second', TerminalRole.output);
     final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('physical-terminals'),
+      circuitId: CircuitId('physical-terminals-v2'),
       revision: 1,
       mode: ElectricalMode.dc,
       components: <ComponentInstance>[
         ComponentInstance(
           id: ComponentId('switch-a'),
           modelType: 'switch',
-          terminals: <Terminal>[left, right],
+          terminals: <Terminal>[first, second],
         ),
       ],
-      sources: const <SourceInstance>[],
-      connections: const <Connection>[],
     );
     final CircuitVisualLayout layout = CircuitVisualLayout(
       elementPositions: const <String, Offset>{
         'switch-a': Offset(200, 100),
       },
       elementSizes: const <String, Size>{
-        'switch-a': Size(240, 160),
+        'switch-a': Size(90, 140),
       },
+      elementQuarterTurns: const <String, int>{'switch-a': 1},
     );
 
     final CircuitGeometryIndex geometry =
         CircuitGeometryIndex.build(circuit, layout);
 
+    expect(geometry.terminalPositions[first.id], const Offset(250, 100));
+    expect(geometry.terminalPositions[second.id], const Offset(150, 100));
     expect(
-      geometry.terminalPositions[left.id]!.dx,
-      closeTo(200 - 240 * .455, 0.0001),
+      geometry.terminalRoutingPositions[first.id],
+      const Offset(270, 100),
     );
     expect(
-      geometry.terminalPositions[right.id]!.dx,
-      closeTo(200 + 240 * .455, 0.0001),
-    );
-    expect(
-      geometry.terminalRoutingPositions[left.id]!.dx,
-      closeTo(80, 0.0001),
-    );
-    expect(
-      geometry.terminalRoutingPositions[right.id]!.dx,
-      closeTo(320, 0.0001),
-    );
-  });
-
-  test('reference terminals keep generic invisible routing ports', () {
-    const Size size = Size(210, 210);
-    expect(
-      TerminalVisualProfile.routingOffset(size: size, index: 0, count: 2),
-      const Offset(-105, 0),
-    );
-    expect(
-      TerminalVisualProfile.routingOffset(size: size, index: 1, count: 2),
-      const Offset(105, 0),
-    );
-    expect(
-      TerminalVisualProfile.terminalOffset(
-        modelType: 'fan_dc',
-        size: size,
-        index: 0,
-        count: 2,
-      ).dx,
-      greaterThan(-105),
+      geometry.terminalRoutingPositions[second.id],
+      const Offset(130, 100),
     );
   });
 

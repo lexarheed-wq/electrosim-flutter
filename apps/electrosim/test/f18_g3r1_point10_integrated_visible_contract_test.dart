@@ -1,5 +1,4 @@
 import 'package:electrosim/f18_component_asset_visual.dart';
-import 'package:electrosim/f18_component_archetypes.dart';
 import 'package:electrosim/f18_workspace_wire_safety.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';

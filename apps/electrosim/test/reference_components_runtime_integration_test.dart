@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
+import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
@@ -54,6 +55,34 @@ void main() {
         (pressed.dc.branch('component:button').currentA ?? 0).abs(),
         closeTo(0, 1e-12),
       );
+    });
+
+    testWidgets('paused supply keeps voltage but reports zero dynamic current',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Center(
+            child: F18ComponentAssetVisual(
+              modelType: 'dc_voltage_source',
+              size: Size(240, 160),
+              active: true,
+              energized: false,
+              currentA: 1,
+              voltageV: 24,
+              currentLimitA: 2,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final ReferenceComponentView view =
+          tester.widget<ReferenceComponentView>(
+        find.byType(ReferenceComponentView),
+      );
+      expect(view.state.voltageV, closeTo(24, 1e-9));
+      expect(view.state.currentA, 0);
+      expect(view.state.supplyMode, SupplyMode.constantVoltage);
     });
 
     testWidgets('motor runtime state maps to rotating production painter',

@@ -8,6 +8,7 @@ on:
       - "apps/electrosim/lib/f17_tp_session_dialog.dart"
       - "apps/electrosim/lib/f17_tp_supervision_panel.dart"
       - "apps/electrosim/lib/f18_session_coordinator.dart"
+      - "apps/electrosim/lib/f18_live_supervision_panel.dart"
       - "apps/electrosim/lib/student_web_main.dart"
       - "apps/electrosim/lib/runtime/electrosim_lan_sync.dart"
       - "apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart"
@@ -139,7 +140,7 @@ jobs:
           "$chrome" --version |
             tee ../../audit/point4/chromium/chromium-version.txt
 
-          screens=(manage-published manage-closed supervision)
+          screens=(manage-published manage-closed supervision supervision-detail)
           for screen in "${screens[@]}"; do
             out="../../audit/point4/chromium/${screen}.png"
             timeout 45s "$chrome"               --headless=new               --no-sandbox               --disable-gpu               --disable-dev-shm-usage               --disable-background-networking               --disable-default-apps               --disable-extensions               --disable-sync               --no-first-run               --hide-scrollbars               --enable-unsafe-swiftshader               --window-size=1440,900               --virtual-time-budget=5000               --screenshot="$out"               "http://127.0.0.1:8774/?screen=${screen}"
@@ -152,7 +153,12 @@ jobs:
           import struct
 
           root = Path('../../audit/point4/chromium')
-          expected = {'manage-published', 'manage-closed', 'supervision'}
+          expected = {
+              'manage-published',
+              'manage-closed',
+              'supervision',
+              'supervision-detail',
+          }
           found = {p.stem for p in root.glob('*.png')}
           if found != expected:
               raise SystemExit(

@@ -12,48 +12,98 @@ import 'circuit_visual_layout.dart';
 /// located at the physical connection lug instead of at the edge of a generic
 /// 104x64 bounding box.
 abstract final class TerminalVisualProfile {
-  /// Physical terminal position as a fraction of each model's own width.
-  ///
-  /// The pilot no longer shares one 104x64 visible geometry: each component
-  /// may have its own aspect ratio while the terminal remains attached to its
-  /// real front-view silhouette.
-  static const Map<String, double> _pilotHalfSpanFractions = <String, double>{
-    // Uploaded five: x = 10.8 / 229.2 inside a 240-wide design.
-    'dc_voltage_source': 0.455,
-    'voltage_source': 0.455,
-    'switch': 0.455,
-    'switch_spst': 0.455,
-    'lamp': 0.455,
-    'breaker_dc': 0.455,
-    'breaker_ac1': 0.455,
-    'breaker': 0.455,
-    'push_button_no': 0.455,
+  /// Physical front-view anchors expressed from the center of the component
+  /// envelope. The uploaded V2 five use their exact Dart design coordinates;
+  /// the remaining reference components retain their existing horizontal lugs.
+  static List<Offset>? _physicalOffsets(
+    String modelType, {
+    required Size size,
+  }) {
+    final String type = modelType.toLowerCase();
+    final double w = size.width;
+    final double h = size.height;
+    return switch (type) {
+      // Uploaded V2 geometry:
+      // supply 140x160 -> (42,127) / (94,127)
+      'dc_voltage_source' || 'voltage_source' => <Offset>[
+          Offset(w * -0.20, h * 0.29375),
+          Offset(w * 0.1714285714, h * 0.29375),
+        ],
+      // breaker 72x160 -> (36,23) / (36,137)
+      'breaker_dc' || 'breaker_ac1' || 'breaker' => <Offset>[
+          Offset(0, h * -0.35625),
+          Offset(0, h * 0.35625),
+        ],
+      // toggle 90x140 -> (45,20) / (45,120)
+      'switch' || 'switch_spst' => <Offset>[
+          Offset(0, h * -0.3571428571),
+          Offset(0, h * 0.3571428571),
+        ],
+      // button 90x140 -> (31,119) / (59,119)
+      'push_button_no' => <Offset>[
+          Offset(w * -0.1555555556, h * 0.35),
+          Offset(w * 0.1555555556, h * 0.35),
+        ],
+      // lamp 130x160 -> (40,139) / (90,139)
+      'lamp' => <Offset>[
+          Offset(w * -0.1923076923, h * 0.36875),
+          Offset(w * 0.1923076923, h * 0.36875),
+        ],
 
-    // Eight extended reference components. Fractions match the exact visible
-    // terminal coordinates used by their Dart painters.
-    'resistor': 0.4714285714,
-    'push_button_nc': 0.4444444444,
-    'buzzer': 0.4473684211,
-    'fuse_dc': 0.4733333333,
-    'fuse_ac1': 0.4733333333,
-    'fuse': 0.4733333333,
-    'diode': 0.4703703704,
-    'fan_dc': 0.4523809524,
-    'motor_dc': 0.4565217391,
-    'relay_coil': 0.4473684211,
-  };
+      // Eight extended reference components.
+      'resistor' => <Offset>[
+          Offset(w * -0.4714285714, 0),
+          Offset(w * 0.4714285714, 0),
+        ],
+      'push_button_nc' => <Offset>[
+          Offset(w * -0.4444444444, 0),
+          Offset(w * 0.4444444444, 0),
+        ],
+      'buzzer' => <Offset>[
+          Offset(w * -0.4473684211, 0),
+          Offset(w * 0.4473684211, 0),
+        ],
+      'fuse_dc' || 'fuse_ac1' || 'fuse' => <Offset>[
+          Offset(w * -0.4733333333, 0),
+          Offset(w * 0.4733333333, 0),
+        ],
+      'diode' => <Offset>[
+          Offset(w * -0.4703703704, 0),
+          Offset(w * 0.4703703704, 0),
+        ],
+      'fan_dc' => <Offset>[
+          Offset(w * -0.4523809524, 0),
+          Offset(w * 0.4523809524, 0),
+        ],
+      'motor_dc' => <Offset>[
+          Offset(w * -0.4565217391, 0),
+          Offset(w * 0.4565217391, 0),
+        ],
+      'relay_coil' => <Offset>[
+          Offset(w * -0.4473684211, 0),
+          Offset(w * 0.4473684211, 0),
+        ],
+      _ => null,
+    };
+  }
 
   static bool hasPhysicalPilotAnchor(String modelType) =>
-      _pilotHalfSpanFractions.containsKey(modelType.toLowerCase());
+      _physicalOffsets(modelType, size: const Size(100, 100)) != null;
 
+  /// Retained for compatibility with contracts that only need a symmetric
+  /// horizontal pair. V2 devices with top/bottom or asymmetric terminals
+  /// intentionally return null here.
   static double? horizontalHalfSpanForModel(
     String modelType, {
     required Size size,
   }) {
-    final double? fraction =
-        _pilotHalfSpanFractions[modelType.toLowerCase()];
-    if (fraction == null) return null;
-    return size.width * fraction;
+    final List<Offset>? offsets = _physicalOffsets(modelType, size: size);
+    if (offsets == null || offsets.length != 2) return null;
+    final Offset a = offsets[0];
+    final Offset b = offsets[1];
+    if (a.dy.abs() > 1e-9 || b.dy.abs() > 1e-9) return null;
+    if ((a.dx + b.dx).abs() > 1e-6) return null;
+    return b.dx.abs();
   }
 
   static Offset terminalOffset({
@@ -62,22 +112,52 @@ abstract final class TerminalVisualProfile {
     required int index,
     required int count,
   }) {
-    final double? halfSpan = count == 2
-        ? horizontalHalfSpanForModel(modelType, size: size)
-        : null;
-    if (halfSpan != null) {
-      return Offset(index == 0 ? -halfSpan : halfSpan, 0);
+    final List<Offset>? offsets =
+        count == 2 ? _physicalOffsets(modelType, size: size) : null;
+    if (offsets != null && index >= 0 && index < offsets.length) {
+      return offsets[index];
     }
     return _genericTerminalOffset(size, index, count);
   }
 
-  /// Invisible routing port remains on the logical element envelope.
+  /// Invisible routing ports follow the natural exit side of the uploaded V2
+  /// terminals so the visible terminal-to-route stub remains orthogonal.
+  /// Other component families keep the generic left/right envelope ports.
   static Offset routingOffset({
+    String? modelType,
     required Size size,
     required int index,
     required int count,
-  }) =>
-      _genericTerminalOffset(size, index, count);
+  }) {
+    if (count == 2 && modelType != null) {
+      final String type = modelType.toLowerCase();
+      final List<Offset>? physical = _physicalOffsets(type, size: size);
+      if (physical != null && index >= 0 && index < 2) {
+        final Offset p = physical[index];
+        final Rect rect = Rect.fromCenter(
+          center: Offset.zero,
+          width: size.width,
+          height: size.height,
+        );
+        return switch (type) {
+          'dc_voltage_source' ||
+          'voltage_source' ||
+          'push_button_no' ||
+          'lamp' => Offset(p.dx, rect.bottom),
+          'breaker_dc' ||
+          'breaker_ac1' ||
+          'breaker' ||
+          'switch' ||
+          'switch_spst' => Offset(
+              p.dx,
+              index == 0 ? rect.top : rect.bottom,
+            ),
+          _ => _genericTerminalOffset(size, index, count),
+        };
+      }
+    }
+    return _genericTerminalOffset(size, index, count);
+  }
 
   static Offset _genericTerminalOffset(Size size, int index, int count) {
     final Rect rect = Rect.fromCenter(
@@ -178,6 +258,7 @@ final class CircuitGeometryIndex {
           count: terminals.length,
         );
         final Offset routingLocal = TerminalVisualProfile.routingOffset(
+          modelType: modelType,
           size: baseSize,
           index: index,
           count: terminals.length,

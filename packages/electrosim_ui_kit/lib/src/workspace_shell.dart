@@ -207,7 +207,6 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                 alignment: Alignment.centerLeft,
                 width: paletteWidth,
                 regionKey: electroSimPaletteRegionKey,
-                title: 'Composants',
                 pinKey: electroSimPalettePinKey,
                 child: widget.palette,
               ),
@@ -216,7 +215,6 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                 alignment: Alignment.centerRight,
                 width: contextWidth,
                 regionKey: electroSimContextRegionKey,
-                title: 'Propriétés',
                 pinKey: electroSimContextPinKey,
                 child: widget.contextPanel,
               ),
@@ -309,7 +307,6 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     required Alignment alignment,
     required double width,
     required Key regionKey,
-    required String title,
     required Key pinKey,
     required Widget child,
   }) {
@@ -336,15 +333,19 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               key: regionKey,
               elevation: 14,
               color: ElectroSimColors.surfaceElevated,
-              child: Column(
+              child: Stack(
                 children: <Widget>[
-                  _overlayHeader(
-                    title: title,
-                    panel: panel,
-                    pinKey: pinKey,
+                  Positioned.fill(child: child),
+                  Positioned(
+                    top: 4,
+                    right: left ? 4 : null,
+                    left: left ? null : 4,
+                    child: _pinButton(
+                      panel: panel,
+                      key: pinKey,
+                      compact: true,
+                    ),
                   ),
-                  const Divider(height: 1),
-                  Expanded(child: child),
                 ],
               ),
             ),
@@ -398,32 +399,6 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _overlayHeader({
-    required String title,
-    required ElectroSimWorkspacePanel panel,
-    required Key pinKey,
-  }) {
-    return SizedBox(
-      height: 38,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 12, right: 4),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            _pinButton(panel: panel, key: pinKey),
-          ],
         ),
       ),
     );

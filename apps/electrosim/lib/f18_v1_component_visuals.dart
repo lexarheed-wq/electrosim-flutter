@@ -330,7 +330,12 @@ class F18V1ComponentPainter extends CustomPainter {
 
   void _paintSwitch(Canvas canvas, {required bool push}) {
     const Rect body = Rect.fromLTWH(-26, -26, 52, 52);
-    _lead(canvas, body.left, body.right);
+    _lead(
+      canvas,
+      body.left,
+      body.right,
+      terminalHalfSpan: _terminalHalfSpan(),
+    );
     _round(
       canvas,
       body,
@@ -477,7 +482,12 @@ class F18V1ComponentPainter extends CustomPainter {
 
   void _paintBreaker(Canvas canvas) {
     const Rect body = Rect.fromLTWH(-32, -28, 64, 56);
-    _lead(canvas, body.left, body.right);
+    _lead(
+      canvas,
+      body.left,
+      body.right,
+      terminalHalfSpan: _terminalHalfSpan(),
+    );
     _round(
       canvas,
       body,

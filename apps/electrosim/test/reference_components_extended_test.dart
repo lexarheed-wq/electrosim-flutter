@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/reference_components/reference_models_extended.dart';
-import '../lib/reference_components/reference_widgets_extended.dart';
+import 'package:electrosim/reference_components/reference_models_extended.dart';
+import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 
 void main() {
   test('eight extended devices keep distinct visual identities', () {

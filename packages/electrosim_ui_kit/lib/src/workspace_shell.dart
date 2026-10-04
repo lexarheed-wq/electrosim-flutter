@@ -251,7 +251,32 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
         panel == ElectroSimWorkspacePanel.status;
     final bool open = _isOpen(panel);
 
-    final Widget rail = MouseRegion(
+    final Widget visibleHandle = Container(
+      width: horizontal ? 58 : 7,
+      height: horizontal ? 7 : 58,
+      decoration: BoxDecoration(
+        color: open
+            ? ElectroSimColors.primary.withValues(alpha: .38)
+            : ElectroSimColors.surfaceElevated.withValues(alpha: .92),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            blurRadius: 4,
+            color: Color(0x22000000),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: open
+          ? Icon(
+              icon,
+              size: 8,
+              color: ElectroSimColors.textSecondary,
+            )
+          : null,
+    );
+
+    final Widget activationZone = MouseRegion(
       onEnter: (_) => _openPanel(panel),
       onExit: (_) => _scheduleClose(panel),
       child: Semantics(
@@ -260,46 +285,50 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
         child: Tooltip(
           message: tooltip,
           child: GestureDetector(
+            key: key,
             behavior: HitTestBehavior.opaque,
             onTap: () => _togglePanel(panel),
-            child: Container(
-              key: key,
-              width: horizontal ? 58 : 12,
-              height: horizontal ? 12 : 58,
-              decoration: BoxDecoration(
-                color: open
-                    ? ElectroSimColors.primary.withValues(alpha: .28)
-                    : ElectroSimColors.surfaceElevated.withValues(alpha: .88),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const <BoxShadow>[
-                  BoxShadow(
-                    blurRadius: 4,
-                    color: Color(0x22000000),
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                icon,
-                size: horizontal ? 12 : 10,
-                color: ElectroSimColors.textSecondary,
-              ),
-            ),
+            child: Center(child: visibleHandle),
           ),
         ),
       ),
     );
 
+    const double activationExtent = 18;
     if (alignment == Alignment.centerLeft) {
-      return Positioned(left: 0, top: 0, bottom: 0, child: Center(child: rail));
+      return Positioned(
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: activationExtent,
+        child: activationZone,
+      );
     }
     if (alignment == Alignment.centerRight) {
-      return Positioned(right: 0, top: 0, bottom: 0, child: Center(child: rail));
+      return Positioned(
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: activationExtent,
+        child: activationZone,
+      );
     }
     if (alignment == Alignment.topCenter) {
-      return Positioned(left: 0, right: 0, top: 0, child: Center(child: rail));
+      return Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        height: activationExtent,
+        child: activationZone,
+      );
     }
-    return Positioned(left: 0, right: 0, bottom: 0, child: Center(child: rail));
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: activationExtent,
+      child: activationZone,
+    );
   }
 
   Widget _sideOverlay({

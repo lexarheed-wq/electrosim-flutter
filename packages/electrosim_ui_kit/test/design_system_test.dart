@@ -109,7 +109,7 @@ void main() {
     expect(open.right, closeTo(390, .5));
     expect(open.left, lessThan(390));
 
-    await tester.tapAt(const Offset(120, 420));
+    await tester.tapAt(const Offset(12, 420));
     await tester.pumpAndSettle();
     final Rect closed =
         tester.getRect(find.byKey(electroSimContextRegionKey));

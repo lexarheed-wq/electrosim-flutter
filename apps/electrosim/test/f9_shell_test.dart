@@ -349,7 +349,7 @@ void main() {
     SimulatorCanvas canvas =
         tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
     expect(canvas.circuit.connections.length, 3);
-    expect(canvas.circuit.components.length, 3);
+    expect(canvas.circuit.components.length, 2);
 
     await _openTop(tester);
     final IconButton deleteButton = tester.widget<IconButton>(
@@ -367,7 +367,7 @@ void main() {
       isNot(contains('wire-2')),
     );
     expect(canvas.circuit.connections.length, 2);
-    expect(canvas.circuit.components.length, 3);
+    expect(canvas.circuit.components.length, 2);
     expect(
       (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
       contains('Suppression : fil — wire-2'),

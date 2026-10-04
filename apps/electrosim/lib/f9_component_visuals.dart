@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
-import 'f18_v1_component_visuals.dart';
 import 'f9_wiring_policy.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 
@@ -82,7 +81,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               return Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  ..._buildV1Visuals(geometry),
+                  ..._buildReferenceVisuals(geometry),
                   CustomPaint(
                     painter: _F9CanvasOverlayPainter(
                       circuit: widget.circuit,
@@ -107,7 +106,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     );
   }
 
-  List<Widget> _buildV1Visuals(CircuitGeometryIndex geometry) {
+  List<Widget> _buildReferenceVisuals(CircuitGeometryIndex geometry) {
     final List<Widget> widgets = <Widget>[];
 
     void addVisual({
@@ -118,8 +117,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required bool closed,
       required bool tripped,
       required bool pressed,
+      required double currentA,
+      required double voltageV,
+      required double ratedCurrentA,
+      required double currentLimitA,
+      required double resistanceOhm,
     }) {
-      if (!F18V1PilotVisuals.supports(modelType)) return;
+      if (!F18ReferenceComponentVisuals.supports(modelType)) return;
       final Rect? worldRect = geometry.elementRects[elementId];
       if (worldRect == null) return;
       final Offset center = widget.viewport.worldToScreen(worldRect.center);
@@ -147,7 +151,12 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               tripped: tripped,
               pressed: pressed,
               animationValue: _motion.value,
-              showTerminals: false,
+              showTerminals: true,
+              currentA: currentA,
+              voltageV: voltageV,
+              ratedCurrentA: ratedCurrentA,
+              currentLimitA: currentLimitA,
+              resistanceOhm: resistanceOhm,
             ),
           ),
         ),
@@ -156,6 +165,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
+      final double currentA = _sourceCurrentA(runtime, source.id);
+      final double voltageV = _sourceVoltageV(runtime, source.id);
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
@@ -165,19 +176,27 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         closed: true,
         tripped: false,
         pressed: false,
+        currentA: currentA,
+        voltageV: voltageV,
+        ratedCurrentA: 1,
+        currentLimitA:
+            (source.parameters['currentLimitA'] as num?)?.toDouble() ?? 2,
+        resistanceOhm: 0,
       );
     }
     for (final ComponentInstance component in widget.circuit.components) {
-      final double currentA = _componentCurrentA(runtime, component.id);
+      final double currentA = _componentSignedCurrentA(runtime, component.id);
       final double voltageV = _componentVoltageV(runtime, component.id);
       final bool energized = widget.simulationRunning &&
           (runtime?.solved ?? false) &&
-          (currentA > 1e-6 || voltageV > 1);
-      final bool isPush = component.modelType.toLowerCase() == 'push_button_no';
+          currentA.abs() > 1e-6;
+      final String type = component.modelType.toLowerCase();
       final bool pressed = component.controlState['pressed'] == true;
-      final bool closed = isPush
-          ? pressed
-          : (component.controlState['closed'] as bool?) ?? true;
+      final bool closed = switch (type) {
+        'push_button_no' => pressed,
+        'push_button_nc' => !pressed,
+        _ => (component.controlState['closed'] as bool?) ?? true,
+      };
       final bool tripped = (runtime?.protectionTripped(component.id) ?? false) ||
           component.controlState['tripped'] == true;
 
@@ -189,26 +208,58 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         closed: closed,
         tripped: tripped,
         pressed: pressed,
+        currentA: currentA,
+        voltageV: voltageV,
+        ratedCurrentA:
+            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1,
+        currentLimitA: 2,
+        resistanceOhm:
+            (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
       );
     }
     return widgets;
   }
 
-  static double _componentCurrentA(
+  static double _componentSignedCurrentA(
     ElectroSimRuntimeSnapshot? runtime,
     ComponentId id,
   ) {
     final result = runtime?.dcResult;
     if (result == null || !result.isSolved) return 0;
-    double value = 0;
     for (final branch in result.branchResults) {
       if (branch.id != 'component:${id.value}') continue;
       final double? current = branch.currentA;
-      if (current != null && current.isFinite) {
-        value = math.max(value, current.abs());
+      if (current != null && current.isFinite) return current;
+    }
+    return 0;
+  }
+
+  static double _sourceCurrentA(
+    ElectroSimRuntimeSnapshot? runtime,
+    SourceId id,
+  ) {
+    final result = runtime?.dcResult;
+    if (result == null || !result.isSolved) return 0;
+    for (final branch in result.branchResults) {
+      if (branch.id != 'source:${id.value}') continue;
+      final double? current = branch.currentA;
+      if (current != null && current.isFinite) return current;
+    }
+    return 0;
+  }
+
+  static double _sourceVoltageV(
+    ElectroSimRuntimeSnapshot? runtime,
+    SourceId id,
+  ) {
+    final result = runtime?.dcResult;
+    if (result == null || !result.isSolved) return 0;
+    for (final branch in result.branchResults) {
+      if (branch.id == 'source:${id.value}' && branch.voltageV.isFinite) {
+        return branch.voltageV;
       }
     }
-    return value;
+    return 0;
   }
 
   static double _componentVoltageV(
@@ -443,6 +494,27 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       final bool pending = entry.key == pendingTerminalId;
       final bool hovered = entry.key == hoverTerminalId;
       final double radius = pending || hovered ? 6.4 : 5.2;
+      final bool referenceTerminal = _isReferenceTerminal(entry.key);
+
+      if (referenceTerminal) {
+        if (pending || hovered) {
+          canvas.drawCircle(
+            p,
+            radius + 4,
+            Paint()
+              ..color = ElectroSimColors.primary.withValues(alpha: 45 / 255),
+          );
+          canvas.drawCircle(
+            p,
+            radius + 1.5,
+            Paint()
+              ..color = ElectroSimColors.primary
+              ..strokeWidth = 2
+              ..style = PaintingStyle.stroke,
+          );
+        }
+        continue;
+      }
 
       if (pending || hovered) {
         canvas.drawCircle(
@@ -486,6 +558,23 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         Paint()..color = const Color(0xFF4D3A22),
       );
     }
+  }
+
+  bool _isReferenceTerminal(TerminalId terminalId) {
+    for (final SourceInstance source in circuit.sources) {
+      if (!F18ReferenceComponentVisuals.supports(source.modelType)) continue;
+      if (source.terminals.any((Terminal terminal) => terminal.id == terminalId)) {
+        return true;
+      }
+    }
+    for (final ComponentInstance component in circuit.components) {
+      if (!F18ReferenceComponentVisuals.supports(component.modelType)) continue;
+      if (component.terminals
+          .any((Terminal terminal) => terminal.id == terminalId)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {
@@ -538,7 +627,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     final Color color =
         active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
 
-    if (!F18V1PilotVisuals.supports(modelType)) {
+    if (!F18ReferenceComponentVisuals.supports(modelType)) {
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(math.pi / 2 * quarterTurns);

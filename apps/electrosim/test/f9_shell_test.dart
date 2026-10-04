@@ -17,8 +17,14 @@ Future<void> _openPalette(WidgetTester tester) async {
 }
 
 Future<void> _openContext(WidgetTester tester) async {
-  await tester.tap(find.byKey(electroSimContextEdgeKey));
-  await tester.pumpAndSettle();
+  final Finder region = find.byKey(electroSimContextRegionKey);
+  final double width =
+      tester.view.physicalSize.width / tester.view.devicePixelRatio;
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).left >= width) {
+    await tester.tap(find.byKey(electroSimContextEdgeKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _openTop(WidgetTester tester) async {

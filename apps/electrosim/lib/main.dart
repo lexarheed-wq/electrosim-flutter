@@ -937,21 +937,43 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
       polylines.add(<Offset>[start, ..._layout.routeFor(connection.id.value), end]);
     }
-    final Offset? position = F9AutoPlacement.findPosition(
+    final Size elementSize =
+        F18ReferenceComponentVisuals.supports(definition.modelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(definition.modelType)
+            : _layout.defaultElementSize;
+    Offset? position = F9AutoPlacement.findPosition(
       visibleWorldRect: visibleWorldRect,
-      elementSize: F18ReferenceComponentVisuals.supports(definition.modelType)
-          ? F18ReferenceComponentMetrics.boardSizeFor(definition.modelType)
-          : _layout.defaultElementSize,
+      elementSize: elementSize,
       occupiedElements: geometry.elementRects.values,
       occupiedPolylines: polylines,
     );
+    var requiresRefit = false;
+    if (position == null) {
+      final double expansion =
+          math.max(elementSize.width, elementSize.height) + 96;
+      position = F9AutoPlacement.findPosition(
+        visibleWorldRect: visibleWorldRect.inflate(expansion),
+        elementSize: elementSize,
+        occupiedElements: geometry.elementRects.values,
+        occupiedPolylines: polylines,
+      );
+      requiresRefit = position != null;
+    }
     if (position == null) {
       _setStatus(
-        'Ajout rapide impossible : aucune zone libre visible. Glissez le composant sur la platine.',
+        'Ajout rapide impossible : aucune zone libre autour de la platine. '
+        'Glissez le composant à l’endroit souhaité.',
       );
       return;
     }
     _addPaletteDefinition(definition, position);
+    if (requiresRefit) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _fitCircuitToViewport();
+        }
+      });
+    }
   }
 
   String _allocateElementId(String keyName) {

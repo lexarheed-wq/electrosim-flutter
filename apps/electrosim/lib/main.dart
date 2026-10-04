@@ -1365,12 +1365,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
     }
 
-    bounds = bounds.inflate(56);
+    bounds = bounds.inflate(32);
     final double scaleX =
-        (size.width - 48).clamp(120.0, double.infinity) / bounds.width;
+        (size.width - 32).clamp(120.0, double.infinity) / bounds.width;
     final double scaleY =
-        (size.height - 48).clamp(120.0, double.infinity) / bounds.height;
-    final double scale = math.min(scaleX, scaleY).clamp(0.75, 1.35).toDouble();
+        (size.height - 32).clamp(120.0, double.infinity) / bounds.height;
+    final double scale = math.min(scaleX, scaleY).clamp(0.75, 1.50).toDouble();
     final Offset translation = Offset(
       size.width / 2 - bounds.center.dx * scale,
       size.height / 2 - bounds.center.dy * scale,

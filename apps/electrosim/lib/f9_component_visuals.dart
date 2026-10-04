@@ -196,9 +196,9 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final double scale = viewport.scale;
     final double visualWidth =
-        (worldRect.width * scale * 0.92).clamp(64.0, 132.0).toDouble();
+        (worldRect.width * scale * 0.96).clamp(72.0, 136.0).toDouble();
     final double visualHeight =
-        (worldRect.height * scale * 0.84).clamp(42.0, 88.0).toDouble();
+        (worldRect.height * scale * 0.96).clamp(46.0, 92.0).toDouble();
     final Offset visualCenter = center;
     final Color color =
         active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
@@ -206,7 +206,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     canvas.save();
     canvas.translate(visualCenter.dx, visualCenter.dy);
     canvas.rotate(math.pi / 2 * quarterTurns);
-    paintF18ElectricalArchetype(
+    paintF18ComponentIdentity(
       canvas,
       Rect.fromCenter(
         center: Offset.zero,

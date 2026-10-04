@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
+import 'f18_v1_component_visuals.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
@@ -938,7 +939,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     final Offset? position = F9AutoPlacement.findPosition(
       visibleWorldRect: visibleWorldRect,
-      elementSize: _layout.defaultElementSize,
+      elementSize: F18V1PilotVisuals.supports(definition.modelType)
+          ? F18PilotVisualMetrics.boardSizeFor(definition.modelType)
+          : _layout.defaultElementSize,
       occupiedElements: geometry.elementRects.values,
       occupiedPolylines: polylines,
     );
@@ -1004,7 +1007,25 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     setState(() {
       _circuit = nextCircuit;
-      _layout = _routeWithG2A(_circuit, _layout.moveElement(elementId, worldPosition));
+      final CircuitVisualLayout moved =
+          _layout.moveElement(elementId, worldPosition);
+      final Map<String, Size> sizes = <String, Size>{
+        ...moved.elementSizes,
+      };
+      if (F18V1PilotVisuals.supports(definition.modelType)) {
+        sizes[elementId] =
+            F18PilotVisualMetrics.boardSizeFor(definition.modelType);
+      }
+      _layout = _routeWithG2A(
+        _circuit,
+        CircuitVisualLayout(
+          elementPositions: moved.elementPositions,
+          elementSizes: sizes,
+          wireRoutes: moved.wireRoutes,
+          elementQuarterTurns: moved.elementQuarterTurns,
+          defaultElementSize: moved.defaultElementSize,
+        ),
+      );
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
@@ -1662,21 +1683,31 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   CircuitVisualLayout _layoutForCircuit(CircuitState circuit) {
     final Map<String, Offset> positions = <String, Offset>{};
-    final List<String> ids = <String>[
-      ...circuit.sources.map((SourceInstance item) => item.id.value),
-      ...circuit.components.map((ComponentInstance item) => item.id.value),
+    final Map<String, Size> sizes = <String, Size>{};
+    final List<(String, String)> elements = <(String, String)>[
+      ...circuit.sources.map(
+        (SourceInstance item) => (item.id.value, item.modelType),
+      ),
+      ...circuit.components.map(
+        (ComponentInstance item) => (item.id.value, item.modelType),
+      ),
     ];
-    for (var index = 0; index < ids.length; index++) {
+    for (var index = 0; index < elements.length; index++) {
       final int column = index % 3;
       final int row = index ~/ 3;
-      positions[ids[index]] = Offset(
+      final (String id, String modelType) = elements[index];
+      positions[id] = Offset(
         144 + (column * 240.0),
         192 + (row * 192.0),
       );
+      if (F18V1PilotVisuals.supports(modelType)) {
+        sizes[id] = F18PilotVisualMetrics.boardSizeFor(modelType);
+      }
     }
 
     final CircuitVisualLayout base = CircuitVisualLayout(
       elementPositions: positions,
+      elementSizes: sizes,
     );
     final CircuitVisualLayout arranged = _arrangeSimpleDcCircuit(
       circuit,

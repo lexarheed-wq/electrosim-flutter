@@ -163,7 +163,6 @@ void main() {
         tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
     expect(canvas.layout.quarterTurnsOf('switch-1'), 1);
 
-    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
     canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));

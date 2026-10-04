@@ -84,6 +84,35 @@ void main() {
       geometry.terminalPositions[right.id]!.dx,
       closeTo(231.2, 0.0001),
     );
+    expect(
+      geometry.terminalRoutingPositions[left.id],
+      const Offset(148, 100),
+    );
+    expect(
+      geometry.terminalRoutingPositions[right.id],
+      const Offset(252, 100),
+    );
+  });
+
+  test('physical pilot terminals keep generic invisible routing ports', () {
+    const Size size = Size(104, 64);
+    expect(
+      TerminalVisualProfile.routingOffset(size: size, index: 0, count: 2),
+      const Offset(-52, 0),
+    );
+    expect(
+      TerminalVisualProfile.routingOffset(size: size, index: 1, count: 2),
+      const Offset(52, 0),
+    );
+    expect(
+      TerminalVisualProfile.terminalOffset(
+        modelType: 'lamp',
+        size: size,
+        index: 0,
+        count: 2,
+      ).dx,
+      greaterThan(-52),
+    );
   });
 
   test('non-pilot two-terminal components keep the generic box-edge anchors', () {

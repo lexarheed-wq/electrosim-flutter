@@ -176,6 +176,12 @@ class _PropertiesPanel extends StatelessWidget {
                 ...circuit.components.map(
                   (ComponentInstance component) => DropdownMenuItem<String>(value: component.id.value, child: Text('${f9ModelLabel(component.modelType)} · ${component.id.value}')),
                 ),
+                ...circuit.connections.map(
+                  (Connection connection) => DropdownMenuItem<String>(
+                    value: connection.id.value,
+                    child: Text('Fil · ${connection.id.value}'),
+                  ),
+                ),
               ],
               onChanged: onSelectElement,
             ),
@@ -187,11 +193,24 @@ class _PropertiesPanel extends StatelessWidget {
           const SizedBox(height: ElectroSimSpacing.xs),
           const Text('Aucun élément sélectionné'),
         ] else ...<Widget>[
-          Text(f9ModelLabel(details.modelType), key: const Key('properties-model-type'), style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            details.kind == F9ElementKind.connection
+                ? 'Fil'
+                : f9ModelLabel(details.modelType),
+            key: const Key('properties-model-type'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: ElectroSimSpacing.xxs),
           Text(details.id, key: const Key('properties-element-id'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ElectroSimColors.textSecondary)),
           const SizedBox(height: ElectroSimSpacing.md),
-          _PropertyLine(label: 'Type', value: details.kind == F9ElementKind.source ? 'Source' : 'Composant'),
+          _PropertyLine(
+            label: 'Type',
+            value: switch (details.kind) {
+              F9ElementKind.source => 'Source',
+              F9ElementKind.component => 'Composant',
+              F9ElementKind.connection => 'Fil',
+            },
+          ),
           _PropertyLine(label: 'État', value: details.stateLabel),
           _PropertyLine(label: 'Bornes', value: details.terminalLabels.join(' · ')),
           if (details.parameters.isNotEmpty) ...<Widget>[

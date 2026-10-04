@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:electrosim/f17_tp_session_dialog.dart';
+import 'package:electrosim/f17_tp_supervision_panel.dart';
 import 'package:electrosim/f18_session_coordinator.dart';
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/runtime/electrosim_lan_sync.dart';
@@ -159,7 +160,7 @@ void main() {
     });
 
     testWidgets(
-        'teacher supervision shows the real student submission and accepts individual grade',
+        'teacher supervision renders submitted student and dispatches grade and close actions',
         (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1100, 900);
       tester.view.devicePixelRatio = 1;
@@ -172,103 +173,84 @@ void main() {
       teacher.publish();
       teacher.startTeacher();
 
-      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
-        controller: teacher,
-        sessionCode: 'P4VIEW',
-        sessionName: 'Atelier BEP1',
-      );
-      final ElectroSimLanHostInfo info = await host.start(
-        address: InternetAddress.loopbackIPv4,
-      );
       final ElectroSimTpSessionController student =
-          ElectroSimTpSessionController();
-      final ElectroSimLanSyncClient client = ElectroSimLanSyncClient(
-        controller: student,
-        sessionCode: 'P4VIEW',
-        clientId: 'fatimata-001',
-        displayName: 'Fatimata Kaboré',
-        autoReconnect: false,
-      );
+          teacher.createStudentReplica();
+      student.submitStudent();
 
-      try {
-        await client.connect(info.preferredEndpoint);
-        await _waitFor(() => student.lifecycle == TpLifecycle.started);
-        student.submitStudent();
-        await _waitFor(
-          () => host.studentSessions['fatimata-001']?.lifecycle ==
-              TpLifecycle.submitted,
-        );
+      addTearDown(teacher.dispose);
+      addTearDown(student.dispose);
 
-        await tester.pumpWidget(
-          MaterialApp(
+      F17StudentGradeRequest? gradeRequest;
+      String? closeRequest;
+
+      Widget supervision() => MaterialApp(
             home: F18SessionSupervisionPage(
               controller: teacher,
-              lanHost: host,
+              proofStudents: <F17StudentSupervisionItem>[
+                F17StudentSupervisionItem(
+                  clientId: 'fatimata-001',
+                  displayName: 'Fatimata Kaboré',
+                  connected: true,
+                  session: student.session,
+                ),
+              ],
+              onGradeStudentOverride: (F17StudentGradeRequest request) {
+                gradeRequest = request;
+                student.evaluateTeacher(score: request.score);
+              },
+              onCloseStudentOverride: (String clientId) {
+                closeRequest = clientId;
+                student.closeTeacher();
+              },
             ),
-          ),
-        );
-        await tester.pump();
+          );
 
-        expect(find.text('Fatimata Kaboré'), findsOneWidget);
-        expect(
-          find.byKey(
-            const Key('supervision-student-state-fatimata-001'),
-          ),
-          findsOneWidget,
-        );
-        expect(find.text('TP remis — à noter'), findsWidgets);
-        expect(
-          find.byKey(const Key('supervision-grade-input-fatimata-001')),
-          findsOneWidget,
-        );
+      await tester.pumpWidget(supervision());
+      await tester.pump();
 
-        await tester.enterText(
-          find.byKey(const Key('supervision-grade-input-fatimata-001')),
-          '92',
-        );
-        await tester.tap(
-          find.byKey(const Key('supervision-grade-submit-fatimata-001')),
-        );
-        await tester.pump();
+      expect(find.text('Fatimata Kaboré'), findsOneWidget);
+      expect(find.text('TP remis — à noter'), findsWidgets);
+      expect(
+        find.byKey(const Key('supervision-grade-input-fatimata-001')),
+        findsOneWidget,
+      );
 
-        expect(
-          host.studentSessions['fatimata-001']?.lifecycle,
-          TpLifecycle.evaluated,
-        );
-        expect(
-          host.studentSessions['fatimata-001']?.evaluation?.score,
-          92,
-        );
-        expect(
-          find.byKey(const Key('supervision-student-score-fatimata-001')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const Key('supervision-close-student-fatimata-001')),
-          findsOneWidget,
-        );
+      await tester.enterText(
+        find.byKey(const Key('supervision-grade-input-fatimata-001')),
+        '92',
+      );
+      await tester.tap(
+        find.byKey(const Key('supervision-grade-submit-fatimata-001')),
+      );
+      await tester.pump();
 
-        await tester.tap(
-          find.byKey(const Key('supervision-close-student-fatimata-001')),
-        );
-        await tester.pump();
-        expect(
-          host.studentSessions['fatimata-001']?.lifecycle,
-          TpLifecycle.closed,
-        );
-        await tester.runAsync(
-          () => _waitFor(() => student.lifecycle == TpLifecycle.closed),
-        );
-        expect(student.readOnly, isTrue);
-        expect(tester.takeException(), isNull);
-      } finally {
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump();
-        await client.close();
-        await host.close();
-        student.dispose();
-        teacher.dispose();
-      }
+      expect(gradeRequest?.clientId, 'fatimata-001');
+      expect(gradeRequest?.score, 92);
+      expect(student.lifecycle, TpLifecycle.evaluated);
+      expect(student.evaluation?.score, 92);
+      expect(student.readOnly, isTrue);
+
+      await tester.pumpWidget(supervision());
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('supervision-student-score-fatimata-001')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('supervision-close-student-fatimata-001')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('supervision-close-student-fatimata-001')),
+      );
+      await tester.pump();
+
+      expect(closeRequest, 'fatimata-001');
+      expect(student.lifecycle, TpLifecycle.closed);
+      expect(student.readOnly, isTrue);
+      expect(tester.takeException(), isNull);
     });
   });
 }

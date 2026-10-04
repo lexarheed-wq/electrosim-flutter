@@ -2,6 +2,7 @@ import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f18_workspace_wire_safety.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,6 +26,16 @@ Future<void> _openDesignWorkspace(
   await tester.ensureVisible(wiring);
   await tester.pumpAndSettle();
   await tester.tap(wiring);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openContext(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimContextEdgeKey));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openTop(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimTopEdgeKey));
   await tester.pumpAndSettle();
 }
 
@@ -111,10 +122,12 @@ void main() {
       isTrue,
     );
 
+    await _openContext(tester);
     await tester.tap(find.byKey(const Key('properties-element-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('switch-1').last);
     await tester.pumpAndSettle();
+    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-rotate-action')));
     await tester.pumpAndSettle();
 

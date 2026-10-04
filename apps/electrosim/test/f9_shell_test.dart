@@ -298,34 +298,170 @@ void main() {
     expect(find.textContaining('resistor-1'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('state control remains in properties and deletion is owned by topbar', (WidgetTester tester) async {
+  testWidgets('switch actuates only from a double-click on its physical rocker',
+      (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-  
+
     await tester.pumpWidget(
       const MaterialApp(
         home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
       ),
     );
     await tester.pumpAndSettle();
-    await _openContext(tester);
-  
-    expect(find.byKey(const Key('properties-model-type')), findsOneWidget);
-    expect(find.text('Interrupteur'), findsOneWidget);
-    expect(find.byKey(const Key('properties-primary-toggle')), findsOneWidget);
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('3 éléments'));
-  
-    await tester.tap(find.byKey(const Key('properties-primary-toggle')));
-    await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('État modifié'));
 
-    await _openTop(tester);
-    await tester.tap(find.byKey(const Key('workspace-delete-action')));
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    ComponentInstance switchComponent = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'switch-1',
+    );
+    expect(switchComponent.controlState['closed'], isTrue);
+
+    final Finder visual =
+        find.byKey(const ValueKey<String>('board-v1-visual-switch-1'));
+    expect(visual, findsOneWidget);
+    final Rect rect = tester.getRect(visual);
+
+    // Carcass double-click: selected but not actuated.
+    final Offset carcass = Offset(rect.left + rect.width * .08,
+        rect.top + rect.height * .08);
+    await tester.tapAt(carcass);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(carcass);
+    await tester.pump(const Duration(milliseconds: 30));
+
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    switchComponent = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'switch-1',
+    );
+    expect(switchComponent.controlState['closed'], isTrue);
+
+    // Rocker double-click: real actuation.
+    final Offset rocker = rect.center;
+    await tester.tapAt(rocker);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(rocker);
+    await tester.pump(const Duration(milliseconds: 30));
+
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    switchComponent = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'switch-1',
+    );
+    expect(switchComponent.controlState['closed'], isFalse);
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+      contains('Commande directe : switch-1 — ouvert'),
+    );
+
+    await _openContext(tester);
+    expect(find.byKey(const Key('properties-primary-toggle')), findsNothing);
+    expect(find.byKey(const Key('properties-direct-control-hint')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('push button double-click produces a momentary press and release',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialCircuit: _seriesControlCircuit(
+            modelType: 'push_button_no',
+            elementId: 'push-1',
+            controlState: const <String, Object?>{'pressed': false},
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('2 éléments'));
-    expect(find.text('Aucun élément sélectionné'), findsOneWidget);
+
+    final Finder visual =
+        find.byKey(const ValueKey<String>('board-v1-visual-push-1'));
+    final Rect rect = tester.getRect(visual);
+    final Offset head = Offset(
+      rect.left + rect.width * .5,
+      rect.top + rect.height * (58 / 140),
+    );
+
+    await tester.tapAt(head);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(head);
+    await tester.pump(const Duration(milliseconds: 20));
+
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    ComponentInstance button = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'push-1',
+    );
+    expect(button.controlState['pressed'], isTrue);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    button = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'push-1',
+    );
+    expect(button.controlState['pressed'], isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('breaker handle double-click opens and recloses the breaker',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialCircuit: _seriesControlCircuit(
+            modelType: 'breaker_dc',
+            elementId: 'breaker-1',
+            controlState: const <String, Object?>{
+              'closed': true,
+              'tripped': false,
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder visual =
+        find.byKey(const ValueKey<String>('board-v1-visual-breaker-1'));
+    final Rect rect = tester.getRect(visual);
+    final Offset handle = Offset(
+      rect.left + rect.width * .5,
+      rect.top + rect.height * .52,
+    );
+
+    Future<void> doubleClickHandle() async {
+      await tester.tapAt(handle);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tapAt(handle);
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+
+    await doubleClickHandle();
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    ComponentInstance breaker = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'breaker-1',
+    );
+    expect(breaker.controlState['closed'], isFalse);
+
+    await doubleClickHandle();
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    breaker = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'breaker-1',
+    );
+    expect(breaker.controlState['closed'], isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -573,3 +709,91 @@ void main() {
   });
 
 }
+
+CircuitState _seriesControlCircuit({
+  required String modelType,
+  required String elementId,
+  required Map<String, Object?> controlState,
+}) {
+  final Terminal sourcePositive = Terminal(
+    id: TerminalId('source-positive'),
+    name: '+',
+    role: TerminalRole.positive,
+    phase: PhaseTag.dcPositive,
+  );
+  final Terminal sourceNegative = Terminal(
+    id: TerminalId('source-negative'),
+    name: '−',
+    role: TerminalRole.negative,
+    phase: PhaseTag.dcNegative,
+  );
+  final Terminal controlIn = Terminal(
+    id: TerminalId('$elementId-in'),
+    name: '1',
+    role: TerminalRole.input,
+  );
+  final Terminal controlOut = Terminal(
+    id: TerminalId('$elementId-out'),
+    name: '2',
+    role: TerminalRole.output,
+  );
+  final Terminal lampIn = Terminal(
+    id: TerminalId('control-lamp-in'),
+    name: 'A',
+    role: TerminalRole.input,
+  );
+  final Terminal lampOut = Terminal(
+    id: TerminalId('control-lamp-out'),
+    name: 'B',
+    role: TerminalRole.output,
+  );
+
+  return CircuitState(
+    circuitId: CircuitId('direct-control-$elementId'),
+    revision: 1,
+    mode: ElectricalMode.dc,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('source-24v'),
+        modelType: 'dc_voltage_source',
+        terminals: <Terminal>[sourcePositive, sourceNegative],
+        parameters: const <String, Object?>{'voltageV': 24.0},
+      ),
+    ],
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId(elementId),
+        modelType: modelType,
+        terminals: <Terminal>[controlIn, controlOut],
+        parameters: modelType.startsWith('breaker')
+            ? const <String, Object?>{'ratedCurrentA': 10.0}
+            : const <String, Object?>{},
+        controlState: controlState,
+      ),
+      ComponentInstance(
+        id: ComponentId('lamp-1'),
+        modelType: 'lamp',
+        terminals: <Terminal>[lampIn, lampOut],
+        parameters: const <String, Object?>{'resistanceOhm': 24.0},
+      ),
+    ],
+    connections: <Connection>[
+      Connection(
+        id: ConnectionId('wire-control-1'),
+        fromTerminalId: sourcePositive.id,
+        toTerminalId: controlIn.id,
+      ),
+      Connection(
+        id: ConnectionId('wire-control-2'),
+        fromTerminalId: controlOut.id,
+        toTerminalId: lampIn.id,
+      ),
+      Connection(
+        id: ConnectionId('wire-control-3'),
+        fromTerminalId: lampOut.id,
+        toTerminalId: sourceNegative.id,
+      ),
+    ],
+  );
+}
+

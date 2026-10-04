@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - v1-parity
+      - candidate-autohide-2127
     paths:
       - "apps/electrosim/lib/f18_component_asset_visual.dart"
       - "apps/electrosim/lib/f9_component_visuals.dart"

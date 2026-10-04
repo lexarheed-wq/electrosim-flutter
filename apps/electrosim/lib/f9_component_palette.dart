@@ -2,6 +2,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
+import 'f18_component_asset_visual.dart';
 
 enum F9PaletteElementKind { source, component }
 
@@ -448,7 +449,7 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return F18ComponentIdentityVisual(
+    return F18ComponentAssetVisual(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.modelType,
       size: compact

@@ -2,12 +2,18 @@ import 'dart:io';
 
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:electrosim/main.dart';
 import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
+
+Future<void> _openTop(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimTopEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   group('F17-R8 local persistence', () {
@@ -102,6 +108,7 @@ void main() {
         find.byKey(const Key('workspace-more-actions')),
         findsOneWidget,
       );
+      await _openTop(tester);
       await tester.tap(find.byKey(const Key('workspace-more-actions')));
       await tester.pumpAndSettle();
 

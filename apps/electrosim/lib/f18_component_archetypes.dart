@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
+import 'f18_industrial_component_visuals.dart';
+
 enum F18ElectricalArchetype {
   source,
   protection,
@@ -222,12 +224,18 @@ void paintF18ElectricalArchetype(
   Color foreground,
 ) {
   final String normalizedType = modelType.toLowerCase();
-  if (_paintIndustrialModel(
-    canvas,
-    rect,
-    normalizedType,
-    foreground,
-  )) {
+  if (paintF18IndustrialComponentV2(
+        canvas,
+        rect,
+        normalizedType,
+        foreground,
+      ) ||
+      _paintIndustrialModel(
+        canvas,
+        rect,
+        normalizedType,
+        foreground,
+      )) {
     return;
   }
 

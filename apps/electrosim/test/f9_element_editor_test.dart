@@ -46,10 +46,38 @@ void main() {
     expect(next.revision, circuit.revision + 1);
   });
 
+  test('describes a wire as a first-class selectable connection', () {
+    final CircuitState circuit = _circuit();
+    final F9ElementDetails? details =
+        F9ElementEditor.describe(circuit, 'wire-2');
+    expect(details, isNotNull);
+    expect(details!.kind, F9ElementKind.connection);
+    expect(details.modelType, 'wire');
+    expect(details.terminalLabels, <String>['switch-out', 'lamp-in']);
+    expect(details.stateLabel, 'raccordé');
+  });
+
+  test('deleting a selected wire removes only that connection', () {
+    final CircuitState circuit = _circuit();
+    final CircuitState next =
+        F9ElementEditor.deleteConnection(circuit, 'wire-2');
+    expect(
+      next.connections.map((Connection item) => item.id.value),
+      <String>['wire-1', 'wire-3'],
+    );
+    expect(next.components, circuit.components);
+    expect(next.sources, circuit.sources);
+    expect(next.revision, circuit.revision + 1);
+  });
+
   test('unknown element is a no-op', () {
     final CircuitState circuit = _circuit();
     expect(F9ElementEditor.describe(circuit, 'missing'), isNull);
     expect(identical(F9ElementEditor.deleteElement(circuit, 'missing'), circuit), isTrue);
+    expect(
+      identical(F9ElementEditor.deleteConnection(circuit, 'missing'), circuit),
+      isTrue,
+    );
     expect(identical(F9ElementEditor.togglePrimaryState(circuit, 'missing'), circuit), isTrue);
   });
 }

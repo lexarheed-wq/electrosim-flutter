@@ -49,11 +49,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    final Finder switchVisual =
+        find.byKey(const ValueKey<String>('board-v1-visual-switch-1'));
+    final Offset rocker = tester.getRect(switchVisual).center;
+    await tester.tapAt(rocker);
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(rocker);
+    await tester.pump(const Duration(milliseconds: 30));
+
     await _openContext(tester);
-
-    await tester.tap(find.byKey(const Key('properties-primary-toggle')));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.text('EIE'));
     await tester.pumpAndSettle();
 

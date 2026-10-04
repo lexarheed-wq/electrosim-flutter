@@ -1063,7 +1063,9 @@ int _progressPercent(TpSession? session) {
     TpLifecycle.draft => 0,
     TpLifecycle.published => 10,
     TpLifecycle.started => session.definition.mode == TpMode.troubleshooting
-        ? (35 + (session.diagnosticSheet.entries.length * 12)).clamp(35, 75)
+        ? (35 + (session.diagnosticSheet.entries.length * 12))
+            .clamp(35, 75)
+            .toInt()
         : 55,
     TpLifecycle.submitted => 85,
     TpLifecycle.evaluated => 95,

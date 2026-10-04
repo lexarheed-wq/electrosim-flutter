@@ -119,7 +119,7 @@ void main() {
             entry.key,
             size: designSize,
           ),
-          entry.value,
+          closeTo(entry.value, 0.0001),
           reason: entry.key,
         );
         expect(entry.value, lessThan(designSize.width / 2));

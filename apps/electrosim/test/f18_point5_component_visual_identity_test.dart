@@ -144,7 +144,19 @@ void main() {
     });
 
     test('uploaded V2 physical anchors match the exact Dart geometry', () {
-      expect(
+      void expectOffset(
+        Offset actual,
+        Offset expected, {
+        required String reason,
+      }) {
+        expect(
+          (actual - expected).distance,
+          lessThan(1e-6),
+          reason: reason,
+        );
+      }
+
+      expectOffset(
         TerminalVisualProfile.terminalOffset(
           modelType: 'dc_voltage_source',
           size: const Size(140, 160),
@@ -152,8 +164,9 @@ void main() {
           count: 2,
         ),
         const Offset(-28, 47),
+        reason: 'supply terminal 0',
       );
-      expect(
+      expectOffset(
         TerminalVisualProfile.terminalOffset(
           modelType: 'breaker_dc',
           size: const Size(72, 160),
@@ -161,8 +174,9 @@ void main() {
           count: 2,
         ),
         const Offset(0, -57),
+        reason: 'breaker terminal 0',
       );
-      expect(
+      expectOffset(
         TerminalVisualProfile.terminalOffset(
           modelType: 'switch',
           size: const Size(90, 140),
@@ -170,8 +184,9 @@ void main() {
           count: 2,
         ),
         const Offset(0, 50),
+        reason: 'switch terminal 1',
       );
-      expect(
+      expectOffset(
         TerminalVisualProfile.terminalOffset(
           modelType: 'push_button_no',
           size: const Size(90, 140),
@@ -179,8 +194,9 @@ void main() {
           count: 2,
         ),
         const Offset(-14, 49),
+        reason: 'button terminal 0',
       );
-      expect(
+      expectOffset(
         TerminalVisualProfile.terminalOffset(
           modelType: 'lamp',
           size: const Size(130, 160),
@@ -188,6 +204,7 @@ void main() {
           count: 2,
         ),
         const Offset(25, 59),
+        reason: 'lamp terminal 1',
       );
     });
 

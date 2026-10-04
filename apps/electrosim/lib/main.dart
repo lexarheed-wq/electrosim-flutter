@@ -1842,9 +1842,54 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     CircuitState circuit,
     CircuitVisualLayout layout,
   ) {
-    return _g2aWireLayoutEngine.routeAll(
+    final CircuitVisualLayout routed = _g2aWireLayoutEngine.routeAll(
       circuit: circuit,
       layout: layout,
+    );
+    if (!_isSimpleSeriesDc(circuit)) {
+      return routed;
+    }
+
+    // The G2A router may deliberately leave a connection without waypoints.
+    // With the larger reference-component envelopes that can expose a direct
+    // diagonal segment. For the bounded simple-series DC arrangement only,
+    // insert one Manhattan corner so the public wire contract stays strictly
+    // orthogonal. The normal G2A route remains authoritative whenever it
+    // produced an explicit route.
+    final CircuitGeometryIndex geometry =
+        CircuitGeometryIndex.build(circuit, routed);
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      ...routed.wireRoutes,
+    };
+    var changed = false;
+
+    for (final Connection connection in circuit.connections) {
+      final List<Offset> existing = routed.routeFor(connection.id.value);
+      if (existing.isNotEmpty) continue;
+
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? end =
+          geometry.terminalPositions[connection.toTerminalId];
+      if (start == null || end == null || start.dx == end.dx || start.dy == end.dy) {
+        continue;
+      }
+
+      routes[connection.id.value] = <Offset>[
+        Offset(end.dx, start.dy),
+      ];
+      changed = true;
+    }
+
+    if (!changed) {
+      return routed;
+    }
+    return CircuitVisualLayout(
+      elementPositions: routed.elementPositions,
+      elementSizes: routed.elementSizes,
+      wireRoutes: routes,
+      elementQuarterTurns: routed.elementQuarterTurns,
+      defaultElementSize: routed.defaultElementSize,
     );
   }
 

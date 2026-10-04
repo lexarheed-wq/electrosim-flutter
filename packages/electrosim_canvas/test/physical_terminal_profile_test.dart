@@ -5,6 +5,18 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  void expectOffset(
+    Offset actual,
+    Offset expected, {
+    required String reason,
+  }) {
+    expect(
+      (actual - expected).distance,
+      lessThan(1e-6),
+      reason: reason,
+    );
+  }
+
   Terminal terminal(String id, TerminalRole role) => Terminal(
         id: TerminalId(id),
         name: id,
@@ -41,7 +53,7 @@ void main() {
       final Size size = entry.value.$1;
       final List<Offset> expected = entry.value.$2;
       for (var index = 0; index < 2; index++) {
-        expect(
+        expectOffset(
           TerminalVisualProfile.terminalOffset(
             modelType: entry.key,
             size: size,
@@ -95,7 +107,7 @@ void main() {
   });
 
   test('uploaded V2 routing ports follow each physical terminal exit side', () {
-    expect(
+    expectOffset(
       TerminalVisualProfile.routingOffset(
         modelType: 'switch',
         size: const Size(90, 140),
@@ -103,8 +115,9 @@ void main() {
         count: 2,
       ),
       const Offset(0, -70),
+      reason: 'switch route 0',
     );
-    expect(
+    expectOffset(
       TerminalVisualProfile.routingOffset(
         modelType: 'switch',
         size: const Size(90, 140),
@@ -112,8 +125,9 @@ void main() {
         count: 2,
       ),
       const Offset(0, 70),
+      reason: 'switch route 1',
     );
-    expect(
+    expectOffset(
       TerminalVisualProfile.routingOffset(
         modelType: 'dc_voltage_source',
         size: const Size(140, 160),
@@ -121,8 +135,9 @@ void main() {
         count: 2,
       ),
       const Offset(-28, 80),
+      reason: 'supply route 0',
     );
-    expect(
+    expectOffset(
       TerminalVisualProfile.routingOffset(
         modelType: 'push_button_no',
         size: const Size(90, 140),
@@ -130,6 +145,7 @@ void main() {
         count: 2,
       ),
       const Offset(14, 70),
+      reason: 'button route 1',
     );
   });
 
@@ -161,15 +177,25 @@ void main() {
     final CircuitGeometryIndex geometry =
         CircuitGeometryIndex.build(circuit, layout);
 
-    expect(geometry.terminalPositions[first.id], const Offset(250, 100));
-    expect(geometry.terminalPositions[second.id], const Offset(150, 100));
-    expect(
-      geometry.terminalRoutingPositions[first.id],
-      const Offset(270, 100),
+    expectOffset(
+      geometry.terminalPositions[first.id]!,
+      const Offset(250, 100),
+      reason: 'rotated switch terminal 0',
     );
-    expect(
-      geometry.terminalRoutingPositions[second.id],
+    expectOffset(
+      geometry.terminalPositions[second.id]!,
+      const Offset(150, 100),
+      reason: 'rotated switch terminal 1',
+    );
+    expectOffset(
+      geometry.terminalRoutingPositions[first.id]!,
+      const Offset(270, 100),
+      reason: 'rotated switch routing 0',
+    );
+    expectOffset(
+      geometry.terminalRoutingPositions[second.id]!,
       const Offset(130, 100),
+      reason: 'rotated switch routing 1',
     );
   });
 

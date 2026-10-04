@@ -8,8 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _openPalette(WidgetTester tester) async {
-  await tester.tap(find.byKey(electroSimPaletteEdgeKey));
-  await tester.pumpAndSettle();
+  final Finder region = find.byKey(electroSimPaletteRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).right <= 0) {
+    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _openContext(WidgetTester tester) async {

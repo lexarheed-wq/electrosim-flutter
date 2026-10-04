@@ -1,0 +1,103 @@
+name: Reference components extended proof
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "apps/electrosim/lib/reference_components/reference_models_extended.dart"
+      - "apps/electrosim/lib/reference_components/reference_widgets_extended.dart"
+      - "apps/electrosim/lib/reference_components/reference_extended_demo.dart"
+      - "apps/electrosim/test/reference_components_extended_test.dart"
+      - ".github/workflows/reference-components-extended-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze extended reference code
+        working-directory: apps/electrosim
+        run: |
+          flutter analyze \
+            lib/reference_components/reference_models_extended.dart \
+            lib/reference_components/reference_widgets_extended.dart \
+            lib/reference_components/reference_extended_demo.dart \
+            test/reference_components_extended_test.dart
+
+      - name: Test extended reference models
+        working-directory: apps/electrosim
+        run: flutter test test/reference_components_extended_test.dart
+
+      - name: Build extended reference demo
+        working-directory: apps/electrosim
+        run: |
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          flutter build web --release -t lib/reference_components/reference_extended_demo.dart
+          mkdir -p ../../audit/reference-components-extended/web
+          cp -R build/web/. ../../audit/reference-components-extended/web/
+
+      - name: Capture Chromium proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/reference-components-extended/chromium
+          python3 -m http.server 8782 --directory ../../audit/reference-components-extended/web \
+            > ../../audit/reference-components-extended/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8782/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          "$chrome" --version > ../../audit/reference-components-extended/chromium/chromium-version.txt
+
+          timeout 45s "$chrome" \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --disable-background-networking \
+            --disable-default-apps \
+            --disable-extensions \
+            --disable-sync \
+            --no-first-run \
+            --hide-scrollbars \
+            --enable-unsafe-swiftshader \
+            --window-size=1600,1200 \
+            --virtual-time-budget=5000 \
+            --screenshot=../../audit/reference-components-extended/chromium/reference-components-extended.png \
+            "http://127.0.0.1:8782/"
+          test -s ../../audit/reference-components-extended/chromium/reference-components-extended.png
+
+      - name: Upload proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-components-eight-extended-proof
+          path: audit/reference-components-extended/chromium
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo REFERENCE_COMPONENTS_EXTENDED_PASS

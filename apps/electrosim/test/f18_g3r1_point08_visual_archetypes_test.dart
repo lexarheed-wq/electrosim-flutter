@@ -61,7 +61,8 @@ void main() {
     final String visuals =
         File('lib/f9_component_visuals.dart').readAsStringSync();
 
-    expect(palette, contains('F18ComponentIdentityVisual'));
+    expect(palette, contains('F18ComponentAssetVisual'));
+    expect(visuals, contains('F18ComponentAssetVisual'));
     expect(visuals, contains('paintF18ComponentIdentity'));
     expect(palette, isNot(contains('F9ComponentGlyph(')));
     expect(visuals, isNot(contains('paintF9Glyph(')));

@@ -170,12 +170,6 @@ class F18V1ComponentPainter extends CustomPainter {
         _paintPushButton(canvas, design);
     }
 
-    if (!enabled) {
-      canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: design.width, height: design.height),
-        Paint()..color = const Color(0x66FFFFFF),
-      );
-    }
     canvas.restore();
   }
 

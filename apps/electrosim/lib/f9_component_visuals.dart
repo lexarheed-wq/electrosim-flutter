@@ -127,24 +127,29 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final Rect? worldRect = geometry.elementRects[elementId];
       if (worldRect == null) return;
       final Offset center = widget.viewport.worldToScreen(worldRect.center);
-      final Size visualSize = Size(
-        worldRect.width * widget.viewport.scale,
-        worldRect.height * widget.viewport.scale,
-      );
       final int quarterTurns = widget.layout.quarterTurnsOf(elementId);
+      final Size baseWorldSize = widget.layout.sizeOf(elementId);
+      final Size baseVisualSize = Size(
+        baseWorldSize.width * widget.viewport.scale,
+        baseWorldSize.height * widget.viewport.scale,
+      );
+      final Size displayVisualSize = quarterTurns.isOdd
+          ? Size(baseVisualSize.height, baseVisualSize.width)
+          : baseVisualSize;
 
       widgets.add(
         Positioned(
-          left: center.dx - visualSize.width / 2,
-          top: center.dy - visualSize.height / 2,
-          width: visualSize.width,
-          height: visualSize.height,
-          child: Transform.rotate(
-            angle: math.pi / 2 * quarterTurns,
-            child: F18ComponentAssetVisual(
+          left: center.dx - displayVisualSize.width / 2,
+          top: center.dy - displayVisualSize.height / 2,
+          width: displayVisualSize.width,
+          height: displayVisualSize.height,
+          child: Center(
+            child: Transform.rotate(
+              angle: math.pi / 2 * quarterTurns,
+              child: F18ComponentAssetVisual(
               key: ValueKey<String>('board-v1-visual-$elementId'),
               modelType: modelType,
-              size: visualSize,
+              size: baseVisualSize,
               active: enabled,
               energized: energized,
               closed: closed,
@@ -157,6 +162,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               ratedCurrentA: ratedCurrentA,
               currentLimitA: currentLimitA,
               resistanceOhm: resistanceOhm,
+              ),
             ),
           ),
         ),

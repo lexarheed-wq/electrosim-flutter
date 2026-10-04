@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:electrosim/f18_component_archetypes.dart';
+import 'package:electrosim/f18_industrial_component_visuals.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,6 +61,16 @@ void main() {
         board,
         isNot(contains('paintF18ElectricalArchetype(')),
       );
+    });
+
+    test('every production palette model has a dedicated industrial renderer', () {
+      for (final F9PaletteDefinition item in f9PaletteCatalog) {
+        expect(
+          isF18IndustrialV2Model(item.modelType),
+          isTrue,
+          reason: '${item.title} (${item.modelType}) must never fall back to a schematic glyph',
+        );
+      }
     });
 
     test('quick catalog has no duplicate visual identity model type', () {

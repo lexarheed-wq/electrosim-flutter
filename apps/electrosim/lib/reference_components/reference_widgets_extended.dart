@@ -57,23 +57,49 @@ abstract final class ExtendedReferenceGeometry {
   static Size displaySizeFor(ExtendedReferenceDevice device) =>
       designSizeFor(device);
 
+  /// Physical terminal coordinates for the eight additional V2 front views.
+  /// The lugs stay close to the actual housing; routing ports remain separate.
+  static List<Offset> terminalOffsetsFor(ExtendedReferenceDevice device) =>
+      switch (device) {
+        ExtendedReferenceDevice.resistor => const <Offset>[
+            Offset(62, 55),
+            Offset(218, 55),
+          ],
+        ExtendedReferenceDevice.pushButtonNc => const <Offset>[
+            Offset(70, 153),
+            Offset(110, 153),
+          ],
+        ExtendedReferenceDevice.buzzer => const <Offset>[
+            Offset(70, 160),
+            Offset(120, 160),
+          ],
+        ExtendedReferenceDevice.fuse => const <Offset>[
+            Offset(48, 55),
+            Offset(252, 55),
+          ],
+        ExtendedReferenceDevice.diode => const <Offset>[
+            Offset(60, 52.5),
+            Offset(210, 52.5),
+          ],
+        ExtendedReferenceDevice.fan => const <Offset>[
+            Offset(82, 187),
+            Offset(128, 187),
+          ],
+        ExtendedReferenceDevice.motor => const <Offset>[
+            Offset(90, 161),
+            Offset(140, 161),
+          ],
+        ExtendedReferenceDevice.relayCoil => const <Offset>[
+            Offset(65, 202),
+            Offset(125, 202),
+          ],
+      };
+
   static Offset terminalOffset(
     ExtendedReferenceDevice device, {
     required bool right,
-  }) {
-    final Size s = designSizeFor(device);
-    final double inset = switch (device) {
-      ExtendedReferenceDevice.resistor => 8,
-      ExtendedReferenceDevice.pushButtonNc => 10,
-      ExtendedReferenceDevice.buzzer => 10,
-      ExtendedReferenceDevice.fuse => 8,
-      ExtendedReferenceDevice.diode => 8,
-      ExtendedReferenceDevice.fan => 10,
-      ExtendedReferenceDevice.motor => 10,
-      ExtendedReferenceDevice.relayCoil => 10,
-    };
-    return Offset(right ? s.width - inset : inset, s.height / 2);
-  }
+  }) =>
+      terminalOffsetsFor(device)[right ? 1 : 0];
 }
 
 class ExtendedReferenceComponentView extends StatelessWidget {
@@ -347,8 +373,8 @@ class _ExtendedReferencePainter extends CustomPainter {
     const double bezelR = 55;
 
     if (showTerminals) {
-      _terminal(c, left, const Offset(35, 90));
-      _terminal(c, right, const Offset(145, 90));
+      _terminal(c, left, const Offset(70, 139));
+      _terminal(c, right, const Offset(110, 139));
     }
 
     final Rect bezel = Rect.fromCircle(center: center, radius: bezelR);
@@ -414,8 +440,8 @@ class _ExtendedReferencePainter extends CustomPainter {
     const double r = 63;
 
     if (showTerminals) {
-      _terminal(c, left, const Offset(31, 95));
-      _terminal(c, right, const Offset(159, 95));
+      _terminal(c, left, const Offset(70, 145));
+      _terminal(c, right, const Offset(120, 145));
     }
 
     final Rect face = Rect.fromCircle(center: center, radius: r);
@@ -597,8 +623,8 @@ class _ExtendedReferencePainter extends CustomPainter {
 
     const Rect frame = Rect.fromLTWH(29, 29, 152, 152);
     if (showTerminals) {
-      _terminal(c, left, const Offset(29, 105));
-      _terminal(c, right, const Offset(181, 105));
+      _terminal(c, left, const Offset(82, 176));
+      _terminal(c, right, const Offset(128, 176));
     }
 
     _box(
@@ -634,8 +660,12 @@ class _ExtendedReferencePainter extends CustomPainter {
       Paint()..color = const Color(0xFF4E5C62),
     );
 
-    final double phase =
-        state.animationValue * math.pi * 2 * (0.25 + state.speedFraction * 2.75);
+    final double phase = state.speedFraction <= 1e-6
+        ? 0
+        : state.animationValue *
+            math.pi *
+            2 *
+            (0.25 + state.speedFraction * 2.75);
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -679,8 +709,8 @@ class _ExtendedReferencePainter extends CustomPainter {
     const Offset center = Offset(116, 91);
 
     if (showTerminals) {
-      _terminal(c, left, const Offset(43, 95));
-      _terminal(c, right, const Offset(189, 95));
+      _terminal(c, left, const Offset(90, 146));
+      _terminal(c, right, const Offset(140, 146));
     }
 
     final Rect shell = Rect.fromCircle(center: center, radius: 68);
@@ -719,8 +749,13 @@ class _ExtendedReferencePainter extends CustomPainter {
     final double speedFraction =
         (state.speedRpm.abs() / 3000).clamp(0.0, 1.0).toDouble();
     final double direction = state.speedRpm < 0 ? -1 : 1;
-    final double phase =
-        state.animationValue * math.pi * 2 * (0.2 + speedFraction * 3.8) * direction;
+    final double phase = speedFraction <= 1e-6
+        ? 0
+        : state.animationValue *
+            math.pi *
+            2 *
+            (0.2 + speedFraction * 3.8) *
+            direction;
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -756,8 +791,8 @@ class _ExtendedReferencePainter extends CustomPainter {
 
     const Rect body = Rect.fromLTWH(35, 24, 120, 182);
     if (showTerminals) {
-      _terminal(c, left, const Offset(35, 115));
-      _terminal(c, right, const Offset(155, 115));
+      _terminal(c, left, const Offset(65, 188));
+      _terminal(c, right, const Offset(125, 188));
     }
 
     _box(

@@ -67,10 +67,10 @@ void main() {
 
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
     expect(
-      find.byType(F18ComponentArchetypeGlyph),
+      find.byType(F18ComponentIdentityVisual),
       findsAtLeastNWidgets(3),
       reason:
-          'The visible palette viewport must use F18 archetype visuals; '
+          'The visible palette viewport must use the canonical F18 identity visual; '
           'P05 separately proves the five-item quick contract.',
     );
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);

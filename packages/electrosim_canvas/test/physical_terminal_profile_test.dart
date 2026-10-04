@@ -67,42 +67,56 @@ void main() {
     }
   });
 
-  test('extended reference components retain existing horizontal lug anchors',
+  test('all additional V2 components keep terminals on their physical lugs',
       () {
-    const Map<String, (Size, double)> cases =
-        <String, (Size, double)>{
-      'resistor': (Size(280, 110), .4714285714),
-      'push_button_nc': (Size(180, 180), .4444444444),
-      'buzzer': (Size(190, 190), .4473684211),
-      'fuse_dc': (Size(300, 110), .4733333333),
-      'diode': (Size(270, 105), .4703703704),
-      'fan_dc': (Size(210, 210), .4523809524),
-      'motor_dc': (Size(230, 190), .4565217391),
-      'relay_coil': (Size(190, 230), .4473684211),
+    const Map<String, (Size, List<Offset>)> cases =
+        <String, (Size, List<Offset>)>{
+      'resistor': (
+        Size(280, 110),
+        <Offset>[Offset(-78, 0), Offset(78, 0)],
+      ),
+      'push_button_nc': (
+        Size(180, 180),
+        <Offset>[Offset(-20, 63), Offset(20, 63)],
+      ),
+      'buzzer': (
+        Size(190, 190),
+        <Offset>[Offset(-25, 65), Offset(25, 65)],
+      ),
+      'fuse_dc': (
+        Size(300, 110),
+        <Offset>[Offset(-102, 0), Offset(102, 0)],
+      ),
+      'diode': (
+        Size(270, 105),
+        <Offset>[Offset(-75, 0), Offset(75, 0)],
+      ),
+      'fan_dc': (
+        Size(210, 210),
+        <Offset>[Offset(-23, 82), Offset(23, 82)],
+      ),
+      'motor_dc': (
+        Size(230, 190),
+        <Offset>[Offset(-25, 66), Offset(25, 66)],
+      ),
+      'relay_coil': (
+        Size(190, 230),
+        <Offset>[Offset(-30, 87), Offset(30, 87)],
+      ),
     };
-    for (final MapEntry<String, (Size, double)> entry in cases.entries) {
-      final Size size = entry.value.$1;
-      final double span = size.width * entry.value.$2;
-      expect(
-        TerminalVisualProfile.terminalOffset(
-          modelType: entry.key,
-          size: size,
-          index: 0,
-          count: 2,
-        ),
-        Offset(-span, 0),
-        reason: entry.key,
-      );
-      expect(
-        TerminalVisualProfile.terminalOffset(
-          modelType: entry.key,
-          size: size,
-          index: 1,
-          count: 2,
-        ),
-        Offset(span, 0),
-        reason: entry.key,
-      );
+    for (final MapEntry<String, (Size, List<Offset>)> entry in cases.entries) {
+      for (var index = 0; index < 2; index++) {
+        expectOffset(
+          TerminalVisualProfile.terminalOffset(
+            modelType: entry.key,
+            size: entry.value.$1,
+            index: index,
+            count: 2,
+          ),
+          entry.value.$2[index],
+          reason: '${entry.key} terminal $index',
+        );
+      }
     }
   });
 
@@ -146,6 +160,26 @@ void main() {
       ),
       const Offset(14, 70),
       reason: 'button route 1',
+    );
+    expectOffset(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'push_button_nc',
+        size: const Size(180, 180),
+        index: 0,
+        count: 2,
+      ),
+      const Offset(-20, 90),
+      reason: 'NC button route 0',
+    );
+    expectOffset(
+      TerminalVisualProfile.routingOffset(
+        modelType: 'fan_dc',
+        size: const Size(210, 210),
+        index: 1,
+        count: 2,
+      ),
+      const Offset(23, 105),
+      reason: 'fan route 1',
     );
   });
 

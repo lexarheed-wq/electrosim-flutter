@@ -5,7 +5,9 @@ on:
     branches:
       - v1-parity
       - candidate-autohide-2127
+      - library-c14-wave1
     paths:
+      - "apps/electrosim/lib/f14_library_components.dart"
       - "apps/electrosim/lib/f18_component_asset_visual.dart"
       - "apps/electrosim/lib/f9_component_visuals.dart"
       - "apps/electrosim/lib/f9_component_palette.dart"
@@ -24,9 +26,11 @@ on:
       - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
       - "apps/electrosim/test/reference_components_extended_test.dart"
       - "apps/electrosim/test/reference_components_runtime_integration_test.dart"
+      - "apps/electrosim/test/c14_library_wave1_test.dart"
       - "packages/electrosim_canvas/lib/src/canvas_geometry.dart"
       - "packages/electrosim_canvas/lib/src/circuit_wire_layout_engine.dart"
       - "packages/electrosim_canvas/test/physical_terminal_profile_test.dart"
+      - ".github/workflows/reference-components-integrated-candidate.yml"
       - "packages/electrosim_ui_kit/lib/src/workspace_shell.dart"
       - "packages/electrosim_ui_kit/test/design_system_test.dart"
       - ".github/workflows/reference-components-integrated-candidate.yml"

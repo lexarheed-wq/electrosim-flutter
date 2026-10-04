@@ -1,6 +1,17 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _openPalette(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openContext(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimContextEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('F17-R4 voltmeter and ammeter show real solver readings for selected lamp',
@@ -16,6 +27,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openContext(tester);
 
     await tester.tap(find.text('Mesures'));
     await tester.pumpAndSettle();
@@ -45,12 +57,14 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
+    await _openPalette(tester);
 
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'diode');
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-quick-add-diode')), findsOneWidget);
     await tester.tap(find.byKey(const Key('palette-quick-add-diode')));
     await tester.pumpAndSettle();
+    await _openContext(tester);
 
     await tester.tap(find.text('Mesures'));
     await tester.pumpAndSettle();

@@ -1,3 +1,4 @@
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +6,21 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 
 enum F9PaletteElementKind { source, component }
+
+@immutable
+class F9PaletteTerminalSpec {
+  const F9PaletteTerminalSpec(
+    this.label, {
+    this.role = TerminalRole.generic,
+    this.phase = PhaseTag.none,
+    this.idSuffix,
+  });
+
+  final String label;
+  final TerminalRole role;
+  final PhaseTag phase;
+  final String? idSuffix;
+}
 
 @immutable
 class F9PaletteDefinition {
@@ -16,6 +32,9 @@ class F9PaletteDefinition {
     required this.icon,
     required this.kind,
     required this.terminalLabels,
+    this.terminals = const <F9PaletteTerminalSpec>[],
+    this.defaultParameters = const <String, Object?>{},
+    this.defaultControlState = const <String, Object?>{},
     this.subtitle,
   });
 
@@ -26,6 +45,9 @@ class F9PaletteDefinition {
   final IconData icon;
   final F9PaletteElementKind kind;
   final List<String> terminalLabels;
+  final List<F9PaletteTerminalSpec> terminals;
+  final Map<String, Object?> defaultParameters;
+  final Map<String, Object?> defaultControlState;
   final String? subtitle;
 }
 
@@ -159,6 +181,347 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['A1', 'A2'],
     subtitle: 'Commande électromagnétique',
+  ),
+
+  // C14 Wave 1 — canonical models already supported by the V2 electrical core.
+  F9PaletteDefinition(
+    keyName: 'capacitor',
+    title: 'Condensateur',
+    category: 'Passifs',
+    modelType: 'capacitor',
+    icon: Icons.view_column_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{'capacitanceF': 0.0001},
+    subtitle: '100 µF — AC1/AC3',
+  ),
+  F9PaletteDefinition(
+    keyName: 'inductor',
+    title: 'Inductance',
+    category: 'Passifs',
+    modelType: 'inductor',
+    icon: Icons.waves_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{'inductanceH': 0.1},
+    subtitle: '100 mH — AC1/AC3',
+  ),
+  F9PaletteDefinition(
+    keyName: 'impedance',
+    title: 'Impédance',
+    category: 'Passifs',
+    modelType: 'impedance',
+    icon: Icons.show_chart,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{
+      'resistanceOhm': 20.0,
+      'reactanceOhm': 10.0,
+    },
+    subtitle: 'R + jX — AC1/AC3',
+  ),
+  F9PaletteDefinition(
+    keyName: 'breaker-ac1',
+    title: 'Disjoncteur AC 1φ',
+    category: 'Protection',
+    modelType: 'breaker_ac1',
+    icon: Icons.electrical_services_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['L', 'T'],
+    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Protection monophasée',
+  ),
+  F9PaletteDefinition(
+    keyName: 'fuse-ac1',
+    title: 'Fusible AC 1φ',
+    category: 'Protection',
+    modelType: 'fuse_ac1',
+    icon: Icons.horizontal_rule,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['L', 'T'],
+    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Fusible monophasé',
+  ),
+  F9PaletteDefinition(
+    keyName: 'aux-contact-no',
+    title: 'Contact auxiliaire NO',
+    category: 'Commande',
+    modelType: 'contactor_aux_no',
+    icon: Icons.call_split_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['13', '14'],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '13',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '13',
+      ),
+      F9PaletteTerminalSpec(
+        '14',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '14',
+      ),
+    ],
+    defaultControlState: <String, Object?>{'actuated': false},
+    subtitle: 'Contact lié au contacteur',
+  ),
+  F9PaletteDefinition(
+    keyName: 'aux-contact-nc',
+    title: 'Contact auxiliaire NC',
+    category: 'Commande',
+    modelType: 'contactor_aux_nc',
+    icon: Icons.call_merge_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['21', '22'],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '21',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '21',
+      ),
+      F9PaletteTerminalSpec(
+        '22',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '22',
+      ),
+    ],
+    defaultControlState: <String, Object?>{'actuated': false},
+    subtitle: 'Contact lié au contacteur',
+  ),
+  F9PaletteDefinition(
+    keyName: 'contactor-ac1',
+    title: 'Contacteur AC 1φ',
+    category: 'Commande',
+    modelType: 'contactor_ac1',
+    icon: Icons.hub_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['1L1', '2T1', 'A1', 'A2'],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        'A1',
+        role: TerminalRole.coilA1,
+        phase: PhaseTag.l1,
+        idSuffix: 'a1',
+      ),
+      F9PaletteTerminalSpec(
+        'A2',
+        role: TerminalRole.coilA2,
+        phase: PhaseTag.neutral,
+        idSuffix: 'a2',
+      ),
+    ],
+    defaultParameters: <String, Object?>{
+      'coilResistanceOhm': 1000.0,
+      'coilInductanceH': 0.0,
+      'coilPickupVoltageV': 180.0,
+      'coilDropoutVoltageV': 100.0,
+    },
+    defaultControlState: <String, Object?>{'actuated': false},
+    subtitle: 'Puissance + bobine A1/A2',
+  ),
+  F9PaletteDefinition(
+    keyName: 'contactor-3p',
+    title: 'Contacteur 3P',
+    category: 'Triphasé',
+    modelType: 'contactor_3p',
+    icon: Icons.hub,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      '2T1',
+      '4T2',
+      '6T3',
+      'A1',
+      'A2',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
+      F9PaletteTerminalSpec(
+        'A1',
+        role: TerminalRole.coilA1,
+        phase: PhaseTag.l1,
+        idSuffix: 'a1',
+      ),
+      F9PaletteTerminalSpec(
+        'A2',
+        role: TerminalRole.coilA2,
+        phase: PhaseTag.neutral,
+        idSuffix: 'a2',
+      ),
+    ],
+    defaultParameters: <String, Object?>{
+      'coilResistanceOhm': 1000.0,
+      'coilInductanceH': 0.0,
+      'coilPickupVoltageV': 180.0,
+      'coilDropoutVoltageV': 100.0,
+    },
+    defaultControlState: <String, Object?>{'actuated': false},
+    subtitle: '3 pôles + bobine A1/A2',
+  ),
+  F9PaletteDefinition(
+    keyName: 'breaker-3p',
+    title: 'Disjoncteur 3P',
+    category: 'Triphasé',
+    modelType: 'breaker_3p',
+    icon: Icons.electrical_services,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      '2T1',
+      '4T2',
+      '6T3',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
+    ],
+    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Protection triphasée',
+  ),
+  F9PaletteDefinition(
+    keyName: 'thermal-overload-3p',
+    title: 'Relais thermique 3P',
+    category: 'Triphasé',
+    modelType: 'thermal_overload_3p',
+    icon: Icons.device_thermostat_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      '2T1',
+      '4T2',
+      '6T3',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
+    ],
+    defaultParameters: <String, Object?>{'ratedCurrentA': 5.0},
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Surcharge moteur 3φ',
   ),
 ];
 

@@ -1,30 +1,16 @@
 import 'dart:io';
 
-import 'package:electrosim/f18_component_archetypes.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
-import 'package:electrosim/f18_industrial_component_visuals.dart';
-import 'package:electrosim/f18_v1_component_visuals.dart';
-import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim/f9_component_palette.dart';
+import 'package:electrosim/reference_components/reference_widgets.dart';
+import 'package:electrosim/reference_components/reference_widgets_extended.dart';
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('V1 parity Point 5 component visual identity', () {
-    test('canonical identity keeps one aspect ratio inside arbitrary bounds', () {
-      const Rect bounds = Rect.fromLTWH(0, 0, 200, 100);
-      final Rect fitted = F18ComponentIdentityMetrics.fit(bounds);
-      expect(
-        fitted.width / fitted.height,
-        closeTo(F18ComponentIdentityMetrics.aspectRatio, 0.0001),
-      );
-      expect(fitted.left, greaterThanOrEqualTo(bounds.left));
-      expect(fitted.top, greaterThanOrEqualTo(bounds.top));
-      expect(fitted.right, lessThanOrEqualTo(bounds.right));
-      expect(fitted.bottom, lessThanOrEqualTo(bounds.bottom));
-    });
-
-    testWidgets('every palette model uses the canonical shared wrapper',
+  group('Reference component production integration', () {
+    testWidgets('every palette model uses the reference wrapper and size contract',
         (WidgetTester tester) async {
       for (final F9PaletteDefinition item in f9PaletteCatalog) {
         await tester.pumpWidget(
@@ -46,15 +32,14 @@ void main() {
         expect(visual.modelType, item.modelType);
         expect(
           visual.size,
-          F18V1PilotVisuals.supports(item.modelType)
-              ? F18PilotVisualMetrics.paletteSizeFor(item.modelType)
-              : F18ComponentIdentityMetrics.paletteSize,
+          F18ReferenceComponentMetrics.paletteSizeFor(item.modelType),
+          reason: item.modelType,
         );
         expect(tester.takeException(), isNull, reason: item.modelType);
       }
     });
 
-    testWidgets('five pilot families render with the V1 native painter',
+    testWidgets('uploaded five render through uploaded ReferenceComponentView',
         (WidgetTester tester) async {
       const List<String> models = <String>[
         'dc_voltage_source',
@@ -69,8 +54,10 @@ void main() {
             home: Center(
               child: F18ComponentAssetVisual(
                 modelType: modelType,
-                size: F18PilotVisualMetrics.dragSizeFor(modelType),
+                size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
                 energized: modelType == 'dc_voltage_source' || modelType == 'lamp',
+                currentA: .5,
+                voltageV: 24,
                 closed: modelType == 'switch' || modelType == 'breaker_dc',
                 pressed: modelType == 'push_button_no',
               ),
@@ -78,189 +65,135 @@ void main() {
           ),
         );
         await tester.pump();
-        expect(
-          find.byType(F18V1ComponentVisual),
-          findsOneWidget,
-          reason: modelType,
-        );
+
+        expect(find.byType(ReferenceComponentView), findsOneWidget,
+            reason: modelType);
+        expect(find.byType(ExtendedReferenceComponentView), findsNothing,
+            reason: modelType);
         expect(tester.takeException(), isNull, reason: modelType);
       }
     });
 
-    test('pilot coverage is exactly the requested five component families', () {
-      const Set<String> expected = <String>{
-        'dc_voltage_source',
-        'switch',
-        'lamp',
-        'breaker_dc',
-        'push_button_no',
-      };
-      for (final String modelType in expected) {
-        expect(
-          F18V1PilotVisuals.supports(modelType),
-          isTrue,
-          reason: modelType,
+    testWidgets('eight additional models use dedicated extended vector painters',
+        (WidgetTester tester) async {
+      const List<String> models = <String>[
+        'resistor',
+        'push_button_nc',
+        'buzzer',
+        'fuse_dc',
+        'diode',
+        'fan_dc',
+        'motor_dc',
+        'relay_coil',
+      ];
+      for (final String modelType in models) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Center(
+              child: F18ComponentAssetVisual(
+                modelType: modelType,
+                size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
+                energized: true,
+                currentA: .5,
+                voltageV: 24,
+                resistanceOhm: 100,
+                animationValue: .25,
+              ),
+            ),
+          ),
         );
+        await tester.pump();
+
+        expect(find.byType(ExtendedReferenceComponentView), findsOneWidget,
+            reason: modelType);
+        expect(tester.takeException(), isNull, reason: modelType);
       }
-      expect(
-        F18V1PilotVisuals.supports('resistor'),
-        isFalse,
-        reason: 'The first pilot must stop after five component families.',
-      );
     });
 
-    test('pilot terminal spans follow each model width', () {
+    test('production palette is fully covered by the reference renderer', () {
+      for (final F9PaletteDefinition item in f9PaletteCatalog) {
+        expect(
+          F18ReferenceComponentVisuals.supports(item.modelType),
+          isTrue,
+          reason: '${item.title} (${item.modelType})',
+        );
+      }
+    });
+
+    test('physical terminal anchors match the reference Dart painter coordinates',
+        () {
       const Map<String, double> expectedFractions = <String, double>{
-        'dc_voltage_source': .48,
-        'switch': .46,
-        'lamp': .44,
-        'breaker_dc': .46,
-        'push_button_no': .44,
+        'dc_voltage_source': .455,
+        'switch': .455,
+        'lamp': .455,
+        'breaker_dc': .455,
+        'push_button_no': .455,
+        'resistor': .4714285714,
+        'push_button_nc': .4444444444,
+        'buzzer': .4473684211,
+        'fuse_dc': .4733333333,
+        'diode': .4703703704,
+        'fan_dc': .4523809524,
+        'motor_dc': .4565217391,
+        'relay_coil': .4473684211,
       };
-      for (final MapEntry<String, double> entry
-          in expectedFractions.entries) {
-        final Size size =
-            F18PilotVisualMetrics.boardSizeFor(entry.key);
+
+      for (final MapEntry<String, double> entry in expectedFractions.entries) {
+        final Size size = F18ReferenceComponentMetrics.boardSizeFor(entry.key);
         expect(
           TerminalVisualProfile.horizontalHalfSpanForModel(
             entry.key,
             size: size,
           ),
-          closeTo(size.width * entry.value, 0.0001),
+          closeTo(size.width * entry.value, 1e-6),
           reason: entry.key,
         );
       }
     });
 
-    test('physical nodes remain distinct from invisible routing ports', () {
-      final Size designSize =
-          F18PilotVisualMetrics.boardSizeFor('switch');
-      final Offset visible = TerminalVisualProfile.terminalOffset(
-        modelType: 'switch',
-        size: designSize,
-        index: 1,
-        count: 2,
-      );
-      final Offset routing = TerminalVisualProfile.routingOffset(
-        size: designSize,
-        index: 1,
-        count: 2,
-      );
-
-      expect(visible.dx, closeTo(designSize.width * .46, 0.0001));
-      expect(routing.dx, closeTo(designSize.width / 2, 0.0001));
-      expect(visible.dx, lessThan(routing.dx));
-    });
-
-    test('Point 5D contract is front-view vector only', () {
-      expect(F18V1PilotVisuals.renderingMode, 'per_model_front_vector');
-      expect(F18V1PilotVisuals.frontViewOnly, isTrue);
-      expect(F18V1PilotVisuals.rasterAssetsAllowed, isFalse);
-      expect(F18V1PilotVisuals.perspectiveAllowed, isFalse);
-
-      final String painter =
-          File('lib/f18_v1_component_visuals.dart').readAsStringSync();
-      for (final String forbidden in <String>[
-        'Image.asset(',
-        'DecorationImage(',
-        'Matrix4.',
-        'setEntry(3, 2',
-        'rotateX(',
-        'rotateY(',
-        'skewX(',
-        'skewY(',
+    test('renderer remains vector-only and front-view', () {
+      for (final String path in <String>[
+        'lib/reference_components/reference_widgets.dart',
+        'lib/reference_components/reference_widgets_extended.dart',
       ]) {
-        expect(
-          painter,
-          isNot(contains(forbidden)),
-          reason: 'Front-view vector contract forbids $forbidden',
-        );
+        final String painter = File(path).readAsStringSync();
+        for (final String forbidden in <String>[
+          'Image.asset(',
+          'DecorationImage(',
+          'Matrix4.',
+          'rotateX(',
+          'rotateY(',
+          'skewX(',
+          'skewY(',
+        ]) {
+          expect(
+            painter,
+            isNot(contains(forbidden)),
+            reason: '$path forbids $forbidden',
+          );
+        }
       }
     });
 
-    test('Point 5D-R3 keeps five dedicated silhouettes without a generic box', () {
-      expect(F18V1PilotVisuals.renderingMode, 'per_model_front_vector');
-      expect(F18V1PilotVisuals.visibleBoundingBoxAllowed, isFalse);
-
-      const Map<String, String> expected = <String, String>{
-        'dc_voltage_source': 'wide_industrial_power_supply',
-        'switch': 'horizontal_rocker_switch',
-        'push_button_no': 'round_pushbutton',
-        'breaker_dc': 'tall_narrow_mcb',
-        'lamp': 'round_pilot_lamp',
-      };
-      for (final MapEntry<String, String> entry in expected.entries) {
-        expect(
-          F18V1PilotVisuals.silhouetteByModel[entry.key],
-          entry.value,
-          reason: entry.key,
-        );
-        expect(entry.value, isNot(contains('generic_box')));
-      }
-
-      final String painter =
-          File('lib/f18_v1_component_visuals.dart').readAsStringSync();
-      expect(painter, contains('_paintPowerSupply'));
-      expect(painter, contains('_paintRockerSwitch'));
-      expect(painter, contains('_paintPushButton'));
-      expect(painter, contains('_paintBreaker'));
-      expect(painter, contains('_paintPilotLamp'));
-      expect(painter, contains('F18PilotVisualMetrics'));
-      expect(painter, isNot(contains('generic visible component box')));
-    });
-
-    test('Point 5D-R3 assigns five distinct board proportions', () {
-      const List<String> models = <String>[
-        'dc_voltage_source',
-        'switch',
-        'push_button_no',
-        'breaker_dc',
-        'lamp',
-      ];
-      final List<Size> sizes = models
-          .map(F18PilotVisualMetrics.boardSizeFor)
-          .toList(growable: false);
-      expect(sizes.toSet().length, 5);
-      expect(sizes[0].width / sizes[0].height, greaterThan(1.7));
-      expect(sizes[1].width / sizes[1].height, greaterThan(1.5));
-      expect(sizes[2].width / sizes[2].height, closeTo(1, .001));
-      expect(sizes[3].width / sizes[3].height, lessThan(.7));
-      expect(sizes[4].width / sizes[4].height, closeTo(1, .001));
-    });
-
-    test('generated raster assets are no longer the runtime renderer', () {
-      final String wrapper =
-          File('lib/f18_component_asset_visual.dart').readAsStringSync();
-      expect(wrapper, contains('F18V1ComponentVisual'));
-      expect(wrapper, isNot(contains('Image.asset(')));
-    });
-
-    test('board owns V1 visuals crisp terminals and current-flow animation', () {
+    test('board uses reference widgets and live runtime animation', () {
       final String board =
           File('lib/f9_component_visuals.dart').readAsStringSync();
-      expect(board, contains('F18V1PilotVisuals.supports'));
-      expect(board, contains('_paintTerminals'));
+      expect(board, contains('F18ReferenceComponentVisuals.supports'));
       expect(board, contains('_paintLiveWires'));
       expect(board, contains('_paintMovingDashes'));
       expect(board, contains('runtimeSnapshot'));
       expect(board, contains('simulationRunning'));
-      expect(board, contains('paintF18ComponentIdentity'));
-      expect(
-        board,
-        isNot(contains('paintF18ElectricalArchetype(')),
-      );
+      expect(board, contains('animationValue: _motion.value'));
+      expect(board, contains('currentA: currentA'));
+      expect(board, contains('voltageV: voltageV'));
     });
 
-    test('every non-pilot production model retains a local vector fallback', () {
-      for (final F9PaletteDefinition item in f9PaletteCatalog) {
-        if (F18V1PilotVisuals.supports(item.modelType)) continue;
-        expect(
-          isF18IndustrialV2Model(item.modelType),
-          isTrue,
-          reason:
-              '${item.title} (${item.modelType}) must retain a local vector fallback',
-        );
-      }
+    test('no photographic renderer is used by the shared production wrapper', () {
+      final String wrapper =
+          File('lib/f18_component_asset_visual.dart').readAsStringSync();
+      expect(wrapper, contains('ReferenceComponentView'));
+      expect(wrapper, contains('ExtendedReferenceComponentView'));
+      expect(wrapper, isNot(contains('Image.asset(')));
     });
 
     test('quick catalog has no duplicate component identity key', () {

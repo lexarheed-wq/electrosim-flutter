@@ -3,10 +3,11 @@ import 'dart:math' as math;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
 
-/// Five-component pilot ported from the V1 C31 visual language.
+/// Visual contract for the five Point 5 pilot components.
 ///
-/// Presentation only: electrical state remains owned by the Flutter/Dart
-/// runtime and is passed in as explicit visual state.
+/// The public API is intentionally kept stable while the former simplified
+/// painter has been replaced by a front-view vector renderer. Electrical state
+/// remains owned by the Flutter/Dart runtime and is only consumed here.
 abstract final class F18V1PilotVisuals {
   static const Set<String> coveredModelTypes = <String>{
     'dc_voltage_source',
@@ -19,6 +20,11 @@ abstract final class F18V1PilotVisuals {
     'breaker',
     'push_button_no',
   };
+
+  static const String renderingMode = 'orthographic_front_vector';
+  static const bool frontViewOnly = true;
+  static const bool rasterAssetsAllowed = false;
+  static const bool perspectiveAllowed = false;
 
   static bool supports(String modelType) =>
       coveredModelTypes.contains(modelType.toLowerCase());
@@ -69,6 +75,11 @@ class F18V1ComponentVisual extends StatelessWidget {
   }
 }
 
+/// Orthographic front-view vector renderer.
+///
+/// No perspective transforms, side faces, raster textures or photographic
+/// assets are used. Material realism comes from symmetric front-face shading,
+/// mechanical proportions, screws, bezels, lenses and connection hardware.
 class F18V1ComponentPainter extends CustomPainter {
   const F18V1ComponentPainter({
     required this.modelType,
@@ -95,40 +106,43 @@ class F18V1ComponentPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
+
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
-    canvas.scale(size.width / _designSize.width, size.height / _designSize.height);
-    if (!enabled) {
-      canvas.saveLayer(
-        Offset.zero & _designSize,
-        Paint()..color = const Color.fromARGB(112, 255, 255, 255),
-      );
-    }
+    canvas.scale(
+      size.width / _designSize.width,
+      size.height / _designSize.height,
+    );
 
     switch (modelType.toLowerCase()) {
       case 'dc_voltage_source':
       case 'voltage_source':
-        _paintSource(canvas);
+        _paintPowerSupply(canvas);
       case 'switch':
       case 'switch_spst':
-        _paintSwitch(canvas, push: false);
+        _paintRockerSwitch(canvas);
       case 'lamp':
-        _paintLamp(canvas);
+        _paintPilotLamp(canvas);
       case 'breaker_dc':
       case 'breaker_ac1':
       case 'breaker':
         _paintBreaker(canvas);
       case 'push_button_no':
-        _paintSwitch(canvas, push: true);
+        _paintPushButton(canvas);
     }
 
-    if (!enabled) canvas.restore();
+    if (!enabled) {
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 104, height: 64),
+        Paint()..color = const Color(0x66FFFFFF),
+      );
+    }
     canvas.restore();
   }
 
   Paint _stroke({
-    Color color = const Color(0xFF445B63),
-    double width = 1.8,
+    Color color = const Color(0xFF29363B),
+    double width = 1.2,
   }) =>
       Paint()
         ..color = color
@@ -137,113 +151,39 @@ class F18V1ComponentPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
-  Paint _metal(Rect rect) => Paint()
-    ..shader = const LinearGradient(
+  Paint _frontGradient(Rect rect, List<Color> colors) => Paint()
+    ..shader = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: <Color>[
-        Color(0xFFF0F4F4),
-        Color(0xFFCCD6D8),
-        Color(0xFF8CA0A7),
-      ],
-      stops: <double>[0, .55, 1],
+      colors: colors,
     ).createShader(rect);
 
-  Paint _dark(Rect rect) => Paint()
-    ..shader = const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: <Color>[Color(0xFF43545B), Color(0xFF172429)],
-    ).createShader(rect);
-
-  void _round(
+  void _roundedPanel(
     Canvas canvas,
-    Rect rect,
-    double radius,
-    Paint fill, {
-    Color border = const Color(0xFF445B63),
-    double borderWidth = 1.8,
+    Rect rect, {
+    required double radius,
+    required Paint fill,
+    Color border = const Color(0xFF34464C),
+    double borderWidth = 1.1,
   }) {
-    final RRect rr = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    final RRect shape =
+        RRect.fromRectAndRadius(rect, Radius.circular(radius));
+    canvas.drawRRect(shape, fill);
     canvas.drawRRect(
-      rr.shift(const Offset(0, 1.6)),
-      Paint()..color = const Color(0x33000000),
+      shape,
+      _stroke(color: border, width: borderWidth),
     );
-    canvas.drawRRect(rr, fill);
-    canvas.drawRRect(rr, _stroke(color: border, width: borderWidth));
   }
 
-  void _lead(
-    Canvas canvas,
-    double bodyLeft,
-    double bodyRight, {
-    required double terminalHalfSpan,
-  }) {
-    final Paint base = _stroke(color: const Color(0xFF556970), width: 2.2);
-    canvas.drawLine(Offset(-terminalHalfSpan, 0), Offset(bodyLeft, 0), base);
-    canvas.drawLine(Offset(bodyRight, 0), Offset(terminalHalfSpan, 0), base);
-    final Paint highlight = _stroke(color: const Color(0xFFBAC8CC), width: .7);
-    final double highlightInset = math.min(4, terminalHalfSpan - bodyRight);
-    canvas.drawLine(
-      Offset(-terminalHalfSpan + highlightInset, -0.8),
-      Offset(bodyLeft, -0.8),
-      highlight,
-    );
-    canvas.drawLine(
-      Offset(bodyRight, -0.8),
-      Offset(terminalHalfSpan - highlightInset, -0.8),
-      highlight,
-    );
-    if (showTerminals) {
-      _terminal(canvas, Offset(-terminalHalfSpan, 0));
-      _terminal(canvas, Offset(terminalHalfSpan, 0));
-    }
-  }
-
-  double _terminalHalfSpan() =>
-      TerminalVisualProfile.horizontalHalfSpanForModel(
-        modelType,
-        size: _designSize,
-      ) ??
-      _designSize.width / 2;
-
-  void _terminal(Canvas canvas, Offset center) {
-    canvas.drawCircle(
-      center.translate(0, 1),
-      4.5,
-      Paint()..color = const Color(0x33000000),
-    );
-    final Rect r = Rect.fromCircle(center: center, radius: 4.2);
-    canvas.drawCircle(
-      center,
-      4.2,
-      Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-.35, -.35),
-          colors: <Color>[
-            Color(0xFFFFF2BF),
-            Color(0xFFD4A44B),
-            Color(0xFF7C5927),
-          ],
-        ).createShader(r),
-    );
-    canvas.drawCircle(
-      center,
-      4.2,
-      _stroke(color: const Color(0xFF49371F), width: 1.15),
-    );
-    canvas.drawCircle(center, 1.45, Paint()..color = const Color(0xFF4D3A22));
-  }
-
-  void _text(
+  void _label(
     Canvas canvas,
     String text,
     Offset center, {
-    double size = 8,
-    Color color = const Color(0xFF273237),
-    FontWeight weight = FontWeight.w800,
+    double size = 6,
+    Color color = const Color(0xFF263338),
+    FontWeight weight = FontWeight.w700,
   }) {
-    final TextPainter tp = TextPainter(
+    final TextPainter painter = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
@@ -256,291 +196,600 @@ class F18V1ComponentPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
-    tp.paint(
+    painter.paint(
       canvas,
-      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+      Offset(center.dx - painter.width / 2, center.dy - painter.height / 2),
     );
   }
 
-  void _statusLed(Canvas canvas, Offset center, bool on, {bool fault = false}) {
-    final Color color = fault
-        ? const Color(0xFFE56A4A)
-        : on
-            ? const Color(0xFF72D99A)
-            : const Color(0xFF74858A);
-    if (on || fault) {
-      canvas.drawCircle(
-        center,
-        5.3,
-        Paint()..color = color.withValues(alpha: 55 / 255),
-      );
+  double _terminalHalfSpan() =>
+      TerminalVisualProfile.horizontalHalfSpanForModel(
+        modelType,
+        size: _designSize,
+      ) ??
+      _designSize.width / 2;
+
+  void _drawLeadAndTerminal(
+    Canvas canvas, {
+    required bool left,
+    required double bodyEdge,
+    required Color conductorColor,
+  }) {
+    final double terminalX = left ? -_terminalHalfSpan() : _terminalHalfSpan();
+    final double bodyX = left ? -bodyEdge : bodyEdge;
+    canvas.drawLine(
+      Offset(bodyX, 0),
+      Offset(terminalX, 0),
+      Paint()
+        ..color = conductorColor
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.square,
+    );
+    if (showTerminals) {
+      _terminal(canvas, Offset(terminalX, 0));
     }
-    canvas.drawCircle(center, 3.2, Paint()..color = color);
+  }
+
+  void _terminal(Canvas canvas, Offset center) {
+    final Rect brassRect = Rect.fromCircle(center: center, radius: 3.8);
     canvas.drawCircle(
       center,
-      3.2,
-      _stroke(color: const Color(0xFF33474D), width: .9),
-    );
-  }
-
-  void _paintSource(Canvas canvas) {
-    const Rect body = Rect.fromLTWH(-41, -29, 82, 58);
-    _lead(
-      canvas,
-      body.left,
-      body.right,
-      terminalHalfSpan: _terminalHalfSpan(),
-    );
-    _round(canvas, body, 8, _metal(body));
-
-    const Rect display = Rect.fromLTWH(-29, -21, 58, 22);
-    _round(
-      canvas,
-      display,
-      4,
-      Paint()..color = const Color(0xFF17272D),
-      border: const Color(0xFF0A1418),
-      borderWidth: 1.4,
-    );
-    _text(
-      canvas,
-      '24.0 V',
-      const Offset(0, -10),
-      size: 9.5,
-      color: energized ? const Color(0xFF79DCA0) : const Color(0xFF668078),
-    );
-
-    for (final (Offset, Color) item in <(Offset, Color)>[
-      (const Offset(-20, 16), const Color(0xFFD8524B)),
-      (const Offset(20, 16), const Color(0xFF171C1E)),
-    ]) {
-      final Offset p = item.$1;
-      canvas.drawCircle(p, 8, Paint()..color = const Color(0xFF293A40));
-      canvas.drawCircle(p, 4, Paint()..color = item.$2);
-      canvas.drawCircle(
-        p,
-        8,
-        _stroke(color: const Color(0xFF18272C), width: 1),
-      );
-    }
-    _text(canvas, '+', const Offset(-20, 16), size: 5.8, color: Colors.white);
-    _text(canvas, '−', const Offset(20, 16), size: 5.8, color: Colors.white);
-    _statusLed(canvas, const Offset(33, -22), energized);
-  }
-
-  void _paintSwitch(Canvas canvas, {required bool push}) {
-    const Rect body = Rect.fromLTWH(-26, -26, 52, 52);
-    _lead(
-      canvas,
-      body.left,
-      body.right,
-      terminalHalfSpan: _terminalHalfSpan(),
-    );
-    _round(
-      canvas,
-      body,
-      9,
-      _metal(body),
-      border: const Color(0xFF667B81),
-      borderWidth: 1.8,
-    );
-
-    const Rect well = Rect.fromLTWH(-15, -20, 30, 38);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(well, const Radius.circular(9)),
-      _dark(well),
-    );
-
-    final bool stateClosed = push ? pressed : closed;
-    final double knobY = stateClosed ? 4 : -12;
-    final Rect knob = Rect.fromCenter(
-      center: Offset(0, knobY),
-      width: 22,
-      height: 16,
-    );
-    final RRect knobR =
-        RRect.fromRectAndRadius(knob, const Radius.circular(5));
-    canvas.drawRRect(
-      knobR,
+      3.8,
       Paint()
-        ..color = stateClosed
-            ? const Color(0xFF5CBD79)
-            : const Color(0xFF76868A),
-    );
-    canvas.drawRRect(
-      knobR,
-      _stroke(color: const Color(0xFF18262A), width: 1.4),
+        ..shader = const RadialGradient(
+          center: Alignment(-0.25, -0.25),
+          radius: .9,
+          colors: <Color>[
+            Color(0xFFFFE9A2),
+            Color(0xFFD7A843),
+            Color(0xFF8D6425),
+          ],
+        ).createShader(brassRect),
     );
     canvas.drawCircle(
-      Offset(0, knobY - 2),
-      4,
-      Paint()..color = const Color(0xB8DFE9E6),
+      center,
+      3.8,
+      _stroke(color: const Color(0xFF5F451D), width: .9),
     );
-
-    if (push) {
-      final double depression = pressed ? 2.5 : 0;
-      final Rect cap = Rect.fromCenter(
-        center: Offset(0, -24 + depression),
-        width: 26,
-        height: 7,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(cap, const Radius.circular(3.5)),
-        Paint()
-          ..color = pressed
-              ? const Color(0xFF42B769)
-              : const Color(0xFF55D67A),
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(cap, const Radius.circular(3.5)),
-        _stroke(color: const Color(0xFF17663A), width: 1.2),
-      );
-      canvas.drawLine(
-        Offset(0, cap.bottom),
-        Offset(0, -20 + depression),
-        _stroke(color: const Color(0xFF42575E), width: 2),
-      );
-    }
-
-    _text(
-      canvas,
-      push ? 'NO' : (closed ? 'I' : 'O'),
-      const Offset(0, 22),
-      size: 7.2,
-      color: stateClosed
-          ? const Color(0xFF21613B)
-          : const Color(0xFF273237),
+    canvas.drawLine(
+      center.translate(-1.5, 0),
+      center.translate(1.5, 0),
+      _stroke(color: const Color(0xFF59411D), width: .8),
     );
   }
 
-  void _paintLamp(Canvas canvas) {
-    const double bulbR = 22;
-    const Offset bulb = Offset(0, -7);
-    _lead(
+  void _screw(Canvas canvas, Offset center, {double radius = 3.1}) {
+    final Rect r = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawCircle(
+      center,
+      radius,
+      _frontGradient(
+        r,
+        const <Color>[
+          Color(0xFFF3F5F5),
+          Color(0xFFB7C1C4),
+          Color(0xFF7D8B8F),
+        ],
+      ),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      _stroke(color: const Color(0xFF4A585D), width: .8),
+    );
+    canvas.drawLine(
+      center.translate(-1.6, 0),
+      center.translate(1.6, 0),
+      _stroke(color: const Color(0xFF475358), width: .7),
+    );
+    canvas.drawLine(
+      center.translate(0, -1.6),
+      center.translate(0, 1.6),
+      _stroke(color: const Color(0xFF475358), width: .7),
+    );
+  }
+
+  void _paintPowerSupply(Canvas canvas) {
+    const Rect body = Rect.fromLTWH(-39, -29, 78, 58);
+    _drawLeadAndTerminal(
       canvas,
-      -bulbR,
-      bulbR,
-      terminalHalfSpan: _terminalHalfSpan(),
+      left: true,
+      bodyEdge: 39,
+      conductorColor: const Color(0xFFB59B5F),
+    );
+    _drawLeadAndTerminal(
+      canvas,
+      left: false,
+      bodyEdge: 39,
+      conductorColor: const Color(0xFFB59B5F),
+    );
+
+    _roundedPanel(
+      canvas,
+      body,
+      radius: 3.2,
+      fill: _frontGradient(
+        body,
+        const <Color>[
+          Color(0xFFF5F7F7),
+          Color(0xFFE6ECEC),
+          Color(0xFFD2DCDD),
+        ],
+      ),
+      border: const Color(0xFF65767B),
+    );
+
+    const Rect face = Rect.fromLTWH(-32, -24, 64, 48);
+    _roundedPanel(
+      canvas,
+      face,
+      radius: 2.4,
+      fill: Paint()..color = const Color(0xFF07558C),
+      border: const Color(0xFF043A61),
+    );
+
+    for (double x = -28; x <= 28; x += 7) {
+      canvas.drawLine(
+        Offset(x, -20.5),
+        Offset(x + 3, -20.5),
+        _stroke(color: const Color(0xFFA9B7BA), width: 1),
+      );
+    }
+
+    const Rect topTerminals = Rect.fromLTWH(-27, -17, 54, 11);
+    _roundedPanel(
+      canvas,
+      topTerminals,
+      radius: 1.5,
+      fill: Paint()..color = const Color(0xFF38A65C),
+      border: const Color(0xFF1B6336),
+      borderWidth: .8,
+    );
+    for (final double x in <double>[-18, -6, 6, 18]) {
+      _screw(canvas, Offset(x, -11.5), radius: 2.5);
+    }
+
+    _label(
+      canvas,
+      '24 V CC',
+      const Offset(0, 1),
+      size: 7.4,
+      color: Colors.white,
+      weight: FontWeight.w800,
+    );
+    _label(
+      canvas,
+      'ALIM',
+      const Offset(0, 9),
+      size: 5.2,
+      color: const Color(0xFFDCECF6),
+    );
+
+    const Rect lower = Rect.fromLTWH(-27, 13, 54, 8);
+    _roundedPanel(
+      canvas,
+      lower,
+      radius: 1.4,
+      fill: Paint()..color = const Color(0xFF2E9C55),
+      border: const Color(0xFF1D6438),
+      borderWidth: .7,
+    );
+    _screw(canvas, const Offset(-17, 17), radius: 2.2);
+    _screw(canvas, const Offset(0, 17), radius: 2.2);
+    _screw(canvas, const Offset(17, 17), radius: 2.2);
+
+    final Color led = energized
+        ? const Color(0xFF65E87C)
+        : const Color(0xFF6C7E78);
+    if (energized) {
+      canvas.drawCircle(
+        const Offset(25, 5),
+        4.5,
+        Paint()..color = const Color(0x4465E87C),
+      );
+    }
+    canvas.drawCircle(const Offset(25, 5), 2.4, Paint()..color = led);
+    canvas.drawCircle(
+      const Offset(25, 5),
+      2.4,
+      _stroke(color: const Color(0xFF163C26), width: .7),
+    );
+  }
+
+  void _paintRockerSwitch(Canvas canvas) {
+    const Rect shell = Rect.fromLTWH(-25, -27, 50, 54);
+    _drawLeadAndTerminal(
+      canvas,
+      left: true,
+      bodyEdge: 25,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+    _drawLeadAndTerminal(
+      canvas,
+      left: false,
+      bodyEdge: 25,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+
+    _roundedPanel(
+      canvas,
+      shell,
+      radius: 4.2,
+      fill: _frontGradient(
+        shell,
+        const <Color>[
+          Color(0xFF343A3D),
+          Color(0xFF181D20),
+          Color(0xFF0F1315),
+        ],
+      ),
+      border: const Color(0xFF070A0B),
+      borderWidth: 1.2,
+    );
+
+    const Rect rocker = Rect.fromLTWH(-15, -20, 30, 40);
+    _roundedPanel(
+      canvas,
+      rocker,
+      radius: 3.6,
+      fill: _frontGradient(
+        rocker,
+        closed
+            ? const <Color>[
+                Color(0xFF4A5053),
+                Color(0xFF252A2C),
+                Color(0xFF171A1C),
+              ]
+            : const <Color>[
+                Color(0xFF2C3133),
+                Color(0xFF171B1D),
+                Color(0xFF0F1213),
+              ],
+      ),
+      border: const Color(0xFF080A0B),
+      borderWidth: 1,
+    );
+
+    canvas.drawLine(
+      const Offset(-11, 0),
+      const Offset(11, 0),
+      _stroke(color: const Color(0xFF090C0D), width: .8),
+    );
+    _label(
+      canvas,
+      'I',
+      const Offset(0, -10),
+      size: 8,
+      color: closed ? Colors.white : const Color(0xFFB9BFC1),
+    );
+    _label(
+      canvas,
+      'O',
+      const Offset(0, 10),
+      size: 8,
+      color: !closed ? Colors.white : const Color(0xFFB9BFC1),
+    );
+
+    const Rect leftLug = Rect.fromLTWH(-31, -5, 6, 10);
+    const Rect rightLug = Rect.fromLTWH(25, -5, 6, 10);
+    canvas.drawRect(leftLug, Paint()..color = const Color(0xFFC8A44F));
+    canvas.drawRect(rightLug, Paint()..color = const Color(0xFFC8A44F));
+    canvas.drawRect(leftLug, _stroke(color: const Color(0xFF70531E), width: .7));
+    canvas.drawRect(rightLug, _stroke(color: const Color(0xFF70531E), width: .7));
+  }
+
+  void _paintPushButton(Canvas canvas) {
+    const Rect block = Rect.fromLTWH(-22, -22, 44, 44);
+    _drawLeadAndTerminal(
+      canvas,
+      left: true,
+      bodyEdge: 22,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+    _drawLeadAndTerminal(
+      canvas,
+      left: false,
+      bodyEdge: 22,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+
+    _roundedPanel(
+      canvas,
+      block,
+      radius: 3.2,
+      fill: _frontGradient(
+        block,
+        const <Color>[
+          Color(0xFF3D4346),
+          Color(0xFF23282A),
+          Color(0xFF171A1C),
+        ],
+      ),
+      border: const Color(0xFF0D1011),
+    );
+
+    for (final Offset screw in const <Offset>[
+      Offset(-16, -16),
+      Offset(16, -16),
+      Offset(-16, 16),
+      Offset(16, 16),
+    ]) {
+      _screw(canvas, screw, radius: 2.1);
+    }
+
+    final Rect bezelRect = Rect.fromCircle(center: Offset.zero, radius: 16.5);
+    canvas.drawCircle(
+      Offset.zero,
+      16.5,
+      _frontGradient(
+        bezelRect,
+        const <Color>[
+          Color(0xFFF5F7F7),
+          Color(0xFFC9D0D2),
+          Color(0xFF879397),
+        ],
+      ),
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      16.5,
+      _stroke(color: const Color(0xFF59676C), width: 1.1),
+    );
+
+    final double capRadius = pressed ? 12.2 : 13.2;
+    final Rect capRect = Rect.fromCircle(center: Offset.zero, radius: capRadius);
+    canvas.drawCircle(
+      Offset.zero,
+      capRadius,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-.3, -.35),
+          radius: .85,
+          colors: <Color>[
+            Color(0xFF7EF19B),
+            Color(0xFF26B85A),
+            Color(0xFF0A7634),
+          ],
+        ).createShader(capRect),
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      capRadius,
+      _stroke(color: const Color(0xFF075D2A), width: 1.1),
+    );
+    canvas.drawCircle(
+      const Offset(-3.5, -4),
+      3.4,
+      Paint()..color = const Color(0x55FFFFFF),
+    );
+    _label(
+      canvas,
+      'NO',
+      const Offset(0, 25.5),
+      size: 5,
+      color: const Color(0xFF324148),
+    );
+  }
+
+  void _paintBreaker(Canvas canvas) {
+    const Rect body = Rect.fromLTWH(-29, -30, 58, 60);
+    _drawLeadAndTerminal(
+      canvas,
+      left: true,
+      bodyEdge: 29,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+    _drawLeadAndTerminal(
+      canvas,
+      left: false,
+      bodyEdge: 29,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+
+    _roundedPanel(
+      canvas,
+      body,
+      radius: 2.5,
+      fill: _frontGradient(
+        body,
+        const <Color>[
+          Color(0xFFF9FAFA),
+          Color(0xFFF0F2F2),
+          Color(0xFFD9DEDF),
+        ],
+      ),
+      border: const Color(0xFF69777B),
+    );
+
+    const Rect terminalTop = Rect.fromLTWH(-18, -28, 36, 9);
+    const Rect terminalBottom = Rect.fromLTWH(-18, 19, 36, 9);
+    canvas.drawRect(terminalTop, Paint()..color = const Color(0xFFE4E8E8));
+    canvas.drawRect(terminalBottom, Paint()..color = const Color(0xFFE4E8E8));
+    _screw(canvas, const Offset(0, -23.5), radius: 3);
+    _screw(canvas, const Offset(0, 23.5), radius: 3);
+
+    _label(
+      canvas,
+      'Q1',
+      const Offset(0, -14.5),
+      size: 5.6,
+      color: const Color(0xFF263238),
+      weight: FontWeight.w800,
+    );
+    _label(
+      canvas,
+      'C10',
+      const Offset(0, -8.5),
+      size: 5.2,
+      color: const Color(0xFF263238),
+    );
+
+    const Rect leverWell = Rect.fromLTWH(-10, -2, 20, 20);
+    _roundedPanel(
+      canvas,
+      leverWell,
+      radius: 2,
+      fill: Paint()..color = const Color(0xFFCAD0D1),
+      border: const Color(0xFF939C9F),
+      borderWidth: .7,
+    );
+
+    final bool isOpen = !closed && !tripped;
+    final double leverY = tripped ? 9 : isOpen ? 10 : 2;
+    final Rect lever = Rect.fromCenter(
+      center: Offset(0, leverY),
+      width: 16,
+      height: 14,
+    );
+    _roundedPanel(
+      canvas,
+      lever,
+      radius: 1.8,
+      fill: _frontGradient(
+        lever,
+        tripped
+            ? const <Color>[
+                Color(0xFFF2A073),
+                Color(0xFFD35D35),
+              ]
+            : const <Color>[
+                Color(0xFF4E9EF0),
+                Color(0xFF1368C5),
+              ],
+      ),
+      border: tripped
+          ? const Color(0xFF8F3D23)
+          : const Color(0xFF0A4B92),
+      borderWidth: .9,
+    );
+
+    _label(
+      canvas,
+      tripped ? 'TRIP' : closed ? 'I' : 'O',
+      Offset(0, leverY),
+      size: tripped ? 4.2 : 6,
+      color: Colors.white,
+      weight: FontWeight.w800,
+    );
+
+    const Rect leftLug = Rect.fromLTWH(-35, -4, 6, 8);
+    const Rect rightLug = Rect.fromLTWH(29, -4, 6, 8);
+    canvas.drawRect(leftLug, Paint()..color = const Color(0xFFC9A451));
+    canvas.drawRect(rightLug, Paint()..color = const Color(0xFFC9A451));
+    canvas.drawRect(leftLug, _stroke(color: const Color(0xFF6F531D), width: .7));
+    canvas.drawRect(rightLug, _stroke(color: const Color(0xFF6F531D), width: .7));
+  }
+
+  void _paintPilotLamp(Canvas canvas) {
+    const double bodyRadius = 22;
+    _drawLeadAndTerminal(
+      canvas,
+      left: true,
+      bodyEdge: bodyRadius,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+    _drawLeadAndTerminal(
+      canvas,
+      left: false,
+      bodyEdge: bodyRadius,
+      conductorColor: const Color(0xFFB79C5B),
+    );
+
+    const Rect mount = Rect.fromLTWH(-22, -22, 44, 44);
+    _roundedPanel(
+      canvas,
+      mount,
+      radius: 3,
+      fill: _frontGradient(
+        mount,
+        const <Color>[
+          Color(0xFF343A3D),
+          Color(0xFF202527),
+          Color(0xFF141719),
+        ],
+      ),
+      border: const Color(0xFF0A0D0E),
+    );
+
+    final Rect bezel = Rect.fromCircle(center: Offset.zero, radius: 18.2);
+    canvas.drawCircle(
+      Offset.zero,
+      18.2,
+      _frontGradient(
+        bezel,
+        const <Color>[
+          Color(0xFF707A7D),
+          Color(0xFF2B3133),
+          Color(0xFF15191A),
+        ],
+      ),
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      18.2,
+      _stroke(color: const Color(0xFF0A0D0E), width: 1),
     );
 
     final double phase = animationValue * math.pi * 2;
     final double pulse = .5 + .5 * math.sin(phase);
     if (energized) {
       canvas.drawCircle(
-        bulb,
-        29 + pulse * 3.5,
-        Paint()
-          ..color = Color.fromARGB(
-            (28 + pulse * 24).round(),
-            255,
-            216,
-            107,
-          ),
+        Offset.zero,
+        17.5 + pulse,
+        Paint()..color = Color.fromARGB((30 + pulse * 22).round(), 255, 40, 35),
       );
+    }
+
+    const double lensRadius = 14.7;
+    final Rect lens = Rect.fromCircle(center: Offset.zero, radius: lensRadius);
+    canvas.drawCircle(
+      Offset.zero,
+      lensRadius,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-.28, -.32),
+          radius: .9,
+          colors: energized
+              ? const <Color>[
+                  Color(0xFFFF9185),
+                  Color(0xFFFF2825),
+                  Color(0xFF9A0808),
+                ]
+              : const <Color>[
+                  Color(0xFFB85A55),
+                  Color(0xFF8D2623),
+                  Color(0xFF561413),
+                ],
+        ).createShader(lens),
+    );
+    canvas.drawCircle(
+      Offset.zero,
+      lensRadius,
+      _stroke(color: const Color(0xFF5C0B0B), width: 1.1),
+    );
+
+    for (double r = 5; r <= 12; r += 3.5) {
       canvas.drawCircle(
-        bulb,
-        25.5,
-        Paint()..color = const Color(0x55FFD86B),
+        Offset.zero,
+        r,
+        _stroke(
+          color: const Color(0x55FFD0CB),
+          width: .55,
+        ),
       );
     }
     canvas.drawCircle(
-      bulb,
-      bulbR,
-      Paint()
-        ..color = energized
-            ? const Color(0xFFFFE49A)
-            : const Color(0xFFDBE1DF),
-    );
-    canvas.drawCircle(
-      bulb,
-      bulbR,
-      _stroke(color: const Color(0xFF67777B), width: 2),
-    );
-    final Path filament = Path()
-      ..moveTo(-10, -10)
-      ..quadraticBezierTo(0, 3, 10, -10);
-    canvas.drawPath(
-      filament,
-      _stroke(
-        color: energized
-            ? const Color(0xFFF0A84B)
-            : const Color(0xFF7A8586),
-        width: 2,
-      ),
-    );
-
-    const Rect base = Rect.fromLTWH(-12, 16, 24, 17);
-    _round(
-      canvas,
-      base,
+      const Offset(-4.2, -4.5),
       3,
-      Paint()..color = const Color(0xFF687E84),
-      border: const Color(0xFF35494F),
-      borderWidth: 1.5,
-    );
-  }
-
-  void _paintBreaker(Canvas canvas) {
-    const Rect body = Rect.fromLTWH(-32, -28, 64, 56);
-    _lead(
-      canvas,
-      body.left,
-      body.right,
-      terminalHalfSpan: _terminalHalfSpan(),
-    );
-    _round(
-      canvas,
-      body,
-      6,
-      _metal(body),
-      border: const Color(0xFF65777C),
-      borderWidth: 1.8,
+      Paint()..color = const Color(0x44FFFFFF),
     );
 
-    const Rect top = Rect.fromLTWH(-19, -23, 38, 10);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(top, const Radius.circular(2)),
-      Paint()..color = const Color(0xFFEEF2F1),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(top, const Radius.circular(2)),
-      _stroke(color: const Color(0xFFA7B2B4), width: .8),
-    );
-
-    final bool open = !closed && !tripped;
-    final double leverY = tripped ? 2 : open ? 9 : -7;
-    final Rect lever = Rect.fromCenter(
-      center: Offset(0, leverY),
-      width: 12,
-      height: 20,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(lever, const Radius.circular(3)),
-      Paint()
-        ..color = tripped
-            ? const Color(0xFFDB7047)
-            : open
-                ? const Color(0xFF38474B)
-                : const Color(0xFF232D31),
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(lever, const Radius.circular(3)),
-      _stroke(color: const Color(0xFF0D1517), width: 1.2),
-    );
-
-    final String stateText = tripped ? 'TRIP' : open ? 'O' : 'I';
-    _text(
-      canvas,
-      'Q · $stateText',
-      const Offset(0, -18),
-      size: 6.5,
-    );
-    _statusLed(
-      canvas,
-      const Offset(0, 21),
-      closed && !tripped,
-      fault: tripped,
-    );
+    const Rect leftLug = Rect.fromLTWH(-28, -4, 6, 8);
+    const Rect rightLug = Rect.fromLTWH(22, -4, 6, 8);
+    canvas.drawRect(leftLug, Paint()..color = const Color(0xFFC9A451));
+    canvas.drawRect(rightLug, Paint()..color = const Color(0xFFC9A451));
+    canvas.drawRect(leftLug, _stroke(color: const Color(0xFF6F531D), width: .7));
+    canvas.drawRect(rightLug, _stroke(color: const Color(0xFF6F531D), width: .7));
   }
 
   @override

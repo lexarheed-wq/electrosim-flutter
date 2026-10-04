@@ -146,6 +146,8 @@ void main() {
       expect(painter, contains('state.animationValue * math.pi * 2'));
       expect(painter, contains('_paintFan'));
       expect(painter, contains('_paintMotor'));
+      expect(painter, contains('state.speedFraction <= 1e-6'));
+      expect(painter, contains('speedFraction <= 1e-6'));
     });
   });
 }

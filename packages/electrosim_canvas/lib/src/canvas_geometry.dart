@@ -56,6 +56,18 @@ abstract final class TerminalVisualProfile {
     return _genericTerminalOffset(size, index, count);
   }
 
+  /// Routing port kept on the generic element envelope.
+  ///
+  /// This is intentionally distinct from [terminalOffset]. The visible node
+  /// may sit on the real component lug while the orthogonal router continues
+  /// to leave the component through the stable 104x64 routing envelope.
+  static Offset routingOffset({
+    required Size size,
+    required int index,
+    required int count,
+  }) =>
+      _genericTerminalOffset(size, index, count);
+
   static Offset _genericTerminalOffset(Size size, int index, int count) {
     final Rect rect = Rect.fromCenter(
       center: Offset.zero,
@@ -105,6 +117,7 @@ final class CircuitGeometryIndex {
   CircuitGeometryIndex._({
     required this.elementRects,
     required this.terminalPositions,
+    required this.terminalRoutingPositions,
     required this.terminalOwners,
   });
 
@@ -115,6 +128,8 @@ final class CircuitGeometryIndex {
   }) {
     final Map<String, Rect> elementRects = <String, Rect>{};
     final Map<TerminalId, Offset> terminalPositions = <TerminalId, Offset>{};
+    final Map<TerminalId, Offset> terminalRoutingPositions =
+        <TerminalId, Offset>{};
     final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
     final Set<String> seenElementIds = <String>{};
 
@@ -145,14 +160,21 @@ final class CircuitGeometryIndex {
       elementRects[id] = rect;
       for (var index = 0; index < terminals.length; index++) {
         final Terminal terminal = terminals[index];
-        final Offset local = TerminalVisualProfile.terminalOffset(
+        final Offset physicalLocal = TerminalVisualProfile.terminalOffset(
           modelType: modelType,
           size: baseSize,
           index: index,
           count: terminals.length,
         );
+        final Offset routingLocal = TerminalVisualProfile.routingOffset(
+          size: baseSize,
+          index: index,
+          count: terminals.length,
+        );
         terminalPositions[terminal.id] =
-            center + _rotateQuarterTurns(local, quarterTurns);
+            center + _rotateQuarterTurns(physicalLocal, quarterTurns);
+        terminalRoutingPositions[terminal.id] =
+            center + _rotateQuarterTurns(routingLocal, quarterTurns);
         terminalOwners[terminal.id] = id;
       }
     }
@@ -178,12 +200,23 @@ final class CircuitGeometryIndex {
     return CircuitGeometryIndex._(
       elementRects: Map<String, Rect>.unmodifiable(elementRects),
       terminalPositions: Map<TerminalId, Offset>.unmodifiable(terminalPositions),
+      terminalRoutingPositions:
+          Map<TerminalId, Offset>.unmodifiable(terminalRoutingPositions),
       terminalOwners: Map<TerminalId, String>.unmodifiable(terminalOwners),
     );
   }
 
   final Map<String, Rect> elementRects;
+  /// Physical terminal positions used for painting, hit testing and the
+  /// visible endpoints of wires.
   final Map<TerminalId, Offset> terminalPositions;
+
+  /// Invisible routing-envelope ports used only by the orthogonal router.
+  ///
+  /// A pilot component may therefore expose a real terminal inside its generic
+  /// element rectangle without destabilising routing around that rectangle.
+  final Map<TerminalId, Offset> terminalRoutingPositions;
+
   final Map<TerminalId, String> terminalOwners;
 
   static Offset _rotateQuarterTurns(Offset offset, int quarterTurns) {

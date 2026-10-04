@@ -95,6 +95,7 @@ class F18V1ComponentPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
     canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
     canvas.scale(size.width / _designSize.width, size.height / _designSize.height);
     if (!enabled) {
       canvas.saveLayer(
@@ -173,14 +174,14 @@ class F18V1ComponentPainter extends CustomPainter {
 
   void _lead(Canvas canvas, double bodyLeft, double bodyRight) {
     final Paint base = _stroke(color: const Color(0xFF556970), width: 2.2);
-    canvas.drawLine(Offset(-48, 0), Offset(bodyLeft, 0), base);
-    canvas.drawLine(Offset(bodyRight, 0), const Offset(48, 0), base);
+    canvas.drawLine(Offset(-52, 0), Offset(bodyLeft, 0), base);
+    canvas.drawLine(Offset(bodyRight, 0), const Offset(52, 0), base);
     final Paint highlight = _stroke(color: const Color(0xFFBAC8CC), width: .7);
     canvas.drawLine(Offset(-48, -0.8), Offset(bodyLeft, -0.8), highlight);
     canvas.drawLine(Offset(bodyRight, -0.8), const Offset(48, -0.8), highlight);
     if (showTerminals) {
-      _terminal(canvas, const Offset(-48, 0));
-      _terminal(canvas, const Offset(48, 0));
+      _terminal(canvas, const Offset(-52, 0));
+      _terminal(canvas, const Offset(52, 0));
     }
   }
 

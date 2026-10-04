@@ -36,7 +36,7 @@ class _Point5V1ParityProofPage extends StatefulWidget {
 
 class _Point5V1ParityProofPageState extends State<_Point5V1ParityProofPage> {
   late final CircuitState _circuit = _buildPilotCircuit();
-  late final CircuitVisualLayout _layout = _buildPilotLayout();
+  late final CircuitVisualLayout _layout = _buildPilotLayout(_circuit);
   final ViewportController _viewport = ViewportController();
   late final ElectroSimSimulationController _simulation =
       ElectroSimSimulationController(circuit: _circuit)
@@ -390,8 +390,8 @@ CircuitState _buildPilotCircuit() {
   );
 }
 
-CircuitVisualLayout _buildPilotLayout() {
-  return CircuitVisualLayout(
+CircuitVisualLayout _buildPilotLayout(CircuitState circuit) {
+  final CircuitVisualLayout base = CircuitVisualLayout(
     elementPositions: const <String, Offset>{
       'lamp-1': Offset(110, 112),
       'push-1': Offset(270, 112),
@@ -399,10 +399,20 @@ CircuitVisualLayout _buildPilotLayout() {
       'breaker-1': Offset(590, 112),
       'source-24v': Offset(750, 112),
     },
-    wireRoutes: const <String, List<Offset>>{
+  );
+  final CircuitGeometryIndex geometry =
+      CircuitGeometryIndex.build(circuit, base);
+  final Offset lampReturn =
+      geometry.terminalPositions[TerminalId('p5-lamp-a')]!;
+  final Offset sourceReturn =
+      geometry.terminalPositions[TerminalId('p5-source-neg')]!;
+
+  return CircuitVisualLayout(
+    elementPositions: base.elementPositions,
+    wireRoutes: <String, List<Offset>>{
       'wire-return': <Offset>[
-        Offset(58, 210),
-        Offset(802, 210),
+        Offset(lampReturn.dx, 210),
+        Offset(sourceReturn.dx, 210),
       ],
     },
   );

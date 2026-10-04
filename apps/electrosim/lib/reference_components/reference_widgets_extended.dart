@@ -26,6 +26,7 @@ final class ExtendedReferenceVisualState {
     this.currentA = 0,
     this.voltageV = 0,
     this.resistanceOhm = 0,
+    this.animationValue = 0,
   });
 
   final bool pressed;
@@ -38,6 +39,7 @@ final class ExtendedReferenceVisualState {
   final double currentA;
   final double voltageV;
   final double resistanceOhm;
+  final double animationValue;
 }
 
 abstract final class ExtendedReferenceGeometry {
@@ -447,13 +449,17 @@ class _ExtendedReferencePainter extends CustomPainter {
     c.drawCircle(center, 6, Paint()..color = const Color(0xFF69777C));
 
     if (state.active) {
+      final double pulse = .65 + .35 * math.sin(state.animationValue * math.pi * 2);
       for (final double radius in <double>[73, 82]) {
         c.drawArc(
           Rect.fromCircle(center: center, radius: radius),
           -.65,
           1.3,
           false,
-          _stroke(color: const Color(0xAA23A6D5), width: 2),
+          _stroke(
+            color: const Color(0xFF23A6D5).withValues(alpha: pulse),
+            width: 2,
+          ),
         );
       }
     }
@@ -628,7 +634,8 @@ class _ExtendedReferencePainter extends CustomPainter {
       Paint()..color = const Color(0xFF4E5C62),
     );
 
-    final double phase = state.speedFraction * math.pi / 7;
+    final double phase =
+        state.animationValue * math.pi * 2 * (0.25 + state.speedFraction * 2.75);
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -709,8 +716,11 @@ class _ExtendedReferencePainter extends CustomPainter {
       );
     }
 
+    final double speedFraction =
+        (state.speedRpm.abs() / 3000).clamp(0.0, 1.0).toDouble();
+    final double direction = state.speedRpm < 0 ? -1 : 1;
     final double phase =
-        (state.speedRpm.abs() / 3000).clamp(0.0, 1.0) * math.pi / 2;
+        state.animationValue * math.pi * 2 * (0.2 + speedFraction * 3.8) * direction;
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -804,7 +814,12 @@ class _ExtendedReferencePainter extends CustomPainter {
           const Rect.fromLTWH(47, 45, 96, 101),
           const Radius.circular(8),
         ),
-        _stroke(color: const Color(0xAA43C777), width: 3),
+        _stroke(
+          color: const Color(0xFF43C777).withValues(
+            alpha: .55 + .35 * math.sin(state.animationValue * math.pi * 2).abs(),
+          ),
+          width: 3,
+        ),
       );
     }
 

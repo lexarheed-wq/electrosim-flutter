@@ -126,12 +126,14 @@ final class ElectroSimStudentSupervisionState {
     required this.displayName,
     required this.connected,
     required this.session,
+    this.lastActivityAtUtc,
   });
 
   final String clientId;
   final String displayName;
   final bool connected;
   final TpSession? session;
+  final DateTime? lastActivityAtUtc;
 }
 
 final class ElectroSimLanSyncHost extends ChangeNotifier {
@@ -152,6 +154,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   HttpServer? _server;
   final Map<String, WebSocket> _clients = <String, WebSocket>{};
   final Map<String, String> _clientDisplayNames = <String, String>{};
+  final Map<String, DateTime> _studentLastActivityAtUtc =
+      <String, DateTime>{};
   final Map<String, ElectroSimTpSessionController> _studentControllers =
       <String, ElectroSimTpSessionController>{};
   final Map<String, int> _lastClientSequence = <String, int>{};
@@ -197,6 +201,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
             displayName: _clientDisplayNames[id] ?? id,
             connected: _clients.containsKey(id),
             session: _studentControllers[id]?.session,
+            lastActivityAtUtc: _studentLastActivityAtUtc[id],
           ),
         )
         .toList(growable: false)
@@ -471,6 +476,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     final String id = clientId!;
     _studentController(id);
     _clientDisplayNames[id] = displayName;
+    _studentLastActivityAtUtc[id] = DateTime.now().toUtc();
     final WebSocket? previous = _clients[id];
     _clients[id] = socket;
     if (previous != null) {
@@ -586,6 +592,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         throw StateError('Stale or replayed student sync message.');
       }
       _lastClientSequence[clientId] = envelope.sequence;
+      _studentLastActivityAtUtc[clientId] = DateTime.now().toUtc();
       final Object? raw = envelope.payload['state'];
       if (raw is! Map<String, dynamic>) {
         throw const FormatException('studentState payload is missing state.');
@@ -883,6 +890,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         _clients.values.toList(growable: false);
     _clients.clear();
     _clientDisplayNames.clear();
+    _studentLastActivityAtUtc.clear();
     for (final WebSocket socket in sockets) {
       await socket.close(
         WebSocketStatus.normalClosure,

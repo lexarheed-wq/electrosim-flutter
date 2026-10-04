@@ -623,7 +623,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             status: _status,
             workspace: _workspace,
             role: widget.role,
-            onTogglePrimaryState: _selected == null ? null : _toggleSelectedPrimaryState,
+            onTogglePrimaryState: selectedDetails == null ||
+                    _usesDirectCanvasControl(selectedDetails.modelType)
+                ? null
+                : _toggleSelectedPrimaryState,
             onReplaceSelected: _selected == null ? null : _replaceSelectedElement,
             onSelectElement: (String? id) {
               setState(() {
@@ -2173,6 +2176,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   void dispose() {
+    for (final Timer timer in _momentaryReleaseTimers.values) {
+      timer.cancel();
+    }
+    _momentaryReleaseTimers.clear();
     _simulation.removeListener(_onSimulationChanged);
     _simulation.dispose();
     widget.syncClient?.removeListener(_onLanSyncChanged);

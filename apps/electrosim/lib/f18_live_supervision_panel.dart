@@ -33,11 +33,18 @@ class F18LiveSupervisionPanel extends StatefulWidget {
 class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
   _LiveSupervisionFilter _filter = _LiveSupervisionFilter.all;
   String? _selectedClientId;
+  final GlobalKey _detailAnchorKey =
+      GlobalKey(debugLabel: 'supervision-live-detail-anchor');
 
   @override
   void initState() {
     super.initState();
     _selectedClientId = widget.initialSelectedClientId;
+    if (_selectedClientId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _revealSelected();
+      });
+    }
   }
 
   @override
@@ -221,13 +228,16 @@ class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
               if (selected == null)
                 const _NoStudentSelectedPanel()
               else
-                _StudentDetailPanel(
-                  key: ValueKey<String>(
-                    'supervision-detail-' + selected.clientId,
+                KeyedSubtree(
+                  key: _detailAnchorKey,
+                  child: _StudentDetailPanel(
+                    key: ValueKey<String>(
+                      'supervision-detail-' + selected.clientId,
+                    ),
+                    student: selected,
+                    onGradeStudent: widget.onGradeStudent,
+                    onCloseStudent: widget.onCloseStudent,
                   ),
-                  student: selected,
-                  onGradeStudent: widget.onGradeStudent,
-                  onCloseStudent: widget.onCloseStudent,
                 ),
             ],
           );
@@ -274,6 +284,20 @@ class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
     setState(() {
       _selectedClientId = clientId;
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revealSelected();
+    });
+  }
+
+  void _revealSelected() {
+    final BuildContext? detailContext = _detailAnchorKey.currentContext;
+    if (!mounted || detailContext == null) return;
+    Scrollable.ensureVisible(
+      detailContext,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      alignment: .05,
+    );
   }
 }
 

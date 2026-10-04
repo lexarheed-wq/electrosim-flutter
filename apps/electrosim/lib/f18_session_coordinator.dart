@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
+import 'f18_live_supervision_panel.dart';
 import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'f9_ui_context.dart';
@@ -319,12 +320,14 @@ class F18SessionSupervisionPage extends StatelessWidget {
                                     displayName: state.displayName,
                                     connected: state.connected,
                                     session: state.session,
+                                    lastActivityAtUtc:
+                                        state.lastActivityAtUtc,
                                   ),
                                 )
                                 .toList(growable: false) ??
                             const <F17StudentSupervisionItem>[];
 
-                    return F17TpSupervisionPanel(
+                    return F18LiveSupervisionPanel(
                       controller: controller,
                       students: students,
                       onGradeStudent: onGradeStudentOverride ??

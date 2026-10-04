@@ -1008,6 +1008,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _addPaletteDefinition(F9PaletteDefinition definition, Offset worldPosition) {
     if (_blockStudentTpMutation()) return;
+    if (definition.kind == F9PaletteElementKind.component) {
+      final ComponentModelContract? contract =
+          CoreComponentModelContracts.registry.resolve(definition.modelType);
+      if (contract != null && !contract.supportsMode(_circuit.mode)) {
+        _setStatus(
+          '${definition.title} n’est pas compatible avec le mode '
+          '${_circuit.mode.name.toUpperCase()}.',
+        );
+        return;
+      }
+    }
     final String elementId = _allocateElementId(definition.keyName);
     final List<Terminal> terminals = _buildPaletteTerminals(definition, elementId);
     final List<ComponentInstance> components = <ComponentInstance>[..._circuit.components];
@@ -1019,17 +1030,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           id: SourceId(elementId),
           modelType: definition.modelType,
           terminals: terminals,
-          parameters: const <String, Object?>{'voltageV': 24.0},
+          parameters: definition.defaultParameters.isNotEmpty
+              ? definition.defaultParameters
+              : const <String, Object?>{'voltageV': 24.0},
         ),
       );
     } else {
+      Map<String, Object?> parameters = definition.defaultParameters.isNotEmpty
+          ? <String, Object?>{...definition.defaultParameters}
+          : <String, Object?>{..._defaultParametersFor(definition.keyName)};
+      if (definition.modelType == 'contactor_aux_no' ||
+          definition.modelType == 'contactor_aux_nc') {
+        final List<ComponentInstance> contactors = components
+            .where(
+              (ComponentInstance item) =>
+                  item.modelType == 'contactor_ac1' ||
+                  item.modelType == 'contactor_3p',
+            )
+            .toList(growable: false);
+        ComponentInstance? linked;
+        for (final ComponentInstance item in contactors) {
+          if (item.id.value == _selected) {
+            linked = item;
+            break;
+          }
+        }
+        if (linked == null && contactors.length == 1) {
+          linked = contactors.single;
+        }
+        if (linked != null) {
+          parameters = <String, Object?>{
+            ...parameters,
+            'linkedContactorId': linked.id.value,
+          };
+        }
+      }
       components.add(
         ComponentInstance(
           id: ComponentId(elementId),
           modelType: definition.modelType,
           terminals: terminals,
-          parameters: _defaultParametersFor(definition.keyName),
-          controlState: _defaultControlStateFor(definition.keyName),
+          parameters: parameters,
+          controlState: definition.defaultControlState.isNotEmpty
+              ? definition.defaultControlState
+              : _defaultControlStateFor(definition.keyName),
         ),
       );
     }
@@ -1073,7 +1117,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _syncStudentTpCircuit();
   }
 
-  List<Terminal> _buildPaletteTerminals(F9PaletteDefinition definition, String elementId) {
+  List<Terminal> _buildPaletteTerminals(
+    F9PaletteDefinition definition,
+    String elementId,
+  ) {
+    if (definition.terminals.isNotEmpty) {
+      return <Terminal>[
+        for (var index = 0; index < definition.terminals.length; index++)
+          Terminal(
+            id: TerminalId(
+              '$elementId-${definition.terminals[index].idSuffix ?? 't${index + 1}'}',
+            ),
+            name: definition.terminals[index].label,
+            role: definition.terminals[index].role,
+            phase: definition.terminals[index].phase,
+          ),
+      ];
+    }
+
     if (definition.kind == F9PaletteElementKind.source) {
       return <Terminal>[
         Terminal(
@@ -1420,7 +1481,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'push_button_nc' ||
         'breaker_dc' ||
         'breaker_ac1' ||
-        'breaker' => true,
+        'breaker' ||
+        'breaker_3p' ||
+        'thermal_overload_3p' => true,
         _ => false,
       };
 
@@ -1464,10 +1527,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final bool isBreaker = type == 'breaker_dc' ||
+    final bool isProtectionReset = type == 'breaker_dc' ||
         type == 'breaker_ac1' ||
-        type == 'breaker';
-    if (isBreaker &&
+        type == 'breaker' ||
+        type == 'breaker_3p' ||
+        type == 'thermal_overload_3p';
+    if (isProtectionReset &&
         _simulation.snapshot.protectionTripped(ComponentId(elementId))) {
       final CircuitState closed = F9ElementEditor.setComponentClosed(
         _circuit,
@@ -1484,7 +1549,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _simulation.rearmProtection(ComponentId(elementId));
       setState(() {
         _selected = elementId;
-        _status = 'Commande directe : $elementId — disjoncteur réarmé';
+        _status = 'Commande directe : $elementId — protection réarmée';
       });
       _syncStudentTpCircuit();
       return;

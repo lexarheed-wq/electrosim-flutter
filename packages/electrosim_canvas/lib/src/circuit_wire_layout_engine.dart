@@ -31,7 +31,15 @@ final class CircuitWireLayoutEngine {
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end =
           geometry.terminalPositions[connection.toTerminalId];
-      if (start == null || end == null || start == end) {
+      final Offset? startRouting =
+          geometry.terminalRoutingPositions[connection.fromTerminalId];
+      final Offset? endRouting =
+          geometry.terminalRoutingPositions[connection.toTerminalId];
+      if (start == null ||
+          end == null ||
+          startRouting == null ||
+          endRouting == null ||
+          start == end) {
         continue;
       }
 
@@ -45,11 +53,11 @@ final class CircuitWireLayoutEngine {
           toOwner == null ? null : geometry.elementRects[toOwner];
 
       final Offset startStub = fromRect == null
-          ? start
-          : _terminalStubPoint(start, fromRect);
+          ? startRouting
+          : _terminalStubPoint(startRouting, fromRect);
       final Offset endStub = toRect == null
-          ? end
-          : _terminalStubPoint(end, toRect);
+          ? endRouting
+          : _terminalStubPoint(endRouting, toRect);
 
       final List<RoutingObstacle> obstacles = geometry.elementRects.entries
           .map(
@@ -76,9 +84,11 @@ final class CircuitWireLayoutEngine {
       if (result.isResolved) {
         final OrthogonalWirePath? path = _composeStubbedPath(
           start: start,
+          startRouting: startRouting,
           startStub: startStub,
           routed: result.path!,
           endStub: endStub,
+          endRouting: endRouting,
           end: end,
         );
         if (path != null &&
@@ -98,6 +108,8 @@ final class CircuitWireLayoutEngine {
 
       final OrthogonalWirePath? existing = _existingOrthogonalPath(
         start: start,
+        startRouting: startRouting,
+        endRouting: endRouting,
         end: end,
         intermediate: layout.routeFor(connection.id.value),
       );
@@ -152,18 +164,22 @@ final class CircuitWireLayoutEngine {
 
   static OrthogonalWirePath? _composeStubbedPath({
     required Offset start,
+    required Offset startRouting,
     required Offset startStub,
     required OrthogonalWirePath routed,
     required Offset endStub,
+    required Offset endRouting,
     required Offset end,
   }) {
     final List<Offset> raw = <Offset>[
       start,
-      if (startStub != start) startStub,
+      if (startRouting != start) startRouting,
+      if (startStub != startRouting) startStub,
       ...routed.points.skip(1).take(
         routed.points.length > 2 ? routed.points.length - 2 : 0,
       ),
-      if (endStub != end) endStub,
+      if (endStub != endRouting) endStub,
+      if (endRouting != end) endRouting,
       end,
     ];
     final List<Offset> normalized = <Offset>[];
@@ -205,10 +221,39 @@ final class CircuitWireLayoutEngine {
 
   static OrthogonalWirePath? _existingOrthogonalPath({
     required Offset start,
+    required Offset startRouting,
+    required Offset endRouting,
     required Offset end,
     required List<Offset> intermediate,
   }) {
-    final List<Offset> points = <Offset>[start, ...intermediate, end];
+    final List<Offset> raw = <Offset>[
+      start,
+      if (startRouting != start) startRouting,
+      ...intermediate,
+      if (endRouting != end) endRouting,
+      end,
+    ];
+    final List<Offset> points = <Offset>[];
+    for (final Offset point in raw) {
+      if (points.isEmpty || points.last != point) {
+        points.add(point);
+      }
+    }
+    var index = 1;
+    while (index < points.length - 1) {
+      final Offset before = points[index - 1];
+      final Offset current = points[index];
+      final Offset after = points[index + 1];
+      final bool horizontal =
+          before.dy == current.dy && current.dy == after.dy;
+      final bool vertical =
+          before.dx == current.dx && current.dx == after.dx;
+      if (horizontal || vertical) {
+        points.removeAt(index);
+      } else {
+        index++;
+      }
+    }
     try {
       return OrthogonalWirePath(points: points);
     } on ArgumentError {

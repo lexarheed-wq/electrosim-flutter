@@ -240,7 +240,7 @@ jobs:
 
   macos-candidate:
     needs: validate
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
 
@@ -254,22 +254,42 @@ jobs:
         working-directory: apps/electrosim
         run: flutter pub get
 
-      - name: Build macOS candidate
-        working-directory: apps/electrosim
+      - name: Build macOS Intel candidate
         shell: bash
         run: |
           set -euo pipefail
           flutter config --enable-macos-desktop
+          chmod +x tools/*.sh
+
+          prep_out="$(./tools/f15_prepare_runner.sh macos)"
+          case "$prep_out" in
+            F15_RUNNER_PATH=*) tmp="${prep_out#F15_RUNNER_PATH=}" ;;
+            *) echo "F15_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+
+          app_root="$tmp/apps/electrosim"
+          cd "$app_root"
           flutter build macos --release
+
           app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$app_path"
-          mkdir -p ../../audit/reference-integrated/macos
-          sha="$(git rev-parse HEAD)"
+
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/reference-integrated/macos"
+          mkdir -p "$out"
+          sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" \
-            "../../audit/reference-integrated/macos/ElectroSim_ReferenceComponents_AutoHide_${sha:0:12}_macOS.zip"
-          printf '%s\n' "$sha" > ../../audit/reference-integrated/macos/COMMIT.txt
-          shasum -a 256 ../../audit/reference-integrated/macos/*.zip \
-            > ../../audit/reference-integrated/macos/SHA256.txt
+            "$out/ElectroSim_ReferenceComponents_AutoHide_${sha:0:12}_macOS_Intel.zip"
+          printf '%s\n' "$sha" > "$out/COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+          rm -rf "$tmp"
 
       - name: Upload macOS candidate
         uses: actions/upload-artifact@v4

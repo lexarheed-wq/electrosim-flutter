@@ -10,12 +10,14 @@ final class F17StudentSupervisionItem {
     required this.displayName,
     required this.connected,
     required this.session,
+    this.lastActivityAtUtc,
   });
 
   final String clientId;
   final String displayName;
   final bool connected;
   final TpSession? session;
+  final DateTime? lastActivityAtUtc;
 }
 
 final class F17StudentGradeRequest {

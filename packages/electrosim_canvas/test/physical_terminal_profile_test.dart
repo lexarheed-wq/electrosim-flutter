@@ -11,17 +11,18 @@ void main() {
         role: role,
       );
 
-  test('Point 5 pilot terminal anchors follow each visible component body', () {
-    const Size size = Size(104, 64);
-    const Map<String, double> expectedHalfSpans = <String, double>{
-      'dc_voltage_source': 46.0,
-      'switch': 31.2,
-      'lamp': 27.0,
-      'breaker_dc': 37.2,
-      'push_button_no': 31.2,
+  test('Point 5 pilot terminal anchors scale with each model proportion', () {
+    const Map<String, (Size, double)> cases = <String, (Size, double)>{
+      'dc_voltage_source': (Size(156, 88), .48),
+      'switch': (Size(118, 72), .46),
+      'lamp': (Size(86, 86), .44),
+      'breaker_dc': (Size(76, 132), .46),
+      'push_button_no': (Size(88, 88), .44),
     };
 
-    for (final MapEntry<String, double> entry in expectedHalfSpans.entries) {
+    for (final MapEntry<String, (Size, double)> entry in cases.entries) {
+      final Size size = entry.value.$1;
+      final double span = size.width * entry.value.$2;
       expect(
         TerminalVisualProfile.terminalOffset(
           modelType: entry.key,
@@ -30,7 +31,7 @@ void main() {
           count: 2,
         ),
         isA<Offset>()
-            .having((Offset value) => value.dx, 'dx', closeTo(-entry.value, 0.0001))
+            .having((Offset value) => value.dx, 'dx', closeTo(-span, 0.0001))
             .having((Offset value) => value.dy, 'dy', 0),
         reason: entry.key,
       );
@@ -42,15 +43,15 @@ void main() {
           count: 2,
         ),
         isA<Offset>()
-            .having((Offset value) => value.dx, 'dx', closeTo(entry.value, 0.0001))
+            .having((Offset value) => value.dx, 'dx', closeTo(span, 0.0001))
             .having((Offset value) => value.dy, 'dy', 0),
         reason: entry.key,
       );
-      expect(entry.value, lessThan(52), reason: entry.key);
+      expect(span, lessThan(size.width / 2), reason: entry.key);
     }
   });
 
-  test('CircuitGeometryIndex uses the physical pilot anchors', () {
+  test('CircuitGeometryIndex uses the switch-specific physical size', () {
     final Terminal left = terminal('left', TerminalRole.input);
     final Terminal right = terminal('right', TerminalRole.output);
     final CircuitState circuit = CircuitState(
@@ -71,6 +72,9 @@ void main() {
       elementPositions: const <String, Offset>{
         'switch-a': Offset(200, 100),
       },
+      elementSizes: const <String, Size>{
+        'switch-a': Size(118, 72),
+      },
     );
 
     final CircuitGeometryIndex geometry =
@@ -78,31 +82,31 @@ void main() {
 
     expect(
       geometry.terminalPositions[left.id]!.dx,
-      closeTo(168.8, 0.0001),
+      closeTo(200 - 118 * .46, 0.0001),
     );
     expect(
       geometry.terminalPositions[right.id]!.dx,
-      closeTo(231.2, 0.0001),
+      closeTo(200 + 118 * .46, 0.0001),
     );
     expect(
-      geometry.terminalRoutingPositions[left.id],
-      const Offset(148, 100),
+      geometry.terminalRoutingPositions[left.id]!.dx,
+      closeTo(200 - 59, 0.0001),
     );
     expect(
-      geometry.terminalRoutingPositions[right.id],
-      const Offset(252, 100),
+      geometry.terminalRoutingPositions[right.id]!.dx,
+      closeTo(200 + 59, 0.0001),
     );
   });
 
   test('physical pilot terminals keep generic invisible routing ports', () {
-    const Size size = Size(104, 64);
+    const Size size = Size(86, 86);
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 0, count: 2),
-      const Offset(-52, 0),
+      const Offset(-43, 0),
     );
     expect(
       TerminalVisualProfile.routingOffset(size: size, index: 1, count: 2),
-      const Offset(52, 0),
+      const Offset(43, 0),
     );
     expect(
       TerminalVisualProfile.terminalOffset(
@@ -111,7 +115,7 @@ void main() {
         index: 0,
         count: 2,
       ).dx,
-      greaterThan(-52),
+      greaterThan(-43),
     );
   });
 

@@ -1,3 +1,4 @@
+import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f18_component_archetypes.dart';
 import 'package:electrosim/f18_workspace_wire_safety.dart';
 import 'package:electrosim/main.dart' as app;
@@ -67,11 +68,12 @@ void main() {
 
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
     expect(
-      find.byType(F18ComponentIdentityVisual),
-      findsAtLeastNWidgets(3),
+      find.byType(F18ComponentAssetVisual),
+      findsAtLeastNWidgets(5),
       reason:
-          'The visible palette viewport must use the canonical F18 identity visual; '
-          'P05 separately proves the five-item quick contract.',
+          'The visible quick palette must route every item through the shared '
+          'asset visual wrapper; imported Adobe assets and local fallbacks '
+          'therefore keep one representation contract.',
     );
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);
     expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);

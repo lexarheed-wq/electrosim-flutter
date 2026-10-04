@@ -132,8 +132,8 @@ jobs:
           test -n "$chrome"
           "$chrome" --version > ../../audit/reference-integrated/chromium/chromium-version.txt
 
-          for spec in "5200:integrated-a.png" "5750:integrated-b.png"; do
-            budget="${spec%%:*}"
+          for spec in "0.10:integrated-a.png" "0.60:integrated-b.png"; do
+            phase="${spec%%:*}"
             name="${spec#*:}"
             timeout 45s "$chrome" \
               --headless=new \
@@ -148,9 +148,9 @@ jobs:
               --hide-scrollbars \
               --enable-unsafe-swiftshader \
               --window-size=1600,1200 \
-              --virtual-time-budget="$budget" \
+              --virtual-time-budget=5000 \
               --screenshot="../../audit/reference-integrated/chromium/$name" \
-              "http://127.0.0.1:8783/"
+              "http://127.0.0.1:8783/?phase=$phase"
           done
 
           python3 - <<'PY'

@@ -265,6 +265,7 @@ class F18SessionSupervisionPage extends StatelessWidget {
     this.proofStudents,
     this.onGradeStudentOverride,
     this.onCloseStudentOverride,
+    this.initialSelectedClientId,
   });
 
   final ElectroSimTpSessionController controller;
@@ -272,6 +273,7 @@ class F18SessionSupervisionPage extends StatelessWidget {
   final List<F17StudentSupervisionItem>? proofStudents;
   final ValueChanged<F17StudentGradeRequest>? onGradeStudentOverride;
   final ValueChanged<String>? onCloseStudentOverride;
+  final String? initialSelectedClientId;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +332,7 @@ class F18SessionSupervisionPage extends StatelessWidget {
                     return F18LiveSupervisionPanel(
                       controller: controller,
                       students: students,
+                      initialSelectedClientId: initialSelectedClientId,
                       onGradeStudent: onGradeStudentOverride ??
                           (host == null
                               ? null

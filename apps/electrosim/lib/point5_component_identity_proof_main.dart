@@ -4,7 +4,6 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_component_asset_visual.dart';
-import 'f18_component_archetypes.dart';
 import 'f9_component_palette.dart';
 import 'f9_component_visuals.dart';
 import 'runtime/electrosim_simulation_controller.dart';
@@ -286,7 +285,7 @@ CircuitState _buildPilotCircuit() {
   Terminal t(
     String id,
     String name, {
-    TerminalRole role = TerminalRole.unspecified,
+    TerminalRole role = TerminalRole.generic,
     PhaseTag phase = PhaseTag.none,
   }) =>
       Terminal(id: TerminalId(id), name: name, role: role, phase: phase);

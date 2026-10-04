@@ -202,7 +202,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (result == null || !result.isSolved) return 0;
     double value = 0;
     for (final branch in result.branchResults) {
-      if (branch.id != 'component:' + id.value) continue;
+      if (branch.id != 'component:${id.value}') continue;
       final double? current = branch.currentA;
       if (current != null && current.isFinite) {
         value = math.max(value, current.abs());
@@ -219,7 +219,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (result == null || !result.isSolved) return 0;
     double value = 0;
     for (final branch in result.branchResults) {
-      if (branch.id == 'component:' + id.value && branch.voltageV.isFinite) {
+      if (branch.id == 'component:${id.value}' && branch.voltageV.isFinite) {
         value = math.max(value, branch.voltageV.abs());
       }
     }
@@ -336,7 +336,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = Color.fromARGB(48, phase.red, phase.green, phase.blue)
+          ..color = phase.withValues(alpha: 48 / 255)
           ..strokeWidth = 7
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
@@ -448,13 +448,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         canvas.drawCircle(
           p,
           radius + 3,
-          Paint()
-            ..color = Color.fromARGB(
-              52,
-              ElectroSimColors.primary.red,
-              ElectroSimColors.primary.green,
-              ElectroSimColors.primary.blue,
-            ),
+          Paint()..color = ElectroSimColors.primary.withValues(alpha: 52 / 255),
         );
       }
       canvas.drawCircle(

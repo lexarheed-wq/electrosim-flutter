@@ -249,13 +249,7 @@ class F18V1ComponentPainter extends CustomPainter {
       canvas.drawCircle(
         center,
         5.3,
-        Paint()
-          ..color = Color.fromARGB(
-            55,
-            color.red,
-            color.green,
-            color.blue,
-          ),
+        Paint()..color = color.withValues(alpha: 55 / 255),
       );
     }
     canvas.drawCircle(center, 3.2, Paint()..color = color);
@@ -494,7 +488,7 @@ class F18V1ComponentPainter extends CustomPainter {
     final String stateText = tripped ? 'TRIP' : open ? 'O' : 'I';
     _text(
       canvas,
-      'Q · '+stateText,
+      'Q · $stateText',
       const Offset(0, -18),
       size: 6.5,
     );

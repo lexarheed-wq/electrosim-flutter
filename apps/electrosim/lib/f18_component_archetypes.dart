@@ -103,6 +103,56 @@ abstract final class F18ElectricalArchetypeClassifier {
   }
 }
 
+abstract final class F18ComponentIdentityMetrics {
+  static const double aspectRatio = 104 / 64;
+  static const Size paletteSize = Size(96, 59);
+  static const Size dragSize = Size(112, 69);
+
+  static Rect fit(Rect bounds) {
+    if (bounds.isEmpty) return bounds;
+    double width = bounds.width;
+    double height = width / aspectRatio;
+    if (height > bounds.height) {
+      height = bounds.height;
+      width = height * aspectRatio;
+    }
+    return Rect.fromCenter(
+      center: bounds.center,
+      width: width,
+      height: height,
+    );
+  }
+}
+
+class F18ComponentIdentityVisual extends StatelessWidget {
+  const F18ComponentIdentityVisual({
+    super.key,
+    required this.modelType,
+    this.size = F18ComponentIdentityMetrics.paletteSize,
+    this.active = true,
+  });
+
+  final String modelType;
+  final Size size;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color =
+        active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: CustomPaint(
+        painter: _F18IdentityPainter(
+          modelType: modelType,
+          foreground: color,
+        ),
+      ),
+    );
+  }
+}
+
 class F18ComponentArchetypeGlyph extends StatelessWidget {
   const F18ComponentArchetypeGlyph({
     super.key,
@@ -117,15 +167,37 @@ class F18ComponentArchetypeGlyph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color =
-        active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
-    return CustomPaint(
+    return F18ComponentIdentityVisual(
+      modelType: modelType,
       size: Size(size * 1.45, size),
-      painter: _F18ArchetypePainter(
-        modelType: modelType,
-        foreground: color,
-      ),
+      active: active,
     );
+  }
+}
+
+class _F18IdentityPainter extends CustomPainter {
+  const _F18IdentityPainter({
+    required this.modelType,
+    required this.foreground,
+  });
+
+  final String modelType;
+  final Color foreground;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintF18ComponentIdentity(
+      canvas,
+      Offset.zero & size,
+      modelType,
+      foreground,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_F18IdentityPainter oldDelegate) {
+    return oldDelegate.modelType != modelType ||
+        oldDelegate.foreground != foreground;
   }
 }
 
@@ -140,7 +212,7 @@ class _F18ArchetypePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    paintF18ElectricalArchetype(
+    paintF18ComponentIdentity(
       canvas,
       Offset.zero & size,
       modelType,
@@ -153,6 +225,20 @@ class _F18ArchetypePainter extends CustomPainter {
     return oldDelegate.modelType != modelType ||
         oldDelegate.foreground != foreground;
   }
+}
+
+void paintF18ComponentIdentity(
+  Canvas canvas,
+  Rect bounds,
+  String modelType,
+  Color foreground,
+) {
+  paintF18ElectricalArchetype(
+    canvas,
+    F18ComponentIdentityMetrics.fit(bounds),
+    modelType,
+    foreground,
+  );
 }
 
 void paintF18ElectricalArchetype(

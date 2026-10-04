@@ -12,33 +12,34 @@ import 'circuit_visual_layout.dart';
 /// located at the physical connection lug instead of at the edge of a generic
 /// 104x64 bounding box.
 abstract final class TerminalVisualProfile {
-  static const double designWidth = 104;
-
-  /// Horizontal half-span, in the canonical 104x64 design coordinate system,
-  /// for the five Point 5 pilot families. Values are chosen so the visible
-  /// metal terminal is tangent or nearly tangent to the actual component body.
-  static const Map<String, double> _pilotHalfSpans = <String, double>{
-    'dc_voltage_source': 46.0,
-    'voltage_source': 46.0,
-    'switch': 31.2,
-    'switch_spst': 31.2,
-    'lamp': 27.0,
-    'breaker_dc': 37.2,
-    'breaker_ac1': 37.2,
-    'breaker': 37.2,
-    'push_button_no': 31.2,
+  /// Physical terminal position as a fraction of each model's own width.
+  ///
+  /// The pilot no longer shares one 104x64 visible geometry: each component
+  /// may have its own aspect ratio while the terminal remains attached to its
+  /// real front-view silhouette.
+  static const Map<String, double> _pilotHalfSpanFractions = <String, double>{
+    'dc_voltage_source': 0.48,
+    'voltage_source': 0.48,
+    'switch': 0.46,
+    'switch_spst': 0.46,
+    'lamp': 0.44,
+    'breaker_dc': 0.46,
+    'breaker_ac1': 0.46,
+    'breaker': 0.46,
+    'push_button_no': 0.44,
   };
 
   static bool hasPhysicalPilotAnchor(String modelType) =>
-      _pilotHalfSpans.containsKey(modelType.toLowerCase());
+      _pilotHalfSpanFractions.containsKey(modelType.toLowerCase());
 
   static double? horizontalHalfSpanForModel(
     String modelType, {
     required Size size,
   }) {
-    final double? designSpan = _pilotHalfSpans[modelType.toLowerCase()];
-    if (designSpan == null) return null;
-    return designSpan * size.width / designWidth;
+    final double? fraction =
+        _pilotHalfSpanFractions[modelType.toLowerCase()];
+    if (fraction == null) return null;
+    return size.width * fraction;
   }
 
   static Offset terminalOffset({
@@ -56,11 +57,7 @@ abstract final class TerminalVisualProfile {
     return _genericTerminalOffset(size, index, count);
   }
 
-  /// Routing port kept on the generic element envelope.
-  ///
-  /// This is intentionally distinct from [terminalOffset]. The visible node
-  /// may sit on the real component lug while the orthogonal router continues
-  /// to leave the component through the stable 104x64 routing envelope.
+  /// Invisible routing port remains on the logical element envelope.
   static Offset routingOffset({
     required Size size,
     required int index,

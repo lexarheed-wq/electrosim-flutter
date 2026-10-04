@@ -38,6 +38,16 @@ abstract final class F18ReferenceComponentVisuals {
   static bool supports(String modelType) =>
       coveredModelTypes.contains(modelType.toLowerCase());
 
+  static ReferenceDevice? uploadedDeviceFor(String modelType) =>
+      switch (modelType.toLowerCase()) {
+        'dc_voltage_source' || 'voltage_source' => ReferenceDevice.supply,
+        'breaker_dc' || 'breaker_ac1' || 'breaker' => ReferenceDevice.breaker,
+        'switch' || 'switch_spst' => ReferenceDevice.toggle,
+        'push_button_no' => ReferenceDevice.button,
+        'lamp' => ReferenceDevice.lamp,
+        _ => null,
+      };
+
   static bool usesUploadedFive(String modelType) => switch (modelType.toLowerCase()) {
         'dc_voltage_source' ||
         'voltage_source' ||
@@ -54,11 +64,11 @@ abstract final class F18ReferenceComponentVisuals {
 
 abstract final class F18ReferenceComponentMetrics {
   static Size boardSizeFor(String modelType) => switch (modelType.toLowerCase()) {
-        'dc_voltage_source' || 'voltage_source' => const Size(240, 160),
-        'switch' || 'switch_spst' => const Size(240, 160),
-        'lamp' => const Size(240, 160),
-        'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(240, 160),
-        'push_button_no' => const Size(240, 160),
+        'dc_voltage_source' || 'voltage_source' => const Size(140, 160),
+        'switch' || 'switch_spst' => const Size(90, 140),
+        'lamp' => const Size(130, 160),
+        'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
+        'push_button_no' => const Size(90, 140),
         'resistor' => const Size(280, 110),
         'push_button_nc' => const Size(180, 180),
         'buzzer' => const Size(190, 190),
@@ -151,14 +161,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
 
-    final ReferenceDevice? uploadedDevice = switch (type) {
-      'dc_voltage_source' || 'voltage_source' => ReferenceDevice.supply,
-      'breaker_dc' || 'breaker_ac1' || 'breaker' => ReferenceDevice.breaker,
-      'switch' || 'switch_spst' => ReferenceDevice.toggle,
-      'push_button_no' => ReferenceDevice.button,
-      'lamp' => ReferenceDevice.lamp,
-      _ => null,
-    };
+    final ReferenceDevice? uploadedDevice =
+        F18ReferenceComponentVisuals.uploadedDeviceFor(type);
 
     if (uploadedDevice != null) {
       final double level =

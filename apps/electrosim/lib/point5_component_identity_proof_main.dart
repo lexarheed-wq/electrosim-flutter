@@ -4,6 +4,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_component_asset_visual.dart';
+import 'f18_v1_component_visuals.dart';
 import 'f9_component_palette.dart';
 import 'f9_component_visuals.dart';
 import 'runtime/electrosim_simulation_controller.dart';
@@ -85,12 +86,12 @@ class _Point5V1ParityProofPageState extends State<_Point5V1ParityProofPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Point 5D-R2 — silhouettes réelles vectorielles de face',
+                          'Point 5D-R3 — 5 proportions réelles distinctes',
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '5 composants pilotes · silhouettes libres · aucune boîte visible · vue de face · aucun raster/photo',
+                          '5 composants pilotes · 5 tailles distinctes · 5 silhouettes distinctes · vue de face · aucun raster/photo',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -269,7 +270,7 @@ class _PilotCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'Silhouette réelle · vectoriel de face',
+              'Proportion réelle · vectoriel de face',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: ElectroSimColors.textSecondary,
                   ),
@@ -398,6 +399,13 @@ CircuitVisualLayout _buildPilotLayout(CircuitState circuit) {
       'switch-1': Offset(430, 112),
       'breaker-1': Offset(590, 112),
       'source-24v': Offset(750, 112),
+    },
+    elementSizes: <String, Size>{
+      'lamp-1': F18PilotVisualMetrics.boardSizeFor('lamp'),
+      'push-1': F18PilotVisualMetrics.boardSizeFor('push_button_no'),
+      'switch-1': F18PilotVisualMetrics.boardSizeFor('switch'),
+      'breaker-1': F18PilotVisualMetrics.boardSizeFor('breaker_dc'),
+      'source-24v': F18PilotVisualMetrics.boardSizeFor('dc_voltage_source'),
     },
   );
   final CircuitGeometryIndex geometry =

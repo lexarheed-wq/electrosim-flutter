@@ -146,7 +146,7 @@ void main() {
     });
 
     test('Point 5D contract is front-view vector only', () {
-      expect(F18V1PilotVisuals.renderingMode, 'orthographic_front_vector');
+      expect(F18V1PilotVisuals.renderingMode, 'free_silhouette_front_vector');
       expect(F18V1PilotVisuals.frontViewOnly, isTrue);
       expect(F18V1PilotVisuals.rasterAssetsAllowed, isFalse);
       expect(F18V1PilotVisuals.perspectiveAllowed, isFalse);

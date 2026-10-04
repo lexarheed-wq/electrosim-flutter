@@ -166,6 +166,37 @@ final class CircuitWireLayoutEngine {
         }
       }
 
+      final OrthogonalWirePath? perimeter = _perimeterEscapePath(
+        start: startStub,
+        end: endStub,
+        geometry: geometry,
+      );
+      if (perimeter != null) {
+        final OrthogonalWirePath? path = _composeStubbedPath(
+          start: start,
+          startRouting: startRouting,
+          startStub: startStub,
+          routed: perimeter,
+          endStub: endStub,
+          endRouting: endRouting,
+          end: end,
+        );
+        if (path != null &&
+            !WireRouteSafety.hasDifferentNetCrossing(
+              candidate: path,
+              occupiedDifferentNetPaths: crossingObstacles,
+            )) {
+          nextRoutes[connection.id.value] = path.points.length <= 2
+              ? const <Offset>[]
+              : List<Offset>.unmodifiable(
+                  path.points.sublist(1, path.points.length - 1),
+                );
+          occupied.add(path);
+          resolvedCount++;
+          continue;
+        }
+      }
+
       final OrthogonalWirePath? existing = _existingOrthogonalPath(
         start: start,
         startRouting: startRouting,
@@ -206,6 +237,90 @@ final class CircuitWireLayoutEngine {
         geometry.terminalRoutingPositions[connection.toTerminalId];
     if (start == null || end == null) return 0;
     return (start.dx - end.dx).abs() + (start.dy - end.dy).abs();
+  }
+
+  OrthogonalWirePath? _perimeterEscapePath({
+    required Offset start,
+    required Offset end,
+    required CircuitGeometryIndex geometry,
+  }) {
+    if (geometry.elementRects.isEmpty) return null;
+
+    Rect bounds = geometry.elementRects.values.first;
+    for (final Rect rect in geometry.elementRects.values.skip(1)) {
+      bounds = bounds.expandToInclude(rect);
+    }
+    final double escape =
+        router.obstacleClearance + router.grid * 2;
+
+    List<Offset>? raw;
+    if ((start.dy - end.dy).abs() <= 0.001) {
+      if (start.dy >= bounds.bottom && end.dy >= bounds.bottom) {
+        final double y = bounds.bottom + escape;
+        raw = <Offset>[
+          start,
+          Offset(start.dx, y),
+          Offset(end.dx, y),
+          end,
+        ];
+      } else if (start.dy <= bounds.top && end.dy <= bounds.top) {
+        final double y = bounds.top - escape;
+        raw = <Offset>[
+          start,
+          Offset(start.dx, y),
+          Offset(end.dx, y),
+          end,
+        ];
+      }
+    } else if ((start.dx - end.dx).abs() <= 0.001) {
+      if (start.dx >= bounds.right && end.dx >= bounds.right) {
+        final double x = bounds.right + escape;
+        raw = <Offset>[
+          start,
+          Offset(x, start.dy),
+          Offset(x, end.dy),
+          end,
+        ];
+      } else if (start.dx <= bounds.left && end.dx <= bounds.left) {
+        final double x = bounds.left - escape;
+        raw = <Offset>[
+          start,
+          Offset(x, start.dy),
+          Offset(x, end.dy),
+          end,
+        ];
+      }
+    }
+    if (raw == null) return null;
+
+    final List<Offset> normalized = <Offset>[];
+    for (final Offset point in raw) {
+      if (normalized.isEmpty || normalized.last != point) {
+        normalized.add(point);
+      }
+    }
+    var index = 1;
+    while (index < normalized.length - 1) {
+      final Offset before = normalized[index - 1];
+      final Offset current = normalized[index];
+      final Offset after = normalized[index + 1];
+      final bool horizontal =
+          before.dy == current.dy && current.dy == after.dy;
+      final bool vertical =
+          before.dx == current.dx && current.dx == after.dx;
+      if (horizontal || vertical) {
+        normalized.removeAt(index);
+      } else {
+        index++;
+      }
+    }
+
+    if (normalized.length < 2) return null;
+    try {
+      return OrthogonalWirePath(points: normalized);
+    } on ArgumentError {
+      return null;
+    }
   }
 
   Offset _terminalStubPoint(Offset terminal, Rect ownerRect) {

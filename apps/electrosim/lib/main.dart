@@ -21,6 +21,7 @@ import 'f18_workspace_wire_safety.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
+import 'reference_components/reference_widgets.dart';
 import 'f9_ui_context.dart';
 import 'f9_context_panels.dart';
 import 'f9_component_visuals.dart';
@@ -517,6 +518,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   bool _directPointerMoved = false;
   bool _trackpadPanZoomActive = false;
   double _trackpadLastScale = 1;
+
+  static const Duration _directControlDoubleTapWindow =
+      Duration(milliseconds: 420);
+  static const double _directControlDoubleTapDistance = 28;
+  DateTime? _lastDirectControlTapTime;
+  String? _lastDirectControlTapElementId;
+  Offset? _lastDirectControlTapLocal;
+  final Map<String, Timer> _momentaryReleaseTimers = <String, Timer>{};
   late final ElectroSimTpSessionController _tpController;
   late final bool _ownsTpController;
   ElectroSimLanSyncHost? _lanHost;

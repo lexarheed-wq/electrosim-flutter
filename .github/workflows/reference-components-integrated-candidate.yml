@@ -1,0 +1,209 @@
+name: Integrated reference components candidate
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "apps/electrosim/lib/f18_component_asset_visual.dart"
+      - "apps/electrosim/lib/f9_component_visuals.dart"
+      - "apps/electrosim/lib/f9_component_palette.dart"
+      - "apps/electrosim/lib/main.dart"
+      - "apps/electrosim/lib/reference_components/**"
+      - "apps/electrosim/lib/reference_components_integrated_proof_main.dart"
+      - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
+      - "apps/electrosim/test/reference_components_extended_test.dart"
+      - "apps/electrosim/test/reference_components_runtime_integration_test.dart"
+      - "packages/electrosim_canvas/lib/src/canvas_geometry.dart"
+      - "packages/electrosim_canvas/test/physical_terminal_profile_test.dart"
+      - ".github/workflows/reference-components-integrated-candidate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep "3.10.9"
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Test reference component integration
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f18_point5_component_visual_identity_test.dart
+          flutter test test/reference_components_extended_test.dart
+          flutter test test/reference_components_runtime_integration_test.dart
+
+      - name: Test terminal geometry
+        working-directory: packages/electrosim_canvas
+        run: flutter test test/physical_terminal_profile_test.dart
+
+      - name: Run full application non-golden regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
+            xargs -0 flutter test
+
+      - name: Build integrated Chromium proof
+        working-directory: apps/electrosim
+        run: |
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          flutter build web --release -t lib/reference_components_integrated_proof_main.dart
+          mkdir -p ../../audit/reference-integrated/web
+          cp -R build/web/. ../../audit/reference-integrated/web/
+
+      - name: Capture animated Chromium proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/reference-integrated/chromium
+          python3 -m http.server 8783 --directory ../../audit/reference-integrated/web \
+            > ../../audit/reference-integrated/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8783/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          "$chrome" --version > ../../audit/reference-integrated/chromium/chromium-version.txt
+
+          for spec in "5200:integrated-a.png" "5750:integrated-b.png"; do
+            budget="${spec%%:*}"
+            name="${spec#*:}"
+            timeout 45s "$chrome" \
+              --headless=new \
+              --no-sandbox \
+              --disable-gpu \
+              --disable-dev-shm-usage \
+              --disable-background-networking \
+              --disable-default-apps \
+              --disable-extensions \
+              --disable-sync \
+              --no-first-run \
+              --hide-scrollbars \
+              --enable-unsafe-swiftshader \
+              --window-size=1600,1200 \
+              --virtual-time-budget="$budget" \
+              --screenshot="../../audit/reference-integrated/chromium/$name" \
+              "http://127.0.0.1:8783/"
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          a = Path('../../audit/reference-integrated/chromium/integrated-a.png').read_bytes()
+          b = Path('../../audit/reference-integrated/chromium/integrated-b.png').read_bytes()
+          if not a or not b:
+              raise SystemExit('INTEGRATED_PROOF_MISSING')
+          da = hashlib.sha256(a).hexdigest()
+          db = hashlib.sha256(b).hexdigest()
+          print('FRAME_A', da)
+          print('FRAME_B', db)
+          if da == db:
+              raise SystemExit('INTEGRATED_ANIMATION_FRAMES_IDENTICAL')
+          print('INTEGRATED_ANIMATION_FRAMES_DIFFER')
+          PY
+
+      - name: Package source candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          mkdir -p audit/reference-integrated/source
+          git archive --format=zip \
+            --output="audit/reference-integrated/source/ELECTROSIM_REFERENCE_COMPONENTS_${sha:0:12}.zip" \
+            HEAD
+          printf '%s\n' "$sha" > audit/reference-integrated/source/COMMIT.txt
+
+      - name: Upload Chromium proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrated-reference-components-chromium
+          path: audit/reference-integrated/chromium
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload source candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrated-reference-components-source
+          path: audit/reference-integrated/source
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo INTEGRATED_REFERENCE_COMPONENTS_VALIDATION_PASS
+
+  macos-candidate:
+    needs: validate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Build macOS candidate
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          mkdir -p ../../audit/reference-integrated/macos
+          sha="$(git rev-parse HEAD)"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" \
+            "../../audit/reference-integrated/macos/ElectroSim_ReferenceComponents_${sha:0:12}_macOS.zip"
+          printf '%s\n' "$sha" > ../../audit/reference-integrated/macos/COMMIT.txt
+          shasum -a 256 ../../audit/reference-integrated/macos/*.zip \
+            > ../../audit/reference-integrated/macos/SHA256.txt
+
+      - name: Upload macOS candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: electrosim-reference-components-macos-candidate
+          path: audit/reference-integrated/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo INTEGRATED_REFERENCE_COMPONENTS_MACOS_PASS

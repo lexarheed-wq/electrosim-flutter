@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'reference_models.dart';
 
 double _finitePositive(String name, double value) {
   if (!value.isFinite || value <= 0) {

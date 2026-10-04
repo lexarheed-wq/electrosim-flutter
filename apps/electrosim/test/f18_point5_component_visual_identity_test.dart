@@ -12,8 +12,10 @@ void main() {
       final Rect fitted = F18ComponentIdentityMetrics.fit(bounds);
       expect(fitted.width / fitted.height,
           closeTo(F18ComponentIdentityMetrics.aspectRatio, 0.0001));
-      expect(bounds.contains(fitted.topLeft), isTrue);
-      expect(bounds.contains(fitted.bottomRight), isTrue);
+      expect(fitted.left, greaterThanOrEqualTo(bounds.left));
+      expect(fitted.top, greaterThanOrEqualTo(bounds.top));
+      expect(fitted.right, lessThanOrEqualTo(bounds.right));
+      expect(fitted.bottom, lessThanOrEqualTo(bounds.bottom));
     });
 
     testWidgets('every palette model uses the canonical identity widget',

@@ -80,7 +80,9 @@ class _DemoState extends State<ReferenceComponentsDemo>
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ReferenceComponentView(device: device, state: state),
           const SizedBox(height: 8),
-          Text(label, style: Theme.of(context).textTheme.titleSmall),
+          SizedBox(width: 180, child: Text(label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall)),
         ]),
       ),
     ),

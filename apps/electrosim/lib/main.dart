@@ -1285,11 +1285,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _status = 'Position graphique mise à jour : $movedId';
       });
-    } else if (_backgroundPanActive && !_directPointerMoved && _wiringPendingTerminal == null) {
+      _resetDirectControlTapTracking();
+    } else if (_backgroundPanActive &&
+        !_directPointerMoved &&
+        _wiringPendingTerminal == null) {
       setState(() {
         _selected = null;
         _status = 'Sélection effacée';
       });
+      _resetDirectControlTapTracking();
+    } else if (!_directPointerMoved && _wiringPendingTerminal == null) {
+      _handleDirectControlTap(event.localPosition);
     }
     _clearDirectPointerState();
   }
@@ -1307,6 +1313,197 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _lastCanvasPointerLocal = null;
     _backgroundPanActive = false;
     _directPointerMoved = false;
+  }
+
+  ({String id, String modelType})? _directControlAt(Offset screenPosition) {
+    final CanvasHitResult hit = _f9CanvasHit(screenPosition);
+    if (hit.kind != CanvasHitKind.component || hit.elementId == null) {
+      return null;
+    }
+    final String id = hit.elementId!;
+    ComponentInstance? component;
+    for (final ComponentInstance item in _circuit.components) {
+      if (item.id.value == id) {
+        component = item;
+        break;
+      }
+    }
+    if (component == null) return null;
+    final String modelType = component.modelType.toLowerCase();
+
+    final Size baseSize = _layout.sizeOf(id);
+    final Offset? center = _layout.positionOf(id);
+    if (center == null) return null;
+    final Offset worldPoint = _viewport.screenToWorld(screenPosition);
+    final Offset delta = worldPoint - center;
+    final int turns = _layout.quarterTurnsOf(id) % 4;
+    final Offset unrotatedDelta = switch (turns) {
+      0 => delta,
+      1 => Offset(delta.dy, -delta.dx),
+      2 => Offset(-delta.dx, -delta.dy),
+      _ => Offset(-delta.dy, delta.dx),
+    };
+    final Offset local = Offset(
+      baseSize.width / 2 + unrotatedDelta.dx,
+      baseSize.height / 2 + unrotatedDelta.dy,
+    );
+
+    final ReferenceDevice? device =
+        F18ReferenceComponentVisuals.uploadedDeviceFor(modelType);
+    if (device == ReferenceDevice.breaker ||
+        device == ReferenceDevice.toggle ||
+        device == ReferenceDevice.button) {
+      if (ReferenceComponentView.hitsControlRegion(
+        baseSize,
+        local,
+        device: device!,
+      )) {
+        return (id: id, modelType: modelType);
+      }
+      return null;
+    }
+
+    if (modelType == 'push_button_nc') {
+      final Offset centerLocal =
+          Offset(baseSize.width * .5, baseSize.height * (88 / 180));
+      final double radius =
+          math.min(baseSize.width, baseSize.height) * (39 / 180);
+      if ((local - centerLocal).distance <= radius) {
+        return (id: id, modelType: modelType);
+      }
+    }
+    return null;
+  }
+
+  void _handleDirectControlTap(Offset screenPosition) {
+    final ({String id, String modelType})? target =
+        _directControlAt(screenPosition);
+    if (target == null) {
+      _resetDirectControlTapTracking();
+      return;
+    }
+
+    final DateTime now = DateTime.now();
+    final bool sameTarget = _lastDirectControlTapElementId == target.id;
+    final bool withinTime = _lastDirectControlTapTime != null &&
+        now.difference(_lastDirectControlTapTime!) <=
+            _directControlDoubleTapWindow;
+    final bool withinDistance = _lastDirectControlTapLocal != null &&
+        (screenPosition - _lastDirectControlTapLocal!).distance <=
+            _directControlDoubleTapDistance;
+
+    if (sameTarget && withinTime && withinDistance) {
+      _resetDirectControlTapTracking();
+      _actuateDirectCanvasControl(target.id, target.modelType);
+      return;
+    }
+
+    _lastDirectControlTapTime = now;
+    _lastDirectControlTapElementId = target.id;
+    _lastDirectControlTapLocal = screenPosition;
+  }
+
+  void _resetDirectControlTapTracking() {
+    _lastDirectControlTapTime = null;
+    _lastDirectControlTapElementId = null;
+    _lastDirectControlTapLocal = null;
+  }
+
+  bool _usesDirectCanvasControl(String modelType) => switch (
+        modelType.toLowerCase(),
+      ) {
+        'switch' ||
+        'switch_spst' ||
+        'push_button_no' ||
+        'push_button_nc' ||
+        'breaker_dc' ||
+        'breaker_ac1' ||
+        'breaker' => true,
+        _ => false,
+      };
+
+  void _actuateDirectCanvasControl(String elementId, String modelType) {
+    if (_blockStudentTpMutation()) return;
+    final String type = modelType.toLowerCase();
+
+    if (type == 'push_button_no' || type == 'push_button_nc') {
+      _momentaryReleaseTimers.remove(elementId)?.cancel();
+      final CircuitState pressed = F9ElementEditor.setPushButtonPressed(
+        _circuit,
+        elementId,
+        pressed: true,
+      );
+      if (!identical(pressed, _circuit)) {
+        setState(() {
+          _circuit = pressed;
+          _selected = elementId;
+          _status = 'Commande directe : $elementId — appuyé';
+        });
+        _simulation.updateCircuit(_circuit);
+        _syncStudentTpCircuit();
+      }
+
+      _momentaryReleaseTimers[elementId] =
+          Timer(const Duration(milliseconds: 260), () {
+        if (!mounted) return;
+        final CircuitState released = F9ElementEditor.setPushButtonPressed(
+          _circuit,
+          elementId,
+          pressed: false,
+        );
+        if (identical(released, _circuit)) return;
+        setState(() {
+          _circuit = released;
+          _status = 'Commande directe : $elementId — relâché';
+        });
+        _simulation.updateCircuit(_circuit);
+        _syncStudentTpCircuit();
+      });
+      return;
+    }
+
+    final bool isBreaker = type == 'breaker_dc' ||
+        type == 'breaker_ac1' ||
+        type == 'breaker';
+    if (isBreaker &&
+        _simulation.snapshot.protectionTripped(ComponentId(elementId))) {
+      final CircuitState closed = F9ElementEditor.setComponentClosed(
+        _circuit,
+        elementId,
+        closed: true,
+      );
+      if (!identical(closed, _circuit)) {
+        setState(() {
+          _circuit = closed;
+          _selected = elementId;
+        });
+        _simulation.updateCircuit(_circuit);
+      }
+      _simulation.rearmProtection(ComponentId(elementId));
+      setState(() {
+        _selected = elementId;
+        _status = 'Commande directe : $elementId — disjoncteur réarmé';
+      });
+      _syncStudentTpCircuit();
+      return;
+    }
+
+    final CircuitState next =
+        F9ElementEditor.togglePrimaryState(_circuit, elementId);
+    if (identical(next, _circuit)) {
+      _setStatus('Commande directe indisponible pour $elementId');
+      return;
+    }
+    final F9ElementDetails? details =
+        F9ElementEditor.describe(next, elementId);
+    setState(() {
+      _circuit = next;
+      _selected = elementId;
+      _status = 'Commande directe : $elementId — ' +
+          (details?.stateLabel ?? 'mis à jour');
+    });
+    _simulation.updateCircuit(_circuit);
+    _syncStudentTpCircuit();
   }
 
   void _onCanvasPointerSignal(PointerSignalEvent event) {

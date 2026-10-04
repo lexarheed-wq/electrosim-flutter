@@ -11,8 +11,12 @@ import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
 import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 
 Future<void> _openTop(WidgetTester tester) async {
-  await tester.tap(find.byKey(electroSimTopEdgeKey));
-  await tester.pumpAndSettle();
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 void main() {

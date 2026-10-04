@@ -1,0 +1,79 @@
+name: Uploaded V2 exact Dart proof
+
+on:
+  push:
+    branches:
+      - uploaded-v2-exact-proof
+    paths:
+      - "apps/electrosim/lib/reference_components/reference_demo.dart"
+      - "apps/electrosim/lib/reference_components/reference_models.dart"
+      - "apps/electrosim/lib/reference_components/reference_widgets.dart"
+      - ".github/workflows/uploaded-v2-exact-proof.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Resolve
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze exact uploaded files
+        working-directory: apps/electrosim
+        run: |
+          flutter analyze             lib/reference_components/reference_demo.dart             lib/reference_components/reference_models.dart             lib/reference_components/reference_widgets.dart
+
+      - name: Build exact uploaded demo
+        working-directory: apps/electrosim
+        run: |
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          flutter build web --release -t lib/reference_components/reference_demo.dart
+          mkdir -p ../../audit/uploaded-v2-exact/web
+          cp -R build/web/. ../../audit/uploaded-v2-exact/web/
+
+      - name: Capture exact Chromium rendering
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/uploaded-v2-exact/chromium
+          python3 -m http.server 8786 --directory ../../audit/uploaded-v2-exact/web             > ../../audit/uploaded-v2-exact/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8786/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          "$chrome" --version > ../../audit/uploaded-v2-exact/chromium/chromium-version.txt
+
+          timeout 45s "$chrome"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --disable-background-networking             --disable-default-apps             --disable-extensions             --disable-sync             --no-first-run             --hide-scrollbars             --enable-unsafe-swiftshader             --window-size=1600,1100             --virtual-time-budget=5000             --screenshot=../../audit/uploaded-v2-exact/chromium/uploaded-v2-exact.png             "http://127.0.0.1:8786/"
+
+          test -s ../../audit/uploaded-v2-exact/chromium/uploaded-v2-exact.png
+
+      - name: Upload exact proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: uploaded-v2-exact-dart-proof
+          path: audit/uploaded-v2-exact/chromium
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo UPLOADED_V2_EXACT_DART_PROOF_PASS

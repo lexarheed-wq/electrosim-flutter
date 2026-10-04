@@ -559,13 +559,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final ElectroSimRuntimeSnapshot runtimeSnapshot = _simulation.snapshot;
     final F9ElementDetails? selectedDetails =
         F9ElementEditor.describe(_circuit, _selected);
-    final bool canTransformSelection =
+    final bool canDeleteSelection =
         selectedDetails != null && !_studentTpReadOnly;
+    final bool canRotateSelection =
+        selectedDetails != null &&
+        selectedDetails.kind != F9ElementKind.connection &&
+        !_studentTpReadOnly;
     return Scaffold(
       body: SafeArea(
         child: CallbackShortcuts(
           bindings: <ShortcutActivator, VoidCallback>{
             const SingleActivator(LogicalKeyboardKey.escape): _cancelCanvasInteraction,
+            const SingleActivator(LogicalKeyboardKey.delete): _deleteSelectedElement,
+            const SingleActivator(LogicalKeyboardKey.backspace): _deleteSelectedElement,
             const SingleActivator(LogicalKeyboardKey.equal, shift: true): () => _viewport.zoomAt(const Offset(400, 300), 1.1),
             const SingleActivator(LogicalKeyboardKey.minus): () => _viewport.zoomAt(const Offset(400, 300), 0.9),
           },
@@ -587,9 +593,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             onSave: widget.persistenceController == null ? null : _saveWorkspace,
             onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
             onRotateSelected:
-                canTransformSelection ? _rotateSelectedElement : null,
+                canRotateSelection ? _rotateSelectedElement : null,
             onDeleteSelected:
-                canTransformSelection ? _deleteSelectedElement : null,
+                canDeleteSelection ? _deleteSelectedElement : null,
             onRecenter: _fitCircuitToViewport,
             simulationRunning: _simulation.running,
             simulatedTime: _simulation.simulatedTime,
@@ -1648,11 +1654,43 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
     if (selected == null) {
+      _setStatus('Suppression impossible : aucune sélection.');
       return;
     }
     final F9ElementDetails? details = F9ElementEditor.describe(_circuit, selected);
     if (details == null) {
-      _setStatus('Suppression impossible : élément introuvable.');
+      _setStatus('Suppression impossible : sélection introuvable.');
+      return;
+    }
+
+    if (details.kind == F9ElementKind.connection) {
+      final CircuitState next =
+          F9ElementEditor.deleteConnection(_circuit, selected);
+      if (identical(next, _circuit)) {
+        _setStatus('Suppression impossible : fil introuvable.');
+        return;
+      }
+      final Map<String, List<Offset>> routes = <String, List<Offset>>{
+        ..._layout.wireRoutes,
+      }..remove(selected);
+      setState(() {
+        _circuit = next;
+        _layout = _routeWithG2A(
+          _circuit,
+          CircuitVisualLayout(
+            elementPositions: _layout.elementPositions,
+            elementSizes: _layout.elementSizes,
+            wireRoutes: routes,
+            elementQuarterTurns: _layout.elementQuarterTurns,
+            defaultElementSize: _layout.defaultElementSize,
+          ),
+        );
+        _selected = null;
+        _status = 'Suppression : fil — $selected';
+      });
+      _simulation.updateCircuit(_circuit);
+      _syncStudentTpCircuit();
+      _announce(_status);
       return;
     }
     final Set<TerminalId> removedTerminalIds = <TerminalId>{};

@@ -2,6 +2,7 @@ import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

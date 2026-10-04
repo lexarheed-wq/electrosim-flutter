@@ -5,27 +5,27 @@ import 'package:flutter/material.dart';
 
 abstract final class F18PilotVisualMetrics {
   static const Map<String, Size> _board = <String, Size>{
-    'dc_voltage_source': Size(156, 88),
-    'voltage_source': Size(156, 88),
-    'switch': Size(118, 72),
-    'switch_spst': Size(118, 72),
-    'push_button_no': Size(88, 88),
-    'breaker_dc': Size(76, 132),
-    'breaker_ac1': Size(76, 132),
-    'breaker': Size(76, 132),
-    'lamp': Size(86, 86),
+    'dc_voltage_source': Size(188, 106),
+    'voltage_source': Size(188, 106),
+    'switch': Size(142, 84),
+    'switch_spst': Size(142, 84),
+    'push_button_no': Size(104, 104),
+    'breaker_dc': Size(92, 158),
+    'breaker_ac1': Size(92, 158),
+    'breaker': Size(92, 158),
+    'lamp': Size(102, 102),
   };
 
   static const Map<String, Size> _palette = <String, Size>{
-    'dc_voltage_source': Size(88, 50),
-    'voltage_source': Size(88, 50),
-    'switch': Size(76, 46),
-    'switch_spst': Size(76, 46),
-    'push_button_no': Size(54, 54),
-    'breaker_dc': Size(40, 68),
-    'breaker_ac1': Size(40, 68),
-    'breaker': Size(40, 68),
-    'lamp': Size(54, 54),
+    'dc_voltage_source': Size(104, 58),
+    'voltage_source': Size(104, 58),
+    'switch': Size(88, 52),
+    'switch_spst': Size(88, 52),
+    'push_button_no': Size(64, 64),
+    'breaker_dc': Size(48, 82),
+    'breaker_ac1': Size(48, 82),
+    'breaker': Size(48, 82),
+    'lamp': Size(64, 64),
   };
 
   static Size boardSizeFor(String modelType) =>

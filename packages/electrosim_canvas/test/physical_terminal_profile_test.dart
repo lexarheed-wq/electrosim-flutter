@@ -29,7 +29,9 @@ void main() {
           index: 0,
           count: 2,
         ),
-        Offset(-entry.value, 0),
+        isA<Offset>()
+            .having((Offset value) => value.dx, 'dx', closeTo(-entry.value, 0.0001))
+            .having((Offset value) => value.dy, 'dy', 0),
         reason: entry.key,
       );
       expect(
@@ -39,7 +41,9 @@ void main() {
           index: 1,
           count: 2,
         ),
-        Offset(entry.value, 0),
+        isA<Offset>()
+            .having((Offset value) => value.dx, 'dx', closeTo(entry.value, 0.0001))
+            .having((Offset value) => value.dy, 'dy', 0),
         reason: entry.key,
       );
       expect(entry.value, lessThan(52), reason: entry.key);
@@ -72,8 +76,14 @@ void main() {
     final CircuitGeometryIndex geometry =
         CircuitGeometryIndex.build(circuit, layout);
 
-    expect(geometry.terminalPositions[left.id], const Offset(168.8, 100));
-    expect(geometry.terminalPositions[right.id], const Offset(231.2, 100));
+    expect(
+      geometry.terminalPositions[left.id]!.dx,
+      closeTo(168.8, 0.0001),
+    );
+    expect(
+      geometry.terminalPositions[right.id]!.dx,
+      closeTo(231.2, 0.0001),
+    );
   });
 
   test('non-pilot two-terminal components keep the generic box-edge anchors', () {

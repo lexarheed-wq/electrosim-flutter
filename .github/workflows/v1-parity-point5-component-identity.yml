@@ -6,9 +6,12 @@ on:
       - v1-parity
     paths:
       - "apps/electrosim/lib/f18_component_archetypes.dart"
+      - "apps/electrosim/lib/f18_component_asset_visual.dart"
       - "apps/electrosim/lib/f18_industrial_component_visuals.dart"
+      - "apps/electrosim/assets/components/adobe/**"
       - "apps/electrosim/lib/f9_component_palette.dart"
       - "apps/electrosim/lib/f9_component_visuals.dart"
+      - "apps/electrosim/pubspec.yaml"
       - "apps/electrosim/lib/point5_component_identity_proof_main.dart"
       - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
       - "apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart"

@@ -117,7 +117,7 @@ final class _IndustrialPainter {
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
 
-  void _shadowRRect(RRect rrect, {double dy = 2.5, double blurHint = 1}) {
+  void _shadowRRect(RRect rrect, {double dy = 2.5}) {
     final RRect shifted = rrect.shift(Offset(0, dy));
     canvas.drawRRect(
       shifted,
@@ -420,15 +420,16 @@ final class _IndustrialPainter {
     canvas.drawCircle(
       lens,
       lensR,
-      RadialGradient(
-        center: const Alignment(-.35, -.4),
-        radius: 1.0,
-        colors: const <Color>[
-          Color(0xFFFFFBE0),
-          Color(0xFFFFD95A),
-          Color(0xFFE5A800),
-        ],
-      ).createShader(Rect.fromCircle(center: lens, radius: lensR)),
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-.35, -.4),
+          radius: 1.0,
+          colors: const <Color>[
+            Color(0xFFFFFBE0),
+            Color(0xFFFFD95A),
+            Color(0xFFE5A800),
+          ],
+        ).createShader(Rect.fromCircle(center: lens, radius: lensR)),
     );
     canvas.drawCircle(lens, lensR * 1.14, outline);
     canvas.drawArc(
@@ -612,14 +613,15 @@ final class _IndustrialPainter {
     canvas.drawCircle(
       headCenter,
       ringR * .76,
-      RadialGradient(
-        center: const Alignment(-.35, -.38),
-        radius: 1,
-        colors: <Color>[const Color(0xFFF8FFFF), top, bottom],
-        stops: const <double>[0, .22, 1],
-      ).createShader(
-        Rect.fromCircle(center: headCenter, radius: ringR * .76),
-      ),
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-.35, -.38),
+          radius: 1,
+          colors: <Color>[const Color(0xFFF8FFFF), top, bottom],
+          stops: const <double>[0, .22, 1],
+        ).createShader(
+          Rect.fromCircle(center: headCenter, radius: ringR * .76),
+        ),
     );
     canvas.drawCircle(headCenter, ringR * .76, outline);
 
@@ -650,15 +652,16 @@ final class _IndustrialPainter {
     canvas.drawCircle(
       center,
       r,
-      RadialGradient(
-        center: const Alignment(-.3, -.35),
-        radius: 1,
-        colors: const <Color>[
-          Color(0xFF758590),
-          Color(0xFF27343D),
-          Color(0xFF10171C),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: r)),
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-.3, -.35),
+          radius: 1,
+          colors: const <Color>[
+            Color(0xFF758590),
+            Color(0xFF27343D),
+            Color(0xFF10171C),
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: r)),
     );
     canvas.drawCircle(center, r, outline);
 

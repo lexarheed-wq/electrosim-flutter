@@ -329,6 +329,93 @@ void main() {
   });
 
 
+  testWidgets('selected wire is deletable from the topbar without deleting components',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialSelectedElementId: 'wire-2',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.circuit.connections.length, 3);
+    expect(canvas.circuit.components.length, 3);
+
+    await _openTop(tester);
+    final IconButton deleteButton = tester.widget<IconButton>(
+      find.byKey(const Key('workspace-delete-action')),
+    );
+    expect(deleteButton.onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('workspace-delete-action')));
+    await tester.pumpAndSettle();
+
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(
+      canvas.circuit.connections
+          .map((Connection item) => item.id.value),
+      isNot(contains('wire-2')),
+    );
+    expect(canvas.circuit.connections.length, 2);
+    expect(canvas.circuit.components.length, 3);
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+      contains('Suppression : fil — wire-2'),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('selected wire is described in Properties and Delete key removes it',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialSelectedElementId: 'wire-1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openContext(tester);
+
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('properties-model-type')))).data,
+      'Fil',
+    );
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('properties-element-id')))).data,
+      'wire-1',
+    );
+    expect(find.text('Fil · wire-1'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pumpAndSettle();
+
+    final SimulatorCanvas canvas =
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(
+      canvas.circuit.connections
+          .map((Connection item) => item.id.value),
+      isNot(contains('wire-1')),
+    );
+    expect(canvas.circuit.connections.length, 2);
+    expect(tester.takeException(), isNull);
+  });
+
+
   testWidgets('diagnostic sheet exists only for student troubleshooting', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;

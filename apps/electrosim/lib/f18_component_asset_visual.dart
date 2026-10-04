@@ -1,11 +1,92 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
-import 'f18_v1_component_visuals.dart';
+import 'reference_components/reference_models.dart';
+import 'reference_components/reference_widgets.dart';
+import 'reference_components/reference_widgets_extended.dart';
 
-/// Legacy generated assets are retained in the repository only for audit/history.
-/// The five Point 5 pilot families are rendered from the V1 C31 visual language.
-@Deprecated('Point 5 V1 parity uses F18V1PilotVisuals instead.')
+/// Unified reference-component contract.
+///
+/// The five uploaded components are rendered by the uploaded Dart painters
+/// unchanged. The eight additional components use the same vector approach.
+/// This adapter only maps ElectroSim runtime state to those painters.
+abstract final class F18ReferenceComponentVisuals {
+  static const Set<String> coveredModelTypes = <String>{
+    'dc_voltage_source',
+    'voltage_source',
+    'switch',
+    'switch_spst',
+    'lamp',
+    'breaker_dc',
+    'breaker_ac1',
+    'breaker',
+    'push_button_no',
+    'resistor',
+    'push_button_nc',
+    'buzzer',
+    'fuse_dc',
+    'fuse_ac1',
+    'fuse',
+    'diode',
+    'fan_dc',
+    'motor_dc',
+    'relay_coil',
+  };
+
+  static bool supports(String modelType) =>
+      coveredModelTypes.contains(modelType.toLowerCase());
+
+  static bool usesUploadedFive(String modelType) => switch (modelType.toLowerCase()) {
+        'dc_voltage_source' ||
+        'voltage_source' ||
+        'switch' ||
+        'switch_spst' ||
+        'lamp' ||
+        'breaker_dc' ||
+        'breaker_ac1' ||
+        'breaker' ||
+        'push_button_no' => true,
+        _ => false,
+      };
+}
+
+abstract final class F18ReferenceComponentMetrics {
+  static Size boardSizeFor(String modelType) => switch (modelType.toLowerCase()) {
+        'dc_voltage_source' || 'voltage_source' => const Size(240, 160),
+        'switch' || 'switch_spst' => const Size(240, 160),
+        'lamp' => const Size(240, 160),
+        'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(240, 160),
+        'push_button_no' => const Size(240, 160),
+        'resistor' => const Size(280, 110),
+        'push_button_nc' => const Size(180, 180),
+        'buzzer' => const Size(190, 190),
+        'fuse_dc' || 'fuse_ac1' || 'fuse' => const Size(300, 110),
+        'diode' => const Size(270, 105),
+        'fan_dc' => const Size(210, 210),
+        'motor_dc' => const Size(230, 190),
+        'relay_coil' => const Size(190, 230),
+        _ => const Size(104, 64),
+      };
+
+  static Size paletteSizeFor(String modelType) =>
+      _fitInside(boardSizeFor(modelType), const Size(82, 58));
+
+  static Size dragSizeFor(String modelType) =>
+      _fitInside(boardSizeFor(modelType), const Size(160, 118));
+
+  static Size _fitInside(Size source, Size bounds) {
+    final double scale = math.min(
+      bounds.width / source.width,
+      bounds.height / source.height,
+    );
+    return Size(source.width * scale, source.height * scale);
+  }
+}
+
+/// Historical generated assets retained only for repository audit/history.
+@Deprecated('Reference components are now rendered natively in Dart.')
 abstract final class F18AdobeComponentAssets {
   static const String _root = 'assets/components/adobe';
 
@@ -32,10 +113,6 @@ abstract final class F18AdobeComponentAssets {
 }
 
 /// Shared representation entry point used by palette, drag feedback and board.
-///
-/// Despite its historical name, the wrapper no longer renders the generated
-/// Adobe assets for the Point 5 pilot. Those models are painted natively from
-/// the V1 C31 visual contract so the same geometry remains crisp at every zoom.
 class F18ComponentAssetVisual extends StatelessWidget {
   const F18ComponentAssetVisual({
     super.key,
@@ -48,6 +125,11 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.pressed = false,
     this.animationValue = 0,
     this.showTerminals = true,
+    this.currentA = 0,
+    this.voltageV = 0,
+    this.ratedCurrentA = 1,
+    this.currentLimitA = 2,
+    this.resistanceOhm = 0,
   });
 
   final String modelType;
@@ -59,23 +141,90 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final bool pressed;
   final double animationValue;
   final bool showTerminals;
+  final double currentA;
+  final double voltageV;
+  final double ratedCurrentA;
+  final double currentLimitA;
+  final double resistanceOhm;
 
   @override
   Widget build(BuildContext context) {
-    if (F18V1PilotVisuals.supports(modelType)) {
-      final String type = modelType.toLowerCase();
-      final bool defaultClosed =
-          type == 'breaker_dc' || type == 'breaker_ac1' || type == 'breaker';
-      return F18V1ComponentVisual(
-        modelType: modelType,
-        size: size,
-        enabled: active,
-        energized: energized,
-        closed: closed ?? defaultClosed,
-        tripped: tripped,
-        pressed: pressed,
-        animationValue: animationValue,
+    final String type = modelType.toLowerCase();
+
+    final ReferenceDevice? uploadedDevice = switch (type) {
+      'dc_voltage_source' || 'voltage_source' => ReferenceDevice.supply,
+      'breaker_dc' || 'breaker_ac1' || 'breaker' => ReferenceDevice.breaker,
+      'switch' || 'switch_spst' => ReferenceDevice.toggle,
+      'push_button_no' => ReferenceDevice.button,
+      'lamp' => ReferenceDevice.lamp,
+      _ => null,
+    };
+
+    if (uploadedDevice != null) {
+      final double level =
+          (voltageV.abs() / 24.0).clamp(0.0, 1.0).toDouble();
+      final double brightness = energized ? level * level : 0;
+      final double temperatureK = 293.15 + brightness * (2700 - 293.15);
+      final SupplyMode supplyMode = !active
+          ? SupplyMode.off
+          : (currentA.abs() >= currentLimitA * .98
+              ? SupplyMode.constantCurrent
+              : SupplyMode.constantVoltage);
+
+      return ReferenceComponentView(
+        device: uploadedDevice,
+        width: size.width,
+        height: size.height,
         showTerminals: showTerminals,
+        state: ReferenceVisualState(
+          closed: closed ?? true,
+          pressed: pressed,
+          tripped: tripped,
+          brightness: brightness,
+          temperatureK: temperatureK,
+          voltageV: active ? voltageV.abs() : 0,
+          currentA: active ? currentA.abs() : 0,
+          supplyMode: supplyMode,
+          ratedCurrentA: ratedCurrentA,
+        ),
+      );
+    }
+
+    final ExtendedReferenceDevice? extendedDevice = switch (type) {
+      'resistor' => ExtendedReferenceDevice.resistor,
+      'push_button_nc' => ExtendedReferenceDevice.pushButtonNc,
+      'buzzer' => ExtendedReferenceDevice.buzzer,
+      'fuse_dc' || 'fuse_ac1' || 'fuse' => ExtendedReferenceDevice.fuse,
+      'diode' => ExtendedReferenceDevice.diode,
+      'fan_dc' => ExtendedReferenceDevice.fan,
+      'motor_dc' => ExtendedReferenceDevice.motor,
+      'relay_coil' => ExtendedReferenceDevice.relayCoil,
+      _ => null,
+    };
+
+    if (extendedDevice != null) {
+      final double speedFraction = energized
+          ? (voltageV.abs() / 24.0).clamp(0.0, 1.0).toDouble()
+          : 0;
+      final double motorDirection = currentA < 0 ? -1 : 1;
+      return ExtendedReferenceComponentView(
+        device: extendedDevice,
+        width: size.width,
+        height: size.height,
+        showTerminals: showTerminals,
+        state: ExtendedReferenceVisualState(
+          pressed: pressed,
+          active: energized,
+          blown: tripped,
+          forwardBiased: currentA > 1e-6,
+          speedFraction: speedFraction,
+          speedRpm: speedFraction * 3000 * motorDirection,
+          energized: energized,
+          currentA: currentA,
+          voltageV: voltageV,
+          resistanceOhm: resistanceOhm,
+          animationValue: animationValue,
+        ),
       );
     }
 

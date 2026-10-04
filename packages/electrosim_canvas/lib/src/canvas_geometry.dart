@@ -18,15 +18,29 @@ abstract final class TerminalVisualProfile {
   /// may have its own aspect ratio while the terminal remains attached to its
   /// real front-view silhouette.
   static const Map<String, double> _pilotHalfSpanFractions = <String, double>{
-    'dc_voltage_source': 0.48,
-    'voltage_source': 0.48,
-    'switch': 0.46,
-    'switch_spst': 0.46,
-    'lamp': 0.44,
-    'breaker_dc': 0.46,
-    'breaker_ac1': 0.46,
-    'breaker': 0.46,
-    'push_button_no': 0.44,
+    // Uploaded five: x = 10.8 / 229.2 inside a 240-wide design.
+    'dc_voltage_source': 0.455,
+    'voltage_source': 0.455,
+    'switch': 0.455,
+    'switch_spst': 0.455,
+    'lamp': 0.455,
+    'breaker_dc': 0.455,
+    'breaker_ac1': 0.455,
+    'breaker': 0.455,
+    'push_button_no': 0.455,
+
+    // Eight extended reference components. Fractions match the exact visible
+    // terminal coordinates used by their Dart painters.
+    'resistor': 0.4714285714,
+    'push_button_nc': 0.4444444444,
+    'buzzer': 0.4473684211,
+    'fuse_dc': 0.4733333333,
+    'fuse_ac1': 0.4733333333,
+    'fuse': 0.4733333333,
+    'diode': 0.4703703704,
+    'fan_dc': 0.4523809524,
+    'motor_dc': 0.4565217391,
+    'relay_coil': 0.4473684211,
   };
 
   static bool hasPhysicalPilotAnchor(String modelType) =>

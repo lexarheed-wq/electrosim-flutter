@@ -2,9 +2,25 @@ import 'package:electrosim/main.dart' as app;
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _openPalette(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openContext(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimContextEdgeKey));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openTop(WidgetTester tester) async {
+  await tester.tap(find.byKey(electroSimTopEdgeKey));
+  await tester.pumpAndSettle();
+}
 
 Future<void> _waitForSessionReady(
   WidgetTester tester, {
@@ -155,8 +171,10 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
-    expect(find.text('Palette'), findsOneWidget);
-    expect(find.text('Propriétés'), findsWidgets);
+    expect(find.byKey(electroSimPaletteEdgeKey), findsOneWidget);
+    expect(find.byKey(electroSimContextEdgeKey), findsOneWidget);
+    expect(find.byKey(electroSimTopEdgeKey), findsOneWidget);
+    expect(find.byKey(electroSimStatusEdgeKey), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -168,6 +186,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await _openPalette(tester);
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
     expect(
       tester.getRect(find.byKey(const Key('palette-show-all'))).bottom,
@@ -206,6 +225,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await _openPalette(tester);
     expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
     expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('3 éléments · 1 source'));
 
@@ -225,6 +245,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await _openPalette(tester);
     await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
     await tester.pumpAndSettle();
 
@@ -241,6 +262,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await _openPalette(tester);
     final Finder item = find.byKey(const Key('palette-item-resistor'));
     final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
     expect(item, findsOneWidget);
@@ -273,6 +295,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _openContext(tester);
   
     expect(find.byKey(const Key('properties-model-type')), findsOneWidget);
     expect(find.text('Interrupteur'), findsOneWidget);
@@ -282,7 +305,8 @@ void main() {
     await tester.tap(find.byKey(const Key('properties-primary-toggle')));
     await tester.pumpAndSettle();
     expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('État modifié'));
-  
+
+    await _openTop(tester);
     await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
     expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('2 éléments'));
@@ -318,6 +342,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('diagnostic-tab')), findsOneWidget);
+    await _openContext(tester);
     await tester.tap(find.byKey(const Key('diagnostic-tab')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('student-diagnostic-panel')), findsOneWidget);
@@ -332,6 +357,7 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
+    await _openContext(tester);
     await tester.tap(find.byKey(const Key('properties-element-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Lampe · lamp-1').last);
@@ -386,6 +412,7 @@ void main() {
       const MaterialApp(home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1')),
     );
     await tester.pumpAndSettle();
+    await _openContext(tester);
     await tester.tap(find.byKey(const Key('properties-replace-element')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('replace-resistor')));

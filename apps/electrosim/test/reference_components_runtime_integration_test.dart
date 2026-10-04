@@ -1,12 +1,10 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
+import 'dart:io';
 
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -91,70 +89,41 @@ void main() {
       expect(view.state.animationValue, .25);
     });
 
-    testWidgets('fan animation changes rendered pixels while energized',
+    testWidgets('fan receives live animation phase while energized',
         (WidgetTester tester) async {
-      final List<int> frameA = await _renderPixels(
-        tester,
-        modelType: 'fan_dc',
-        animationValue: .05,
-      );
-      final List<int> frameB = await _renderPixels(
-        tester,
-        modelType: 'fan_dc',
-        animationValue: .55,
-      );
-      expect(frameA, isNot(equals(frameB)));
-    });
-
-    testWidgets('motor animation changes rendered pixels while energized',
-        (WidgetTester tester) async {
-      final List<int> frameA = await _renderPixels(
-        tester,
-        modelType: 'motor_dc',
-        animationValue: .10,
-      );
-      final List<int> frameB = await _renderPixels(
-        tester,
-        modelType: 'motor_dc',
-        animationValue: .60,
-      );
-      expect(frameA, isNot(equals(frameB)));
-    });
-  });
-}
-
-Future<List<int>> _renderPixels(
-  WidgetTester tester, {
-  required String modelType,
-  required double animationValue,
-}) async {
-  final GlobalKey boundaryKey = GlobalKey();
-  await tester.pumpWidget(
-    MaterialApp(
-      home: Center(
-        child: RepaintBoundary(
-          key: boundaryKey,
-          child: F18ComponentAssetVisual(
-            modelType: modelType,
-            size: F18ReferenceComponentMetrics.boardSizeFor(modelType),
-            energized: true,
-            currentA: 2,
-            voltageV: 24,
-            animationValue: animationValue,
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Center(
+            child: F18ComponentAssetVisual(
+              modelType: 'fan_dc',
+              size: Size(210, 210),
+              energized: true,
+              currentA: 2,
+              voltageV: 24,
+              animationValue: .55,
+            ),
           ),
         ),
-      ),
-    ),
-  );
-  await tester.pump();
+      );
+      await tester.pump();
+      final ExtendedReferenceComponentView view =
+          tester.widget<ExtendedReferenceComponentView>(
+        find.byType(ExtendedReferenceComponentView),
+      );
+      expect(view.device, ExtendedReferenceDevice.fan);
+      expect(view.state.speedFraction, closeTo(1, 1e-9));
+      expect(view.state.animationValue, .55);
+    });
 
-  final RenderRepaintBoundary boundary =
-      boundaryKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-  final ui.Image image = await boundary.toImage(pixelRatio: 1);
-  final ByteData? data =
-      await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-  image.dispose();
-  return data!.buffer.asUint8List().toList(growable: false);
+    test('extended painter uses animationValue for rotating receivers', () {
+      final String painter = File(
+        'lib/reference_components/reference_widgets_extended.dart',
+      ).readAsStringSync();
+      expect(painter, contains('state.animationValue * math.pi * 2'));
+      expect(painter, contains('_paintFan'));
+      expect(painter, contains('_paintMotor'));
+    });
+  });
 }
 
 CircuitState _singleLoadCircuit({

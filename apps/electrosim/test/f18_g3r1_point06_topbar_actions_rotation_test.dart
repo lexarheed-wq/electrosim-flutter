@@ -32,9 +32,9 @@ Future<void> _openTop(WidgetTester tester) async {
 }
 
 void main() {
-  test('CircuitVisualLayout rotates terminal geometry by quarter turns', () {
-    final Terminal left = _terminal('left', TerminalRole.input);
-    final Terminal right = _terminal('right', TerminalRole.output);
+  test('CircuitVisualLayout rotates V2 switch terminal geometry by quarter turns', () {
+    final Terminal first = _terminal('first', TerminalRole.input);
+    final Terminal second = _terminal('second', TerminalRole.output);
     final CircuitState circuit = CircuitState(
       circuitId: CircuitId('rotation'),
       revision: 1,
@@ -43,7 +43,7 @@ void main() {
         ComponentInstance(
           id: ComponentId('S1'),
           modelType: 'switch',
-          terminals: <Terminal>[left, right],
+          terminals: <Terminal>[first, second],
         ),
       ],
       sources: const <SourceInstance>[],
@@ -52,23 +52,31 @@ void main() {
 
     final CircuitVisualLayout initial = CircuitVisualLayout(
       elementPositions: const <String, Offset>{'S1': Offset(240, 240)},
-      elementSizes: const <String, Size>{'S1': Size(104, 64)},
+      elementSizes: const <String, Size>{'S1': Size(90, 140)},
     );
     final CircuitGeometryIndex before =
         CircuitGeometryIndex.build(circuit, initial);
-    expect(before.terminalPositions[left.id]!.dy, 240);
-    expect(before.terminalPositions[right.id]!.dy, 240);
+    expect(
+      (before.terminalPositions[first.id]! - const Offset(240, 190)).distance,
+      lessThan(1e-6),
+    );
+    expect(
+      (before.terminalPositions[second.id]! - const Offset(240, 290)).distance,
+      lessThan(1e-6),
+    );
 
     final CircuitVisualLayout rotated = initial.rotateElement('S1');
     expect(rotated.quarterTurnsOf('S1'), 1);
 
     final CircuitGeometryIndex after =
         CircuitGeometryIndex.build(circuit, rotated);
-    expect(after.terminalPositions[left.id]!.dx, 240);
-    expect(after.terminalPositions[right.id]!.dx, 240);
     expect(
-      after.terminalPositions[left.id]!.dy,
-      lessThan(after.terminalPositions[right.id]!.dy),
+      (after.terminalPositions[first.id]! - const Offset(290, 240)).distance,
+      lessThan(1e-6),
+    );
+    expect(
+      (after.terminalPositions[second.id]! - const Offset(190, 240)).distance,
+      lessThan(1e-6),
     );
   });
 

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
+import 'package:electrosim/reference_components/reference_models.dart';
 import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';

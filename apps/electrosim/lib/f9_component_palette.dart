@@ -355,7 +355,10 @@ class _PaletteDraggableTile extends StatelessWidget {
           'Palette : ${definition.title} sélectionné — glissez-le sur la platine ou utilisez +.',
         ),
         child: Padding(
-          padding: const EdgeInsets.all(ElectroSimSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ElectroSimSpacing.sm,
+            vertical: ElectroSimSpacing.xs,
+          ),
           child: Row(
             children: <Widget>[
               F9ComponentPreview(definition: definition, compact: true),
@@ -364,7 +367,12 @@ class _PaletteDraggableTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(definition.title, style: Theme.of(context).textTheme.labelLarge),
+                    Text(
+                      definition.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       definition.subtitle ?? definition.category,

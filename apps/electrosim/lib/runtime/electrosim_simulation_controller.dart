@@ -103,6 +103,23 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Rearms one protection device without resetting unrelated dynamic state.
+  /// If the electrical fault is still present, the normal protection engine
+  /// can trip it again on the next simulation advance.
+  void rearmProtection(ComponentId componentId) {
+    final previous = _snapshot.protectionState;
+    if (previous == null || !previous.isTripped(componentId)) {
+      return;
+    }
+    _snapshot = _runtimeEngine.advance(
+      _circuit,
+      elapsed: Duration.zero,
+      previousProtectionState: previous.reset(componentId),
+      previousContactorStates: _currentContactorStates(),
+    );
+    notifyListeners();
+  }
+
   Map<ComponentId, bool> _currentContactorStates() =>
       <ComponentId, bool>{
         for (final MapEntry<ComponentId, ContactorActuationState> entry

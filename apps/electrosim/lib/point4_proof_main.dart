@@ -67,7 +67,9 @@ class _Point4ProofScreenState extends State<_Point4ProofScreen> {
             ),
           ),
         );
+      case 'supervision-detail':
       case 'supervision':
+        final bool showDetail = widget.screen == 'supervision-detail';
         final ElectroSimTpSessionController teacher = _controller()
           ..createDraft()
           ..publish()
@@ -81,6 +83,14 @@ class _Point4ProofScreenState extends State<_Point4ProofScreen> {
         final ElectroSimTpSessionController moussa =
             teacher.createStudentReplica();
         _controllers.add(moussa);
+        moussa.addDiagnosticEntry(
+          promptId: 'symptome',
+          answer: 'Le récepteur reste à l’arrêt malgré la commande.',
+        );
+        moussa.addDiagnosticEntry(
+          promptId: 'hypothese',
+          answer: 'Défaut possible sur la chaîne de commande.',
+        );
 
         final ElectroSimTpSessionController fatimata =
             teacher.createStudentReplica();
@@ -103,26 +113,31 @@ class _Point4ProofScreenState extends State<_Point4ProofScreen> {
               displayName: 'Awa Ouédraogo',
               connected: true,
               session: awa.session,
+              lastActivityAtUtc: DateTime.utc(2026, 10, 4, 0, 7, 12),
             ),
             F17StudentSupervisionItem(
               clientId: 'moussa-001',
               displayName: 'Moussa Traoré',
               connected: true,
               session: moussa.session,
+              lastActivityAtUtc: DateTime.utc(2026, 10, 4, 0, 8, 31),
             ),
             F17StudentSupervisionItem(
               clientId: 'fatimata-001',
               displayName: 'Fatimata Kaboré',
               connected: true,
               session: fatimata.session,
+              lastActivityAtUtc: DateTime.utc(2026, 10, 4, 0, 6, 44),
             ),
             F17StudentSupervisionItem(
               clientId: 'ibrahim-001',
               displayName: 'Ibrahim Sawadogo',
               connected: false,
               session: ibrahim.session,
+              lastActivityAtUtc: DateTime.utc(2026, 10, 4, 0, 4, 9),
             ),
           ],
+          initialSelectedClientId: showDetail ? 'moussa-001' : null,
           onGradeStudentOverride: (_) {},
           onCloseStudentOverride: (_) {},
         );

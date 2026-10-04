@@ -3,8 +3,19 @@ import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_energy/electrosim_energy.dart';
 import 'package:electrosim_pv/electrosim_pv.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Future<void> _ensureContextOpen(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimContextRegionKey);
+  final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).left >= width) {
+    await tester.tap(find.byKey(electroSimContextEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
 
 void main() {
   group('F17-R10 PV and energy runtime routing', () {
@@ -99,6 +110,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await _ensureContextOpen(tester);
       await tester.tap(find.text('Mesures'));
       await tester.pumpAndSettle();
 

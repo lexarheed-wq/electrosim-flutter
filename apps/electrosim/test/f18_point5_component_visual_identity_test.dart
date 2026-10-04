@@ -145,6 +145,32 @@ void main() {
       expect(visible.dx, lessThan(routing.dx));
     });
 
+    test('Point 5D contract is front-view vector only', () {
+      expect(F18V1PilotVisuals.renderingMode, 'orthographic_front_vector');
+      expect(F18V1PilotVisuals.frontViewOnly, isTrue);
+      expect(F18V1PilotVisuals.rasterAssetsAllowed, isFalse);
+      expect(F18V1PilotVisuals.perspectiveAllowed, isFalse);
+
+      final String painter =
+          File('lib/f18_v1_component_visuals.dart').readAsStringSync();
+      for (final String forbidden in <String>[
+        'Image.asset(',
+        'DecorationImage(',
+        'Matrix4.',
+        'setEntry(3, 2',
+        'rotateX(',
+        'rotateY(',
+        'skewX(',
+        'skewY(',
+      ]) {
+        expect(
+          painter,
+          isNot(contains(forbidden)),
+          reason: 'Front-view vector contract forbids $forbidden',
+        );
+      }
+    });
+
     test('generated raster assets are no longer the runtime renderer', () {
       final String wrapper =
           File('lib/f18_component_asset_visual.dart').readAsStringSync();

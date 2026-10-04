@@ -11,11 +11,22 @@ on:
       - "apps/electrosim/lib/main.dart"
       - "apps/electrosim/lib/reference_components/**"
       - "apps/electrosim/lib/reference_components_integrated_proof_main.dart"
+      - "apps/electrosim/lib/workspace_autohide_proof_main.dart"
+      - "apps/electrosim/test/f9_shell_test.dart"
+      - "apps/electrosim/test/f17_eie_ui_test.dart"
+      - "apps/electrosim/test/f17_measurement_ui_test.dart"
+      - "apps/electrosim/test/f17_persistence_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point06_topbar_actions_rotation_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart"
+      - "apps/electrosim/test/m12_workspace_responsive_test.dart"
       - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
       - "apps/electrosim/test/reference_components_extended_test.dart"
       - "apps/electrosim/test/reference_components_runtime_integration_test.dart"
       - "packages/electrosim_canvas/lib/src/canvas_geometry.dart"
       - "packages/electrosim_canvas/test/physical_terminal_profile_test.dart"
+      - "packages/electrosim_ui_kit/lib/src/workspace_shell.dart"
+      - "packages/electrosim_ui_kit/test/design_system_test.dart"
       - ".github/workflows/reference-components-integrated-candidate.yml"
 
 permissions:
@@ -48,6 +59,13 @@ jobs:
         working-directory: apps/electrosim
         run: flutter analyze
 
+      - name: Validate auto-hide workspace shell
+        working-directory: packages/electrosim_ui_kit
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test test/design_system_test.dart
+
       - name: Test reference component integration
         working-directory: apps/electrosim
         run: |
@@ -66,6 +84,18 @@ jobs:
           set -euo pipefail
           find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
             xargs -0 flutter test
+
+      - name: Test auto-hide workspace integration
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f9_shell_test.dart
+          flutter test test/f17_eie_ui_test.dart
+          flutter test test/f17_measurement_ui_test.dart
+          flutter test test/f17_persistence_test.dart
+          flutter test test/f18_g3r1_point05_palette_contract_test.dart
+          flutter test test/f18_g3r1_point06_topbar_actions_rotation_test.dart
+          flutter test test/f18_g3r1_point10_integrated_visible_contract_test.dart
+          flutter test test/m12_workspace_responsive_test.dart
 
       - name: Build integrated Chromium proof
         working-directory: apps/electrosim
@@ -134,6 +164,37 @@ jobs:
           print('INTEGRATED_ANIMATION_FRAMES_DIFFER')
           PY
 
+      - name: Build real workspace auto-hide proof
+        working-directory: apps/electrosim
+        run: |
+          flutter build web --release -t lib/workspace_autohide_proof_main.dart
+          mkdir -p ../../audit/workspace-autohide/web
+          cp -R build/web/. ../../audit/workspace-autohide/web/
+
+      - name: Capture real workspace Chromium proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/workspace-autohide/chromium
+          python3 -m http.server 8784 --directory ../../audit/workspace-autohide/web             > ../../audit/workspace-autohide/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8784/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          "$chrome" --version > ../../audit/workspace-autohide/chromium/chromium-version.txt
+
+          timeout 45s "$chrome"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --disable-background-networking             --disable-default-apps             --disable-extensions             --disable-sync             --no-first-run             --hide-scrollbars             --enable-unsafe-swiftshader             --window-size=1600,1000             --virtual-time-budget=5000             --screenshot=../../audit/workspace-autohide/chromium/workspace-auto-hidden.png             "http://127.0.0.1:8784/"
+          test -s ../../audit/workspace-autohide/chromium/workspace-auto-hidden.png
+
       - name: Package source candidate
         shell: bash
         run: |
@@ -153,6 +214,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Upload auto-hide workspace proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-autohide-chromium
+          path: audit/workspace-autohide/chromium
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload source candidate
         uses: actions/upload-artifact@v4
         with:
@@ -162,7 +231,7 @@ jobs:
           retention-days: 14
 
       - name: Gate
-        run: echo INTEGRATED_REFERENCE_COMPONENTS_VALIDATION_PASS
+        run: echo INTEGRATED_REFERENCE_COMPONENTS_AUTOHIDE_VALIDATION_PASS
 
   macos-candidate:
     needs: validate
@@ -192,7 +261,7 @@ jobs:
           mkdir -p ../../audit/reference-integrated/macos
           sha="$(git rev-parse HEAD)"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" \
-            "../../audit/reference-integrated/macos/ElectroSim_ReferenceComponents_${sha:0:12}_macOS.zip"
+            "../../audit/reference-integrated/macos/ElectroSim_ReferenceComponents_AutoHide_${sha:0:12}_macOS.zip"
           printf '%s\n' "$sha" > ../../audit/reference-integrated/macos/COMMIT.txt
           shasum -a 256 ../../audit/reference-integrated/macos/*.zip \
             > ../../audit/reference-integrated/macos/SHA256.txt
@@ -206,4 +275,4 @@ jobs:
           retention-days: 14
 
       - name: Gate
-        run: echo INTEGRATED_REFERENCE_COMPONENTS_MACOS_PASS
+        run: echo INTEGRATED_REFERENCE_COMPONENTS_AUTOHIDE_MACOS_PASS

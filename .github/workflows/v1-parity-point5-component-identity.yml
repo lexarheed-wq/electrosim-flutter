@@ -1,0 +1,159 @@
+name: V1 parity point 5 component visual identity
+
+on:
+  push:
+    branches:
+      - v1-parity
+    paths:
+      - "apps/electrosim/lib/f18_component_archetypes.dart"
+      - "apps/electrosim/lib/f9_component_palette.dart"
+      - "apps/electrosim/lib/f9_component_visuals.dart"
+      - "apps/electrosim/lib/point5_component_identity_proof_main.dart"
+      - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point08_visual_archetypes_test.dart"
+      - "apps/electrosim/test/m11_component_visuals_test.dart"
+      - "apps/electrosim/test/m3b_palette_canonical_models_test.dart"
+      - ".github/workflows/v1-parity-point5-component-identity.yml"
+  pull_request:
+    branches:
+      - v1-parity
+
+permissions:
+  contents: read
+
+jobs:
+  component-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.10"
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version 2>&1 | grep "3.10.9"
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Run Point 5 identity contract
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/point5
+          timeout 90s flutter test test/f18_point5_component_visual_identity_test.dart 2>&1 |
+            tee ../../audit/point5/point5-component-identity.log
+          timeout 90s flutter test test/f18_g3r1_point05_palette_contract_test.dart 2>&1 |
+            tee ../../audit/point5/palette-contract.log
+          timeout 90s flutter test test/f18_g3r1_point08_visual_archetypes_test.dart 2>&1 |
+            tee ../../audit/point5/visual-archetypes.log
+          timeout 90s flutter test test/m11_component_visuals_test.dart 2>&1 |
+            tee ../../audit/point5/m11-component-visuals.log
+          timeout 90s flutter test test/m3b_palette_canonical_models_test.dart 2>&1 |
+            tee ../../audit/point5/m3b-canonical-models.log
+
+      - name: Upload targeted diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point5-targeted-logs
+          path: audit/point5
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run full application non-golden regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          find test -name "*_test.dart" ! -name "f9_goldens_test.dart" -print0 |
+            xargs -0 flutter test 2>&1 |
+            tee ../../audit/point5/full-non-golden-regression.log
+
+      - name: Build Point 5 Chromium proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --platforms=web --project-name electrosim . >/dev/null 2>&1
+          flutter build web --release -t lib/point5_component_identity_proof_main.dart 2>&1 |
+            tee ../../audit/point5/web-build.log
+          rm -rf ../../audit/point5/web
+          cp -R build/web ../../audit/point5/web
+
+      - name: Capture real Chromium Point 5 proof
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../../audit/point5/chromium
+          python3 -m http.server 8775 --directory ../../audit/point5/web             > ../../audit/point5/chromium/http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..50}; do
+            if curl -fsS http://127.0.0.1:8775/ >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8775/ >/dev/null
+
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$chrome" ]; then
+            echo "CHROMIUM_NOT_FOUND" >&2
+            exit 70
+          fi
+          "$chrome" --version |
+            tee ../../audit/point5/chromium/chromium-version.txt
+
+          out="../../audit/point5/chromium/component-identity.png"
+          timeout 45s "$chrome"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --disable-background-networking             --disable-default-apps             --disable-extensions             --disable-sync             --no-first-run             --hide-scrollbars             --enable-unsafe-swiftshader             --window-size=1440,900             --virtual-time-budget=5000             --screenshot="$out"             "http://127.0.0.1:8775/"
+          test -s "$out"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import struct
+
+          path = Path('../../audit/point5/chromium/component-identity.png')
+          data = path.read_bytes()
+          if data[:8] != b'\x89PNG\r\n\x1a\n':
+              raise SystemExit('INVALID_POINT5_PNG')
+          width, height = struct.unpack('>II', data[16:24])
+          if (width, height) != (1440, 900):
+              raise SystemExit(f'POINT5_PNG_SIZE_MISMATCH:{width}x{height}')
+          if len(data) < 30000:
+              raise SystemExit(f'POINT5_PNG_SUSPICIOUSLY_SMALL:{len(data)}')
+          digest = hashlib.sha256(data).hexdigest()
+          print(
+              f'POINT5_CHROMIUM_PASS {path.name} '
+              f'{width}x{height} {len(data)} bytes {digest}'
+          )
+          PY
+
+      - name: Upload Point 5 Chromium screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-parity-point5-component-identity-chromium
+          path: audit/point5/chromium
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Gate
+        run: echo V1_PARITY_POINT5_COMPONENT_IDENTITY_PASS

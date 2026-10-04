@@ -167,9 +167,11 @@ class F18ComponentAssetVisual extends StatelessWidget {
       final double temperatureK = 293.15 + brightness * (2700 - 293.15);
       final SupplyMode supplyMode = !active
           ? SupplyMode.off
-          : (currentA.abs() >= currentLimitA * .98
-              ? SupplyMode.constantCurrent
-              : SupplyMode.constantVoltage);
+          : (!energized
+              ? SupplyMode.constantVoltage
+              : (currentA.abs() >= currentLimitA * .98
+                  ? SupplyMode.constantCurrent
+                  : SupplyMode.constantVoltage));
 
       return ReferenceComponentView(
         device: uploadedDevice,
@@ -183,7 +185,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
           brightness: brightness,
           temperatureK: temperatureK,
           voltageV: active ? voltageV.abs() : 0,
-          currentA: active ? currentA.abs() : 0,
+          currentA: uploadedDevice == ReferenceDevice.supply
+              ? (energized ? currentA.abs() : 0)
+              : (active ? currentA.abs() : 0),
           supplyMode: supplyMode,
           ratedCurrentA: ratedCurrentA,
         ),

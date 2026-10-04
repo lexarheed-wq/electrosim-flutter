@@ -1,5 +1,6 @@
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,6 +38,15 @@ Future<void> _pumpUntil(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
     await tester.pump();
+  }
+}
+
+Future<void> _ensureTopOpen(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty ||
+      tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
   }
 }
 
@@ -92,12 +102,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-manage-action')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('tp-session-title')), findsOneWidget);
     await tester.tap(find.text('Fermer'));
     await tester.pumpAndSettle();
 
+    await _ensureTopOpen(tester);
     await tester.tap(find.byKey(const Key('session-dashboard-action')));
     await tester.pumpAndSettle();
 

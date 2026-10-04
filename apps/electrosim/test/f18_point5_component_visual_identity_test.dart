@@ -44,7 +44,12 @@ void main() {
         final F18ComponentAssetVisual visual =
             tester.widget<F18ComponentAssetVisual>(finder);
         expect(visual.modelType, item.modelType);
-        expect(visual.size, F18ComponentIdentityMetrics.paletteSize);
+        expect(
+          visual.size,
+          F18V1PilotVisuals.supports(item.modelType)
+              ? F18PilotVisualMetrics.paletteSizeFor(item.modelType)
+              : F18ComponentIdentityMetrics.paletteSize,
+        );
         expect(tester.takeException(), isNull, reason: item.modelType);
       }
     });
@@ -64,7 +69,7 @@ void main() {
             home: Center(
               child: F18ComponentAssetVisual(
                 modelType: modelType,
-                size: F18ComponentIdentityMetrics.dragSize,
+                size: F18PilotVisualMetrics.dragSizeFor(modelType),
                 energized: modelType == 'dc_voltage_source' || modelType == 'lamp',
                 closed: modelType == 'switch' || modelType == 'breaker_dc',
                 pressed: modelType == 'push_button_no',
@@ -104,30 +109,32 @@ void main() {
       );
     });
 
-    test('pilot terminal spans are physical and model-specific', () {
-      const Size designSize = Size(104, 64);
-      const Map<String, double> expected = <String, double>{
-        'dc_voltage_source': 46.0,
-        'switch': 31.2,
-        'lamp': 27.0,
-        'breaker_dc': 37.2,
-        'push_button_no': 31.2,
+    test('pilot terminal spans follow each model width', () {
+      const Map<String, double> expectedFractions = <String, double>{
+        'dc_voltage_source': .48,
+        'switch': .46,
+        'lamp': .44,
+        'breaker_dc': .46,
+        'push_button_no': .44,
       };
-      for (final MapEntry<String, double> entry in expected.entries) {
+      for (final MapEntry<String, double> entry
+          in expectedFractions.entries) {
+        final Size size =
+            F18PilotVisualMetrics.boardSizeFor(entry.key);
         expect(
           TerminalVisualProfile.horizontalHalfSpanForModel(
             entry.key,
-            size: designSize,
+            size: size,
           ),
-          closeTo(entry.value, 0.0001),
+          closeTo(size.width * entry.value, 0.0001),
           reason: entry.key,
         );
-        expect(entry.value, lessThan(designSize.width / 2));
       }
     });
 
     test('physical nodes remain distinct from invisible routing ports', () {
-      const Size designSize = Size(104, 64);
+      final Size designSize =
+          F18PilotVisualMetrics.boardSizeFor('switch');
       final Offset visible = TerminalVisualProfile.terminalOffset(
         modelType: 'switch',
         size: designSize,
@@ -140,13 +147,13 @@ void main() {
         count: 2,
       );
 
-      expect(visible.dx, closeTo(31.2, 0.0001));
-      expect(routing, const Offset(52, 0));
+      expect(visible.dx, closeTo(designSize.width * .46, 0.0001));
+      expect(routing.dx, closeTo(designSize.width / 2, 0.0001));
       expect(visible.dx, lessThan(routing.dx));
     });
 
     test('Point 5D contract is front-view vector only', () {
-      expect(F18V1PilotVisuals.renderingMode, 'free_silhouette_front_vector');
+      expect(F18V1PilotVisuals.renderingMode, 'per_model_front_vector');
       expect(F18V1PilotVisuals.frontViewOnly, isTrue);
       expect(F18V1PilotVisuals.rasterAssetsAllowed, isFalse);
       expect(F18V1PilotVisuals.perspectiveAllowed, isFalse);
@@ -172,15 +179,15 @@ void main() {
     });
 
     test('Point 5D-R2 uses free real silhouettes, never a visible generic box', () {
-      expect(F18V1PilotVisuals.renderingMode, 'free_silhouette_front_vector');
+      expect(F18V1PilotVisuals.renderingMode, 'per_model_front_vector');
       expect(F18V1PilotVisuals.visibleBoundingBoxAllowed, isFalse);
 
       const Map<String, String> expected = <String, String>{
-        'dc_voltage_source': 'industrial_power_supply_front',
-        'switch': 'rocker_switch_front',
-        'push_button_no': 'round_pushbutton_front',
-        'breaker_dc': 'stepped_mcb_front',
-        'lamp': 'round_pilot_lamp_front',
+        'dc_voltage_source': 'wide_industrial_power_supply',
+        'switch': 'horizontal_rocker_switch',
+        'push_button_no': 'round_pushbutton',
+        'breaker_dc': 'tall_narrow_mcb',
+        'lamp': 'round_pilot_lamp',
       };
       for (final MapEntry<String, String> entry in expected.entries) {
         expect(
@@ -197,6 +204,25 @@ void main() {
       expect(painter, contains('Only the real circular bezel is visible'));
       expect(painter, contains('A stepped MCB outline'));
       expect(painter, isNot(contains('generic visible component box')));
+    });
+
+    test('Point 5D-R3 assigns five distinct board proportions', () {
+      const List<String> models = <String>[
+        'dc_voltage_source',
+        'switch',
+        'push_button_no',
+        'breaker_dc',
+        'lamp',
+      ];
+      final List<Size> sizes = models
+          .map(F18PilotVisualMetrics.boardSizeFor)
+          .toList(growable: false);
+      expect(sizes.toSet().length, 5);
+      expect(sizes[0].width / sizes[0].height, greaterThan(1.7));
+      expect(sizes[1].width / sizes[1].height, greaterThan(1.5));
+      expect(sizes[2].width / sizes[2].height, closeTo(1, .001));
+      expect(sizes[3].width / sizes[3].height, lessThan(.7));
+      expect(sizes[4].width / sizes[4].height, closeTo(1, .001));
     });
 
     test('generated raster assets are no longer the runtime renderer', () {

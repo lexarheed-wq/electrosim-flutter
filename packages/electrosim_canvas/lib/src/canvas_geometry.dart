@@ -50,38 +50,39 @@ abstract final class TerminalVisualProfile {
           Offset(w * 0.1923076923, h * 0.36875),
         ],
 
-      // Eight extended reference components.
+      // Eight additional V2 front-view components. Physical terminals stay
+      // close to the actual housing instead of floating at the layout edge.
       'resistor' => <Offset>[
-          Offset(w * -0.4714285714, 0),
-          Offset(w * 0.4714285714, 0),
+          Offset(w * -0.2785714286, 0),
+          Offset(w * 0.2785714286, 0),
         ],
       'push_button_nc' => <Offset>[
-          Offset(w * -0.4444444444, 0),
-          Offset(w * 0.4444444444, 0),
+          Offset(w * -0.1111111111, h * 0.35),
+          Offset(w * 0.1111111111, h * 0.35),
         ],
       'buzzer' => <Offset>[
-          Offset(w * -0.4473684211, 0),
-          Offset(w * 0.4473684211, 0),
+          Offset(w * -0.1315789474, h * 0.3421052632),
+          Offset(w * 0.1315789474, h * 0.3421052632),
         ],
       'fuse_dc' || 'fuse_ac1' || 'fuse' => <Offset>[
-          Offset(w * -0.4733333333, 0),
-          Offset(w * 0.4733333333, 0),
+          Offset(w * -0.34, 0),
+          Offset(w * 0.34, 0),
         ],
       'diode' => <Offset>[
-          Offset(w * -0.4703703704, 0),
-          Offset(w * 0.4703703704, 0),
+          Offset(w * -0.2777777778, 0),
+          Offset(w * 0.2777777778, 0),
         ],
       'fan_dc' => <Offset>[
-          Offset(w * -0.4523809524, 0),
-          Offset(w * 0.4523809524, 0),
+          Offset(w * -0.1095238095, h * 0.3904761905),
+          Offset(w * 0.1095238095, h * 0.3904761905),
         ],
       'motor_dc' => <Offset>[
-          Offset(w * -0.4565217391, 0),
-          Offset(w * 0.4565217391, 0),
+          Offset(w * -0.1086956522, h * 0.3473684211),
+          Offset(w * 0.1086956522, h * 0.3473684211),
         ],
       'relay_coil' => <Offset>[
-          Offset(w * -0.4473684211, 0),
-          Offset(w * 0.4473684211, 0),
+          Offset(w * -0.1578947368, h * 0.3782608696),
+          Offset(w * 0.1578947368, h * 0.3782608696),
         ],
       _ => null,
     };
@@ -143,6 +144,11 @@ abstract final class TerminalVisualProfile {
           'dc_voltage_source' ||
           'voltage_source' ||
           'push_button_no' ||
+          'push_button_nc' ||
+          'buzzer' ||
+          'fan_dc' ||
+          'motor_dc' ||
+          'relay_coil' ||
           'lamp' => Offset(p.dx, rect.bottom),
           'breaker_dc' ||
           'breaker_ac1' ||

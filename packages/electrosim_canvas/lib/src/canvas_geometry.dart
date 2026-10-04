@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:electrosim_domain/electrosim_domain.dart';
@@ -84,6 +85,49 @@ abstract final class TerminalVisualProfile {
           Offset(w * -0.1578947368, h * 0.3782608696),
           Offset(w * 0.1578947368, h * 0.3782608696),
         ],
+
+      // C14 library wave 1. Multi-pole devices use the exact terminal order
+      // from their ComponentModelContract / palette definition.
+      'capacitor' || 'inductor' || 'impedance' => <Offset>[
+          Offset(w * -0.28, 0),
+          Offset(w * 0.28, 0),
+        ],
+      'contactor_aux_no' || 'contactor_aux_nc' => <Offset>[
+          Offset(0, h * -0.38),
+          Offset(0, h * 0.38),
+        ],
+      'contactor_ac1' => <Offset>[
+          Offset(w * -0.1224, h * -0.42),
+          Offset(w * -0.1224, h * 0.42),
+          Offset(w * -0.42, h * 0.08),
+          Offset(w * 0.42, h * 0.08),
+        ],
+      'contactor_3p' => <Offset>[
+          Offset(w * -0.2016, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.2016, h * -0.42),
+          Offset(w * -0.2016, h * 0.42),
+          Offset(0, h * 0.42),
+          Offset(w * 0.2016, h * 0.42),
+          Offset(w * -0.42, h * 0.08),
+          Offset(w * 0.42, h * 0.08),
+        ],
+      'breaker_3p' => <Offset>[
+          Offset(w * -0.2016, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.2016, h * -0.42),
+          Offset(w * -0.2016, h * 0.42),
+          Offset(0, h * 0.42),
+          Offset(w * 0.2016, h * 0.42),
+        ],
+      'thermal_overload_3p' => <Offset>[
+          Offset(w * -0.2072, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.2072, h * -0.42),
+          Offset(w * -0.2072, h * 0.42),
+          Offset(0, h * 0.42),
+          Offset(w * 0.2072, h * 0.42),
+        ],
       _ => null,
     };
   }
@@ -113,8 +157,9 @@ abstract final class TerminalVisualProfile {
     required int index,
     required int count,
   }) {
+    final List<Offset>? candidate = _physicalOffsets(modelType, size: size);
     final List<Offset>? offsets =
-        count == 2 ? _physicalOffsets(modelType, size: size) : null;
+        candidate != null && candidate.length == count ? candidate : null;
     if (offsets != null && index >= 0 && index < offsets.length) {
       return offsets[index];
     }
@@ -130,39 +175,35 @@ abstract final class TerminalVisualProfile {
     required int index,
     required int count,
   }) {
-    if (count == 2 && modelType != null) {
-      final String type = modelType.toLowerCase();
-      final List<Offset>? physical = _physicalOffsets(type, size: size);
-      if (physical != null && index >= 0 && index < 2) {
-        final Offset p = physical[index];
-        final Rect rect = Rect.fromCenter(
-          center: Offset.zero,
-          width: size.width,
-          height: size.height,
-        );
-        return switch (type) {
-          'dc_voltage_source' ||
-          'voltage_source' ||
-          'push_button_no' ||
-          'push_button_nc' ||
-          'buzzer' ||
-          'fan_dc' ||
-          'motor_dc' ||
-          'relay_coil' ||
-          'lamp' => Offset(p.dx, rect.bottom),
-          'breaker_dc' ||
-          'breaker_ac1' ||
-          'breaker' ||
-          'switch' ||
-          'switch_spst' => Offset(
-              p.dx,
-              index == 0 ? rect.top : rect.bottom,
-            ),
-          _ => _genericTerminalOffset(size, index, count),
-        };
+    if (modelType != null) {
+      final List<Offset>? candidate =
+          _physicalOffsets(modelType.toLowerCase(), size: size);
+      if (candidate != null &&
+          candidate.length == count &&
+          index >= 0 &&
+          index < candidate.length) {
+        return _projectToNearestEdge(candidate[index], size);
       }
     }
     return _genericTerminalOffset(size, index, count);
+  }
+
+  static Offset _projectToNearestEdge(Offset point, Size size) {
+    final Rect rect = Rect.fromCenter(
+      center: Offset.zero,
+      width: size.width,
+      height: size.height,
+    );
+    final double left = (point.dx - rect.left).abs();
+    final double right = (rect.right - point.dx).abs();
+    final double top = (point.dy - rect.top).abs();
+    final double bottom = (rect.bottom - point.dy).abs();
+    final double minimum =
+        math.min(math.min(left, right), math.min(top, bottom));
+    if (minimum == left) return Offset(rect.left, point.dy);
+    if (minimum == right) return Offset(rect.right, point.dy);
+    if (minimum == top) return Offset(point.dx, rect.top);
+    return Offset(point.dx, rect.bottom);
   }
 
   static Offset _genericTerminalOffset(Size size, int index, int count) {

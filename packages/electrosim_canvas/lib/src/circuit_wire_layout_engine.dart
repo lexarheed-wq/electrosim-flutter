@@ -22,11 +22,69 @@ final class CircuitWireLayoutEngine {
       circuit,
       layout,
     );
+    final List<Connection> original =
+        List<Connection>.unmodifiable(circuit.connections);
+
+    final _RoutePass primary = _routePass(
+      circuit: circuit,
+      layout: layout,
+      geometry: geometry,
+      orderedConnections: original,
+    );
+    if (primary.complete) {
+      return primary.layout;
+    }
+
+    // A strict no-crossing router is order-sensitive: an early path can
+    // consume the only channel needed by a later connection. Keep the normal
+    // circuit order as the authoritative fast path, but if it is incomplete,
+    // retry deterministic alternatives and accept a retry only when it
+    // resolves more connections. This is especially important for V2 devices
+    // whose physical terminals can leave through top/bottom instead of only
+    // left/right.
+    final List<List<Connection>> retries = <List<Connection>>[
+      original.reversed.toList(growable: false),
+      <Connection>[...original]
+        ..sort((Connection a, Connection b) {
+          final double aDistance = _routingDistance(a, geometry);
+          final double bDistance = _routingDistance(b, geometry);
+          final int byDistance = bDistance.compareTo(aDistance);
+          if (byDistance != 0) return byDistance;
+          return a.id.value.compareTo(b.id.value);
+        }),
+    ];
+
+    _RoutePass best = primary;
+    for (final List<Connection> order in retries) {
+      final _RoutePass candidate = _routePass(
+        circuit: circuit,
+        layout: layout,
+        geometry: geometry,
+        orderedConnections: order,
+      );
+      if (candidate.resolvedCount > best.resolvedCount) {
+        best = candidate;
+      }
+      if (candidate.complete) {
+        return candidate.layout;
+      }
+    }
+    return best.layout;
+  }
+
+  _RoutePass _routePass({
+    required CircuitState circuit,
+    required CircuitVisualLayout layout,
+    required CircuitGeometryIndex geometry,
+    required List<Connection> orderedConnections,
+  }) {
     final Map<String, List<Offset>> nextRoutes =
         <String, List<Offset>>{...layout.wireRoutes};
     final List<OrthogonalWirePath> occupied = <OrthogonalWirePath>[];
+    var eligibleCount = 0;
+    var resolvedCount = 0;
 
-    for (final Connection connection in circuit.connections) {
+    for (final Connection connection in orderedConnections) {
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end =
@@ -42,6 +100,7 @@ final class CircuitWireLayoutEngine {
           start == end) {
         continue;
       }
+      eligibleCount++;
 
       final String? fromOwner =
           geometry.terminalOwners[connection.fromTerminalId];
@@ -102,6 +161,7 @@ final class CircuitWireLayoutEngine {
                   path.points.sublist(1, path.points.length - 1),
                 );
           occupied.add(path);
+          resolvedCount++;
           continue;
         }
       }
@@ -113,18 +173,39 @@ final class CircuitWireLayoutEngine {
         end: end,
         intermediate: layout.routeFor(connection.id.value),
       );
-      if (existing != null) {
+      if (existing != null &&
+          !WireRouteSafety.hasDifferentNetCrossing(
+            candidate: existing,
+            occupiedDifferentNetPaths: crossingObstacles,
+          )) {
         occupied.add(existing);
+        resolvedCount++;
       }
     }
 
-    return CircuitVisualLayout(
-      elementPositions: layout.elementPositions,
-      elementSizes: layout.elementSizes,
-      wireRoutes: nextRoutes,
-      elementQuarterTurns: layout.elementQuarterTurns,
-      defaultElementSize: layout.defaultElementSize,
+    return _RoutePass(
+      layout: CircuitVisualLayout(
+        elementPositions: layout.elementPositions,
+        elementSizes: layout.elementSizes,
+        wireRoutes: nextRoutes,
+        elementQuarterTurns: layout.elementQuarterTurns,
+        defaultElementSize: layout.defaultElementSize,
+      ),
+      resolvedCount: resolvedCount,
+      eligibleCount: eligibleCount,
     );
+  }
+
+  static double _routingDistance(
+    Connection connection,
+    CircuitGeometryIndex geometry,
+  ) {
+    final Offset? start =
+        geometry.terminalRoutingPositions[connection.fromTerminalId];
+    final Offset? end =
+        geometry.terminalRoutingPositions[connection.toTerminalId];
+    if (start == null || end == null) return 0;
+    return (start.dx - end.dx).abs() + (start.dy - end.dy).abs();
   }
 
   Offset _terminalStubPoint(Offset terminal, Rect ownerRect) {
@@ -260,4 +341,18 @@ final class CircuitWireLayoutEngine {
       return null;
     }
   }
+}
+
+final class _RoutePass {
+  const _RoutePass({
+    required this.layout,
+    required this.resolvedCount,
+    required this.eligibleCount,
+  });
+
+  final CircuitVisualLayout layout;
+  final int resolvedCount;
+  final int eligibleCount;
+
+  bool get complete => resolvedCount >= eligibleCount;
 }

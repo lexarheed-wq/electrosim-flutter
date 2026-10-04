@@ -12,6 +12,7 @@ on:
       - "apps/electrosim/test/f18_point5_component_visual_identity_test.dart"
       - "apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart"
       - "apps/electrosim/test/f18_g3r1_point08_visual_archetypes_test.dart"
+      - "apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart"
       - "apps/electrosim/test/m11_component_visuals_test.dart"
       - "apps/electrosim/test/m3b_palette_canonical_models_test.dart"
       - ".github/workflows/v1-parity-point5-component-identity.yml"

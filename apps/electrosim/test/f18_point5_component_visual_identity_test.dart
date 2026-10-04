@@ -4,6 +4,7 @@ import 'package:electrosim/f18_component_archetypes.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f18_industrial_component_visuals.dart';
 import 'package:electrosim/f18_v1_component_visuals.dart';
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,6 +102,28 @@ void main() {
         isFalse,
         reason: 'The first pilot must stop after five component families.',
       );
+    });
+
+    test('pilot terminal spans are physical and model-specific', () {
+      const Size designSize = Size(104, 64);
+      const Map<String, double> expected = <String, double>{
+        'dc_voltage_source': 46.0,
+        'switch': 31.2,
+        'lamp': 27.0,
+        'breaker_dc': 37.2,
+        'push_button_no': 31.2,
+      };
+      for (final MapEntry<String, double> entry in expected.entries) {
+        expect(
+          TerminalVisualProfile.horizontalHalfSpanForModel(
+            entry.key,
+            size: designSize,
+          ),
+          entry.value,
+          reason: entry.key,
+        );
+        expect(entry.value, lessThan(designSize.width / 2));
+      }
     });
 
     test('generated raster assets are no longer the runtime renderer', () {

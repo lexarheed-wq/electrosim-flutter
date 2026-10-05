@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import hashlib,json,pathlib,re,sys,zipfile,collections
+import hashlib,json,pathlib,re,subprocess,sys,zipfile,collections
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 ZIP=ROOT/'reference/legacy/ElectroSim-FIELDFIX01-R1.zip'
 BASE=ROOT/'reference/REFERENCE_BASELINE.json'
@@ -15,6 +15,16 @@ base=json.loads(BASE.read_text())
 expected=base['legacy_zip']['sha256']
 actual=sha(ZIP)
 if actual!=expected: errors.append('legacy-sha-mismatch')
+
+# The audit report is generated evidence, not source. Every isolated CI gate
+# must be able to reconstruct it deterministically from the immutable V1 oracle.
+analysis = subprocess.run(
+    [sys.executable, str(ROOT/'tools/analyze_legacy_reference.py')],
+    capture_output=True,
+    text=True,
+)
+if analysis.returncode != 0:
+    errors.append(f'legacy-analysis-failed:{analysis.stdout}{analysis.stderr}')
 try: stored=json.loads(AUD.read_text())
 except Exception as exc:
     stored={}; errors.append(f'audit-unreadable:{exc}')

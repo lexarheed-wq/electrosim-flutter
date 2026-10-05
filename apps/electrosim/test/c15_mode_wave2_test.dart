@@ -148,8 +148,8 @@ void main() {
 
       await tester.tap(find.byKey(const Key('workspace-electrical-mode')));
       await tester.pumpAndSettle();
-      final PopupMenuItem<ElectricalMode> pvEntry =
-          tester.widget<PopupMenuItem<ElectricalMode>>(
+      final PopupMenuItem<ElectricalMode> pvEntry = tester
+          .widget<PopupMenuItem<ElectricalMode>>(
             find.byKey(const Key('workspace-mode-pv')),
           );
       expect(pvEntry.enabled, isTrue);

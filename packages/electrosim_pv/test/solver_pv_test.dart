@@ -14,6 +14,7 @@ void main() {
     test('PV-002 nominal PV/inverter/load power flow is physically balanced', () {
       final PvSolveResult result = solve(_pvCircuit(loadPowerAt230W: 2000.0));
       expect(result.status, PvSolveStatus.solved);
+      expect(result.engineVersion, SolverPV.engineVersion);
       expect(result.pvOperatingVoltageV, closeTo(400.0, 1e-9));
       expect(result.pvAvailableCurrentA, closeTo(10.0, 1e-9));
       expect(result.pvAvailablePowerW, closeTo(4000.0, 1e-9));

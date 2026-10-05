@@ -1,0 +1,190 @@
+name: Build passation snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - migration-c15-full-parity
+    paths:
+      - ".github/workflows/passation-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact handoff head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: Generate handoff documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p PASSATION
+
+          cat > PASSATION/00_LIRE_EN_PREMIER.md <<'EOF'
+          # ElectroSim V2 — Dossier de passation
+
+          Ce dossier contient le snapshot source complet de la branche de migration V2 et les informations nécessaires pour reprendre le travail sans perdre le contexte.
+
+          ## Source de vérité
+          - Dépôt : lexarheed-wq/electrosim-flutter
+          - Branche : migration-c15-full-parity
+          - Le SHA exact du snapshot est indiqué dans `01_ETAT_PROJET.md`.
+          - V1 reste uniquement une référence fonctionnelle/visuelle. Ne pas réimporter son architecture.
+          - Ne pas importer les anciennes bibliothèques V1 de schémas ou de pannes.
+
+          ## Architecture non négociable
+          `CircuitState -> TopologyEngine -> SolverEngine -> SimulationResult -> DeviceStateEngine/UI/EIE`
+
+          L'UI ne calcule jamais l'électricité. EIE observe et diagnostique, mais ne modifie jamais le solveur.
+
+          ## Toolchain
+          Flutter 3.38.10 / Dart 3.10.9.
+          EOF
+
+          cat > PASSATION/01_ETAT_PROJET.md <<EOF
+          # État projet au moment de la passation
+
+          - Snapshot HEAD : `${GITHUB_SHA}`
+          - Branche : `${GITHUB_REF_NAME}`
+          - Date CI : $(date -u +"%Y-%m-%d %H:%M UTC")
+          - Dernier HEAD fonctionnel avant ajout du workflow de passation : `aa57fe696ae757c70d1a70605245cb4ba44cae21`
+
+          ## Preuves récentes
+          - Integrated reference components candidate : SUCCESS — run 37306795124
+          - F15 platform qualification : SUCCESS — run 37306795164
+          - F7 gate : FAILURE uniquement sur couverture finale 89.96 % pour seuil 90 % — run 37306795097
+          - F5 gate : même blocage de couverture 89.96 % / 90 % — run 37306795096
+
+          ## Couvertures observées dans F7
+          - F1 : 94.52 %
+          - F2 : 95.78 %
+          - F3 : 90.90 %
+          - F4 : 90.24 %
+          - F6/final : 89.96 % — reste 0.04 point à couvrir sans baisser le seuil.
+
+          ## État fonctionnel
+          - C13 et C14 validés.
+          - C15+ migration catalogue/modes/identité visuelle intégrée.
+          - C16 semi-conducteurs non linéaires.
+          - C17 moteurs/charges triphasés physiques.
+          - C18 relais CC.
+          - C19/C24 mesures AC, P/Q/S, ordre des phases.
+          - C20 appareils externes via modèles canoniques.
+          - C21 condensateur/inductance CC régime établi.
+          - C22 source AC3 4 fils.
+          - C23 distribution multipolaire.
+          - C25 PV régulateur + batterie + SOC + énergie.
+          - `exampleId` supprimé de l'architecture de scénarios. Schémas sains et pannes autonomes restent indépendants.
+          - Palette : variantes visuelles/catalogue séparées des modèles électriques canoniques.
+
+          ## Point de reprise immédiat
+          1. Ne pas réduire le seuil 90 %.
+          2. Ajouter quelques tests réels AC3/C23 afin de faire passer la couverture finale de 89.96 % à >= 90 %.
+          3. Relancer F5/F7 et vérifier que les deux deviennent verts sur le même HEAD.
+          4. Rejouer le candidat intégré complet.
+          5. Fermer la matrice de parité produit.
+          6. Auditer TP professeur/élève, supervision, LAN, EIE, énergie et UX.
+          7. Exécuter G12/régression finale.
+          8. Construire le candidat macOS Intel compatible Ventura 13.7 uniquement sur le SHA final qualifié.
+          EOF
+
+          cat > PASSATION/02_DECISIONS_ARCHITECTURE.md <<'EOF'
+          # Décisions architecture et produit à conserver
+
+          - Flutter/Dart est le nouveau noyau. V1 n'est pas migrée comme architecture.
+          - Bibliothèques de schémas et de pannes : reconstruction depuis zéro.
+          - Schéma sain = circuit fonctionnel autonome.
+          - Panne = CircuitState défectueux autonome, sans lien exampleId.
+          - Modèles électriques canoniques ; variantes visuelles/catalogue distinctes.
+          - Pas de règle UI simpliste de polarité : le Canvas construit la topologie, le moteur interprète la physique.
+          - Fils orthogonaux, bornes physiques nettes, composants frontaux réalistes, pas de cartes carrées permanentes.
+          - Double-clic sur zone physique pour interrupteurs/BP/disjoncteurs.
+          - Animation du courant et états physiques pilotés par le runtime/solveur.
+          - EIE interne, silencieux si OK, teacher-facing, aucune cause inventée.
+          - Student coach supprimé.
+          - TP terminé = lecture seule.
+          - Un seul Supprimer en topbar, Rotation à côté.
+          - Multi-sélection uniquement avec modificateur.
+          - Ne pas réintroduire le concept UX hors tension/sous tension.
+          EOF
+
+          cat > PASSATION/03_PROMPT_REPRISE.txt <<'EOF'
+          Tu reprends le projet ElectroSim V2 Flutter depuis le dossier de passation fourni.
+
+          Rôle : agir comme ingénieur de conception et de validation. Ne pas acquiescer automatiquement : signaler les choix techniques/UX risqués, proposer une alternative, puis laisser la décision finale au chef de projet.
+
+          Règles :
+          1. Lire 00_LIRE_EN_PREMIER.md, 01_ETAT_PROJET.md et 02_DECISIONS_ARCHITECTURE.md avant toute modification.
+          2. Vérifier le HEAD et les derniers workflows GitHub avant d'agir.
+          3. Rester sur migration-c15-full-parity tant que le candidat final n'est pas qualifié.
+          4. Ne jamais importer les bibliothèques V1 de schémas/pannes.
+          5. Ne jamais réintroduire exampleId comme dépendance panne -> exemple.
+          6. Ne jamais baisser un seuil de couverture pour faire passer un gate.
+          7. Corriger la cause racine, pas empiler une exception.
+          8. Un seul front de travail à la fois.
+          9. Avant le ZIP Mac final : analyse, tests unitaires/widgets, gates, régression intégrée, preuves Chromium si pertinentes, build macOS Intel, SHA-256.
+          10. Ne demander une validation physique Mac qu'à la toute fin.
+
+          Point de reprise prioritaire :
+          F5/F7 échouent à 89.96 % de couverture finale pour un seuil de 90 %. Ajouter les tests réels manquants (priorité C23/AC3 et branches de résultats), obtenir >=90 %, puis relancer les gates et le candidat intégré sur le même HEAD. Ensuite fermer la parité produit et construire le Mac final.
+          EOF
+
+          cat > PASSATION/04_CHECKLIST_FINALE.md <<'EOF'
+          # Checklist finale avant candidat Mac
+
+          - [ ] F0 vert
+          - [ ] F1 vert
+          - [ ] F2 vert
+          - [ ] F3 >= 90 %
+          - [ ] F4 >= 90 %
+          - [ ] F5/F6/F7 >= 90 %
+          - [ ] Integrated reference components candidate vert
+          - [ ] F15 platform qualification vert
+          - [ ] Aucun exampleId de couplage scénarios
+          - [ ] Parité composants utile fermée
+          - [ ] Schémas sains reconstruits proprement
+          - [ ] Pannes autonomes reconstruites proprement
+          - [ ] TP professeur/élève validé
+          - [ ] Publication/suppression/notation validées
+          - [ ] TP terminé lecture seule
+          - [ ] Supervision cohérente
+          - [ ] LAN reconnexion/catch-up validé
+          - [ ] Mesures CC/AC1/AC3/PV validées
+          - [ ] Énergie et temps explicite validés
+          - [ ] EIE silencieux si OK et evidence-based
+          - [ ] Responsive mobile/desktop sans clipping
+          - [ ] Sélection/désélection/multi-sélection fiables
+          - [ ] Suppression fils/composants/instruments fiable
+          - [ ] Palette Voir tous/recherche fiable
+          - [ ] Build macOS Intel compatible Ventura 13.7
+          - [ ] SHA-256 du ZIP final
+          - [ ] courte validation physique finale Mac
+          EOF
+
+          git log -20 --oneline > PASSATION/05_20_DERNIERS_COMMITS.txt
+          git status --short > PASSATION/06_GIT_STATUS.txt
+
+      - name: Package exact repository snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          short="$(git rev-parse --short=12 HEAD)"
+          out="ElectroSim_V2_PASSATION_${short}.zip"
+          zip -qr "$out" .             -x ".git/*"             -x "*/.dart_tool/*"             -x "*/build/*"             -x "*/Pods/*"
+          sha256sum "$out" > "${out}.sha256"
+
+      - name: Upload passation
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-V2-PASSATION
+          path: |
+            ElectroSim_V2_PASSATION_*.zip
+            ElectroSim_V2_PASSATION_*.zip.sha256
+          compression-level: 0
+          if-no-files-found: error

@@ -1,4 +1,5 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,6 +81,51 @@ void main() {
 
       expect(find.byKey(const Key('palette-item-motor-dc')), findsOneWidget);
       expect(find.byKey(const Key('palette-show-all')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'quick add preserves visual model and variant on the board component',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await tester.pumpAndSettle();
+      await _openPalette(tester);
+
+      await tester.enterText(
+        find.byKey(const Key('palette-search-field')),
+        'Pompe solaire',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('palette-quick-add-external-solar-pump')),
+      );
+      await tester.pumpAndSettle();
+
+      final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      final component = canvas.circuit.components.singleWhere(
+        (item) => item.id.value.startsWith('external-solar-pump'),
+      );
+      expect(
+        component.parameters['_visualModelType'],
+        'catalog_motor_driven_2t',
+      );
+      expect(component.parameters['_visualVariant'], 'pump');
+      expect(
+        canvas.layout.sizeOf(component.id.value),
+        F18ReferenceComponentMetrics.boardSizeFor(
+          'catalog_motor_driven_2t',
+        ),
+      );
     },
   );
 }

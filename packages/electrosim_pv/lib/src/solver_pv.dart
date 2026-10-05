@@ -10,7 +10,7 @@ import 'pv_solver_options.dart';
 final class SolverPV {
   const SolverPV({this.options = const PvSolverOptions()});
 
-  static const String engineVersion = 'solver-pv/0.1.0';
+  static const String engineVersion = 'solver-pv/0.2.0';
 
   final PvSolverOptions options;
 
@@ -729,7 +729,7 @@ final class SolverPV {
     return PvSolveResult(
       circuitId: circuit.circuitId,
       circuitRevision: circuit.revision,
-      engineVersion: 'solver-pv/0.2.0',
+      engineVersion: engineVersion,
       status: PvSolveStatus.solved,
       irradianceWm2: irradianceWm2,
       cellTemperatureC: cellTemperatureC,

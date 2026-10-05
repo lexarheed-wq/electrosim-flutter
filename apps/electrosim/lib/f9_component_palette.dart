@@ -1422,6 +1422,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'contactor_ac1',
     icon: Icons.hub_outlined,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1},
     terminalLabels: <String>['1L1', '2T1', 'A1', 'A2'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
@@ -1465,6 +1466,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'contactor_3p',
     icon: Icons.hub,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>[
       '1L1',
       '3L2',
@@ -1541,6 +1543,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'breaker_3p',
     icon: Icons.electrical_services,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
@@ -1591,6 +1594,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'isolator_3p',
     icon: Icons.toggle_off_outlined,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
@@ -1640,6 +1644,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'isolator_4p',
     icon: Icons.toggle_off,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>[
       '1L1',
       '3L2',
@@ -1710,6 +1715,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'breaker_4p',
     icon: Icons.electrical_services,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>[
       '1L1',
       '3L2',
@@ -1775,12 +1781,99 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'Protection L1/L2/L3/N',
   ),
   F9PaletteDefinition(
+    keyName: 'terminal-block-dc-5',
+    title: 'Bornier CC +/−/PE',
+    category: 'Distribution CC',
+    modelType: 'terminal_block_5',
+    icon: Icons.view_week_outlined,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    terminalLabels: <String>[
+      '+1 IN',
+      '+2 IN',
+      '−1 IN',
+      '−2 IN',
+      'PE IN',
+      '+1 OUT',
+      '+2 OUT',
+      '−1 OUT',
+      '−2 OUT',
+      'PE OUT',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '+1 IN',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: 'plus1-in',
+      ),
+      F9PaletteTerminalSpec(
+        '+2 IN',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: 'plus2-in',
+      ),
+      F9PaletteTerminalSpec(
+        '−1 IN',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: 'minus1-in',
+      ),
+      F9PaletteTerminalSpec(
+        '−2 IN',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: 'minus2-in',
+      ),
+      F9PaletteTerminalSpec(
+        'PE IN',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.protectiveEarth,
+        idSuffix: 'pe-in',
+      ),
+      F9PaletteTerminalSpec(
+        '+1 OUT',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: 'plus1-out',
+      ),
+      F9PaletteTerminalSpec(
+        '+2 OUT',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: 'plus2-out',
+      ),
+      F9PaletteTerminalSpec(
+        '−1 OUT',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: 'minus1-out',
+      ),
+      F9PaletteTerminalSpec(
+        '−2 OUT',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: 'minus2-out',
+      ),
+      F9PaletteTerminalSpec(
+        'PE OUT',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.protectiveEarth,
+        idSuffix: 'pe-out',
+      ),
+    ],
+    visualVariant: 'dc',
+    displayLabel: 'Bornier CC',
+    subtitle: '2 départs +/− et conducteur PE',
+  ),
+  F9PaletteDefinition(
     keyName: 'terminal-block-5',
     title: 'Bornier L1/L2/L3/N/PE',
     category: 'Distribution 3φ',
     modelType: 'terminal_block_5',
     icon: Icons.view_week_outlined,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>[
       'L1 IN',
       'L2 IN',
@@ -1823,6 +1916,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: 'pe-out',
       ),
     ],
+    visualVariant: 'ac3',
     subtitle: 'Bornier de distribution 5 conducteurs',
   ),
   F9PaletteDefinition(
@@ -1832,6 +1926,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'thermal_overload_3p',
     icon: Icons.device_thermostat_outlined,
     kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(

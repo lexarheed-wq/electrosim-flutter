@@ -25,6 +25,21 @@ Future<void> _openPalette(WidgetTester tester) async {
 }
 
 void main() {
+  test('catalog does not duplicate base DC lamp and fan entries', () {
+    expect(
+      f9PaletteCatalog.any(
+        (F9PaletteDefinition item) => item.keyName == 'external-lamp-dc',
+      ),
+      isFalse,
+    );
+    expect(
+      f9PaletteCatalog.any(
+        (F9PaletteDefinition item) => item.keyName == 'external-fan-dc',
+      ),
+      isFalse,
+    );
+  });
+
   test('C15 source catalog preserves phase semantics', () {
     final F9PaletteDefinition ac1 = f9PaletteCatalog.singleWhere(
       (F9PaletteDefinition item) => item.keyName == 'source-ac1-230v',

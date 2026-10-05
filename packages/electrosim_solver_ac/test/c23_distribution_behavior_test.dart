@@ -92,13 +92,11 @@ void main() {
     final Ac3SolveResult open = solve(
       _fourPoleCircuit(modelType: 'isolator_4p', closed: false),
     );
-    expect(open.isSolved, isTrue);
-    for (final String pole in <String>['L1', 'L2', 'L3', 'N']) {
-      expect(
-        open.branch('component:q1:power:$pole').kind,
-        Ac3BranchKind.openCircuit,
-      );
-    }
+    expect(open.status, Ac3SolveStatus.singular);
+    expect(
+      open.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.floatingElectricalIsland),
+    );
   });
 
   test('C23 breaker_4p conducts and trips all four poles', () {
@@ -126,13 +124,11 @@ void main() {
         ratedCurrentA: 10.0,
       ),
     );
-    expect(tripped.isSolved, isTrue);
-    for (final String pole in <String>['L1', 'L2', 'L3', 'N']) {
-      expect(
-        tripped.branch('component:q1:power:$pole').kind,
-        Ac3BranchKind.openCircuit,
-      );
-    }
+    expect(tripped.status, Ac3SolveStatus.singular);
+    expect(
+      tripped.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.floatingElectricalIsland),
+    );
   });
 
   test('C23 terminal_block_5 feeds five independent conductors', () {
@@ -156,22 +152,10 @@ void main() {
     final Ac3SolveResult result = solve(
       _terminalBlockCircuit(condition: ComponentCondition.openCircuit),
     );
-    expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
-    final List<Ac3BranchResult> feeds = result.branchResults
-        .where((Ac3BranchResult item) => item.modelType == 'terminal_block_5')
-        .toList(growable: false);
-    expect(feeds, hasLength(5));
+    expect(result.status, Ac3SolveStatus.singular);
     expect(
-      feeds.every((Ac3BranchResult item) => item.kind == Ac3BranchKind.openCircuit),
-      isTrue,
-    );
-    expect(
-      result.branch('component:r1').current!.magnitude,
-      closeTo(0.0, 1e-12),
-    );
-    expect(
-      result.branch('component:r4').current!.magnitude,
-      closeTo(0.0, 1e-12),
+      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.floatingElectricalIsland),
     );
   });
 

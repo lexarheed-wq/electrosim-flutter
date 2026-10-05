@@ -13,7 +13,7 @@ final class ExampleRepository {
 
   List<ExampleDefinition> get all => _examples;
 
-  ExampleDefinition? findById(ExampleId id) {
+  ExampleDefinition? findById(CircuitTemplateId id) {
     for (final ExampleDefinition example in _examples) {
       if (example.id == id) return example;
     }
@@ -27,7 +27,7 @@ final class ExampleRepository {
     List<ExampleDefinition> examples,
     ExampleValidator validator,
   ) {
-    final Set<ExampleId> ids = <ExampleId>{};
+    final Set<CircuitTemplateId> ids = <CircuitTemplateId>{};
     final List<ExampleDefinition> validated = <ExampleDefinition>[];
     for (final ExampleDefinition example in examples) {
       if (!ids.add(example.id)) {

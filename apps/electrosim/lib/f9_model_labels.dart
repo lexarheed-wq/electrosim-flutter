@@ -57,6 +57,8 @@ String f9ModelLabel(String modelType) {
       return 'Source AC';
     case 'ac_current_source':
       return 'Source de courant AC';
+    case 'ac3_voltage_source':
+      return 'Source triphasée 400/230 V';
     case 'pv_array':
       return 'Champ photovoltaïque';
     case 'pv_inverter':

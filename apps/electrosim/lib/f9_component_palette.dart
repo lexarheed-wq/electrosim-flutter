@@ -49,6 +49,25 @@ class F9PaletteDefinition {
   final Map<String, Object?> defaultParameters;
   final Map<String, Object?> defaultControlState;
   final String? subtitle;
+
+  bool supportsMode(ElectricalMode mode) {
+    if (kind == F9PaletteElementKind.source) {
+      return switch (modelType) {
+        'dc_voltage_source' || 'voltage_source' || 'dc_current_source' =>
+          mode == ElectricalMode.dc,
+        'ac_voltage_source' || 'ac_current_source' =>
+          mode == ElectricalMode.ac1 || mode == ElectricalMode.ac3,
+        'pv_array' => mode == ElectricalMode.pv,
+        _ => false,
+      };
+    }
+    final ComponentModelContract? contract =
+        CoreComponentModelContracts.registry.resolve(modelType);
+    if (contract != null) return contract.supportsMode(mode);
+    // Temporary explicit compatibility for the diode visual until the
+    // nonlinear C15 semiconductor model is registered in the domain core.
+    return modelType == 'diode' && mode == ElectricalMode.dc;
+  }
 }
 
 const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
@@ -528,10 +547,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
 class F9ComponentPalette extends StatefulWidget {
   const F9ComponentPalette({
     super.key,
+    required this.mode,
     required this.onStatus,
     required this.onQuickAdd,
   });
 
+  final ElectricalMode mode;
   final ValueChanged<String> onStatus;
   final ValueChanged<F9PaletteDefinition> onQuickAdd;
 
@@ -555,6 +576,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   List<F9PaletteDefinition> get _filtered {
     final String q = _query.trim().toLowerCase();
     return f9PaletteCatalog.where((F9PaletteDefinition item) {
+      if (!item.supportsMode(widget.mode)) return false;
       final bool categoryMatches = _category == 'Tous' || item.category == _category;
       final bool queryMatches = q.isEmpty ||
           item.title.toLowerCase().contains(q) ||
@@ -673,7 +695,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
             ],
             const SizedBox(height: ElectroSimSpacing.xs),
             Text(
-              '${filtered.length} composant${filtered.length > 1 ? 's' : ''} disponible${filtered.length > 1 ? 's' : ''}',
+              '${filtered.length} composant${filtered.length > 1 ? 's' : ''} '
+              'disponible${filtered.length > 1 ? 's' : ''} · '
+              '${widget.mode.name.toUpperCase()}',
               key: const Key('palette-result-count'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: ElectroSimColors.textSecondary,

@@ -2,6 +2,9 @@ name: F9-R3 gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'apps/electrosim/**'
       - 'packages/electrosim_ui_kit/**'
@@ -9,6 +12,10 @@ on:
       - 'tools/f9_*'
       - 'tools/run_f9_r3_gate.sh'
       - 'validate.sh'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   f9-r3:
     runs-on: macos-13

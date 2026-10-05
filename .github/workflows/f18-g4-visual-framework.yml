@@ -1,0 +1,56 @@
+name: F18 G4 visual framework
+
+on:
+  push:
+    branches:
+      - f18-g4-visual-framework-r2
+    paths:
+      - '.github/workflows/f18-g4-visual-framework.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f18-g4-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+
+      - name: G4 visual framework
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/f18_g4_visual_framework_gate_test.dart
+          flutter test test/f18_point5_component_visual_identity_test.dart
+          flutter test test/f18_g3r1_point08_visual_archetypes_test.dart
+          flutter test test/f14_visual_identity_test.dart
+          flutter test test/f20_catalog_visual_identity_test.dart
+          flutter test test/f9_catalog_visual_uniqueness_test.dart
+          flutter test test/c15_mode_wave2_test.dart
+          flutter test test/f18_g3r1_point05_palette_contract_test.dart
+
+      - name: Gate marker
+        run: echo F18_G4_VISUAL_FRAMEWORK_GATE_PASS

@@ -125,6 +125,24 @@ void main() {
       expect(apparent.reading!.value, closeTo(1150.0, 1e-6));
     });
 
+    test('AC voltage probes reject terminals absent from topology', () {
+      final CircuitState circuit = _ac1Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac1SolveResult result = const SolverAC1().solve(circuit, topology);
+
+      final MeasurementResult invalid = measurements.measureAc1(
+        request: MeasurementRequest.voltageAcRms(
+          positiveProbe: TerminalId('missing-terminal'),
+          negativeProbe: TerminalId('r1b'),
+        ),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      expect(invalid.isValid, isFalse);
+      expect(invalid.errorCode, MeasurementErrorCode.unknownTerminal);
+    });
+
     test('AC power requests reject missing branches and invalid mode kinds', () {
       final CircuitState ac1 = _ac1Circuit();
       final TopologyGraph topology1 = topologyEngine.compile(ac1);

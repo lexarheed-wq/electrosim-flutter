@@ -576,6 +576,41 @@ void main() {
     expect(graph.nodeForTerminal(TerminalId('v1p')), graph.nodeForTerminal(TerminalId('v2n')));
   });
 
+  test('zero-volt DC source on one node is redundant, not a topology error', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('zero-volt-redundant-topology'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('short'),
+          fromTerminalId: TerminalId('z1'),
+          toTerminalId: TerminalId('z2'),
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('z'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('z1'), name: 'A'),
+            Terminal(id: TerminalId('z2'), name: 'B'),
+          ],
+          parameters: const <String, Object?>{'voltageV': 0.0},
+        ),
+      ],
+    );
+
+    final TopologyGraph graph = const TopologyEngine().compile(circuit);
+    expect(
+      graph.findings.where(
+        (TopologyFinding finding) =>
+            finding.code == TopologyFindingCode.conflictingPhases,
+      ),
+      isEmpty,
+    );
+  });
+
   test(
     'current-limited DC source direct short is warning not topology error',
     () {

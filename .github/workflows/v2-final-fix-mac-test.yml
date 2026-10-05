@@ -11,6 +11,7 @@ on:
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'
       - 'packages/electrosim_solver_ac/**'
+      - 'packages/electrosim_pv/**'
       - 'tools/test_convergence_*.py'
       - 'tools/f9_static_contract_check.py'
       - '.github/workflows/v2-final-fix-mac-test.yml'
@@ -64,7 +65,8 @@ jobs:
             packages/electrosim_topology/lib/src/topology_engine.dart \
             packages/electrosim_topology/test/topology_engine_test.dart \
             packages/electrosim_solver_dc/test/solver_dc_test.dart \
-            packages/electrosim_solver_ac/test/solver_ac3_test.dart
+            packages/electrosim_solver_ac/test/solver_ac3_test.dart \
+            packages/electrosim_pv/test/solver_pv_test.dart
 
       - name: Static convergence and F9 contracts
         shell: bash

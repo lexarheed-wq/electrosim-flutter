@@ -41,6 +41,8 @@ abstract final class F18ReferenceComponentVisuals {
     'impedance',
     'contactor_aux_no',
     'contactor_aux_nc',
+    'relay_contact_no',
+    'relay_contact_nc',
     'contactor_ac1',
     'contactor_3p',
     'breaker_3p',
@@ -101,8 +103,10 @@ abstract final class F18ReferenceComponentMetrics {
         'capacitor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.capacitor),
         'inductor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.inductor),
         'impedance' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.impedance),
-        'contactor_aux_no' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNo),
-        'contactor_aux_nc' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNc),
+        'contactor_aux_no' || 'relay_contact_no' =>
+          F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNo),
+        'contactor_aux_nc' || 'relay_contact_nc' =>
+          F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNc),
         'contactor_ac1' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactorAc1),
         'contactor_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactor3p),
         'breaker_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.breaker3p),
@@ -284,8 +288,10 @@ class F18ComponentAssetVisual extends StatelessWidget {
       'capacitor' => F14LibraryDevice.capacitor,
       'inductor' => F14LibraryDevice.inductor,
       'impedance' => F14LibraryDevice.impedance,
-      'contactor_aux_no' => F14LibraryDevice.auxiliaryNo,
-      'contactor_aux_nc' => F14LibraryDevice.auxiliaryNc,
+      'contactor_aux_no' || 'relay_contact_no' =>
+        F14LibraryDevice.auxiliaryNo,
+      'contactor_aux_nc' || 'relay_contact_nc' =>
+        F14LibraryDevice.auxiliaryNc,
       'contactor_ac1' => F14LibraryDevice.contactorAc1,
       'contactor_3p' => F14LibraryDevice.contactor3p,
       'breaker_3p' => F14LibraryDevice.breaker3p,

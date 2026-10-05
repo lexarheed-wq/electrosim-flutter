@@ -61,6 +61,10 @@ String f9ModelLabel(String modelType) {
       return 'Source triphasée 400/230 V';
     case 'pv_array':
       return 'Champ photovoltaïque';
+    case 'pv_controller':
+      return 'Régulateur solaire';
+    case 'pv_battery':
+      return 'Batterie PV';
     case 'pv_inverter':
       return 'Onduleur solaire';
     case 'pv_resistive_load':

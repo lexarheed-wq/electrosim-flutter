@@ -610,6 +610,40 @@ class _PvRuntimePanel extends StatelessWidget {
         ),
         const Text('Puissance PV disponible'),
         const SizedBox(height: ElectroSimSpacing.sm),
+        if (pv.controllerPresent) ...<Widget>[
+          Text(
+            '${(pv.controllerEfficiency * 100).toStringAsFixed(1)} %',
+            key: const Key('pv-controller-efficiency-reading'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const Text('Rendement régulateur'),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ],
+        if (pv.batteryPresent) ...<Widget>[
+          Text(
+            '${(pv.batterySoc * 100).toStringAsFixed(1)} %',
+            key: const Key('pv-battery-soc-reading'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Text(
+            'SOC batterie · ${pv.batteryVoltageV.toStringAsFixed(1)} V · '
+            '${pv.batteryStoredEnergyWh.toStringAsFixed(0)} Wh',
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          Text(
+            '${pv.batteryPowerW.abs().toStringAsFixed(1)} W',
+            key: const Key('pv-battery-power-reading'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Text(
+            pv.batteryPowerW > 1e-9
+                ? 'Batterie en décharge'
+                : pv.batteryPowerW < -1e-9
+                    ? 'Batterie en charge'
+                    : 'Batterie au repos',
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ],
         Text(
           '${pv.inverterOutputPowerW.toStringAsFixed(1)} W',
           key: const Key('pv-output-power-reading'),

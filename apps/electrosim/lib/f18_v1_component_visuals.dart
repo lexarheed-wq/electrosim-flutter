@@ -373,12 +373,13 @@ class F18V1ComponentPainter extends CustomPainter {
     final Color led = energized
         ? const Color(0xFF66ED7C)
         : const Color(0xFF66776F);
-    if (energized)
+    if (energized) {
       canvas.drawCircle(
         Offset(w * .22, h * .04),
         h * .06,
         Paint()..color = const Color(0x4466ED7C),
       );
+    }
     canvas.drawCircle(Offset(w * .22, h * .04), h * .032, Paint()..color = led);
 
     canvas.drawRRect(

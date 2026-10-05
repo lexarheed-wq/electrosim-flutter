@@ -480,6 +480,21 @@ void main() {
       expect(discharged.inverterState, PvInverterState.powerLimited);
     });
 
+    test('C25 controller output voltage must match battery voltage', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        controllerOutputVoltageV: 24.0,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+      );
+      expect(result.status, PvSolveStatus.invalid);
+      expect(
+        result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.invalidControllerParameter),
+      );
+    });
+
     test('C25 empty battery reports minimum SOC exhaustion explicitly', () {
       final CircuitState circuit = _pvStorageCircuit(
         irradianceWm2: 0.0,
@@ -712,6 +727,7 @@ CircuitState _pvStorageCircuit({
   double maxSoc = 0.95,
   bool includeController = true,
   bool includeBattery = true,
+  double controllerOutputVoltageV = 48.0,
 }) {
   final double resistance = 230.0 * 230.0 / loadPowerAt230W;
   final ComponentInstance inverter = ComponentInstance(
@@ -780,8 +796,8 @@ CircuitState _pvStorageCircuit({
         phase: PhaseTag.dcNegative,
       ),
     ],
-    parameters: const <String, Object?>{
-      'outputVoltageV': 48.0,
+    parameters: <String, Object?>{
+      'outputVoltageV': controllerOutputVoltageV,
       'maxOutputCurrentA': 60.0,
       'efficiency': 0.97,
     },

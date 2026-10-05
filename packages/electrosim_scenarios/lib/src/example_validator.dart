@@ -14,12 +14,12 @@ final class ExampleValidationIssue {
 
 final class ExampleValidationResult {
   const ExampleValidationResult({
-    required this.exampleId,
+    required this.templateId,
     required this.issues,
     required this.stamp,
   });
 
-  final ExampleId exampleId;
+  final CircuitTemplateId templateId;
   final List<ExampleValidationIssue> issues;
   final ExampleValidationStamp stamp;
   bool get isValid => issues.isEmpty;
@@ -83,7 +83,7 @@ final class ExampleValidator {
     }
 
     return ExampleValidationResult(
-      exampleId: example.id,
+      templateId: example.id,
       issues: List<ExampleValidationIssue>.unmodifiable(issues),
       stamp: ExampleValidationStamp(
         validatorVersion: validatorVersion,
@@ -95,7 +95,7 @@ final class ExampleValidator {
 
   static bool _containsFaultSemantics(Map<String, Object?> metadata) {
     const Set<String> forbidden = <String>{
-      'fault', 'faultId', 'faultScenario', 'faultScenarioId', 'teacherTruth', 'exampleId',
+      'fault', 'faultId', 'faultScenario', 'faultScenarioId', 'teacherTruth',
     };
     return metadata.keys.any(forbidden.contains);
   }

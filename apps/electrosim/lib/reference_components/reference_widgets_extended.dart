@@ -13,6 +13,25 @@ enum ExtendedReferenceDevice {
   relayCoil,
 }
 
+enum ExtendedDiodeVisualPackage {
+  rectifier,
+  schottky,
+  led,
+  zenerGlass,
+  tvs,
+}
+
+abstract final class ExtendedReferenceVisualIdentity {
+  static ExtendedDiodeVisualPackage diodePackage(String? variantKey) =>
+      switch (variantKey) {
+        'schottky' => ExtendedDiodeVisualPackage.schottky,
+        'led-red' || 'led-green' => ExtendedDiodeVisualPackage.led,
+        'zener' => ExtendedDiodeVisualPackage.zenerGlass,
+        'tvs' => ExtendedDiodeVisualPackage.tvs,
+        _ => ExtendedDiodeVisualPackage.rectifier,
+      };
+}
+
 @immutable
 final class ExtendedReferenceVisualState {
   const ExtendedReferenceVisualState({
@@ -565,78 +584,236 @@ class _ExtendedReferencePainter extends CustomPainter {
     );
     final String variant = state.variantKey ?? 'rectifier';
 
-    const Rect body = Rect.fromLTWH(80, 27, 110, 51);
-    if (showTerminals) {
-      _terminal(c, left, const Offset(80, 52.5));
-      _terminal(c, right, const Offset(190, 52.5));
+    switch (ExtendedReferenceVisualIdentity.diodePackage(variant)) {
+      case ExtendedDiodeVisualPackage.rectifier:
+        _paintAxialDiode(c, left, right, schottky: false);
+        break;
+      case ExtendedDiodeVisualPackage.schottky:
+        _paintAxialDiode(c, left, right, schottky: true);
+        break;
+      case ExtendedDiodeVisualPackage.led:
+        _paintLed(c, left, right, green: variant == 'led-green');
+        break;
+      case ExtendedDiodeVisualPackage.zenerGlass:
+        _paintZenerGlass(c, left, right);
+        break;
+      case ExtendedDiodeVisualPackage.tvs:
+        _paintTvs(c, left, right);
+        break;
     }
 
-    final bool led = variant == 'led-red' || variant == 'led-green';
-    final Color accent = switch (variant) {
-      'schottky' => const Color(0xFF4D7A8A),
-      'zener' => const Color(0xFF7758A6),
-      'tvs' => const Color(0xFFB24C55),
-      'led-red' => const Color(0xFFD83C3C),
-      'led-green' => const Color(0xFF2B9A57),
-      'freewheel' => const Color(0xFF4B657A),
-      'reverse-protection' => const Color(0xFF9A6A2B),
-      _ => const Color(0xFF30363A),
-    };
+    _text(c, 'A', const Offset(92, 82), size: 9);
+    _text(c, 'K', const Offset(164, 82), size: 9);
+  }
 
+  void _paintAxialDiode(
+    Canvas c,
+    Offset left,
+    Offset right, {
+    required bool schottky,
+  }) {
+    final Rect body = schottky
+        ? const Rect.fromLTWH(88, 31, 94, 43)
+        : const Rect.fromLTWH(80, 27, 110, 51);
+    if (showTerminals) {
+      _terminal(c, left, Offset(body.left, 52.5));
+      _terminal(c, right, Offset(body.right, 52.5));
+    }
+
+    final Color bodyTop = schottky
+        ? const Color(0xFF385B68)
+        : const Color(0xFF42494D);
+    final Color bodyBottom = schottky
+        ? const Color(0xFF162B33)
+        : const Color(0xFF171B1E);
     _box(
       c,
       body,
       <Color>[
         state.forwardBiased
-            ? Color.lerp(accent, Colors.white, .18)!
-            : Color.lerp(accent, Colors.black, .10)!,
-        Color.lerp(accent, Colors.black, .72)!,
-        Color.lerp(accent, Colors.black, .45)!,
+            ? Color.lerp(bodyTop, Colors.white, .18)!
+            : bodyTop,
+        bodyBottom,
       ],
-      radius: 24,
+      radius: body.height * .46,
       shadow: true,
     );
     c.drawRect(
-      const Rect.fromLTWH(162, 29, 10, 47),
-      Paint()..color = const Color(0xFFD8DEE0),
+      Rect.fromLTWH(
+        body.right - body.width * .23,
+        body.top + 2,
+        body.width * .10,
+        body.height - 4,
+      ),
+      Paint()..color = const Color(0xFFDDE2E4),
     );
     c.drawOval(
-      const Rect.fromLTWH(91, 34, 36, 11),
+      Rect.fromLTWH(
+        body.left + body.width * .10,
+        body.top + body.height * .13,
+        body.width * .30,
+        body.height * .20,
+      ),
       Paint()..color = const Color(0x33FFFFFF),
     );
-
-    if (led && state.forwardBiased) {
-      final Color glow = variant == 'led-green'
-          ? const Color(0xFF63E98C)
-          : const Color(0xFFFF6868);
-      c.drawCircle(
-        const Offset(134, 52.5),
-        30,
-        Paint()
-          ..color = glow.withValues(alpha: .22)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-      );
-    }
-    if (variant == 'zener' || variant == 'tvs') {
-      _text(
-        c,
-        variant == 'zener' ? 'Z' : 'TVS',
-        const Offset(132, 52),
-        size: variant == 'zener' ? 18 : 10,
-        color: const Color(0xFFE9EDF0),
-      );
-    } else if (variant == 'schottky') {
+    if (schottky) {
       _text(
         c,
         'S',
-        const Offset(132, 52),
+        Offset(body.center.dx - 6, body.center.dy - 8),
         size: 15,
-        color: const Color(0xFFE9EDF0),
+        color: const Color(0xFFE9F2F4),
+      );
+    }
+  }
+
+  void _paintLed(
+    Canvas c,
+    Offset left,
+    Offset right, {
+    required bool green,
+  }) {
+    const Offset center = Offset(135, 49);
+    final Color color = green
+        ? const Color(0xFF2DAA60)
+        : const Color(0xFFD94444);
+    final Color litColor = green
+        ? const Color(0xFF65F095)
+        : const Color(0xFFFF7070);
+
+    if (showTerminals) {
+      _terminal(c, left, const Offset(112, 58));
+      _terminal(c, right, const Offset(158, 58));
+    }
+    c.drawLine(
+      const Offset(112, 58),
+      const Offset(122, 58),
+      _stroke(color: const Color(0xFF8C979C), width: 3),
+    );
+    c.drawLine(
+      const Offset(148, 58),
+      const Offset(158, 58),
+      _stroke(color: const Color(0xFF8C979C), width: 3),
+    );
+
+    if (state.forwardBiased) {
+      c.drawCircle(
+        center,
+        31,
+        Paint()
+          ..color = litColor.withValues(alpha: .25)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13),
       );
     }
 
-    _text(c, 'K', const Offset(164, 82), size: 9);
-    _text(c, 'A', const Offset(92, 82), size: 9);
+    final Path dome = Path()
+      ..moveTo(118, 58)
+      ..lineTo(118, 47)
+      ..quadraticBezierTo(118, 25, 135, 22)
+      ..quadraticBezierTo(152, 25, 152, 47)
+      ..lineTo(152, 58)
+      ..close();
+    c.drawPath(
+      dome,
+      _linear(
+        dome.getBounds(),
+        <Color>[
+          Color.lerp(color, Colors.white, .48)!,
+          state.forwardBiased ? litColor : color,
+          Color.lerp(color, Colors.black, .28)!,
+        ],
+      ),
+    );
+    c.drawPath(dome, _stroke(color: const Color(0xFF6A757A), width: 1.2));
+    c.drawRect(
+      const Rect.fromLTWH(115, 56, 40, 7),
+      Paint()..color = const Color(0xFF7B878C),
+    );
+    c.drawLine(
+      const Offset(126, 44),
+      const Offset(126, 57),
+      _stroke(color: const Color(0xFFB7C0C4), width: 1.5),
+    );
+    c.drawLine(
+      const Offset(143, 38),
+      const Offset(143, 57),
+      _stroke(color: const Color(0xFFB7C0C4), width: 1.5),
+    );
+  }
+
+  void _paintZenerGlass(Canvas c, Offset left, Offset right) {
+    const Rect glass = Rect.fromLTWH(88, 33, 94, 39);
+    if (showTerminals) {
+      _terminal(c, left, const Offset(88, 52.5));
+      _terminal(c, right, const Offset(182, 52.5));
+    }
+    c.drawRRect(
+      RRect.fromRectAndRadius(glass, const Radius.circular(17)),
+      _linear(
+        glass,
+        const <Color>[
+          Color(0x99F8D6A2),
+          Color(0x66CE8B45),
+          Color(0x99F4E3C5),
+        ],
+      ),
+    );
+    c.drawRRect(
+      RRect.fromRectAndRadius(glass, const Radius.circular(17)),
+      _stroke(color: const Color(0xFF8C6E55), width: 1.1),
+    );
+    c.drawRect(
+      const Rect.fromLTWH(157, 35, 7, 35),
+      Paint()..color = const Color(0xFF6C4B88),
+    );
+    c.drawRect(
+      const Rect.fromLTWH(124, 44, 21, 17),
+      Paint()..color = const Color(0x885A3A28),
+    );
+    _text(
+      c,
+      '5V1',
+      const Offset(120, 82),
+      size: 8,
+      color: const Color(0xFF60472F),
+    );
+  }
+
+  void _paintTvs(Canvas c, Offset left, Offset right) {
+    const Rect body = Rect.fromLTWH(91, 29, 88, 47);
+    if (showTerminals) {
+      _terminal(c, left, const Offset(91, 52.5));
+      _terminal(c, right, const Offset(179, 52.5));
+    }
+    _box(
+      c,
+      body,
+      const <Color>[
+        Color(0xFF5A6267),
+        Color(0xFF20272B),
+        Color(0xFF101518),
+      ],
+      radius: 6,
+      shadow: true,
+    );
+    c.drawRect(
+      const Rect.fromLTWH(152, 31, 9, 43),
+      Paint()..color = const Color(0xFFB74E58),
+    );
+    _text(
+      c,
+      'TVS',
+      const Offset(112, 45),
+      size: 11,
+      color: const Color(0xFFF1F3F4),
+    );
+    _text(
+      c,
+      '12 V',
+      const Offset(111, 82),
+      size: 8,
+      color: const Color(0xFF545F64),
+    );
   }
 
   void _paintFan(Canvas c, Size s) {

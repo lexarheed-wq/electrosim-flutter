@@ -218,7 +218,11 @@ final class CoreComponentModelContracts {
         modelType: 'inductor',
         family: ComponentFamily.passive,
         terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
         branches: <ComponentBranchDefinition>[
           ComponentBranchDefinition(
             id: 'main',
@@ -232,7 +236,11 @@ final class CoreComponentModelContracts {
         modelType: 'capacitor',
         family: ComponentFamily.passive,
         terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
         branches: <ComponentBranchDefinition>[
           ComponentBranchDefinition(
             id: 'main',

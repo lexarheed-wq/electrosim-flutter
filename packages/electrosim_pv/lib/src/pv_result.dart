@@ -48,6 +48,14 @@ final class PvSolveResult {
     required this.inverterOutputCurrentRmsA,
     required this.inverterOutputPowerW,
     required this.inverterConversionLossW,
+    this.controllerPresent = false,
+    this.controllerEfficiency = 1.0,
+    this.controllerConversionLossW = 0.0,
+    this.batteryPresent = false,
+    this.batterySoc = 0.0,
+    this.batteryStoredEnergyWh = 0.0,
+    this.batteryPowerW = 0.0,
+    this.batteryConversionLossW = 0.0,
     required Iterable<PvLoadResult> loadResults,
     required Iterable<PvSolverDiagnostic> diagnostics,
   }) : loadResults = List<PvLoadResult>.unmodifiable(loadResults),
@@ -71,6 +79,16 @@ final class PvSolveResult {
   final double inverterOutputCurrentRmsA;
   final double inverterOutputPowerW;
   final double inverterConversionLossW;
+  final bool controllerPresent;
+  final double controllerEfficiency;
+  final double controllerConversionLossW;
+  final bool batteryPresent;
+  /// State of charge in [0, 1].
+  final double batterySoc;
+  final double batteryStoredEnergyWh;
+  /// Positive while discharging to the DC bus, negative while charging.
+  final double batteryPowerW;
+  final double batteryConversionLossW;
   final List<PvLoadResult> loadResults;
   final List<PvSolverDiagnostic> diagnostics;
 

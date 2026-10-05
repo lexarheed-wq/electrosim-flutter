@@ -11,11 +11,13 @@ final class F23DistributionState {
     this.tripped = false,
     this.energized = false,
     this.currentA = 0,
+    this.variantKey,
   });
   final bool closed;
   final bool tripped;
   final bool energized;
   final double currentA;
+  final String? variantKey;
 }
 
 abstract final class F23DistributionGeometry {
@@ -78,7 +80,8 @@ final class _F23DistributionPainter extends CustomPainter {
       oldDelegate.state.closed != state.closed ||
       oldDelegate.state.tripped != state.tripped ||
       oldDelegate.state.energized != state.energized ||
-      oldDelegate.state.currentA != state.currentA;
+      oldDelegate.state.currentA != state.currentA ||
+      oldDelegate.state.variantKey != state.variantKey;
 }
 
 final class _P {
@@ -272,6 +275,7 @@ final class _P {
   }
 
   void terminalBlock5() {
+    final bool dc = state.variantKey == 'dc';
     final Rect rail = Rect.fromCenter(
       center: c,
       width: w * .82,
@@ -284,14 +288,24 @@ final class _P {
     );
     canvas.drawRRect(rr, outline);
 
-    const List<String> labels = <String>['L1', 'L2', 'L3', 'N', 'PE'];
-    const List<Color> colors = <Color>[
-      Color(0xFF8B5A2B),
-      Color(0xFF242A30),
-      Color(0xFF777F86),
-      Color(0xFF2563EB),
-      Color(0xFF2F8B57),
-    ];
+    final List<String> labels = dc
+        ? const <String>['+1', '+2', '−1', '−2', 'PE']
+        : const <String>['L1', 'L2', 'L3', 'N', 'PE'];
+    final List<Color> colors = dc
+        ? const <Color>[
+            Color(0xFFC73737),
+            Color(0xFFE2584D),
+            Color(0xFF252B30),
+            Color(0xFF4B5359),
+            Color(0xFF2F8B57),
+          ]
+        : const <Color>[
+            Color(0xFF8B5A2B),
+            Color(0xFF242A30),
+            Color(0xFF777F86),
+            Color(0xFF2563EB),
+            Color(0xFF2F8B57),
+          ];
     final double step = rail.width / 5;
     for (var pole = 0; pole < 5; pole++) {
       final double x = rail.left + step * (pole + .5);

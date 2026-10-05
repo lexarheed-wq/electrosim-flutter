@@ -30,7 +30,9 @@ on:
       - "apps/electrosim/test/reference_components_runtime_integration_test.dart"
       - "apps/electrosim/test/c14_library_wave1_test.dart"
       - "apps/electrosim/test/c15_mode_wave2_test.dart"
-      - "packages/electrosim_domain/lib/src/component_model_contract.dart"
+      - "packages/electrosim_domain/**"
+      - "packages/electrosim_solver_dc/**"
+      - "packages/electrosim_topology/**"
       - "packages/electrosim_canvas/lib/src/canvas_geometry.dart"
       - "packages/electrosim_canvas/lib/src/circuit_wire_layout_engine.dart"
       - "packages/electrosim_canvas/test/physical_terminal_profile_test.dart"
@@ -90,6 +92,12 @@ jobs:
       - name: Test terminal geometry
         working-directory: packages/electrosim_canvas
         run: flutter test test/physical_terminal_profile_test.dart
+
+      - name: Qualify DC nonlinear semiconductor model
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          dart pub get
+          dart test test/diode_model_test.dart
 
       - name: Run full application non-golden regression
         working-directory: apps/electrosim

@@ -159,8 +159,8 @@ void main() {
       ),
     );
     await tester.pump();
-    final F23DistributionComponentView view =
-        tester.widget<F23DistributionComponentView>(
+    final F23DistributionComponentView view = tester
+        .widget<F23DistributionComponentView>(
           find.byType(F23DistributionComponentView),
         );
     expect(view.state.variantKey, 'dc');

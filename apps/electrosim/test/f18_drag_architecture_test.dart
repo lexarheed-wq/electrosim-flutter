@@ -28,10 +28,7 @@ void main() {
   test('authoritative global routing is deferred to drag finalization', () {
     final String source = File('lib/main.dart').readAsStringSync();
     final int start = source.indexOf('void _finalizeDirectDrag(');
-    final int end = source.indexOf(
-      'void _cancelCanvasInteraction(',
-      start,
-    );
+    final int end = source.indexOf('void _cancelCanvasInteraction(', start);
     expect(start, greaterThanOrEqualTo(0));
     expect(end, greaterThan(start));
 

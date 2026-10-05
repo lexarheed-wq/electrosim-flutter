@@ -48,8 +48,7 @@ abstract final class F18DragPreviewPolicy {
         continue;
       }
 
-      routes[connection.id.value] =
-          start.dx == end.dx || start.dy == end.dy
+      routes[connection.id.value] = start.dx == end.dx || start.dy == end.dy
           ? const <Offset>[]
           : <Offset>[Offset(end.dx, start.dy)];
     }

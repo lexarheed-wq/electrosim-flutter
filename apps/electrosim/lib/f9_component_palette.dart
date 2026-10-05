@@ -36,6 +36,7 @@ class F9PaletteDefinition {
     this.defaultParameters = const <String, Object?>{},
     this.defaultControlState = const <String, Object?>{},
     this.supportedModes = const <ElectricalMode>{},
+    this.visualModelType,
     this.visualVariant,
     this.displayLabel,
     this.subtitle,
@@ -52,12 +53,15 @@ class F9PaletteDefinition {
   final Map<String, Object?> defaultParameters;
   final Map<String, Object?> defaultControlState;
   final Set<ElectricalMode> supportedModes;
+  final String? visualModelType;
   final String? visualVariant;
   final String? displayLabel;
   final String? subtitle;
 
   int get terminalCount =>
       terminals.isNotEmpty ? terminals.length : terminalLabels.length;
+
+  String get renderedModelType => visualModelType ?? modelType;
 
   bool supportsMode(ElectricalMode mode) {
     if (supportedModes.isNotEmpty) return supportedModes.contains(mode);
@@ -1389,10 +1393,10 @@ class _PaletteDraggableTile extends StatelessWidget {
         child: Opacity(
           opacity: 0.94,
           child: F18ComponentAssetVisual(
-            modelType: definition.modelType,
+            modelType: definition.renderedModelType,
             variantKey: definition.visualVariant,
-            size: F18ReferenceComponentVisuals.supports(definition.modelType)
-                ? F18ReferenceComponentMetrics.dragSizeFor(definition.modelType)
+            size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
+                ? F18ReferenceComponentMetrics.dragSizeFor(definition.renderedModelType)
                 : F18ComponentIdentityMetrics.dragSize,
           ),
         ),
@@ -1420,12 +1424,12 @@ class F9ComponentPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return F18ComponentAssetVisual(
       key: Key('component-identity-preview-${definition.keyName}'),
-      modelType: definition.modelType,
+      modelType: definition.renderedModelType,
       variantKey: definition.visualVariant,
-      size: F18ReferenceComponentVisuals.supports(definition.modelType)
+      size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
           ? (compact
-              ? F18ReferenceComponentMetrics.paletteSizeFor(definition.modelType)
-              : F18ReferenceComponentMetrics.dragSizeFor(definition.modelType))
+              ? F18ReferenceComponentMetrics.paletteSizeFor(definition.renderedModelType)
+              : F18ReferenceComponentMetrics.dragSizeFor(definition.renderedModelType))
           : (compact
               ? F18ComponentIdentityMetrics.paletteSize
               : F18ComponentIdentityMetrics.dragSize),

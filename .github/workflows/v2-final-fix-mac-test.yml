@@ -1,0 +1,187 @@
+name: V2 final fix Mac test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - migration-c15-full-parity
+    paths:
+      - 'ci/v2_final_fix_2026_10_05.patch'
+      - '.github/workflows/v2-final-fix-mac-test.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v2-final-fix-mac-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-and-build:
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply audited final fix patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check ci/v2_final_fix_2026_10_05.patch
+          git apply ci/v2_final_fix_2026_10_05.patch
+          git diff --check
+          git diff --stat
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Normalize patched Dart sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format \
+            apps/electrosim/lib/f9_wiring_policy.dart \
+            apps/electrosim/test/f9_wiring_policy_test.dart \
+            packages/electrosim_topology/lib/src/topology_engine.dart \
+            packages/electrosim_topology/test/topology_engine_test.dart \
+            packages/electrosim_solver_dc/test/solver_dc_test.dart \
+            packages/electrosim_solver_ac/test/solver_ac3_test.dart
+
+      - name: Static convergence and F9 contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools/test_convergence_*.py
+          python3 tools/f9_static_contract_check.py
+          python3 tools/f2_static_contract_check.py
+          python3 tools/f3_static_contract_check.py
+          python3 tools/f4_static_contract_check.py
+          python3 tools/f5_static_contract_check.py
+          python3 tools/f6_static_contract_check.py
+          python3 tools/f7_static_contract_check.py
+
+      - name: Validate wiring UI regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/f9_wiring_policy_test.dart
+
+      - name: Validate topology and DC series sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_topology
+          dart pub get
+          dart analyze
+          dart test
+          cd ../electrosim_solver_dc
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Validate AC and coverage threshold
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_solver_ac
+          dart pub get
+          dart analyze
+          dart test
+          rm -rf coverage
+          dart run coverage:test_with_coverage
+          python3 ../../tools/check_lcov.py coverage/lcov.info 90 'F6-FINAL-FIX'
+
+      - name: Run F5 and F7 qualification gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/run_f5_gate.sh
+          ./tools/run_f7_gate.sh
+
+      - name: Qualify macOS target
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/f15_qualify_target.sh macos
+
+      - name: Build macOS Intel test candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter config --enable-macos-desktop
+          prep_out="$(./tools/f15_prepare_runner.sh macos)"
+          case "$prep_out" in
+            F15_RUNNER_PATH=*) tmp="${prep_out#F15_RUNNER_PATH=}" ;;
+            *) echo "F15_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          app_root="$tmp/apps/electrosim"
+          cd "$app_root"
+          flutter build macos --release
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/v2-final-fix/macos"
+          mkdir -p "$out"
+          base_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          cp "$GITHUB_WORKSPACE/ci/v2_final_fix_2026_10_05.patch" "$out/APPLIED_PATCH.patch"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" \
+            "$out/ElectroSim_V2_FINAL_FIX_${base_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+          rm -rf "$tmp"
+
+      - name: Package corrected source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/v2-final-fix/source"
+          mkdir -p "$out"
+          cp -R "$GITHUB_WORKSPACE" "$RUNNER_TEMP/electrosim-corrected"
+          rm -rf "$RUNNER_TEMP/electrosim-corrected/.git" \
+                 "$RUNNER_TEMP/electrosim-corrected/audit/v2-final-fix/source"
+          cd "$RUNNER_TEMP"
+          zip -qr "$out/ElectroSim_V2_CORRECTED_SOURCE.zip" electrosim-corrected \
+            -x '*/build/*' '*/.dart_tool/*' '*/Pods/*'
+          shasum -a 256 "$out/ElectroSim_V2_CORRECTED_SOURCE.zip" > "$out/SHA256.txt"
+
+      - name: Upload corrected Mac test candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-V2-FINAL-FIX-macOS-Intel
+          path: audit/v2-final-fix/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload corrected source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-V2-FINAL-FIX-source
+          path: audit/v2-final-fix/source
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Gate
+        run: echo ELECTROSIM_V2_FINAL_FIX_MAC_TEST_PASS

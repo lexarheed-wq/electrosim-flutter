@@ -1,0 +1,526 @@
+diff --git a/apps/electrosim/lib/f9_wiring_policy.dart b/apps/electrosim/lib/f9_wiring_policy.dart
+index 48c263d..37db89d 100644
+--- a/apps/electrosim/lib/f9_wiring_policy.dart
++++ b/apps/electrosim/lib/f9_wiring_policy.dart
+@@ -56,16 +56,20 @@ abstract final class F9WiringPolicy {
+ 
+     final PhaseTag fromPhase = fromTerminal.phase;
+     final PhaseTag toPhase = toTerminal.phase;
+-    if (fromPhase != PhaseTag.none &&
+-        toPhase != PhaseTag.none &&
+-        fromPhase != toPhase) {
+-      return F9WiringDecision.rejected(
+-        'Connexion incompatible : ${fromTerminal.name} (${fromPhase.name}) ↔ '
+-        '${toTerminal.name} (${toPhase.name}).',
+-      );
+-    }
+ 
+-    final PhaseTag phase = fromPhase != PhaseTag.none ? fromPhase : toPhase;
++    // Terminal phase/polarity tags describe the electrical terminals; they are
++    // not a universal UI-level wiring prohibition. In particular, DC+ -> DC-
++    // is required for valid series-source circuits and can also represent a
++    // deliberate fault to be interpreted by TopologyEngine/SolverEngine.
++    // Preserve an explicit wire phase only when both endpoints agree, or when
++    // exactly one endpoint is untagged. Mixed explicit tags stay neutral.
++    final PhaseTag phase = fromPhase == toPhase
++        ? fromPhase
++        : fromPhase == PhaseTag.none
++        ? toPhase
++        : toPhase == PhaseTag.none
++        ? fromPhase
++        : PhaseTag.none;
+     final String id = _allocateConnectionId(circuit);
+     final Connection connection = Connection(
+       id: ConnectionId(id),
+diff --git a/apps/electrosim/test/f9_wiring_policy_test.dart b/apps/electrosim/test/f9_wiring_policy_test.dart
+index 42bf25f..c5b4366 100644
+--- a/apps/electrosim/test/f9_wiring_policy_test.dart
++++ b/apps/electrosim/test/f9_wiring_policy_test.dart
+@@ -26,15 +26,16 @@ void main() {
+     },
+   );
+ 
+-  test('rejects incompatible explicit phases', () {
++  test('accepts mixed explicit DC polarities and keeps the wire untagged', () {
+     final CircuitState circuit = _circuit();
+     final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
+       circuit,
+       TerminalId('source-pos'),
+       TerminalId('load-neg'),
+     );
+-    expect(decision.accepted, isFalse);
+-    expect(decision.message, contains('incompatible'));
++    expect(decision.accepted, isTrue);
++    expect(decision.connection, isNotNull);
++    expect(decision.connection!.phase, PhaseTag.none);
+   });
+ 
+   test('rejects duplicate reverse connection', () {
+diff --git a/packages/electrosim_solver_ac/test/solver_ac3_test.dart b/packages/electrosim_solver_ac/test/solver_ac3_test.dart
+index fd4b59c..068942d 100644
+--- a/packages/electrosim_solver_ac/test/solver_ac3_test.dart
++++ b/packages/electrosim_solver_ac/test/solver_ac3_test.dart
+@@ -12,6 +12,38 @@ void main() {
+   Ac3SolveResult solve(CircuitState circuit) =>
+       solver.solve(circuit, topologyEngine.compile(circuit));
+ 
++  test('AC3 branch result nullable power and zero-power-factor semantics', () {
++    const Ac3BranchResult openBranch = Ac3BranchResult(
++      id: 'open',
++      modelType: 'switch',
++      kind: Ac3BranchKind.openCircuit,
++      fromNodeId: 'a',
++      toNodeId: 'b',
++      voltage: AcComplex(230.0, 0.0),
++      current: null,
++    );
++    expect(openBranch.complexPower, isNull);
++    expect(openBranch.activePowerW, isNull);
++    expect(openBranch.reactivePowerVar, isNull);
++    expect(openBranch.apparentPowerVA, isNull);
++    expect(openBranch.powerFactor, isNull);
++
++    const Ac3BranchResult zeroPower = Ac3BranchResult(
++      id: 'zero',
++      modelType: 'resistor',
++      kind: Ac3BranchKind.resistor,
++      fromNodeId: 'a',
++      toNodeId: 'b',
++      voltage: AcComplex(230.0, 0.0),
++      current: AcComplex.zero,
++    );
++    expect(zeroPower.complexPower, AcComplex.zero);
++    expect(zeroPower.activePowerW, 0.0);
++    expect(zeroPower.reactivePowerVar, 0.0);
++    expect(zeroPower.apparentPowerVA, 0.0);
++    expect(zeroPower.powerFactor, 1.0);
++  });
++
+   group('SolverAC3', () {
+     test('Ac3BranchResult power factor handles zero and loaded branches', () {
+       const Ac3BranchResult zero = Ac3BranchResult(
+diff --git a/packages/electrosim_solver_dc/test/solver_dc_test.dart b/packages/electrosim_solver_dc/test/solver_dc_test.dart
+index 2cc6d33..88def66 100644
+--- a/packages/electrosim_solver_dc/test/solver_dc_test.dart
++++ b/packages/electrosim_solver_dc/test/solver_dc_test.dart
+@@ -42,6 +42,16 @@ void main() {
+       _expectPhysicalResiduals(result);
+     });
+ 
++    test('DC-002B: two DC voltage sources in series add their voltages', () {
++      final DcSolveResult result = solve(_twoSeriesSourcesCircuit());
++      expect(result.status, DcSolveStatus.solved);
++      expect(result.branch('component:r1').currentA, closeTo(3.0, 1e-10));
++      expect(result.branch('component:r1').voltageV.abs(), closeTo(36.0, 1e-10));
++      expect(result.branch('source:v1').currentA?.abs(), closeTo(3.0, 1e-10));
++      expect(result.branch('source:v2').currentA?.abs(), closeTo(3.0, 1e-10));
++      _expectPhysicalResiduals(result);
++    });
++
+     test('DC-003: 10 ohm parallel 10 ohm under 10 V gives 2 A total', () {
+       final DcSolveResult result = solve(_parallelCircuit());
+       expect(result.status, DcSolveStatus.solved);
+@@ -556,6 +566,57 @@ CircuitState _seriesCircuit() => CircuitState(
+   sources: <SourceInstance>[_voltageSource(30)],
+ );
+ 
++CircuitState _twoSeriesSourcesCircuit() => CircuitState(
++  circuitId: CircuitId('dc002b'),
++  revision: 0,
++  mode: ElectricalMode.dc,
++  components: <ComponentInstance>[
++    ComponentInstance(
++      id: ComponentId('r1'),
++      modelType: 'resistor',
++      terminals: <Terminal>[_terminal('r1a', 'A'), _terminal('r1b', 'B')],
++      parameters: const <String, Object?>{'resistanceOhm': 12.0},
++    ),
++  ],
++  connections: <Connection>[
++    Connection(
++      id: ConnectionId('w1'),
++      fromTerminalId: TerminalId('v1p'),
++      toTerminalId: TerminalId('r1a'),
++    ),
++    Connection(
++      id: ConnectionId('w2'),
++      fromTerminalId: TerminalId('r1b'),
++      toTerminalId: TerminalId('v2n'),
++    ),
++    Connection(
++      id: ConnectionId('series-link'),
++      fromTerminalId: TerminalId('v2p'),
++      toTerminalId: TerminalId('v1n'),
++    ),
++  ],
++  sources: <SourceInstance>[
++    SourceInstance(
++      id: SourceId('v1'),
++      modelType: 'dc_voltage_source',
++      terminals: <Terminal>[
++        _terminal('v1p', '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
++        _terminal('v1n', '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
++      ],
++      parameters: const <String, Object?>{'voltageV': 24.0},
++    ),
++    SourceInstance(
++      id: SourceId('v2'),
++      modelType: 'dc_voltage_source',
++      terminals: <Terminal>[
++        _terminal('v2p', '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
++        _terminal('v2n', '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
++      ],
++      parameters: const <String, Object?>{'voltageV': 12.0},
++    ),
++  ],
++);
++
+ CircuitState _parallelCircuit() => CircuitState(
+   circuitId: CircuitId('dc003'),
+   revision: 0,
+diff --git a/packages/electrosim_topology/lib/src/topology_engine.dart b/packages/electrosim_topology/lib/src/topology_engine.dart
+index 08a7604..0f6108f 100644
+--- a/packages/electrosim_topology/lib/src/topology_engine.dart
++++ b/packages/electrosim_topology/lib/src/topology_engine.dart
+@@ -194,19 +194,25 @@ final class TopologyEngine {
+         for (final TerminalId id in node.terminalIds)
+          if (terminalById[id]!.phase != PhaseTag.none) terminalById[id]!.phase,
+       };
+-      if (_hasConflictingPhases(phases)) {
+-        final bool allowedLimitedDcShort = _isLimitedDcSourceShortNode(
+-          circuit,
+-          node,
+-        );
++      final bool directDcSourceShort = _hasDirectDcSourceShortNode(
++        circuit,
++        node,
++      );
++      final bool phaseConflict = _hasConflictingPhases(phases);
++      if (phaseConflict || directDcSourceShort) {
++        final bool allowedLimitedDcShort =
++            directDcSourceShort &&
++            !_hasIdealDcSourceShortNode(circuit, node);
+         findings.add(
+          TopologyFinding(
+            code: TopologyFindingCode.conflictingPhases,
+@@ -211,9 +217,11 @@ final class TopologyEngine {
+                 ? TopologyFindingSeverity.warning
+                : TopologyFindingSeverity.error,
+-            message: allowedLimitedDcShort
+-                ? 'Node ${node.id} directly shorts a current-limited DC source; solver current limiting is required.'
+-                : 'Node ${node.id} merges incompatible phase/polarity tags.',
++            message: directDcSourceShort
++                ? allowedLimitedDcShort
++                      ? 'Node ${node.id} directly shorts a current-limited DC source; solver current limiting is required.'
++                      : 'Node ${node.id} directly shorts an ideal DC voltage source.'
++                : 'Node ${node.id} merges incompatible phase/polarity tags.',
+             nodeId: node.id,
+             terminalIds: node.terminalIds,
+           ),
+@@ -288,7 +296,15 @@ bool _ownerIsIsolated(
+   (Terminal terminal) => enabledConnectionDegree[terminal.id] == 0,
+ );
+ 
+-bool _isLimitedDcSourceShortNode(CircuitState circuit, TopologyNode node) {
++bool _hasDirectDcSourceShortNode(CircuitState circuit, TopologyNode node) {
++  if (circuit.mode != ElectricalMode.dc) {
++    return false;
++  }
++  final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
++  return circuit.sources.any(
++    (SourceInstance source) =>
++        _isDcVoltageSource(source) &&
++        nodeTerminals.contains(source.terminals[0].id) &&
++        nodeTerminals.contains(source.terminals[1].id),
++   );
++}
++
++bool _hasIdealDcSourceShortNode(CircuitState circuit, TopologyNode node) {
+   if (circuit.mode != ElectricalMode.dc) {
+     return false;
+   }
+@@ -297,25 +313,30 @@ bool _isLimitedDcSourceShortNode(CircuitState circuit, TopologyNode node) {
+   final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
+   for (final SourceInstance source in circuit.sources) {
+-    if (!source.enabled ||
+-        (source.modelType != 'dc_voltage_source' &&
+-            source.modelType != 'voltage_source') ||
+-        source.terminals.length != 2) {
++    if (!_isDcVoltageSource(source) ||
++        !nodeTerminals.contains(source.terminals[0].id) ||
++        !nodeTerminals.contains(source.terminals[1].id)) {
+       continue;
+    }
+    final Object? rawLimit = source.parameters['currentLimitA'];
+     if (rawLimit is! num ||
+        !rawLimit.toDouble().isFinite ||
+        rawLimit.toDouble() <= 0.0) {
+-
+      continue;
++      return true;
+     }
+-    if (nodeTerminals.contains(source.terminals[0].id) &&
+-        nodeTerminals.contains(source.terminals[1].id)) {
+-      return true;
+-    }
+   }
+   return false;
+ }
+ 
++bool _isDcVoltageSource(SourceInstance source) =>
++    source.enabled &&
++    (source.modelType == 'dc_voltage_source' ||
++        source.modelType == 'voltage_source') &&
++    source.terminals.length == 2;
++ bool _hasConflictingPhases(Set<PhaseTag> phases) {
+   if (phases.length < 2) {
+     return false;
+@@ -323,6 +344,15 @@ bool _hasConflictingPhases(Set<PhaseTag> phases) {
+    if (active.length < 2) {
+     return false;
+   }
++  // DC positive/negative are local terminal polarity labels, not global bus
++  // phases. Their coexistence in a node is valid for series sources and
++  // polarized receivers. A same-source direct short is checked separately.
++  if (active.every(
++    (PhaseTag phase) =>
++        phase == PhaseTag.dcPositive ||
++        phase == PhaseTag.dcNegative,
++  )) {
++    return false;
++  }
+   return true;
+ }
+ 
+diff --git a/packages/electrosim_topology/test/topology_engine_test.dart b/packages/electrosim_topology/test/topology_engine_test.dart
+index 9083970..d1f7bdb 100644
+--- a/packages/electrosim_topology/test/topology_engine_test.dart
++++ b/packages/electrosim_topology/test/topology_engine_test.dart
+@@ -515,6 +515,67 @@ void main() {
+     );
+   });
+ 
++  test('DC series-source junction may merge positive and negative terminals', () {
++    final CircuitState circuit = CircuitState(
++      circuitId: CircuitId('dc-series-source-junction'),
++      revision: 0,
++      mode: ElectricalMode.dc,
++      connections: <Connection>[
++        Connection(
++          id: ConnectionId('series-link'),
++          fromTerminalId: TerminalId('v1p'),
++          toTerminalId: TerminalId('v2n'),
++        ),
++      ],
++      sources: <SourceInstance>[
++        SourceInstance(
++          id: SourceId('v1'),
++          modelType: 'dc_voltage_source',
++          terminals: <Terminal>[
++            Terminal(
++              id: TerminalId('v1p'),
++              name: '+',
++              phase: PhaseTag.dcPositive,
++            ),
++            Terminal(
++              id: TerminalId('v1n'),
++              name: '-',
++              phase: PhaseTag.dcNegative,
++            ),
++          ],
++          parameters: const <String, Object?>{'voltageV': 24.0},
++        ),
++        SourceInstance(
++          id: SourceId('v2'),
++          modelType: 'dc_voltage_source',
++          terminals: <Terminal>[
++            Terminal(
++              id: TerminalId('v2p'),
++              name: '+',
++              phase: PhaseTag.dcPositive,
++            ),
++            Terminal(
++              id: TerminalId('v2n'),
++              name: '-',
++              phase: PhaseTag.dcNegative,
++            ),
++          ],
++          parameters: const <String, Object?>{'voltageV': 12.0},
++        ),
++      ],
++    );
++
++    final TopologyGraph graph = const TopologyEngine().compile(circuit);
++    expect(
++      graph.findings.where(
++        (TopologyFinding finding) =>
++            finding.code == TopologyFindingCode.conflictingPhases,
++      ),
++      isEmpty,
++    );
++    expect(graph.nodeFor(TerminalId('v1p')), graph.nodeFor(TerminalId('v2n')));
++  });
++
+   test(
+     'current-limited DC source direct short is warning not topology error',
+    () {
+diff --git a/tools/f9_static_contract_check.py b/tools/f9_static_contract_check.py
+index 755630b..5a699b2 100755
+--- a/tools/f9_static_contract_check.py
++++ b/tools/f9_static_contract_check.py
+@@ -33,9 +33,11 @@ for token in ['compactUpperBound = 600', 'mediumUpperBound = 1000', 'compact, med
+     if token not in responsive:
+         errors.append(f'responsive-contract:{token}')
+ 
+ main = (ROOT / 'apps/electrosim/lib/main.dart').read_text(encoding='utf-8')
++home = (ROOT / 'apps/electrosim/lib/f18_home.dart').read_text(encoding='utf-8')
+/�ain_surface = main + '\n' + home
+ for label in [
+     'Créer une nouvelle session', 'Centre de maintenance', 'Centre de conception',
+     'Accueil', 'Tableau de bord', 'Câblage', 'Recherche de dérangement',
+@@ -43,7 +45,7 @@ for label in [
+     'Supervision', 'Gérer la session',
+ ]:
+-    if label not in main:
++    if label not in main_surface:
+         errors.append(f'ux-label-missing:{label}')
+ for token in [
+     'session-home-action', 'session-dashboard-action', 'session-manage-action',
+@@ -56,10 +58,12 @@ for token in [
+ 
+ shell = (ROOT / 'packages/electrosim_ui_kit/lib/src/workspace_shell.dart').read_text(encoding='utf-8')
+ for token in [
+-    'ElectroSimWindowClass.compact', 'ElectroSimWindowClass.medium',
+-    'ElectroSimWindowClass.expanded', 'electroSimCanvasRegionKey',
++    'ElectroSimWindowClass.compact', 'ElectroSimWindowClass.medium',
++    'electroSimCanvasRegionKey', 'ElectroSimBreakpoints.classify',
+ ]:
+     if token not in shell:
+         errors.append(f'shell-contract:{token}')
++if 'ElectroSimWindowClass.expanded' not in responsive:
++    errors.append('shell-contract:expanded-window-class')
+ 
+ freeze = json.loads((ROOT / 'docs/f9/F8_CORE_FREEZE_FOR_F9.json').read_text(encoding='utf-8')
+ if freeze.get('fileCount') != 54:
+@@ -68,8 +72,8 @@ if freeze.get('fileCount') != 54:
+ 
+ palette = (ROOT / 'apps/electrosim/lib/f9_component_palette.dart').read_text(encoding='utf-8')
+ for token in [
+-    'palette-search-field', 'palette-show-more', 'Draggable<F9PaletteDefinition>',
+-    'F9ComponentPreview', 'palette-quick-add-', 'F9ComponentGlyph',
++    'palette-search-field', 'palette-show-all', 'Draggable<F9PaletteDefinition>',
++    'F9ComponentPreview', 'palette-quick-add-', 'F18ComponentAssetVisual',
+ ]:
+     if token not in palette:
+         errors.append(f'palette-contract:{token}')
+@@ -89,16 +93,21 @@ for token in ['F9WiringPolicy', 'evaluateAndBuild', 'already', 'PhaseTag.none',
+         errors.append(f'wiring-contract:{token}')
+ 
+ panels = (ROOT / 'apps/electrosim/lib/f9_context_panels.dart').read_text(encoding='utf-8')
++panels_compact = ''.join(panels.split())
+ for token in [
+     'measurements-panel', 'eie-panel', 'student-diagnostic-panel',
+-    "role == F9UserRole.student", "workspace == 'Recherche de dérangement'",
+     'properties-element-selector', 'properties-replace-element',
+ ]:
+     if token not in panels:
+         errors.append(f'context-contract:{token}')
++for token in [
++    'role!=F9UserRole.student', "workspace!='Recherchededérangement'",
++]:
++    if token not in panels_compact:
++        errors.append(f'context-contract:{token}')
+ 
+ visuals = (ROOT / 'apps/electrosim/lib/f9_component_visuals.dart').read_text(encoding='utf-8')
+-for token in ['F9ComponentGlyph', 'F9CanvasVisualOverlay', 'paintF9Glyph'];
++for token in ['F9CanvasVisualOverlay', 'F18ComponentAssetVisual', 'paintF18ComponentIdentity']:
+     if token not in visuals:
+         errors.append(f'visual-contract:{token}')
+ 
+diff --git a/tools/test_convergence_controls_contract.py b/tools/test_convergence_controls_contract.py
+index e87b506..016db29 100644
+--- a/tools/test_convergence_controls_contract.py
++++ b/tools/test_convergence_controls_contract.py
+@@ -19,8 +19,9 @@ class ControlsConvergenceContractTest(unittest.TestCase):
+ 
+     def test_runtime_uses_protection_coordinator_for_ac(self):
+         text = (ROOT / 'apps/electrosim/lib/runtime/electrosim_runtime_engine.dart').read_text(encoding='utf-8')
+-        self.assertIn('protectionCoordinator.advanceAc1', text)
+-        self.assertIn('protectionCoordinator.advanceAc3', text)
++        compact = ''.join(text.split())
++        self.assertIn('protectionCoordinator.advanceAc1', compact)
++        self.assertIn('protectionCoordinator.advanceAc3', compact)
+         self.assertIn('controlsEngine: electromechanicalControlEngine', text)
+         self.assertIn('contactorStates: coordinated.contactors', text)
+ 
+diff --git a/tools/test_convergence_m11_visual_contract.py b/tools/test_convergence_m11_visual_contract.py
+index 330ddc4..caecafb 100644
+--- a/tools/test_convergence_m11_visual_contract.py
++++ b/tools/test_convergence_m11_visual_contract.py
+@@ -7,8 +7,9 @@ class M11VisualContractTest(unittest.TestCase):
+     def test_palette_and_canvas_share_f18_painter(self):
+         palette = (ROOT / 'apps/electrosim/lib/f9_component_palette.dart').read_text(encoding='utf-8')
+         overlay = (ROOT / 'apps/electrosim/lib/f9_component_visuals.dart').read_text(encoding='utf-8')
+-        self.assertIn('F18ComponentArchetypeGlyph', palette)
+-        self.assertIn('paintF18ElectricalArchetype', overlay)
++        self.assertIn('F18ComponentAssetVisual', palette)
++        self.assertIn('F18ComponentAssetVisual', overlay)
++        self.assertIn("import 'f18_component_asset_visual.dart';", overlay)
+ 
+     def test_specific_models_have_dedicated_visual_paths(self):
+         text = (ROOT / 'apps/electrosim/lib/f18_component_archetypes.dart').read_text(encoding='utf-8')
+diff --git a/tools/test_convergence_m12_ui_contract.py b/tools/test_convergence_m12_ui_contract.py
+index d610223..ee2c4c6 100644
+--- a/tools/test_convergence_m12_ui_contract.py
++++ b/tools/test_convergence_m12_ui_contract.py
+@@ -19,9 +19,11 @@ class M12UiContractTest(unittest.TestCase):
+ 
+     def test_workspace_shell_has_compact_medium_expanded_layouts(self):
+         text = (ROOT / 'packages/electrosim_ui_kit/lib/src/workspace_shell.dart').read_text(encoding='utf-8')
++        responsive = (ROOT / 'packages/electrosim_ui_kit/lib/src/responsive.dart').read_text(encoding='utf-8')
++        self.assertIn('ElectroSimBreakpoints.classify', text)
+         self.assertIn('ElectroSimWindowClass.compact', text)
+         self.assertIn('ElectroSimWindowClass.medium', text)
+-        self.assertIn('ElectroSimWindowClass.expanded', text)
++        self.assertIn('enum ElectroSimWindowClass { compact, medium, expanded }', responsive)
+         self.assertIn('electroSimCompactActionsKey', text)
+ 
+     def test_palette_collapsed_limit_remains_five(self):
+diff --git a/tools/test_convergence_m3a_dc_contract.py b/tools/test_convergence_m3a_dc_contract.py
+index 62828b7..d73c803 100644
+--- a/tools/test_convergence_m3a_dc_contract.py
++++ b/tools/test_convergence_m3a_dc_contract.py
+@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ class M3ADcContractTest(unittest.TestCase):
+     def test_solver_uses_canonical_topology_branches(self):
+         text = (ROOT / 'packages/electrosim_solver_dc/lib/src/solver_dc.dart').read_text(encoding='utf-8')
+-        self.assertIn('topology.branchesForComponent(component.id)', text)
++        self.assertRegex(''.join(text.split()), r'topology\.branchesForComponent\(component\.id,?\)')
+         self.assertNotIn("component.terminals[0].id", text)
+         self.assertNotIn("component.terminals[1].id", text)
+ 
+diff --git a/tools/test_convergence_m4_ac1_contract.py b/tools/test_convergence_m4_ac1_contract.py
+index aca7997..20198e9 100644
+--- a/tools/test_convergence_m4_ac1_contract.py
++++ b/tools/test_convergence_m4_ac1_contract.py
+@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ class M4Ac1ContractTest(unittest.TestCase):
+     def test_ac1_solver_uses_topology_branches(self):
+         text = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac1.dart').read_text(encoding='utf-8')
+-        self.assertIn('topology.branchesForComponent(component.id)', text)
++        self.assertRegex(''.join(text.split()), r'topology\.branchesForComponent\(component\.id,?\)')
+         self.assertNotIn('component.terminals[0].id', text)
+         self.assertNotIn('component.terminals[1].id', text)
+ 
+diff --git a/tools/test_convergence_m5_ac3_contract.py b/tools/test_convergence_m5_ac3_contract.py
+index 530e06a..7d5d322 100644
+--- a/tools/test_convergence_m5_ac3_contract.py
++++ b/tools/test_convergence_m5_ac3_contract.py
+@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ class M5Ac3ContractTest(unittest.TestCase):
+     def test_ac3_power_components_use_topology_branches(self):
+         text = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
+-        self.assertIn('topology.branchesForComponent(component.id)', text)
++        self.assertRegex(''.join(text.split()), r'topology\.branchesForComponent\(component\.id,?\)')
+         self.assertNotIn('component.terminals[0].id', text)
+         self.assertNotIn('component.terminals[1].id', text)

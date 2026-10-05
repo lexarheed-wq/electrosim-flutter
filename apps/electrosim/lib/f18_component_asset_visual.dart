@@ -468,6 +468,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
           tripped: tripped,
           energized: energized,
           currentA: currentA,
+          variantKey: variantKey,
         ),
       );
     }

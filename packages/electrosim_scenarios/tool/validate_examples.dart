@@ -6,7 +6,7 @@ void main() {
   final failed = results.where((result) => !result.isValid).toList(growable: false);
   if (failed.isNotEmpty) {
     for (final result in failed) {
-      print('${result.exampleId.value}: ${result.issues.map((issue) => issue.code).join(',')}');
+      print('${result.templateId.value}: ${result.issues.map((issue) => issue.code).join(',')}');
     }
     throw StateError('F10 example validation failed.');
   }

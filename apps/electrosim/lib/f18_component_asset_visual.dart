@@ -400,6 +400,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
           actuated: actuated,
           currentA: currentA,
           voltageV: voltageV,
+          variantKey: variantKey,
         ),
       );
     }

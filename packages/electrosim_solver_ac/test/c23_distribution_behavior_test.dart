@@ -159,6 +159,21 @@ void main() {
     );
   });
 
+  test('C23 breaker_4p rejects unsupported degraded condition', () {
+    final CircuitState circuit = _fourPoleCircuit(
+      modelType: 'breaker_4p',
+      closed: true,
+      ratedCurrentA: 10.0,
+      condition: ComponentCondition.degraded,
+    );
+    final Ac3SolveResult result = solve(circuit);
+    expect(result.status, Ac3SolveStatus.invalid);
+    expect(
+      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.unsupportedComponentCondition),
+    );
+  });
+
   test('C23 breaker_4p rejects missing rating and malformed controls', () {
     final Ac3SolveResult missingRating = solve(
       _fourPoleCircuit(modelType: 'breaker_4p', closed: true),

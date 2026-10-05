@@ -3,6 +3,9 @@ name: F9-R7 gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'apps/electrosim/**'
       - 'packages/electrosim_ui_kit/**'
@@ -11,6 +14,10 @@ on:
       - 'tools/**'
       - 'validate.sh'
       - '.github/workflows/f9-r6-gate.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   f9-r6:

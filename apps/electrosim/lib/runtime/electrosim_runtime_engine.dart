@@ -350,6 +350,7 @@ final class ElectroSimRuntimeEngine {
     ProtectionRuntimeState? previousProtectionState,
     Map<ComponentId, bool> previousContactorStates =
         const <ComponentId, bool>{},
+    double? previousPvBatterySoc,
   }) {
     final TopologyGraph topology = topologyEngine.compile(circuit);
     switch (circuit.mode) {
@@ -439,7 +440,12 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.pv:
-        final PvSolveResult pv = solverPV.solve(circuit, topology);
+        final PvSolveResult pv = solverPV.solve(
+          circuit,
+          topology,
+          previousBatterySoc: previousPvBatterySoc,
+          elapsed: elapsed,
+        );
         return ElectroSimRuntimeSnapshot(
           circuit: circuit,
           topology: topology,

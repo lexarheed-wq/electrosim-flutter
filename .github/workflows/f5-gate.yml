@@ -3,11 +3,18 @@ name: F5 Gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'packages/electrosim_solver_ac/**'
       - 'tools/run_f5_gate.sh'
       - 'tools/f5_*'
       - 'validate.sh'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   f5:

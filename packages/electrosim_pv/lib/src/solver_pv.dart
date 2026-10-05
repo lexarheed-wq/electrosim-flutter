@@ -749,6 +749,7 @@ final class SolverPV {
       controllerEfficiency: controllerParameters.efficiency,
       controllerConversionLossW: controllerLossW,
       batteryPresent: true,
+      batteryVoltageV: busVoltageV,
       batterySoc: finalSoc,
       batteryStoredEnergyWh: finalStoredEnergyWh,
       batteryPowerW: actualBatteryBusDischargeW > options.numericTolerance

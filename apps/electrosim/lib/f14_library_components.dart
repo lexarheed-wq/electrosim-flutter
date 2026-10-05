@@ -19,8 +19,7 @@ enum F14AuxiliaryContactSilhouette { contactorAuxiliary, relay }
 abstract final class F14LibraryVisualIdentity {
   static F14AuxiliaryContactSilhouette auxiliaryContactSilhouette(
     String? variantKey,
-  ) =>
-      variantKey?.startsWith('relay-') ?? false
+  ) => variantKey?.startsWith('relay-') ?? false
       ? F14AuxiliaryContactSilhouette.relay
       : F14AuxiliaryContactSilhouette.contactorAuxiliary;
 }

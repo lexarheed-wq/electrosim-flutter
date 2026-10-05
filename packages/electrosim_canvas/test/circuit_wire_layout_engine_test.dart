@@ -98,51 +98,57 @@ void main() {
     expect(second.elementPositions, equals(first.elementPositions));
   });
 
-  test('finite wall is rerouted around instead of preserving an invalid visual route', () {
-    final CircuitState base = buildTestCircuit();
-    final CircuitState circuit = CircuitState(
-      circuitId: base.circuitId,
-      revision: base.revision,
-      mode: base.mode,
-      sources: base.sources,
-      connections: <Connection>[base.connections.first],
-      components: <ComponentInstance>[
-        base.components.first,
-        ComponentInstance(
-          id: ComponentId('wall'),
-          modelType: 'Wall',
-          terminals: const <Terminal>[],
-        ),
-      ],
-      settings: base.settings,
-      metadata: base.metadata,
-    );
-    final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'source': Offset(120, 120),
-        'resistor': Offset(120, 408),
-        'wall': Offset(120, 264),
-      },
-      elementSizes: const <String, Size>{'wall': Size(1000, 120)},
-      wireRoutes: const <String, List<Offset>>{
-        'wire-a': <Offset>[Offset(24, 120), Offset(24, 408)],
-      },
-    );
+  test(
+    'finite wall is rerouted around instead of preserving an invalid visual route',
+    () {
+      final CircuitState base = buildTestCircuit();
+      final CircuitState circuit = CircuitState(
+        circuitId: base.circuitId,
+        revision: base.revision,
+        mode: base.mode,
+        sources: base.sources,
+        connections: <Connection>[base.connections.first],
+        components: <ComponentInstance>[
+          base.components.first,
+          ComponentInstance(
+            id: ComponentId('wall'),
+            modelType: 'Wall',
+            terminals: const <Terminal>[],
+          ),
+        ],
+        settings: base.settings,
+        metadata: base.metadata,
+      );
+      final CircuitVisualLayout layout = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'source': Offset(120, 120),
+          'resistor': Offset(120, 408),
+          'wall': Offset(120, 264),
+        },
+        elementSizes: const <String, Size>{'wall': Size(1000, 120)},
+        wireRoutes: const <String, List<Offset>>{
+          'wire-a': <Offset>[Offset(24, 120), Offset(24, 408)],
+        },
+      );
 
-    final CircuitVisualLayout routed = engine.routeAll(
-      circuit: circuit,
-      layout: layout,
-    );
+      final CircuitVisualLayout routed = engine.routeAll(
+        circuit: circuit,
+        layout: layout,
+      );
 
-    expect(routed.routeFor('wire-a'), isNot(equals(layout.routeFor('wire-a'))));
-    final List<Offset> route = routed.routeFor('wire-a');
-    expect(
-      route.any((Offset point) => point.dx < -380 || point.dx > 620),
-      isTrue,
-      reason:
-          'A finite component wall must be bypassed through free workspace instead of forcing a refusal.',
-    );
-  });
+      expect(
+        routed.routeFor('wire-a'),
+        isNot(equals(layout.routeFor('wire-a'))),
+      );
+      final List<Offset> route = routed.routeFor('wire-a');
+      expect(
+        route.any((Offset point) => point.dx < -380 || point.dx > 620),
+        isTrue,
+        reason:
+            'A finite component wall must be bypassed through free workspace instead of forcing a refusal.',
+      );
+    },
+  );
 
   test(
     'rotated terminal exits owner body through an outward orthogonal stub',

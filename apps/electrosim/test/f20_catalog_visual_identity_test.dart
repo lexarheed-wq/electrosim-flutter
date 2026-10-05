@@ -40,17 +40,16 @@ void main() {
   testWidgets('all motor-driven silhouettes render without exception', (
     WidgetTester tester,
   ) async {
-    const List<(F20CatalogDevice, String)> cases =
-        <(F20CatalogDevice, String)>[
-          (F20CatalogDevice.motorDriven2t, 'pump'),
-          (F20CatalogDevice.motorDriven2t, 'fan'),
-          (F20CatalogDevice.motorDriven6t, 'pump'),
-          (F20CatalogDevice.motorDriven6t, 'fan'),
-          (F20CatalogDevice.motorDriven6t, 'compressor'),
-          (F20CatalogDevice.motorDriven6t, 'conveyor'),
-          (F20CatalogDevice.motorDriven6t, 'mixer'),
-          (F20CatalogDevice.motorDriven6t, 'crusher'),
-        ];
+    const List<(F20CatalogDevice, String)> cases = <(F20CatalogDevice, String)>[
+      (F20CatalogDevice.motorDriven2t, 'pump'),
+      (F20CatalogDevice.motorDriven2t, 'fan'),
+      (F20CatalogDevice.motorDriven6t, 'pump'),
+      (F20CatalogDevice.motorDriven6t, 'fan'),
+      (F20CatalogDevice.motorDriven6t, 'compressor'),
+      (F20CatalogDevice.motorDriven6t, 'conveyor'),
+      (F20CatalogDevice.motorDriven6t, 'mixer'),
+      (F20CatalogDevice.motorDriven6t, 'crusher'),
+    ];
 
     for (final (F20CatalogDevice device, String variant) in cases) {
       await tester.pumpWidget(

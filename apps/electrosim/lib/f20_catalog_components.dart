@@ -622,10 +622,7 @@ final class _P {
     );
     text(shortLabel(), face.center, size: h * .075, color: Colors.white);
     _statusLed(
-      Offset(
-        body.right - body.width * .16,
-        body.bottom - body.height * .15,
-      ),
+      Offset(body.right - body.width * .16, body.bottom - body.height * .15),
     );
   }
 
@@ -767,11 +764,7 @@ final class _P {
   void _fan({required bool industrial}) {
     final Offset center = Offset(c.dx, c.dy - h * .01);
     final double radius = industrial ? h * .25 : h * .22;
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()..color = const Color(0xFFE3E8EA),
-    );
+    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFFE3E8EA));
     canvas.drawCircle(center, radius, outline);
     canvas.drawCircle(
       center,
@@ -878,7 +871,12 @@ final class _P {
       height: h * .18,
     );
     box(head, top: const Color(0xFFBCC7CC), bottom: const Color(0xFF6D7E86));
-    text('COMP.', Offset(c.dx, tank.center.dy), size: h * .05, color: Colors.white);
+    text(
+      'COMP.',
+      Offset(c.dx, tank.center.dy),
+      size: h * .05,
+      color: Colors.white,
+    );
   }
 
   void _conveyor() {
@@ -896,7 +894,10 @@ final class _P {
       outline,
     );
     final double rollerR = h * .075;
-    for (final double x in <double>[belt.left + rollerR, belt.right - rollerR]) {
+    for (final double x in <double>[
+      belt.left + rollerR,
+      belt.right - rollerR,
+    ]) {
       canvas.drawCircle(
         Offset(x, belt.center.dy),
         rollerR,
@@ -991,11 +992,7 @@ final class _P {
       width: w * .50,
       height: h * .30,
     );
-    box(
-      chamber,
-      top: const Color(0xFF8D969A),
-      bottom: const Color(0xFF4B565B),
-    );
+    box(chamber, top: const Color(0xFF8D969A), bottom: const Color(0xFF4B565B));
 
     final Path hopper = Path()
       ..moveTo(c.dx - w * .24, chamber.top)
@@ -1005,10 +1002,10 @@ final class _P {
       ..close();
     canvas.drawPath(
       hopper,
-      grad(
-        hopper.getBounds(),
-        const <Color>[Color(0xFFB0B7BA), Color(0xFF667278)],
-      ),
+      grad(hopper.getBounds(), const <Color>[
+        Color(0xFFB0B7BA),
+        Color(0xFF667278),
+      ]),
     );
     canvas.drawPath(hopper, outline);
 
@@ -1109,10 +1106,10 @@ final class _P {
       ..close();
     canvas.drawPath(
       sole,
-      grad(
-        sole.getBounds(),
-        const <Color>[Color(0xFFD8E0E4), Color(0xFF738187)],
-      ),
+      grad(sole.getBounds(), const <Color>[
+        Color(0xFFD8E0E4),
+        Color(0xFF738187),
+      ]),
     );
     canvas.drawPath(sole, outline);
 
@@ -1129,15 +1126,10 @@ final class _P {
       ..close();
     canvas.drawPath(
       body,
-      grad(
-        body.getBounds(),
-        <Color>[
-          state.energized
-              ? const Color(0xFFEFE7DD)
-              : const Color(0xFFE3E7E8),
-          const Color(0xFFA9B4B9),
-        ],
-      ),
+      grad(body.getBounds(), <Color>[
+        state.energized ? const Color(0xFFEFE7DD) : const Color(0xFFE3E7E8),
+        const Color(0xFFA9B4B9),
+      ]),
     );
     canvas.drawPath(body, outline);
 
@@ -1162,12 +1154,7 @@ final class _P {
         final double x = c.dx - w * .10 + i * w * .10;
         final Path heat = Path()
           ..moveTo(x, c.dy - h * .31)
-          ..quadraticBezierTo(
-            x - w * .025,
-            c.dy - h * .37,
-            x,
-            c.dy - h * .43,
-          );
+          ..quadraticBezierTo(x - w * .025, c.dy - h * .37, x, c.dy - h * .43);
         canvas.drawPath(
           heat,
           Paint()

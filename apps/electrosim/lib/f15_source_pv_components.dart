@@ -24,9 +24,7 @@ abstract final class F15SourcePvVisualIdentity {
       ? F15Ac3SourceSilhouette.alternator
       : F15Ac3SourceSilhouette.grid;
 
-  static F15PvControllerSilhouette pvControllerSilhouette(
-    String? variantKey,
-  ) =>
+  static F15PvControllerSilhouette pvControllerSilhouette(String? variantKey) =>
       variantKey == 'pv-pwm'
       ? F15PvControllerSilhouette.pwm
       : F15PvControllerSilhouette.mppt;
@@ -407,11 +405,7 @@ final class _P {
     }
 
     final double innerR = radius * .57;
-    canvas.drawCircle(
-      center,
-      innerR,
-      Paint()..color = const Color(0xFFF5F7F8),
-    );
+    canvas.drawCircle(center, innerR, Paint()..color = const Color(0xFFF5F7F8));
     canvas.drawCircle(center, innerR, outline);
     text('G', center.translate(0, -innerR * .12), size: h * .13);
     text('3~', center.translate(0, innerR * .38), size: h * .075);
@@ -549,8 +543,9 @@ final class _P {
   }
 
   void pvController() {
-    switch (
-        F15SourcePvVisualIdentity.pvControllerSilhouette(state.variantKey)) {
+    switch (F15SourcePvVisualIdentity.pvControllerSilhouette(
+      state.variantKey,
+    )) {
       case F15PvControllerSilhouette.mppt:
         _pvMpptController();
         break;
@@ -655,21 +650,12 @@ final class _P {
       RRect.fromRectAndRadius(display, Radius.circular(h * .018)),
       Paint()..color = const Color(0xFF1F3138),
     );
-    text(
-      'PWM',
-      display.center,
-      size: h * .070,
-      color: const Color(0xFF9FE0F0),
-    );
+    text('PWM', display.center, size: h * .070, color: const Color(0xFF9FE0F0));
 
     final double buttonY = body.top + body.height * .48;
     for (var i = -1; i <= 1; i++) {
       final Offset p = Offset(c.dx + i * w * .11, buttonY);
-      canvas.drawCircle(
-        p,
-        h * .025,
-        Paint()..color = const Color(0xFF53636C),
-      );
+      canvas.drawCircle(p, h * .025, Paint()..color = const Color(0xFF53636C));
       canvas.drawCircle(p, h * .025, outline);
     }
 

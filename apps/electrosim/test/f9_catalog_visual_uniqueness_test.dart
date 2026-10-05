@@ -26,11 +26,12 @@ void main() {
         identities.putIfAbsent(identity, () => <String>[]).add(item.keyName);
       }
 
-      final Map<String, List<String>> duplicates = Map<String, List<String>>.fromEntries(
-        identities.entries.where((MapEntry<String, List<String>> entry) {
-          return entry.value.length > 1;
-        }),
-      );
+      final Map<String, List<String>> duplicates =
+          Map<String, List<String>>.fromEntries(
+            identities.entries.where((MapEntry<String, List<String>> entry) {
+              return entry.value.length > 1;
+            }),
+          );
       expect(
         duplicates,
         isEmpty,

@@ -13,13 +13,7 @@ enum ExtendedReferenceDevice {
   relayCoil,
 }
 
-enum ExtendedDiodeVisualPackage {
-  rectifier,
-  schottky,
-  led,
-  zenerGlass,
-  tvs,
-}
+enum ExtendedDiodeVisualPackage { rectifier, schottky, led, zenerGlass, tvs }
 
 abstract final class ExtendedReferenceVisualIdentity {
   static ExtendedDiodeVisualPackage diodePackage(String? variantKey) =>
@@ -630,9 +624,7 @@ class _ExtendedReferencePainter extends CustomPainter {
       c,
       body,
       <Color>[
-        state.forwardBiased
-            ? Color.lerp(bodyTop, Colors.white, .18)!
-            : bodyTop,
+        state.forwardBiased ? Color.lerp(bodyTop, Colors.white, .18)! : bodyTop,
         bodyBottom,
       ],
       radius: body.height * .46,
@@ -667,12 +659,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     }
   }
 
-  void _paintLed(
-    Canvas c,
-    Offset left,
-    Offset right, {
-    required bool green,
-  }) {
+  void _paintLed(Canvas c, Offset left, Offset right, {required bool green}) {
     const Offset center = Offset(135, 49);
     final Color color = green
         ? const Color(0xFF2DAA60)
@@ -715,14 +702,11 @@ class _ExtendedReferencePainter extends CustomPainter {
       ..close();
     c.drawPath(
       dome,
-      _linear(
-        dome.getBounds(),
-        <Color>[
-          Color.lerp(color, Colors.white, .48)!,
-          state.forwardBiased ? litColor : color,
-          Color.lerp(color, Colors.black, .28)!,
-        ],
-      ),
+      _linear(dome.getBounds(), <Color>[
+        Color.lerp(color, Colors.white, .48)!,
+        state.forwardBiased ? litColor : color,
+        Color.lerp(color, Colors.black, .28)!,
+      ]),
     );
     c.drawPath(dome, _stroke(color: const Color(0xFF6A757A), width: 1.2));
     c.drawRect(
@@ -749,14 +733,11 @@ class _ExtendedReferencePainter extends CustomPainter {
     }
     c.drawRRect(
       RRect.fromRectAndRadius(glass, const Radius.circular(17)),
-      _linear(
-        glass,
-        const <Color>[
-          Color(0x99F8D6A2),
-          Color(0x66CE8B45),
-          Color(0x99F4E3C5),
-        ],
-      ),
+      _linear(glass, const <Color>[
+        Color(0x99F8D6A2),
+        Color(0x66CE8B45),
+        Color(0x99F4E3C5),
+      ]),
     );
     c.drawRRect(
       RRect.fromRectAndRadius(glass, const Radius.circular(17)),
@@ -788,11 +769,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     _box(
       c,
       body,
-      const <Color>[
-        Color(0xFF5A6267),
-        Color(0xFF20272B),
-        Color(0xFF101518),
-      ],
+      const <Color>[Color(0xFF5A6267), Color(0xFF20272B), Color(0xFF101518)],
       radius: 6,
       shadow: true,
     );

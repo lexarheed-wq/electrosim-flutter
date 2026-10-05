@@ -64,12 +64,19 @@ void main() {
     expect(decorated, isNotEmpty);
 
     for (final F9PaletteDefinition item in decorated) {
-      expect(item.visualModelType, isNot(item.modelType), reason: item.keyName);
       expect(
         item.modelType.startsWith('catalog_'),
         isFalse,
         reason: item.keyName,
       );
+      if (item.visualModelType == item.modelType) {
+        expect(
+          item.visualVariant,
+          isNotNull,
+          reason:
+              '${item.keyName}: same electrical/visual model must still carry a physical variant',
+        );
+      }
     }
   });
 

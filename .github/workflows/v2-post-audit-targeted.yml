@@ -51,3 +51,22 @@ jobs:
           flutter analyze
           flutter test test/c15_mode_wave2_test.dart
           flutter test test/f18_g3r1_point05_palette_contract_test.dart
+
+  visual-appliances:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate appliance visual identities
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib/f20_catalog_components.dart test/f20_catalog_visual_identity_test.dart
+          flutter analyze
+          flutter test test/f20_catalog_visual_identity_test.dart

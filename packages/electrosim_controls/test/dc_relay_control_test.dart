@@ -100,11 +100,11 @@ CircuitState _relayCircuit(double voltageV) {
       ),
     ],
     connections: <Connection>[
-      _w('coil+', 'vp', 'a1'),
-      _w('coil-', 'a2', 'vn'),
-      _w('power+', 'vp', 'c13'),
+      _w('coil-pos', 'vp', 'a1'),
+      _w('coil-neg', 'a2', 'vn'),
+      _w('power-pos', 'vp', 'c13'),
       _w('contact-load', 'c14', 'r1'),
-      _w('load-', 'r2', 'vn'),
+      _w('load-neg', 'r2', 'vn'),
     ],
   );
 }

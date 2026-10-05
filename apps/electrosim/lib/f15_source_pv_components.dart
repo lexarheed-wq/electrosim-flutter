@@ -8,6 +8,8 @@ enum F15SourcePvDevice {
   acCurrentSource,
   ac3VoltageSource,
   pvArray,
+  pvController,
+  pvBattery,
   pvInverter,
   pvLoad,
 }
@@ -20,6 +22,7 @@ final class F15SourcePvState {
     this.currentA = 0,
     this.voltageV = 0,
     this.animationValue = 0,
+    this.batterySoc = 0,
     this.variantKey,
   });
 
@@ -28,6 +31,7 @@ final class F15SourcePvState {
   final double currentA;
   final double voltageV;
   final double animationValue;
+  final double batterySoc;
   final String? variantKey;
 }
 
@@ -38,6 +42,8 @@ abstract final class F15SourcePvGeometry {
         F15SourcePvDevice.acCurrentSource => const Size(140, 160),
         F15SourcePvDevice.ac3VoltageSource => const Size(210, 210),
         F15SourcePvDevice.pvArray => const Size(220, 170),
+        F15SourcePvDevice.pvController => const Size(200, 200),
+        F15SourcePvDevice.pvBattery => const Size(210, 170),
         F15SourcePvDevice.pvInverter => const Size(190, 230),
         F15SourcePvDevice.pvLoad => const Size(170, 160),
       };
@@ -90,6 +96,12 @@ final class _F15SourcePvPainter extends CustomPainter {
       case F15SourcePvDevice.pvArray:
         p.pvArray();
         return;
+      case F15SourcePvDevice.pvController:
+        p.pvController();
+        return;
+      case F15SourcePvDevice.pvBattery:
+        p.pvBattery();
+        return;
       case F15SourcePvDevice.pvInverter:
         p.pvInverter();
         return;
@@ -107,6 +119,7 @@ final class _F15SourcePvPainter extends CustomPainter {
       oldDelegate.state.currentA != state.currentA ||
       oldDelegate.state.voltageV != state.voltageV ||
       oldDelegate.state.animationValue != state.animationValue ||
+      oldDelegate.state.batterySoc != state.batterySoc ||
       oldDelegate.state.variantKey != state.variantKey;
 }
 
@@ -440,6 +453,141 @@ final class _P {
       Offset(c.dx, frame.bottom + h * .08),
       size: h * .065,
     );
+  }
+
+  void pvController() {
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .72,
+      height: h * .70,
+    );
+    housing(
+      body,
+      colors: const <Color>[Color(0xFFF4F8F5), Color(0xFFCBD8D0)],
+      radius: h * .045,
+    );
+    final Rect display = Rect.fromLTWH(
+      body.left + body.width * .14,
+      body.top + body.height * .11,
+      body.width * .72,
+      body.height * .22,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(h * .024)),
+      Paint()..color = const Color(0xFF12352C),
+    );
+    text(
+      state.variantKey == 'pv-pwm' ? 'PWM' : 'MPPT',
+      display.center.translate(0, -display.height * .11),
+      size: h * .075,
+      color: const Color(0xFF8FF0C7),
+    );
+    text(
+      state.energized
+          ? '${state.voltageV.toStringAsFixed(0)} V · ${state.currentA.abs().toStringAsFixed(1)} A'
+          : 'RÉGULATEUR',
+      display.center.translate(0, display.height * .24),
+      size: h * .043,
+      color: const Color(0xFFB6DED2),
+    );
+
+    final Offset pvP = Offset(c.dx - w * .20, rect.top + h * .08);
+    final Offset pvN = Offset(c.dx + w * .20, rect.top + h * .08);
+    final Offset busP = Offset(c.dx - w * .20, rect.bottom - h * .08);
+    final Offset busN = Offset(c.dx + w * .20, rect.bottom - h * .08);
+    terminal(pvP, const Color(0xFFE65353), 'PV+');
+    terminal(pvN, const Color(0xFF111827), 'PV−');
+    terminal(busP, const Color(0xFFE65353), 'BAT+');
+    terminal(busN, const Color(0xFF111827), 'BAT−');
+
+    final Offset symbol = Offset(c.dx, c.dy + h * .08);
+    canvas.drawCircle(
+      symbol,
+      h * .10,
+      Paint()..color = const Color(0xFFE6EEE9),
+    );
+    canvas.drawCircle(symbol, h * .10, outline);
+    final Path arrow = Path()
+      ..moveTo(symbol.dx - h * .055, symbol.dy)
+      ..lineTo(symbol.dx + h * .035, symbol.dy)
+      ..lineTo(symbol.dx + h * .010, symbol.dy - h * .025)
+      ..moveTo(symbol.dx + h * .035, symbol.dy)
+      ..lineTo(symbol.dx + h * .010, symbol.dy + h * .025);
+    canvas.drawPath(
+      arrow,
+      Paint()
+        ..color = const Color(0xFF3E806B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2, s * .018)
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  void pvBattery() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .02),
+      width: w * .72,
+      height: h * .58,
+    );
+    final RRect outer =
+        RRect.fromRectAndRadius(body, Radius.circular(h * .035));
+    canvas.drawRRect(
+      outer,
+      Paint()..color = const Color(0xFF2B353B),
+    );
+    final Rect inner = body.deflate(h * .035);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(inner, Radius.circular(h * .02)),
+      Paint()..color = const Color(0xFFE7ECEF),
+    );
+    final double soc = state.batterySoc.clamp(0.0, 1.0).toDouble();
+    final Rect fill = Rect.fromLTWH(
+      inner.left,
+      inner.bottom - inner.height * soc,
+      inner.width,
+      inner.height * soc,
+    );
+    if (fill.height > 0) {
+      canvas.save();
+      canvas.clipRRect(
+        RRect.fromRectAndRadius(inner, Radius.circular(h * .02)),
+      );
+      canvas.drawRect(
+        fill,
+        Paint()
+          ..color = soc > .2
+              ? const Color(0xFF55A86F)
+              : const Color(0xFFD86945),
+      );
+      canvas.restore();
+    }
+    final Rect cap = Rect.fromCenter(
+      center: Offset(c.dx, body.top - h * .025),
+      width: body.width * .24,
+      height: h * .05,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(cap, Radius.circular(h * .01)),
+      Paint()..color = const Color(0xFF2B353B),
+    );
+    text(
+      '${(soc * 100).toStringAsFixed(0)} %',
+      c.translate(0, -h * .04),
+      size: h * .13,
+      color: soc > .45 ? Colors.white : const Color(0xFF26363E),
+    );
+    text(
+      state.voltageV > 0 ? '${state.voltageV.toStringAsFixed(0)} V' : 'BATTERIE',
+      c.translate(0, h * .13),
+      size: h * .055,
+      color: soc > .32 ? Colors.white : const Color(0xFF26363E),
+    );
+
+    final Offset pos = Offset(c.dx - w * .16, rect.bottom - h * .08);
+    final Offset neg = Offset(c.dx + w * .16, rect.bottom - h * .08);
+    terminal(pos, const Color(0xFFE65353), '+');
+    terminal(neg, const Color(0xFF111827), '−');
   }
 
   void pvInverter() {

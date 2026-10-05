@@ -21,6 +21,32 @@ void main() {
     expect(result.branch('component:r').currentA?.abs(), closeTo(.24, 1e-9));
   });
 
+  test('invalid DC inductor parameter is rejected explicitly', () {
+    final CircuitState circuit = _series(
+      modelType: 'inductor',
+      parameters: const <String, Object?>{'inductanceH': 0.0},
+    );
+    final DcSolveResult result = solve(circuit);
+    expect(result.status, DcSolveStatus.invalid);
+    expect(
+      result.diagnostics.map((DcSolverDiagnostic item) => item.code),
+      contains(DcDiagnosticCode.invalidParameter),
+    );
+  });
+
+  test('invalid DC capacitor parameter is rejected explicitly', () {
+    final CircuitState circuit = _series(
+      modelType: 'capacitor',
+      parameters: const <String, Object?>{'capacitanceF': -0.001},
+    );
+    final DcSolveResult result = solve(circuit);
+    expect(result.status, DcSolveStatus.invalid);
+    expect(
+      result.diagnostics.map((DcSolverDiagnostic item) => item.code),
+      contains(DcDiagnosticCode.invalidParameter),
+    );
+  });
+
   test('steady-state DC capacitor behaves as open circuit', () {
     final CircuitState circuit = _series(
       modelType: 'capacitor',

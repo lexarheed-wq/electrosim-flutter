@@ -47,6 +47,18 @@ String f9ModelLabel(String modelType) {
       return 'Disjoncteur 3P';
     case 'thermal_overload_3p':
       return 'Relais thermique 3P';
+    case 'dc_current_source':
+      return 'Source de courant CC';
+    case 'ac_voltage_source':
+      return 'Source AC';
+    case 'ac_current_source':
+      return 'Source de courant AC';
+    case 'pv_array':
+      return 'Champ photovoltaïque';
+    case 'pv_inverter':
+      return 'Onduleur solaire';
+    case 'pv_resistive_load':
+      return 'Charge AC PV';
     default:
       return modelType;
   }

@@ -573,7 +573,7 @@ void main() {
       ),
       isEmpty,
     );
-    expect(graph.nodeFor(TerminalId('v1p')), graph.nodeFor(TerminalId('v2n')));
+    expect(graph.nodeForTerminal(TerminalId('v1p')), graph.nodeForTerminal(TerminalId('v2n')));
   });
 
   test(

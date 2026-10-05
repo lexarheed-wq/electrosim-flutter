@@ -19,9 +19,11 @@ class M12UiContractTest(unittest.TestCase):
 
     def test_workspace_shell_has_compact_medium_expanded_layouts(self):
         text = (ROOT / 'packages/electrosim_ui_kit/lib/src/workspace_shell.dart').read_text(encoding='utf-8')
+        responsive = (ROOT / 'packages/electrosim_ui_kit/lib/src/responsive.dart').read_text(encoding='utf-8')
+        self.assertIn('ElectroSimBreakpoints.classify', text)
         self.assertIn('ElectroSimWindowClass.compact', text)
         self.assertIn('ElectroSimWindowClass.medium', text)
-        self.assertIn('ElectroSimWindowClass.expanded', text)
+        self.assertIn('enum ElectroSimWindowClass { compact, medium, expanded }', responsive)
         self.assertIn('electroSimCompactActionsKey', text)
 
     def test_palette_collapsed_limit_remains_five(self):

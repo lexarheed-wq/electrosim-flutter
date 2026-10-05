@@ -24,6 +24,16 @@ enum F20ApplianceSilhouette {
   generic,
 }
 
+enum F20MotorSilhouette {
+  pump,
+  fan,
+  compressor,
+  conveyor,
+  mixer,
+  crusher,
+  generic,
+}
+
 abstract final class F20CatalogVisualIdentity {
   static F20ApplianceSilhouette applianceSilhouette(String? variantKey) =>
       switch (variantKey) {
@@ -34,6 +44,17 @@ abstract final class F20CatalogVisualIdentity {
         'refrigerator-dc' => F20ApplianceSilhouette.refrigeratorDc,
         'television' => F20ApplianceSilhouette.television,
         _ => F20ApplianceSilhouette.generic,
+      };
+
+  static F20MotorSilhouette motorSilhouette(String? variantKey) =>
+      switch (variantKey) {
+        'pump' => F20MotorSilhouette.pump,
+        'fan' => F20MotorSilhouette.fan,
+        'compressor' => F20MotorSilhouette.compressor,
+        'conveyor' => F20MotorSilhouette.conveyor,
+        'mixer' => F20MotorSilhouette.mixer,
+        'crusher' => F20MotorSilhouette.crusher,
+        _ => F20MotorSilhouette.generic,
       };
 }
 
@@ -602,47 +623,36 @@ final class _P {
   }
 
   void motorDriven({required bool sixTerminals}) {
-    final Rect body = Rect.fromCenter(
-      center: Offset(c.dx - w * .06, c.dy),
-      width: w * .46,
-      height: h * .48,
-    );
-    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .12));
-    canvas.drawRRect(
-      rr,
-      grad(body, const <Color>[Color(0xFFE4EAED), Color(0xFF77868F)]),
-    );
-    canvas.drawRRect(rr, outline);
-
-    final Offset shaft = Offset(body.right + w * .12, c.dy);
-    canvas.drawLine(
-      Offset(body.right, c.dy),
-      shaft,
-      Paint()
-        ..color = const Color(0xFF87939A)
-        ..strokeWidth = math.max(4, s * .045)
-        ..strokeCap = StrokeCap.round,
-    );
-
-    final double rotorR = h * .075;
-    canvas.save();
-    canvas.translate(shaft.dx, shaft.dy);
-    canvas.rotate(
-      state.energized ? state.animationValue * math.pi * 2 * 2.2 : 0,
-    );
-    for (var i = 0; i < 4; i++) {
-      canvas.rotate(math.pi / 2);
-      canvas.drawLine(
-        Offset.zero,
-        Offset(rotorR, 0),
-        Paint()
-          ..color = const Color(0xFF465660)
-          ..strokeWidth = math.max(2, s * .018),
-      );
+    switch (F20CatalogVisualIdentity.motorSilhouette(variant)) {
+      case F20MotorSilhouette.pump:
+        _pump();
+        break;
+      case F20MotorSilhouette.fan:
+        _fan(industrial: sixTerminals);
+        break;
+      case F20MotorSilhouette.compressor:
+        _compressor();
+        break;
+      case F20MotorSilhouette.conveyor:
+        _conveyor();
+        break;
+      case F20MotorSilhouette.mixer:
+        _mixer();
+        break;
+      case F20MotorSilhouette.crusher:
+        _crusher();
+        break;
+      case F20MotorSilhouette.generic:
+        _genericMotorDriven();
+        break;
     }
-    canvas.restore();
+    _motorTerminals(sixTerminals);
+  }
 
-    text(shortLabel(), body.center, size: h * .06);
+  double get _motionPhase =>
+      state.energized ? state.animationValue * math.pi * 2 : 0;
+
+  void _motorTerminals(bool sixTerminals) {
     if (sixTerminals) {
       final List<double> xs = <double>[c.dx - w * .20, c.dx, c.dx + w * .20];
       for (var i = 0; i < 3; i++) {
@@ -655,11 +665,412 @@ final class _P {
           <String>['U2', 'V2', 'W2'][i],
         );
       }
-    } else {
-      final List<Offset> t = bottomPair();
-      terminal(t[0], '1');
-      terminal(t[1], '2');
+      return;
     }
+    final List<Offset> t = bottomPair();
+    terminal(t[0], '1');
+    terminal(t[1], '2');
+  }
+
+  void _motorBody(Rect body) {
+    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .08));
+    canvas.drawRRect(
+      rr,
+      grad(body, const <Color>[Color(0xFFE3E9EC), Color(0xFF77878F)]),
+    );
+    canvas.drawRRect(rr, outline);
+    for (var i = 1; i <= 4; i++) {
+      final double x = body.left + body.width * i / 5;
+      canvas.drawLine(
+        Offset(x, body.top + h * .025),
+        Offset(x, body.bottom - h * .025),
+        Paint()
+          ..color = const Color(0x66707D83)
+          ..strokeWidth = math.max(1, s * .008),
+      );
+    }
+  }
+
+  void _pump() {
+    final Rect motor = Rect.fromCenter(
+      center: Offset(c.dx - w * .19, c.dy),
+      width: w * .36,
+      height: h * .30,
+    );
+    _motorBody(motor);
+    final Offset shaftEnd = Offset(c.dx + w * .03, c.dy);
+    canvas.drawLine(
+      Offset(motor.right, c.dy),
+      shaftEnd,
+      Paint()
+        ..color = const Color(0xFF7D8B92)
+        ..strokeWidth = math.max(4, s * .025),
+    );
+
+    final Offset voluteCenter = Offset(c.dx + w * .20, c.dy);
+    final double voluteRadius = h * .17;
+    canvas.drawCircle(
+      voluteCenter,
+      voluteRadius,
+      grad(
+        Rect.fromCircle(center: voluteCenter, radius: voluteRadius),
+        const <Color>[Color(0xFF8FB4C2), Color(0xFF4A6873)],
+      ),
+    );
+    canvas.drawCircle(voluteCenter, voluteRadius, outline);
+    canvas.drawCircle(
+      voluteCenter,
+      voluteRadius * .42,
+      Paint()..color = const Color(0xFF263940),
+    );
+
+    canvas.save();
+    canvas.translate(voluteCenter.dx, voluteCenter.dy);
+    canvas.rotate(_motionPhase * 2);
+    for (var i = 0; i < 5; i++) {
+      canvas.rotate(math.pi * 2 / 5);
+      canvas.drawLine(
+        const Offset(4, 0),
+        Offset(voluteRadius * .34, 0),
+        Paint()
+          ..color = const Color(0xFFD8E5E9)
+          ..strokeWidth = math.max(2, s * .012),
+      );
+    }
+    canvas.restore();
+
+    final Rect outlet = Rect.fromLTWH(
+      voluteCenter.dx - w * .03,
+      voluteCenter.dy - voluteRadius - h * .10,
+      w * .10,
+      h * .12,
+    );
+    canvas.drawRect(outlet, Paint()..color = const Color(0xFF587680));
+    canvas.drawRect(outlet, outline);
+    canvas.drawLine(
+      Offset(voluteCenter.dx + voluteRadius, voluteCenter.dy),
+      Offset(rect.right - w * .06, voluteCenter.dy),
+      Paint()
+        ..color = const Color(0xFF587680)
+        ..strokeWidth = math.max(8, s * .055),
+    );
+    text('POMPE', Offset(c.dx - w * .16, motor.top - h * .06), size: h * .05);
+  }
+
+  void _fan({required bool industrial}) {
+    final Offset center = Offset(c.dx, c.dy - h * .01);
+    final double radius = industrial ? h * .25 : h * .22;
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()..color = const Color(0xFFE3E8EA),
+    );
+    canvas.drawCircle(center, radius, outline);
+    canvas.drawCircle(
+      center,
+      radius * .82,
+      Paint()..color = const Color(0xFF27373E),
+    );
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(_motionPhase * 2.4);
+    final int blades = industrial ? 6 : 5;
+    for (var i = 0; i < blades; i++) {
+      canvas.rotate(math.pi * 2 / blades);
+      final Path blade = Path()
+        ..moveTo(radius * .12, -radius * .08)
+        ..quadraticBezierTo(
+          radius * .58,
+          -radius * .27,
+          radius * .72,
+          radius * .02,
+        )
+        ..quadraticBezierTo(
+          radius * .48,
+          radius * .16,
+          radius * .12,
+          radius * .10,
+        )
+        ..close();
+      canvas.drawPath(
+        blade,
+        grad(
+          Rect.fromLTWH(0, -radius * .3, radius * .8, radius * .6),
+          const <Color>[Color(0xFF9AA8AF), Color(0xFF485A62)],
+        ),
+      );
+    }
+    canvas.restore();
+    canvas.drawCircle(
+      center,
+      radius * .14,
+      Paint()..color = const Color(0xFF8D9BA1),
+    );
+
+    if (!industrial) {
+      final Offset neck = center.translate(0, radius);
+      canvas.drawLine(
+        neck,
+        neck.translate(0, h * .17),
+        Paint()
+          ..color = const Color(0xFF65757C)
+          ..strokeWidth = math.max(5, s * .028),
+      );
+      canvas.drawLine(
+        neck.translate(-w * .16, h * .17),
+        neck.translate(w * .16, h * .17),
+        Paint()
+          ..color = const Color(0xFF65757C)
+          ..strokeWidth = math.max(5, s * .028)
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+    text(
+      industrial ? 'VENTIL. 3φ' : 'VENTIL.',
+      Offset(c.dx, rect.top + h * .13),
+      size: h * .045,
+    );
+  }
+
+  void _compressor() {
+    final Rect tank = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + h * .10),
+      width: w * .72,
+      height: h * .25,
+    );
+    box(tank, top: const Color(0xFF6C8390), bottom: const Color(0xFF344B55));
+    final Rect motor = Rect.fromCenter(
+      center: Offset(c.dx - w * .18, c.dy - h * .08),
+      width: w * .30,
+      height: h * .22,
+    );
+    _motorBody(motor);
+
+    final Offset wheel = Offset(c.dx + w * .18, c.dy - h * .07);
+    final double r = h * .105;
+    canvas.drawCircle(wheel, r, outline);
+    canvas.save();
+    canvas.translate(wheel.dx, wheel.dy);
+    canvas.rotate(_motionPhase * 1.8);
+    for (var i = 0; i < 6; i++) {
+      canvas.rotate(math.pi / 3);
+      canvas.drawLine(
+        Offset.zero,
+        Offset(r * .82, 0),
+        Paint()
+          ..color = const Color(0xFF64757D)
+          ..strokeWidth = math.max(2, s * .012),
+      );
+    }
+    canvas.restore();
+
+    final Rect head = Rect.fromCenter(
+      center: Offset(c.dx + w * .02, c.dy - h * .12),
+      width: w * .15,
+      height: h * .18,
+    );
+    box(head, top: const Color(0xFFBCC7CC), bottom: const Color(0xFF6D7E86));
+    text('COMP.', Offset(c.dx, tank.center.dy), size: h * .05, color: Colors.white);
+  }
+
+  void _conveyor() {
+    final Rect belt = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .01),
+      width: w * .78,
+      height: h * .23,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(belt, Radius.circular(h * .055)),
+      Paint()..color = const Color(0xFF303B40),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(belt, Radius.circular(h * .055)),
+      outline,
+    );
+    final double rollerR = h * .075;
+    for (final double x in <double>[belt.left + rollerR, belt.right - rollerR]) {
+      canvas.drawCircle(
+        Offset(x, belt.center.dy),
+        rollerR,
+        Paint()..color = const Color(0xFF7A898F),
+      );
+      canvas.drawCircle(Offset(x, belt.center.dy), rollerR, outline);
+    }
+
+    final double offset = state.energized
+        ? (state.animationValue % 1.0) * w * .12
+        : 0;
+    for (var i = -1; i < 7; i++) {
+      final double x = belt.left + w * .06 + i * w * .12 + offset;
+      if (x < belt.left + w * .03 || x > belt.right - w * .03) {
+        continue;
+      }
+      canvas.drawLine(
+        Offset(x, belt.top + h * .03),
+        Offset(x, belt.bottom - h * .03),
+        Paint()
+          ..color = const Color(0xFF93A2A8)
+          ..strokeWidth = math.max(1.5, s * .01),
+      );
+    }
+    final Rect motor = Rect.fromCenter(
+      center: Offset(belt.right - w * .08, belt.bottom + h * .14),
+      width: w * .22,
+      height: h * .17,
+    );
+    _motorBody(motor);
+    text('CONVOYEUR', Offset(c.dx, belt.top - h * .07), size: h * .05);
+  }
+
+  void _mixer() {
+    final Rect vessel = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + h * .08),
+      width: w * .48,
+      height: h * .42,
+    );
+    final Path tank = Path()
+      ..moveTo(vessel.left, vessel.top)
+      ..lineTo(vessel.right, vessel.top)
+      ..lineTo(vessel.right - w * .06, vessel.bottom)
+      ..lineTo(vessel.left + w * .06, vessel.bottom)
+      ..close();
+    canvas.drawPath(
+      tank,
+      grad(vessel, const <Color>[Color(0xFFD7E0E4), Color(0xFF778990)]),
+    );
+    canvas.drawPath(tank, outline);
+
+    final Rect motor = Rect.fromCenter(
+      center: Offset(c.dx, vessel.top - h * .12),
+      width: w * .24,
+      height: h * .16,
+    );
+    _motorBody(motor);
+    canvas.drawLine(
+      Offset(c.dx, motor.bottom),
+      Offset(c.dx, vessel.bottom - h * .07),
+      Paint()
+        ..color = const Color(0xFF67777E)
+        ..strokeWidth = math.max(4, s * .022),
+    );
+
+    canvas.save();
+    canvas.translate(c.dx, vessel.center.dy + h * .03);
+    canvas.rotate(_motionPhase * 1.7);
+    canvas.drawLine(
+      Offset(-w * .14, 0),
+      Offset(w * .14, 0),
+      Paint()
+        ..color = const Color(0xFF50636B)
+        ..strokeWidth = math.max(5, s * .025)
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawLine(
+      Offset(0, -h * .08),
+      Offset(0, h * .08),
+      Paint()
+        ..color = const Color(0xFF50636B)
+        ..strokeWidth = math.max(5, s * .025)
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.restore();
+    text('MÉLANGEUR', Offset(c.dx, vessel.bottom + h * .07), size: h * .045);
+  }
+
+  void _crusher() {
+    final Rect chamber = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + h * .08),
+      width: w * .50,
+      height: h * .30,
+    );
+    box(
+      chamber,
+      top: const Color(0xFF8D969A),
+      bottom: const Color(0xFF4B565B),
+    );
+
+    final Path hopper = Path()
+      ..moveTo(c.dx - w * .24, chamber.top)
+      ..lineTo(c.dx + w * .24, chamber.top)
+      ..lineTo(c.dx + w * .15, rect.top + h * .19)
+      ..lineTo(c.dx - w * .15, rect.top + h * .19)
+      ..close();
+    canvas.drawPath(
+      hopper,
+      grad(
+        hopper.getBounds(),
+        const <Color>[Color(0xFFB0B7BA), Color(0xFF667278)],
+      ),
+    );
+    canvas.drawPath(hopper, outline);
+
+    final double rollerR = h * .075;
+    for (final (double dx, double direction) in <(double, double)>[
+      (-rollerR * .90, 1),
+      (rollerR * .90, -1),
+    ]) {
+      final Offset center = Offset(c.dx + dx, chamber.center.dy);
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(_motionPhase * direction * 2);
+      canvas.drawCircle(
+        Offset.zero,
+        rollerR,
+        Paint()..color = const Color(0xFF27343A),
+      );
+      for (var tooth = 0; tooth < 8; tooth++) {
+        canvas.rotate(math.pi / 4);
+        canvas.drawLine(
+          Offset(rollerR * .45, 0),
+          Offset(rollerR, 0),
+          Paint()
+            ..color = const Color(0xFFB5C0C5)
+            ..strokeWidth = math.max(2, s * .012),
+        );
+      }
+      canvas.restore();
+    }
+    final Rect motor = Rect.fromCenter(
+      center: Offset(chamber.right + w * .13, chamber.center.dy),
+      width: w * .18,
+      height: h * .18,
+    );
+    _motorBody(motor);
+    text('BROYEUR', Offset(c.dx, chamber.bottom + h * .075), size: h * .05);
+  }
+
+  void _genericMotorDriven() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx - w * .06, c.dy),
+      width: w * .46,
+      height: h * .48,
+    );
+    _motorBody(body);
+    final Offset shaft = Offset(body.right + w * .12, c.dy);
+    canvas.drawLine(
+      Offset(body.right, c.dy),
+      shaft,
+      Paint()
+        ..color = const Color(0xFF87939A)
+        ..strokeWidth = math.max(4, s * .045)
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.save();
+    canvas.translate(shaft.dx, shaft.dy);
+    canvas.rotate(_motionPhase * 2.2);
+    for (var i = 0; i < 4; i++) {
+      canvas.rotate(math.pi / 2);
+      canvas.drawLine(
+        Offset.zero,
+        Offset(h * .075, 0),
+        Paint()
+          ..color = const Color(0xFF465660)
+          ..strokeWidth = math.max(2, s * .018),
+      );
+    }
+    canvas.restore();
+    text(shortLabel(), body.center, size: h * .06);
   }
 
   void heater() {

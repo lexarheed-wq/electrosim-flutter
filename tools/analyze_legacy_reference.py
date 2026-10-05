@@ -31,7 +31,7 @@ def rel(name):
 def main():
     errors=[]
     baseline=json.loads(BASELINE.read_text(encoding='utf-8'))
-    expected=baseline.get('sha256') or baseline.get('referenceSha256') or baseline.get('zipSha256')
+    expected=baseline['legacy_zip']['sha256']
     actual=sha256_file(ZIP)
     if expected and expected != actual:
         errors.append(f'reference SHA mismatch: expected {expected}, actual {actual}')

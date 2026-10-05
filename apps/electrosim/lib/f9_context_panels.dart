@@ -299,6 +299,17 @@ class _MeasurementsPanel extends StatelessWidget {
       return _PvRuntimePanel(runtimeSnapshot: runtimeSnapshot);
     }
 
+    final bool ac3 =
+        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+    final MeasurementResult? phaseSequence =
+        ac3 ? runtimeSnapshot.measurePhaseSequence() : null;
+    final MeasurementResult? totalActive =
+        ac3 ? runtimeSnapshot.measureActivePower() : null;
+    final MeasurementResult? totalReactive =
+        ac3 ? runtimeSnapshot.measureReactivePower() : null;
+    final MeasurementResult? totalApparent =
+        ac3 ? runtimeSnapshot.measureApparentPower() : null;
+
     final _MeasurementTarget? target = _target();
     if (target == null) {
       return ListView(
@@ -310,15 +321,54 @@ class _MeasurementsPanel extends StatelessWidget {
             subtitle: 'Valeurs calculées uniquement par MeasurementEngine',
           ),
           const SizedBox(height: ElectroSimSpacing.md),
-          const ElectroSimStatusChip(
-            label: 'Sélectionnez un élément à 2 bornes',
-            icon: Icons.touch_app_outlined,
-          ),
-          const SizedBox(height: ElectroSimSpacing.sm),
-          const Text(
-            'Le voltmètre et l’ampèremètre utilisent le résultat électrique courant. '
-            'Aucune valeur n’est calculée ou inventée par l’interface.',
-          ),
+          if (ac3) ...<Widget>[
+            ElectroSimStatusChip(
+              label: phaseSequence?.isValid == true
+                  ? 'Réseau triphasé mesurable'
+                  : 'Mesure triphasée indisponible',
+              icon: Icons.threesixty_outlined,
+              emphasized: phaseSequence?.isValid == true,
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _InstrumentReading(
+              key: const Key('measurement-phase-sequence-meter'),
+              icon: Icons.rotate_right_outlined,
+              title: 'Contrôleur d’ordre des phases',
+              reading: phaseSequence!,
+              readingKey: const Key('measurement-phase-sequence-reading'),
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _InstrumentReading(
+              icon: Icons.bolt_outlined,
+              title: 'Puissance active totale P',
+              reading: totalActive!,
+              readingKey: const Key('measurement-active-power-reading'),
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _InstrumentReading(
+              icon: Icons.waves_outlined,
+              title: 'Puissance réactive totale Q',
+              reading: totalReactive!,
+              readingKey: const Key('measurement-reactive-power-reading'),
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _InstrumentReading(
+              icon: Icons.electric_meter_outlined,
+              title: 'Puissance apparente totale S',
+              reading: totalApparent!,
+              readingKey: const Key('measurement-apparent-power-reading'),
+            ),
+          ] else ...<Widget>[
+            const ElectroSimStatusChip(
+              label: 'Sélectionnez un élément à 2 bornes',
+              icon: Icons.touch_app_outlined,
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            const Text(
+              'Le voltmètre et l’ampèremètre utilisent le résultat électrique courant. '
+              'Aucune valeur n’est calculée ou inventée par l’interface.',
+            ),
+          ],
         ],
       );
     }
@@ -340,9 +390,27 @@ class _MeasurementsPanel extends StatelessWidget {
         : runtimeSnapshot.measureCurrent(branchId: target.branchId);
     final MeasurementResult? frequency =
         ac ? runtimeSnapshot.measureFrequency() : null;
+    final MeasurementResult? activePower = ac
+        ? (ac3
+            ? totalActive
+            : runtimeSnapshot.measureActivePower(branchId: target.branchId))
+        : null;
+    final MeasurementResult? reactivePower = ac
+        ? (ac3
+            ? totalReactive
+            : runtimeSnapshot.measureReactivePower(branchId: target.branchId))
+        : null;
+    final MeasurementResult? apparentPower = ac
+        ? (ac3
+            ? totalApparent
+            : runtimeSnapshot.measureApparentPower(branchId: target.branchId))
+        : null;
     final bool available = voltage.isValid &&
         current.isValid &&
-        (frequency == null || frequency.isValid);
+        (frequency == null || frequency.isValid) &&
+        (activePower == null || activePower.isValid) &&
+        (reactivePower == null || reactivePower.isValid) &&
+        (apparentPower == null || apparentPower.isValid);
 
     return ListView(
       key: const Key('measurements-panel'),
@@ -396,6 +464,39 @@ class _MeasurementsPanel extends StatelessWidget {
             title: 'Fréquencemètre',
             reading: frequency,
             readingKey: const Key('measurement-frequency-reading'),
+          ),
+        ],
+        if (phaseSequence != null) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.sm),
+          _InstrumentReading(
+            key: const Key('measurement-phase-sequence-meter'),
+            icon: Icons.rotate_right_outlined,
+            title: 'Contrôleur d’ordre des phases',
+            reading: phaseSequence,
+            readingKey: const Key('measurement-phase-sequence-reading'),
+          ),
+        ],
+        if (activePower != null) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.sm),
+          _InstrumentReading(
+            icon: Icons.bolt_outlined,
+            title: ac3 ? 'Puissance active totale P' : 'Puissance active P',
+            reading: activePower,
+            readingKey: const Key('measurement-active-power-reading'),
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          _InstrumentReading(
+            icon: Icons.waves_outlined,
+            title: ac3 ? 'Puissance réactive totale Q' : 'Puissance réactive Q',
+            reading: reactivePower!,
+            readingKey: const Key('measurement-reactive-power-reading'),
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+          _InstrumentReading(
+            icon: Icons.electric_meter_outlined,
+            title: ac3 ? 'Puissance apparente totale S' : 'Puissance apparente S',
+            reading: apparentPower!,
+            readingKey: const Key('measurement-apparent-power-reading'),
           ),
         ],
         if (!available) ...<Widget>[
@@ -559,7 +660,9 @@ class _InstrumentReading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String value = reading.isValid ? _formatQuantity(reading.reading!) : '—';
+    final String value = reading.isValid
+        ? (reading.displayText ?? _formatQuantity(reading.reading!))
+        : '—';
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -589,7 +692,14 @@ class _InstrumentReading extends StatelessWidget {
       ElectricalUnit.volt => 'V',
       ElectricalUnit.ampere => 'A',
       ElectricalUnit.ohm => 'Ω',
-      _ => quantity.unit.name,
+      ElectricalUnit.watt => 'W',
+      ElectricalUnit.wattHour => 'Wh',
+      ElectricalUnit.kilowattHour => 'kWh',
+      ElectricalUnit.hertz => 'Hz',
+      ElectricalUnit.voltAmpere => 'VA',
+      ElectricalUnit.varUnit => 'var',
+      ElectricalUnit.degree => '°',
+      ElectricalUnit.radian => 'rad',
     };
     final double value = quantity.value.abs() < 1e-12 ? 0.0 : quantity.value;
     return '${value.toStringAsFixed(3)} $unit';

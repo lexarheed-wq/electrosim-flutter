@@ -35,6 +35,8 @@ on:
       - "packages/electrosim_domain/**"
       - "packages/electrosim_solver_dc/**"
       - "packages/electrosim_solver_ac/**"
+      - "packages/electrosim_protection/**"
+      - "packages/electrosim_controls/**"
       - "packages/electrosim_topology/**"
       - "packages/electrosim_canvas/lib/src/canvas_geometry.dart"
       - "packages/electrosim_canvas/lib/src/circuit_wire_layout_engine.dart"
@@ -107,6 +109,12 @@ jobs:
         run: |
           dart pub get
           dart test test/three_phase_physical_devices_test.dart
+
+      - name: Qualify DC relay control
+        working-directory: packages/electrosim_controls
+        run: |
+          dart pub get
+          dart test test/dc_relay_control_test.dart
 
       - name: Run full application non-golden regression
         working-directory: apps/electrosim

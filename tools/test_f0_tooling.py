@@ -83,6 +83,14 @@ class F0ToolingTests(unittest.TestCase):
         self.assertIn('dart format --output=none --set-exit-if-changed lib test',s)
         self.assertNotIn('dart format --output=none --set-exit-if-changed .',s)
 
+    def test_fault_scenarios_have_no_legacy_example_linkage(self):
+        scenario_root=ROOT/"packages/electrosim_scenarios"
+        forbidden=("example"+"id","example"+"_id")
+        for p in scenario_root.rglob("*.dart"):
+            lowered=p.read_text(encoding="utf-8").lower()
+            for token in forbidden:
+                self.assertNotIn(token,lowered,p.relative_to(ROOT).as_posix())
+
     def test_f1_domain_source_is_canonical_dart_only(self):
         domain=ROOT/"packages/electrosim_domain"
         authored=[p for p in domain.rglob('*') if p.is_file() and p.name!='README.md']

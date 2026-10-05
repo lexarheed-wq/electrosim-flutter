@@ -30,6 +30,25 @@ void main() {
     expect(diode.voltageV, lessThan(0));
   });
 
+  test('Zener diode clamps reverse voltage at configured breakdown', () {
+    final CircuitState circuit = _seriesDiode(
+      reverse: true,
+      sourceVoltageV: 12.0,
+      resistanceOhm: 1000.0,
+      diodeParameters: const <String, Object?>{
+        'forwardVoltageV': 0.7,
+        'reverseBreakdownVoltageV': 5.1,
+      },
+    );
+    final DcSolveResult result = solve(circuit);
+    expect(result.status, DcSolveStatus.solved);
+    final DcBranchResult diode = result.branch('component:d1');
+    expect(diode.kind, DcBranchKind.diode);
+    expect(diode.voltageV, closeTo(-5.1, 1e-9));
+    expect(diode.currentA?.abs(), closeTo(0.0069, 1e-9));
+    expect(result.branch('component:r1').currentA?.abs(), closeTo(0.0069, 1e-9));
+  });
+
   test('diode parameters are validated', () {
     final CircuitState circuit = _seriesDiode(
       reverse: false,
@@ -48,6 +67,8 @@ void main() {
 
 CircuitState _seriesDiode({
   required bool reverse,
+  double sourceVoltageV = 5.0,
+  double resistanceOhm = 100.0,
   Map<String, Object?> diodeParameters = const <String, Object?>{},
 }) {
   final Terminal vp = _t('vp', '+', phase: PhaseTag.dcPositive);
@@ -72,7 +93,7 @@ CircuitState _seriesDiode({
         id: ComponentId('r1'),
         modelType: 'resistor',
         terminals: <Terminal>[r1a, r1b],
-        parameters: const <String, Object?>{'resistanceOhm': 100.0},
+        parameters: <String, Object?>{'resistanceOhm': resistanceOhm},
       ),
     ],
     sources: <SourceInstance>[
@@ -80,7 +101,7 @@ CircuitState _seriesDiode({
         id: SourceId('v1'),
         modelType: 'dc_voltage_source',
         terminals: <Terminal>[vp, vn],
-        parameters: const <String, Object?>{'voltageV': 5.0},
+        parameters: <String, Object?>{'voltageV': sourceVoltageV},
       ),
     ],
     connections: reverse

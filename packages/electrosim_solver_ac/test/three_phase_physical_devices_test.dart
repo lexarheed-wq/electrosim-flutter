@@ -25,6 +25,77 @@ void main() {
     expect(result.currentBalanced, isTrue);
   });
 
+  test('three-phase motor open condition creates an explicit floating island', () {
+    final CircuitState base = _motorStarCircuit();
+    final CircuitState circuit = _replaceOnlyComponent(
+      base,
+      condition: ComponentCondition.openCircuit,
+    );
+    final Ac3SolveResult result = solve(circuit);
+    expect(result.status, Ac3SolveStatus.singular);
+    expect(
+      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.floatingElectricalIsland),
+    );
+  });
+
+  test('three-phase motor short condition is modeled as ideal winding shorts', () {
+    final CircuitState base = _motorStarCircuit();
+    final CircuitState circuit = _replaceOnlyComponent(
+      base,
+      condition: ComponentCondition.shortCircuit,
+    );
+    final Ac3SolveResult result = solve(circuit);
+    expect(result.status, isNot(Ac3SolveStatus.solved));
+    expect(
+      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.singularMatrix),
+    );
+  });
+
+  test('three-phase device rejects degraded condition and invalid parameters', () {
+    final CircuitState base = _motorStarCircuit();
+
+    final Ac3SolveResult degraded = solve(
+      _replaceOnlyComponent(base, condition: ComponentCondition.degraded),
+    );
+    expect(degraded.status, Ac3SolveStatus.invalid);
+    expect(
+      degraded.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.unsupportedComponentCondition),
+    );
+
+    final Ac3SolveResult badResistance = solve(
+      _replaceOnlyComponent(
+        base,
+        parameters: const <String, Object?>{
+          'resistanceOhm': 0.0,
+          'inductanceH': 0.0,
+        },
+      ),
+    );
+    expect(badResistance.status, Ac3SolveStatus.invalid);
+    expect(
+      badResistance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.invalidParameter),
+    );
+
+    final Ac3SolveResult badInductance = solve(
+      _replaceOnlyComponent(
+        base,
+        parameters: const <String, Object?>{
+          'resistanceOhm': 23.0,
+          'inductanceH': -0.001,
+        },
+      ),
+    );
+    expect(badInductance.status, Ac3SolveStatus.invalid);
+    expect(
+      badInductance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.invalidParameter),
+    );
+  });
+
   test('delta load solves three real line-to-line branches', () {
     final CircuitState circuit = _deltaLoadCircuit();
     final Ac3SolveResult result = solve(circuit);
@@ -41,6 +112,31 @@ void main() {
     }
     expect(result.voltageBalanced, isTrue);
   });
+}
+
+CircuitState _replaceOnlyComponent(
+  CircuitState base, {
+  ComponentCondition? condition,
+  Map<String, Object?>? parameters,
+}) {
+  final ComponentInstance original = base.components.single;
+  final ComponentInstance replacement = ComponentInstance(
+    id: original.id,
+    modelType: original.modelType,
+    terminals: original.terminals,
+    parameters: parameters ?? original.parameters,
+    controlState: original.controlState,
+    condition: condition ?? original.condition,
+  );
+  return CircuitState(
+    circuitId: base.circuitId,
+    revision: base.revision,
+    mode: base.mode,
+    sources: base.sources,
+    components: <ComponentInstance>[replacement],
+    connections: base.connections,
+    settings: base.settings,
+  );
 }
 
 CircuitState _motorStarCircuit() {

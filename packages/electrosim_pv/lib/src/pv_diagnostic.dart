@@ -20,6 +20,12 @@ enum PvDiagnosticCode {
   inverterFaulted,
   inverterDerated,
   powerLimited,
+  invalidControllerParameter,
+  invalidBatteryParameter,
+  storageTopologyInvalid,
+  controllerFaulted,
+  batteryEmpty,
+  batteryFull,
 }
 
 final class PvSolverDiagnostic {

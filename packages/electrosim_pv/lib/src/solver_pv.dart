@@ -449,6 +449,442 @@ final class SolverPV {
     );
   }
 
+  PvSolveResult _solveStorageChain({
+    required CircuitState circuit,
+    required SourceInstance array,
+    required ComponentInstance inverter,
+    required ComponentInstance controller,
+    required ComponentInstance battery,
+    required _InverterParameters inverterParameters,
+    required _ControllerParameters controllerParameters,
+    required _BatteryParameters batteryParameters,
+    required List<_LoadParameters> loadParameters,
+    required List<PvSolverDiagnostic> diagnostics,
+    required double irradianceWm2,
+    required double cellTemperatureC,
+    required double operatingVoltageV,
+    required double availableCurrentA,
+    required double availablePowerW,
+    required double? previousBatterySoc,
+    required Duration elapsed,
+  }) {
+    final double capacityWh =
+        batteryParameters.nominalVoltageV * batteryParameters.capacityAh;
+    final double initialSoc =
+        (previousBatterySoc ?? batteryParameters.initialSoc)
+            .clamp(batteryParameters.minSoc, batteryParameters.maxSoc)
+            .toDouble();
+    final double elapsedHours = elapsed.inMicroseconds / 3600000000.0;
+
+    final bool controllerOperational =
+        controller.condition == ComponentCondition.normal ||
+        controller.condition == ComponentCondition.degraded;
+    double controllerDerating = 1.0;
+    if (controller.condition == ComponentCondition.degraded) {
+      final double? raw = _finiteOptionalNumber(
+        controller.parameters,
+        'deratingFactor',
+        0.75,
+      );
+      if (raw == null || raw <= 0.0 || raw > 1.0) {
+        diagnostics.add(
+          PvSolverDiagnostic(
+            code: PvDiagnosticCode.invalidControllerParameter,
+            severity: PvDiagnosticSeverity.error,
+            message:
+                'Degraded pv_controller requires deratingFactor in (0,1].',
+            componentId: controller.id,
+          ),
+        );
+        return _failure(circuit, diagnostics);
+      }
+      controllerDerating = raw;
+    } else if (!controllerOperational) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.controllerFaulted,
+          severity: PvDiagnosticSeverity.warning,
+          message:
+              'PV controller condition disables transfer from the array to the DC bus.',
+          componentId: controller.id,
+        ),
+      );
+    }
+
+    final double busVoltageV = batteryParameters.nominalVoltageV;
+    final double controllerOutputLimitW =
+        busVoltageV * controllerParameters.maxOutputCurrentA *
+        controllerDerating;
+    final double pvBusAvailablePowerW = controllerOperational
+        ? math.min(
+            availablePowerW * controllerParameters.efficiency,
+            controllerOutputLimitW,
+          )
+        : 0.0;
+
+    final _InverterAvailability availability = _inverterAvailability(
+      inverter,
+      inverterParameters,
+      busVoltageV,
+      diagnostics,
+    );
+    if (_hasErrors(diagnostics)) {
+      return _failure(circuit, diagnostics);
+    }
+
+    final double totalConductance = loadParameters.fold<double>(
+      0.0,
+      (double sum, _LoadParameters load) =>
+          sum + (1.0 / load.resistanceOhm),
+    );
+    final double nominalLoadPowerW =
+        inverterParameters.nominalAcVoltageV *
+        inverterParameters.nominalAcVoltageV *
+        totalConductance;
+
+    final double ratedAcPowerW =
+        inverterParameters.ratedAcPowerW * availability.deratingFactor;
+    final double desiredAcPowerW =
+        availability.canOperate ? math.min(nominalLoadPowerW, ratedAcPowerW) : 0.0;
+    final double requiredDcPowerW = desiredAcPowerW <= options.numericTolerance
+        ? 0.0
+        : desiredAcPowerW / inverterParameters.efficiency;
+
+    final double pvToInverterW =
+        math.min(pvBusAvailablePowerW, requiredDcPowerW);
+    final double dcDeficitW = math.max(0.0, requiredDcPowerW - pvToInverterW);
+
+    final double availableBatteryEnergyWh =
+        math.max(0.0, (initialSoc - batteryParameters.minSoc) * capacityWh);
+    double maxBatteryRawDischargeW =
+        busVoltageV * batteryParameters.maxDischargeCurrentA;
+    if (elapsedHours > 0.0) {
+      maxBatteryRawDischargeW = math.min(
+        maxBatteryRawDischargeW,
+        availableBatteryEnergyWh / elapsedHours,
+      );
+    }
+    final double rawBatteryDischargeW = math.min(
+      maxBatteryRawDischargeW,
+      dcDeficitW / batteryParameters.dischargeEfficiency,
+    );
+    final double batteryBusDischargeW =
+        rawBatteryDischargeW * batteryParameters.dischargeEfficiency;
+
+    final double inverterDcAvailableW =
+        pvToInverterW + batteryBusDischargeW;
+    final double availableAcPowerW = inverterDcAvailableW *
+        inverterParameters.efficiency;
+    final double outputPowerW = math.min(desiredAcPowerW, availableAcPowerW);
+
+    double outputVoltageV = 0.0;
+    double outputCurrentA = 0.0;
+    PvInverterState inverterState = availability.state;
+    if (availability.canOperate) {
+      if (totalConductance <= options.numericTolerance) {
+        outputVoltageV = inverterParameters.nominalAcVoltageV;
+        inverterState = PvInverterState.idle;
+      } else if (outputPowerW + options.numericTolerance >=
+          nominalLoadPowerW) {
+        outputVoltageV = inverterParameters.nominalAcVoltageV;
+        outputCurrentA = outputVoltageV * totalConductance;
+        inverterState = PvInverterState.running;
+      } else {
+        outputVoltageV = outputPowerW <= options.numericTolerance
+            ? 0.0
+            : math.sqrt(outputPowerW / totalConductance);
+        outputCurrentA = outputVoltageV * totalConductance;
+        inverterState = PvInverterState.powerLimited;
+        diagnostics.add(
+          PvSolverDiagnostic(
+            code: PvDiagnosticCode.powerLimited,
+            severity: PvDiagnosticSeverity.warning,
+            message:
+                'Inverter output is limited by PV + battery availability or inverter rating.',
+            componentId: inverter.id,
+          ),
+        );
+      }
+    }
+
+    final double actualInverterDcW = outputPowerW <= options.numericTolerance
+        ? 0.0
+        : outputPowerW / inverterParameters.efficiency;
+    final double actualPvToInverterW =
+        math.min(pvBusAvailablePowerW, actualInverterDcW);
+    final double actualBatteryBusDischargeW =
+        math.max(0.0, actualInverterDcW - actualPvToInverterW);
+    final double actualRawBatteryDischargeW =
+        actualBatteryBusDischargeW <= options.numericTolerance
+            ? 0.0
+            : actualBatteryBusDischargeW /
+                batteryParameters.dischargeEfficiency;
+
+    final double pvBusSurplusW =
+        math.max(0.0, pvBusAvailablePowerW - actualPvToInverterW);
+    final double batteryHeadroomWh =
+        math.max(0.0, (batteryParameters.maxSoc - initialSoc) * capacityWh);
+    double maxChargeInputW =
+        busVoltageV * batteryParameters.maxChargeCurrentA;
+    if (elapsedHours > 0.0) {
+      maxChargeInputW = math.min(
+        maxChargeInputW,
+        batteryHeadroomWh /
+            (elapsedHours * batteryParameters.chargeEfficiency),
+      );
+    }
+    final double batteryChargeInputW =
+        math.min(pvBusSurplusW, maxChargeInputW);
+    final double batteryStoredChargeW =
+        batteryChargeInputW * batteryParameters.chargeEfficiency;
+
+    final double deltaEnergyWh = elapsedHours <= 0.0
+        ? 0.0
+        : (batteryStoredChargeW - actualRawBatteryDischargeW) * elapsedHours;
+    final double finalStoredEnergyWh =
+        (initialSoc * capacityWh + deltaEnergyWh)
+            .clamp(
+              batteryParameters.minSoc * capacityWh,
+              batteryParameters.maxSoc * capacityWh,
+            )
+            .toDouble();
+    final double finalSoc = capacityWh <= options.numericTolerance
+        ? initialSoc
+        : finalStoredEnergyWh / capacityWh;
+
+    if (dcDeficitW > batteryBusDischargeW + options.numericTolerance &&
+        initialSoc <= batteryParameters.minSoc + options.numericTolerance) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.batteryEmpty,
+          severity: PvDiagnosticSeverity.warning,
+          message: 'Battery reached its minimum state of charge.',
+          componentId: battery.id,
+        ),
+      );
+    }
+    if (pvBusSurplusW > batteryChargeInputW + options.numericTolerance &&
+        initialSoc >= batteryParameters.maxSoc - options.numericTolerance) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.batteryFull,
+          severity: PvDiagnosticSeverity.info,
+          message: 'Battery reached its maximum state of charge.',
+          componentId: battery.id,
+        ),
+      );
+    }
+
+    final double pvBusUsedW =
+        actualPvToInverterW + batteryChargeInputW;
+    final double arrayDrawnPowerW = controllerOperational
+        ? math.min(
+            availablePowerW,
+            pvBusUsedW / controllerParameters.efficiency,
+          )
+        : 0.0;
+    final double drawnCurrentA = operatingVoltageV <= options.numericTolerance
+        ? 0.0
+        : arrayDrawnPowerW / operatingVoltageV;
+    final double controllerLossW =
+        math.max(0.0, arrayDrawnPowerW - pvBusUsedW);
+    final double inverterLossW =
+        math.max(0.0, actualInverterDcW - outputPowerW);
+    final double batteryLossW = math.max(
+      0.0,
+      (actualRawBatteryDischargeW - actualBatteryBusDischargeW) +
+          (batteryChargeInputW - batteryStoredChargeW),
+    );
+    final double curtailedPowerW =
+        math.max(0.0, availablePowerW - arrayDrawnPowerW);
+
+    final List<PvLoadResult> loadResults = <PvLoadResult>[
+      for (final _LoadParameters load in loadParameters)
+        PvLoadResult(
+          componentId: load.componentId,
+          resistanceOhm: load.resistanceOhm,
+          voltageRmsV: outputVoltageV,
+          currentRmsA: outputVoltageV / load.resistanceOhm,
+          activePowerW:
+              outputVoltageV * outputVoltageV / load.resistanceOhm,
+        ),
+    ];
+
+    return PvSolveResult(
+      circuitId: circuit.circuitId,
+      circuitRevision: circuit.revision,
+      engineVersion: 'solver-pv/0.2.0',
+      status: PvSolveStatus.solved,
+      irradianceWm2: irradianceWm2,
+      cellTemperatureC: cellTemperatureC,
+      pvOperatingVoltageV: operatingVoltageV,
+      pvAvailableCurrentA: availableCurrentA,
+      pvAvailablePowerW: availablePowerW,
+      pvDrawnCurrentA: drawnCurrentA,
+      pvDrawnPowerW: arrayDrawnPowerW,
+      curtailedPowerW: curtailedPowerW,
+      inverterState: inverterState,
+      inverterEfficiency: inverterParameters.efficiency,
+      inverterOutputVoltageRmsV: outputVoltageV,
+      inverterOutputCurrentRmsA: outputCurrentA,
+      inverterOutputPowerW: outputPowerW,
+      inverterConversionLossW: inverterLossW,
+      controllerPresent: true,
+      controllerEfficiency: controllerParameters.efficiency,
+      controllerConversionLossW: controllerLossW,
+      batteryPresent: true,
+      batterySoc: finalSoc,
+      batteryStoredEnergyWh: finalStoredEnergyWh,
+      batteryPowerW: actualBatteryBusDischargeW > options.numericTolerance
+          ? actualBatteryBusDischargeW
+          : -batteryChargeInputW,
+      batteryConversionLossW: batteryLossW,
+      loadResults: loadResults,
+      diagnostics: diagnostics,
+    );
+  }
+
+  _ControllerParameters? _controllerParameters(
+    ComponentInstance controller,
+    List<PvSolverDiagnostic> diagnostics,
+  ) {
+    final double? outputVoltage =
+        _positiveNumber(controller.parameters, 'outputVoltageV');
+    final double? maxCurrent =
+        _positiveNumber(controller.parameters, 'maxOutputCurrentA');
+    final double? efficiency =
+        _positiveNumber(controller.parameters, 'efficiency');
+    if (outputVoltage == null ||
+        maxCurrent == null ||
+        efficiency == null ||
+        efficiency > 1.0) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidControllerParameter,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'pv_controller requires outputVoltageV/maxOutputCurrentA > 0 and efficiency in (0,1].',
+          componentId: controller.id,
+        ),
+      );
+      return null;
+    }
+    return _ControllerParameters(
+      outputVoltageV: outputVoltage,
+      maxOutputCurrentA: maxCurrent,
+      efficiency: efficiency,
+    );
+  }
+
+  _BatteryParameters? _batteryParameters(
+    ComponentInstance battery,
+    List<PvSolverDiagnostic> diagnostics,
+  ) {
+    final double? voltage =
+        _positiveNumber(battery.parameters, 'nominalVoltageV');
+    final double? capacity =
+        _positiveNumber(battery.parameters, 'capacityAh');
+    final double? maxCharge =
+        _positiveNumber(battery.parameters, 'maxChargeCurrentA');
+    final double? maxDischarge =
+        _positiveNumber(battery.parameters, 'maxDischargeCurrentA');
+    final double? chargeEfficiency =
+        _positiveNumber(battery.parameters, 'chargeEfficiency');
+    final double? dischargeEfficiency =
+        _positiveNumber(battery.parameters, 'dischargeEfficiency');
+    final double? initialSoc =
+        _finiteOptionalNumber(battery.parameters, 'initialSoc', 0.5);
+    final double? minSoc =
+        _finiteOptionalNumber(battery.parameters, 'minSoc', 0.1);
+    final double? maxSoc =
+        _finiteOptionalNumber(battery.parameters, 'maxSoc', 1.0);
+    if (voltage == null ||
+        capacity == null ||
+        maxCharge == null ||
+        maxDischarge == null ||
+        chargeEfficiency == null ||
+        chargeEfficiency > 1.0 ||
+        dischargeEfficiency == null ||
+        dischargeEfficiency > 1.0 ||
+        initialSoc == null ||
+        minSoc == null ||
+        maxSoc == null ||
+        minSoc < 0.0 ||
+        maxSoc > 1.0 ||
+        minSoc >= maxSoc ||
+        initialSoc < minSoc ||
+        initialSoc > maxSoc) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidBatteryParameter,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'pv_battery requires valid voltage/capacity/current limits, efficiencies in (0,1], and minSoc <= initialSoc <= maxSoc.',
+          componentId: battery.id,
+        ),
+      );
+      return null;
+    }
+    return _BatteryParameters(
+      nominalVoltageV: voltage,
+      capacityAh: capacity,
+      initialSoc: initialSoc,
+      minSoc: minSoc,
+      maxSoc: maxSoc,
+      maxChargeCurrentA: maxCharge,
+      maxDischargeCurrentA: maxDischarge,
+      chargeEfficiency: chargeEfficiency,
+      dischargeEfficiency: dischargeEfficiency,
+    );
+  }
+
+  _ControllerTerminalContract? _controllerTerminals(
+    ComponentInstance controller,
+    List<PvSolverDiagnostic> diagnostics,
+  ) {
+    if (controller.terminals.length != 4) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidTerminalContract,
+          severity: PvDiagnosticSeverity.error,
+          message: 'pv_controller requires four ordered DC terminals.',
+          componentId: controller.id,
+        ),
+      );
+      return null;
+    }
+    return _ControllerTerminalContract(
+      pvPositive: controller.terminals[0],
+      pvNegative: controller.terminals[1],
+      busPositive: controller.terminals[2],
+      busNegative: controller.terminals[3],
+    );
+  }
+
+  _BatteryTerminalContract? _batteryTerminals(
+    ComponentInstance battery,
+    List<PvSolverDiagnostic> diagnostics,
+  ) {
+    if (battery.terminals.length != 2 ||
+        battery.terminals[0].phase != PhaseTag.dcPositive ||
+        battery.terminals[1].phase != PhaseTag.dcNegative) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidTerminalContract,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'pv_battery requires ordered dcPositive/dcNegative terminals.',
+          componentId: battery.id,
+        ),
+      );
+      return null;
+    }
+    return _BatteryTerminalContract(
+      positive: battery.terminals[0],
+      negative: battery.terminals[1],
+    );
+  }
+
   _PvArrayParameters? _arrayParameters(
     SourceInstance source,
     List<PvSolverDiagnostic> diagnostics,

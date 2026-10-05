@@ -1957,8 +1957,22 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
 
   List<String> get _categories => <String>{
     'Tous',
-    ...f9PaletteCatalog.map((F9PaletteDefinition item) => item.category),
+    ...f9PaletteCatalog
+        .where((F9PaletteDefinition item) => item.supportsMode(widget.mode))
+        .map((F9PaletteDefinition item) => item.category),
   }.toList(growable: false);
+
+  @override
+  void didUpdateWidget(covariant F9ComponentPalette oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mode == widget.mode) {
+      return;
+    }
+    _searchController.clear();
+    _query = '';
+    _category = 'Tous';
+    _expanded = false;
+  }
 
   List<F9PaletteDefinition> get _filtered {
     final String q = _query.trim().toLowerCase();

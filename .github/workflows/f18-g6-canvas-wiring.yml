@@ -1,0 +1,101 @@
+name: F18 G6 canvas and wiring
+
+on:
+  push:
+    branches:
+      - f18-g6-canvas-interactions-r2
+    paths:
+      - '.github/workflows/f18-g6-canvas-wiring.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: f18-g6-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      qualified_sha: ${{ steps.sha.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f18-g6-canvas-interactions-r2
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Normalize G6 Dart files
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format             apps/electrosim/lib/main.dart             apps/electrosim/lib/f18_selection_state.dart             apps/electrosim/lib/f9_component_visuals.dart             apps/electrosim/test/f18_selection_state_test.dart             apps/electrosim/test/f18_g6_multiselect_test.dart
+          git diff --check
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add               apps/electrosim/lib/main.dart               apps/electrosim/lib/f18_selection_state.dart               apps/electrosim/lib/f9_component_visuals.dart               apps/electrosim/test/f18_selection_state_test.dart               apps/electrosim/test/f18_g6_multiselect_test.dart
+            git commit -m 'Normalize F18 G6 Dart formatting [skip ci]'
+            git push origin HEAD:f18-g6-canvas-interactions-r2
+          fi
+      - id: sha
+        shell: bash
+        run: echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  qualify:
+    needs: normalize
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.normalize.outputs.qualified_sha }}
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+      - name: G6 application interactions
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/f18_selection_state_test.dart
+          flutter test test/f18_g6_multiselect_test.dart
+          flutter test test/f18_drag_architecture_test.dart
+          flutter test test/f18_drag_preview_test.dart
+          flutter test test/f9_canvas_interaction_test.dart
+          flutter test test/f9_shell_test.dart
+          flutter test test/f18_g3r1_point04_no_auto_crossing_test.dart
+      - name: G6 canvas routing and performance
+        working-directory: packages/electrosim_canvas
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/canvas_performance_test.dart
+          flutter test test/viewport_controller_test.dart
+          flutter test test/simulator_canvas_test.dart
+          flutter test test/hit_test_engine_test.dart
+          flutter test test/physical_terminal_profile_test.dart
+          flutter test test/orthogonal_wire_router_test.dart
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+      - name: Gate marker
+        run: echo F18_G6_CANVAS_WIRING_GATE_PASS

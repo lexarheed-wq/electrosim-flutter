@@ -1196,6 +1196,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ...(definition.defaultParameters.isNotEmpty
             ? definition.defaultParameters
             : _defaultParametersFor(definition.keyName)),
+        if (definition.visualModelType != null)
+          '_visualModelType': definition.visualModelType!,
         if (definition.visualVariant != null)
           '_visualVariant': definition.visualVariant!,
         if (definition.displayLabel != null)
@@ -2088,9 +2090,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     setState(() {
       _circuit = next;
       final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes};
-      if (F18ReferenceComponentVisuals.supports(replacement.modelType)) {
+      if (F18ReferenceComponentVisuals.supports(
+        replacement.renderedModelType,
+      )) {
         sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
-          replacement.modelType,
+          replacement.renderedModelType,
         );
       } else {
         sizes.remove(selected);

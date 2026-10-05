@@ -147,6 +147,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     super.key,
     required this.modelType,
     required this.size,
+    this.variantKey,
     this.active = true,
     this.energized = false,
     this.closed,
@@ -164,6 +165,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
 
   final String modelType;
   final Size size;
+  final String? variantKey;
   final bool active;
   final bool energized;
   final bool? closed;

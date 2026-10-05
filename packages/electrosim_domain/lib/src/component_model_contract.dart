@@ -541,6 +541,39 @@ final class CoreComponentModelContracts {
         branches: _threePowerPoles,
       ),
       ComponentModelContract(
+        modelType: 'isolator_3p',
+        family: ComponentFamily.control,
+        terminalCount: 6,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+        branches: _threePowerPoles,
+      ),
+      ComponentModelContract(
+        modelType: 'isolator_4p',
+        family: ComponentFamily.control,
+        terminalCount: 8,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+        branches: _fourPowerPoles,
+      ),
+      ComponentModelContract(
+        modelType: 'breaker_4p',
+        family: ComponentFamily.protection,
+        terminalCount: 8,
+        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+        branches: _fourPowerPoles,
+      ),
+      ComponentModelContract(
+        modelType: 'terminal_block_5',
+        family: ComponentFamily.passive,
+        terminalCount: 10,
+        supportedModes: <ElectricalMode>{
+          ElectricalMode.dc,
+          ElectricalMode.ac1,
+          ElectricalMode.ac3,
+        },
+        branches: _fiveFeedThroughPoles,
+      ),
+
+      ComponentModelContract(
         modelType: 'thermal_overload_3p',
         family: ComponentFamily.protection,
         terminalCount: 6,
@@ -741,5 +774,49 @@ final class CoreComponentModelContracts {
           role: ElectricalBranchRole.powerPole,
           poleIndex: 2,
         ),
+      ];
+
+  static final List<ComponentBranchDefinition> _fourPowerPoles =
+      <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:L1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'power:L2',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 5,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 1,
+        ),
+        ComponentBranchDefinition(
+          id: 'power:L3',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 6,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 2,
+        ),
+        ComponentBranchDefinition(
+          id: 'power:N',
+          fromTerminalIndex: 3,
+          toTerminalIndex: 7,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 3,
+        ),
+      ];
+
+  static final List<ComponentBranchDefinition> _fiveFeedThroughPoles =
+      <ComponentBranchDefinition>[
+        for (var index = 0; index < 5; index++)
+          ComponentBranchDefinition(
+            id: 'feed:$index',
+            fromTerminalIndex: index,
+            toTerminalIndex: index + 5,
+            role: ElectricalBranchRole.main,
+            poleIndex: index,
+          ),
       ];
 }

@@ -323,18 +323,25 @@ final class _P {
     switch (F20CatalogVisualIdentity.applianceSilhouette(variant)) {
       case F20ApplianceSilhouette.airConditioner:
         _airConditioner();
+        break;
       case F20ApplianceSilhouette.freezer:
         _freezer();
+        break;
       case F20ApplianceSilhouette.computer:
         _computer();
+        break;
       case F20ApplianceSilhouette.refrigerator:
         _refrigerator(dc: false);
+        break;
       case F20ApplianceSilhouette.refrigeratorDc:
         _refrigerator(dc: true);
+        break;
       case F20ApplianceSilhouette.television:
         _television();
+        break;
       case F20ApplianceSilhouette.generic:
         _genericAppliance();
+        break;
     }
     final List<Offset> t = bottomPair();
     terminal(t[0], '1');
@@ -586,7 +593,12 @@ final class _P {
       Paint()..color = const Color(0xFF33434C),
     );
     text(shortLabel(), face.center, size: h * .075, color: Colors.white);
-    _statusLed(Offset(body.right - body.width * .16, body.bottom - body.height * .15));
+    _statusLed(
+      Offset(
+        body.right - body.width * .16,
+        body.bottom - body.height * .15,
+      ),
+    );
   }
 
   void motorDriven({required bool sixTerminals}) {

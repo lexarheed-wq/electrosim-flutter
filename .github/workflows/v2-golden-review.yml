@@ -1,0 +1,47 @@
+name: V2 golden review
+
+on:
+  push:
+    branches:
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - '.github/workflows/v2-golden-review.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v2-golden-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Generate current F9 golden candidates
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed test/f9_goldens_test.dart
+          flutter test --update-goldens test/f9_goldens_test.dart
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ElectroSim-V2-golden-candidate
+          path: |
+            apps/electrosim/test/goldens/*.png
+            apps/electrosim/test/failures/**
+          if-no-files-found: warn
+          retention-days: 7

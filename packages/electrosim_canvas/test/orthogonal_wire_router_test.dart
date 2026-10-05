@@ -69,7 +69,7 @@ void main() {
   });
 
   test(
-    'returns unresolved instead of crossing an impenetrable conductor barrier',
+    'detours beyond a long finite conductor barrier instead of refusing a valid connection',
     () {
       final OrthogonalWirePath barrier = OrthogonalWirePath(
         points: const <Offset>[Offset(168, -500), Offset(168, 500)],
@@ -81,8 +81,22 @@ void main() {
         occupiedDifferentNetPaths: <OrthogonalWirePath>[barrier],
       );
 
-      expect(result.isResolved, isFalse);
-      expect(result.failure, WireRouteFailure.noCrossingFreeRoute);
+      expect(result.isResolved, isTrue);
+      expect(
+        WireRouteSafety.hasDifferentNetCrossing(
+          candidate: result.path!,
+          occupiedDifferentNetPaths: <OrthogonalWirePath>[barrier],
+        ),
+        isFalse,
+      );
+      expect(
+        result.path!.points.any(
+          (Offset point) => point.dy < -500 || point.dy > 500,
+        ),
+        isTrue,
+        reason:
+            'A finite existing net must be bypassed using free workspace rather than treated as an infinite wall.',
+      );
     },
   );
 

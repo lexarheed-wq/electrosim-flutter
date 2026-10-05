@@ -52,6 +52,7 @@ final class PvSolveResult {
     this.controllerEfficiency = 1.0,
     this.controllerConversionLossW = 0.0,
     this.batteryPresent = false,
+    this.batteryVoltageV = 0.0,
     this.batterySoc = 0.0,
     this.batteryStoredEnergyWh = 0.0,
     this.batteryPowerW = 0.0,
@@ -83,6 +84,7 @@ final class PvSolveResult {
   final double controllerEfficiency;
   final double controllerConversionLossW;
   final bool batteryPresent;
+  final double batteryVoltageV;
   /// State of charge in [0, 1].
   final double batterySoc;
   final double batteryStoredEnergyWh;

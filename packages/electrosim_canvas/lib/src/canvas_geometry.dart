@@ -361,12 +361,17 @@ final class CircuitGeometryIndex {
     }
 
     for (final SourceInstance source in circuit.sources) {
-      indexElement(source.id.value, source.modelType, source.terminals);
+      indexElement(
+        source.id.value,
+        (source.parameters['_visualModelType'] as String?) ?? source.modelType,
+        source.terminals,
+      );
     }
     for (final ComponentInstance component in circuit.components) {
       indexElement(
         component.id.value,
-        component.modelType,
+        (component.parameters['_visualModelType'] as String?) ??
+            component.modelType,
         component.terminals,
       );
     }

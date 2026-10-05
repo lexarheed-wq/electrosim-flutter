@@ -333,19 +333,23 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     }
     final ac1 = runtime.ac1Result;
     if (ac1 != null && ac1.isSolved) {
+      double value = 0;
       for (final branch in ac1.branchResults) {
-        if (branch.id != target) continue;
+        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) return current;
+        if (current != null && current.isFinite) value = math.max(value, current);
       }
+      if (value > 0) return value;
     }
     final ac3 = runtime.ac3Result;
     if (ac3 != null && ac3.isSolved) {
+      double value = 0;
       for (final branch in ac3.branchResults) {
-        if (branch.id != target) continue;
+        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) return current;
+        if (current != null && current.isFinite) value = math.max(value, current);
       }
+      if (value > 0) return value;
     }
     final pv = runtime.pvResult;
     if (pv != null && pv.isSolved && modelType == 'pv_array') {
@@ -371,19 +375,25 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     }
     final ac1 = runtime.ac1Result;
     if (ac1 != null && ac1.isSolved) {
+      double value = 0;
       for (final branch in ac1.branchResults) {
-        if (branch.id == target && branch.voltage.magnitude.isFinite) {
-          return branch.voltage.magnitude;
+        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
+        if (branch.voltage.magnitude.isFinite) {
+          value = math.max(value, branch.voltage.magnitude);
         }
       }
+      if (value > 0) return value;
     }
     final ac3 = runtime.ac3Result;
     if (ac3 != null && ac3.isSolved) {
+      double value = 0;
       for (final branch in ac3.branchResults) {
-        if (branch.id == target && branch.voltage.magnitude.isFinite) {
-          return branch.voltage.magnitude;
+        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
+        if (branch.voltage.magnitude.isFinite) {
+          value = math.max(value, branch.voltage.magnitude);
         }
       }
+      if (value > 0) return value;
     }
     final pv = runtime.pvResult;
     if (pv != null && pv.isSolved && modelType == 'pv_array') {

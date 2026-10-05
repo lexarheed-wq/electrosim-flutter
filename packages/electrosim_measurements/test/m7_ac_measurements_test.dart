@@ -83,6 +83,47 @@ void main() {
       expect(frequency.reading!.value, closeTo(50.0, 1e-12));
     });
 
+    test('AC3 total P Q S and phase sequence come from solved phasors', () {
+      final CircuitState circuit = _ac3Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac3SolveResult result = const SolverAC3().solve(circuit, topology);
+      expect(result.isSolved, isTrue);
+
+      final MeasurementResult p = measurements.measureAc3(
+        request: MeasurementRequest.activePower(),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      final MeasurementResult q = measurements.measureAc3(
+        request: MeasurementRequest.reactivePower(),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      final MeasurementResult apparent = measurements.measureAc3(
+        request: MeasurementRequest.apparentPower(),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      final MeasurementResult sequence = measurements.measureAc3(
+        request: MeasurementRequest.phaseSequence(),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+
+      expect(p.reading!.unit, ElectricalUnit.watt);
+      expect(p.reading!.value, closeTo(3450.0, 1e-6));
+      expect(q.reading!.unit, ElectricalUnit.varUnit);
+      expect(q.reading!.value.abs(), lessThan(1e-6));
+      expect(apparent.reading!.unit, ElectricalUnit.voltAmpere);
+      expect(apparent.reading!.value, closeTo(3450.0, 1e-6));
+      expect(sequence.displayText, 'L1 → L2 → L3');
+      expect(sequence.evidenceIds, contains('solver:phase-sequence'));
+    });
+
     test('DC entry point explicitly rejects AC measurement requests', () {
       final CircuitState circuit = _ac1Circuit();
       final TopologyGraph topology = topologyEngine.compile(circuit);

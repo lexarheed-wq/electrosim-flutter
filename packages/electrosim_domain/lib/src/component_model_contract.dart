@@ -382,6 +382,34 @@ final class CoreComponentModelContracts {
         ],
       ),
       ComponentModelContract(
+        modelType: 'relay_contact_no',
+        family: ComponentFamily.electromechanicalControl,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'aux:no',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.auxiliaryNormallyOpen,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'relay_contact_nc',
+        family: ComponentFamily.electromechanicalControl,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'aux:nc',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.auxiliaryNormallyClosed,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'switch',
         family: ComponentFamily.switching,
         terminalCount: 2,

@@ -35,6 +35,8 @@ class F9PaletteDefinition {
     this.terminals = const <F9PaletteTerminalSpec>[],
     this.defaultParameters = const <String, Object?>{},
     this.defaultControlState = const <String, Object?>{},
+    this.visualVariant,
+    this.displayLabel,
     this.subtitle,
   });
 
@@ -48,6 +50,8 @@ class F9PaletteDefinition {
   final List<F9PaletteTerminalSpec> terminals;
   final Map<String, Object?> defaultParameters;
   final Map<String, Object?> defaultControlState;
+  final String? visualVariant;
+  final String? displayLabel;
   final String? subtitle;
 
   bool supportsMode(ElectricalMode mode) {
@@ -794,6 +798,7 @@ class _PaletteDraggableTile extends StatelessWidget {
           opacity: 0.94,
           child: F18ComponentAssetVisual(
             modelType: definition.modelType,
+            variantKey: definition.visualVariant,
             size: F18ReferenceComponentVisuals.supports(definition.modelType)
                 ? F18ReferenceComponentMetrics.dragSizeFor(definition.modelType)
                 : F18ComponentIdentityMetrics.dragSize,
@@ -824,6 +829,7 @@ class F9ComponentPreview extends StatelessWidget {
     return F18ComponentAssetVisual(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.modelType,
+      variantKey: definition.visualVariant,
       size: F18ReferenceComponentVisuals.supports(definition.modelType)
           ? (compact
               ? F18ReferenceComponentMetrics.paletteSizeFor(definition.modelType)

@@ -140,19 +140,34 @@ final class SolverDC {
       final Map<String, _Element> diodeUpdates = <String, _Element>{};
       for (final _Element element in activeElements) {
         if (!element.isDiode) continue;
-        if (!element.diodeOn) {
-          final double forwardBias =
-              network.nodeVoltages[element.fromNodeId]! -
-              network.nodeVoltages[element.toNodeId]!;
-          if (forwardBias >
-              element.diodeForwardVoltageV! + options.residualTolerance) {
-            diodeUpdates[element.id] = element.withDiodeState(true);
-          }
-        } else {
-          final double? current = network.idealCurrentA(element.id);
-          if (current != null && current < -options.residualTolerance) {
-            diodeUpdates[element.id] = element.withDiodeState(false);
-          }
+        final double forwardBias =
+            network.nodeVoltages[element.fromNodeId]! -
+            network.nodeVoltages[element.toNodeId]!;
+        switch (element.diodeMode) {
+          case _DiodeMode.off:
+            if (forwardBias >
+                element.diodeForwardVoltageV! + options.residualTolerance) {
+              diodeUpdates[element.id] =
+                  element.withDiodeMode(_DiodeMode.forward);
+            } else if (element.diodeReverseBreakdownVoltageV != null &&
+                forwardBias <
+                    -element.diodeReverseBreakdownVoltageV! -
+                        options.residualTolerance) {
+              diodeUpdates[element.id] =
+                  element.withDiodeMode(_DiodeMode.reverseBreakdown);
+            }
+          case _DiodeMode.forward:
+            final double? current = network.idealCurrentA(element.id);
+            if (current != null && current < -options.residualTolerance) {
+              diodeUpdates[element.id] =
+                  element.withDiodeMode(_DiodeMode.off);
+            }
+          case _DiodeMode.reverseBreakdown:
+            final double? current = network.idealCurrentA(element.id);
+            if (current != null && current > options.residualTolerance) {
+              diodeUpdates[element.id] =
+                  element.withDiodeMode(_DiodeMode.off);
+            }
         }
       }
       if (diodeUpdates.isNotEmpty) {
@@ -433,6 +448,8 @@ final class SolverDC {
           final Object? rawForward = component.parameters['forwardVoltageV'];
           final Object? rawOffResistance =
               component.parameters['offResistanceOhm'];
+          final Object? rawBreakdown =
+              component.parameters['reverseBreakdownVoltageV'];
           final double forwardVoltageV = rawForward == null
               ? 0.7
               : rawForward is num
@@ -443,16 +460,24 @@ final class SolverDC {
               : rawOffResistance is num
                   ? rawOffResistance.toDouble()
                   : double.nan;
+          final double? reverseBreakdownVoltageV = rawBreakdown == null
+              ? null
+              : rawBreakdown is num
+                  ? rawBreakdown.toDouble()
+                  : double.nan;
           if (!forwardVoltageV.isFinite ||
               forwardVoltageV < 0.0 ||
               !offResistanceOhm.isFinite ||
-              offResistanceOhm < 1e6) {
+              offResistanceOhm < 1e6 ||
+              (reverseBreakdownVoltageV != null &&
+                  (!reverseBreakdownVoltageV.isFinite ||
+                      reverseBreakdownVoltageV <= 0.0))) {
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
                 message:
-                    'Diode requires forwardVoltageV >= 0 and offResistanceOhm >= 1e6.',
+                    'Diode requires forwardVoltageV >= 0, offResistanceOhm >= 1e6 and optional reverseBreakdownVoltageV > 0.',
                 componentId: component.id,
               ),
             );
@@ -465,6 +490,7 @@ final class SolverDC {
                 toNodeId: toNode,
                 forwardVoltageV: forwardVoltageV,
                 offResistanceOhm: offResistanceOhm,
+                reverseBreakdownVoltageV: reverseBreakdownVoltageV,
               ),
             );
           }
@@ -1245,6 +1271,7 @@ double _limitedSourceCurrent(double voltageV, double currentLimitA) =>
 double _clean(double value, double tolerance) => value.abs() <= tolerance ? 0.0 : value;
 
 enum _ElementKind { resistor, idealVoltage, currentSource }
+enum _DiodeMode { off, forward, reverseBreakdown }
 
 final class _Element {
   const _Element._({
@@ -1260,7 +1287,8 @@ final class _Element {
     this.sourceId,
     this.diodeForwardVoltageV,
     this.diodeOffResistanceOhm,
-    this.diodeOn = false,
+    this.diodeReverseBreakdownVoltageV,
+    this.diodeMode = _DiodeMode.off,
   });
 
   factory _Element.resistor({
@@ -1330,6 +1358,7 @@ final class _Element {
     required String toNodeId,
     required double forwardVoltageV,
     required double offResistanceOhm,
+    double? reverseBreakdownVoltageV,
   }) => _Element._(
     id: id,
     modelType: modelType,
@@ -1341,29 +1370,41 @@ final class _Element {
     redundant: false,
     diodeForwardVoltageV: forwardVoltageV,
     diodeOffResistanceOhm: offResistanceOhm,
-    diodeOn: false,
+    diodeReverseBreakdownVoltageV: reverseBreakdownVoltageV,
+    diodeMode: _DiodeMode.off,
   );
 
-  factory _Element.diodeOn({
+  factory _Element.diodeConducting({
     required String id,
     required String modelType,
     required String fromNodeId,
     required String toNodeId,
     required double forwardVoltageV,
     required double offResistanceOhm,
-  }) => _Element._(
-    id: id,
-    modelType: modelType,
-    kind: _ElementKind.idealVoltage,
-    publicKind: DcBranchKind.diode,
-    fromNodeId: fromNodeId,
-    toNodeId: toNodeId,
-    value: forwardVoltageV,
-    redundant: fromNodeId == toNodeId,
-    diodeForwardVoltageV: forwardVoltageV,
-    diodeOffResistanceOhm: offResistanceOhm,
-    diodeOn: true,
-  );
+    required _DiodeMode mode,
+    double? reverseBreakdownVoltageV,
+  }) {
+    if (mode == _DiodeMode.off) {
+      throw ArgumentError('Conducting diode mode cannot be off.');
+    }
+    final double drop = mode == _DiodeMode.forward
+        ? forwardVoltageV
+        : -reverseBreakdownVoltageV!;
+    return _Element._(
+      id: id,
+      modelType: modelType,
+      kind: _ElementKind.idealVoltage,
+      publicKind: DcBranchKind.diode,
+      fromNodeId: fromNodeId,
+      toNodeId: toNodeId,
+      value: drop,
+      redundant: fromNodeId == toNodeId,
+      diodeForwardVoltageV: forwardVoltageV,
+      diodeOffResistanceOhm: offResistanceOhm,
+      diodeReverseBreakdownVoltageV: reverseBreakdownVoltageV,
+      diodeMode: mode,
+    );
+  }
 
   final String id;
   final String modelType;
@@ -1377,31 +1418,36 @@ final class _Element {
   final SourceId? sourceId;
   final double? diodeForwardVoltageV;
   final double? diodeOffResistanceOhm;
-  final bool diodeOn;
+  final double? diodeReverseBreakdownVoltageV;
+  final _DiodeMode diodeMode;
 
   bool get isDiode => diodeForwardVoltageV != null;
 
-  _Element withDiodeState(bool on) {
+  _Element withDiodeMode(_DiodeMode mode) {
     if (!isDiode) {
       throw StateError('Only diode elements can change diode state.');
     }
-    return on
-        ? _Element.diodeOn(
-            id: id,
-            modelType: modelType,
-            fromNodeId: fromNodeId,
-            toNodeId: toNodeId,
-            forwardVoltageV: diodeForwardVoltageV!,
-            offResistanceOhm: diodeOffResistanceOhm!,
-          )
-        : _Element.diodeOff(
-            id: id,
-            modelType: modelType,
-            fromNodeId: fromNodeId,
-            toNodeId: toNodeId,
-            forwardVoltageV: diodeForwardVoltageV!,
-            offResistanceOhm: diodeOffResistanceOhm!,
-          );
+    if (mode == _DiodeMode.off) {
+      return _Element.diodeOff(
+        id: id,
+        modelType: modelType,
+        fromNodeId: fromNodeId,
+        toNodeId: toNodeId,
+        forwardVoltageV: diodeForwardVoltageV!,
+        offResistanceOhm: diodeOffResistanceOhm!,
+        reverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
+      );
+    }
+    return _Element.diodeConducting(
+      id: id,
+      modelType: modelType,
+      fromNodeId: fromNodeId,
+      toNodeId: toNodeId,
+      forwardVoltageV: diodeForwardVoltageV!,
+      offResistanceOhm: diodeOffResistanceOhm!,
+      reverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
+      mode: mode,
+    );
   }
 
   _Element asCurrentLimited(double currentA) {

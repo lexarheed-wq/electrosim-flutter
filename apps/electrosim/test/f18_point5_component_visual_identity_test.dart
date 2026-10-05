@@ -29,11 +29,11 @@ void main() {
         expect(finder, findsOneWidget, reason: item.modelType);
         final F18ComponentAssetVisual visual =
             tester.widget<F18ComponentAssetVisual>(finder);
-        expect(visual.modelType, item.modelType);
+        expect(visual.modelType, item.renderedModelType);
         expect(
           visual.size,
-          F18ReferenceComponentMetrics.paletteSizeFor(item.modelType),
-          reason: item.modelType,
+          F18ReferenceComponentMetrics.paletteSizeFor(item.renderedModelType),
+          reason: item.renderedModelType,
         );
         expect(tester.takeException(), isNull, reason: item.modelType);
       }
@@ -113,9 +113,9 @@ void main() {
     test('production palette is fully covered by the reference renderer', () {
       for (final F9PaletteDefinition item in f9PaletteCatalog) {
         expect(
-          F18ReferenceComponentVisuals.supports(item.modelType),
+          F18ReferenceComponentVisuals.supports(item.renderedModelType),
           isTrue,
-          reason: '${item.title} (${item.modelType})',
+          reason: '${item.title} (${item.modelType} → ${item.renderedModelType})',
         );
       }
     });

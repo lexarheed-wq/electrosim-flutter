@@ -903,13 +903,13 @@ SourceInstance _detachedPvArray(String id) => SourceInstance(
   modelType: 'pv_array',
   terminals: <Terminal>[
     Terminal(
-      id: TerminalId('${id}-pos'),
+      id: TerminalId(id + '-pos'),
       name: '+',
       role: TerminalRole.positive,
       phase: PhaseTag.dcPositive,
     ),
     Terminal(
-      id: TerminalId('${id}-neg'),
+      id: TerminalId(id + '-neg'),
       name: '-',
       role: TerminalRole.negative,
       phase: PhaseTag.dcNegative,
@@ -928,25 +928,25 @@ ComponentInstance _detachedInverter(String id) => ComponentInstance(
   modelType: 'pv_inverter',
   terminals: <Terminal>[
     Terminal(
-      id: TerminalId('${id}-dc-pos'),
+      id: TerminalId(id + '-dc-pos'),
       name: 'DC+',
       role: TerminalRole.positive,
       phase: PhaseTag.dcPositive,
     ),
     Terminal(
-      id: TerminalId('${id}-dc-neg'),
+      id: TerminalId(id + '-dc-neg'),
       name: 'DC-',
       role: TerminalRole.negative,
       phase: PhaseTag.dcNegative,
     ),
     Terminal(
-      id: TerminalId('${id}-l'),
+      id: TerminalId(id + '-l'),
       name: 'L',
       role: TerminalRole.line,
       phase: PhaseTag.l1,
     ),
     Terminal(
-      id: TerminalId('${id}-n'),
+      id: TerminalId(id + '-n'),
       name: 'N',
       role: TerminalRole.neutral,
       phase: PhaseTag.neutral,

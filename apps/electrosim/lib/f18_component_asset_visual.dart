@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'f14_library_components.dart';
 import 'f15_source_pv_components.dart';
+import 'f17_three_phase_components.dart';
 import 'f18_component_archetypes.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
@@ -50,6 +51,9 @@ abstract final class F18ReferenceComponentVisuals {
     'pv_array',
     'pv_inverter',
     'pv_resistive_load',
+    'motor_3p_6t',
+    'load_wye_3p',
+    'load_delta_3p',
   };
 
   static bool supports(String modelType) =>
@@ -109,6 +113,9 @@ abstract final class F18ReferenceComponentMetrics {
         'pv_array' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvArray),
         'pv_inverter' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvInverter),
         'pv_resistive_load' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvLoad),
+        'motor_3p_6t' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.motor6t),
+        'load_wye_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.wyeLoad),
+        'load_delta_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.deltaLoad),
         _ => const Size(104, 64),
       };
 
@@ -321,6 +328,25 @@ class F18ComponentAssetVisual extends StatelessWidget {
           voltageV: voltageV,
           animationValue: animationValue,
           variantKey: variantKey,
+        ),
+      );
+    }
+
+    final F17ThreePhaseDevice? threePhaseDevice = switch (type) {
+      'motor_3p_6t' => F17ThreePhaseDevice.motor6t,
+      'load_wye_3p' => F17ThreePhaseDevice.wyeLoad,
+      'load_delta_3p' => F17ThreePhaseDevice.deltaLoad,
+      _ => null,
+    };
+    if (threePhaseDevice != null) {
+      return F17ThreePhaseComponentView(
+        device: threePhaseDevice,
+        size: size,
+        state: F17ThreePhaseState(
+          energized: energized,
+          currentA: currentA,
+          voltageV: voltageV,
+          animationValue: animationValue,
         ),
       );
     }

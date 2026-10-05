@@ -79,10 +79,7 @@ class F9PaletteDefinition {
     final ComponentModelContract? contract = CoreComponentModelContracts
         .registry
         .resolve(modelType);
-    if (contract != null) return contract.supportsMode(mode);
-    // Temporary explicit compatibility for the diode visual until the
-    // nonlinear C15 semiconductor model is registered in the domain core.
-    return modelType == 'diode' && mode == ElectricalMode.dc;
+    return contract?.supportsMode(mode) ?? false;
   }
 }
 

@@ -76,6 +76,8 @@ void main() {
         expect(result.lineCurrent(PhaseTag.l2).magnitude, closeTo(10.0, 1e-8));
         expect(result.lineCurrent(PhaseTag.l3).magnitude, closeTo(10.0, 1e-8));
         expect(result.neutralCurrent.magnitude, lessThan(1e-8));
+        expect(result.lineCurrent(PhaseTag.none), AcComplex.zero);
+        expect(result.phaseVoltage(PhaseTag.none), isNull);
         expect(
           result.lineToLineVoltages['L1-L2']!.magnitude,
           closeTo(230.0 * math.sqrt(3.0), 1e-8),

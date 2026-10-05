@@ -171,15 +171,13 @@ jobs:
           flutter test test/f20_catalog_visual_identity_test.dart
           flutter test test/f9_catalog_visual_uniqueness_test.dart
           flutter test test/f9_wiring_policy_test.dart
+          flutter test
 
-      - name: Core solver regression gates
+      - name: Cumulative electrical-engine regression gate F1-F7
         shell: bash
         run: |
           set -euo pipefail
           chmod +x tools/*.sh
-          ./tools/run_f1_gate.sh
-          ./tools/run_f3_gate.sh
-          ./tools/run_f5_gate.sh
           ./tools/run_f7_gate.sh
   macos-intel:
     needs: [normalize, qualify]

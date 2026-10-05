@@ -515,6 +515,67 @@ void main() {
     );
   });
 
+  test('DC series-source junction may merge positive and negative terminals', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('dc-series-source-junction'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('series-link'),
+          fromTerminalId: TerminalId('v1p'),
+          toTerminalId: TerminalId('v2n'),
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('v1p'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('v1n'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        ),
+        SourceInstance(
+          id: SourceId('v2'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('v2p'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('v2n'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 12.0},
+        ),
+      ],
+    );
+
+    final TopologyGraph graph = const TopologyEngine().compile(circuit);
+    expect(
+      graph.findings.where(
+        (TopologyFinding finding) =>
+            finding.code == TopologyFindingCode.conflictingPhases,
+      ),
+      isEmpty,
+    );
+    expect(graph.nodeFor(TerminalId('v1p')), graph.nodeFor(TerminalId('v2n')));
+  });
+
   test(
     'current-limited DC source direct short is warning not topology error',
     () {

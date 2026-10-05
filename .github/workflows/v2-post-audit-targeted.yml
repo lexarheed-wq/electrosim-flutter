@@ -1,0 +1,33 @@
+name: V2 post-audit targeted qualification
+
+on:
+  push:
+    branches:
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'packages/electrosim_canvas/**'
+      - 'apps/electrosim/**'
+      - '.github/workflows/v2-post-audit-targeted.yml'
+  workflow_dispatch:
+
+jobs:
+  routing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate canvas routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_canvas
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib/src/orthogonal_wire_router.dart test/orthogonal_wire_router_test.dart
+          flutter analyze
+          flutter test test/orthogonal_wire_router_test.dart
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart

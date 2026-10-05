@@ -50,8 +50,8 @@ jobs:
           cat > PASSATION/01_ETAT_PROJET.md <<EOF
           # État projet au moment de la passation
 
-          - Snapshot HEAD : `${GITHUB_SHA}`
-          - Branche : `${GITHUB_REF_NAME}`
+          - Snapshot HEAD : ${GITHUB_SHA}
+          - Branche : ${GITHUB_REF_NAME}
           - Date CI : $(date -u +"%Y-%m-%d %H:%M UTC")
           - Dernier HEAD fonctionnel avant ajout du workflow de passation : `aa57fe696ae757c70d1a70605245cb4ba44cae21`
 

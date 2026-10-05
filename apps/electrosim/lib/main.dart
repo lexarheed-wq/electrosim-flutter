@@ -2302,10 +2302,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Map<String, Size> sizes = <String, Size>{};
     final List<(String, String)> elements = <(String, String)>[
       ...circuit.sources.map(
-        (SourceInstance item) => (item.id.value, item.modelType),
+        (SourceInstance item) => (
+          item.id.value,
+          (item.parameters['_visualModelType'] as String?) ?? item.modelType,
+        ),
       ),
       ...circuit.components.map(
-        (ComponentInstance item) => (item.id.value, item.modelType),
+        (ComponentInstance item) => (
+          item.id.value,
+          (item.parameters['_visualModelType'] as String?) ?? item.modelType,
+        ),
       ),
     ];
     for (var index = 0; index < elements.length; index++) {

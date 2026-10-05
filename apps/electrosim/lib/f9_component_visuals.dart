@@ -112,6 +112,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     void addVisual({
       required String elementId,
       required String modelType,
+      String? visualModelType,
       String? visualVariant,
       required bool enabled,
       required bool energized,
@@ -125,7 +126,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double currentLimitA,
       required double resistanceOhm,
     }) {
-      if (!F18ReferenceComponentVisuals.supports(modelType)) return;
+      final String renderedModelType = visualModelType ?? modelType;
+      if (!F18ReferenceComponentVisuals.supports(renderedModelType)) return;
       final Rect? worldRect = geometry.elementRects[elementId];
       if (worldRect == null) return;
       final Offset center = widget.viewport.worldToScreen(worldRect.center);
@@ -150,7 +152,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               angle: math.pi / 2 * quarterTurns,
               child: F18ComponentAssetVisual(
               key: ValueKey<String>('board-v1-visual-$elementId'),
-              modelType: modelType,
+              modelType: renderedModelType,
               variantKey: visualVariant,
               size: baseVisualSize,
               active: enabled,
@@ -182,6 +184,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
+        visualModelType: source.parameters['_visualModelType'] as String?,
         visualVariant: source.parameters['_visualVariant'] as String?,
         enabled: source.enabled,
         energized:
@@ -236,6 +239,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: component.id.value,
         modelType: component.modelType,
+        visualModelType: component.parameters['_visualModelType'] as String?,
         visualVariant: component.parameters['_visualVariant'] as String?,
         enabled: component.condition != ComponentCondition.disabled,
         energized: energized,
@@ -479,7 +483,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       _paintElementGlyph(
         canvas,
         rect,
-        source.modelType,
+        (source.parameters['_visualModelType'] as String?) ?? source.modelType,
         source.enabled,
         layout.quarterTurnsOf(source.id.value),
         displayLabel: source.parameters['_displayLabel'] as String?,
@@ -494,7 +498,8 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       _paintElementGlyph(
         canvas,
         rect,
-        component.modelType,
+        (component.parameters['_visualModelType'] as String?) ??
+            component.modelType,
         active,
         layout.quarterTurnsOf(component.id.value),
         displayLabel: component.parameters['_displayLabel'] as String?,
@@ -753,13 +758,18 @@ class _F9CanvasOverlayPainter extends CustomPainter {
 
   bool _isReferenceTerminal(TerminalId terminalId) {
     for (final SourceInstance source in circuit.sources) {
-      if (!F18ReferenceComponentVisuals.supports(source.modelType)) continue;
+      final String rendered =
+          (source.parameters['_visualModelType'] as String?) ?? source.modelType;
+      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
       if (source.terminals.any((Terminal terminal) => terminal.id == terminalId)) {
         return true;
       }
     }
     for (final ComponentInstance component in circuit.components) {
-      if (!F18ReferenceComponentVisuals.supports(component.modelType)) continue;
+      final String rendered =
+          (component.parameters['_visualModelType'] as String?) ??
+              component.modelType;
+      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
       if (component.terminals
           .any((Terminal terminal) => terminal.id == terminalId)) {
         return true;

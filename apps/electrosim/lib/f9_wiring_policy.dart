@@ -56,16 +56,20 @@ abstract final class F9WiringPolicy {
 
     final PhaseTag fromPhase = fromTerminal.phase;
     final PhaseTag toPhase = toTerminal.phase;
-    if (fromPhase != PhaseTag.none &&
-        toPhase != PhaseTag.none &&
-        fromPhase != toPhase) {
-      return F9WiringDecision.rejected(
-        'Connexion incompatible : ${fromTerminal.name} (${fromPhase.name}) ↔ '
-        '${toTerminal.name} (${toPhase.name}).',
-      );
-    }
 
-    final PhaseTag phase = fromPhase != PhaseTag.none ? fromPhase : toPhase;
+    // Terminal phase/polarity tags describe the electrical terminals; they are
+    // not a universal UI-level wiring prohibition. In particular, DC+ -> DC-
+    // is required for valid series-source circuits and can also represent a
+    // deliberate fault to be interpreted by TopologyEngine/SolverEngine.
+    // Preserve an explicit wire phase only when both endpoints agree, or when
+    // exactly one endpoint is untagged. Mixed explicit tags stay neutral.
+    final PhaseTag phase = fromPhase == toPhase
+        ? fromPhase
+        : fromPhase == PhaseTag.none
+        ? toPhase
+        : toPhase == PhaseTag.none
+        ? fromPhase
+        : PhaseTag.none;
     final String id = _allocateConnectionId(circuit);
     final Connection connection = Connection(
       id: ConnectionId(id),

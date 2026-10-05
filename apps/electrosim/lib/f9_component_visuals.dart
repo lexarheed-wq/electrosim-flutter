@@ -258,7 +258,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         voltageV: voltageV,
         batterySoc: batterySoc,
         ratedCurrentA:
-            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1;
+            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1,
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,

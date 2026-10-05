@@ -135,6 +135,46 @@ void main() {
     }
   });
 
+  test('C23 terminal_block_5 feeds five independent conductors', () {
+    final Ac3SolveResult result = solve(_terminalBlockCircuit());
+    expect(result.isSolved, isTrue);
+    final List<Ac3BranchResult> feeds = result.branchResults
+        .where((Ac3BranchResult item) => item.modelType == 'terminal_block_5')
+        .toList(growable: false);
+    expect(feeds, hasLength(5));
+    expect(
+      feeds.every((Ac3BranchResult item) => item.kind == Ac3BranchKind.idealShort),
+      isTrue,
+    );
+    expect(
+      result.branch('component:r4').current!.magnitude,
+      closeTo(2.5, 1e-8),
+    );
+  });
+
+  test('C23 terminal_block_5 open condition isolates all five conductors', () {
+    final Ac3SolveResult result = solve(
+      _terminalBlockCircuit(condition: ComponentCondition.openCircuit),
+    );
+    expect(result.isSolved, isTrue);
+    final List<Ac3BranchResult> feeds = result.branchResults
+        .where((Ac3BranchResult item) => item.modelType == 'terminal_block_5')
+        .toList(growable: false);
+    expect(feeds, hasLength(5));
+    expect(
+      feeds.every((Ac3BranchResult item) => item.kind == Ac3BranchKind.openCircuit),
+      isTrue,
+    );
+    expect(
+      result.branch('component:r1').current!.magnitude,
+      closeTo(0.0, 1e-12),
+    );
+    expect(
+      result.branch('component:r4').current!.magnitude,
+      closeTo(0.0, 1e-12),
+    );
+  });
+
   test('C23 breaker_4p rejects missing rating and malformed controls', () {
     final Ac3SolveResult missingRating = solve(
       _fourPoleCircuit(modelType: 'breaker_4p', closed: true),
@@ -283,6 +323,60 @@ CircuitState _fourPoleCircuit({
     _wire('no1', 'r1-n', 'q-n-out'),
     _wire('no2', 'r2-n', 'q-n-out'),
     _wire('no3', 'r3-n', 'q-n-out'),
+  ],
+  sources: <SourceInstance>[
+    _source('v1', PhaseTag.l1),
+    _source('v2', PhaseTag.l2),
+    _source('v3', PhaseTag.l3),
+  ],
+  settings: const <String, Object?>{'frequencyHz': 50.0},
+);
+
+CircuitState _terminalBlockCircuit({
+  ComponentCondition condition = ComponentCondition.normal,
+}) => CircuitState(
+  circuitId: CircuitId('c23-terminal-block'),
+  revision: 0,
+  mode: ElectricalMode.ac3,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('tb1'),
+      modelType: 'terminal_block_5',
+      terminals: <Terminal>[
+        _t('tb-l1-in', 'L1 in', PhaseTag.l1),
+        _t('tb-l2-in', 'L2 in', PhaseTag.l2),
+        _t('tb-l3-in', 'L3 in', PhaseTag.l3),
+        _t('tb-n-in', 'N in', PhaseTag.neutral),
+        _t('tb-x-in', 'X in', PhaseTag.l1),
+        _t('tb-l1-out', 'L1 out', PhaseTag.l1),
+        _t('tb-l2-out', 'L2 out', PhaseTag.l2),
+        _t('tb-l3-out', 'L3 out', PhaseTag.l3),
+        _t('tb-n-out', 'N out', PhaseTag.neutral),
+        _t('tb-x-out', 'X out', PhaseTag.l1),
+      ],
+      condition: condition,
+    ),
+    _load('r1', PhaseTag.l1),
+    _load('r2', PhaseTag.l2),
+    _load('r3', PhaseTag.l3),
+    _load('r4', PhaseTag.l1, resistanceOhm: 92.0),
+  ],
+  connections: <Connection>[
+    _wire('p1', 'v1-p', 'tb-l1-in'),
+    _wire('p2', 'v2-p', 'tb-l2-in'),
+    _wire('p3', 'v3-p', 'tb-l3-in'),
+    _wire('pn', 'v1-n', 'tb-n-in'),
+    _wire('px', 'v1-p', 'tb-x-in'),
+    _wire('ns2', 'v2-n', 'v1-n'),
+    _wire('ns3', 'v3-n', 'v1-n'),
+    _wire('o1', 'tb-l1-out', 'r1-p'),
+    _wire('o2', 'tb-l2-out', 'r2-p'),
+    _wire('o3', 'tb-l3-out', 'r3-p'),
+    _wire('ox', 'tb-x-out', 'r4-p'),
+    _wire('n1', 'r1-n', 'tb-n-out'),
+    _wire('n2', 'r2-n', 'tb-n-out'),
+    _wire('n3', 'r3-n', 'tb-n-out'),
+    _wire('n4', 'r4-n', 'tb-n-out'),
   ],
   sources: <SourceInstance>[
     _source('v1', PhaseTag.l1),

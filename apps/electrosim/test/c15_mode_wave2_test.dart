@@ -1,5 +1,6 @@
 import 'package:electrosim/f15_source_pv_components.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
+import 'package:electrosim/f23_distribution_components.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -94,6 +95,75 @@ void main() {
       expect(item.supportsMode(ElectricalMode.ac1), isFalse);
       expect(item.defaultParameters['phaseDeg'], entry.value);
     }
+  });
+
+  test('mode-specific distribution hardware is strictly filtered', () {
+    const List<String> ac3Only = <String>[
+      'contactor-3p',
+      'breaker-3p',
+      'isolator-3p',
+      'isolator-4p',
+      'breaker-4p',
+      'terminal-block-5',
+      'thermal-overload-3p',
+      'motor-3p-6t',
+      'load-wye-3p',
+      'load-delta-3p',
+    ];
+    for (final String key in ac3Only) {
+      final F9PaletteDefinition item = f9PaletteCatalog.singleWhere(
+        (F9PaletteDefinition value) => value.keyName == key,
+      );
+      expect(item.supportsMode(ElectricalMode.ac3), isTrue, reason: key);
+      expect(item.supportsMode(ElectricalMode.dc), isFalse, reason: key);
+      expect(item.supportsMode(ElectricalMode.ac1), isFalse, reason: key);
+      expect(item.supportsMode(ElectricalMode.pv), isFalse, reason: key);
+    }
+
+    final F9PaletteDefinition ac1Contactor = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'contactor-ac1',
+    );
+    expect(ac1Contactor.supportsMode(ElectricalMode.ac1), isTrue);
+    expect(ac1Contactor.supportsMode(ElectricalMode.dc), isFalse);
+    expect(ac1Contactor.supportsMode(ElectricalMode.ac3), isFalse);
+
+    final F9PaletteDefinition dcTerminal = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'terminal-block-dc-5',
+    );
+    expect(dcTerminal.supportsMode(ElectricalMode.dc), isTrue);
+    expect(dcTerminal.supportsMode(ElectricalMode.ac1), isFalse);
+    expect(dcTerminal.supportsMode(ElectricalMode.ac3), isFalse);
+    expect(dcTerminal.visualVariant, 'dc');
+    expect(
+      dcTerminal.terminals.map((F9PaletteTerminalSpec t) => t.phase).toSet(),
+      containsAll(<PhaseTag>[
+        PhaseTag.dcPositive,
+        PhaseTag.dcNegative,
+        PhaseTag.protectiveEarth,
+      ]),
+    );
+  });
+
+  testWidgets('DC terminal block uses the dedicated DC physical identity', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: F18ComponentAssetVisual(
+            modelType: 'terminal_block_5',
+            variantKey: 'dc',
+            size: Size(280, 210),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final F23DistributionComponentView view =
+        tester.widget<F23DistributionComponentView>(
+          find.byType(F23DistributionComponentView),
+        );
+    expect(view.state.variantKey, 'dc');
   });
 
   test('C15 PV palette matches structural contracts', () {

@@ -14,6 +14,17 @@ enum F14LibraryDevice {
   thermalOverload3p,
 }
 
+enum F14AuxiliaryContactSilhouette { contactorAuxiliary, relay }
+
+abstract final class F14LibraryVisualIdentity {
+  static F14AuxiliaryContactSilhouette auxiliaryContactSilhouette(
+    String? variantKey,
+  ) =>
+      variantKey?.startsWith('relay-') ?? false
+      ? F14AuxiliaryContactSilhouette.relay
+      : F14AuxiliaryContactSilhouette.contactorAuxiliary;
+}
+
 @immutable
 final class F14LibraryVisualState {
   const F14LibraryVisualState({
@@ -329,7 +340,9 @@ final class _Painter {
   }
 
   void auxiliaryContact({required bool normallyClosed}) {
-    final bool relayContact = state.variantKey?.startsWith('relay-') ?? false;
+    final bool relayContact =
+        F14LibraryVisualIdentity.auxiliaryContactSilhouette(state.variantKey) ==
+        F14AuxiliaryContactSilhouette.relay;
     final Rect body = Rect.fromCenter(
       center: c,
       width: relayContact ? w * .72 : w * .62,

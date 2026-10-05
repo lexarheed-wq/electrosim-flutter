@@ -85,12 +85,20 @@ final class ProtectionDcOutcome {
     required this.result,
     required this.effectiveCircuit,
     required this.state,
+    required Map<ComponentId, ContactorActuationState> relays,
+    required Iterable<ElectromechanicalControlIssue> controlIssues,
     required Iterable<ProtectionCoordinationIssue> issues,
-  }) : issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
+  })  : relays =
+            Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
+        controlIssues =
+            List<ElectromechanicalControlIssue>.unmodifiable(controlIssues),
+        issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
 
   final DcSolveResult result;
   final CircuitState effectiveCircuit;
   final ProtectionRuntimeState state;
+  final Map<ComponentId, ContactorActuationState> relays;
+  final List<ElectromechanicalControlIssue> controlIssues;
   final List<ProtectionCoordinationIssue> issues;
 }
 
@@ -153,12 +161,23 @@ final class ProtectionCoordinator {
     required Duration elapsed,
     ProtectionRuntimeState? previous,
     SolverDC solver = const SolverDC(),
+    ElectromechanicalControlEngine? controlsEngine,
+    Map<ComponentId, bool> previousRelayStates =
+        const <ComponentId, bool>{},
   }) {
     _validateElapsed(elapsed);
+    final ElectromechanicalControlEngine controlEngine =
+        controlsEngine ?? controls;
     final ProtectionRuntimeState baseline =
         _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
     CircuitState effective = _applyTrips(circuit, baseline);
-    DcSolveResult result = solver.solve(effective, topology);
+    ElectromechanicalDcOutcome control = controlEngine.solveDc(
+      circuit: effective,
+      topology: topology,
+      solver: solver,
+      previousStates: previousRelayStates,
+    );
+    DcSolveResult result = control.result;
     final List<ProtectionCoordinationIssue> issues =
         <ProtectionCoordinationIssue>[];
 
@@ -166,13 +185,16 @@ final class ProtectionCoordinator {
       issues.add(
         const ProtectionCoordinationIssue(
           code: ProtectionCoordinationIssueCode.solveFailed,
-          message: 'DC solve failed before protection exposure could advance.',
+          message:
+              'DC solve failed before relay/protection exposure could advance.',
         ),
       );
       return ProtectionDcOutcome(
         result: result,
-        effectiveCircuit: effective,
+        effectiveCircuit: control.effectiveCircuit,
         state: baseline,
+        relays: control.relays,
+        controlIssues: control.issues,
         issues: issues,
       );
     }
@@ -187,12 +209,23 @@ final class ProtectionCoordinator {
 
     if (_tripSetChanged(baseline, next)) {
       effective = _applyTrips(circuit, next);
-      result = solver.solve(effective, topology);
+      control = controlEngine.solveDc(
+        circuit: effective,
+        topology: topology,
+        solver: solver,
+        previousStates: <ComponentId, bool>{
+          for (final MapEntry<ComponentId, ContactorActuationState> entry
+              in control.relays.entries)
+            entry.key: entry.value.actuated,
+        },
+      );
+      result = control.result;
       if (!result.isSolved) {
         issues.add(
           const ProtectionCoordinationIssue(
             code: ProtectionCoordinationIssueCode.solveFailed,
-            message: 'DC solve failed after applying protection trip state.',
+            message:
+                'DC solve failed after applying protection trip state.',
           ),
         );
       }
@@ -200,8 +233,10 @@ final class ProtectionCoordinator {
 
     return ProtectionDcOutcome(
       result: result,
-      effectiveCircuit: effective,
+      effectiveCircuit: control.effectiveCircuit,
       state: next,
+      relays: control.relays,
+      controlIssues: control.issues,
       issues: issues,
     );
   }

@@ -101,12 +101,29 @@ final class OrthogonalWireRouter {
         .map((RoutingObstacle obstacle) => obstacle.expanded(obstacleClearance))
         .toList(growable: false);
 
-    final Rect envelope = Rect.fromLTRB(
-      _min(start.dx, end.dx) - envelopePadding,
-      _min(start.dy, end.dy) - envelopePadding,
-      _max(start.dx, end.dx) + envelopePadding,
-      _max(start.dy, end.dy) + envelopePadding,
+    Rect routingBounds = Rect.fromLTRB(
+      _min(start.dx, end.dx),
+      _min(start.dy, end.dy),
+      _max(start.dx, end.dx),
+      _max(start.dy, end.dy),
     );
+    for (final RoutingObstacle obstacle in expandedObstacles) {
+      routingBounds = routingBounds.expandToInclude(obstacle.bounds);
+    }
+    for (final OrthogonalWirePath occupied in occupiedDifferentNetPaths) {
+      for (final Offset point in occupied.points) {
+        routingBounds = routingBounds.expandToInclude(
+          Rect.fromLTWH(point.dx, point.dy, 0, 0),
+        );
+      }
+    }
+
+    // Routing is performed on an effectively open workspace. The previous
+    // envelope was bounded only around start/end, so a finite existing wire
+    // could look like an impenetrable wall even though free space existed a
+    // little farther away. Include all known obstacles and occupied paths,
+    // then add an escape margin around their complete extent.
+    final Rect envelope = routingBounds.inflate(envelopePadding);
 
     final List<List<Offset>> candidatePoints = <List<Offset>>[];
 

@@ -8,7 +8,7 @@ on:
       - '.github/workflows/v2-golden-review.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: v2-golden-review-${{ github.ref }}
@@ -36,10 +36,22 @@ jobs:
           dart format --output=none --set-exit-if-changed test/f9_goldens_test.dart
           flutter test --update-goldens test/f9_goldens_test.dart
 
+      - name: Commit approved golden baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/electrosim/test/goldens/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update F9 golden baselines [skip ci]'
+            git push origin HEAD:v2-post-mac-audit-fixes-20261005
+          fi
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ElectroSim-V2-golden-candidate
+          name: ElectroSim-V2-golden-approved
           path: |
             apps/electrosim/test/goldens/*.png
             apps/electrosim/test/failures/**

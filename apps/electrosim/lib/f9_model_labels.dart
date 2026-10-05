@@ -59,6 +59,12 @@ String f9ModelLabel(String modelType) {
       return 'Onduleur solaire';
     case 'pv_resistive_load':
       return 'Charge AC PV';
+    case 'motor_3p_6t':
+      return 'Moteur triphasé 6 bornes';
+    case 'load_wye_3p':
+      return 'Charge triphasée étoile';
+    case 'load_delta_3p':
+      return 'Charge triphasée triangle';
     default:
       return modelType;
   }

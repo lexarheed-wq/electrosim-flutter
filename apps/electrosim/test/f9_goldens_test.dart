@@ -44,7 +44,6 @@ void main() {
     WidgetTester tester, {
     required Size size,
     required String prefix,
-    required bool needsPanelButton,
   }) async {
     await pumpWorkspace(tester, size);
     await expectLater(
@@ -73,7 +72,6 @@ void main() {
       tester,
       size: const Size(390, 844),
       prefix: 'f9_compact',
-      needsPanelButton: true,
     );
   });
 
@@ -84,7 +82,6 @@ void main() {
       tester,
       size: const Size(820, 1180),
       prefix: 'f9_medium',
-      needsPanelButton: true,
     );
   });
 
@@ -95,7 +92,6 @@ void main() {
       tester,
       size: const Size(1440, 900),
       prefix: 'f9_expanded',
-      needsPanelButton: false,
     );
   });
 

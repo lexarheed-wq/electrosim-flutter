@@ -268,6 +268,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
           voltageV: voltageV,
           resistanceOhm: resistanceOhm,
           animationValue: animationValue,
+          variantKey: variantKey,
         ),
       );
     }

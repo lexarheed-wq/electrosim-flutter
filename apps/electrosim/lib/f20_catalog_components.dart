@@ -34,6 +34,8 @@ enum F20MotorSilhouette {
   generic,
 }
 
+enum F20HeaterSilhouette { iron, generic }
+
 abstract final class F20CatalogVisualIdentity {
   static F20ApplianceSilhouette applianceSilhouette(String? variantKey) =>
       switch (variantKey) {
@@ -56,6 +58,11 @@ abstract final class F20CatalogVisualIdentity {
         'crusher' => F20MotorSilhouette.crusher,
         _ => F20MotorSilhouette.generic,
       };
+
+  static F20HeaterSilhouette heaterSilhouette(String? variantKey) =>
+      variantKey == 'iron'
+      ? F20HeaterSilhouette.iron
+      : F20HeaterSilhouette.generic;
 }
 
 @immutable
@@ -1074,6 +1081,106 @@ final class _P {
   }
 
   void heater() {
+    switch (F20CatalogVisualIdentity.heaterSilhouette(variant)) {
+      case F20HeaterSilhouette.iron:
+        _iron();
+        break;
+      case F20HeaterSilhouette.generic:
+        _genericHeater();
+        break;
+    }
+    final List<Offset> t = bottomPair();
+    terminal(t[0], '1');
+    terminal(t[1], '2');
+  }
+
+  void _iron() {
+    final Path sole = Path()
+      ..moveTo(rect.left + w * .15, c.dy + h * .20)
+      ..quadraticBezierTo(
+        rect.left + w * .22,
+        c.dy + h * .10,
+        rect.left + w * .34,
+        c.dy + h * .07,
+      )
+      ..lineTo(rect.right - w * .15, c.dy + h * .07)
+      ..lineTo(rect.right - w * .08, c.dy + h * .22)
+      ..lineTo(rect.left + w * .15, c.dy + h * .22)
+      ..close();
+    canvas.drawPath(
+      sole,
+      grad(
+        sole.getBounds(),
+        const <Color>[Color(0xFFD8E0E4), Color(0xFF738187)],
+      ),
+    );
+    canvas.drawPath(sole, outline);
+
+    final Path body = Path()
+      ..moveTo(rect.left + w * .25, c.dy + h * .08)
+      ..quadraticBezierTo(
+        rect.left + w * .32,
+        c.dy - h * .22,
+        c.dx,
+        c.dy - h * .25,
+      )
+      ..lineTo(rect.right - w * .18, c.dy - h * .18)
+      ..lineTo(rect.right - w * .15, c.dy + h * .06)
+      ..close();
+    canvas.drawPath(
+      body,
+      grad(
+        body.getBounds(),
+        <Color>[
+          state.energized
+              ? const Color(0xFFEFE7DD)
+              : const Color(0xFFE3E7E8),
+          const Color(0xFFA9B4B9),
+        ],
+      ),
+    );
+    canvas.drawPath(body, outline);
+
+    final RRect handle = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(c.dx + w * .02, c.dy - h * .14),
+        width: w * .34,
+        height: h * .12,
+      ),
+      Radius.circular(h * .05),
+    );
+    canvas.drawRRect(
+      handle,
+      Paint()
+        ..color = const Color(0xFF4F6067)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(6, s * .035),
+    );
+
+    if (state.energized) {
+      for (var i = 0; i < 3; i++) {
+        final double x = c.dx - w * .10 + i * w * .10;
+        final Path heat = Path()
+          ..moveTo(x, c.dy - h * .31)
+          ..quadraticBezierTo(
+            x - w * .025,
+            c.dy - h * .37,
+            x,
+            c.dy - h * .43,
+          );
+        canvas.drawPath(
+          heat,
+          Paint()
+            ..color = const Color(0xFFDB7047)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = math.max(1.5, s * .01),
+        );
+      }
+    }
+    text('FER', Offset(c.dx, c.dy + h * .145), size: h * .055);
+  }
+
+  void _genericHeater() {
     final Rect body = Rect.fromCenter(
       center: c,
       width: w * .66,
@@ -1103,9 +1210,6 @@ final class _P {
         ..strokeWidth = math.max(2.2, s * .022),
     );
     text(shortLabel(), Offset(c.dx, body.top + h * .07), size: h * .055);
-    final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
   }
 
   void actuator() {

@@ -36,6 +36,10 @@ final class MeasurementEngine {
       case MeasurementKind.voltageAcRms:
       case MeasurementKind.currentAcRms:
       case MeasurementKind.frequency:
+      case MeasurementKind.activePower:
+      case MeasurementKind.reactivePower:
+      case MeasurementKind.apparentPower:
+      case MeasurementKind.phaseSequence:
         return MeasurementResult.invalid(
           kind: request.kind,
           errorCode: MeasurementErrorCode.wrongElectricalMode,
@@ -78,6 +82,16 @@ final class MeasurementEngine {
         return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
       case MeasurementKind.frequency:
         return _frequencyResult(request, simulation.frequencyHz);
+      case MeasurementKind.activePower:
+      case MeasurementKind.reactivePower:
+      case MeasurementKind.apparentPower:
+        return _ac1PowerResult(request, simulation);
+      case MeasurementKind.phaseSequence:
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: MeasurementErrorCode.wrongElectricalMode,
+          message: 'Phase sequence requires an AC3 result.',
+        );
       case MeasurementKind.voltageDc:
       case MeasurementKind.currentDc:
       case MeasurementKind.resistance:
@@ -123,6 +137,12 @@ final class MeasurementEngine {
         return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
       case MeasurementKind.frequency:
         return _frequencyResult(request, simulation.frequencyHz);
+      case MeasurementKind.activePower:
+      case MeasurementKind.reactivePower:
+      case MeasurementKind.apparentPower:
+        return _ac3PowerResult(request, simulation);
+      case MeasurementKind.phaseSequence:
+        return _phaseSequenceResult(request, simulation);
       case MeasurementKind.voltageDc:
       case MeasurementKind.currentDc:
       case MeasurementKind.resistance:
@@ -132,6 +152,137 @@ final class MeasurementEngine {
           message: 'This request is not an AC3 measurement.',
         );
     }
+  }
+
+  MeasurementResult _ac1PowerResult(
+    MeasurementRequest request,
+    Ac1SolveResult simulation,
+  ) {
+    final String? branchId = request.branchId;
+    if (branchId == null) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: MeasurementErrorCode.unknownBranch,
+        message: 'AC1 power measurement requires a branch.',
+      );
+    }
+    Ac1BranchResult? branch;
+    for (final Ac1BranchResult candidate in simulation.branchResults) {
+      if (candidate.id == branchId) {
+        branch = candidate;
+        break;
+      }
+    }
+    if (branch == null || branch.complexPower == null) {
+      return MeasurementResult.invalid(
+        kind: request.kind,
+        errorCode: branch == null
+            ? MeasurementErrorCode.unknownBranch
+            : MeasurementErrorCode.branchCurrentUnavailable,
+        message: 'AC1 complex power is unavailable for this branch.',
+        evidenceIds: <String>['branch:' + branchId],
+      );
+    }
+    return _powerQuantityResult(
+      request.kind,
+      branch.complexPower!,
+      <String>['branch:' + branchId],
+    );
+  }
+
+  MeasurementResult _ac3PowerResult(
+    MeasurementRequest request,
+    Ac3SolveResult simulation,
+  ) {
+    AcComplex power = AcComplex.zero;
+    final List<String> evidence = <String>[];
+    if (request.branchId != null) {
+      final String branchId = request.branchId!;
+      Ac3BranchResult? branch;
+      for (final Ac3BranchResult candidate in simulation.branchResults) {
+        if (candidate.id == branchId) {
+          branch = candidate;
+          break;
+        }
+      }
+      if (branch == null || branch.complexPower == null) {
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: branch == null
+              ? MeasurementErrorCode.unknownBranch
+              : MeasurementErrorCode.branchCurrentUnavailable,
+          message: 'AC3 complex power is unavailable for this branch.',
+          evidenceIds: <String>['branch:' + branchId],
+        );
+      }
+      power = branch.complexPower!;
+      evidence.add('branch:' + branchId);
+    } else {
+      for (final PhaseTag phase
+          in <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]) {
+        final AcComplex? voltage = simulation.phaseVoltage(phase);
+        final AcComplex current = simulation.lineCurrent(phase);
+        if (voltage == null) continue;
+        power = power + voltage * current.conjugate;
+        evidence.add('phase:' + phase.name);
+      }
+      if (evidence.isEmpty) {
+        return MeasurementResult.invalid(
+          kind: request.kind,
+          errorCode: MeasurementErrorCode.simulationNotSolved,
+          message: 'No solved AC3 phase power is available.',
+        );
+      }
+    }
+    return _powerQuantityResult(request.kind, power, evidence);
+  }
+
+  MeasurementResult _powerQuantityResult(
+    MeasurementKind kind,
+    AcComplex power,
+    Iterable<String> evidenceIds,
+  ) {
+    switch (kind) {
+      case MeasurementKind.activePower:
+        return MeasurementResult.valid(
+          kind: kind,
+          value: power.real,
+          unit: ElectricalUnit.watt,
+          evidenceIds: evidenceIds,
+        );
+      case MeasurementKind.reactivePower:
+        return MeasurementResult.valid(
+          kind: kind,
+          value: power.imaginary,
+          unit: ElectricalUnit.varUnit,
+          evidenceIds: evidenceIds,
+        );
+      case MeasurementKind.apparentPower:
+        return MeasurementResult.valid(
+          kind: kind,
+          value: power.magnitude,
+          unit: ElectricalUnit.voltAmpere,
+          evidenceIds: evidenceIds,
+        );
+      default:
+        throw StateError('Unsupported power measurement kind: ' + kind.name);
+    }
+  }
+
+  MeasurementResult _phaseSequenceResult(
+    MeasurementRequest request,
+    Ac3SolveResult simulation,
+  ) {
+    final String label = switch (simulation.sourceSequence) {
+      Ac3PhaseSequence.positive => 'L1 → L2 → L3',
+      Ac3PhaseSequence.negative => 'L1 → L3 → L2',
+      Ac3PhaseSequence.indeterminate => 'Indéterminé',
+    };
+    return MeasurementResult.text(
+      kind: request.kind,
+      value: label,
+      evidenceIds: const <String>['solver:phase-sequence'],
+    );
   }
 
   MeasurementResult? _preflightAc({

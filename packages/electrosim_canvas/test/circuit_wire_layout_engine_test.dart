@@ -1,4 +1,4 @@
-import 'dart:ui' show Offset, Size;
+import 'dart:ui' show Offset, Rect, Size;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';

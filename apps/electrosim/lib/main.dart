@@ -1589,6 +1589,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'breaker_ac1' ||
         'breaker' ||
         'breaker_3p' ||
+        'breaker_4p' ||
+        'isolator_3p' ||
+        'isolator_4p' ||
         'thermal_overload_3p' => true,
         _ => false,
       };
@@ -1637,6 +1640,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         type == 'breaker_ac1' ||
         type == 'breaker' ||
         type == 'breaker_3p' ||
+        type == 'breaker_4p' ||
         type == 'thermal_overload_3p';
     if (isProtectionReset &&
         _simulation.snapshot.protectionTripped(ComponentId(elementId))) {

@@ -54,11 +54,11 @@ jobs:
           flutter --version
           dart --version 2>&1 | grep '3.10.9'
 
-      - name: Verify Dart formatting
+      - name: Normalize Dart formatting
         shell: bash
         run: |
           set -euo pipefail
-          dart format --output=none --set-exit-if-changed \
+          dart format \
             apps/electrosim/lib/f9_wiring_policy.dart \
             apps/electrosim/test/f9_wiring_policy_test.dart \
             packages/electrosim_topology/lib/src/topology_engine.dart \

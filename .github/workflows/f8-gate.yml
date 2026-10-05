@@ -2,12 +2,19 @@ name: F8 Gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'packages/electrosim_canvas/**'
       - 'apps/electrosim/**'
       - 'tools/run_f8_gate.sh'
       - 'tools/f8_*'
       - 'docs/f8/**'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   f8:
     runs-on: macos-14

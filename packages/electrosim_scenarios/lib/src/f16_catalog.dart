@@ -97,7 +97,7 @@ ComponentInstance _resistor(
 ExampleDefinition _parallelResistorsExample() {
   const String p = 'f16ex04';
   return ExampleDefinition(
-    id: ExampleId('EX-DC-004'),
+    id: CircuitTemplateId('EX-DC-004'),
     title: 'Résistances identiques en parallèle',
     description:
         'Deux résistances de 10 ohms en parallèle sous 10 V, circuit sain.',
@@ -144,7 +144,7 @@ ExampleDefinition _parallelResistorsExample() {
 ExampleDefinition _voltageDividerExample() {
   const String p = 'f16ex05';
   return ExampleDefinition(
-    id: ExampleId('EX-DC-005'),
+    id: CircuitTemplateId('EX-DC-005'),
     title: 'Diviseur résistif CC',
     description:
         'Résistances de 5 et 15 ohms en série sous 20 V, circuit sain.',

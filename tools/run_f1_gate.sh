@@ -28,7 +28,6 @@ python3 "$ROOT/tools/f0_guard.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
 python3 "$ROOT/tools/f1_architecture_guard.py"
-python3 "$ROOT/tools/verify_f1_manifest.py"
 
 steps=()
 run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name"); }
@@ -43,6 +42,10 @@ cd "$ROOT/packages/electrosim_domain"
 run_step "f1-dart-pub-get" dart pub get
 run_step "f1-dart-format" dart format lib test "$ROOT/tools/architecture_guard.dart"
 run_step "f1-dart-format-check" dart format --output=none --set-exit-if-changed lib test "$ROOT/tools/architecture_guard.dart"
+cd "$ROOT"
+run_step "f1-refresh-manifest" python3 "$ROOT/tools/generate_f1_manifest.py"
+run_step "f1-verify-refreshed-manifest" python3 "$ROOT/tools/verify_f1_manifest.py"
+cd "$ROOT/packages/electrosim_domain"
 run_step "f1-dart-analyze" dart analyze
 run_step "f1-dart-test" dart test
 rm -rf coverage

@@ -324,6 +324,28 @@ final class SolverPV {
         ? 0.0
         : availablePowerW / operatingVoltageV;
 
+    if (controller != null && battery != null) {
+      return _solveStorageChain(
+        circuit: circuit,
+        array: array,
+        inverter: inverter,
+        controller: controller,
+        battery: battery,
+        inverterParameters: inverterParameters,
+        controllerParameters: controllerParameters!,
+        batteryParameters: batteryParameters!,
+        loadParameters: loadParameters,
+        diagnostics: diagnostics,
+        irradianceWm2: irradianceWm2,
+        cellTemperatureC: cellTemperatureC,
+        operatingVoltageV: operatingVoltageV,
+        availableCurrentA: availableCurrentA,
+        availablePowerW: availablePowerW,
+        previousBatterySoc: previousBatterySoc,
+        elapsed: elapsed,
+      );
+    }
+
     final _InverterAvailability availability = _inverterAvailability(
       inverter,
       inverterParameters,

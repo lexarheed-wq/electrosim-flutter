@@ -1,4 +1,5 @@
 name: V2 post-audit final qualification
+# final qualification trigger 2026-10-05
 
 on:
   workflow_dispatch:

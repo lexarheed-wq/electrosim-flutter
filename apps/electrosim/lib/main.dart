@@ -509,6 +509,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Offset? _lastCanvasPointerLocal;
   bool _backgroundPanActive = false;
   bool _directPointerMoved = false;
+  bool _selectionModifierAtPointerDown = false;
   bool _trackpadPanZoomActive = false;
   double _trackpadLastScale = 1;
 
@@ -1410,6 +1411,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _ => const <String, Object?>{},
       };
 
+  bool get _multiSelectionModifierPressed {
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    return keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isShiftPressed;
+  }
+
+  String _selectionStatus(String prefix) {
+    final int count = _selectedIds.length;
+    if (count == 0) return 'Sélection effacée';
+    if (count == 1) return '$prefix : ${_selection.primaryId}';
+    return '$prefix multiple : $count éléments';
+  }
+
   CanvasHitResult _f9CanvasHit(Offset localPosition) => _hitTest.hitTest(
     worldPoint: _viewport.screenToWorld(localPosition),
     circuit: _circuit,
@@ -1425,6 +1440,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _activeCanvasPointer = event.pointer;
     _lastCanvasPointerLocal = event.localPosition;
     _directPointerMoved = false;
+    _selectionModifierAtPointerDown = _multiSelectionModifierPressed;
     _backgroundPanActive = false;
     _directDragElementId = null;
     _directDragGrabDelta = null;
@@ -1466,24 +1482,30 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         return;
       }
       final Offset world = _viewport.screenToWorld(event.localPosition);
+      final bool additive = _selectionModifierAtPointerDown;
       setState(() {
-        _selected = id;
-        if (!_studentTpReadOnly) {
+        _selection = _selection.select(id, additive: additive);
+        if (!additive && !_studentTpReadOnly) {
           _directDragElementId = id;
           _directDragGrabDelta = current - world;
           _directDragBaseLayout = _layout;
         }
         _status = _studentTpReadOnly
-            ? 'Sélection : $id — TP en lecture seule'
-            : 'Sélection : $id';
+            ? '${_selectionStatus('Sélection')} — TP en lecture seule'
+            : _selectionStatus('Sélection');
       });
       return;
     }
 
     if (hit.kind == CanvasHitKind.wire) {
+      final String? id = hit.connectionId?.value;
+      if (id == null) return;
       setState(() {
-        _selected = hit.connectionId?.value;
-        _status = 'Sélection : ${hit.connectionId?.value ?? 'fil'}';
+        _selection = _selection.select(
+          id,
+          additive: _selectionModifierAtPointerDown,
+        );
+        _status = _selectionStatus('Sélection');
       });
       return;
     }
@@ -1540,13 +1562,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _resetDirectControlTapTracking();
     } else if (_backgroundPanActive &&
         !_directPointerMoved &&
-        _wiringPendingTerminal == null) {
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown) {
       setState(() {
         _selected = null;
         _status = 'Sélection effacée';
       });
       _resetDirectControlTapTracking();
-    } else if (!_directPointerMoved && _wiringPendingTerminal == null) {
+    } else if (!_directPointerMoved &&
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown) {
       _handleDirectControlTap(event.localPosition);
     }
     _clearDirectPointerState();
@@ -1570,6 +1595,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _lastCanvasPointerLocal = null;
     _backgroundPanActive = false;
     _directPointerMoved = false;
+    _selectionModifierAtPointerDown = false;
   }
 
   ({String id, String modelType})? _directControlAt(Offset screenPosition) {

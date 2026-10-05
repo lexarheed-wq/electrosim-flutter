@@ -298,6 +298,34 @@ void main() {
       expect(result.nodeVoltages.values.every((double value) => value == 0.0), isTrue);
     });
 
+    test('relay NO contact follows explicit actuated state', () {
+      final DcSolveResult open = solve(
+        _relayContactCircuit(modelType: 'relay_contact_no', actuated: false),
+      );
+      expect(open.status, DcSolveStatus.solved);
+      expect(open.branch('component:k1').currentA, 0.0);
+
+      final DcSolveResult closed = solve(
+        _relayContactCircuit(modelType: 'relay_contact_no', actuated: true),
+      );
+      expect(closed.status, DcSolveStatus.solved);
+      expect(closed.branch('component:r1').currentA?.abs(), closeTo(2.0, 1e-9));
+    });
+
+    test('relay NC contact inverts the same canonical actuated state', () {
+      final DcSolveResult closed = solve(
+        _relayContactCircuit(modelType: 'relay_contact_nc', actuated: false),
+      );
+      expect(closed.status, DcSolveStatus.solved);
+      expect(closed.branch('component:r1').currentA?.abs(), closeTo(2.0, 1e-9));
+
+      final DcSolveResult open = solve(
+        _relayContactCircuit(modelType: 'relay_contact_nc', actuated: true),
+      );
+      expect(open.status, DcSolveStatus.solved);
+      expect(open.branch('component:k1').currentA, 0.0);
+    });
+
     test('component condition shortCircuit is an ideal 0 V constraint', () {
       final CircuitState base = _singleResistor(voltage: 24, resistance: 12);
       final ComponentInstance resistor = base.components.single;
@@ -446,6 +474,54 @@ CircuitState _switchCircuit({required bool closed}) => CircuitState(
   ],
   sources: <SourceInstance>[_voltageSource(24)],
 );
+
+CircuitState _relayContactCircuit({
+  required String modelType,
+  required bool actuated,
+}) =>
+    CircuitState(
+      circuitId: CircuitId('relay-contact-$modelType-$actuated'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('k1'),
+          modelType: modelType,
+          terminals: <Terminal>[
+            _terminal('k1a', 'A'),
+            _terminal('k1b', 'B'),
+          ],
+          controlState: <String, Object?>{'actuated': actuated},
+        ),
+        ComponentInstance(
+          id: ComponentId('r1'),
+          modelType: 'resistor',
+          terminals: <Terminal>[
+            _terminal('r1a', 'A'),
+            _terminal('r1b', 'B'),
+          ],
+          parameters: const <String, Object?>{'resistanceOhm': 12.0},
+        ),
+      ],
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('w1'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('k1a'),
+        ),
+        Connection(
+          id: ConnectionId('w2'),
+          fromTerminalId: TerminalId('k1b'),
+          toTerminalId: TerminalId('r1a'),
+        ),
+        Connection(
+          id: ConnectionId('w3'),
+          fromTerminalId: TerminalId('r1b'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+      sources: <SourceInstance>[_voltageSource(24)],
+    );
 
 CircuitState _floatingIslandCircuit() => CircuitState(
   circuitId: CircuitId('dc005'),

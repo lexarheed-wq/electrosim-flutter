@@ -10,7 +10,7 @@ import 'dc_solver_options.dart';
 final class SolverDC {
   const SolverDC({this.options = const DcSolverOptions()});
 
-  static const String engineVersion = 'solver-dc/0.3.0';
+  static const String engineVersion = 'solver-dc/0.4.0';
 
   final DcSolverOptions options;
 
@@ -97,6 +97,7 @@ final class SolverDC {
     );
     _MnaSolveOutcome? network;
     var currentLimitIteration = 0;
+    var nonlinearIteration = 0;
     while (true) {
       network = _solveActiveElements(
         topology.nodes.map((TopologyNode node) => node.id),
@@ -134,6 +135,50 @@ final class SolverDC {
           referenceNodeId: referenceNodeId,
           maxMatrixResidual: network.maxResidual,
         );
+      }
+
+      final Map<String, _Element> diodeUpdates = <String, _Element>{};
+      for (final _Element element in activeElements) {
+        if (!element.isDiode) continue;
+        if (!element.diodeOn) {
+          final double forwardBias =
+              network.nodeVoltages[element.fromNodeId]! -
+              network.nodeVoltages[element.toNodeId]!;
+          if (forwardBias >
+              element.diodeForwardVoltageV! + options.residualTolerance) {
+            diodeUpdates[element.id] = element.withDiodeState(true);
+          }
+        } else {
+          final double? current = network.idealCurrentA(element.id);
+          if (current != null && current < -options.residualTolerance) {
+            diodeUpdates[element.id] = element.withDiodeState(false);
+          }
+        }
+      }
+      if (diodeUpdates.isNotEmpty) {
+        if (nonlinearIteration >= options.maxNonlinearIterations) {
+          diagnostics.add(
+            DcSolverDiagnostic(
+              code: DcDiagnosticCode.nonlinearIterationExceeded,
+              severity: DcDiagnosticSeverity.error,
+              message:
+                  'DC nonlinear active set did not converge within the configured bound.',
+            ),
+          );
+          return _failure(
+            circuit,
+            DcSolveStatus.invalid,
+            diagnostics,
+            referenceNodeId: referenceNodeId,
+            maxMatrixResidual: network.maxResidual,
+          );
+        }
+        activeElements = <_Element>[
+          for (final _Element element in activeElements)
+            diodeUpdates[element.id] ?? element,
+        ];
+        nonlinearIteration++;
+        continue;
       }
 
       final List<_Element> violations = <_Element>[];
@@ -381,6 +426,45 @@ final class SolverDC {
                 fromNodeId: fromNode,
                 toNodeId: toNode,
                 resistanceOhm: resistance,
+              ),
+            );
+          }
+        case 'diode':
+          final Object? rawForward = component.parameters['forwardVoltageV'];
+          final Object? rawOffResistance =
+              component.parameters['offResistanceOhm'];
+          final double forwardVoltageV = rawForward == null
+              ? 0.7
+              : rawForward is num
+                  ? rawForward.toDouble()
+                  : double.nan;
+          final double offResistanceOhm = rawOffResistance == null
+              ? 1e12
+              : rawOffResistance is num
+                  ? rawOffResistance.toDouble()
+                  : double.nan;
+          if (!forwardVoltageV.isFinite ||
+              forwardVoltageV < 0.0 ||
+              !offResistanceOhm.isFinite ||
+              offResistanceOhm < 1e6) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'Diode requires forwardVoltageV >= 0 and offResistanceOhm >= 1e6.',
+                componentId: component.id,
+              ),
+            );
+          } else {
+            active.add(
+              _Element.diodeOff(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+                forwardVoltageV: forwardVoltageV,
+                offResistanceOhm: offResistanceOhm,
               ),
             );
           }
@@ -904,6 +988,7 @@ const Set<String> _supportedDcComponentModels = <String>{
   'fan_dc',
   'motor_dc',
   'relay_coil',
+  'diode',
   'breaker_dc',
   'fuse_dc',
 };
@@ -1173,6 +1258,9 @@ final class _Element {
     required this.redundant,
     this.currentLimitA,
     this.sourceId,
+    this.diodeForwardVoltageV,
+    this.diodeOffResistanceOhm,
+    this.diodeOn = false,
   });
 
   factory _Element.resistor({
@@ -1235,6 +1323,48 @@ final class _Element {
     sourceId: sourceId,
   );
 
+  factory _Element.diodeOff({
+    required String id,
+    required String modelType,
+    required String fromNodeId,
+    required String toNodeId,
+    required double forwardVoltageV,
+    required double offResistanceOhm,
+  }) => _Element._(
+    id: id,
+    modelType: modelType,
+    kind: _ElementKind.resistor,
+    publicKind: DcBranchKind.diode,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: offResistanceOhm,
+    redundant: false,
+    diodeForwardVoltageV: forwardVoltageV,
+    diodeOffResistanceOhm: offResistanceOhm,
+    diodeOn: false,
+  );
+
+  factory _Element.diodeOn({
+    required String id,
+    required String modelType,
+    required String fromNodeId,
+    required String toNodeId,
+    required double forwardVoltageV,
+    required double offResistanceOhm,
+  }) => _Element._(
+    id: id,
+    modelType: modelType,
+    kind: _ElementKind.idealVoltage,
+    publicKind: DcBranchKind.diode,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: forwardVoltageV,
+    redundant: fromNodeId == toNodeId,
+    diodeForwardVoltageV: forwardVoltageV,
+    diodeOffResistanceOhm: offResistanceOhm,
+    diodeOn: true,
+  );
+
   final String id;
   final String modelType;
   final _ElementKind kind;
@@ -1245,6 +1375,34 @@ final class _Element {
   final bool redundant;
   final double? currentLimitA;
   final SourceId? sourceId;
+  final double? diodeForwardVoltageV;
+  final double? diodeOffResistanceOhm;
+  final bool diodeOn;
+
+  bool get isDiode => diodeForwardVoltageV != null;
+
+  _Element withDiodeState(bool on) {
+    if (!isDiode) {
+      throw StateError('Only diode elements can change diode state.');
+    }
+    return on
+        ? _Element.diodeOn(
+            id: id,
+            modelType: modelType,
+            fromNodeId: fromNodeId,
+            toNodeId: toNodeId,
+            forwardVoltageV: diodeForwardVoltageV!,
+            offResistanceOhm: diodeOffResistanceOhm!,
+          )
+        : _Element.diodeOff(
+            id: id,
+            modelType: modelType,
+            fromNodeId: fromNodeId,
+            toNodeId: toNodeId,
+            forwardVoltageV: diodeForwardVoltageV!,
+            offResistanceOhm: diodeOffResistanceOhm!,
+          );
+  }
 
   _Element asCurrentLimited(double currentA) {
     if (kind != _ElementKind.idealVoltage || currentLimitA == null) {

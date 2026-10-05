@@ -27,6 +27,7 @@ final class ExtendedReferenceVisualState {
     this.voltageV = 0,
     this.resistanceOhm = 0,
     this.animationValue = 0,
+    this.variantKey,
   });
 
   final bool pressed;
@@ -40,6 +41,7 @@ final class ExtendedReferenceVisualState {
   final double voltageV;
   final double resistanceOhm;
   final double animationValue;
+  final String? variantKey;
 }
 
 abstract final class ExtendedReferenceGeometry {
@@ -579,6 +581,7 @@ class _ExtendedReferencePainter extends CustomPainter {
         ExtendedReferenceGeometry.terminalOffset(device, right: false);
     final Offset right =
         ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final String variant = state.variantKey ?? 'rectifier';
 
     const Rect body = Rect.fromLTWH(80, 27, 110, 51);
     if (showTerminals) {
@@ -586,20 +589,28 @@ class _ExtendedReferencePainter extends CustomPainter {
       _terminal(c, right, const Offset(190, 52.5));
     }
 
+    final bool led = variant == 'led-red' || variant == 'led-green';
+    final Color accent = switch (variant) {
+      'schottky' => const Color(0xFF4D7A8A),
+      'zener' => const Color(0xFF7758A6),
+      'tvs' => const Color(0xFFB24C55),
+      'led-red' => const Color(0xFFD83C3C),
+      'led-green' => const Color(0xFF2B9A57),
+      'freewheel' => const Color(0xFF4B657A),
+      'reverse-protection' => const Color(0xFF9A6A2B),
+      _ => const Color(0xFF30363A),
+    };
+
     _box(
       c,
       body,
-      state.forwardBiased
-          ? const <Color>[
-              Color(0xFF444B50),
-              Color(0xFF121719),
-              Color(0xFF263238),
-            ]
-          : const <Color>[
-              Color(0xFF30363A),
-              Color(0xFF0C1012),
-              Color(0xFF1A2023),
-            ],
+      <Color>[
+        state.forwardBiased
+            ? Color.lerp(accent, Colors.white, .18)!
+            : Color.lerp(accent, Colors.black, .10)!,
+        Color.lerp(accent, Colors.black, .72)!,
+        Color.lerp(accent, Colors.black, .45)!,
+      ],
       radius: 24,
       shadow: true,
     );
@@ -611,6 +622,30 @@ class _ExtendedReferencePainter extends CustomPainter {
       const Rect.fromLTWH(91, 34, 36, 11),
       Paint()..color = const Color(0x33FFFFFF),
     );
+
+    if (led && state.forwardBiased) {
+      final Color glow =
+          variant == 'led-green' ? const Color(0xFF63E98C) : const Color(0xFFFF6868);
+      c.drawCircle(
+        const Offset(134, 52.5),
+        30,
+        Paint()
+          ..color = glow.withValues(alpha: .22)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+      );
+    }
+    if (variant == 'zener' || variant == 'tvs') {
+      _text(
+        c,
+        variant == 'zener' ? 'Z' : 'TVS',
+        const Offset(132, 52),
+        size: variant == 'zener' ? 18 : 10,
+        color: const Color(0xFFE9EDF0),
+      );
+    } else if (variant == 'schottky') {
+      _text(c, 'S', const Offset(132, 52), size: 15, color: const Color(0xFFE9EDF0));
+    }
+
     _text(c, 'K', const Offset(164, 82), size: 9);
     _text(c, 'A', const Offset(92, 82), size: 9);
   }

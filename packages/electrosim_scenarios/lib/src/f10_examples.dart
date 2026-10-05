@@ -28,7 +28,7 @@ SourceInstance _voltageSource(String prefix, double voltageV) => SourceInstance(
 ExampleDefinition _singleResistorExample() {
   const String p = 'ex01';
   return ExampleDefinition(
-    id: ExampleId('EX-DC-001'),
+    id: CircuitTemplateId('EX-DC-001'),
     title: 'Circuit résistif CC simple',
     description: 'Source 24 V alimentant une résistance de 12 ohms.',
     circuit: CircuitState(
@@ -56,7 +56,7 @@ ExampleDefinition _singleResistorExample() {
 ExampleDefinition _seriesResistorsExample() {
   const String p = 'ex02';
   return ExampleDefinition(
-    id: ExampleId('EX-DC-002'),
+    id: CircuitTemplateId('EX-DC-002'),
     title: 'Résistances en série',
     description: 'Deux résistances de 10 et 20 ohms alimentées sous 30 V.',
     circuit: CircuitState(
@@ -91,7 +91,7 @@ ExampleDefinition _seriesResistorsExample() {
 ExampleDefinition _switchLoadExample() {
   const String p = 'ex03';
   return ExampleDefinition(
-    id: ExampleId('EX-DC-003'),
+    id: CircuitTemplateId('EX-DC-003'),
     title: 'Commande simple par interrupteur',
     description: 'Interrupteur fermé commandant une charge résistive saine sous 24 V.',
     circuit: CircuitState(

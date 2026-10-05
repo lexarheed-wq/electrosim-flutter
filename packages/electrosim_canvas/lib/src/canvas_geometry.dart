@@ -170,6 +170,25 @@ abstract final class TerminalVisualProfile {
           Offset(0, h * -0.42),
           Offset(w * 0.20, h * -0.42),
         ],
+      'catalog_battery' ||
+      'catalog_generator' ||
+      'catalog_appliance_2t' ||
+      'catalog_motor_driven_2t' ||
+      'catalog_heater' ||
+      'catalog_actuator_2t' ||
+      'catalog_sensor_2t' ||
+      'catalog_indicator_2t' => <Offset>[
+          Offset(w * -0.17, h * 0.42),
+          Offset(w * 0.17, h * 0.42),
+        ],
+      'catalog_motor_driven_6t' => <Offset>[
+          Offset(w * -0.20, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.20, h * -0.42),
+          Offset(w * -0.20, h * 0.42),
+          Offset(0, h * 0.42),
+          Offset(w * 0.20, h * 0.42),
+        ],
       _ => null,
     };
   }

@@ -25,6 +25,17 @@ void main() {
       );
       expect(zero.powerFactor, 1.0);
 
+      const Ac3BranchResult noCurrent = Ac3BranchResult(
+        id: 'no-current',
+        modelType: 'resistor',
+        kind: Ac3BranchKind.resistor,
+        fromNodeId: 'a',
+        toNodeId: 'b',
+        voltage: AcComplex(230.0, 0.0),
+        current: null,
+      );
+      expect(noCurrent.powerFactor, isNull);
+
       final Ac3BranchResult loaded = Ac3BranchResult(
         id: 'loaded-power',
         modelType: 'impedance',

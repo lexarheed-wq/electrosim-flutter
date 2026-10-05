@@ -2264,6 +2264,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _deleteSelectedElement() {
     if (_blockStudentTpMutation()) return;
+    if (_selectedIds.length > 1) {
+      _deleteMultipleSelection();
+      return;
+    }
     final String? selected = _selected;
     if (selected == null) {
       _setStatus('Suppression impossible : aucune sélection.');
@@ -2364,6 +2368,82 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
+  }
+
+  void _deleteMultipleSelection() {
+    final Set<String> selectedIds = <String>{..._selectedIds};
+    if (selectedIds.isEmpty) {
+      _setStatus('Suppression impossible : aucune sélection.');
+      return;
+    }
+
+    CircuitState next = _circuit;
+    var removedCount = 0;
+    for (final String id in selectedIds) {
+      final F9ElementDetails? details =
+          F9ElementEditor.describe(next, id) ??
+          F9ElementEditor.describe(_circuit, id);
+      if (details == null) continue;
+      final CircuitState candidate = details.kind == F9ElementKind.connection
+          ? F9ElementEditor.deleteConnection(next, id)
+          : F9ElementEditor.deleteElement(next, id);
+      if (!identical(candidate, next)) {
+        next = candidate;
+        removedCount += 1;
+      }
+    }
+
+    if (removedCount == 0) {
+      _setStatus('Suppression impossible : sélection introuvable.');
+      return;
+    }
+
+    final Set<String> remainingElements = <String>{
+      ...next.sources.map((SourceInstance item) => item.id.value),
+      ...next.components.map((ComponentInstance item) => item.id.value),
+    };
+    final Set<String> remainingConnections = next.connections
+        .map((Connection item) => item.id.value)
+        .toSet();
+
+    final Map<String, Offset> positions = <String, Offset>{
+      for (final MapEntry<String, Offset> entry
+          in _layout.elementPositions.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, Size> sizes = <String, Size>{
+      for (final MapEntry<String, Size> entry in _layout.elementSizes.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, int> rotations = <String, int>{
+      for (final MapEntry<String, int> entry
+          in _layout.elementQuarterTurns.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      for (final MapEntry<String, List<Offset>> entry
+          in _layout.wireRoutes.entries)
+        if (remainingConnections.contains(entry.key)) entry.key: entry.value,
+    };
+
+    setState(() {
+      _circuit = next;
+      _layout = _routeWithG2A(
+        _circuit,
+        CircuitVisualLayout(
+          elementPositions: positions,
+          elementSizes: sizes,
+          wireRoutes: routes,
+          elementQuarterTurns: rotations,
+          defaultElementSize: _layout.defaultElementSize,
+        ),
+      );
+      _selected = null;
+      _status = 'Suppression multiple : $removedCount éléments sélectionnés';
+    });
+    _simulation.updateCircuit(_circuit);
+    _syncStudentTpCircuit();
+    _announce(_status);
   }
 
   bool _blockStudentTpMutation() {

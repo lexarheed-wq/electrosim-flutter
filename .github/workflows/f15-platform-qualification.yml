@@ -2,6 +2,9 @@ name: F15 platform qualification
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'apps/**'
       - 'packages/**'
@@ -10,6 +13,10 @@ on:
       - '.github/workflows/f15-platform-qualification.yml'
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   qualify:
     name: ${{ matrix.target }}

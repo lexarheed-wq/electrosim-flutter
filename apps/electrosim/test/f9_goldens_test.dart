@@ -28,6 +28,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> openPalette(WidgetTester tester) async {
+    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(electroSimPaletteRegionKey), findsOneWidget);
+  }
+
+  Future<void> openContext(WidgetTester tester) async {
+    await tester.tap(find.byKey(electroSimContextEdgeKey));
+    await tester.pumpAndSettle();
+    expect(find.byKey(electroSimContextRegionKey), findsOneWidget);
+  }
+
   Future<void> captureProfile(
     WidgetTester tester, {
     required Size size,
@@ -40,20 +52,14 @@ void main() {
       matchesGoldenFile('goldens/${prefix}_base.png'),
     );
 
-    if (needsPanelButton) {
-      await tester.tap(find.text('Palette').last);
-      await tester.pumpAndSettle();
-    }
+    await openPalette(tester);
     await expectLater(
       find.byType(Scaffold),
       matchesGoldenFile('goldens/${prefix}_palette.png'),
     );
 
     await pumpWorkspace(tester, size, selected: 'switch-1');
-    if (needsPanelButton) {
-      await tester.tap(find.text('Propriétés').last);
-      await tester.pumpAndSettle();
-    }
+    await openContext(tester);
     await expectLater(
       find.byType(Scaffold),
       matchesGoldenFile('goldens/${prefix}_properties.png'),
@@ -104,8 +110,7 @@ void main() {
       role: F9UserRole.student,
       workspace: 'Recherche de dérangement',
     );
-    await tester.tap(find.text('Propriétés').last);
-    await tester.pumpAndSettle();
+    await openContext(tester);
     await tester.tap(find.byKey(const Key('diagnostic-tab')));
     await tester.pumpAndSettle();
     await expectLater(

@@ -89,6 +89,75 @@ void main() {
       },
     );
 
+    test('AC1 branch P Q S are derived from solved complex power', () {
+      final CircuitState circuit = _ac1Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac1SolveResult result = const SolverAC1().solve(circuit, topology);
+      expect(result.isSolved, isTrue);
+
+      final MeasurementResult p = measurements.measureAc1(
+        request: MeasurementRequest.activePower(branchId: 'component:r1'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      final MeasurementResult q = measurements.measureAc1(
+        request: MeasurementRequest.reactivePower(branchId: 'component:r1'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      final MeasurementResult apparent = measurements.measureAc1(
+        request: MeasurementRequest.apparentPower(branchId: 'component:r1'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+
+      expect(p.isValid, isTrue);
+      expect(p.reading!.unit, ElectricalUnit.watt);
+      expect(p.reading!.value, closeTo(1150.0, 1e-6));
+      expect(q.isValid, isTrue);
+      expect(q.reading!.unit, ElectricalUnit.varUnit);
+      expect(q.reading!.value.abs(), lessThan(1e-6));
+      expect(apparent.isValid, isTrue);
+      expect(apparent.reading!.unit, ElectricalUnit.voltAmpere);
+      expect(apparent.reading!.value, closeTo(1150.0, 1e-6));
+    });
+
+    test('AC power requests reject missing branches and invalid mode kinds', () {
+      final CircuitState ac1 = _ac1Circuit();
+      final TopologyGraph topology1 = topologyEngine.compile(ac1);
+      final Ac1SolveResult result1 = const SolverAC1().solve(ac1, topology1);
+
+      final MeasurementResult missing = measurements.measureAc1(
+        request: MeasurementRequest.activePower(branchId: 'missing'),
+        circuit: ac1,
+        topology: topology1,
+        simulation: result1,
+      );
+      expect(missing.errorCode, MeasurementErrorCode.unknownBranch);
+
+      final MeasurementResult phaseSequence = measurements.measureAc1(
+        request: MeasurementRequest.phaseSequence(),
+        circuit: ac1,
+        topology: topology1,
+        simulation: result1,
+      );
+      expect(phaseSequence.errorCode, MeasurementErrorCode.wrongElectricalMode);
+
+      final MeasurementResult dcKind = measurements.measureAc1(
+        request: MeasurementRequest.voltage(
+          positiveProbe: TerminalId('r1a'),
+          negativeProbe: TerminalId('r1b'),
+        ),
+        circuit: ac1,
+        topology: topology1,
+        simulation: result1,
+      );
+      expect(dcKind.errorCode, MeasurementErrorCode.wrongElectricalMode);
+    });
+
     test('AC3 total P Q S and phase sequence come from solved phasors', () {
       final CircuitState circuit = _ac3Circuit();
       final TopologyGraph topology = topologyEngine.compile(circuit);
@@ -128,6 +197,74 @@ void main() {
       expect(apparent.reading!.value, closeTo(3450.0, 1e-6));
       expect(sequence.displayText, 'L1 → L2 → L3');
       expect(sequence.evidenceIds, contains('solver:phase-sequence'));
+    });
+
+    test('AC3 branch power and invalid DC-kind request stay explicit', () {
+      final CircuitState circuit = _ac3Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac3SolveResult result = const SolverAC3().solve(circuit, topology);
+      expect(result.isSolved, isTrue);
+
+      final MeasurementResult branchP = measurements.measureAc3(
+        request: MeasurementRequest.activePower(branchId: 'component:r1'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      expect(branchP.isValid, isTrue);
+      expect(branchP.reading!.value, closeTo(1150.0, 1e-6));
+
+      final MeasurementResult missing = measurements.measureAc3(
+        request: MeasurementRequest.apparentPower(branchId: 'missing'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      expect(missing.errorCode, MeasurementErrorCode.unknownBranch);
+
+      final MeasurementResult dcKind = measurements.measureAc3(
+        request: MeasurementRequest.current(branchId: 'component:r1'),
+        circuit: circuit,
+        topology: topology,
+        simulation: result,
+      );
+      expect(dcKind.errorCode, MeasurementErrorCode.wrongElectricalMode);
+    });
+
+    test('AC preflight rejects identity and mode mismatches', () {
+      final CircuitState circuit = _ac1Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac1SolveResult result = const SolverAC1().solve(circuit, topology);
+
+      final CircuitState revised = CircuitState(
+        circuitId: circuit.circuitId,
+        revision: circuit.revision + 1,
+        mode: circuit.mode,
+        components: circuit.components,
+        connections: circuit.connections,
+        sources: circuit.sources,
+        settings: circuit.settings,
+      );
+      final MeasurementResult identityMismatch = measurements.measureAc1(
+        request: MeasurementRequest.frequency(),
+        circuit: revised,
+        topology: topology,
+        simulation: result,
+      );
+      expect(
+        identityMismatch.errorCode,
+        MeasurementErrorCode.identityMismatch,
+      );
+
+      final CircuitState ac3 = _ac3Circuit();
+      final TopologyGraph topology3 = topologyEngine.compile(ac3);
+      final MeasurementResult modeMismatch = measurements.measureAc1(
+        request: MeasurementRequest.frequency(),
+        circuit: ac3,
+        topology: topology3,
+        simulation: result,
+      );
+      expect(modeMismatch.errorCode, MeasurementErrorCode.wrongElectricalMode);
     });
 
     test('DC entry point explicitly rejects AC measurement requests', () {

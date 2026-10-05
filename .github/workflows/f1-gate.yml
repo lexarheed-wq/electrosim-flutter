@@ -2,6 +2,9 @@ name: F1 gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'packages/electrosim_domain/**'
       - 'tools/**'
@@ -15,6 +18,10 @@ on:
       - 'apps/electrosim/**'
       - 'ci/**'
       - '.github/workflows/f1-gate.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   f1:
     runs-on: ubuntu-latest

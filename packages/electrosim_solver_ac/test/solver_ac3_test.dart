@@ -12,6 +12,38 @@ void main() {
   Ac3SolveResult solve(CircuitState circuit) =>
       solver.solve(circuit, topologyEngine.compile(circuit));
 
+  test('AC3 branch result nullable power and zero-power-factor semantics', () {
+    const Ac3BranchResult openBranch = Ac3BranchResult(
+      id: 'open',
+      modelType: 'switch',
+      kind: Ac3BranchKind.openCircuit,
+      fromNodeId: 'a',
+      toNodeId: 'b',
+      voltage: AcComplex(230.0, 0.0),
+      current: null,
+    );
+    expect(openBranch.complexPower, isNull);
+    expect(openBranch.activePowerW, isNull);
+    expect(openBranch.reactivePowerVar, isNull);
+    expect(openBranch.apparentPowerVA, isNull);
+    expect(openBranch.powerFactor, isNull);
+
+    const Ac3BranchResult zeroPower = Ac3BranchResult(
+      id: 'zero',
+      modelType: 'resistor',
+      kind: Ac3BranchKind.resistor,
+      fromNodeId: 'a',
+      toNodeId: 'b',
+      voltage: AcComplex(230.0, 0.0),
+      current: AcComplex.zero,
+    );
+    expect(zeroPower.complexPower, AcComplex.zero);
+    expect(zeroPower.activePowerW, 0.0);
+    expect(zeroPower.reactivePowerVar, 0.0);
+    expect(zeroPower.apparentPowerVA, 0.0);
+    expect(zeroPower.powerFactor, 1.0);
+  });
+
   group('SolverAC3', () {
     test('Ac3BranchResult power factor handles zero and loaded branches', () {
       const Ac3BranchResult zero = Ac3BranchResult(

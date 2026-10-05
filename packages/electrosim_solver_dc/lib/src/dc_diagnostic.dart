@@ -19,6 +19,7 @@ enum DcDiagnosticCode {
   numericalResidualExceeded,
   sourceCurrentLimited,
   currentLimitIterationExceeded,
+  nonlinearIterationExceeded,
 }
 
 final class DcSolverDiagnostic {

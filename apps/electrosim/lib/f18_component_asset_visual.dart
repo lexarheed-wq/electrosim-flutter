@@ -315,7 +315,6 @@ class F18ComponentAssetVisual extends StatelessWidget {
           voltageV: voltageV,
           resistanceOhm: resistanceOhm,
           animationValue: animationValue,
-          batterySoc: batterySoc,
           variantKey: variantKey,
         ),
       );
@@ -373,6 +372,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
           currentA: currentA,
           voltageV: voltageV,
           animationValue: animationValue,
+          batterySoc: batterySoc,
           variantKey: variantKey,
         ),
       );

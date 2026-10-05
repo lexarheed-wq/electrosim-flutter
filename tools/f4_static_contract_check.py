@@ -18,7 +18,7 @@ if not errors:
     device=files['device'].read_text(encoding='utf-8')
     models=files['models'].read_text(encoding='utf-8')
     tests=files['tests'].read_text(encoding='utf-8')
-    for token in ['class MeasurementEngine','MeasurementKind.voltageDc','MeasurementKind.currentDc','MeasurementKind.resistance','energizedResistanceMeasurement','branchCurrentUnavailable']:
+    for token in ['class MeasurementEngine','MeasurementKind.voltageDc','MeasurementKind.currentDc','MeasurementKind.resistance','MeasurementKind.voltageAcRms','MeasurementKind.currentAcRms','MeasurementKind.activePower','MeasurementKind.reactivePower','MeasurementKind.apparentPower','MeasurementKind.phaseSequence','energizedResistanceMeasurement','branchCurrentUnavailable']:
         if token not in engine and token not in models: errors.append(f'measurement-contract-missing:{token}')
     for token in ['class DeviceStateEngine','ComponentOperatingCode.overloaded','maxVoltageV','maxCurrentA','maxPowerW','component:${component.id.value}']:
         if token not in device: errors.append(f'device-state-contract-missing:{token}')

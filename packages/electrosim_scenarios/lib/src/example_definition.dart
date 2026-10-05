@@ -4,20 +4,20 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 typedef ExampleMetadata = Map<String, Object?>;
 
-final class ExampleId {
-  ExampleId(String raw) : value = _validate(raw);
+final class CircuitTemplateId {
+  CircuitTemplateId(String raw) : value = _validate(raw);
   final String value;
 
   static String _validate(String raw) {
     final String value = raw.trim();
     if (value.isEmpty || !RegExp(r'^[A-Z0-9][A-Z0-9_-]{2,63}$').hasMatch(value)) {
-      throw ArgumentError.value(raw, 'raw', 'Invalid ExampleId.');
+      throw ArgumentError.value(raw, 'raw', 'Invalid CircuitTemplateId.');
     }
     return value;
   }
 
   @override
-  bool operator ==(Object other) => other is ExampleId && other.value == value;
+  bool operator ==(Object other) => other is CircuitTemplateId && other.value == value;
 
   @override
   int get hashCode => value.hashCode;
@@ -50,7 +50,7 @@ final class ExampleDefinition {
        description = _cleanText(description, 'description'),
        metadata = Map<String, Object?>.unmodifiable(metadata);
 
-  final ExampleId id;
+  final CircuitTemplateId id;
   final String title;
   final String description;
   final CircuitState circuit;

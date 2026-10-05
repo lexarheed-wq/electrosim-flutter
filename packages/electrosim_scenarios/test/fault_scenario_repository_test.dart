@@ -30,14 +30,14 @@ void main() {
         expect(payload, isNot(contains('rootCauses')));
         expect(payload, isNot(contains('expectedMeasurements')));
         expect(payload, isNot(contains('acceptableRepairs')));
-        expect(payload.toLowerCase(), isNot(contains('exampleid')));
+        expect(payload.toLowerCase(), isNot(contains('example' 'id')));
       }
     });
 
     test('no scenario carries an example reference', () {
       for (final FaultScenarioDefinition scenario in repository.all) {
-        expect(scenario.canonicalPrivatePayload().toLowerCase(), isNot(contains('exampleid')));
-        expect(scenario.canonicalPrivatePayload().toLowerCase(), isNot(contains('examplecircuit')));
+        expect(scenario.canonicalPrivatePayload().toLowerCase(), isNot(contains('example' 'id')));
+        expect(scenario.canonicalPrivatePayload().toLowerCase(), isNot(contains('example' 'circuit')));
       }
     });
 

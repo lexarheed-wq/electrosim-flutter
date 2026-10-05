@@ -56,6 +56,9 @@ class F9PaletteDefinition {
   final String? displayLabel;
   final String? subtitle;
 
+  int get terminalCount =>
+      terminals.isNotEmpty ? terminals.length : terminalLabels.length;
+
   bool supportsMode(ElectricalMode mode) {
     if (supportedModes.isNotEmpty) return supportedModes.contains(mode);
     if (kind == F9PaletteElementKind.source) {

@@ -9,6 +9,96 @@ void main() {
   const TopologyEngine topologyEngine = TopologyEngine();
   const SolverAC3 solver = SolverAC3();
 
+  test('four-wire AC3 source validates terminal contract and phase tags', () {
+    final CircuitState tooFew = CircuitState(
+      circuitId: CircuitId('ac3-4w-too-few'),
+      revision: 0,
+      mode: ElectricalMode.ac3,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('grid'),
+          modelType: 'ac3_voltage_source',
+          terminals: <Terminal>[
+            _t('grid-l1', 'L1', PhaseTag.l1, TerminalRole.phaseL1),
+            _t('grid-l2', 'L2', PhaseTag.l2, TerminalRole.phaseL2),
+            _t('grid-n', 'N', PhaseTag.neutral, TerminalRole.neutral),
+          ],
+          parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
+        ),
+      ],
+      settings: const <String, Object?>{'frequencyHz': 50.0},
+    );
+    final Ac3SolveResult countResult = solver.solve(
+      tooFew,
+      topologyEngine.compile(tooFew),
+    );
+    expect(countResult.status, Ac3SolveStatus.invalid);
+    expect(
+      countResult.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.invalidTerminalCount),
+    );
+
+    final CircuitState missingNeutral = CircuitState(
+      circuitId: CircuitId('ac3-4w-missing-neutral'),
+      revision: 0,
+      mode: ElectricalMode.ac3,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('grid'),
+          modelType: 'ac3_voltage_source',
+          terminals: <Terminal>[
+            _t('grid-l1', 'L1', PhaseTag.l1, TerminalRole.phaseL1),
+            _t('grid-l2', 'L2', PhaseTag.l2, TerminalRole.phaseL2),
+            _t('grid-l3', 'L3', PhaseTag.l3, TerminalRole.phaseL3),
+            _t('grid-x', 'X', PhaseTag.none, TerminalRole.generic),
+          ],
+          parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
+        ),
+      ],
+      settings: const <String, Object?>{'frequencyHz': 50.0},
+    );
+    final Ac3SolveResult tagResult = solver.solve(
+      missingNeutral,
+      topologyEngine.compile(missingNeutral),
+    );
+    expect(tagResult.status, Ac3SolveStatus.invalid);
+    expect(
+      tagResult.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.missingSourcePhaseTag),
+    );
+  });
+
+  test('four-wire AC3 source rejects invalid phase voltage', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('ac3-4w-bad-voltage'),
+      revision: 0,
+      mode: ElectricalMode.ac3,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('grid'),
+          modelType: 'ac3_voltage_source',
+          terminals: <Terminal>[
+            _t('grid-l1', 'L1', PhaseTag.l1, TerminalRole.phaseL1),
+            _t('grid-l2', 'L2', PhaseTag.l2, TerminalRole.phaseL2),
+            _t('grid-l3', 'L3', PhaseTag.l3, TerminalRole.phaseL3),
+            _t('grid-n', 'N', PhaseTag.neutral, TerminalRole.neutral),
+          ],
+          parameters: const <String, Object?>{'phaseVoltageRmsV': -1.0},
+        ),
+      ],
+      settings: const <String, Object?>{'frequencyHz': 50.0},
+    );
+    final Ac3SolveResult result = solver.solve(
+      circuit,
+      topologyEngine.compile(circuit),
+    );
+    expect(result.status, Ac3SolveStatus.invalid);
+    expect(
+      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+      contains(Ac3DiagnosticCode.invalidParameter),
+    );
+  });
+
   test('four-wire AC3 source produces positive 400/230 V sequence', () {
     final CircuitState circuit = _balancedWyeCircuit();
     final Ac3SolveResult result = solver.solve(

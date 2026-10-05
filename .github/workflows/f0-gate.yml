@@ -3,6 +3,9 @@ name: F0 quality gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'apps/electrosim/**'
       - 'packages/electrosim_scenarios/**'
@@ -24,6 +27,10 @@ on:
       - 'docs/f0/LEGACY_TECHNICAL_BASELINE.md'
       - 'test_vectors/**'
       - '.github/workflows/f0-gate.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   f0:

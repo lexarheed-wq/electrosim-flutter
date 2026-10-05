@@ -254,7 +254,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-lamp')), findsNothing);
-    expect(find.text('1 composant disponible'), findsOneWidget);
+    expect(find.text('1 composant disponible · DC'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

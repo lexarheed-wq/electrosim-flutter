@@ -25,6 +25,7 @@ Future<void> main() async {
           !uri.startsWith('package:electrosim_domain') &&
           !uri.startsWith('package:electrosim_topology') &&
           !uri.startsWith('package:electrosim_solver_dc') &&
+          !uri.startsWith('package:electrosim_solver_ac') &&
           !uri.startsWith('package:electrosim_measurements')) {
         errors.add('forbidden-project-dependency:${entity.path}:$uri');
       }

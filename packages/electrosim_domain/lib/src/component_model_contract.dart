@@ -671,6 +671,40 @@ final class CoreComponentModelContracts {
         ],
       ),
       ComponentModelContract(
+        modelType: 'pv_controller',
+        family: ComponentFamily.conversion,
+        terminalCount: 4,
+        supportedModes: <ElectricalMode>{ElectricalMode.pv},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'pv:input',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+          ComponentBranchDefinition(
+            id: 'dc:output',
+            fromTerminalIndex: 2,
+            toTerminalIndex: 3,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
+        modelType: 'pv_battery',
+        family: ComponentFamily.other,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.pv},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'storage',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'pv_resistive_load',
         family: ComponentFamily.receiver,
         terminalCount: 2,

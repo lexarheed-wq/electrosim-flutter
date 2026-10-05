@@ -122,6 +122,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required bool actuated,
       required double currentA,
       required double voltageV,
+      required double batterySoc,
       required double ratedCurrentA,
       required double currentLimitA,
       required double resistanceOhm,
@@ -165,6 +166,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               showTerminals: true,
               currentA: currentA,
               voltageV: voltageV,
+              batterySoc: batterySoc,
               ratedCurrentA: ratedCurrentA,
               currentLimitA: currentLimitA,
               resistanceOhm: resistanceOhm,
@@ -195,6 +197,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         actuated: false,
         currentA: currentA,
         voltageV: voltageV,
+        batterySoc: 0,
         ratedCurrentA: 1,
         currentLimitA:
             (source.parameters['currentLimitA'] as num?)?.toDouble() ?? 2,
@@ -212,6 +215,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         component.id,
         component.modelType,
       );
+      final double batterySoc = component.modelType == 'pv_battery' &&
+              (runtime?.pvResult?.isSolved ?? false)
+          ? runtime!.pvResult!.batterySoc
+          : 0;
       final bool energized = widget.simulationRunning &&
           (runtime?.solved ?? false) &&
           currentA.abs() > 1e-6;
@@ -249,8 +256,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         actuated: actuated,
         currentA: currentA,
         voltageV: voltageV,
+        batterySoc: batterySoc,
         ratedCurrentA:
-            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1,
+            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1;
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
@@ -304,6 +312,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final pv = runtime.pvResult;
     if (pv != null && pv.isSolved) {
+      if (modelType == 'pv_controller') {
+        return pv.pvDrawnCurrentA;
+      }
+      if (modelType == 'pv_battery') {
+        final double voltage = pv.batteryVoltageV.abs();
+        return voltage > 1e-9 ? pv.batteryPowerW / voltage : 0;
+      }
       if (modelType == 'pv_inverter') {
         return pv.inverterOutputCurrentRmsA;
       }
@@ -436,6 +451,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     }
     final pv = runtime.pvResult;
     if (pv != null && pv.isSolved) {
+      if (modelType == 'pv_controller' || modelType == 'pv_battery') {
+        return pv.batteryVoltageV;
+      }
       if (modelType == 'pv_inverter') {
         return pv.inverterOutputVoltageRmsV;
       }

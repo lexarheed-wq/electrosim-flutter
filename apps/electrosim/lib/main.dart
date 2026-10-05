@@ -1138,29 +1138,34 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (definition.displayLabel != null)
           '_displayLabel': definition.displayLabel!,
       };
-      if (definition.modelType == 'contactor_aux_no' ||
-          definition.modelType == 'contactor_aux_nc') {
-        final List<ComponentInstance> contactors = components
+      final bool contactorAux = definition.modelType == 'contactor_aux_no' ||
+          definition.modelType == 'contactor_aux_nc';
+      final bool relayAux = definition.modelType == 'relay_contact_no' ||
+          definition.modelType == 'relay_contact_nc';
+      if (contactorAux || relayAux) {
+        final List<ComponentInstance> coils = components
             .where(
-              (ComponentInstance item) =>
-                  item.modelType == 'contactor_ac1' ||
-                  item.modelType == 'contactor_3p',
+              (ComponentInstance item) => relayAux
+                  ? item.modelType == 'relay_coil'
+                  : item.modelType == 'contactor_ac1' ||
+                      item.modelType == 'contactor_3p',
             )
             .toList(growable: false);
         ComponentInstance? linked;
-        for (final ComponentInstance item in contactors) {
+        for (final ComponentInstance item in coils) {
           if (item.id.value == _selected) {
             linked = item;
             break;
           }
         }
-        if (linked == null && contactors.length == 1) {
-          linked = contactors.single;
+        if (linked == null && coils.length == 1) {
+          linked = coils.single;
         }
         if (linked != null) {
           parameters = <String, Object?>{
             ...parameters,
-            'linkedContactorId': linked.id.value,
+            relayAux ? 'linkedRelayId' : 'linkedContactorId':
+                linked.id.value,
           };
         }
       }

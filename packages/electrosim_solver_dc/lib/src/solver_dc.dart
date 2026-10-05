@@ -362,7 +362,52 @@ final class SolverDC {
         continue;
       }
 
-      final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+      final List<TopologyBranch> topologyBranches =
+          topology.branchesForComponent(component.id);
+      if (component.modelType == 'terminal_block_5') {
+        if (topologyBranches.length != 5) {
+          diagnostics.add(
+            DcSolverDiagnostic(
+              code: DcDiagnosticCode.invalidTerminalCount,
+              severity: DcDiagnosticSeverity.error,
+              message:
+                  'terminal_block_5 must expose five feed-through branches.',
+              componentId: component.id,
+            ),
+          );
+        } else {
+          final bool open =
+              component.condition == ComponentCondition.openCircuit ||
+              component.condition == ComponentCondition.disabled;
+          for (final TopologyBranch branch in topologyBranches) {
+            if (open) {
+              inactive.add(
+                _InactiveElement(
+                  id:
+                      'component:${component.id.value}:${branch.branchId}',
+                  modelType: component.modelType,
+                  fromNodeId: branch.fromNodeId,
+                  toNodeId: branch.toNodeId,
+                ),
+              );
+            } else {
+              active.add(
+                _Element.idealVoltage(
+                  id:
+                      'component:${component.id.value}:${branch.branchId}',
+                  modelType: component.modelType,
+                  publicKind: DcBranchKind.idealShort,
+                  fromNodeId: branch.fromNodeId,
+                  toNodeId: branch.toNodeId,
+                  voltageV: 0.0,
+                  redundant: branch.fromNodeId == branch.toNodeId,
+                ),
+              );
+            }
+          }
+        }
+        continue;
+      }
       if (topologyBranches.length != 1) {
         diagnostics.add(
           DcSolverDiagnostic(
@@ -1108,6 +1153,7 @@ const Set<String> _supportedDcComponentModels = <String>{
   'diode',
   'relay_contact_no',
   'relay_contact_nc',
+  'terminal_block_5',
   'breaker_dc',
   'fuse_dc',
 };

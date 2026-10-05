@@ -468,6 +468,22 @@ final class SolverPV {
     required double? previousBatterySoc,
     required Duration elapsed,
   }) {
+    if ((controllerParameters.outputVoltageV -
+                batteryParameters.nominalVoltageV)
+            .abs() >
+        options.numericTolerance) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidControllerParameter,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'pv_controller outputVoltageV must match pv_battery nominalVoltageV.',
+          componentId: controller.id,
+        ),
+      );
+      return _failure(circuit, diagnostics);
+    }
+
     final double capacityWh =
         batteryParameters.nominalVoltageV * batteryParameters.capacityAh;
     final double initialSoc =
@@ -511,7 +527,7 @@ final class SolverPV {
       );
     }
 
-    final double busVoltageV = batteryParameters.nominalVoltageV;
+    final double busVoltageV = controllerParameters.outputVoltageV;
     final double controllerOutputLimitW =
         busVoltageV * controllerParameters.maxOutputCurrentA *
         controllerDerating;
@@ -1303,6 +1319,66 @@ Terminal? _terminalForPhase(List<Terminal> terminals, PhaseTag phase) {
       .where((Terminal terminal) => terminal.phase == phase)
       .toList(growable: false);
   return matches.length == 1 ? matches.single : null;
+}
+
+final class _ControllerParameters {
+  const _ControllerParameters({
+    required this.outputVoltageV,
+    required this.maxOutputCurrentA,
+    required this.efficiency,
+  });
+
+  final double outputVoltageV;
+  final double maxOutputCurrentA;
+  final double efficiency;
+}
+
+final class _BatteryParameters {
+  const _BatteryParameters({
+    required this.nominalVoltageV,
+    required this.capacityAh,
+    required this.initialSoc,
+    required this.minSoc,
+    required this.maxSoc,
+    required this.maxChargeCurrentA,
+    required this.maxDischargeCurrentA,
+    required this.chargeEfficiency,
+    required this.dischargeEfficiency,
+  });
+
+  final double nominalVoltageV;
+  final double capacityAh;
+  final double initialSoc;
+  final double minSoc;
+  final double maxSoc;
+  final double maxChargeCurrentA;
+  final double maxDischargeCurrentA;
+  final double chargeEfficiency;
+  final double dischargeEfficiency;
+}
+
+final class _ControllerTerminalContract {
+  const _ControllerTerminalContract({
+    required this.pvPositive,
+    required this.pvNegative,
+    required this.busPositive,
+    required this.busNegative,
+  });
+
+  final Terminal pvPositive;
+  final Terminal pvNegative;
+  final Terminal busPositive;
+  final Terminal busNegative;
+}
+
+final class _BatteryTerminalContract {
+  const _BatteryTerminalContract({
+    required this.positive,
+    required this.negative,
+  });
+
+  final Terminal positive;
+  final Terminal negative;
 }
 
 final class _PvArrayParameters {

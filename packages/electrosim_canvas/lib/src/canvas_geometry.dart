@@ -147,6 +147,16 @@ abstract final class TerminalVisualProfile {
           Offset(w * -0.14, h * 0.42),
           Offset(w * 0.14, h * 0.42),
         ],
+      'pv_controller' => <Offset>[
+          Offset(w * -0.19, h * -0.42),
+          Offset(w * 0.19, h * -0.42),
+          Offset(w * -0.19, h * 0.42),
+          Offset(w * 0.19, h * 0.42),
+        ],
+      'pv_battery' => <Offset>[
+          Offset(w * -0.17, h * 0.42),
+          Offset(w * 0.17, h * 0.42),
+        ],
       'pv_inverter' => <Offset>[
           Offset(w * -0.19, h * -0.42),
           Offset(w * 0.19, h * -0.42),

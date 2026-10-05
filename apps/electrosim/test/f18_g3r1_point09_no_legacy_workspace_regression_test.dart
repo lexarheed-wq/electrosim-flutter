@@ -67,8 +67,7 @@ void main() {
     }
   });
 
-  testWidgets('Design Center enters F18 workspace identity',
-      (WidgetTester tester) async {
+  testWidgets('Design Center enters F18 workspace identity', (WidgetTester tester) async {
     _desktop(tester);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -84,8 +83,7 @@ void main() {
     _expectNoLegacyIdentity(tester);
   });
 
-  testWidgets('Maintenance troubleshooting enters F18 workspace identity',
-      (WidgetTester tester) async {
+  testWidgets('Maintenance troubleshooting enters F18 workspace identity', (WidgetTester tester) async {
     _desktop(tester);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -103,8 +101,7 @@ void main() {
     _expectNoLegacyIdentity(tester);
   });
 
-  testWidgets('teacher session wiring enters F18 workspace identity',
-      (WidgetTester tester) async {
+  testWidgets('teacher session wiring enters F18 workspace identity', (WidgetTester tester) async {
     _desktop(tester);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

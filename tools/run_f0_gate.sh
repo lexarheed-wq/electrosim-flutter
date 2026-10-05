@@ -13,7 +13,6 @@ python3 "$ROOT/tools/f0_guard.py"
 python3 "$ROOT/tools/analyze_legacy_reference.py"
 python3 "$ROOT/tools/verify_legacy_reference.py"
 python3 "$ROOT/tools/validate_test_vectors.py"
-python3 "$ROOT/tools/verify_f0_manifest.py"
 python3 "$ROOT/tools/test_f0_tooling.py"
 
 if ! command -v flutter >/dev/null 2>&1; then
@@ -51,6 +50,10 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 # caused package-resolution warnings and exposed an unformatted F0 source file.
 run_step "flutter-pub-get" flutter pub get
 run_step "dart-format" dart format --output=none --set-exit-if-changed lib test
+cd "$ROOT"
+run_step "f0-refresh-manifest" python3 "$ROOT/tools/generate_f0_manifest.py"
+run_step "f0-verify-refreshed-manifest" python3 "$ROOT/tools/verify_f0_manifest.py"
+cd "$ROOT/apps/electrosim"
 run_step "flutter-analyze" flutter analyze
 run_step "flutter-test" flutter test
 

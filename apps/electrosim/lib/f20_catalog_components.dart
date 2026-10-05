@@ -14,6 +14,29 @@ enum F20CatalogDevice {
   indicator2t,
 }
 
+enum F20ApplianceSilhouette {
+  airConditioner,
+  freezer,
+  computer,
+  refrigerator,
+  refrigeratorDc,
+  television,
+  generic,
+}
+
+abstract final class F20CatalogVisualIdentity {
+  static F20ApplianceSilhouette applianceSilhouette(String? variantKey) =>
+      switch (variantKey) {
+        'air-conditioner' => F20ApplianceSilhouette.airConditioner,
+        'freezer' => F20ApplianceSilhouette.freezer,
+        'computer' => F20ApplianceSilhouette.computer,
+        'refrigerator' => F20ApplianceSilhouette.refrigerator,
+        'refrigerator-dc' => F20ApplianceSilhouette.refrigeratorDc,
+        'television' => F20ApplianceSilhouette.television,
+        _ => F20ApplianceSilhouette.generic,
+      };
+}
+
 @immutable
 final class F20CatalogState {
   const F20CatalogState({
@@ -297,6 +320,252 @@ final class _P {
   }
 
   void appliance() {
+    switch (F20CatalogVisualIdentity.applianceSilhouette(variant)) {
+      case F20ApplianceSilhouette.airConditioner:
+        _airConditioner();
+      case F20ApplianceSilhouette.freezer:
+        _freezer();
+      case F20ApplianceSilhouette.computer:
+        _computer();
+      case F20ApplianceSilhouette.refrigerator:
+        _refrigerator(dc: false);
+      case F20ApplianceSilhouette.refrigeratorDc:
+        _refrigerator(dc: true);
+      case F20ApplianceSilhouette.television:
+        _television();
+      case F20ApplianceSilhouette.generic:
+        _genericAppliance();
+    }
+    final List<Offset> t = bottomPair();
+    terminal(t[0], '1');
+    terminal(t[1], '2');
+  }
+
+  void _statusLed(Offset position) {
+    canvas.drawCircle(
+      position,
+      math.max(2.2, s * .018),
+      Paint()
+        ..color = state.energized
+            ? const Color(0xFF43B96B)
+            : const Color(0xFF7B878D),
+    );
+  }
+
+  void _airConditioner() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .08),
+      width: w * .78,
+      height: h * .34,
+    );
+    box(body, top: const Color(0xFFF7FAFB), bottom: const Color(0xFFC9D4D9));
+    final Rect outlet = Rect.fromLTWH(
+      body.left + body.width * .08,
+      body.bottom - body.height * .25,
+      body.width * .84,
+      body.height * .13,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(outlet, Radius.circular(h * .012)),
+      Paint()..color = const Color(0xFF42535C),
+    );
+    for (var i = 0; i < 8; i++) {
+      final double x = outlet.left + outlet.width * (i + .5) / 8;
+      canvas.drawLine(
+        Offset(x, outlet.top + 2),
+        Offset(x, outlet.bottom - 2),
+        Paint()
+          ..color = const Color(0xFF9FB0B8)
+          ..strokeWidth = 1,
+      );
+    }
+    canvas.drawLine(
+      Offset(body.left + body.width * .10, body.top + body.height * .32),
+      Offset(body.right - body.width * .10, body.top + body.height * .32),
+      Paint()
+        ..color = const Color(0xFFB2C0C6)
+        ..strokeWidth = math.max(1, s * .008),
+    );
+    _statusLed(Offset(body.right - body.width * .12, body.top + h * .055));
+    text('CLIM', Offset(c.dx, body.top + h * .08), size: h * .055);
+  }
+
+  void _freezer() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + h * .005),
+      width: w * .72,
+      height: h * .48,
+    );
+    box(body, top: const Color(0xFFF3F7F8), bottom: const Color(0xFFB9C8CF));
+    final Rect lid = Rect.fromLTWH(
+      body.left - w * .015,
+      body.top - h * .055,
+      body.width + w * .03,
+      h * .11,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(lid, Radius.circular(h * .025)),
+      grad(lid, const <Color>[Color(0xFFFFFFFF), Color(0xFFCAD5DA)]),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(lid, Radius.circular(h * .025)),
+      outline,
+    );
+    final Rect handle = Rect.fromCenter(
+      center: Offset(c.dx, lid.bottom + h * .018),
+      width: w * .18,
+      height: h * .035,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(handle, Radius.circular(h * .01)),
+      Paint()..color = const Color(0xFF53636B),
+    );
+    _statusLed(Offset(body.right - w * .08, body.bottom - h * .07));
+    text('CONGÉL.', Offset(c.dx, body.center.dy), size: h * .055);
+  }
+
+  void _computer() {
+    final Rect screen = Rect.fromCenter(
+      center: Offset(c.dx - w * .07, c.dy - h * .08),
+      width: w * .62,
+      height: h * .43,
+    );
+    box(screen, top: const Color(0xFF3D4C54), bottom: const Color(0xFF151C20));
+    final Rect display = screen.deflate(math.max(5, s * .035));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(h * .02)),
+      Paint()
+        ..color = state.energized
+            ? const Color(0xFF7DC4DE)
+            : const Color(0xFF26353C),
+    );
+    final Offset stemTop = Offset(screen.center.dx, screen.bottom);
+    final Offset stemBottom = stemTop.translate(0, h * .13);
+    canvas.drawLine(
+      stemTop,
+      stemBottom,
+      Paint()
+        ..color = const Color(0xFF65747B)
+        ..strokeWidth = math.max(4, s * .025),
+    );
+    canvas.drawLine(
+      stemBottom.translate(-w * .13, 0),
+      stemBottom.translate(w * .13, 0),
+      Paint()
+        ..color = const Color(0xFF65747B)
+        ..strokeWidth = math.max(4, s * .025)
+        ..strokeCap = StrokeCap.round,
+    );
+    final Rect tower = Rect.fromCenter(
+      center: Offset(c.dx + w * .31, c.dy + h * .01),
+      width: w * .16,
+      height: h * .46,
+    );
+    box(tower, top: const Color(0xFF505E65), bottom: const Color(0xFF252E33));
+    _statusLed(Offset(tower.center.dx, tower.top + h * .055));
+  }
+
+  void _refrigerator({required bool dc}) {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .035),
+      width: w * .48,
+      height: h * .68,
+    );
+    box(body, top: const Color(0xFFF5F8F9), bottom: const Color(0xFFB9C6CC));
+    final double splitY = body.top + body.height * .38;
+    canvas.drawLine(
+      Offset(body.left + w * .015, splitY),
+      Offset(body.right - w * .015, splitY),
+      Paint()
+        ..color = const Color(0xFF788990)
+        ..strokeWidth = math.max(1.2, s * .012),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          body.right - w * .075,
+          body.top + h * .10,
+          w * .018,
+          body.height * .20,
+        ),
+        Radius.circular(h * .008),
+      ),
+      Paint()..color = const Color(0xFF5C6B72),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          body.right - w * .075,
+          splitY + h * .08,
+          w * .018,
+          body.height * .31,
+        ),
+        Radius.circular(h * .008),
+      ),
+      Paint()..color = const Color(0xFF5C6B72),
+    );
+    if (dc) {
+      final Rect badge = Rect.fromCenter(
+        center: Offset(body.center.dx, body.top + h * .075),
+        width: w * .20,
+        height: h * .065,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(badge, Radius.circular(h * .012)),
+        Paint()..color = const Color(0xFF2E7D5A),
+      );
+      text('DC', badge.center, size: h * .042, color: Colors.white);
+    } else {
+      _statusLed(Offset(body.left + w * .07, body.top + h * .075));
+    }
+  }
+
+  void _television() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .08),
+      width: w * .78,
+      height: h * .45,
+    );
+    box(body, top: const Color(0xFF303D44), bottom: const Color(0xFF111719));
+    final Rect display = body.deflate(math.max(6, s * .04));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(h * .025)),
+      Paint()
+        ..color = state.energized
+            ? const Color(0xFF5C90A8)
+            : const Color(0xFF172228),
+    );
+    if (state.energized) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(display.left, display.bottom)
+          ..lineTo(display.right, display.top)
+          ..lineTo(display.right, display.bottom)
+          ..close(),
+        Paint()..color = const Color(0x335BD0E6),
+      );
+    }
+    final Offset standTop = Offset(c.dx, body.bottom);
+    final Offset standBottom = standTop.translate(0, h * .10);
+    canvas.drawLine(
+      standTop,
+      standBottom,
+      Paint()
+        ..color = const Color(0xFF4C5B62)
+        ..strokeWidth = math.max(4, s * .022),
+    );
+    canvas.drawLine(
+      standBottom.translate(-w * .16, 0),
+      standBottom.translate(w * .16, 0),
+      Paint()
+        ..color = const Color(0xFF4C5B62)
+        ..strokeWidth = math.max(4, s * .022)
+        ..strokeCap = StrokeCap.round,
+    );
+    _statusLed(Offset(body.right - w * .055, body.bottom - h * .025));
+  }
+
+  void _genericAppliance() {
     final Rect body = Rect.fromCenter(
       center: Offset(c.dx, c.dy - h * .03),
       width: w * .66,
@@ -317,17 +586,7 @@ final class _P {
       Paint()..color = const Color(0xFF33434C),
     );
     text(shortLabel(), face.center, size: h * .075, color: Colors.white);
-    canvas.drawCircle(
-      Offset(body.right - body.width * .16, body.bottom - body.height * .15),
-      h * .022,
-      Paint()
-        ..color = state.energized
-            ? const Color(0xFF4DCE73)
-            : const Color(0xFF78858C),
-    );
-    final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
+    _statusLed(Offset(body.right - body.width * .16, body.bottom - body.height * .15));
   }
 
   void motorDriven({required bool sixTerminals}) {

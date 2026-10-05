@@ -40,6 +40,38 @@ void main() {
     );
   });
 
+  test('catalog keeps diode types but not diode use-case duplicates', () {
+    for (final String removedKey in <String>[
+      'diode-freewheel',
+      'diode-reverse-protection',
+    ]) {
+      expect(
+        f9PaletteCatalog.any(
+          (F9PaletteDefinition item) => item.keyName == removedKey,
+        ),
+        isFalse,
+        reason: removedKey,
+      );
+    }
+
+    for (final String retainedKey in <String>[
+      'diode',
+      'diode-schottky',
+      'led-red',
+      'led-green',
+      'zener-5v1',
+      'tvs-12v',
+    ]) {
+      expect(
+        f9PaletteCatalog.any(
+          (F9PaletteDefinition item) => item.keyName == retainedKey,
+        ),
+        isTrue,
+        reason: retainedKey,
+      );
+    }
+  });
+
   test('C15 source catalog preserves phase semantics', () {
     final F9PaletteDefinition ac1 = f9PaletteCatalog.singleWhere(
       (F9PaletteDefinition item) => item.keyName == 'source-ac1-230v',

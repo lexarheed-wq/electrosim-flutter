@@ -417,6 +417,55 @@ final class SolverDC {
       }
 
       switch (component.modelType) {
+        case 'capacitor':
+          final double? capacitance =
+              _positiveParameter(component.parameters, 'capacitanceF');
+          if (capacitance == null) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'DC capacitor requires finite capacitanceF > 0.',
+                componentId: component.id,
+              ),
+            );
+          } else {
+            inactive.add(
+              _InactiveElement(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+              ),
+            );
+          }
+        case 'inductor':
+          final double? inductance =
+              _positiveParameter(component.parameters, 'inductanceH');
+          if (inductance == null) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'DC inductor requires finite inductanceH > 0.',
+                componentId: component.id,
+              ),
+            );
+          } else {
+            active.add(
+              _Element.idealVoltage(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                publicKind: DcBranchKind.idealShort,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+                voltageV: 0.0,
+                redundant: fromNode == toNode,
+              ),
+            );
+          }
         case 'resistor':
         case 'lamp':
         case 'buzzer':
@@ -1045,6 +1094,8 @@ final class SolverDC {
 
 const Set<String> _supportedDcComponentModels = <String>{
   'resistor',
+  'capacitor',
+  'inductor',
   'lamp',
   'switch',
   'switch_spst',

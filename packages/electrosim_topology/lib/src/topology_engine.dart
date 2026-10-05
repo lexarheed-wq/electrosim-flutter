@@ -300,7 +300,7 @@ bool _hasDirectDcSourceShortNode(CircuitState circuit, TopologyNode node) {
   final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
   return circuit.sources.any(
     (SourceInstance source) =>
-        _isDcVoltageSource(source) &&
+        _isEnergizedDcVoltageSource(source) &&
         nodeTerminals.contains(source.terminals[0].id) &&
         nodeTerminals.contains(source.terminals[1].id),
   );
@@ -332,6 +332,18 @@ bool _isDcVoltageSource(SourceInstance source) =>
     (source.modelType == 'dc_voltage_source' ||
         source.modelType == 'voltage_source') &&
     source.terminals.length == 2;
+
+bool _isEnergizedDcVoltageSource(SourceInstance source) {
+  if (!_isDcVoltageSource(source)) {
+    return false;
+  }
+  final Object? rawVoltage = source.parameters['voltageV'];
+  if (rawVoltage is! num) {
+    return false;
+  }
+  final double voltage = rawVoltage.toDouble();
+  return voltage.isFinite && voltage.abs() > 1e-9;
+}
 
 bool _hasConflictingPhases(Set<PhaseTag> phases) {
   if (phases.length < 2) {

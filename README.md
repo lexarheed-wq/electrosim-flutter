@@ -1,6 +1,8 @@
-# ElectroSim Flutter — F15-R1 candidate
+# ElectroSim Flutter — V2 final-fix Mac test candidate
 
 Baseline : F14-R1 validée (`F14_GATE_PASS`).
+
+> **Versioning** — `VERSION` reste volontairement l’ancre de base qualifiée `ELECTROSIM2-F17-R12-QUALIFIED` utilisée par les contrats F18. La version du candidat en cours est portée séparément par `CANDIDATE_VERSION`. Le code courant contient les couches produit postérieures (F18 et catalogues associés) sans falsifier la dernière base formellement qualifiée.
 
 F15 ajoute la qualification et le packaging multi-plateforme. Le noyau électrique et les phases antérieures restent gelés.
 

@@ -92,7 +92,10 @@ abstract final class TerminalVisualProfile {
           Offset(w * -0.28, 0),
           Offset(w * 0.28, 0),
         ],
-      'contactor_aux_no' || 'contactor_aux_nc' => <Offset>[
+      'contactor_aux_no' ||
+      'contactor_aux_nc' ||
+      'relay_contact_no' ||
+      'relay_contact_nc' => <Offset>[
           Offset(0, h * -0.38),
           Offset(0, h * 0.38),
         ],

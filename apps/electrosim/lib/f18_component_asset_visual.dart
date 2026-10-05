@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'f14_library_components.dart';
 import 'f15_source_pv_components.dart';
 import 'f17_three_phase_components.dart';
+import 'f20_catalog_components.dart';
 import 'f18_component_archetypes.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
@@ -56,6 +57,15 @@ abstract final class F18ReferenceComponentVisuals {
     'motor_3p_6t',
     'load_wye_3p',
     'load_delta_3p',
+    'catalog_battery',
+    'catalog_generator',
+    'catalog_appliance_2t',
+    'catalog_motor_driven_2t',
+    'catalog_motor_driven_6t',
+    'catalog_heater',
+    'catalog_actuator_2t',
+    'catalog_sensor_2t',
+    'catalog_indicator_2t',
   };
 
   static bool supports(String modelType) =>
@@ -120,6 +130,15 @@ abstract final class F18ReferenceComponentMetrics {
         'motor_3p_6t' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.motor6t),
         'load_wye_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.wyeLoad),
         'load_delta_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.deltaLoad),
+        'catalog_battery' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.battery),
+        'catalog_generator' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.generator),
+        'catalog_appliance_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.appliance2t),
+        'catalog_motor_driven_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.motorDriven2t),
+        'catalog_motor_driven_6t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.motorDriven6t),
+        'catalog_heater' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.heater),
+        'catalog_actuator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.actuator2t),
+        'catalog_sensor_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.sensor2t),
+        'catalog_indicator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.indicator2t),
         _ => const Size(104, 64),
       };
 
@@ -353,6 +372,33 @@ class F18ComponentAssetVisual extends StatelessWidget {
           currentA: currentA,
           voltageV: voltageV,
           animationValue: animationValue,
+        ),
+      );
+    }
+
+    final F20CatalogDevice? catalogDevice = switch (type) {
+      'catalog_battery' => F20CatalogDevice.battery,
+      'catalog_generator' => F20CatalogDevice.generator,
+      'catalog_appliance_2t' => F20CatalogDevice.appliance2t,
+      'catalog_motor_driven_2t' => F20CatalogDevice.motorDriven2t,
+      'catalog_motor_driven_6t' => F20CatalogDevice.motorDriven6t,
+      'catalog_heater' => F20CatalogDevice.heater,
+      'catalog_actuator_2t' => F20CatalogDevice.actuator2t,
+      'catalog_sensor_2t' => F20CatalogDevice.sensor2t,
+      'catalog_indicator_2t' => F20CatalogDevice.indicator2t,
+      _ => null,
+    };
+    if (catalogDevice != null) {
+      return F20CatalogComponentView(
+        device: catalogDevice,
+        size: size,
+        state: F20CatalogState(
+          energized: energized,
+          actuated: actuated,
+          currentA: currentA,
+          voltageV: voltageV,
+          animationValue: animationValue,
+          variantKey: variantKey,
         ),
       );
     }

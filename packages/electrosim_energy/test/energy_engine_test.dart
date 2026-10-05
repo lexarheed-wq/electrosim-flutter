@@ -138,6 +138,82 @@ void main() {
       expect(result.lossEnergyWh, 0.0);
     });
 
+    test('C25 PV storage charge is balanced as useful stored energy', () {
+      final PvSolveResult pv = PvSolveResult(
+        circuitId: CircuitId('pv-storage-charge'),
+        circuitRevision: 0,
+        engineVersion: 'solver-pv/0.2.0',
+        status: PvSolveStatus.solved,
+        irradianceWm2: 1000.0,
+        cellTemperatureC: 25.0,
+        pvOperatingVoltageV: 360.0,
+        pvAvailableCurrentA: 10.0,
+        pvAvailablePowerW: 3600.0,
+        pvDrawnCurrentA: 2000.0 / 360.0,
+        pvDrawnPowerW: 2000.0,
+        curtailedPowerW: 1600.0,
+        inverterState: PvInverterState.running,
+        inverterEfficiency: 0.95,
+        inverterOutputVoltageRmsV: 230.0,
+        inverterOutputCurrentRmsA: 1000.0 / 230.0,
+        inverterOutputPowerW: 1000.0,
+        inverterConversionLossW: 50.0,
+        controllerPresent: true,
+        controllerEfficiency: 0.95,
+        controllerConversionLossW: 100.0,
+        batteryPresent: true,
+        batteryVoltageV: 48.0,
+        batterySoc: 0.60,
+        batteryStoredEnergyWh: 2880.0,
+        batteryPowerW: -850.0,
+        batteryConversionLossW: 50.0,
+        loadResults: const <PvLoadResult>[],
+        diagnostics: const <PvSolverDiagnostic>[],
+      );
+      final EnergyPowerSample sample = EnergyPowerSample.fromPvResult(pv);
+      expect(sample.inputPowerW, closeTo(2000.0, 1e-9));
+      expect(sample.outputPowerW, closeTo(1800.0, 1e-9));
+      expect(sample.lossPowerW, closeTo(200.0, 1e-9));
+    });
+
+    test('C25 PV storage discharge includes chemical battery draw in input balance', () {
+      final PvSolveResult pv = PvSolveResult(
+        circuitId: CircuitId('pv-storage-discharge'),
+        circuitRevision: 0,
+        engineVersion: 'solver-pv/0.2.0',
+        status: PvSolveStatus.solved,
+        irradianceWm2: 200.0,
+        cellTemperatureC: 25.0,
+        pvOperatingVoltageV: 360.0,
+        pvAvailableCurrentA: 2.0,
+        pvAvailablePowerW: 720.0,
+        pvDrawnCurrentA: 500.0 / 360.0,
+        pvDrawnPowerW: 500.0,
+        curtailedPowerW: 220.0,
+        inverterState: PvInverterState.running,
+        inverterEfficiency: 0.95,
+        inverterOutputVoltageRmsV: 230.0,
+        inverterOutputCurrentRmsA: 1000.0 / 230.0,
+        inverterOutputPowerW: 1000.0,
+        inverterConversionLossW: 50.0,
+        controllerPresent: true,
+        controllerEfficiency: 0.95,
+        controllerConversionLossW: 25.0,
+        batteryPresent: true,
+        batteryVoltageV: 48.0,
+        batterySoc: 0.50,
+        batteryStoredEnergyWh: 2400.0,
+        batteryPowerW: 575.0,
+        batteryConversionLossW: 25.0,
+        loadResults: const <PvLoadResult>[],
+        diagnostics: const <PvSolverDiagnostic>[],
+      );
+      final EnergyPowerSample sample = EnergyPowerSample.fromPvResult(pv);
+      expect(sample.inputPowerW, closeTo(1100.0, 1e-9));
+      expect(sample.outputPowerW, closeTo(1000.0, 1e-9));
+      expect(sample.lossPowerW, closeTo(100.0, 1e-9));
+    });
+
     test('invalid power balance is rejected instead of normalized silently', () {
       expect(
         () => EnergyPowerSample(

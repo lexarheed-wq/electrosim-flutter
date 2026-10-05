@@ -11,6 +11,7 @@ enum DcBranchKind {
   idealProtection,
   voltageSource,
   currentSource,
+  diode,
   openCircuit,
 }
 

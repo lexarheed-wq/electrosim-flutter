@@ -38,12 +38,14 @@ for token in ['compactUpperBound = 600', 'mediumUpperBound = 1000', 'compact, me
         errors.append(f'responsive-contract:{token}')
 
 main = (ROOT / 'apps/electrosim/lib/main.dart').read_text(encoding='utf-8')
+home = (ROOT / 'apps/electrosim/lib/f18_home.dart').read_text(encoding='utf-8')
+main_surface = main + '\n' + home
 for label in [
     'Créer une nouvelle session', 'Centre de maintenance', 'Centre de conception',
     'Accueil', 'Tableau de bord', 'Câblage', 'Recherche de dérangement',
     'Supervision', 'Gérer la session',
 ]:
-    if label not in main:
+    if label not in main_surface:
         errors.append(f'ux-label-missing:{label}')
 for token in [
     'session-home-action', 'session-dashboard-action', 'session-manage-action',
@@ -57,10 +59,12 @@ for token in [
 shell = (ROOT / 'packages/electrosim_ui_kit/lib/src/workspace_shell.dart').read_text(encoding='utf-8')
 for token in [
     'ElectroSimWindowClass.compact', 'ElectroSimWindowClass.medium',
-    'ElectroSimWindowClass.expanded', 'electroSimCanvasRegionKey',
+    'electroSimCanvasRegionKey', 'ElectroSimBreakpoints.classify',
 ]:
     if token not in shell:
         errors.append(f'shell-contract:{token}')
+if 'ElectroSimWindowClass.expanded' not in responsive:
+    errors.append('shell-contract:expanded-window-class')
 
 freeze = json.loads((ROOT / 'docs/f9/F8_CORE_FREEZE_FOR_F9.json').read_text(encoding='utf-8'))
 if freeze.get('fileCount') != 54:
@@ -68,8 +72,8 @@ if freeze.get('fileCount') != 54:
 
 palette = (ROOT / 'apps/electrosim/lib/f9_component_palette.dart').read_text(encoding='utf-8')
 for token in [
-    'palette-search-field', 'palette-show-more', 'Draggable<F9PaletteDefinition>',
-    'F9ComponentPreview', 'palette-quick-add-', 'F9ComponentGlyph',
+    'palette-search-field', 'palette-show-all', 'Draggable<F9PaletteDefinition>',
+    'F9ComponentPreview', 'palette-quick-add-', 'F18ComponentAssetVisual',
 ]:
     if token not in palette:
         errors.append(f'palette-contract:{token}')
@@ -89,16 +93,21 @@ for token in ['F9WiringPolicy', 'evaluateAndBuild', 'already', 'PhaseTag.none', 
         errors.append(f'wiring-contract:{token}')
 
 panels = (ROOT / 'apps/electrosim/lib/f9_context_panels.dart').read_text(encoding='utf-8')
+panels_compact = ''.join(panels.split())
 for token in [
     'measurements-panel', 'eie-panel', 'student-diagnostic-panel',
-    "role == F9UserRole.student", "workspace == 'Recherche de dérangement'",
     'properties-element-selector', 'properties-replace-element',
 ]:
     if token not in panels:
         errors.append(f'context-contract:{token}')
+for token in [
+    'role!=F9UserRole.student', "workspace!='Recherchededérangement'",
+]:
+    if token not in panels_compact:
+        errors.append(f'context-contract:{token}')
 
 visuals = (ROOT / 'apps/electrosim/lib/f9_component_visuals.dart').read_text(encoding='utf-8')
-for token in ['F9ComponentGlyph', 'F9CanvasVisualOverlay', 'paintF9Glyph']:
+for token in ['F9CanvasVisualOverlay', 'F18ComponentAssetVisual', 'paintF18ComponentIdentity']:
     if token not in visuals:
         errors.append(f'visual-contract:{token}')
 

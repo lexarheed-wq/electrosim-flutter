@@ -492,6 +492,22 @@ _CompiledAc3Model _compileModel(
     }
 
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    if (_compileFeedThroughAc3(
+      component: component,
+      branches: topologyBranches,
+      elements: elements,
+      diagnostics: diagnostics,
+    )) {
+      continue;
+    }
+    if (_compileMultipoleSwitchAc3(
+      component: component,
+      branches: topologyBranches,
+      elements: elements,
+      diagnostics: diagnostics,
+    )) {
+      continue;
+    }
     if (_compileThreePhaseImpedanceDeviceAc3(
       component: component,
       branches: topologyBranches,
@@ -894,6 +910,116 @@ _CompiledAc3Model _compileModel(
 
 
 
+bool _compileFeedThroughAc3({
+  required ComponentInstance component,
+  required List<TopologyBranch> branches,
+  required List<_Ac3Element> elements,
+  required List<Ac3SolverDiagnostic> diagnostics,
+}) {
+  if (component.modelType != 'terminal_block_5') return false;
+  if (branches.length != 5) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidTerminalCount,
+        severity: Ac3DiagnosticSeverity.error,
+        message: 'terminal_block_5 must expose five feed-through branches.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+  final bool open = component.condition == ComponentCondition.openCircuit ||
+      component.condition == ComponentCondition.disabled;
+  for (final TopologyBranch branch in branches) {
+    elements.add(
+      _Ac3Element(
+        id: _componentBranchElementIdAc3(component, branch, branches.length),
+        modelType: component.modelType,
+        kind: open
+            ? _Ac3ElementKind.impedance
+            : _Ac3ElementKind.idealVoltage,
+        branchKind:
+            open ? Ac3BranchKind.openCircuit : Ac3BranchKind.idealShort,
+        fromNodeId: branch.fromNodeId,
+        toNodeId: branch.toNodeId,
+        value: open ? const AcComplex(1e300, 0.0) : AcComplex.zero,
+        isOpen: open,
+        phase: _phaseForBranch(component, branch),
+      ),
+    );
+  }
+  return true;
+}
+
+bool _compileMultipoleSwitchAc3({
+  required ComponentInstance component,
+  required List<TopologyBranch> branches,
+  required List<_Ac3Element> elements,
+  required List<Ac3SolverDiagnostic> diagnostics,
+}) {
+  final bool supported =
+      component.modelType == 'isolator_3p' ||
+      component.modelType == 'isolator_4p';
+  if (!supported) return false;
+
+  final int expected = component.modelType == 'isolator_4p' ? 4 : 3;
+  if (branches.length != expected ||
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role != ElectricalBranchRole.powerPole,
+      )) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidTerminalCount,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} must expose exactly $expected power poles.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final Object? rawClosed = component.controlState['closed'];
+  if (rawClosed != null && rawClosed is! bool) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidParameter,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} controlState.closed must be boolean.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+  final bool forcedOpen =
+      component.condition == ComponentCondition.openCircuit ||
+      component.condition == ComponentCondition.disabled;
+  final bool closed = (rawClosed as bool?) ?? true;
+  final bool conducting = !forcedOpen && closed;
+
+  for (final TopologyBranch branch in branches) {
+    elements.add(
+      _Ac3Element(
+        id: _componentBranchElementIdAc3(component, branch, branches.length),
+        modelType: component.modelType,
+        kind: conducting
+            ? _Ac3ElementKind.idealVoltage
+            : _Ac3ElementKind.impedance,
+        branchKind:
+            conducting ? Ac3BranchKind.idealSwitch : Ac3BranchKind.openCircuit,
+        fromNodeId: branch.fromNodeId,
+        toNodeId: branch.toNodeId,
+        value: conducting ? AcComplex.zero : const AcComplex(1e300, 0.0),
+        isOpen: !conducting,
+        phase: _phaseForBranch(component, branch),
+      ),
+    );
+  }
+  return true;
+}
+
 bool _compileThreePhaseImpedanceDeviceAc3({
   required ComponentInstance component,
   required List<TopologyBranch> branches,
@@ -1022,10 +1148,12 @@ bool _compileThreePoleProtectionAc3({
 }) {
   final bool supported =
       component.modelType == 'breaker_3p' ||
+      component.modelType == 'breaker_4p' ||
       component.modelType == 'thermal_overload_3p';
   if (!supported) return false;
 
-  if (branches.length != 3 ||
+  final int expectedPoles = component.modelType == 'breaker_4p' ? 4 : 3;
+  if (branches.length != expectedPoles ||
       branches.any((TopologyBranch branch) =>
           branch.role != ElectricalBranchRole.powerPole)) {
     diagnostics.add(
@@ -1033,7 +1161,7 @@ bool _compileThreePoleProtectionAc3({
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            '${component.modelType} must expose exactly three power poles.',
+            '${component.modelType} must expose exactly $expectedPoles power poles.',
         componentId: component.id,
       ),
     );
@@ -1745,7 +1873,11 @@ const Set<String> _supportedAc3ComponentModels = <String>{
   'contactor_aux_no',
   'contactor_aux_nc',
   'breaker_3p',
+  'breaker_4p',
   'thermal_overload_3p',
+  'isolator_3p',
+  'isolator_4p',
+  'terminal_block_5',
   'motor_3p_6t',
   'load_wye_3p',
   'load_delta_3p',

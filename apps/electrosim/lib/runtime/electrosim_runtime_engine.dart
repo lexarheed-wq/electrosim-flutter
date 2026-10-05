@@ -307,6 +307,8 @@ final class ElectroSimRuntimeEngine {
           elapsed: elapsed,
           previous: previousProtectionState,
           solver: solverDC,
+          controlsEngine: electromechanicalControlEngine,
+          previousRelayStates: previousContactorStates,
         );
         final DcSolveResult dc = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyze(
@@ -319,6 +321,8 @@ final class ElectroSimRuntimeEngine {
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.dc,
           dcResult: dc,
+          contactorStates: coordinated.relays,
+          controlIssues: coordinated.controlIssues,
           protectionState: coordinated.state,
           protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,

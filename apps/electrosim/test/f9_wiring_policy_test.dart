@@ -26,15 +26,16 @@ void main() {
     },
   );
 
-  test('rejects incompatible explicit phases', () {
+  test('accepts mixed explicit DC polarities and keeps the wire untagged', () {
     final CircuitState circuit = _circuit();
     final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
       circuit,
       TerminalId('source-pos'),
       TerminalId('load-neg'),
     );
-    expect(decision.accepted, isFalse);
-    expect(decision.message, contains('incompatible'));
+    expect(decision.accepted, isTrue);
+    expect(decision.connection, isNotNull);
+    expect(decision.connection!.phase, PhaseTag.none);
   });
 
   test('rejects duplicate reverse connection', () {

@@ -1,0 +1,60 @@
+name: F18 G5 supported parity
+
+on:
+  push:
+    branches:
+      - f18-g5-supported-parity-r2
+    paths:
+      - '.github/workflows/f18-g5-supported-parity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f18-g5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+
+      - name: G5 application catalog parity
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/f18_g5_supported_parity_gate_test.dart
+          flutter test test/f9_catalog_visual_uniqueness_test.dart
+          flutter test test/c15_mode_wave2_test.dart
+          flutter test test/f17_catalog_runtime_test.dart
+
+      - name: G5 autonomous scenario non-legacy contract
+        working-directory: packages/electrosim_scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test/f16_catalog_test.dart
+
+      - name: Gate marker
+        run: echo F18_G5_SUPPORTED_PARITY_GATE_PASS

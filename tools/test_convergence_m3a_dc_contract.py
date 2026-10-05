@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class M3ADcContractTest(unittest.TestCase):
     def test_solver_uses_canonical_topology_branches(self):
         text = (ROOT / 'packages/electrosim_solver_dc/lib/src/solver_dc.dart').read_text(encoding='utf-8')
-        self.assertIn('topology.branchesForComponent(component.id)', text)
+        self.assertRegex(''.join(text.split()), r'topology\.branchesForComponent\(component\.id,?\)')
         self.assertNotIn("component.terminals[0].id", text)
         self.assertNotIn("component.terminals[1].id", text)
 

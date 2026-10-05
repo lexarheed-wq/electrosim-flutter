@@ -1,14 +1,11 @@
 name: V2 post-audit targeted qualification
 
 on:
-  push:
-    branches:
-      - v2-post-mac-audit-fixes-20261005
-    paths:
-      - 'packages/electrosim_canvas/**'
-      - 'apps/electrosim/**'
-      - '.github/workflows/v2-post-audit-targeted.yml'
   workflow_dispatch:
+
+concurrency:
+  group: v2-post-audit-targeted-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   routing:

@@ -1,6 +1,17 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-enum MeasurementKind { voltageDc, currentDc, resistance, voltageAcRms, currentAcRms, frequency }
+enum MeasurementKind {
+  voltageDc,
+  currentDc,
+  resistance,
+  voltageAcRms,
+  currentAcRms,
+  frequency,
+  activePower,
+  reactivePower,
+  apparentPower,
+  phaseSequence,
+}
 
 enum MeasurementStatus { valid, invalid }
 
@@ -62,6 +73,27 @@ final class MeasurementRequest {
   factory MeasurementRequest.frequency() =>
       const MeasurementRequest._(kind: MeasurementKind.frequency);
 
+  factory MeasurementRequest.activePower({String? branchId}) =>
+      MeasurementRequest._(
+        kind: MeasurementKind.activePower,
+        branchId: branchId,
+      );
+
+  factory MeasurementRequest.reactivePower({String? branchId}) =>
+      MeasurementRequest._(
+        kind: MeasurementKind.reactivePower,
+        branchId: branchId,
+      );
+
+  factory MeasurementRequest.apparentPower({String? branchId}) =>
+      MeasurementRequest._(
+        kind: MeasurementKind.apparentPower,
+        branchId: branchId,
+      );
+
+  factory MeasurementRequest.phaseSequence() =>
+      const MeasurementRequest._(kind: MeasurementKind.phaseSequence);
+
   final MeasurementKind kind;
   final TerminalId? positiveProbe;
   final TerminalId? negativeProbe;
@@ -76,6 +108,7 @@ final class MeasurementResult {
     required this.reading,
     required this.errorCode,
     required this.message,
+    required this.displayText,
     required Iterable<String> evidenceIds,
   }) : evidenceIds = List<String>.unmodifiable(evidenceIds);
 
@@ -90,6 +123,21 @@ final class MeasurementResult {
     reading: ElectricalQuantity(value: value, unit: unit),
     errorCode: null,
     message: null,
+    displayText: null,
+    evidenceIds: evidenceIds,
+  );
+
+  factory MeasurementResult.text({
+    required MeasurementKind kind,
+    required String value,
+    required Iterable<String> evidenceIds,
+  }) => MeasurementResult._(
+    kind: kind,
+    status: MeasurementStatus.valid,
+    reading: null,
+    errorCode: null,
+    message: null,
+    displayText: value,
     evidenceIds: evidenceIds,
   );
 
@@ -104,6 +152,7 @@ final class MeasurementResult {
     reading: null,
     errorCode: errorCode,
     message: message,
+    displayText: null,
     evidenceIds: evidenceIds,
   );
 
@@ -112,6 +161,7 @@ final class MeasurementResult {
   final ElectricalQuantity? reading;
   final MeasurementErrorCode? errorCode;
   final String? message;
+  final String? displayText;
   final List<String> evidenceIds;
 
   bool get isValid => status == MeasurementStatus.valid;

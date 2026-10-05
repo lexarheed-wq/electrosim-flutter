@@ -1,3 +1,4 @@
+import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';

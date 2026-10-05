@@ -54,6 +54,8 @@ abstract final class F18ReferenceComponentVisuals {
     'ac_current_source',
     'ac3_voltage_source',
     'pv_array',
+    'pv_controller',
+    'pv_battery',
     'pv_inverter',
     'pv_resistive_load',
     'motor_3p_6t',
@@ -132,6 +134,8 @@ abstract final class F18ReferenceComponentMetrics {
         'ac_current_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.acCurrentSource),
         'ac3_voltage_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.ac3VoltageSource),
         'pv_array' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvArray),
+        'pv_controller' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvController),
+        'pv_battery' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvBattery),
         'pv_inverter' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvInverter),
         'pv_resistive_load' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvLoad),
         'motor_3p_6t' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.motor6t),
@@ -209,6 +213,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.pressed = false,
     this.actuated = false,
     this.animationValue = 0,
+    this.batterySoc = 0,
     this.showTerminals = true,
     this.currentA = 0,
     this.voltageV = 0,
@@ -227,6 +232,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final bool pressed;
   final bool actuated;
   final double animationValue;
+  final double batterySoc;
   final bool showTerminals;
   final double currentA;
   final double voltageV;
@@ -309,6 +315,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
           voltageV: voltageV,
           resistanceOhm: resistanceOhm,
           animationValue: animationValue,
+          batterySoc: batterySoc,
           variantKey: variantKey,
         ),
       );
@@ -350,6 +357,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
       'ac_current_source' => F15SourcePvDevice.acCurrentSource,
       'ac3_voltage_source' => F15SourcePvDevice.ac3VoltageSource,
       'pv_array' => F15SourcePvDevice.pvArray,
+      'pv_controller' => F15SourcePvDevice.pvController,
+      'pv_battery' => F15SourcePvDevice.pvBattery,
       'pv_inverter' => F15SourcePvDevice.pvInverter,
       'pv_resistive_load' => F15SourcePvDevice.pvLoad,
       _ => null,

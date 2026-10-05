@@ -7,8 +7,9 @@ class M11VisualContractTest(unittest.TestCase):
     def test_palette_and_canvas_share_f18_painter(self):
         palette = (ROOT / 'apps/electrosim/lib/f9_component_palette.dart').read_text(encoding='utf-8')
         overlay = (ROOT / 'apps/electrosim/lib/f9_component_visuals.dart').read_text(encoding='utf-8')
-        self.assertIn('F18ComponentArchetypeGlyph', palette)
-        self.assertIn('paintF18ElectricalArchetype', overlay)
+        self.assertIn('F18ComponentAssetVisual', palette)
+        self.assertIn('F18ComponentAssetVisual', overlay)
+        self.assertIn("import 'f18_component_asset_visual.dart';", overlay)
 
     def test_specific_models_have_dedicated_visual_paths(self):
         text = (ROOT / 'apps/electrosim/lib/f18_component_archetypes.dart').read_text(encoding='utf-8')

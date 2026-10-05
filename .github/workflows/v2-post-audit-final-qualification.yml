@@ -1,0 +1,172 @@
+name: V2 post-audit final qualification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - '.github/workflows/v2-post-audit-final-qualification.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v2-post-audit-final-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test ! -e .github/workflows/v2-format-preview.yml
+
+      - name: Verify Dart formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format --output=none --set-exit-if-changed             apps/electrosim/lib/main.dart             apps/electrosim/lib/f9_component_palette.dart             apps/electrosim/lib/f14_library_components.dart             apps/electrosim/lib/f15_source_pv_components.dart             apps/electrosim/lib/f18_component_asset_visual.dart             apps/electrosim/lib/f20_catalog_components.dart             apps/electrosim/lib/reference_components/reference_widgets_extended.dart             apps/electrosim/test/c15_mode_wave2_test.dart             apps/electrosim/test/f14_visual_identity_test.dart             apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart             apps/electrosim/test/f20_catalog_visual_identity_test.dart             apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart             packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart             packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart             packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
+
+      - name: Static convergence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools/test_convergence_*.py
+          python3 tools/f9_static_contract_check.py
+          python3 tools/f2_static_contract_check.py
+          python3 tools/f3_static_contract_check.py
+          python3 tools/f4_static_contract_check.py
+          python3 tools/f5_static_contract_check.py
+          python3 tools/f6_static_contract_check.py
+          python3 tools/f7_static_contract_check.py
+
+      - name: Validate canvas routing
+        working-directory: packages/electrosim_canvas
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/orthogonal_wire_router_test.dart
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+
+      - name: Validate workspace and visual catalog
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/c15_mode_wave2_test.dart
+          flutter test test/f14_visual_identity_test.dart
+          flutter test test/f18_g3r1_point05_palette_contract_test.dart
+          flutter test test/f20_catalog_visual_identity_test.dart
+          flutter test test/f9_catalog_visual_uniqueness_test.dart
+          flutter test test/f9_wiring_policy_test.dart
+
+      - name: Core solver regression gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/run_f1_gate.sh
+          ./tools/run_f3_gate.sh
+          ./tools/run_f5_gate.sh
+          ./tools/run_f7_gate.sh
+
+  macos-intel:
+    needs: qualify
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Qualify macOS and build release
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/*.sh
+          ./tools/f15_qualify_target.sh macos
+          flutter config --enable-macos-desktop
+          prep_out="$(./tools/f15_prepare_runner.sh macos)"
+          case "$prep_out" in
+            F15_RUNNER_PATH=*) tmp="${prep_out#F15_RUNNER_PATH=}" ;;
+            *) echo "F15_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          app_root="$tmp/apps/electrosim"
+          cd "$app_root"
+          flutter build macos --release
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/v2-post-audit-final/macos"
+          mkdir -p "$out"
+          head_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$head_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path"             "$out/ElectroSim_V2_POST_AUDIT_${head_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+          rm -rf "$tmp"
+
+      - name: Package source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/v2-post-audit-final/source"
+          mkdir -p "$out"
+          git archive --format=zip --output="$out/ElectroSim_V2_POST_AUDIT_SOURCE.zip" HEAD
+          shasum -a 256 "$out/ElectroSim_V2_POST_AUDIT_SOURCE.zip" > "$out/SHA256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-V2-POST-AUDIT-macOS-Intel
+          path: audit/v2-post-audit-final/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-V2-POST-AUDIT-source
+          path: audit/v2-post-audit-final/source
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Final gate
+        run: echo ELECTROSIM_V2_POST_AUDIT_FINAL_PASS

@@ -494,6 +494,46 @@ final class SolverDC {
               ),
             );
           }
+        case 'relay_contact_no':
+        case 'relay_contact_nc':
+          final Object? rawActuated = component.controlState['actuated'];
+          if (rawActuated is! bool) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'Relay contact requires boolean controlState.actuated.',
+                componentId: component.id,
+              ),
+            );
+          } else {
+            final bool closed = component.modelType == 'relay_contact_no'
+                ? rawActuated
+                : !rawActuated;
+            if (closed) {
+              active.add(
+                _Element.idealVoltage(
+                  id: 'component:${component.id.value}',
+                  modelType: component.modelType,
+                  publicKind: DcBranchKind.idealSwitch,
+                  fromNodeId: fromNode,
+                  toNodeId: toNode,
+                  voltageV: 0.0,
+                  redundant: fromNode == toNode,
+                ),
+              );
+            } else {
+              inactive.add(
+                _InactiveElement(
+                  id: 'component:${component.id.value}',
+                  modelType: component.modelType,
+                  fromNodeId: fromNode,
+                  toNodeId: toNode,
+                ),
+              );
+            }
+          }
         case 'switch':
         case 'switch_spst':
           final Object? rawClosed = component.controlState['closed'];
@@ -1015,6 +1055,8 @@ const Set<String> _supportedDcComponentModels = <String>{
   'motor_dc',
   'relay_coil',
   'diode',
+  'relay_contact_no',
+  'relay_contact_nc',
   'breaker_dc',
   'fuse_dc',
 };

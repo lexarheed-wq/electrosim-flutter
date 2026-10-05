@@ -228,8 +228,11 @@ void main() {
       lessThanOrEqualTo(900),
     );
     expect(find.text('Voir tous les composants'), findsOneWidget);
+    final int dcCatalogCount = f9PaletteCatalog
+        .where((F9PaletteDefinition item) => item.supportsMode(ElectricalMode.dc))
+        .length;
     expect(
-      find.text('${f9PaletteCatalog.length} composants disponibles'),
+      find.text('$dcCatalogCount composants disponibles · DC'),
       findsOneWidget,
     );
 
@@ -238,7 +241,7 @@ void main() {
     expect(find.byKey(const Key('palette-show-all')), findsNothing);
     expect(find.textContaining('Voir moins'), findsNothing);
     expect(
-      find.text('${f9PaletteCatalog.length} composants disponibles'),
+      find.text('$dcCatalogCount composants disponibles · DC'),
       findsOneWidget,
     );
 

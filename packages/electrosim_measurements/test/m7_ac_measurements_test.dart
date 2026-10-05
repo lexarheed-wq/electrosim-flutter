@@ -285,6 +285,28 @@ void main() {
       expect(modeMismatch.errorCode, MeasurementErrorCode.wrongElectricalMode);
     });
 
+    test('AC3 phase sequence reports negative and indeterminate states', () {
+      final CircuitState circuit = _ac3Circuit();
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final Ac3SolveResult solved = const SolverAC3().solve(circuit, topology);
+
+      final MeasurementResult negative = measurements.measureAc3(
+        request: MeasurementRequest.phaseSequence(),
+        circuit: circuit,
+        topology: topology,
+        simulation: _withSequence(solved, Ac3PhaseSequence.negative),
+      );
+      expect(negative.displayText, 'L1 → L3 → L2');
+
+      final MeasurementResult indeterminate = measurements.measureAc3(
+        request: MeasurementRequest.phaseSequence(),
+        circuit: circuit,
+        topology: topology,
+        simulation: _withSequence(solved, Ac3PhaseSequence.indeterminate),
+      );
+      expect(indeterminate.displayText, 'Indéterminé');
+    });
+
     test('DC entry point explicitly rejects AC measurement requests', () {
       final CircuitState circuit = _ac1Circuit();
       final TopologyGraph topology = topologyEngine.compile(circuit);
@@ -299,6 +321,34 @@ void main() {
     });
   });
 }
+
+Ac3SolveResult _withSequence(
+  Ac3SolveResult source,
+  Ac3PhaseSequence sequence,
+) =>
+    Ac3SolveResult(
+      circuitId: source.circuitId,
+      circuitRevision: source.circuitRevision,
+      engineVersion: source.engineVersion,
+      status: source.status,
+      frequencyHz: source.frequencyHz,
+      referenceNodeId: source.referenceNodeId,
+      nodeVoltages: source.nodeVoltages,
+      branchResults: source.branchResults,
+      diagnostics: source.diagnostics,
+      maxMatrixResidual: source.maxMatrixResidual,
+      kclResiduals: source.kclResiduals,
+      phaseVoltages: source.phaseVoltages,
+      lineCurrents: source.lineCurrents,
+      lineToLineVoltages: source.lineToLineVoltages,
+      neutralCurrent: source.neutralCurrent,
+      missingPhases: source.missingPhases,
+      sourceSequence: sequence,
+      voltageBalanced: source.voltageBalanced,
+      currentBalanced: source.currentBalanced,
+      neutralConnected: source.neutralConnected,
+      phaseOrderObservations: source.phaseOrderObservations,
+    );
 
 CircuitState _ac1Circuit() => CircuitState(
   circuitId: CircuitId('m7-ac1'),

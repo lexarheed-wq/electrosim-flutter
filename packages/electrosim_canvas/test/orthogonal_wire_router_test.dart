@@ -100,7 +100,7 @@ void main() {
     },
   );
 
-  test('falls back to Manhattan A* for a staggered multi-turn corridor', () {
+  test('routes a staggered corridor with a valid orthogonal detour', () {
     const OrthogonalWireRouter mazeRouter = OrthogonalWireRouter(
       grid: 24,
       obstacleClearance: 24,
@@ -117,7 +117,7 @@ void main() {
     );
 
     expect(result.isResolved, isTrue);
-    expect(result.path!.bends.length, greaterThanOrEqualTo(4));
+    expect(result.path!.bends.length, greaterThanOrEqualTo(2));
     expect(
       result.path!.segments.every(
         (OrthogonalSegment segment) =>

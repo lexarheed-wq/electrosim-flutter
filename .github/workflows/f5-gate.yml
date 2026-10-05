@@ -20,8 +20,8 @@ jobs:
           channel: stable
       - name: Run F5 gate
         run: |
-          chmod +x validate.sh tools/*.sh
-          ./validate.sh
+          chmod +x tools/*.sh
+          ./tools/run_f5_gate.sh
       - name: Upload runtime audit
         if: always()
         uses: actions/upload-artifact@v4

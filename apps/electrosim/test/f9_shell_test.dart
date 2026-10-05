@@ -229,7 +229,9 @@ void main() {
     );
     expect(find.text('Voir tous les composants'), findsOneWidget);
     final int dcCatalogCount = f9PaletteCatalog
-        .where((F9PaletteDefinition item) => item.supportsMode(ElectricalMode.dc))
+        .where(
+          (F9PaletteDefinition item) => item.supportsMode(ElectricalMode.dc),
+        )
         .length;
     expect(
       find.text('$dcCatalogCount composants disponibles · DC'),

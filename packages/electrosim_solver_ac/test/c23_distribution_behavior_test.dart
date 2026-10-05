@@ -36,10 +36,7 @@ void main() {
         Ac3BranchKind.openCircuit,
       );
     }
-    expect(
-      open.branch('component:r1').current!.magnitude,
-      closeTo(0.0, 1e-12),
-    );
+    expect(open.branch('component:r1').current!.magnitude, closeTo(0.0, 1e-12));
   });
 
   test('C23 isolator open condition forces all poles open', () {
@@ -165,7 +162,9 @@ void main() {
       },
       condition: original.condition,
     );
-    final Ac3SolveResult malformedResult = solve(_replaceFirst(base, malformed));
+    final Ac3SolveResult malformedResult = solve(
+      _replaceFirst(base, malformed),
+    );
     expect(malformedResult.status, Ac3SolveStatus.invalid);
     expect(
       malformedResult.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
@@ -174,18 +173,12 @@ void main() {
   });
 }
 
-CircuitState _replaceFirst(
-  CircuitState base,
-  ComponentInstance replacement,
-) =>
+CircuitState _replaceFirst(CircuitState base, ComponentInstance replacement) =>
     CircuitState(
       circuitId: base.circuitId,
       revision: base.revision,
       mode: base.mode,
-      components: <ComponentInstance>[
-        replacement,
-        ...base.components.skip(1),
-      ],
+      components: <ComponentInstance>[replacement, ...base.components.skip(1)],
       connections: base.connections,
       sources: base.sources,
       settings: base.settings,
@@ -195,50 +188,49 @@ CircuitState _threePoleCircuit({
   required String modelType,
   required bool closed,
   ComponentCondition condition = ComponentCondition.normal,
-}) =>
-    CircuitState(
-      circuitId: CircuitId('c23-three'),
-      revision: 0,
-      mode: ElectricalMode.ac3,
-      components: <ComponentInstance>[
-        ComponentInstance(
-          id: ComponentId('q1'),
-          modelType: modelType,
-          terminals: <Terminal>[
-            _t('q-l1-in', '1L1', PhaseTag.l1),
-            _t('q-l2-in', '3L2', PhaseTag.l2),
-            _t('q-l3-in', '5L3', PhaseTag.l3),
-            _t('q-l1-out', '2T1', PhaseTag.l1),
-            _t('q-l2-out', '4T2', PhaseTag.l2),
-            _t('q-l3-out', '6T3', PhaseTag.l3),
-          ],
-          controlState: <String, Object?>{'closed': closed},
-          condition: condition,
-        ),
-        _load('r1', PhaseTag.l1),
-        _load('r2', PhaseTag.l2),
-        _load('r3', PhaseTag.l3),
+}) => CircuitState(
+  circuitId: CircuitId('c23-three'),
+  revision: 0,
+  mode: ElectricalMode.ac3,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('q1'),
+      modelType: modelType,
+      terminals: <Terminal>[
+        _t('q-l1-in', '1L1', PhaseTag.l1),
+        _t('q-l2-in', '3L2', PhaseTag.l2),
+        _t('q-l3-in', '5L3', PhaseTag.l3),
+        _t('q-l1-out', '2T1', PhaseTag.l1),
+        _t('q-l2-out', '4T2', PhaseTag.l2),
+        _t('q-l3-out', '6T3', PhaseTag.l3),
       ],
-      connections: <Connection>[
-        _wire('p1', 'v1-p', 'q-l1-in'),
-        _wire('p2', 'v2-p', 'q-l2-in'),
-        _wire('p3', 'v3-p', 'q-l3-in'),
-        _wire('o1', 'q-l1-out', 'r1-p'),
-        _wire('o2', 'q-l2-out', 'r2-p'),
-        _wire('o3', 'q-l3-out', 'r3-p'),
-        _wire('n1', 'r1-n', 'v1-n'),
-        _wire('n2', 'r2-n', 'v1-n'),
-        _wire('n3', 'r3-n', 'v1-n'),
-        _wire('ns2', 'v2-n', 'v1-n'),
-        _wire('ns3', 'v3-n', 'v1-n'),
-      ],
-      sources: <SourceInstance>[
-        _source('v1', PhaseTag.l1),
-        _source('v2', PhaseTag.l2),
-        _source('v3', PhaseTag.l3),
-      ],
-      settings: const <String, Object?>{'frequencyHz': 50.0},
-    );
+      controlState: <String, Object?>{'closed': closed},
+      condition: condition,
+    ),
+    _load('r1', PhaseTag.l1),
+    _load('r2', PhaseTag.l2),
+    _load('r3', PhaseTag.l3),
+  ],
+  connections: <Connection>[
+    _wire('p1', 'v1-p', 'q-l1-in'),
+    _wire('p2', 'v2-p', 'q-l2-in'),
+    _wire('p3', 'v3-p', 'q-l3-in'),
+    _wire('o1', 'q-l1-out', 'r1-p'),
+    _wire('o2', 'q-l2-out', 'r2-p'),
+    _wire('o3', 'q-l3-out', 'r3-p'),
+    _wire('n1', 'r1-n', 'v1-n'),
+    _wire('n2', 'r2-n', 'v1-n'),
+    _wire('n3', 'r3-n', 'v1-n'),
+    _wire('ns2', 'v2-n', 'v1-n'),
+    _wire('ns3', 'v3-n', 'v1-n'),
+  ],
+  sources: <SourceInstance>[
+    _source('v1', PhaseTag.l1),
+    _source('v2', PhaseTag.l2),
+    _source('v3', PhaseTag.l3),
+  ],
+  settings: const <String, Object?>{'frequencyHz': 50.0},
+);
 
 CircuitState _fourPoleCircuit({
   required String modelType,
@@ -246,91 +238,89 @@ CircuitState _fourPoleCircuit({
   bool tripped = false,
   double? ratedCurrentA,
   ComponentCondition condition = ComponentCondition.normal,
-}) =>
-    CircuitState(
-      circuitId: CircuitId('c23-four'),
-      revision: 0,
-      mode: ElectricalMode.ac3,
-      components: <ComponentInstance>[
-        ComponentInstance(
-          id: ComponentId('q1'),
-          modelType: modelType,
-          terminals: <Terminal>[
-            _t('q-l1-in', '1L1', PhaseTag.l1),
-            _t('q-l2-in', '3L2', PhaseTag.l2),
-            _t('q-l3-in', '5L3', PhaseTag.l3),
-            _t('q-n-in', 'N in', PhaseTag.neutral),
-            _t('q-l1-out', '2T1', PhaseTag.l1),
-            _t('q-l2-out', '4T2', PhaseTag.l2),
-            _t('q-l3-out', '6T3', PhaseTag.l3),
-            _t('q-n-out', 'N out', PhaseTag.neutral),
-          ],
-          parameters: <String, Object?>{
-            if (ratedCurrentA != null)
-              ProtectionRating.ratedCurrentKey: ratedCurrentA,
-          },
-          controlState: <String, Object?>{
-            'closed': closed,
-            if (modelType == 'breaker_4p') 'tripped': tripped,
-          },
-          condition: condition,
-        ),
-        _load('r1', PhaseTag.l1, resistanceOhm: 46.0),
-        _load('r2', PhaseTag.l2, resistanceOhm: 57.5),
-        _load('r3', PhaseTag.l3, resistanceOhm: 76.6666666667),
+}) => CircuitState(
+  circuitId: CircuitId('c23-four'),
+  revision: 0,
+  mode: ElectricalMode.ac3,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('q1'),
+      modelType: modelType,
+      terminals: <Terminal>[
+        _t('q-l1-in', '1L1', PhaseTag.l1),
+        _t('q-l2-in', '3L2', PhaseTag.l2),
+        _t('q-l3-in', '5L3', PhaseTag.l3),
+        _t('q-n-in', 'N in', PhaseTag.neutral),
+        _t('q-l1-out', '2T1', PhaseTag.l1),
+        _t('q-l2-out', '4T2', PhaseTag.l2),
+        _t('q-l3-out', '6T3', PhaseTag.l3),
+        _t('q-n-out', 'N out', PhaseTag.neutral),
       ],
-      connections: <Connection>[
-        _wire('p1', 'v1-p', 'q-l1-in'),
-        _wire('p2', 'v2-p', 'q-l2-in'),
-        _wire('p3', 'v3-p', 'q-l3-in'),
-        _wire('nin', 'v1-n', 'q-n-in'),
-        _wire('ns2', 'v2-n', 'v1-n'),
-        _wire('ns3', 'v3-n', 'v1-n'),
-        _wire('o1', 'q-l1-out', 'r1-p'),
-        _wire('o2', 'q-l2-out', 'r2-p'),
-        _wire('o3', 'q-l3-out', 'r3-p'),
-        _wire('no1', 'r1-n', 'q-n-out'),
-        _wire('no2', 'r2-n', 'q-n-out'),
-        _wire('no3', 'r3-n', 'q-n-out'),
-      ],
-      sources: <SourceInstance>[
-        _source('v1', PhaseTag.l1),
-        _source('v2', PhaseTag.l2),
-        _source('v3', PhaseTag.l3),
-      ],
-      settings: const <String, Object?>{'frequencyHz': 50.0},
-    );
+      parameters: <String, Object?>{
+        if (ratedCurrentA != null)
+          ProtectionRating.ratedCurrentKey: ratedCurrentA,
+      },
+      controlState: <String, Object?>{
+        'closed': closed,
+        if (modelType == 'breaker_4p') 'tripped': tripped,
+      },
+      condition: condition,
+    ),
+    _load('r1', PhaseTag.l1, resistanceOhm: 46.0),
+    _load('r2', PhaseTag.l2, resistanceOhm: 57.5),
+    _load('r3', PhaseTag.l3, resistanceOhm: 76.6666666667),
+  ],
+  connections: <Connection>[
+    _wire('p1', 'v1-p', 'q-l1-in'),
+    _wire('p2', 'v2-p', 'q-l2-in'),
+    _wire('p3', 'v3-p', 'q-l3-in'),
+    _wire('nin', 'v1-n', 'q-n-in'),
+    _wire('ns2', 'v2-n', 'v1-n'),
+    _wire('ns3', 'v3-n', 'v1-n'),
+    _wire('o1', 'q-l1-out', 'r1-p'),
+    _wire('o2', 'q-l2-out', 'r2-p'),
+    _wire('o3', 'q-l3-out', 'r3-p'),
+    _wire('no1', 'r1-n', 'q-n-out'),
+    _wire('no2', 'r2-n', 'q-n-out'),
+    _wire('no3', 'r3-n', 'q-n-out'),
+  ],
+  sources: <SourceInstance>[
+    _source('v1', PhaseTag.l1),
+    _source('v2', PhaseTag.l2),
+    _source('v3', PhaseTag.l3),
+  ],
+  settings: const <String, Object?>{'frequencyHz': 50.0},
+);
 
 ComponentInstance _load(
   String id,
   PhaseTag phase, {
   double resistanceOhm = 46.0,
-}) =>
-    ComponentInstance(
-      id: ComponentId(id),
-      modelType: 'resistor',
-      terminals: <Terminal>[
-        _t('$id-p', 'L', phase),
-        _t('$id-n', 'N', PhaseTag.neutral),
-      ],
-      parameters: <String, Object?>{'resistanceOhm': resistanceOhm},
-    );
+}) => ComponentInstance(
+  id: ComponentId(id),
+  modelType: 'resistor',
+  terminals: <Terminal>[
+    _t('$id-p', 'L', phase),
+    _t('$id-n', 'N', PhaseTag.neutral),
+  ],
+  parameters: <String, Object?>{'resistanceOhm': resistanceOhm},
+);
 
 SourceInstance _source(String id, PhaseTag phase) => SourceInstance(
-      id: SourceId(id),
-      modelType: 'ac_voltage_source',
-      terminals: <Terminal>[
-        _t('$id-p', phase.name, phase),
-        _t('$id-n', 'N', PhaseTag.neutral),
-      ],
-      parameters: const <String, Object?>{'voltageRmsV': 230.0},
-    );
+  id: SourceId(id),
+  modelType: 'ac_voltage_source',
+  terminals: <Terminal>[
+    _t('$id-p', phase.name, phase),
+    _t('$id-n', 'N', PhaseTag.neutral),
+  ],
+  parameters: const <String, Object?>{'voltageRmsV': 230.0},
+);
 
 Terminal _t(String id, String name, PhaseTag phase) =>
     Terminal(id: TerminalId(id), name: name, phase: phase);
 
 Connection _wire(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);

@@ -143,38 +143,44 @@ void main() {
       expect(invalid.errorCode, MeasurementErrorCode.unknownTerminal);
     });
 
-    test('AC power requests reject missing branches and invalid mode kinds', () {
-      final CircuitState ac1 = _ac1Circuit();
-      final TopologyGraph topology1 = topologyEngine.compile(ac1);
-      final Ac1SolveResult result1 = const SolverAC1().solve(ac1, topology1);
+    test(
+      'AC power requests reject missing branches and invalid mode kinds',
+      () {
+        final CircuitState ac1 = _ac1Circuit();
+        final TopologyGraph topology1 = topologyEngine.compile(ac1);
+        final Ac1SolveResult result1 = const SolverAC1().solve(ac1, topology1);
 
-      final MeasurementResult missing = measurements.measureAc1(
-        request: MeasurementRequest.activePower(branchId: 'missing'),
-        circuit: ac1,
-        topology: topology1,
-        simulation: result1,
-      );
-      expect(missing.errorCode, MeasurementErrorCode.unknownBranch);
+        final MeasurementResult missing = measurements.measureAc1(
+          request: MeasurementRequest.activePower(branchId: 'missing'),
+          circuit: ac1,
+          topology: topology1,
+          simulation: result1,
+        );
+        expect(missing.errorCode, MeasurementErrorCode.unknownBranch);
 
-      final MeasurementResult phaseSequence = measurements.measureAc1(
-        request: MeasurementRequest.phaseSequence(),
-        circuit: ac1,
-        topology: topology1,
-        simulation: result1,
-      );
-      expect(phaseSequence.errorCode, MeasurementErrorCode.wrongElectricalMode);
+        final MeasurementResult phaseSequence = measurements.measureAc1(
+          request: MeasurementRequest.phaseSequence(),
+          circuit: ac1,
+          topology: topology1,
+          simulation: result1,
+        );
+        expect(
+          phaseSequence.errorCode,
+          MeasurementErrorCode.wrongElectricalMode,
+        );
 
-      final MeasurementResult dcKind = measurements.measureAc1(
-        request: MeasurementRequest.voltage(
-          positiveProbe: TerminalId('r1a'),
-          negativeProbe: TerminalId('r1b'),
-        ),
-        circuit: ac1,
-        topology: topology1,
-        simulation: result1,
-      );
-      expect(dcKind.errorCode, MeasurementErrorCode.wrongElectricalMode);
-    });
+        final MeasurementResult dcKind = measurements.measureAc1(
+          request: MeasurementRequest.voltage(
+            positiveProbe: TerminalId('r1a'),
+            negativeProbe: TerminalId('r1b'),
+          ),
+          circuit: ac1,
+          topology: topology1,
+          simulation: result1,
+        );
+        expect(dcKind.errorCode, MeasurementErrorCode.wrongElectricalMode);
+      },
+    );
 
     test('AC3 total P Q S and phase sequence come from solved phasors', () {
       final CircuitState circuit = _ac3Circuit();
@@ -269,10 +275,7 @@ void main() {
         topology: topology,
         simulation: result,
       );
-      expect(
-        identityMismatch.errorCode,
-        MeasurementErrorCode.identityMismatch,
-      );
+      expect(identityMismatch.errorCode, MeasurementErrorCode.identityMismatch);
 
       final CircuitState ac3 = _ac3Circuit();
       final TopologyGraph topology3 = topologyEngine.compile(ac3);
@@ -325,30 +328,29 @@ void main() {
 Ac3SolveResult _withSequence(
   Ac3SolveResult source,
   Ac3PhaseSequence sequence,
-) =>
-    Ac3SolveResult(
-      circuitId: source.circuitId,
-      circuitRevision: source.circuitRevision,
-      engineVersion: source.engineVersion,
-      status: source.status,
-      frequencyHz: source.frequencyHz,
-      referenceNodeId: source.referenceNodeId,
-      nodeVoltages: source.nodeVoltages,
-      branchResults: source.branchResults,
-      diagnostics: source.diagnostics,
-      maxMatrixResidual: source.maxMatrixResidual,
-      kclResiduals: source.kclResiduals,
-      phaseVoltages: source.phaseVoltages,
-      lineCurrents: source.lineCurrents,
-      lineToLineVoltages: source.lineToLineVoltages,
-      neutralCurrent: source.neutralCurrent,
-      missingPhases: source.missingPhases,
-      sourceSequence: sequence,
-      voltageBalanced: source.voltageBalanced,
-      currentBalanced: source.currentBalanced,
-      neutralConnected: source.neutralConnected,
-      phaseOrderObservations: source.phaseOrderObservations,
-    );
+) => Ac3SolveResult(
+  circuitId: source.circuitId,
+  circuitRevision: source.circuitRevision,
+  engineVersion: source.engineVersion,
+  status: source.status,
+  frequencyHz: source.frequencyHz,
+  referenceNodeId: source.referenceNodeId,
+  nodeVoltages: source.nodeVoltages,
+  branchResults: source.branchResults,
+  diagnostics: source.diagnostics,
+  maxMatrixResidual: source.maxMatrixResidual,
+  kclResiduals: source.kclResiduals,
+  phaseVoltages: source.phaseVoltages,
+  lineCurrents: source.lineCurrents,
+  lineToLineVoltages: source.lineToLineVoltages,
+  neutralCurrent: source.neutralCurrent,
+  missingPhases: source.missingPhases,
+  sourceSequence: sequence,
+  voltageBalanced: source.voltageBalanced,
+  currentBalanced: source.currentBalanced,
+  neutralConnected: source.neutralConnected,
+  phaseOrderObservations: source.phaseOrderObservations,
+);
 
 CircuitState _ac1Circuit() => CircuitState(
   circuitId: CircuitId('m7-ac1'),

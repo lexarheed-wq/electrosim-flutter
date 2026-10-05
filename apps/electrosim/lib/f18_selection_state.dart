@@ -34,10 +34,7 @@ final class F18SelectionState {
     } else {
       nextPrimary = id;
     }
-    return F18SelectionState._(
-      selectedIds: next,
-      primaryId: nextPrimary,
-    );
+    return F18SelectionState._(selectedIds: next, primaryId: nextPrimary);
   }
 
   F18SelectionState clear() => F18SelectionState.empty();

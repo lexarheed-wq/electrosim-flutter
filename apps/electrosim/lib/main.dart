@@ -496,6 +496,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ? F18SelectionState.empty()
         : F18SelectionState.single(id);
   }
+
   String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
   int _canvasInteractionEpoch = 0;

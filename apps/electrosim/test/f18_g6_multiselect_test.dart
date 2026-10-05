@@ -10,9 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> _pumpWorkspace(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1440, 900);
   tester.view.devicePixelRatio = 1;
-  await tester.pumpWidget(
-    const MaterialApp(home: app.F9WorkspaceDemoPage()),
-  );
+  await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
   await tester.pumpAndSettle();
 }
 
@@ -23,19 +21,16 @@ Future<void> _modifierTap(
 ) async {
   await tester.sendKeyDownEvent(key);
   await tester.tapAt(
-    tester.getCenter(
-      find.byKey(ValueKey<String>('board-v1-visual-$visualId')),
-    ),
+    tester.getCenter(find.byKey(ValueKey<String>('board-v1-visual-$visualId'))),
   );
   await tester.pump();
   await tester.sendKeyUpEvent(key);
   await tester.pump();
 }
 
-Set<String> _selection(WidgetTester tester) =>
-    tester.widget<F9CanvasVisualOverlay>(
-      find.byType(F9CanvasVisualOverlay),
-    ).selectedElementIds;
+Set<String> _selection(WidgetTester tester) => tester
+    .widget<F9CanvasVisualOverlay>(find.byType(F9CanvasVisualOverlay))
+    .selectedElementIds;
 
 void main() {
   testWidgets('multi-selection requires Ctrl Cmd or Shift and can be toggled', (
@@ -45,24 +40,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _pumpWorkspace(tester);
 
-    await _modifierTap(
-      tester,
-      LogicalKeyboardKey.controlLeft,
-      'switch-1',
-    );
-    await _modifierTap(
-      tester,
-      LogicalKeyboardKey.controlLeft,
-      'lamp-1',
-    );
+    await _modifierTap(tester, LogicalKeyboardKey.controlLeft, 'switch-1');
+    await _modifierTap(tester, LogicalKeyboardKey.controlLeft, 'lamp-1');
     expect(_selection(tester), containsAll(<String>['switch-1', 'lamp-1']));
     expect(_selection(tester).length, 2);
 
-    await _modifierTap(
-      tester,
-      LogicalKeyboardKey.shiftLeft,
-      'switch-1',
-    );
+    await _modifierTap(tester, LogicalKeyboardKey.shiftLeft, 'switch-1');
     expect(_selection(tester), <String>{'lamp-1'});
 
     await tester.tapAt(
@@ -86,16 +69,8 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await _pumpWorkspace(tester);
 
-    await _modifierTap(
-      tester,
-      LogicalKeyboardKey.metaLeft,
-      'switch-1',
-    );
-    await _modifierTap(
-      tester,
-      LogicalKeyboardKey.metaLeft,
-      'lamp-1',
-    );
+    await _modifierTap(tester, LogicalKeyboardKey.metaLeft, 'switch-1');
+    await _modifierTap(tester, LogicalKeyboardKey.metaLeft, 'lamp-1');
     expect(_selection(tester).length, 2);
 
     await tester.tap(find.byKey(electroSimTopEdgeKey));

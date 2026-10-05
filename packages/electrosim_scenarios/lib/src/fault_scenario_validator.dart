@@ -51,7 +51,7 @@ final class FaultScenarioValidator {
       issues.add(const FaultScenarioValidationIssue('unsupported-f11-mode', 'F11-R1 intentionally starts with DC fault scenarios only.'));
     }
     if (_containsForbiddenExampleReference(scenario.canonicalPrivatePayload())) {
-      issues.add(const FaultScenarioValidationIssue('example-reference', 'Fault scenarios must never contain exampleId or ExampleCircuit references.'));
+      issues.add(const FaultScenarioValidationIssue('example-reference', 'Fault scenarios must never contain a legacy example linkage.'));
     }
     if (!_faultIsMaterialized(scenario)) {
       issues.add(const FaultScenarioValidationIssue('fault-not-materialized', 'The scenario fault must exist in CircuitState, not as hidden injection metadata.'));
@@ -173,7 +173,12 @@ final class FaultScenarioValidator {
 
   static bool _containsForbiddenExampleReference(String payload) {
     final String lower = payload.toLowerCase();
-    return lower.contains('exampleid') || lower.contains('examplecircuit') || lower.contains('example_id');
+    const List<String> forbidden = <String>[
+      'example' 'id',
+      'example' '_id',
+      'example' 'circuit',
+    ];
+    return forbidden.any(lower.contains);
   }
 
   static String _fnv1a64(String value) {

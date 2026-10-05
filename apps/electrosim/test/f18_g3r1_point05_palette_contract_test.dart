@@ -1,6 +1,7 @@
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,6 +127,51 @@ void main() {
         F18ReferenceComponentMetrics.boardSizeFor(
           'catalog_motor_driven_2t',
         ),
+      );
+    },
+  );
+
+  testWidgets(
+    'restored workspace keeps the visual-model board size',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ComponentInstance appliance = ComponentInstance(
+        id: ComponentId('restored-tv'),
+        modelType: 'impedance',
+        terminals: <Terminal>[
+          Terminal(id: TerminalId('restored-tv-a'), name: '1'),
+          Terminal(id: TerminalId('restored-tv-b'), name: '2'),
+        ],
+        parameters: const <String, Object?>{
+          '_visualModelType': 'catalog_appliance_2t',
+          '_visualVariant': 'television',
+          'resistanceOhm': 100.0,
+        },
+      );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('visual-restore'),
+        revision: 1,
+        mode: ElectricalMode.ac1,
+        components: <ComponentInstance>[appliance],
+        connections: const <Connection>[],
+        sources: const <SourceInstance>[],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: app.F18WorkspacePage(initialCircuit: circuit)),
+      );
+      await tester.pumpAndSettle();
+
+      final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      expect(
+        canvas.layout.sizeOf('restored-tv'),
+        F18ReferenceComponentMetrics.boardSizeFor('catalog_appliance_2t'),
       );
     },
   );

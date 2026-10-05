@@ -24,6 +24,7 @@ final class F14LibraryVisualState {
     this.actuated = false,
     this.currentA = 0,
     this.voltageV = 0,
+    this.variantKey,
   });
 
   final bool active;
@@ -33,6 +34,7 @@ final class F14LibraryVisualState {
   final bool actuated;
   final double currentA;
   final double voltageV;
+  final String? variantKey;
 }
 
 abstract final class F14LibraryGeometry {
@@ -327,12 +329,35 @@ final class _Painter {
   }
 
   void auxiliaryContact({required bool normallyClosed}) {
+    final bool relayContact = state.variantKey?.startsWith('relay-') ?? false;
     final Rect body = Rect.fromCenter(
       center: c,
-      width: w * .62,
-      height: h * .68,
+      width: relayContact ? w * .72 : w * .62,
+      height: relayContact ? h * .60 : h * .68,
     );
-    housing(body, radius: h * .035);
+    housing(
+      body,
+      colors: relayContact
+          ? const <Color>[Color(0xFFE6F0F5), Color(0xFF9FB6C2)]
+          : const <Color>[Color(0xFFF9FBFC), Color(0xFFD5DEE4)],
+      radius: relayContact ? h * .055 : h * .035,
+    );
+
+    if (relayContact) {
+      final Rect cover = body.deflate(math.max(5, s * .055));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cover, Radius.circular(h * .035)),
+        Paint()..color = const Color(0x557BC3DA),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(cover, Radius.circular(h * .035)),
+        Paint()
+          ..color = const Color(0xFF4F7786)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.0, s * .012),
+      );
+    }
+
     final Offset top = Offset(c.dx, rect.top + h * .12);
     final Offset bottom = Offset(c.dx, rect.bottom - h * .12);
     terminal(top, label: normallyClosed ? '21' : '13');
@@ -365,9 +390,11 @@ final class _Painter {
         ..strokeCap = StrokeCap.round,
     );
     text(
-      normallyClosed ? 'NC' : 'NO',
+      relayContact
+          ? (normallyClosed ? 'RELAIS NC' : 'RELAIS NO')
+          : (normallyClosed ? 'AUX NC' : 'AUX NO'),
       Offset(c.dx, body.top + h * .09),
-      size: h * .085,
+      size: relayContact ? h * .052 : h * .060,
     );
   }
 

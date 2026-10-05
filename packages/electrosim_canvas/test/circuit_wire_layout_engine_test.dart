@@ -98,7 +98,7 @@ void main() {
     expect(second.elementPositions, equals(first.elementPositions));
   });
 
-  test('unresolved routing preserves the previous visual route', () {
+  test('finite wall is rerouted around instead of preserving an invalid visual route', () {
     final CircuitState base = buildTestCircuit();
     final CircuitState circuit = CircuitState(
       circuitId: base.circuitId,
@@ -134,7 +134,14 @@ void main() {
       layout: layout,
     );
 
-    expect(routed.routeFor('wire-a'), layout.routeFor('wire-a'));
+    expect(routed.routeFor('wire-a'), isNot(equals(layout.routeFor('wire-a'))));
+    final List<Offset> route = routed.routeFor('wire-a');
+    expect(
+      route.any((Offset point) => point.dx < -380 || point.dx > 620),
+      isTrue,
+      reason:
+          'A finite component wall must be bypassed through free workspace instead of forcing a refusal.',
+    );
   });
 
   test(
@@ -209,9 +216,10 @@ void main() {
         end,
       ];
 
-      expect(points.length, greaterThanOrEqualTo(4));
-      expect(points[1].dx, start.dx);
-      expect(points[1].dy, greaterThan(start.dy));
+      final Rect ownerRect = geometry.elementRects['A']!;
+      expect(points.length, greaterThanOrEqualTo(3));
+      expect(points[1].dy, start.dy);
+      expect(points[1].dx, lessThan(ownerRect.left));
       expect(
         OrthogonalWirePath(points: points).segments.every(
           (OrthogonalSegment segment) =>

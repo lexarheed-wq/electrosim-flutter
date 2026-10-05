@@ -49,9 +49,9 @@ CircuitState _motorStarCircuit() {
     _t('u1', 'U1', PhaseTag.l1),
     _t('v1', 'V1', PhaseTag.l2),
     _t('w1', 'W1', PhaseTag.l3),
-    _t('u2', 'U2', PhaseTag.l1),
-    _t('v2', 'V2', PhaseTag.l2),
-    _t('w2', 'W2', PhaseTag.l3),
+    _t('u2', 'U2', PhaseTag.none),
+    _t('v2', 'V2', PhaseTag.none),
+    _t('w2', 'W2', PhaseTag.none),
   ];
 
   return CircuitState(

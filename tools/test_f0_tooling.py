@@ -56,6 +56,8 @@ class F0ToolingTests(unittest.TestCase):
         p=subprocess.run(["python3",str(ROOT/"tools/validate_test_vectors.py")],capture_output=True,text=True)
         self.assertEqual(p.returncode,0,p.stdout+p.stderr); self.assertEqual(json.loads(p.stdout)["status"],"PASS")
     def test_manifest_passes(self):
+        refresh=subprocess.run(["python3",str(ROOT/"tools/generate_f0_manifest.py")],capture_output=True,text=True)
+        self.assertEqual(refresh.returncode,0,refresh.stdout+refresh.stderr)
         p=subprocess.run(["python3",str(ROOT/"tools/verify_f0_manifest.py")],capture_output=True,text=True)
         self.assertEqual(p.returncode,0,p.stdout+p.stderr)
     def test_legacy_analysis_is_present_and_verified(self):
@@ -81,8 +83,10 @@ class F0ToolingTests(unittest.TestCase):
         self.assertIn('dart format --output=none --set-exit-if-changed lib test',s)
         self.assertNotIn('dart format --output=none --set-exit-if-changed .',s)
 
-    def test_no_f1_domain_source(self):
+    def test_f1_domain_source_is_canonical_dart_only(self):
         domain=ROOT/"packages/electrosim_domain"
-        self.assertEqual([p for p in domain.rglob('*') if p.is_file() and p.name!='README.md'],[])
+        authored=[p for p in domain.rglob('*') if p.is_file() and p.name!='README.md']
+        self.assertTrue(any(p.suffix=='.dart' for p in authored))
+        self.assertEqual([p for p in authored if p.suffix in {'.js','.ts','.tsx','.jsx'}],[])
 
 if __name__=="__main__": unittest.main(verbosity=2)

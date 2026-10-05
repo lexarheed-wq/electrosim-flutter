@@ -128,6 +128,26 @@ abstract final class TerminalVisualProfile {
           Offset(0, h * 0.42),
           Offset(w * 0.2072, h * 0.42),
         ],
+      'dc_current_source' ||
+      'ac_voltage_source' ||
+      'ac_current_source' => <Offset>[
+          Offset(w * -0.18, h * 0.40),
+          Offset(w * 0.18, h * 0.40),
+        ],
+      'pv_array' => <Offset>[
+          Offset(w * -0.14, h * 0.42),
+          Offset(w * 0.14, h * 0.42),
+        ],
+      'pv_inverter' => <Offset>[
+          Offset(w * -0.19, h * -0.42),
+          Offset(w * 0.19, h * -0.42),
+          Offset(w * -0.19, h * 0.42),
+          Offset(w * 0.19, h * 0.42),
+        ],
+      'pv_resistive_load' => <Offset>[
+          Offset(w * -0.16, h * 0.41),
+          Offset(w * 0.16, h * 0.41),
+        ],
       _ => null,
     };
   }

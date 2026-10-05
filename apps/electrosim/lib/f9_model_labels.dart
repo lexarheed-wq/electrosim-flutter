@@ -39,6 +39,10 @@ String f9ModelLabel(String modelType) {
       return 'Contact auxiliaire NO';
     case 'contactor_aux_nc':
       return 'Contact auxiliaire NC';
+    case 'relay_contact_no':
+      return 'Contact relais NO';
+    case 'relay_contact_nc':
+      return 'Contact relais NC';
     case 'contactor_ac1':
       return 'Contacteur AC 1φ';
     case 'contactor_3p':

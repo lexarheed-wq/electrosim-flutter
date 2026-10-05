@@ -13,6 +13,7 @@ import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
+import 'f18_drag_preview.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_shell_navigation.dart';
@@ -495,6 +496,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   int? _activeCanvasPointer;
   String? _directDragElementId;
   Offset? _directDragGrabDelta;
+  CircuitVisualLayout? _directDragBaseLayout;
   Offset? _lastCanvasPointerLocal;
   bool _backgroundPanActive = false;
   bool _directPointerMoved = false;
@@ -1415,6 +1417,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _backgroundPanActive = false;
     _directDragElementId = null;
     _directDragGrabDelta = null;
+    _directDragBaseLayout = null;
 
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
       if (_studentTpReadOnly) {
@@ -1457,6 +1460,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (!_studentTpReadOnly) {
           _directDragElementId = id;
           _directDragGrabDelta = current - world;
+          _directDragBaseLayout = _layout;
         }
         _status = _studentTpReadOnly
             ? 'Sélection : $id — TP en lecture seule'
@@ -1521,9 +1525,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final String? movedId = _directDragElementId;
     final bool moved = _directPointerMoved && movedId != null;
     if (moved) {
-      setState(() {
-        _status = 'Position graphique mise à jour : $movedId';
-      });
+      _finalizeDirectDrag(movedId);
       _resetDirectControlTapTracking();
     } else if (_backgroundPanActive &&
         !_directPointerMoved &&
@@ -1541,6 +1543,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _onCanvasPointerCancel(PointerCancelEvent event) {
     if (_activeCanvasPointer == event.pointer) {
+      final CircuitVisualLayout? base = _directDragBaseLayout;
+      if (base != null) {
+        setState(() => _layout = base);
+      }
       _clearDirectPointerState();
     }
   }
@@ -1549,6 +1555,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _activeCanvasPointer = null;
     _directDragElementId = null;
     _directDragGrabDelta = null;
+    _directDragBaseLayout = null;
     _lastCanvasPointerLocal = null;
     _backgroundPanActive = false;
     _directPointerMoved = false;
@@ -1949,6 +1956,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     Offset position, {
     bool moving = false,
   }) {
+    if (moving) {
+      final CircuitVisualLayout base = _directDragBaseLayout ?? _layout;
+      final CircuitVisualLayout preview = F18DragPreviewPolicy.previewMove(
+        circuit: _circuit,
+        baseLayout: base,
+        elementId: elementId,
+        position: position,
+      );
+      setState(() {
+        _layout = preview;
+      });
+      return;
+    }
+
     final CircuitVisualLayout candidate = _routeWithG2A(
       _circuit,
       _layout.moveElement(elementId, position),
@@ -1965,17 +1986,44 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     setState(() {
       _layout = candidate;
-      _status = moving
-          ? 'Déplacement : $elementId'
-          : 'Position graphique mise à jour : $elementId';
+      _status = 'Position graphique mise à jour : $elementId';
+    });
+  }
+
+  void _finalizeDirectDrag(String elementId) {
+    final CircuitVisualLayout? base = _directDragBaseLayout;
+    if (base == null) {
+      return;
+    }
+
+    final CircuitVisualLayout candidate = _routeWithG2A(_circuit, _layout);
+    if (!F18WorkspaceWireSafety.isCrossingFree(
+      circuit: _circuit,
+      layout: candidate,
+    )) {
+      setState(() {
+        _layout = base;
+        _status =
+            'Déplacement refusé : aucun routage final sans croisement de nets.';
+      });
+      return;
+    }
+
+    setState(() {
+      _layout = candidate;
+      _status = 'Position graphique mise à jour : $elementId';
     });
   }
 
   void _cancelCanvasInteraction() {
+    final CircuitVisualLayout? dragBase = _directDragBaseLayout;
     setState(() {
       _canvasInteractionEpoch += 1;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
+      if (dragBase != null) {
+        _layout = dragBase;
+      }
       _clearDirectPointerState();
       _status = 'Interaction de câblage annulée (Échap).';
     });

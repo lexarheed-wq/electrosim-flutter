@@ -1984,34 +1984,37 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               ),
             ),
             const SizedBox(height: ElectroSimSpacing.sm),
-            DropdownButtonFormField<String>(
+            KeyedSubtree(
               key: const Key('palette-category-selector'),
-              initialValue: _category,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Catégorie',
-                isDense: true,
-              ),
-              items: <DropdownMenuItem<String>>[
-                for (final String category in _categories)
-                  DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(
-                      category,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey<ElectricalMode>(widget.mode),
+                initialValue: _category,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Catégorie',
+                  isDense: true,
+                ),
+                items: <DropdownMenuItem<String>>[
+                  for (final String category in _categories)
+                    DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(
+                        category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-              ],
-              onChanged: (String? category) {
-                if (category == null) {
-                  return;
-                }
-                setState(() {
-                  _category = category;
-                  _expanded = false;
-                });
-              },
+                ],
+                onChanged: (String? category) {
+                  if (category == null) {
+                    return;
+                  }
+                  setState(() {
+                    _category = category;
+                    _expanded = false;
+                  });
+                },
+              ),
             ),
             const SizedBox(height: ElectroSimSpacing.md),
             Expanded(

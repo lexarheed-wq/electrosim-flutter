@@ -595,12 +595,16 @@ final class ProtectionCoordinator {
     List<ProtectionCoordinationIssue> issues,
   ) {
     if (component.modelType != 'breaker_3p' &&
+        component.modelType != 'breaker_4p' &&
         component.modelType != 'thermal_overload_3p') {
       return null;
     }
     double maximum = 0.0;
     var found = false;
-    for (final String phase in <String>['L1', 'L2', 'L3']) {
+    final List<String> poles = component.modelType == 'breaker_4p'
+        ? <String>['L1', 'L2', 'L3', 'N']
+        : <String>['L1', 'L2', 'L3'];
+    for (final String phase in poles) {
       final String id =
           'component:' + component.id.value + ':power:' + phase;
       for (final Ac3BranchResult candidate in result.branchResults) {
@@ -650,6 +654,7 @@ final class ProtectionCoordinator {
         'breaker_ac1' ||
         'fuse_ac1' ||
         'breaker_3p' ||
+        'breaker_4p' ||
         'thermal_overload_3p' =>
           true,
         _ => false,

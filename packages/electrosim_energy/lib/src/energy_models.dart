@@ -54,13 +54,25 @@ final class EnergyPowerSample {
         'EnergyPowerSample requires a solved PV result.',
       );
     }
+    final double batteryRawDischargeW =
+        result.batteryPresent && result.batteryPowerW > 0.0
+            ? result.batteryPowerW + result.batteryConversionLossW
+            : 0.0;
+    final double batteryStoredChargeW =
+        result.batteryPresent && result.batteryPowerW < 0.0
+            ? (-result.batteryPowerW - result.batteryConversionLossW)
+                .clamp(0.0, double.infinity)
+                .toDouble()
+            : 0.0;
     return EnergyPowerSample(
       circuitId: result.circuitId,
       circuitRevision: result.circuitRevision,
       engineVersion: result.engineVersion,
-      inputPowerW: result.pvDrawnPowerW,
-      outputPowerW: result.inverterOutputPowerW,
-      lossPowerW: result.inverterConversionLossW,
+      inputPowerW: result.pvDrawnPowerW + batteryRawDischargeW,
+      outputPowerW: result.inverterOutputPowerW + batteryStoredChargeW,
+      lossPowerW: result.controllerConversionLossW +
+          result.inverterConversionLossW +
+          result.batteryConversionLossW,
     );
   }
 

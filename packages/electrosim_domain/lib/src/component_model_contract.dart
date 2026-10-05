@@ -257,6 +257,20 @@ final class CoreComponentModelContracts {
         ],
       ),
       ComponentModelContract(
+        modelType: 'diode',
+        family: ComponentFamily.passive,
+        terminalCount: 2,
+        supportedModes: <ElectricalMode>{ElectricalMode.dc},
+        branches: <ComponentBranchDefinition>[
+          ComponentBranchDefinition(
+            id: 'main',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 1,
+            role: ElectricalBranchRole.main,
+          ),
+        ],
+      ),
+      ComponentModelContract(
         modelType: 'lamp',
         family: ComponentFamily.receiver,
         terminalCount: 2,

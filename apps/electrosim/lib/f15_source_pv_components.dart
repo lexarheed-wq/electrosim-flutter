@@ -75,16 +75,22 @@ final class _F15SourcePvPainter extends CustomPainter {
     switch (device) {
       case F15SourcePvDevice.dcCurrentSource:
         p.source(ac: false, currentSource: true);
+        return;
       case F15SourcePvDevice.acVoltageSource:
         p.source(ac: true, currentSource: false);
+        return;
       case F15SourcePvDevice.acCurrentSource:
         p.source(ac: true, currentSource: true);
+        return;
       case F15SourcePvDevice.pvArray:
         p.pvArray();
+        return;
       case F15SourcePvDevice.pvInverter:
         p.pvInverter();
+        return;
       case F15SourcePvDevice.pvLoad:
         p.pvLoad();
+        return;
     }
   }
 

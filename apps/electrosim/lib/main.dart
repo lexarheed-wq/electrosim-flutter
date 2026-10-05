@@ -606,12 +606,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             onDeleteSelected:
                 canDeleteSelection ? _deleteSelectedElement : null,
             onRecenter: _fitCircuitToViewport,
+            electricalMode: _circuit.mode,
+            onSelectElectricalMode: _requestElectricalModeChange,
             simulationRunning: _simulation.running,
             simulatedTime: _simulation.simulatedTime,
             onToggleSimulation: _simulation.toggle,
             onResetSimulation: _simulation.resetDynamics,
           ),
           palette: F9ComponentPalette(
+            mode: _circuit.mode,
             onStatus: _setStatus,
             onQuickAdd: _quickAddFromPalette,
           ),
@@ -938,6 +941,89 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Offset local = renderObject.globalToLocal(details.offset);
     _addPaletteDefinition(details.data, _viewport.screenToWorld(local));
   }
+
+  Future<void> _requestElectricalModeChange(ElectricalMode mode) async {
+    if (mode == _circuit.mode || _studentTpReadOnly) return;
+
+    final bool hasContent = _circuit.components.isNotEmpty ||
+        _circuit.sources.isNotEmpty ||
+        _circuit.connections.isNotEmpty;
+    if (hasContent) {
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) => AlertDialog(
+          title: const Text('Changer de domaine électrique'),
+          content: Text(
+            'Passer de ${_electricalModeLabel(_circuit.mode)} à '
+            '${_electricalModeLabel(mode)} crée une nouvelle platine vide. '
+            'Le circuit actuel doit être sauvegardé avant ce changement si '
+            'vous souhaitez le conserver.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              key: const Key('mode-change-cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              key: const Key('mode-change-confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Créer la platine'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: mode,
+      components: const <ComponentInstance>[],
+      sources: const <SourceInstance>[],
+      connections: const <Connection>[],
+      settings: _defaultSettingsForMode(mode),
+      metadata: <String, Object?>{
+        ..._circuit.metadata,
+        'electricalModeChangedFrom': _circuit.mode.name,
+      },
+    );
+
+    setState(() {
+      _circuit = next;
+      _layout = _layoutForCircuit(next);
+      _selected = null;
+      _wiringPendingTerminal = null;
+      _wiringHoverTerminal = null;
+      _status = 'Nouvelle platine ${_electricalModeLabel(mode)} prête.';
+    });
+    _simulation.updateCircuit(next);
+    _simulation.resetDynamics();
+    _syncStudentTpCircuit();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fitCircuitToViewport();
+    });
+  }
+
+  Map<String, Object?> _defaultSettingsForMode(ElectricalMode mode) =>
+      switch (mode) {
+        ElectricalMode.dc => const <String, Object?>{},
+        ElectricalMode.ac1 || ElectricalMode.ac3 =>
+          const <String, Object?>{'frequencyHz': 50.0},
+        ElectricalMode.pv => const <String, Object?>{
+            'irradianceWm2': 1000.0,
+            'cellTemperatureC': 25.0,
+            'shadingPct': 0.0,
+          },
+      };
+
+  String _electricalModeLabel(ElectricalMode mode) => switch (mode) {
+        ElectricalMode.dc => 'CC',
+        ElectricalMode.ac1 => 'AC 1φ',
+        ElectricalMode.ac3 => 'AC 3φ',
+        ElectricalMode.pv => 'PV',
+      };
 
   void _quickAddFromPalette(F9PaletteDefinition definition) {
     final RenderObject? renderObject = _canvasDropKey.currentContext?.findRenderObject();
@@ -2272,6 +2358,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onRotateSelected,
     required this.onDeleteSelected,
     required this.onRecenter,
+    required this.electricalMode,
+    required this.onSelectElectricalMode,
     required this.simulationRunning,
     required this.simulatedTime,
     required this.onToggleSimulation,
@@ -2290,6 +2378,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onRotateSelected;
   final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
+  final ElectricalMode electricalMode;
+  final ValueChanged<ElectricalMode> onSelectElectricalMode;
   final bool simulationRunning;
   final Duration simulatedTime;
   final VoidCallback onToggleSimulation;
@@ -2351,6 +2441,55 @@ class _WorkspaceTopBar extends StatelessWidget {
                                     ),
                           ),
                       ],
+                    ),
+                  ),
+                  PopupMenuButton<ElectricalMode>(
+                    key: const Key('workspace-electrical-mode'),
+                    tooltip: 'Domaine électrique',
+                    initialValue: electricalMode,
+                    onSelected: onSelectElectricalMode,
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<ElectricalMode>>[
+                      const PopupMenuItem<ElectricalMode>(
+                        value: ElectricalMode.dc,
+                        child: Text('CC — courant continu'),
+                      ),
+                      const PopupMenuItem<ElectricalMode>(
+                        value: ElectricalMode.ac1,
+                        child: Text('AC 1φ — monophasé'),
+                      ),
+                      const PopupMenuItem<ElectricalMode>(
+                        value: ElectricalMode.ac3,
+                        child: Text('AC 3φ — triphasé'),
+                      ),
+                      const PopupMenuItem<ElectricalMode>(
+                        value: ElectricalMode.pv,
+                        child: Text('PV — photovoltaïque'),
+                      ),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ElectroSimSpacing.xs,
+                        vertical: ElectroSimSpacing.xxs,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.bolt_outlined, size: 18),
+                          if (!compact) ...<Widget>[
+                            const SizedBox(width: 4),
+                            Text(
+                              switch (electricalMode) {
+                                ElectricalMode.dc => 'CC',
+                                ElectricalMode.ac1 => 'AC 1φ',
+                                ElectricalMode.ac3 => 'AC 3φ',
+                                ElectricalMode.pv => 'PV',
+                              },
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                   if (sessionNavigation) ...<Widget>[

@@ -175,8 +175,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
-      final double currentA = _sourceCurrentA(runtime, source.id);
-      final double voltageV = _sourceVoltageV(runtime, source.id);
+      final double currentA =
+          _sourceCurrentA(runtime, source.id, source.modelType);
+      final double voltageV =
+          _sourceVoltageV(runtime, source.id, source.modelType);
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
@@ -197,8 +199,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       );
     }
     for (final ComponentInstance component in widget.circuit.components) {
-      final double currentA = _componentSignedCurrentA(runtime, component.id);
-      final double voltageV = _componentVoltageV(runtime, component.id);
+      final double currentA = _componentSignedCurrentA(
+        runtime,
+        component.id,
+        component.modelType,
+      );
+      final double voltageV = _componentVoltageV(
+        runtime,
+        component.id,
+        component.modelType,
+      );
       final bool energized = widget.simulationRunning &&
           (runtime?.solved ?? false) &&
           currentA.abs() > 1e-6;
@@ -245,6 +255,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   static double _componentSignedCurrentA(
     ElectroSimRuntimeSnapshot? runtime,
     ComponentId id,
+    String modelType,
   ) {
     if (runtime == null) return 0;
     final String prefix = 'component:${id.value}';
@@ -283,12 +294,25 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       }
       return value;
     }
+
+    final pv = runtime.pvResult;
+    if (pv != null && pv.isSolved) {
+      if (modelType == 'pv_inverter') {
+        return pv.inverterOutputCurrentRmsA;
+      }
+      if (modelType == 'pv_resistive_load') {
+        for (final load in pv.loadResults) {
+          if (load.componentId == id) return load.currentRmsA;
+        }
+      }
+    }
     return 0;
   }
 
   static double _sourceCurrentA(
     ElectroSimRuntimeSnapshot? runtime,
     SourceId id,
+    String modelType,
   ) {
     if (runtime == null) return 0;
     final String target = 'source:${id.value}';
@@ -316,12 +340,17 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         if (current != null && current.isFinite) return current;
       }
     }
+    final pv = runtime.pvResult;
+    if (pv != null && pv.isSolved && modelType == 'pv_array') {
+      return pv.pvDrawnCurrentA;
+    }
     return 0;
   }
 
   static double _sourceVoltageV(
     ElectroSimRuntimeSnapshot? runtime,
     SourceId id,
+    String modelType,
   ) {
     if (runtime == null) return 0;
     final String target = 'source:${id.value}';
@@ -349,12 +378,17 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         }
       }
     }
+    final pv = runtime.pvResult;
+    if (pv != null && pv.isSolved && modelType == 'pv_array') {
+      return pv.pvOperatingVoltageV;
+    }
     return 0;
   }
 
   static double _componentVoltageV(
     ElectroSimRuntimeSnapshot? runtime,
     ComponentId id,
+    String modelType,
   ) {
     if (runtime == null) return 0;
     final String prefix = 'component:${id.value}';
@@ -380,6 +414,18 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac3.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         if (branch.voltage.magnitude.isFinite) value = math.max(value, branch.voltage.magnitude);
+      }
+      return value;
+    }
+    final pv = runtime.pvResult;
+    if (pv != null && pv.isSolved) {
+      if (modelType == 'pv_inverter') {
+        return pv.inverterOutputVoltageRmsV;
+      }
+      if (modelType == 'pv_resistive_load') {
+        for (final load in pv.loadResults) {
+          if (load.componentId == id) return load.voltageRmsV;
+        }
       }
     }
     return value;
@@ -548,6 +594,20 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         if (branchCurrent == null || !branchCurrent.isFinite) continue;
         current = math.max(current, branchCurrent);
       }
+      return current;
+    }
+
+    final pv = runtime.pvResult;
+    if (pv != null && pv.isSolved) {
+      return switch (connection.phase) {
+        PhaseTag.dcPositive || PhaseTag.dcNegative => pv.pvDrawnCurrentA.abs(),
+        PhaseTag.l1 || PhaseTag.neutral =>
+          pv.inverterOutputCurrentRmsA.abs(),
+        _ => math.max(
+            pv.pvDrawnCurrentA.abs(),
+            pv.inverterOutputCurrentRmsA.abs(),
+          ),
+      };
     }
     return current;
   }

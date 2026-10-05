@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'f14_library_components.dart';
+import 'f15_source_pv_components.dart';
 import 'f18_component_archetypes.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
@@ -43,6 +44,12 @@ abstract final class F18ReferenceComponentVisuals {
     'contactor_3p',
     'breaker_3p',
     'thermal_overload_3p',
+    'dc_current_source',
+    'ac_voltage_source',
+    'ac_current_source',
+    'pv_array',
+    'pv_inverter',
+    'pv_resistive_load',
   };
 
   static bool supports(String modelType) =>
@@ -96,6 +103,12 @@ abstract final class F18ReferenceComponentMetrics {
         'contactor_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactor3p),
         'breaker_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.breaker3p),
         'thermal_overload_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.thermalOverload3p),
+        'dc_current_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.dcCurrentSource),
+        'ac_voltage_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.acVoltageSource),
+        'ac_current_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.acCurrentSource),
+        'pv_array' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvArray),
+        'pv_inverter' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvInverter),
+        'pv_resistive_load' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvLoad),
         _ => const Size(104, 64),
       };
 
@@ -283,6 +296,30 @@ class F18ComponentAssetVisual extends StatelessWidget {
           actuated: actuated,
           currentA: currentA,
           voltageV: voltageV,
+        ),
+      );
+    }
+
+    final F15SourcePvDevice? sourcePvDevice = switch (type) {
+      'dc_current_source' => F15SourcePvDevice.dcCurrentSource,
+      'ac_voltage_source' => F15SourcePvDevice.acVoltageSource,
+      'ac_current_source' => F15SourcePvDevice.acCurrentSource,
+      'pv_array' => F15SourcePvDevice.pvArray,
+      'pv_inverter' => F15SourcePvDevice.pvInverter,
+      'pv_resistive_load' => F15SourcePvDevice.pvLoad,
+      _ => null,
+    };
+    if (sourcePvDevice != null) {
+      return F15SourcePvComponentView(
+        device: sourcePvDevice,
+        size: size,
+        state: F15SourcePvState(
+          active: active,
+          energized: energized,
+          currentA: currentA,
+          voltageV: voltageV,
+          animationValue: animationValue,
+          variantKey: variantKey,
         ),
       );
     }

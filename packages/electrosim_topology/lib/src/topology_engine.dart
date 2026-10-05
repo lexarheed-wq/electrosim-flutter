@@ -194,19 +194,25 @@ final class TopologyEngine {
         for (final TerminalId id in node.terminalIds)
           if (terminalById[id]!.phase != PhaseTag.none) terminalById[id]!.phase,
       };
-      if (_hasConflictingPhases(phases)) {
-        final bool allowedLimitedDcShort = _isLimitedDcSourceShortNode(
-          circuit,
-          node,
-        );
+      final bool directDcSourceShort = _hasDirectDcSourceShortNode(
+        circuit,
+        node,
+      );
+      final bool phaseConflict = _hasConflictingPhases(phases);
+      if (phaseConflict || directDcSourceShort) {
+        final bool allowedLimitedDcShort =
+            directDcSourceShort &&
+            !_hasIdealDcSourceShortNode(circuit, node);
         findings.add(
           TopologyFinding(
             code: TopologyFindingCode.conflictingPhases,
             severity: allowedLimitedDcShort
                 ? TopologyFindingSeverity.warning
                 : TopologyFindingSeverity.error,
-            message: allowedLimitedDcShort
-                ? 'Node ${node.id} directly shorts a current-limited DC source; solver current limiting is required.'
+            message: directDcSourceShort
+                ? allowedLimitedDcShort
+                      ? 'Node ${node.id} directly shorts a current-limited DC source; solver current limiting is required.'
+                      : 'Node ${node.id} directly shorts an ideal DC voltage source.'
                 : 'Node ${node.id} merges incompatible phase/polarity tags.',
             nodeId: node.id,
             terminalIds: node.terminalIds,
@@ -287,31 +293,45 @@ bool _ownerIsIsolated(
   (Terminal terminal) => enabledConnectionDegree[terminal.id] == 0,
 );
 
-bool _isLimitedDcSourceShortNode(CircuitState circuit, TopologyNode node) {
+bool _hasDirectDcSourceShortNode(CircuitState circuit, TopologyNode node) {
+  if (circuit.mode != ElectricalMode.dc) {
+    return false;
+  }
+  final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
+  return circuit.sources.any(
+    (SourceInstance source) =>
+        _isDcVoltageSource(source) &&
+        nodeTerminals.contains(source.terminals[0].id) &&
+        nodeTerminals.contains(source.terminals[1].id),
+  );
+}
+
+bool _hasIdealDcSourceShortNode(CircuitState circuit, TopologyNode node) {
   if (circuit.mode != ElectricalMode.dc) {
     return false;
   }
   final Set<TerminalId> nodeTerminals = node.terminalIds.toSet();
   for (final SourceInstance source in circuit.sources) {
-    if (!source.enabled ||
-        (source.modelType != 'dc_voltage_source' &&
-            source.modelType != 'voltage_source') ||
-        source.terminals.length != 2) {
+    if (!_isDcVoltageSource(source) ||
+        !nodeTerminals.contains(source.terminals[0].id) ||
+        !nodeTerminals.contains(source.terminals[1].id)) {
       continue;
     }
     final Object? rawLimit = source.parameters['currentLimitA'];
     if (rawLimit is! num ||
         !rawLimit.toDouble().isFinite ||
         rawLimit.toDouble() <= 0.0) {
-      continue;
-    }
-    if (nodeTerminals.contains(source.terminals[0].id) &&
-        nodeTerminals.contains(source.terminals[1].id)) {
       return true;
     }
   }
   return false;
 }
+
+bool _isDcVoltageSource(SourceInstance source) =>
+    source.enabled &&
+    (source.modelType == 'dc_voltage_source' ||
+        source.modelType == 'voltage_source') &&
+    source.terminals.length == 2;
 
 bool _hasConflictingPhases(Set<PhaseTag> phases) {
   if (phases.length < 2) {
@@ -321,6 +341,15 @@ bool _hasConflictingPhases(Set<PhaseTag> phases) {
     PhaseTag.protectiveEarth,
   });
   if (active.length < 2) {
+    return false;
+  }
+  // DC positive/negative are local terminal polarity labels, not global bus
+  // phases. Their coexistence in a node is valid for series sources and
+  // polarized receivers. A same-source direct short is checked separately.
+  if (active.every(
+    (PhaseTag phase) =>
+        phase == PhaseTag.dcPositive || phase == PhaseTag.dcNegative,
+  )) {
     return false;
   }
   return true;

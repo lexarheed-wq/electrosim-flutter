@@ -309,8 +309,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac1.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite)
+        if (current != null && current.isFinite) {
           value = math.max(value, current);
+        }
       }
       return value;
     }
@@ -321,8 +322,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac3.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite)
+        if (current != null && current.isFinite) {
           value = math.max(value, current);
+        }
       }
       return value;
     }
@@ -369,8 +371,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac1.branchResults) {
         if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite)
+        if (current != null && current.isFinite) {
           value = math.max(value, current);
+        }
       }
       if (value > 0) return value;
     }
@@ -380,8 +383,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac3.branchResults) {
         if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite)
+        if (current != null && current.isFinite) {
           value = math.max(value, current);
+        }
       }
       if (value > 0) return value;
     }
@@ -448,8 +452,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (dc != null && dc.isSolved) {
       for (final branch in dc.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltageV.isFinite)
+        if (branch.voltageV.isFinite) {
           value = math.max(value, branch.voltageV.abs());
+        }
       }
       return value;
     }
@@ -457,8 +462,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (ac1 != null && ac1.isSolved) {
       for (final branch in ac1.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltage.magnitude.isFinite)
+        if (branch.voltage.magnitude.isFinite) {
           value = math.max(value, branch.voltage.magnitude);
+        }
       }
       return value;
     }
@@ -466,8 +472,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (ac3 != null && ac3.isSolved) {
       for (final branch in ac3.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltage.magnitude.isFinite)
+        if (branch.voltage.magnitude.isFinite) {
           value = math.max(value, branch.voltage.magnitude);
+        }
       }
       return value;
     }

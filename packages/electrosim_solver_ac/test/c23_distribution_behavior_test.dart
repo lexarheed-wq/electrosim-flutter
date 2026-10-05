@@ -315,12 +315,10 @@ CircuitState _fourPoleCircuit({
     _load('r3', PhaseTag.l3, resistanceOhm: 76.6666666667),
   ],
   connections: <Connection>[
-    _wire('p1', 'v1-p', 'q-l1-in'),
-    _wire('p2', 'v2-p', 'q-l2-in'),
-    _wire('p3', 'v3-p', 'q-l3-in'),
-    _wire('nin', 'v1-n', 'q-n-in'),
-    _wire('ns2', 'v2-n', 'v1-n'),
-    _wire('ns3', 'v3-n', 'v1-n'),
+    _wire('p1', 'grid-l1', 'q-l1-in'),
+    _wire('p2', 'grid-l2', 'q-l2-in'),
+    _wire('p3', 'grid-l3', 'q-l3-in'),
+    _wire('nin', 'grid-n', 'q-n-in'),
     _wire('o1', 'q-l1-out', 'r1-p'),
     _wire('o2', 'q-l2-out', 'r2-p'),
     _wire('o3', 'q-l3-out', 'r3-p'),
@@ -328,11 +326,7 @@ CircuitState _fourPoleCircuit({
     _wire('no2', 'r2-n', 'q-n-out'),
     _wire('no3', 'r3-n', 'q-n-out'),
   ],
-  sources: <SourceInstance>[
-    _source('v1', PhaseTag.l1),
-    _source('v2', PhaseTag.l2),
-    _source('v3', PhaseTag.l3),
-  ],
+  sources: <SourceInstance>[_gridSource()],
   settings: const <String, Object?>{'frequencyHz': 50.0},
 );
 
@@ -366,27 +360,21 @@ CircuitState _terminalBlockCircuit({
     _load('r4', PhaseTag.l1, resistanceOhm: 92.0),
   ],
   connections: <Connection>[
-    _wire('p1', 'v1-p', 'tb-l1-in'),
-    _wire('p2', 'v2-p', 'tb-l2-in'),
-    _wire('p3', 'v3-p', 'tb-l3-in'),
-    _wire('pn', 'v1-n', 'tb-n-in'),
-    _wire('px', 'v1-p', 'tb-x-in'),
-    _wire('ns2', 'v2-n', 'v1-n'),
-    _wire('ns3', 'v3-n', 'v1-n'),
+    _wire('p1', 'grid-l1', 'tb-l1-in'),
+    _wire('p2', 'grid-l2', 'tb-l2-in'),
+    _wire('p3', 'grid-l3', 'tb-l3-in'),
+    _wire('pn', 'grid-n', 'tb-n-in'),
+    _wire('px', 'grid-l1', 'tb-x-in'),
     _wire('o1', 'tb-l1-out', 'r1-p'),
     _wire('o2', 'tb-l2-out', 'r2-p'),
     _wire('o3', 'tb-l3-out', 'r3-p'),
     _wire('ox', 'tb-x-out', 'r4-p'),
-    _wire('n1', 'r1-n', 'tb-n-out'),
-    _wire('n2', 'r2-n', 'tb-n-out'),
-    _wire('n3', 'r3-n', 'tb-n-out'),
-    _wire('n4', 'r4-n', 'tb-n-out'),
+    _wire('n1', 'r1-n', 'grid-n'),
+    _wire('n2', 'r2-n', 'grid-n'),
+    _wire('n3', 'r3-n', 'grid-n'),
+    _wire('n4', 'r4-n', 'grid-n'),
   ],
-  sources: <SourceInstance>[
-    _source('v1', PhaseTag.l1),
-    _source('v2', PhaseTag.l2),
-    _source('v3', PhaseTag.l3),
-  ],
+  sources: <SourceInstance>[_gridSource()],
   settings: const <String, Object?>{'frequencyHz': 50.0},
 );
 
@@ -402,6 +390,18 @@ ComponentInstance _load(
     _t('$id-n', 'N', PhaseTag.neutral),
   ],
   parameters: <String, Object?>{'resistanceOhm': resistanceOhm},
+);
+
+SourceInstance _gridSource() => SourceInstance(
+  id: SourceId('grid'),
+  modelType: 'ac3_voltage_source',
+  terminals: <Terminal>[
+    _t('grid-l1', 'L1', PhaseTag.l1),
+    _t('grid-l2', 'L2', PhaseTag.l2),
+    _t('grid-l3', 'L3', PhaseTag.l3),
+    _t('grid-n', 'N', PhaseTag.neutral),
+  ],
+  parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
 );
 
 SourceInstance _source(String id, PhaseTag phase) => SourceInstance(

@@ -13,6 +13,32 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('SolverAC3', () {
+    test('Ac3BranchResult power factor handles zero and loaded branches', () {
+      const Ac3BranchResult zero = Ac3BranchResult(
+        id: 'zero-power',
+        modelType: 'resistor',
+        kind: Ac3BranchKind.resistor,
+        fromNodeId: 'a',
+        toNodeId: 'b',
+        voltage: AcComplex(230.0, 0.0),
+        current: AcComplex.zero,
+      );
+      expect(zero.powerFactor, 1.0);
+
+      final Ac3BranchResult loaded = Ac3BranchResult(
+        id: 'loaded-power',
+        modelType: 'impedance',
+        kind: Ac3BranchKind.impedance,
+        fromNodeId: 'a',
+        toNodeId: 'b',
+        voltage: const AcComplex(230.0, 0.0),
+        current: AcComplex.polar(5.0, -math.pi / 3.0),
+      );
+      expect(loaded.activePowerW, closeTo(575.0, 1e-8));
+      expect(loaded.apparentPowerVA, closeTo(1150.0, 1e-8));
+      expect(loaded.powerFactor, closeTo(0.5, 1e-12));
+    });
+
     test(
       'AC3-001 balanced star has explicit L1/L2/L3/N and balanced currents',
       () {

@@ -98,6 +98,108 @@ void main() {
     });
   });
 
+  group('Contactor AC3 validation branches', () {
+    test('invalid actuated state is rejected explicitly', () {
+      final CircuitState base = _ac3ContactorCircuit(actuated: false);
+      final ComponentInstance original = base.components.first;
+      final ComponentInstance malformed = ComponentInstance(
+        id: original.id,
+        modelType: original.modelType,
+        terminals: original.terminals,
+        parameters: original.parameters,
+        controlState: const <String, Object?>{'actuated': 'yes'},
+        condition: original.condition,
+      );
+      final Ac3SolveResult result = const SolverAC3().solve(
+        _replaceFirstComponent(base, malformed),
+        topologyEngine.compile(_replaceFirstComponent(base, malformed)),
+      );
+      expect(result.status, Ac3SolveStatus.invalid);
+      expect(
+        result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.invalidParameter),
+      );
+    });
+
+    test('degraded contactor condition is rejected explicitly', () {
+      final CircuitState base = _ac3ContactorCircuit(actuated: false);
+      final ComponentInstance original = base.components.first;
+      final ComponentInstance degraded = ComponentInstance(
+        id: original.id,
+        modelType: original.modelType,
+        terminals: original.terminals,
+        parameters: original.parameters,
+        controlState: original.controlState,
+        condition: ComponentCondition.degraded,
+      );
+      final CircuitState circuit = _replaceFirstComponent(base, degraded);
+      final Ac3SolveResult result = const SolverAC3().solve(
+        circuit,
+        topologyEngine.compile(circuit),
+      );
+      expect(result.status, Ac3SolveStatus.invalid);
+      expect(
+        result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.unsupportedComponentCondition),
+      );
+    });
+
+    test('invalid coil parameters are rejected and open condition remains explicit', () {
+      final CircuitState base = _ac3ContactorCircuit(actuated: true);
+      final ComponentInstance original = base.components.first;
+      final ComponentInstance invalidCoil = ComponentInstance(
+        id: original.id,
+        modelType: original.modelType,
+        terminals: original.terminals,
+        parameters: const <String, Object?>{
+          'coilResistanceOhm': 0.0,
+          'coilInductanceH': -0.1,
+        },
+        controlState: original.controlState,
+        condition: original.condition,
+      );
+      final CircuitState invalidCircuit = _replaceFirstComponent(
+        base,
+        invalidCoil,
+      );
+      final Ac3SolveResult invalid = const SolverAC3().solve(
+        invalidCircuit,
+        topologyEngine.compile(invalidCircuit),
+      );
+      expect(invalid.status, Ac3SolveStatus.invalid);
+      expect(
+        invalid.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.invalidParameter),
+      );
+
+      final ComponentInstance openContactor = ComponentInstance(
+        id: original.id,
+        modelType: original.modelType,
+        terminals: original.terminals,
+        parameters: original.parameters,
+        controlState: original.controlState,
+        condition: ComponentCondition.openCircuit,
+      );
+      final CircuitState openCircuit = _replaceFirstComponent(
+        base,
+        openContactor,
+      );
+      final Ac3SolveResult open = const SolverAC3().solve(
+        openCircuit,
+        topologyEngine.compile(openCircuit),
+      );
+      expect(open.isSolved, isTrue);
+      expect(
+        open.branch('component:k1:control:coil').kind,
+        Ac3BranchKind.controlCoil,
+      );
+      expect(
+        open.branch('component:k1:control:coil').current!.magnitude,
+        closeTo(0.0, 1e-12),
+      );
+    });
+  });
+
   group('Contactor AC3 branch behavior', () {
     test(
       'three power poles follow actuated state while coil remains modeled',
@@ -143,6 +245,22 @@ void main() {
     );
   });
 }
+
+CircuitState _replaceFirstComponent(
+  CircuitState base,
+  ComponentInstance replacement,
+) => CircuitState(
+  circuitId: base.circuitId,
+  revision: base.revision,
+  mode: base.mode,
+  components: <ComponentInstance>[
+    replacement,
+    ...base.components.skip(1),
+  ],
+  connections: base.connections,
+  sources: base.sources,
+  settings: base.settings,
+);
 
 CircuitState _ac1ContactorCircuit({required bool actuated}) => CircuitState(
   circuitId: CircuitId('contact-ac1-$actuated'),

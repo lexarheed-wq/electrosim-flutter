@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'apps/electrosim/**'
+      - 'packages/electrosim_scenarios/**'
       - 'tools/**'
       - 'ci/**'
       - 'reference/REFERENCE_BASELINE.json'
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - 'apps/electrosim/**'
+      - 'packages/electrosim_scenarios/**'
       - 'tools/**'
       - 'ci/**'
       - 'reference/REFERENCE_BASELINE.json'

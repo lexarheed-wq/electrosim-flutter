@@ -228,6 +228,59 @@ final class ElectroSimRuntimeSnapshot {
     );
   }
 
+
+  MeasurementResult measureActivePower({String? branchId}) =>
+      _measureAcPower(MeasurementRequest.activePower(branchId: branchId));
+
+  MeasurementResult measureReactivePower({String? branchId}) =>
+      _measureAcPower(MeasurementRequest.reactivePower(branchId: branchId));
+
+  MeasurementResult measureApparentPower({String? branchId}) =>
+      _measureAcPower(MeasurementRequest.apparentPower(branchId: branchId));
+
+  MeasurementResult measurePhaseSequence() {
+    final Ac3SolveResult? result = ac3Result;
+    if (result == null) {
+      return MeasurementResult.invalid(
+        kind: MeasurementKind.phaseSequence,
+        errorCode: MeasurementErrorCode.wrongElectricalMode,
+        message: 'L’ordre des phases nécessite un résultat AC3.',
+      );
+    }
+    return measurementEngine.measureAc3(
+      request: MeasurementRequest.phaseSequence(),
+      circuit: circuit,
+      topology: topology,
+      simulation: result,
+    );
+  }
+
+  MeasurementResult _measureAcPower(MeasurementRequest request) {
+    final Ac1SolveResult? ac1Local = ac1Result;
+    if (ac1Local != null) {
+      return measurementEngine.measureAc1(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac1Local,
+      );
+    }
+    final Ac3SolveResult? ac3Local = ac3Result;
+    if (ac3Local != null) {
+      return measurementEngine.measureAc3(
+        request: request,
+        circuit: circuit,
+        topology: topology,
+        simulation: ac3Local,
+      );
+    }
+    return MeasurementResult.invalid(
+      kind: request.kind,
+      errorCode: MeasurementErrorCode.wrongElectricalMode,
+      message: 'La mesure de puissance nécessite un résultat AC.',
+    );
+  }
+
   EnergyPowerSample energyPowerSample() {
     final PvSolveResult? result = pvResult;
     if (result == null) {

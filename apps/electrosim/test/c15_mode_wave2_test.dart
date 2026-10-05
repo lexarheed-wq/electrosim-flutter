@@ -331,6 +331,40 @@ void main() {
     },
   );
 
+  testWidgets('DC palette never exposes three-phase distribution hardware', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpAndSettle();
+    await _openPalette(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'Bornier',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('palette-item-terminal-block-dc-5')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('palette-item-terminal-block-5')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const Key('palette-category-selector')));
+    await tester.pumpAndSettle();
+    expect(find.text('Distribution CC'), findsOneWidget);
+    expect(find.text('Distribution 3φ'), findsNothing);
+    expect(find.text('Triphasé'), findsNothing);
+  });
+
   testWidgets('C15 source and PV visuals use native production painters', (
     WidgetTester tester,
   ) async {

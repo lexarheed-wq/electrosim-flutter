@@ -1,4 +1,5 @@
 name: F18 G5 supported parity
+# rerun g5 r2
 
 on:
   push:

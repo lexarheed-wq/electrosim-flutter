@@ -480,6 +480,47 @@ void main() {
       expect(discharged.inverterState, PvInverterState.powerLimited);
     });
 
+    test('C25 empty battery reports minimum SOC exhaustion explicitly', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        irradianceWm2: 0.0,
+        loadPowerAt230W: 3000.0,
+        initialSoc: 0.10,
+        minSoc: 0.10,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.10,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.batterySoc, closeTo(0.10, 1e-12));
+      expect(
+        result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.batteryEmpty),
+      );
+    });
+
+    test('C25 full battery reports charge saturation explicitly', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        loadPowerAt230W: 100.0,
+        initialSoc: 0.95,
+        maxSoc: 0.95,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.95,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.batterySoc, closeTo(0.95, 1e-12));
+      expect(
+        result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.batteryFull),
+      );
+    });
+
     test(
       'C25 controller and battery cannot be silently used independently',
       () {

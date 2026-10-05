@@ -77,6 +77,40 @@ void main() {
     }
   });
 
+  test('iron uses a dedicated heater silhouette', () {
+    expect(
+      F20CatalogVisualIdentity.heaterSilhouette('iron'),
+      F20HeaterSilhouette.iron,
+    );
+    expect(
+      F20CatalogVisualIdentity.heaterSilhouette('unknown'),
+      F20HeaterSilhouette.generic,
+    );
+  });
+
+  testWidgets('iron silhouette renders without exception', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: F20CatalogComponentView(
+            device: F20CatalogDevice.heater,
+            size: Size(190, 170),
+            state: F20CatalogState(
+              energized: true,
+              voltageV: 230,
+              currentA: 5,
+              variantKey: 'iron',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('all external appliance silhouettes render without exception', (
     WidgetTester tester,
   ) async {

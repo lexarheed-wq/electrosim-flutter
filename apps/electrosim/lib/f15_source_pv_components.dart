@@ -6,6 +6,7 @@ enum F15SourcePvDevice {
   dcCurrentSource,
   acVoltageSource,
   acCurrentSource,
+  ac3VoltageSource,
   pvArray,
   pvInverter,
   pvLoad,
@@ -35,6 +36,7 @@ abstract final class F15SourcePvGeometry {
         F15SourcePvDevice.dcCurrentSource => const Size(140, 160),
         F15SourcePvDevice.acVoltageSource => const Size(140, 160),
         F15SourcePvDevice.acCurrentSource => const Size(140, 160),
+        F15SourcePvDevice.ac3VoltageSource => const Size(210, 210),
         F15SourcePvDevice.pvArray => const Size(220, 170),
         F15SourcePvDevice.pvInverter => const Size(190, 230),
         F15SourcePvDevice.pvLoad => const Size(170, 160),
@@ -81,6 +83,9 @@ final class _F15SourcePvPainter extends CustomPainter {
         return;
       case F15SourcePvDevice.acCurrentSource:
         p.source(ac: true, currentSource: true);
+        return;
+      case F15SourcePvDevice.ac3VoltageSource:
+        p.ac3Source();
         return;
       case F15SourcePvDevice.pvArray:
         p.pvArray();
@@ -279,6 +284,96 @@ final class _P {
           ..color = const Color(0xFF354650)
           ..style = PaintingStyle.stroke
           ..strokeWidth = math.max(1.2, s * .014),
+      );
+    }
+  }
+
+  void ac3Source() {
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .72,
+      height: h * .70,
+    );
+    housing(
+      body,
+      colors: const <Color>[Color(0xFFF2F5F6), Color(0xFFB8C5CC)],
+      radius: h * .045,
+    );
+    final Rect display = Rect.fromLTWH(
+      body.left + body.width * .12,
+      body.top + body.height * .12,
+      body.width * .76,
+      body.height * .27,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(h * .025)),
+      Paint()..color = const Color(0xFF0C252D),
+    );
+    text(
+      state.energized ? '400 / 230 V' : '3~ 400/230 V',
+      display.center.translate(0, -display.height * .08),
+      size: h * .075,
+      color: const Color(0xFF91EFD0),
+    );
+    text(
+      '50 Hz · L1 L2 L3 N',
+      display.center.translate(0, display.height * .27),
+      size: h * .045,
+      color: const Color(0xFF94C9DC),
+    );
+
+    final Offset symbol = Offset(c.dx, c.dy + h * .04);
+    final double r = h * .12;
+    canvas.drawCircle(symbol, r, Paint()..color = const Color(0xFFF7FAFB));
+    canvas.drawCircle(symbol, r, outline);
+    for (var phase = 0; phase < 3; phase++) {
+      final Path wave = Path();
+      final double shift = phase * 2 * math.pi / 3;
+      for (var i = 0; i <= 24; i++) {
+        final double t = i / 24;
+        final Offset p = Offset(
+          symbol.dx - r * .62 + t * r * 1.24,
+          symbol.dy +
+              (phase - 1) * r * .16 +
+              math.sin(t * math.pi * 2 - shift) * r * .12,
+        );
+        if (i == 0) {
+          wave.moveTo(p.dx, p.dy);
+        } else {
+          wave.lineTo(p.dx, p.dy);
+        }
+      }
+      canvas.drawPath(
+        wave,
+        Paint()
+          ..color = <Color>[
+            const Color(0xFF8B5A2B),
+            const Color(0xFF22282D),
+            const Color(0xFF727A80),
+          ][phase]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.1, s * .012),
+      );
+    }
+
+    final List<double> xs = <double>[
+      c.dx - w * .27,
+      c.dx - w * .09,
+      c.dx + w * .09,
+      c.dx + w * .27,
+    ];
+    const List<String> labels = <String>['L1', 'L2', 'L3', 'N'];
+    const List<Color> colors = <Color>[
+      Color(0xFF8B5A2B),
+      Color(0xFF22282D),
+      Color(0xFF727A80),
+      Color(0xFF2563EB),
+    ];
+    for (var i = 0; i < 4; i++) {
+      terminal(
+        Offset(xs[i], rect.bottom - h * .08),
+        colors[i],
+        labels[i],
       );
     }
   }

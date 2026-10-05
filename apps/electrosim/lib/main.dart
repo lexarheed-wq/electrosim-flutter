@@ -1042,8 +1042,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       polylines.add(<Offset>[start, ..._layout.routeFor(connection.id.value), end]);
     }
     final Size elementSize =
-        F18ReferenceComponentVisuals.supports(definition.modelType)
-            ? F18ReferenceComponentMetrics.boardSizeFor(definition.modelType)
+        F18ReferenceComponentVisuals.supports(definition.renderedModelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(definition.renderedModelType)
             : _layout.defaultElementSize;
     Offset? position = F9AutoPlacement.findPosition(
       visibleWorldRect: visibleWorldRect,
@@ -1115,6 +1115,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ...(definition.defaultParameters.isNotEmpty
             ? definition.defaultParameters
             : const <String, Object?>{'voltageV': 24.0}),
+        if (definition.visualModelType != null)
+          '_visualModelType': definition.visualModelType!,
         if (definition.visualVariant != null)
           '_visualVariant': definition.visualVariant!,
         if (definition.displayLabel != null)
@@ -1200,9 +1202,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final Map<String, Size> sizes = <String, Size>{
         ...moved.elementSizes,
       };
-      if (F18ReferenceComponentVisuals.supports(definition.modelType)) {
+      if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
         sizes[elementId] =
-            F18ReferenceComponentMetrics.boardSizeFor(definition.modelType);
+            F18ReferenceComponentMetrics.boardSizeFor(definition.renderedModelType);
       }
       _layout = _routeWithG2A(
         _circuit,
@@ -1957,6 +1959,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       ...(replacement.defaultParameters.isNotEmpty
           ? replacement.defaultParameters
           : _defaultParametersFor(replacement.keyName)),
+      if (replacement.visualModelType != null)
+        '_visualModelType': replacement.visualModelType!,
       if (replacement.visualVariant != null)
         '_visualVariant': replacement.visualVariant!,
       if (replacement.displayLabel != null)

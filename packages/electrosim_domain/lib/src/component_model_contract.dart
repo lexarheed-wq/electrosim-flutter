@@ -479,6 +479,7 @@ final class CoreComponentModelContracts {
             role: ElectricalBranchRole.controlCoil,
           ),
         ],
+      ),
       ComponentModelContract(
         modelType: 'pv_inverter',
         family: ComponentFamily.conversion,
@@ -512,7 +513,6 @@ final class CoreComponentModelContracts {
             role: ElectricalBranchRole.main,
           ),
         ],
-      ),
       ),
     ],
   );

@@ -5,6 +5,8 @@ on:
     paths:
       - 'packages/electrosim_pv/**'
       - 'packages/electrosim_energy/**'
+      - 'packages/electrosim_measurements/**'
+      - 'tools/f4_*'
       - 'tools/run_f7_gate.sh'
       - 'tools/f7_*'
       - 'docs/f7/**'

@@ -6,6 +6,7 @@ import 'f14_library_components.dart';
 import 'f15_source_pv_components.dart';
 import 'f17_three_phase_components.dart';
 import 'f20_catalog_components.dart';
+import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
@@ -67,6 +68,10 @@ abstract final class F18ReferenceComponentVisuals {
     'catalog_actuator_2t',
     'catalog_sensor_2t',
     'catalog_indicator_2t',
+    'isolator_3p',
+    'isolator_4p',
+    'breaker_4p',
+    'terminal_block_5',
   };
 
   static bool supports(String modelType) =>
@@ -141,6 +146,10 @@ abstract final class F18ReferenceComponentMetrics {
         'catalog_actuator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.actuator2t),
         'catalog_sensor_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.sensor2t),
         'catalog_indicator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.indicator2t),
+        'isolator_3p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.isolator3p),
+        'isolator_4p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.isolator4p),
+        'breaker_4p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.breaker4p),
+        'terminal_block_5' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.terminalBlock5),
         _ => const Size(104, 64),
       };
 
@@ -375,6 +384,26 @@ class F18ComponentAssetVisual extends StatelessWidget {
           currentA: currentA,
           voltageV: voltageV,
           animationValue: animationValue,
+        ),
+      );
+    }
+
+    final F23DistributionDevice? distributionDevice = switch (type) {
+      'isolator_3p' => F23DistributionDevice.isolator3p,
+      'isolator_4p' => F23DistributionDevice.isolator4p,
+      'breaker_4p' => F23DistributionDevice.breaker4p,
+      'terminal_block_5' => F23DistributionDevice.terminalBlock5,
+      _ => null,
+    };
+    if (distributionDevice != null) {
+      return F23DistributionComponentView(
+        device: distributionDevice,
+        size: size,
+        state: F23DistributionState(
+          closed: closed ?? true,
+          tripped: tripped,
+          energized: energized,
+          currentA: currentA,
         ),
       );
     }

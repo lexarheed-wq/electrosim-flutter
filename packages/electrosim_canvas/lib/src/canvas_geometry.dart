@@ -137,6 +137,12 @@ abstract final class TerminalVisualProfile {
           Offset(w * -0.18, h * 0.40),
           Offset(w * 0.18, h * 0.40),
         ],
+      'ac3_voltage_source' => <Offset>[
+          Offset(w * -0.27, h * 0.42),
+          Offset(w * -0.09, h * 0.42),
+          Offset(w * 0.09, h * 0.42),
+          Offset(w * 0.27, h * 0.42),
+        ],
       'pv_array' => <Offset>[
           Offset(w * -0.14, h * 0.42),
           Offset(w * 0.14, h * 0.42),

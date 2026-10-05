@@ -2,6 +2,9 @@ name: F7 gate
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+      - migration-c15-full-parity
     paths:
       - 'packages/electrosim_pv/**'
       - 'packages/electrosim_energy/**'
@@ -12,6 +15,10 @@ on:
       - 'tools/f7_*'
       - 'docs/f7/**'
       - 'ci/TOOLCHAIN_LOCK.json'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   f7:
     runs-on: ubuntu-latest

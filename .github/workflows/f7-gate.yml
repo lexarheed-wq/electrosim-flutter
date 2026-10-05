@@ -6,6 +6,7 @@ on:
       - 'packages/electrosim_pv/**'
       - 'packages/electrosim_energy/**'
       - 'packages/electrosim_measurements/**'
+      - 'packages/electrosim_solver_ac/**'
       - 'tools/f4_*'
       - 'tools/run_f7_gate.sh'
       - 'tools/f7_*'

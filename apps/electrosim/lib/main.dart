@@ -2622,19 +2622,27 @@ class _WorkspaceTopBar extends StatelessWidget {
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<ElectricalMode>>[
                           const PopupMenuItem<ElectricalMode>(
+                            key: Key('workspace-mode-dc'),
                             value: ElectricalMode.dc,
+                            enabled: true,
                             child: Text('CC — courant continu'),
                           ),
                           const PopupMenuItem<ElectricalMode>(
+                            key: Key('workspace-mode-ac1'),
                             value: ElectricalMode.ac1,
+                            enabled: true,
                             child: Text('AC 1φ — monophasé'),
                           ),
                           const PopupMenuItem<ElectricalMode>(
+                            key: Key('workspace-mode-ac3'),
                             value: ElectricalMode.ac3,
+                            enabled: true,
                             child: Text('AC 3φ — triphasé'),
                           ),
                           const PopupMenuItem<ElectricalMode>(
+                            key: Key('workspace-mode-pv'),
                             value: ElectricalMode.pv,
+                            enabled: true,
                             child: Text('PV — photovoltaïque'),
                           ),
                         ],

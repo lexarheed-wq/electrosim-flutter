@@ -353,6 +353,42 @@ _CompiledAc1Model _compileModel(
     )) {
       continue;
     }
+    if (component.modelType == 'terminal_block_5') {
+      if (topologyBranches.length != 5) {
+        diagnostics.add(
+          Ac1SolverDiagnostic(
+            code: Ac1DiagnosticCode.invalidTerminalCount,
+            severity: Ac1DiagnosticSeverity.error,
+            message:
+                'terminal_block_5 must expose five feed-through branches.',
+            componentId: component.id,
+          ),
+        );
+      } else {
+        final bool open =
+            component.condition == ComponentCondition.openCircuit ||
+            component.condition == ComponentCondition.disabled;
+        for (final TopologyBranch branch in topologyBranches) {
+          elements.add(
+            _Ac1Element(
+              id:
+                  'component:${component.id.value}:${branch.branchId}',
+              modelType: component.modelType,
+              kind: open
+                  ? _Ac1ElementKind.impedance
+                  : _Ac1ElementKind.idealVoltage,
+              branchKind:
+                  open ? Ac1BranchKind.openCircuit : Ac1BranchKind.idealShort,
+              fromNodeId: branch.fromNodeId,
+              toNodeId: branch.toNodeId,
+              value: open ? const AcComplex(1e300, 0.0) : AcComplex.zero,
+              isOpen: open,
+            ),
+          );
+        }
+      }
+      continue;
+    }
     if (topologyBranches.length != 1) {
       diagnostics.add(
         Ac1SolverDiagnostic(
@@ -1164,6 +1200,7 @@ const Set<String> _supportedAc1ComponentModels = <String>{
   'contactor_ac1',
   'contactor_aux_no',
   'contactor_aux_nc',
+  'terminal_block_5',
 };
 
 bool _isError(Ac1SolverDiagnostic diagnostic) => diagnostic.severity == Ac1DiagnosticSeverity.error;

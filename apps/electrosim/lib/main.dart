@@ -16,6 +16,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
+import 'f18_selection_state.dart';
 import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -486,7 +487,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   final GlobalKey _canvasDropKey = GlobalKey(
     debugLabel: 'f18-canvas-drop-target',
   );
-  late String? _selected;
+  late F18SelectionState _selection;
+  String? get _selected => _selection.primaryId;
+  Set<String> get _selectedIds => _selection.selectedIds;
+
+  set _selected(String? id) {
+    _selection = id == null
+        ? F18SelectionState.empty()
+        : F18SelectionState.single(id);
+  }
   String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
   int _canvasInteractionEpoch = 0;
@@ -556,8 +565,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected,
     );
     final bool canDeleteSelection =
-        selectedDetails != null && !_studentTpReadOnly;
+        _selectedIds.isNotEmpty && !_studentTpReadOnly;
     final bool canRotateSelection =
+        _selectedIds.length == 1 &&
         selectedDetails != null &&
         selectedDetails.kind != F9ElementKind.connection &&
         !_studentTpReadOnly;
@@ -635,9 +645,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               )
                           ? null
                           : _toggleSelectedPrimaryState,
-                      onReplaceSelected: _selected == null
-                          ? null
-                          : _replaceSelectedElement,
+                      onReplaceSelected: _selectedIds.length == 1
+                          ? _replaceSelectedElement
+                          : null,
                       onSelectElement: (String? id) {
                         setState(() {
                           _selected = id;
@@ -742,6 +752,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                           circuit: _circuit,
                                           layout: _layout,
                                           viewport: _viewport,
+                                          selectedElementIds: _selectedIds,
                                           pendingTerminalId:
                                               _wiringPendingTerminal,
                                           hoverTerminalId: _wiringHoverTerminal,

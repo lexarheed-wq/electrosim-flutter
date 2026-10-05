@@ -1021,6 +1021,88 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: '≈1 kW à 230 V',
   ),
 
+  F9PaletteDefinition(
+    keyName: 'source-ac3-grid',
+    title: 'Réseau triphasé 400/230 V',
+    category: 'Sources 3φ',
+    modelType: 'ac3_voltage_source',
+    icon: Icons.electrical_services_outlined,
+    kind: F9PaletteElementKind.source,
+    terminalLabels: <String>['L1', 'L2', 'L3', 'N'],
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L1',
+        role: TerminalRole.phaseL1,
+        phase: PhaseTag.l1,
+        idSuffix: 'l1',
+      ),
+      F9PaletteTerminalSpec(
+        'L2',
+        role: TerminalRole.phaseL2,
+        phase: PhaseTag.l2,
+        idSuffix: 'l2',
+      ),
+      F9PaletteTerminalSpec(
+        'L3',
+        role: TerminalRole.phaseL3,
+        phase: PhaseTag.l3,
+        idSuffix: 'l3',
+      ),
+      F9PaletteTerminalSpec(
+        'N',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n',
+      ),
+    ],
+    defaultParameters: <String, Object?>{'phaseVoltageRmsV': 230.0},
+    visualVariant: 'ac3-grid',
+    displayLabel: 'Réseau 3φ',
+    subtitle: 'L-L 400 V · L-N 230 V · 50 Hz',
+  ),
+  F9PaletteDefinition(
+    keyName: 'source-ac3-alternator',
+    title: 'Alternateur triphasé',
+    category: 'Sources 3φ',
+    modelType: 'ac3_voltage_source',
+    visualModelType: 'ac3_voltage_source',
+    visualVariant: 'ac3-generator',
+    displayLabel: 'Alternateur 3φ',
+    icon: Icons.cyclone_outlined,
+    kind: F9PaletteElementKind.source,
+    terminalLabels: <String>['L1', 'L2', 'L3', 'N'],
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L1',
+        role: TerminalRole.phaseL1,
+        phase: PhaseTag.l1,
+        idSuffix: 'l1',
+      ),
+      F9PaletteTerminalSpec(
+        'L2',
+        role: TerminalRole.phaseL2,
+        phase: PhaseTag.l2,
+        idSuffix: 'l2',
+      ),
+      F9PaletteTerminalSpec(
+        'L3',
+        role: TerminalRole.phaseL3,
+        phase: PhaseTag.l3,
+        idSuffix: 'l3',
+      ),
+      F9PaletteTerminalSpec(
+        'N',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n',
+      ),
+    ],
+    defaultParameters: <String, Object?>{'phaseVoltageRmsV': 230.0},
+    subtitle: 'Source 3φ synchrone idéale',
+  ),
+
   // C17 — physical three-phase receivers.
   F9PaletteDefinition(
     keyName: 'motor-3p-6t',

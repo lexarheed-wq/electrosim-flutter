@@ -14,7 +14,7 @@ void main() {
     final Ac3SolveResult closed = solve(
       _threePoleCircuit(modelType: 'isolator_3p', closed: true),
     );
-    expect(closed.isSolved, isTrue);
+    expect(closed.isSolved, isTrue, reason: _diagnosticReason(closed));
     for (final String phase in <String>['L1', 'L2', 'L3']) {
       expect(
         closed.branch('component:q1:power:$phase').kind,
@@ -47,7 +47,7 @@ void main() {
         condition: ComponentCondition.openCircuit,
       ),
     );
-    expect(result.isSolved, isTrue);
+    expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
     expect(
       result.branch('component:q1:power:L1').kind,
       Ac3BranchKind.openCircuit,
@@ -81,7 +81,7 @@ void main() {
     final Ac3SolveResult closed = solve(
       _fourPoleCircuit(modelType: 'isolator_4p', closed: true),
     );
-    expect(closed.isSolved, isTrue);
+    expect(closed.isSolved, isTrue, reason: _diagnosticReason(closed));
     for (final String pole in <String>['L1', 'L2', 'L3', 'N']) {
       expect(
         closed.branch('component:q1:power:$pole').kind,
@@ -110,7 +110,7 @@ void main() {
         ratedCurrentA: 10.0,
       ),
     );
-    expect(armed.isSolved, isTrue);
+    expect(armed.isSolved, isTrue, reason: _diagnosticReason(armed));
     for (final String pole in <String>['L1', 'L2', 'L3', 'N']) {
       expect(
         armed.branch('component:q1:power:$pole').kind,
@@ -137,7 +137,7 @@ void main() {
 
   test('C23 terminal_block_5 feeds five independent conductors', () {
     final Ac3SolveResult result = solve(_terminalBlockCircuit());
-    expect(result.isSolved, isTrue);
+    expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
     final List<Ac3BranchResult> feeds = result.branchResults
         .where((Ac3BranchResult item) => item.modelType == 'terminal_block_5')
         .toList(growable: false);
@@ -156,7 +156,7 @@ void main() {
     final Ac3SolveResult result = solve(
       _terminalBlockCircuit(condition: ComponentCondition.openCircuit),
     );
-    expect(result.isSolved, isTrue);
+    expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
     final List<Ac3BranchResult> feeds = result.branchResults
         .where((Ac3BranchResult item) => item.modelType == 'terminal_block_5')
         .toList(growable: false);
@@ -212,6 +212,10 @@ void main() {
     );
   });
 }
+
+String _diagnosticReason(Ac3SolveResult result) => result.diagnostics
+    .map((Ac3SolverDiagnostic item) => '${item.code.name}: ${item.message}')
+    .join(' | ');
 
 CircuitState _replaceFirst(CircuitState base, ComponentInstance replacement) =>
     CircuitState(

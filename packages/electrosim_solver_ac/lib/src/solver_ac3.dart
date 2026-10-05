@@ -690,6 +690,98 @@ _CompiledAc3Model _compileModel(
     if (!source.enabled) {
       continue;
     }
+
+    if (source.modelType == 'ac3_voltage_source') {
+      if (source.terminals.length != 4) {
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.invalidTerminalCount,
+            severity: Ac3DiagnosticSeverity.error,
+            message:
+                'AC3 four-wire source ${source.id.value} must expose L1/L2/L3/N.',
+            sourceId: source.id,
+          ),
+        );
+        continue;
+      }
+      Terminal? neutral;
+      final Map<PhaseTag, Terminal> phaseTerminals = <PhaseTag, Terminal>{};
+      for (final Terminal terminal in source.terminals) {
+        if (terminal.phase == PhaseTag.neutral) {
+          neutral = terminal;
+        } else if (_isLinePhase(terminal.phase)) {
+          phaseTerminals[terminal.phase] = terminal;
+        }
+      }
+      if (neutral == null || phaseTerminals.length != 3) {
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.missingSourcePhaseTag,
+            severity: Ac3DiagnosticSeverity.error,
+            message:
+                'AC3 four-wire source must identify L1, L2, L3 and neutral terminals.',
+            sourceId: source.id,
+          ),
+        );
+        continue;
+      }
+      final Object? rawMagnitude =
+          source.parameters['phaseVoltageRmsV'] ??
+              source.parameters['voltageRmsV'];
+      if (rawMagnitude is! num ||
+          !rawMagnitude.toDouble().isFinite ||
+          rawMagnitude.toDouble() < 0.0) {
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.invalidParameter,
+            severity: Ac3DiagnosticSeverity.error,
+            message:
+                'AC3 four-wire source requires finite phaseVoltageRmsV >= 0.',
+            sourceId: source.id,
+          ),
+        );
+        continue;
+      }
+      final double magnitude = rawMagnitude.toDouble();
+      final String neutralNode =
+          topology.terminalToNode[neutral.id]!;
+      for (final PhaseTag phase
+          in <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]) {
+        final Terminal terminal = phaseTerminals[phase]!;
+        sourcePhases.add(phase);
+        if (!voltageSourcePhases.add(phase)) {
+          diagnostics.add(
+            Ac3SolverDiagnostic(
+              code: Ac3DiagnosticCode.duplicatePhaseSource,
+              severity: Ac3DiagnosticSeverity.warning,
+              message:
+                  'Multiple enabled AC voltage sources are tagged ${phase.name}.',
+              sourceId: source.id,
+              phase: phase,
+            ),
+          );
+        }
+        final double angleDeg = _defaultPhaseDegrees(phase);
+        elements.add(
+          _Ac3Element(
+            id: 'source:${source.id.value}:${phase.name}',
+            modelType: source.modelType,
+            kind: _Ac3ElementKind.idealVoltage,
+            branchKind: Ac3BranchKind.voltageSource,
+            fromNodeId: topology.terminalToNode[terminal.id]!,
+            toNodeId: neutralNode,
+            value: AcComplex.polar(
+              magnitude,
+              angleDeg * math.pi / 180.0,
+            ),
+            phase: phase,
+            isSource: true,
+          ),
+        );
+      }
+      continue;
+    }
+
     if (source.terminals.length != 2) {
       diagnostics.add(
         Ac3SolverDiagnostic(

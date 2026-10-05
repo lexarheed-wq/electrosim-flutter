@@ -35,6 +35,7 @@ class F9PaletteDefinition {
     this.terminals = const <F9PaletteTerminalSpec>[],
     this.defaultParameters = const <String, Object?>{},
     this.defaultControlState = const <String, Object?>{},
+    this.supportedModes = const <ElectricalMode>{},
     this.visualVariant,
     this.displayLabel,
     this.subtitle,
@@ -50,11 +51,13 @@ class F9PaletteDefinition {
   final List<F9PaletteTerminalSpec> terminals;
   final Map<String, Object?> defaultParameters;
   final Map<String, Object?> defaultControlState;
+  final Set<ElectricalMode> supportedModes;
   final String? visualVariant;
   final String? displayLabel;
   final String? subtitle;
 
   bool supportsMode(ElectricalMode mode) {
+    if (supportedModes.isNotEmpty) return supportedModes.contains(mode);
     if (kind == F9PaletteElementKind.source) {
       return switch (modelType) {
         'dc_voltage_source' || 'voltage_source' || 'dc_current_source' =>

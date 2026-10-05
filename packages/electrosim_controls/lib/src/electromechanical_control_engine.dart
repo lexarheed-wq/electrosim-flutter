@@ -1,6 +1,7 @@
 
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
+import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 
 enum ElectromechanicalControlIssueCode {
@@ -38,6 +39,26 @@ final class ContactorActuationState {
   final double coilVoltageV;
   final double pickupVoltageV;
   final double dropoutVoltageV;
+}
+
+final class ElectromechanicalDcOutcome {
+  ElectromechanicalDcOutcome({
+    required this.result,
+    required this.effectiveCircuit,
+    required Map<ComponentId, ContactorActuationState> relays,
+    required Iterable<ElectromechanicalControlIssue> issues,
+    required this.iterations,
+    required this.converged,
+  })  : relays =
+            Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
+        issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
+
+  final DcSolveResult result;
+  final CircuitState effectiveCircuit;
+  final Map<ComponentId, ContactorActuationState> relays;
+  final List<ElectromechanicalControlIssue> issues;
+  final int iterations;
+  final bool converged;
 }
 
 final class ElectromechanicalAc1Outcome {
@@ -95,6 +116,91 @@ final class ElectromechanicalControlEngine {
       : assert(maxIterations > 0);
 
   final int maxIterations;
+
+  ElectromechanicalDcOutcome solveDc({
+    required CircuitState circuit,
+    required TopologyGraph topology,
+    SolverDC solver = const SolverDC(),
+    Map<ComponentId, bool> previousStates = const <ComponentId, bool>{},
+  }) {
+    if (circuit.mode != ElectricalMode.dc ||
+        topology.mode != ElectricalMode.dc) {
+      throw ArgumentError('Electromechanical DC coordination requires DC.');
+    }
+
+    final List<ElectromechanicalControlIssue> issues =
+        <ElectromechanicalControlIssue>[];
+    Map<ComponentId, bool> states = _initialStates(
+      circuit,
+      'relay_coil',
+      issues,
+      previousStates,
+    );
+    CircuitState effective = _applyStates(circuit, states, issues);
+    DcSolveResult result = solver.solve(effective, topology);
+
+    for (var iteration = 1; iteration <= maxIterations; iteration++) {
+      if (!result.isSolved) {
+        issues.add(
+          const ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.solveFailed,
+            message:
+                'DC solve failed before relay state could stabilize.',
+          ),
+        );
+        return ElectromechanicalDcOutcome(
+          result: result,
+          effectiveCircuit: effective,
+          relays: _statesFromDc(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: false,
+        );
+      }
+
+      final Map<ComponentId, bool> next = _deriveDcStates(
+        circuit,
+        states,
+        result,
+        issues,
+      );
+      final bool stable = _sameStates(states, next);
+      if (stable) {
+        return ElectromechanicalDcOutcome(
+          result: result,
+          effectiveCircuit: effective,
+          relays: _statesFromDc(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: true,
+        );
+      }
+
+      if (iteration == maxIterations) {
+        issues.add(
+          const ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.iterationLimitExceeded,
+            message:
+                'DC relay state did not stabilize within the bounded iteration limit.',
+          ),
+        );
+        return ElectromechanicalDcOutcome(
+          result: result,
+          effectiveCircuit: effective,
+          relays: _statesFromDc(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: false,
+        );
+      }
+
+      states = next;
+      effective = _applyStates(circuit, states, issues);
+      result = solver.solve(effective, topology);
+    }
+
+    throw StateError('Unreachable electromechanical DC loop termination.');
+  }
 
   ElectromechanicalAc1Outcome solveAc1({
     required CircuitState circuit,
@@ -312,8 +418,13 @@ CircuitState _applyStates(
     if (states.containsKey(component.id)) {
       actuated = states[component.id]!;
     } else if (component.modelType == 'contactor_aux_no' ||
-        component.modelType == 'contactor_aux_nc') {
-      final Object? linked = component.parameters['linkedContactorId'];
+        component.modelType == 'contactor_aux_nc' ||
+        component.modelType == 'relay_contact_no' ||
+        component.modelType == 'relay_contact_nc') {
+      final bool relayContact = component.modelType == 'relay_contact_no' ||
+          component.modelType == 'relay_contact_nc';
+      final Object? linked = component.parameters[
+          relayContact ? 'linkedRelayId' : 'linkedContactorId'];
       if (linked is String && known.contains(linked)) {
         actuated = states[ComponentId(linked)];
       } else {
@@ -322,7 +433,7 @@ CircuitState _applyStates(
             code:
                 ElectromechanicalControlIssueCode.missingLinkedContactor,
             message:
-                'Auxiliary contact ${component.id.value} does not reference a known contactor.',
+                'Linked contact ${component.id.value} does not reference a known coil device.',
             componentId: component.id,
           ),
         );
@@ -361,6 +472,71 @@ CircuitState _applyStates(
     settings: circuit.settings,
     metadata: circuit.metadata,
   );
+}
+
+Map<ComponentId, bool> _deriveDcStates(
+  CircuitState circuit,
+  Map<ComponentId, bool> previous,
+  DcSolveResult result,
+  List<ElectromechanicalControlIssue> issues,
+) {
+  final Map<ComponentId, bool> next = <ComponentId, bool>{};
+  for (final ComponentInstance component in circuit.components) {
+    if (component.modelType != 'relay_coil') continue;
+    final _CoilThresholds? thresholds = _thresholds(component, issues);
+    final DcBranchResult? coil = _findDcBranch(
+      result,
+      'component:${component.id.value}',
+    );
+    if (thresholds == null || coil == null) {
+      if (coil == null) {
+        issues.add(
+          ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.missingCoilBranch,
+            message:
+                'No DC coil branch result exists for relay ${component.id.value}.',
+            componentId: component.id,
+          ),
+        );
+      }
+      next[component.id] = false;
+      continue;
+    }
+    final double voltage = coil.voltageV.abs();
+    next[component.id] = _nextActuation(
+      previous: previous[component.id] ?? false,
+      voltageV: voltage,
+      thresholds: thresholds,
+    );
+  }
+  return next;
+}
+
+Map<ComponentId, ContactorActuationState> _statesFromDc(
+  CircuitState circuit,
+  Map<ComponentId, bool> states,
+  DcSolveResult result,
+  List<ElectromechanicalControlIssue> issues,
+) {
+  final Map<ComponentId, ContactorActuationState> output =
+      <ComponentId, ContactorActuationState>{};
+  for (final ComponentInstance component in circuit.components) {
+    if (component.modelType != 'relay_coil') continue;
+    final _CoilThresholds? thresholds = _thresholds(component, issues);
+    if (thresholds == null) continue;
+    final DcBranchResult? coil = _findDcBranch(
+      result,
+      'component:${component.id.value}',
+    );
+    output[component.id] = ContactorActuationState(
+      componentId: component.id,
+      actuated: states[component.id] ?? false,
+      coilVoltageV: coil?.voltageV.abs() ?? 0.0,
+      pickupVoltageV: thresholds.pickup,
+      dropoutVoltageV: thresholds.dropout,
+    );
+  }
+  return output;
 }
 
 Map<ComponentId, bool> _deriveAc1States(
@@ -504,7 +680,7 @@ _CoilThresholds? _thresholds(
       ElectromechanicalControlIssue(
         code: ElectromechanicalControlIssueCode.invalidCoilThreshold,
         message:
-            'Contactor ${component.id.value} requires explicit coilPickupVoltageV and coilDropoutVoltageV.',
+            'Electromechanical coil ${component.id.value} requires explicit coilPickupVoltageV and coilDropoutVoltageV.',
         componentId: component.id,
       ),
     );
@@ -521,7 +697,7 @@ _CoilThresholds? _thresholds(
       ElectromechanicalControlIssue(
         code: ElectromechanicalControlIssueCode.invalidCoilThreshold,
         message:
-            'Contactor ${component.id.value} requires 0 <= dropout < pickup.',
+            'Electromechanical coil ${component.id.value} requires 0 <= dropout < pickup.',
         componentId: component.id,
       ),
     );
@@ -548,6 +724,13 @@ bool _sameStates(
     if (right[entry.key] != entry.value) return false;
   }
   return true;
+}
+
+DcBranchResult? _findDcBranch(DcSolveResult result, String id) {
+  for (final DcBranchResult branch in result.branchResults) {
+    if (branch.id == id) return branch;
+  }
+  return null;
 }
 
 Ac1BranchResult? _findAc1Branch(Ac1SolveResult result, String id) {

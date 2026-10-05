@@ -13,6 +13,8 @@ dependencies:
     path: ../electrosim_topology
   electrosim_solver_ac:
     path: ../electrosim_solver_ac
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
 
 dev_dependencies:
   test: ^1.25.8

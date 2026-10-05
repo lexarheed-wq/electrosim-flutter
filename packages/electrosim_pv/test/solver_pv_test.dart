@@ -291,6 +291,104 @@ void main() {
       expect(result.inverterState, PvInverterState.powerLimited);
     });
 
+    test('C25 storage charges battery and SOC advances only with explicit simulation time', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        loadPowerAt230W: 1000.0,
+        initialSoc: 0.50,
+      );
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final PvSolveResult zeroTime = solver.solve(
+        circuit,
+        topology,
+        previousBatterySoc: 0.50,
+        elapsed: Duration.zero,
+      );
+      expect(zeroTime.status, PvSolveStatus.solved);
+      expect(zeroTime.controllerPresent, isTrue);
+      expect(zeroTime.batteryPresent, isTrue);
+      expect(zeroTime.batteryPowerW, lessThan(0.0));
+      expect(zeroTime.batterySoc, closeTo(0.50, 1e-12));
+
+      final PvSolveResult afterHour = solver.solve(
+        circuit,
+        topology,
+        previousBatterySoc: zeroTime.batterySoc,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(afterHour.status, PvSolveStatus.solved);
+      expect(afterHour.batteryPowerW, lessThan(0.0));
+      expect(afterHour.batterySoc, greaterThan(0.50));
+      expect(afterHour.batterySoc, lessThanOrEqualTo(0.95));
+    });
+
+    test('C25 battery discharges at low irradiance and sustains the AC load', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        irradianceWm2: 100.0,
+        loadPowerAt230W: 2000.0,
+        initialSoc: 0.60,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.60,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.batteryPowerW, greaterThan(0.0));
+      expect(result.batterySoc, lessThan(0.60));
+      expect(result.inverterOutputPowerW, closeTo(2000.0, 1e-6));
+      expect(result.inverterState, PvInverterState.running);
+    });
+
+    test('C25 SOC is bounded by configured minimum and maximum', () {
+      final CircuitState charging = _pvStorageCircuit(
+        loadPowerAt230W: 100.0,
+        initialSoc: 0.94,
+        maxSoc: 0.95,
+      );
+      final PvSolveResult charged = solver.solve(
+        charging,
+        topologyEngine.compile(charging),
+        previousBatterySoc: 0.94,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(charged.status, PvSolveStatus.solved);
+      expect(charged.batterySoc, closeTo(0.95, 1e-12));
+
+      final CircuitState discharging = _pvStorageCircuit(
+        irradianceWm2: 0.0,
+        loadPowerAt230W: 3000.0,
+        initialSoc: 0.11,
+        minSoc: 0.10,
+      );
+      final PvSolveResult discharged = solver.solve(
+        discharging,
+        topologyEngine.compile(discharging),
+        previousBatterySoc: 0.11,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(discharged.status, PvSolveStatus.solved);
+      expect(discharged.batterySoc, closeTo(0.10, 1e-12));
+      expect(discharged.inverterState, PvInverterState.powerLimited);
+    });
+
+    test('C25 controller and battery cannot be silently used independently', () {
+      for (final CircuitState circuit in <CircuitState>[
+        _pvStorageCircuit(includeBattery: false),
+        _pvStorageCircuit(includeController: false),
+      ]) {
+        final PvSolveResult result = solver.solve(
+          circuit,
+          topologyEngine.compile(circuit),
+        );
+        expect(result.status, PvSolveStatus.invalid);
+        expect(
+          result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+          contains(PvDiagnosticCode.storageTopologyInvalid),
+        );
+      }
+    });
+
     test('same PV input is deterministic', () {
       final CircuitState circuit = _pvCircuit(
         loadPowerAt230W: 2750.0,
@@ -450,6 +548,251 @@ CircuitState _pvCircuit({
                 ? 'invalid-temperature'
                 : cellTemperatureC,
           },
+  );
+}
+
+CircuitState _pvStorageCircuit({
+  double irradianceWm2 = 1000.0,
+  double loadPowerAt230W = 1000.0,
+  double initialSoc = 0.60,
+  double minSoc = 0.10,
+  double maxSoc = 0.95,
+  bool includeController = true,
+  bool includeBattery = true,
+}) {
+  final double resistance = 230.0 * 230.0 / loadPowerAt230W;
+  final ComponentInstance inverter = ComponentInstance(
+    id: ComponentId('storage-inv'),
+    modelType: 'pv_inverter',
+    terminals: <Terminal>[
+      Terminal(
+        id: TerminalId('storage-inv-dc-pos'),
+        name: 'DC+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      ),
+      Terminal(
+        id: TerminalId('storage-inv-dc-neg'),
+        name: 'DC-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      ),
+      Terminal(
+        id: TerminalId('storage-inv-l'),
+        name: 'L',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+      ),
+      Terminal(
+        id: TerminalId('storage-inv-n'),
+        name: 'N',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+      ),
+    ],
+    parameters: const <String, Object?>{
+      'minDcVoltageV': 40.0,
+      'maxDcVoltageV': 60.0,
+      'nominalAcVoltageV': 230.0,
+      'ratedAcPowerW': 3500.0,
+      'efficiency': 0.95,
+    },
+  );
+  final ComponentInstance controller = ComponentInstance(
+    id: ComponentId('storage-controller'),
+    modelType: 'pv_controller',
+    terminals: <Terminal>[
+      Terminal(
+        id: TerminalId('storage-controller-pv-pos'),
+        name: 'PV+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      ),
+      Terminal(
+        id: TerminalId('storage-controller-pv-neg'),
+        name: 'PV-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      ),
+      Terminal(
+        id: TerminalId('storage-controller-bus-pos'),
+        name: 'BAT+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      ),
+      Terminal(
+        id: TerminalId('storage-controller-bus-neg'),
+        name: 'BAT-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      ),
+    ],
+    parameters: const <String, Object?>{
+      'outputVoltageV': 48.0,
+      'maxOutputCurrentA': 60.0,
+      'efficiency': 0.97,
+    },
+  );
+  final ComponentInstance battery = ComponentInstance(
+    id: ComponentId('storage-battery'),
+    modelType: 'pv_battery',
+    terminals: <Terminal>[
+      Terminal(
+        id: TerminalId('storage-battery-pos'),
+        name: '+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      ),
+      Terminal(
+        id: TerminalId('storage-battery-neg'),
+        name: '-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      ),
+    ],
+    parameters: <String, Object?>{
+      'nominalVoltageV': 48.0,
+      'capacityAh': 100.0,
+      'initialSoc': initialSoc,
+      'minSoc': minSoc,
+      'maxSoc': maxSoc,
+      'maxChargeCurrentA': 30.0,
+      'maxDischargeCurrentA': 60.0,
+      'chargeEfficiency': 0.95,
+      'dischargeEfficiency': 0.95,
+    },
+  );
+  final ComponentInstance load = ComponentInstance(
+    id: ComponentId('storage-load'),
+    modelType: 'pv_resistive_load',
+    terminals: <Terminal>[
+      Terminal(
+        id: TerminalId('storage-load-l'),
+        name: 'L',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+      ),
+      Terminal(
+        id: TerminalId('storage-load-n'),
+        name: 'N',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+      ),
+    ],
+    parameters: <String, Object?>{'resistanceOhm': resistance},
+  );
+
+  final List<ComponentInstance> components = <ComponentInstance>[
+    if (includeController) controller,
+    if (includeBattery) battery,
+    inverter,
+    load,
+  ];
+  final List<Connection> connections = <Connection>[
+    if (includeController) ...<Connection>[
+      _wire(
+        'storage-pv-pos',
+        'storage-pv-source-pos',
+        'storage-controller-pv-pos',
+        PhaseTag.dcPositive,
+      ),
+      _wire(
+        'storage-pv-neg',
+        'storage-pv-source-neg',
+        'storage-controller-pv-neg',
+        PhaseTag.dcNegative,
+      ),
+      _wire(
+        'storage-bus-pos',
+        'storage-controller-bus-pos',
+        'storage-inv-dc-pos',
+        PhaseTag.dcPositive,
+      ),
+      _wire(
+        'storage-bus-neg',
+        'storage-controller-bus-neg',
+        'storage-inv-dc-neg',
+        PhaseTag.dcNegative,
+      ),
+    ] else ...<Connection>[
+      _wire(
+        'storage-direct-pos',
+        'storage-pv-source-pos',
+        'storage-inv-dc-pos',
+        PhaseTag.dcPositive,
+      ),
+      _wire(
+        'storage-direct-neg',
+        'storage-pv-source-neg',
+        'storage-inv-dc-neg',
+        PhaseTag.dcNegative,
+      ),
+    ],
+    if (includeBattery) ...<Connection>[
+      _wire(
+        'storage-battery-pos-wire',
+        'storage-battery-pos',
+        'storage-inv-dc-pos',
+        PhaseTag.dcPositive,
+      ),
+      _wire(
+        'storage-battery-neg-wire',
+        'storage-battery-neg',
+        'storage-inv-dc-neg',
+        PhaseTag.dcNegative,
+      ),
+    ],
+    _wire(
+      'storage-ac-l',
+      'storage-inv-l',
+      'storage-load-l',
+      PhaseTag.l1,
+    ),
+    _wire(
+      'storage-ac-n',
+      'storage-inv-n',
+      'storage-load-n',
+      PhaseTag.neutral,
+    ),
+  ];
+
+  return CircuitState(
+    circuitId: CircuitId('pv-storage-test'),
+    revision: 0,
+    mode: ElectricalMode.pv,
+    components: components,
+    connections: connections,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('storage-pv-source'),
+        modelType: 'pv_array',
+        terminals: <Terminal>[
+          Terminal(
+            id: TerminalId('storage-pv-source-pos'),
+            name: '+',
+            role: TerminalRole.positive,
+            phase: PhaseTag.dcPositive,
+          ),
+          Terminal(
+            id: TerminalId('storage-pv-source-neg'),
+            name: '-',
+            role: TerminalRole.negative,
+            phase: PhaseTag.dcNegative,
+          ),
+        ],
+        parameters: const <String, Object?>{
+          'mppVoltageV': 360.0,
+          'mppCurrentA': 10.0,
+          'powerTemperatureCoefficientPerC': 0.0,
+          'voltageTemperatureCoefficientPerC': 0.0,
+        },
+      ),
+    ],
+    settings: <String, Object?>{
+      'irradianceWm2': irradianceWm2,
+      'shadingPct': 0.0,
+      'cellTemperatureC': 25.0,
+    },
   );
 }
 

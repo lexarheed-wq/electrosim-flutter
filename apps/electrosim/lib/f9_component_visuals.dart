@@ -221,11 +221,14 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       };
       final bool tripped = (runtime?.protectionTripped(component.id) ?? false) ||
           component.controlState['tripped'] == true;
-      final Object? linkedContactorId = component.parameters['linkedContactorId'];
-      final bool actuated = (type == 'contactor_aux_no' ||
-                  type == 'contactor_aux_nc') &&
-              linkedContactorId is String
-          ? (runtime?.contactorActuated(ComponentId(linkedContactorId)) ??
+      final bool contactorAux =
+          type == 'contactor_aux_no' || type == 'contactor_aux_nc';
+      final bool relayAux =
+          type == 'relay_contact_no' || type == 'relay_contact_nc';
+      final Object? linkedId = component.parameters[
+          relayAux ? 'linkedRelayId' : 'linkedContactorId'];
+      final bool actuated = (contactorAux || relayAux) && linkedId is String
+          ? (runtime?.contactorActuated(ComponentId(linkedId)) ??
               (component.controlState['actuated'] == true))
           : (runtime?.contactorActuated(component.id) ??
               (component.controlState['actuated'] == true));
@@ -874,6 +877,8 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       'impedance' => 'Impédance',
       'contactor_aux_no' => 'Aux. NO',
       'contactor_aux_nc' => 'Aux. NC',
+      'relay_contact_no' => 'Relais NO',
+      'relay_contact_nc' => 'Relais NC',
       'contactor_ac1' => 'Contacteur 1φ',
       'contactor_3p' => 'Contacteur 3P',
       'breaker_3p' => 'Disjoncteur 3P',

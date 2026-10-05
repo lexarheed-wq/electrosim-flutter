@@ -9,19 +9,88 @@ on:
       - '.github/workflows/v2-post-audit-final-qualification.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: v2-post-audit-final-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  qualify:
+  normalize:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 30
+    outputs:
+      qualified_sha: ${{ steps.sha.outputs.value }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: v2-post-mac-audit-fixes-20261005
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Normalize changed Dart files
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format \
+            apps/electrosim/lib/main.dart \
+            apps/electrosim/lib/f9_component_palette.dart \
+            apps/electrosim/lib/f14_library_components.dart \
+            apps/electrosim/lib/f15_source_pv_components.dart \
+            apps/electrosim/lib/f18_component_asset_visual.dart \
+            apps/electrosim/lib/f20_catalog_components.dart \
+            apps/electrosim/lib/reference_components/reference_widgets_extended.dart \
+            apps/electrosim/test/c15_mode_wave2_test.dart \
+            apps/electrosim/test/f14_visual_identity_test.dart \
+            apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
+            apps/electrosim/test/f20_catalog_visual_identity_test.dart \
+            apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+            packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
+            packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
+            packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
+
+          git diff --check
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add \
+              apps/electrosim/lib/main.dart \
+              apps/electrosim/lib/f9_component_palette.dart \
+              apps/electrosim/lib/f14_library_components.dart \
+              apps/electrosim/lib/f15_source_pv_components.dart \
+              apps/electrosim/lib/f18_component_asset_visual.dart \
+              apps/electrosim/lib/f20_catalog_components.dart \
+              apps/electrosim/lib/reference_components/reference_widgets_extended.dart \
+              apps/electrosim/test/c15_mode_wave2_test.dart \
+              apps/electrosim/test/f14_visual_identity_test.dart \
+              apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
+              apps/electrosim/test/f20_catalog_visual_identity_test.dart \
+              apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+              packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
+              packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
+              packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
+            git commit -m 'Normalize post-audit Dart formatting [skip ci]'
+            git push origin HEAD:v2-post-mac-audit-fixes-20261005
+          fi
+
+      - name: Capture qualified SHA
+        id: sha
+        shell: bash
+        run: echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  qualify:
+    needs: normalize
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.normalize.outputs.qualified_sha }}
           fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
@@ -44,11 +113,26 @@ jobs:
           git diff --check
           test ! -e .github/workflows/v2-format-preview.yml
 
-      - name: Verify Dart formatting
+      - name: Verify normalized Dart formatting
         shell: bash
         run: |
           set -euo pipefail
-          dart format --output=none --set-exit-if-changed             apps/electrosim/lib/main.dart             apps/electrosim/lib/f9_component_palette.dart             apps/electrosim/lib/f14_library_components.dart             apps/electrosim/lib/f15_source_pv_components.dart             apps/electrosim/lib/f18_component_asset_visual.dart             apps/electrosim/lib/f20_catalog_components.dart             apps/electrosim/lib/reference_components/reference_widgets_extended.dart             apps/electrosim/test/c15_mode_wave2_test.dart             apps/electrosim/test/f14_visual_identity_test.dart             apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart             apps/electrosim/test/f20_catalog_visual_identity_test.dart             apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart             packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart             packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart             packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
+          dart format --output=none --set-exit-if-changed \
+            apps/electrosim/lib/main.dart \
+            apps/electrosim/lib/f9_component_palette.dart \
+            apps/electrosim/lib/f14_library_components.dart \
+            apps/electrosim/lib/f15_source_pv_components.dart \
+            apps/electrosim/lib/f18_component_asset_visual.dart \
+            apps/electrosim/lib/f20_catalog_components.dart \
+            apps/electrosim/lib/reference_components/reference_widgets_extended.dart \
+            apps/electrosim/test/c15_mode_wave2_test.dart \
+            apps/electrosim/test/f14_visual_identity_test.dart \
+            apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
+            apps/electrosim/test/f20_catalog_visual_identity_test.dart \
+            apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+            packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
+            packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
+            packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
 
       - name: Static convergence
         shell: bash
@@ -97,14 +181,14 @@ jobs:
           ./tools/run_f3_gate.sh
           ./tools/run_f5_gate.sh
           ./tools/run_f7_gate.sh
-
   macos-intel:
-    needs: qualify
+    needs: [normalize, qualify]
     runs-on: macos-15-intel
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.normalize.outputs.qualified_sha }}
           fetch-depth: 0
 
       - uses: subosito/flutter-action@v2

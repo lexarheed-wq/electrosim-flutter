@@ -1901,8 +1901,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Remplacement indisponible pour cet élément.');
       return;
     }
+    final ComponentInstance original = _circuit.components.singleWhere(
+      (ComponentInstance item) => item.id.value == selected,
+    );
     final List<F9PaletteDefinition> candidates = f9PaletteCatalog
-        .where((F9PaletteDefinition item) => item.kind == F9PaletteElementKind.component)
+        .where(
+          (F9PaletteDefinition item) =>
+              item.kind == F9PaletteElementKind.component &&
+              item.supportsMode(_circuit.mode) &&
+              item.terminalCount == original.terminals.length,
+        )
         .toList(growable: false);
     final F9PaletteDefinition? replacement = await showDialog<F9PaletteDefinition>(
       context: context,
@@ -1929,12 +1937,35 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (!mounted || replacement == null) {
       return;
     }
+    final List<Terminal> generatedTerminals =
+        _buildPaletteTerminals(replacement, selected);
+    final List<Terminal> replacementTerminals = <Terminal>[
+      for (var index = 0; index < original.terminals.length; index++)
+        Terminal(
+          id: original.terminals[index].id,
+          name: generatedTerminals[index].name,
+          role: generatedTerminals[index].role,
+          phase: generatedTerminals[index].phase,
+        ),
+    ];
+    final Map<String, Object?> replacementParameters = <String, Object?>{
+      ...(replacement.defaultParameters.isNotEmpty
+          ? replacement.defaultParameters
+          : _defaultParametersFor(replacement.keyName)),
+      if (replacement.visualVariant != null)
+        '_visualVariant': replacement.visualVariant!,
+      if (replacement.displayLabel != null)
+        '_displayLabel': replacement.displayLabel!,
+    };
     final CircuitState next = F9ElementEditor.replaceComponent(
       _circuit,
       selected,
       modelType: replacement.modelType,
-      parameters: _defaultParametersFor(replacement.keyName),
-      controlState: _defaultControlStateFor(replacement.keyName),
+      parameters: replacementParameters,
+      controlState: replacement.defaultControlState.isNotEmpty
+          ? replacement.defaultControlState
+          : _defaultControlStateFor(replacement.keyName),
+      replacementTerminals: replacementTerminals,
     );
     setState(() {
       _circuit = next;

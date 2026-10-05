@@ -148,6 +148,25 @@ abstract final class TerminalVisualProfile {
           Offset(w * -0.16, h * 0.41),
           Offset(w * 0.16, h * 0.41),
         ],
+      'motor_3p_6t' => <Offset>[
+          Offset(w * -0.20, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.20, h * -0.42),
+          Offset(w * -0.20, h * 0.42),
+          Offset(0, h * 0.42),
+          Offset(w * 0.20, h * 0.42),
+        ],
+      'load_wye_3p' => <Offset>[
+          Offset(w * -0.20, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.20, h * -0.42),
+          Offset(0, h * 0.42),
+        ],
+      'load_delta_3p' => <Offset>[
+          Offset(w * -0.20, h * -0.42),
+          Offset(0, h * -0.42),
+          Offset(w * 0.20, h * -0.42),
+        ],
       _ => null,
     };
   }

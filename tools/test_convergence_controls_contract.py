@@ -19,8 +19,9 @@ class ControlsConvergenceContractTest(unittest.TestCase):
 
     def test_runtime_uses_protection_coordinator_for_ac(self):
         text = (ROOT / 'apps/electrosim/lib/runtime/electrosim_runtime_engine.dart').read_text(encoding='utf-8')
-        self.assertIn('protectionCoordinator.advanceAc1', text)
-        self.assertIn('protectionCoordinator.advanceAc3', text)
+        compact = ''.join(text.split())
+        self.assertIn('protectionCoordinator.advanceAc1', compact)
+        self.assertIn('protectionCoordinator.advanceAc3', compact)
         self.assertIn('controlsEngine: electromechanicalControlEngine', text)
         self.assertIn('contactorStates: coordinated.contactors', text)
 

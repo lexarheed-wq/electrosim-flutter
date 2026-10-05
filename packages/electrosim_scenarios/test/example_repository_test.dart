@@ -25,8 +25,8 @@ void main() {
     });
 
     test('findById resolves only repository examples', () {
-      expect(repository.findById(ExampleId('EX-DC-001')), isNotNull);
-      expect(repository.findById(ExampleId('EX-DC-999')), isNull);
+      expect(repository.findById(CircuitTemplateId('EX-DC-001')), isNotNull);
+      expect(repository.findById(CircuitTemplateId('EX-DC-999')), isNull);
     });
   });
 }

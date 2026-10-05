@@ -31,3 +31,23 @@ jobs:
           flutter test test/orthogonal_wire_router_test.dart
           flutter test test/wire_routing_robustness_test.dart
           flutter test test/circuit_wire_layout_engine_test.dart
+
+  mode-palette:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate mode and palette synchronization
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib/main.dart lib/f9_component_palette.dart test/c15_mode_wave2_test.dart
+          flutter analyze
+          flutter test test/c15_mode_wave2_test.dart
+          flutter test test/f18_g3r1_point05_palette_contract_test.dart

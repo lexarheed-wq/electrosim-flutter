@@ -14,6 +14,24 @@ enum F15SourcePvDevice {
   pvLoad,
 }
 
+enum F15Ac3SourceSilhouette { grid, alternator }
+
+enum F15PvControllerSilhouette { mppt, pwm }
+
+abstract final class F15SourcePvVisualIdentity {
+  static F15Ac3SourceSilhouette ac3SourceSilhouette(String? variantKey) =>
+      variantKey == 'ac3-generator'
+      ? F15Ac3SourceSilhouette.alternator
+      : F15Ac3SourceSilhouette.grid;
+
+  static F15PvControllerSilhouette pvControllerSilhouette(
+    String? variantKey,
+  ) =>
+      variantKey == 'pv-pwm'
+      ? F15PvControllerSilhouette.pwm
+      : F15PvControllerSilhouette.mppt;
+}
+
 @immutable
 final class F15SourcePvState {
   const F15SourcePvState({
@@ -302,6 +320,18 @@ final class _P {
   }
 
   void ac3Source() {
+    switch (F15SourcePvVisualIdentity.ac3SourceSilhouette(state.variantKey)) {
+      case F15Ac3SourceSilhouette.grid:
+        _ac3GridSource();
+        break;
+      case F15Ac3SourceSilhouette.alternator:
+        _ac3AlternatorSource();
+        break;
+    }
+    _ac3Terminals();
+  }
+
+  void _ac3GridSource() {
     final Rect body = Rect.fromCenter(
       center: c,
       width: w * .72,
@@ -323,7 +353,7 @@ final class _P {
       Paint()..color = const Color(0xFF0C252D),
     );
     text(
-      state.energized ? '400 / 230 V' : '3~ 400/230 V',
+      state.energized ? '400 / 230 V' : 'RÉSEAU 3~',
       display.center.translate(0, -display.height * .08),
       size: h * .075,
       color: const Color(0xFF91EFD0),
@@ -339,6 +369,71 @@ final class _P {
     final double r = h * .12;
     canvas.drawCircle(symbol, r, Paint()..color = const Color(0xFFF7FAFB));
     canvas.drawCircle(symbol, r, outline);
+    _paintThreePhaseWaves(symbol, r);
+  }
+
+  void _ac3AlternatorSource() {
+    final Offset center = Offset(c.dx, c.dy - h * .015);
+    final double radius = h * .255;
+    final Rect machine = Rect.fromCircle(center: center, radius: radius);
+
+    canvas.drawOval(
+      machine.shift(Offset(0, h * .025)),
+      Paint()..color = const Color(0x26000000),
+    );
+    canvas.drawCircle(
+      center,
+      radius,
+      grad(machine, const <Color>[Color(0xFFE1E7EA), Color(0xFF75858E)]),
+    );
+    canvas.drawCircle(center, radius, outline);
+
+    for (var i = -3; i <= 3; i++) {
+      final double y = center.dy + i * radius * .18;
+      canvas.drawLine(
+        Offset(center.dx - radius * .76, y),
+        Offset(center.dx - radius * .54, y),
+        Paint()
+          ..color = const Color(0xFF50616A)
+          ..strokeWidth = math.max(1.4, s * .012),
+      );
+      canvas.drawLine(
+        Offset(center.dx + radius * .54, y),
+        Offset(center.dx + radius * .76, y),
+        Paint()
+          ..color = const Color(0xFF50616A)
+          ..strokeWidth = math.max(1.4, s * .012),
+      );
+    }
+
+    final double innerR = radius * .57;
+    canvas.drawCircle(
+      center,
+      innerR,
+      Paint()..color = const Color(0xFFF5F7F8),
+    );
+    canvas.drawCircle(center, innerR, outline);
+    text('G', center.translate(0, -innerR * .12), size: h * .13);
+    text('3~', center.translate(0, innerR * .38), size: h * .075);
+
+    final Rect nameplate = Rect.fromCenter(
+      center: Offset(c.dx, center.dy + radius * .72),
+      width: radius * 1.05,
+      height: h * .065,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(nameplate, Radius.circular(h * .012)),
+      Paint()..color = const Color(0xFF283941),
+    );
+    text(
+      state.energized ? '400 V · 50 Hz' : 'ALTERNATEUR',
+      nameplate.center,
+      size: h * .041,
+      color: Colors.white,
+    );
+  }
+
+  void _paintThreePhaseWaves(Offset symbol, double r) {
     for (var phase = 0; phase < 3; phase++) {
       final Path wave = Path();
       final double shift = phase * 2 * math.pi / 3;
@@ -368,7 +463,9 @@ final class _P {
           ..strokeWidth = math.max(1.1, s * .012),
       );
     }
+  }
 
+  void _ac3Terminals() {
     final List<double> xs = <double>[
       c.dx - w * .27,
       c.dx - w * .09,
@@ -452,59 +549,75 @@ final class _P {
   }
 
   void pvController() {
+    switch (
+        F15SourcePvVisualIdentity.pvControllerSilhouette(state.variantKey)) {
+      case F15PvControllerSilhouette.mppt:
+        _pvMpptController();
+        break;
+      case F15PvControllerSilhouette.pwm:
+        _pvPwmController();
+        break;
+    }
+    _pvControllerTerminals();
+  }
+
+  void _pvMpptController() {
     final Rect body = Rect.fromCenter(
       center: c,
-      width: w * .72,
-      height: h * .70,
+      width: w * .74,
+      height: h * .72,
     );
     housing(
       body,
-      colors: const <Color>[Color(0xFFF4F8F5), Color(0xFFCBD8D0)],
+      colors: const <Color>[Color(0xFFF4F8F5), Color(0xFFC5D4CB)],
       radius: h * .045,
     );
+
+    for (var i = 0; i < 5; i++) {
+      final double y = body.top + body.height * (.16 + i * .13);
+      canvas.drawLine(
+        Offset(body.right - w * .055, y),
+        Offset(body.right + w * .015, y),
+        Paint()
+          ..color = const Color(0xFF64766D)
+          ..strokeWidth = math.max(1.5, s * .012),
+      );
+    }
+
     final Rect display = Rect.fromLTWH(
-      body.left + body.width * .14,
+      body.left + body.width * .12,
       body.top + body.height * .11,
-      body.width * .72,
-      body.height * .22,
+      body.width * .64,
+      body.height * .25,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(display, Radius.circular(h * .024)),
       Paint()..color = const Color(0xFF12352C),
     );
     text(
-      state.variantKey == 'pv-pwm' ? 'PWM' : 'MPPT',
-      display.center.translate(0, -display.height * .11),
+      'MPPT',
+      display.center.translate(0, -display.height * .12),
       size: h * .075,
       color: const Color(0xFF8FF0C7),
     );
     text(
       state.energized
           ? '${state.voltageV.toStringAsFixed(0)} V · ${state.currentA.abs().toStringAsFixed(1)} A'
-          : 'RÉGULATEUR',
-      display.center.translate(0, display.height * .24),
+          : 'TRACKING',
+      display.center.translate(0, display.height * .25),
       size: h * .043,
       color: const Color(0xFFB6DED2),
     );
 
-    final Offset pvP = Offset(c.dx - w * .20, rect.top + h * .08);
-    final Offset pvN = Offset(c.dx + w * .20, rect.top + h * .08);
-    final Offset busP = Offset(c.dx - w * .20, rect.bottom - h * .08);
-    final Offset busN = Offset(c.dx + w * .20, rect.bottom - h * .08);
-    terminal(pvP, const Color(0xFFE65353), 'PV+');
-    terminal(pvN, const Color(0xFF111827), 'PV−');
-    terminal(busP, const Color(0xFFE65353), 'BAT+');
-    terminal(busN, const Color(0xFF111827), 'BAT−');
-
-    final Offset symbol = Offset(c.dx, c.dy + h * .08);
+    final Offset symbol = Offset(c.dx - w * .03, c.dy + h * .10);
     canvas.drawCircle(
       symbol,
-      h * .10,
+      h * .095,
       Paint()..color = const Color(0xFFE6EEE9),
     );
-    canvas.drawCircle(symbol, h * .10, outline);
+    canvas.drawCircle(symbol, h * .095, outline);
     final Path arrow = Path()
-      ..moveTo(symbol.dx - h * .055, symbol.dy)
+      ..moveTo(symbol.dx - h * .050, symbol.dy)
       ..lineTo(symbol.dx + h * .035, symbol.dy)
       ..lineTo(symbol.dx + h * .010, symbol.dy - h * .025)
       ..moveTo(symbol.dx + h * .035, symbol.dy)
@@ -518,6 +631,82 @@ final class _P {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
+  }
+
+  void _pvPwmController() {
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .66,
+      height: h * .64,
+    );
+    housing(
+      body,
+      colors: const <Color>[Color(0xFFEEF3F6), Color(0xFFAEBCC5)],
+      radius: h * .032,
+    );
+
+    final Rect display = Rect.fromLTWH(
+      body.left + body.width * .16,
+      body.top + body.height * .13,
+      body.width * .68,
+      body.height * .18,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(h * .018)),
+      Paint()..color = const Color(0xFF1F3138),
+    );
+    text(
+      'PWM',
+      display.center,
+      size: h * .070,
+      color: const Color(0xFF9FE0F0),
+    );
+
+    final double buttonY = body.top + body.height * .48;
+    for (var i = -1; i <= 1; i++) {
+      final Offset p = Offset(c.dx + i * w * .11, buttonY);
+      canvas.drawCircle(
+        p,
+        h * .025,
+        Paint()..color = const Color(0xFF53636C),
+      );
+      canvas.drawCircle(p, h * .025, outline);
+    }
+
+    final Rect pulse = Rect.fromCenter(
+      center: Offset(c.dx, body.bottom - h * .10),
+      width: body.width * .55,
+      height: h * .11,
+    );
+    final Path wave = Path()
+      ..moveTo(pulse.left, pulse.bottom)
+      ..lineTo(pulse.left, pulse.top)
+      ..lineTo(pulse.left + pulse.width * .30, pulse.top)
+      ..lineTo(pulse.left + pulse.width * .30, pulse.bottom)
+      ..lineTo(pulse.left + pulse.width * .62, pulse.bottom)
+      ..lineTo(pulse.left + pulse.width * .62, pulse.top)
+      ..lineTo(pulse.right, pulse.top);
+    canvas.drawPath(
+      wave,
+      Paint()
+        ..color = state.energized
+            ? const Color(0xFF2E8B77)
+            : const Color(0xFF65747B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.8, s * .016)
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  void _pvControllerTerminals() {
+    final Offset pvP = Offset(c.dx - w * .20, rect.top + h * .08);
+    final Offset pvN = Offset(c.dx + w * .20, rect.top + h * .08);
+    final Offset busP = Offset(c.dx - w * .20, rect.bottom - h * .08);
+    final Offset busN = Offset(c.dx + w * .20, rect.bottom - h * .08);
+    terminal(pvP, const Color(0xFFE65353), 'PV+');
+    terminal(pvN, const Color(0xFF111827), 'PV−');
+    terminal(busP, const Color(0xFFE65353), 'BAT+');
+    terminal(busN, const Color(0xFF111827), 'BAT−');
   }
 
   void pvBattery() {

@@ -11,8 +11,10 @@ void main() {
 
   test('four-wire AC3 source produces positive 400/230 V sequence', () {
     final CircuitState circuit = _balancedWyeCircuit();
-    final Ac3SolveResult result =
-        solver.solve(circuit, topologyEngine.compile(circuit));
+    final Ac3SolveResult result = solver.solve(
+      circuit,
+      topologyEngine.compile(circuit),
+    );
 
     expect(result.status, Ac3SolveStatus.solved);
     expect(result.sourceSequence, Ac3PhaseSequence.positive);
@@ -20,8 +22,11 @@ void main() {
     expect(result.currentBalanced, isTrue);
     expect(result.neutralConnected, isTrue);
 
-    for (final PhaseTag phase
-        in <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]) {
+    for (final PhaseTag phase in <PhaseTag>[
+      PhaseTag.l1,
+      PhaseTag.l2,
+      PhaseTag.l3,
+    ]) {
       expect(result.phaseVoltage(phase)?.magnitude, closeTo(230.0, 1e-8));
       expect(result.lineCurrent(phase).magnitude, closeTo(10.0, 1e-8));
     }
@@ -70,9 +75,7 @@ CircuitState _balancedWyeCircuit() {
           _t('grid-l3', 'L3', PhaseTag.l3, TerminalRole.phaseL3),
           _t('grid-n', 'N', PhaseTag.neutral, TerminalRole.neutral),
         ],
-        parameters: const <String, Object?>{
-          'phaseVoltageRmsV': 230.0,
-        },
+        parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
       ),
     ],
     components: <ComponentInstance>[
@@ -101,23 +104,12 @@ CircuitState _balancedWyeCircuit() {
   );
 }
 
-Terminal _t(
-  String id,
-  String name,
-  PhaseTag phase,
-  TerminalRole role,
-) =>
-    Terminal(
-      id: TerminalId(id),
-      name: name,
-      phase: phase,
-      role: role,
-    );
+Terminal _t(String id, String name, PhaseTag phase, TerminalRole role) =>
+    Terminal(id: TerminalId(id), name: name, phase: phase, role: role);
 
-Connection _w(String id, String from, String to, PhaseTag phase) =>
-    Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-      phase: phase,
-    );
+Connection _w(String id, String from, String to, PhaseTag phase) => Connection(
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+  phase: phase,
+);

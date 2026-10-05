@@ -21,7 +21,8 @@ final class SolverPV {
     Duration elapsed = Duration.zero,
   }) {
     final List<PvSolverDiagnostic> diagnostics = <PvSolverDiagnostic>[];
-    if (circuit.mode != ElectricalMode.pv || topology.mode != ElectricalMode.pv) {
+    if (circuit.mode != ElectricalMode.pv ||
+        topology.mode != ElectricalMode.pv) {
       diagnostics.add(
         const PvSolverDiagnostic(
           code: PvDiagnosticCode.wrongElectricalMode,
@@ -37,7 +38,8 @@ final class SolverPV {
         const PvSolverDiagnostic(
           code: PvDiagnosticCode.topologyIdentityMismatch,
           severity: PvDiagnosticSeverity.error,
-          message: 'TopologyGraph does not match the CircuitState identity/revision.',
+          message:
+              'TopologyGraph does not match the CircuitState identity/revision.',
         ),
       );
       return _failure(circuit, diagnostics);
@@ -84,7 +86,9 @@ final class SolverPV {
     }
 
     final List<ComponentInstance> inverters = circuit.components
-        .where((ComponentInstance component) => component.modelType == 'pv_inverter')
+        .where(
+          (ComponentInstance component) => component.modelType == 'pv_inverter',
+        )
         .toList(growable: false);
     if (inverters.isEmpty) {
       diagnostics.add(
@@ -110,12 +114,15 @@ final class SolverPV {
     final SourceInstance array = arrays.single;
     final ComponentInstance inverter = inverters.single;
     final List<ComponentInstance> controllers = circuit.components
-        .where((ComponentInstance component) =>
-            component.modelType == 'pv_controller')
+        .where(
+          (ComponentInstance component) =>
+              component.modelType == 'pv_controller',
+        )
         .toList(growable: false);
     final List<ComponentInstance> batteries = circuit.components
-        .where((ComponentInstance component) =>
-            component.modelType == 'pv_battery')
+        .where(
+          (ComponentInstance component) => component.modelType == 'pv_battery',
+        )
         .toList(growable: false);
     if (controllers.length > 1 || batteries.length > 1) {
       diagnostics.add(
@@ -140,13 +147,17 @@ final class SolverPV {
       return _failure(circuit, diagnostics);
     }
 
-    final ComponentInstance? controller =
-        controllers.isEmpty ? null : controllers.single;
-    final ComponentInstance? battery =
-        batteries.isEmpty ? null : batteries.single;
+    final ComponentInstance? controller = controllers.isEmpty
+        ? null
+        : controllers.single;
+    final ComponentInstance? battery = batteries.isEmpty
+        ? null
+        : batteries.single;
 
-    final _PvArrayParameters? arrayParameters =
-        _arrayParameters(array, diagnostics);
+    final _PvArrayParameters? arrayParameters = _arrayParameters(
+      array,
+      diagnostics,
+    );
     final _InverterParameters? inverterParameters = _inverterParameters(
       inverter,
       diagnostics,
@@ -164,8 +175,10 @@ final class SolverPV {
       return _failure(circuit, diagnostics);
     }
 
-    final _PvTerminalContract? arrayTerminals =
-        _pvArrayTerminals(array, diagnostics);
+    final _PvTerminalContract? arrayTerminals = _pvArrayTerminals(
+      array,
+      diagnostics,
+    );
     final _InverterTerminalContract? inverterTerminals = _inverterTerminals(
       inverter,
       diagnostics,
@@ -174,14 +187,18 @@ final class SolverPV {
       return _failure(circuit, diagnostics);
     }
 
-    final String arrayPositiveNode =
-        topology.nodeForTerminal(arrayTerminals.positive.id).id;
-    final String arrayNegativeNode =
-        topology.nodeForTerminal(arrayTerminals.negative.id).id;
-    final String inverterPositiveNode =
-        topology.nodeForTerminal(inverterTerminals.dcPositive.id).id;
-    final String inverterNegativeNode =
-        topology.nodeForTerminal(inverterTerminals.dcNegative.id).id;
+    final String arrayPositiveNode = topology
+        .nodeForTerminal(arrayTerminals.positive.id)
+        .id;
+    final String arrayNegativeNode = topology
+        .nodeForTerminal(arrayTerminals.negative.id)
+        .id;
+    final String inverterPositiveNode = topology
+        .nodeForTerminal(inverterTerminals.dcPositive.id)
+        .id;
+    final String inverterNegativeNode = topology
+        .nodeForTerminal(inverterTerminals.dcNegative.id)
+        .id;
 
     if (controller == null) {
       if (arrayPositiveNode != inverterPositiveNode ||
@@ -201,23 +218,31 @@ final class SolverPV {
     } else {
       final _ControllerTerminalContract? controllerTerminals =
           _controllerTerminals(controller, diagnostics);
-      final _BatteryTerminalContract? batteryTerminals =
-          _batteryTerminals(battery!, diagnostics);
+      final _BatteryTerminalContract? batteryTerminals = _batteryTerminals(
+        battery!,
+        diagnostics,
+      );
       if (controllerTerminals == null || batteryTerminals == null) {
         return _failure(circuit, diagnostics);
       }
-      final String controllerPvPositiveNode =
-          topology.nodeForTerminal(controllerTerminals.pvPositive.id).id;
-      final String controllerPvNegativeNode =
-          topology.nodeForTerminal(controllerTerminals.pvNegative.id).id;
-      final String controllerBusPositiveNode =
-          topology.nodeForTerminal(controllerTerminals.busPositive.id).id;
-      final String controllerBusNegativeNode =
-          topology.nodeForTerminal(controllerTerminals.busNegative.id).id;
-      final String batteryPositiveNode =
-          topology.nodeForTerminal(batteryTerminals.positive.id).id;
-      final String batteryNegativeNode =
-          topology.nodeForTerminal(batteryTerminals.negative.id).id;
+      final String controllerPvPositiveNode = topology
+          .nodeForTerminal(controllerTerminals.pvPositive.id)
+          .id;
+      final String controllerPvNegativeNode = topology
+          .nodeForTerminal(controllerTerminals.pvNegative.id)
+          .id;
+      final String controllerBusPositiveNode = topology
+          .nodeForTerminal(controllerTerminals.busPositive.id)
+          .id;
+      final String controllerBusNegativeNode = topology
+          .nodeForTerminal(controllerTerminals.busNegative.id)
+          .id;
+      final String batteryPositiveNode = topology
+          .nodeForTerminal(batteryTerminals.positive.id)
+          .id;
+      final String batteryNegativeNode = topology
+          .nodeForTerminal(batteryTerminals.negative.id)
+          .id;
       if (arrayPositiveNode != controllerPvPositiveNode ||
           arrayNegativeNode != controllerPvNegativeNode ||
           controllerBusPositiveNode != inverterPositiveNode ||
@@ -238,13 +263,17 @@ final class SolverPV {
       }
     }
 
-    final List<ComponentInstance> loads = circuit.components
-        .where((ComponentInstance component) => component.modelType == 'pv_resistive_load')
-        .toList(growable: false)
-      ..sort(
-        (ComponentInstance a, ComponentInstance b) =>
-            a.id.value.compareTo(b.id.value),
-      );
+    final List<ComponentInstance> loads =
+        circuit.components
+            .where(
+              (ComponentInstance component) =>
+                  component.modelType == 'pv_resistive_load',
+            )
+            .toList(growable: false)
+          ..sort(
+            (ComponentInstance a, ComponentInstance b) =>
+                a.id.value.compareTo(b.id.value),
+          );
     final List<_LoadParameters> loadParameters = <_LoadParameters>[];
     final String inverterLineNode = topology
         .nodeForTerminal(inverterTerminals.acLine.id)
@@ -254,18 +283,24 @@ final class SolverPV {
         .id;
     for (final ComponentInstance load in loads) {
       final _LoadParameters? parameters = _loadParameters(load, diagnostics);
-      final _LoadTerminalContract? terminals = _loadTerminals(load, diagnostics);
+      final _LoadTerminalContract? terminals = _loadTerminals(
+        load,
+        diagnostics,
+      );
       if (parameters == null || terminals == null) {
         continue;
       }
       final String lineNode = topology.nodeForTerminal(terminals.line.id).id;
-      final String neutralNode = topology.nodeForTerminal(terminals.neutral.id).id;
+      final String neutralNode = topology
+          .nodeForTerminal(terminals.neutral.id)
+          .id;
       if (lineNode != inverterLineNode || neutralNode != inverterNeutralNode) {
         diagnostics.add(
           PvSolverDiagnostic(
             code: PvDiagnosticCode.acOutputDisconnected,
             severity: PvDiagnosticSeverity.error,
-            message: 'PV load ${load.id.value} is not connected to the inverter AC output bus.',
+            message:
+                'PV load ${load.id.value} is not connected to the inverter AC output bus.',
             componentId: load.id,
           ),
         );
@@ -289,8 +324,7 @@ final class SolverPV {
       0.0,
       diagnostics,
     );
-    final double irradianceWm2 =
-        rawIrradianceWm2 * (1.0 - shadingPct / 100.0);
+    final double irradianceWm2 = rawIrradianceWm2 * (1.0 - shadingPct / 100.0);
     final double cellTemperatureC = _finiteSetting(
       circuit,
       'cellTemperatureC',
@@ -308,19 +342,22 @@ final class SolverPV {
         cellTemperatureC - options.referenceCellTemperatureC;
     final double voltageFactor = math.max(
       0.0,
-      1.0 + arrayParameters.voltageTemperatureCoefficientPerC * temperatureDelta,
+      1.0 +
+          arrayParameters.voltageTemperatureCoefficientPerC * temperatureDelta,
     );
     final double powerTemperatureFactor = math.max(
       0.0,
       1.0 + arrayParameters.powerTemperatureCoefficientPerC * temperatureDelta,
     );
-    final double operatingVoltageV = arrayParameters.mppVoltageV * voltageFactor;
+    final double operatingVoltageV =
+        arrayParameters.mppVoltageV * voltageFactor;
     final double availablePowerW =
         arrayParameters.mppVoltageV *
         arrayParameters.mppCurrentA *
         irradianceFactor *
         powerTemperatureFactor;
-    final double availableCurrentA = operatingVoltageV <= options.numericTolerance
+    final double availableCurrentA =
+        operatingVoltageV <= options.numericTolerance
         ? 0.0
         : availablePowerW / operatingVoltageV;
 
@@ -382,7 +419,8 @@ final class SolverPV {
         outputVoltageV = inverterParameters.nominalAcVoltageV;
         outputCurrentA = 0.0;
         inverterState = PvInverterState.idle;
-      } else if (nominalLoadPowerW <= availableAcPowerW + options.numericTolerance) {
+      } else if (nominalLoadPowerW <=
+          availableAcPowerW + options.numericTolerance) {
         outputVoltageV = inverterParameters.nominalAcVoltageV;
         outputCurrentA = outputVoltageV * totalConductance;
         inverterState = PvInverterState.running;
@@ -396,7 +434,8 @@ final class SolverPV {
           PvSolverDiagnostic(
             code: PvDiagnosticCode.powerLimited,
             severity: PvDiagnosticSeverity.warning,
-            message: 'Inverter output is power-limited by PV availability or inverter rating.',
+            message:
+                'Inverter output is power-limited by PV availability or inverter rating.',
             componentId: inverter.id,
           ),
         );
@@ -411,7 +450,10 @@ final class SolverPV {
         ? 0.0
         : dcDrawnPowerW / operatingVoltageV;
     final double conversionLossW = math.max(0.0, dcDrawnPowerW - outputPowerW);
-    final double curtailedPowerW = math.max(0.0, availablePowerW - dcDrawnPowerW);
+    final double curtailedPowerW = math.max(
+      0.0,
+      availablePowerW - dcDrawnPowerW,
+    );
 
     final List<PvLoadResult> loadResults = <PvLoadResult>[
       for (final _LoadParameters load in loadParameters)
@@ -420,8 +462,7 @@ final class SolverPV {
           resistanceOhm: load.resistanceOhm,
           voltageRmsV: outputVoltageV,
           currentRmsA: outputVoltageV / load.resistanceOhm,
-          activePowerW:
-              outputVoltageV * outputVoltageV / load.resistanceOhm,
+          activePowerW: outputVoltageV * outputVoltageV / load.resistanceOhm,
         ),
     ];
 
@@ -507,8 +548,7 @@ final class SolverPV {
           PvSolverDiagnostic(
             code: PvDiagnosticCode.invalidControllerParameter,
             severity: PvDiagnosticSeverity.error,
-            message:
-                'Degraded pv_controller requires deratingFactor in (0,1].',
+            message: 'Degraded pv_controller requires deratingFactor in (0,1].',
             componentId: controller.id,
           ),
         );
@@ -529,7 +569,8 @@ final class SolverPV {
 
     final double busVoltageV = controllerParameters.outputVoltageV;
     final double controllerOutputLimitW =
-        busVoltageV * controllerParameters.maxOutputCurrentA *
+        busVoltageV *
+        controllerParameters.maxOutputCurrentA *
         controllerDerating;
     final double pvBusAvailablePowerW = controllerOperational
         ? math.min(
@@ -550,8 +591,7 @@ final class SolverPV {
 
     final double totalConductance = loadParameters.fold<double>(
       0.0,
-      (double sum, _LoadParameters load) =>
-          sum + (1.0 / load.resistanceOhm),
+      (double sum, _LoadParameters load) => sum + (1.0 / load.resistanceOhm),
     );
     final double nominalLoadPowerW =
         inverterParameters.nominalAcVoltageV *
@@ -560,18 +600,23 @@ final class SolverPV {
 
     final double ratedAcPowerW =
         inverterParameters.ratedAcPowerW * availability.deratingFactor;
-    final double desiredAcPowerW =
-        availability.canOperate ? math.min(nominalLoadPowerW, ratedAcPowerW) : 0.0;
+    final double desiredAcPowerW = availability.canOperate
+        ? math.min(nominalLoadPowerW, ratedAcPowerW)
+        : 0.0;
     final double requiredDcPowerW = desiredAcPowerW <= options.numericTolerance
         ? 0.0
         : desiredAcPowerW / inverterParameters.efficiency;
 
-    final double pvToInverterW =
-        math.min(pvBusAvailablePowerW, requiredDcPowerW);
+    final double pvToInverterW = math.min(
+      pvBusAvailablePowerW,
+      requiredDcPowerW,
+    );
     final double dcDeficitW = math.max(0.0, requiredDcPowerW - pvToInverterW);
 
-    final double availableBatteryEnergyWh =
-        math.max(0.0, (initialSoc - batteryParameters.minSoc) * capacityWh);
+    final double availableBatteryEnergyWh = math.max(
+      0.0,
+      (initialSoc - batteryParameters.minSoc) * capacityWh,
+    );
     double maxBatteryRawDischargeW =
         busVoltageV * batteryParameters.maxDischargeCurrentA;
     if (elapsedHours > 0.0) {
@@ -587,10 +632,9 @@ final class SolverPV {
     final double batteryBusDischargeW =
         rawBatteryDischargeW * batteryParameters.dischargeEfficiency;
 
-    final double inverterDcAvailableW =
-        pvToInverterW + batteryBusDischargeW;
-    final double availableAcPowerW = inverterDcAvailableW *
-        inverterParameters.efficiency;
+    final double inverterDcAvailableW = pvToInverterW + batteryBusDischargeW;
+    final double availableAcPowerW =
+        inverterDcAvailableW * inverterParameters.efficiency;
     final double outputPowerW = math.min(desiredAcPowerW, availableAcPowerW);
 
     double outputVoltageV = 0.0;
@@ -600,8 +644,7 @@ final class SolverPV {
       if (totalConductance <= options.numericTolerance) {
         outputVoltageV = inverterParameters.nominalAcVoltageV;
         inverterState = PvInverterState.idle;
-      } else if (outputPowerW + options.numericTolerance >=
-          nominalLoadPowerW) {
+      } else if (outputPowerW + options.numericTolerance >= nominalLoadPowerW) {
         outputVoltageV = inverterParameters.nominalAcVoltageV;
         outputCurrentA = outputVoltageV * totalConductance;
         inverterState = PvInverterState.running;
@@ -626,44 +669,47 @@ final class SolverPV {
     final double actualInverterDcW = outputPowerW <= options.numericTolerance
         ? 0.0
         : outputPowerW / inverterParameters.efficiency;
-    final double actualPvToInverterW =
-        math.min(pvBusAvailablePowerW, actualInverterDcW);
-    final double actualBatteryBusDischargeW =
-        math.max(0.0, actualInverterDcW - actualPvToInverterW);
+    final double actualPvToInverterW = math.min(
+      pvBusAvailablePowerW,
+      actualInverterDcW,
+    );
+    final double actualBatteryBusDischargeW = math.max(
+      0.0,
+      actualInverterDcW - actualPvToInverterW,
+    );
     final double actualRawBatteryDischargeW =
         actualBatteryBusDischargeW <= options.numericTolerance
-            ? 0.0
-            : actualBatteryBusDischargeW /
-                batteryParameters.dischargeEfficiency;
+        ? 0.0
+        : actualBatteryBusDischargeW / batteryParameters.dischargeEfficiency;
 
-    final double pvBusSurplusW =
-        math.max(0.0, pvBusAvailablePowerW - actualPvToInverterW);
-    final double batteryHeadroomWh =
-        math.max(0.0, (batteryParameters.maxSoc - initialSoc) * capacityWh);
-    double maxChargeInputW =
-        busVoltageV * batteryParameters.maxChargeCurrentA;
+    final double pvBusSurplusW = math.max(
+      0.0,
+      pvBusAvailablePowerW - actualPvToInverterW,
+    );
+    final double batteryHeadroomWh = math.max(
+      0.0,
+      (batteryParameters.maxSoc - initialSoc) * capacityWh,
+    );
+    double maxChargeInputW = busVoltageV * batteryParameters.maxChargeCurrentA;
     if (elapsedHours > 0.0) {
       maxChargeInputW = math.min(
         maxChargeInputW,
-        batteryHeadroomWh /
-            (elapsedHours * batteryParameters.chargeEfficiency),
+        batteryHeadroomWh / (elapsedHours * batteryParameters.chargeEfficiency),
       );
     }
-    final double batteryChargeInputW =
-        math.min(pvBusSurplusW, maxChargeInputW);
+    final double batteryChargeInputW = math.min(pvBusSurplusW, maxChargeInputW);
     final double batteryStoredChargeW =
         batteryChargeInputW * batteryParameters.chargeEfficiency;
 
     final double deltaEnergyWh = elapsedHours <= 0.0
         ? 0.0
         : (batteryStoredChargeW - actualRawBatteryDischargeW) * elapsedHours;
-    final double finalStoredEnergyWh =
-        (initialSoc * capacityWh + deltaEnergyWh)
-            .clamp(
-              batteryParameters.minSoc * capacityWh,
-              batteryParameters.maxSoc * capacityWh,
-            )
-            .toDouble();
+    final double finalStoredEnergyWh = (initialSoc * capacityWh + deltaEnergyWh)
+        .clamp(
+          batteryParameters.minSoc * capacityWh,
+          batteryParameters.maxSoc * capacityWh,
+        )
+        .toDouble();
     final double finalSoc = capacityWh <= options.numericTolerance
         ? initialSoc
         : finalStoredEnergyWh / capacityWh;
@@ -691,8 +737,7 @@ final class SolverPV {
       );
     }
 
-    final double pvBusUsedW =
-        actualPvToInverterW + batteryChargeInputW;
+    final double pvBusUsedW = actualPvToInverterW + batteryChargeInputW;
     final double arrayDrawnPowerW = controllerOperational
         ? math.min(
             availablePowerW,
@@ -702,17 +747,20 @@ final class SolverPV {
     final double drawnCurrentA = operatingVoltageV <= options.numericTolerance
         ? 0.0
         : arrayDrawnPowerW / operatingVoltageV;
-    final double controllerLossW =
-        math.max(0.0, arrayDrawnPowerW - pvBusUsedW);
-    final double inverterLossW =
-        math.max(0.0, actualInverterDcW - outputPowerW);
+    final double controllerLossW = math.max(0.0, arrayDrawnPowerW - pvBusUsedW);
+    final double inverterLossW = math.max(
+      0.0,
+      actualInverterDcW - outputPowerW,
+    );
     final double batteryLossW = math.max(
       0.0,
       (actualRawBatteryDischargeW - actualBatteryBusDischargeW) +
           (batteryChargeInputW - batteryStoredChargeW),
     );
-    final double curtailedPowerW =
-        math.max(0.0, availablePowerW - arrayDrawnPowerW);
+    final double curtailedPowerW = math.max(
+      0.0,
+      availablePowerW - arrayDrawnPowerW,
+    );
 
     final List<PvLoadResult> loadResults = <PvLoadResult>[
       for (final _LoadParameters load in loadParameters)
@@ -721,8 +769,7 @@ final class SolverPV {
           resistanceOhm: load.resistanceOhm,
           voltageRmsV: outputVoltageV,
           currentRmsA: outputVoltageV / load.resistanceOhm,
-          activePowerW:
-              outputVoltageV * outputVoltageV / load.resistanceOhm,
+          activePowerW: outputVoltageV * outputVoltageV / load.resistanceOhm,
         ),
     ];
 
@@ -765,12 +812,18 @@ final class SolverPV {
     ComponentInstance controller,
     List<PvSolverDiagnostic> diagnostics,
   ) {
-    final double? outputVoltage =
-        _positiveNumber(controller.parameters, 'outputVoltageV');
-    final double? maxCurrent =
-        _positiveNumber(controller.parameters, 'maxOutputCurrentA');
-    final double? efficiency =
-        _positiveNumber(controller.parameters, 'efficiency');
+    final double? outputVoltage = _positiveNumber(
+      controller.parameters,
+      'outputVoltageV',
+    );
+    final double? maxCurrent = _positiveNumber(
+      controller.parameters,
+      'maxOutputCurrentA',
+    );
+    final double? efficiency = _positiveNumber(
+      controller.parameters,
+      'efficiency',
+    );
     if (outputVoltage == null ||
         maxCurrent == null ||
         efficiency == null ||
@@ -797,24 +850,42 @@ final class SolverPV {
     ComponentInstance battery,
     List<PvSolverDiagnostic> diagnostics,
   ) {
-    final double? voltage =
-        _positiveNumber(battery.parameters, 'nominalVoltageV');
-    final double? capacity =
-        _positiveNumber(battery.parameters, 'capacityAh');
-    final double? maxCharge =
-        _positiveNumber(battery.parameters, 'maxChargeCurrentA');
-    final double? maxDischarge =
-        _positiveNumber(battery.parameters, 'maxDischargeCurrentA');
-    final double? chargeEfficiency =
-        _positiveNumber(battery.parameters, 'chargeEfficiency');
-    final double? dischargeEfficiency =
-        _positiveNumber(battery.parameters, 'dischargeEfficiency');
-    final double? initialSoc =
-        _finiteOptionalNumber(battery.parameters, 'initialSoc', 0.5);
-    final double? minSoc =
-        _finiteOptionalNumber(battery.parameters, 'minSoc', 0.1);
-    final double? maxSoc =
-        _finiteOptionalNumber(battery.parameters, 'maxSoc', 1.0);
+    final double? voltage = _positiveNumber(
+      battery.parameters,
+      'nominalVoltageV',
+    );
+    final double? capacity = _positiveNumber(battery.parameters, 'capacityAh');
+    final double? maxCharge = _positiveNumber(
+      battery.parameters,
+      'maxChargeCurrentA',
+    );
+    final double? maxDischarge = _positiveNumber(
+      battery.parameters,
+      'maxDischargeCurrentA',
+    );
+    final double? chargeEfficiency = _positiveNumber(
+      battery.parameters,
+      'chargeEfficiency',
+    );
+    final double? dischargeEfficiency = _positiveNumber(
+      battery.parameters,
+      'dischargeEfficiency',
+    );
+    final double? initialSoc = _finiteOptionalNumber(
+      battery.parameters,
+      'initialSoc',
+      0.5,
+    );
+    final double? minSoc = _finiteOptionalNumber(
+      battery.parameters,
+      'minSoc',
+      0.1,
+    );
+    final double? maxSoc = _finiteOptionalNumber(
+      battery.parameters,
+      'maxSoc',
+      1.0,
+    );
     if (voltage == null ||
         capacity == null ||
         maxCharge == null ||
@@ -926,7 +997,8 @@ final class SolverPV {
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidPvParameter,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_array requires positive mppVoltageV/mppCurrentA and finite temperature coefficients.',
+          message:
+              'pv_array requires positive mppVoltageV/mppCurrentA and finite temperature coefficients.',
           sourceId: source.id,
         ),
       );
@@ -954,7 +1026,10 @@ final class SolverPV {
       inverter.parameters,
       'ratedAcPowerW',
     );
-    final double? efficiency = _positiveNumber(inverter.parameters, 'efficiency');
+    final double? efficiency = _positiveNumber(
+      inverter.parameters,
+      'efficiency',
+    );
     if (minDc == null ||
         maxDc == null ||
         maxDc < minDc ||
@@ -966,7 +1041,8 @@ final class SolverPV {
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidInverterParameter,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_inverter requires valid DC limits, nominal AC voltage, rating and efficiency in (0,1].',
+          message:
+              'pv_inverter requires valid DC limits, nominal AC voltage, rating and efficiency in (0,1].',
           componentId: inverter.id,
         ),
       );
@@ -985,7 +1061,10 @@ final class SolverPV {
     ComponentInstance load,
     List<PvSolverDiagnostic> diagnostics,
   ) {
-    final double? resistance = _positiveNumber(load.parameters, 'resistanceOhm');
+    final double? resistance = _positiveNumber(
+      load.parameters,
+      'resistanceOhm',
+    );
     if (resistance == null) {
       diagnostics.add(
         PvSolverDiagnostic(
@@ -1004,14 +1083,21 @@ final class SolverPV {
     SourceInstance source,
     List<PvSolverDiagnostic> diagnostics,
   ) {
-    final Terminal? positive = _terminalForPhase(source.terminals, PhaseTag.dcPositive);
-    final Terminal? negative = _terminalForPhase(source.terminals, PhaseTag.dcNegative);
+    final Terminal? positive = _terminalForPhase(
+      source.terminals,
+      PhaseTag.dcPositive,
+    );
+    final Terminal? negative = _terminalForPhase(
+      source.terminals,
+      PhaseTag.dcNegative,
+    );
     if (positive == null || negative == null) {
       diagnostics.add(
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidTerminalContract,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_array requires explicit dcPositive and dcNegative terminals.',
+          message:
+              'pv_array requires explicit dcPositive and dcNegative terminals.',
           sourceId: source.id,
         ),
       );
@@ -1037,12 +1123,16 @@ final class SolverPV {
       inverter.terminals,
       PhaseTag.neutral,
     );
-    if (positive == null || negative == null || line == null || neutral == null) {
+    if (positive == null ||
+        negative == null ||
+        line == null ||
+        neutral == null) {
       diagnostics.add(
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidTerminalContract,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_inverter requires dcPositive, dcNegative, l1 and neutral terminals.',
+          message:
+              'pv_inverter requires dcPositive, dcNegative, l1 and neutral terminals.',
           componentId: inverter.id,
         ),
       );
@@ -1061,13 +1151,17 @@ final class SolverPV {
     List<PvSolverDiagnostic> diagnostics,
   ) {
     final Terminal? line = _terminalForPhase(load.terminals, PhaseTag.l1);
-    final Terminal? neutral = _terminalForPhase(load.terminals, PhaseTag.neutral);
+    final Terminal? neutral = _terminalForPhase(
+      load.terminals,
+      PhaseTag.neutral,
+    );
     if (line == null || neutral == null) {
       diagnostics.add(
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidTerminalContract,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_resistive_load requires explicit l1 and neutral terminals.',
+          message:
+              'pv_resistive_load requires explicit l1 and neutral terminals.',
           componentId: load.id,
         ),
       );
@@ -1109,7 +1203,8 @@ final class SolverPV {
           PvSolverDiagnostic(
             code: PvDiagnosticCode.inverterDerated,
             severity: PvDiagnosticSeverity.warning,
-            message: 'Inverter output rating is reduced by explicit deratingFactor.',
+            message:
+                'Inverter output rating is reduced by explicit deratingFactor.',
             componentId: inverter.id,
           ),
         );
@@ -1118,7 +1213,8 @@ final class SolverPV {
             PvSolverDiagnostic(
               code: PvDiagnosticCode.inputVoltageOutOfRange,
               severity: PvDiagnosticSeverity.warning,
-              message: 'PV operating voltage is outside inverter DC input limits.',
+              message:
+                  'PV operating voltage is outside inverter DC input limits.',
               componentId: inverter.id,
             ),
           );
@@ -1140,7 +1236,8 @@ final class SolverPV {
           PvSolverDiagnostic(
             code: PvDiagnosticCode.inverterFaulted,
             severity: PvDiagnosticSeverity.warning,
-            message: 'Inverter condition ${inverter.condition.name} disables AC output.',
+            message:
+                'Inverter condition ${inverter.condition.name} disables AC output.',
             componentId: inverter.id,
           ),
         );
@@ -1203,38 +1300,38 @@ final class SolverPV {
   }
 
   double _boundedPercentageSetting(
-  CircuitState circuit,
-  String key,
-  double fallback,
-  List<PvSolverDiagnostic> diagnostics,
-) {
-  final Object? raw = circuit.settings[key];
-  if (raw == null) return fallback;
-  if (raw is! num) {
-    diagnostics.add(
-      PvSolverDiagnostic(
-        code: PvDiagnosticCode.invalidPvParameter,
-        severity: PvDiagnosticSeverity.error,
-        message: '$key must be numeric.',
-      ),
-    );
-    return fallback;
+    CircuitState circuit,
+    String key,
+    double fallback,
+    List<PvSolverDiagnostic> diagnostics,
+  ) {
+    final Object? raw = circuit.settings[key];
+    if (raw == null) return fallback;
+    if (raw is! num) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidPvParameter,
+          severity: PvDiagnosticSeverity.error,
+          message: '$key must be numeric.',
+        ),
+      );
+      return fallback;
+    }
+    final double value = raw.toDouble();
+    if (!value.isFinite || value < 0.0 || value > 100.0) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: PvDiagnosticCode.invalidPvParameter,
+          severity: PvDiagnosticSeverity.error,
+          message: '$key must be finite and between 0 and 100.',
+        ),
+      );
+      return fallback;
+    }
+    return value;
   }
-  final double value = raw.toDouble();
-  if (!value.isFinite || value < 0.0 || value > 100.0) {
-    diagnostics.add(
-      PvSolverDiagnostic(
-        code: PvDiagnosticCode.invalidPvParameter,
-        severity: PvDiagnosticSeverity.error,
-        message: '$key must be finite and between 0 and 100.',
-      ),
-    );
-    return fallback;
-  }
-  return value;
-}
 
-double _finiteSetting(
+  double _finiteSetting(
     CircuitState circuit,
     String key,
     double fallback,
@@ -1260,29 +1357,28 @@ double _finiteSetting(
   PvSolveResult _failure(
     CircuitState circuit,
     List<PvSolverDiagnostic> diagnostics,
-  ) =>
-      PvSolveResult(
-        circuitId: circuit.circuitId,
-        circuitRevision: circuit.revision,
-        engineVersion: engineVersion,
-        status: PvSolveStatus.invalid,
-        irradianceWm2: 0.0,
-        cellTemperatureC: 0.0,
-        pvOperatingVoltageV: 0.0,
-        pvAvailableCurrentA: 0.0,
-        pvAvailablePowerW: 0.0,
-        pvDrawnCurrentA: 0.0,
-        pvDrawnPowerW: 0.0,
-        curtailedPowerW: 0.0,
-        inverterState: PvInverterState.faulted,
-        inverterEfficiency: 0.0,
-        inverterOutputVoltageRmsV: 0.0,
-        inverterOutputCurrentRmsA: 0.0,
-        inverterOutputPowerW: 0.0,
-        inverterConversionLossW: 0.0,
-        loadResults: const <PvLoadResult>[],
-        diagnostics: diagnostics,
-      );
+  ) => PvSolveResult(
+    circuitId: circuit.circuitId,
+    circuitRevision: circuit.revision,
+    engineVersion: engineVersion,
+    status: PvSolveStatus.invalid,
+    irradianceWm2: 0.0,
+    cellTemperatureC: 0.0,
+    pvOperatingVoltageV: 0.0,
+    pvAvailableCurrentA: 0.0,
+    pvAvailablePowerW: 0.0,
+    pvDrawnCurrentA: 0.0,
+    pvDrawnPowerW: 0.0,
+    curtailedPowerW: 0.0,
+    inverterState: PvInverterState.faulted,
+    inverterEfficiency: 0.0,
+    inverterOutputVoltageRmsV: 0.0,
+    inverterOutputCurrentRmsA: 0.0,
+    inverterOutputPowerW: 0.0,
+    inverterConversionLossW: 0.0,
+    loadResults: const <PvLoadResult>[],
+    diagnostics: diagnostics,
+  );
 }
 
 bool _hasErrors(List<PvSolverDiagnostic> diagnostics) => diagnostics.any(

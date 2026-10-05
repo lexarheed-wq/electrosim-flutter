@@ -62,7 +62,11 @@ CircuitState _benchmarkCircuit(int branchesPerPhase) {
     _wire('sn12', 's1n', 's2n', PhaseTag.neutral),
     _wire('sn23', 's2n', 's3n', PhaseTag.neutral),
   ];
-  final List<PhaseTag> phases = <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3];
+  final List<PhaseTag> phases = <PhaseTag>[
+    PhaseTag.l1,
+    PhaseTag.l2,
+    PhaseTag.l3,
+  ];
   for (var phaseIndex = 0; phaseIndex < phases.length; phaseIndex++) {
     final PhaseTag phase = phases[phaseIndex];
     final String phaseKey = '${phaseIndex + 1}';
@@ -85,9 +89,7 @@ CircuitState _benchmarkCircuit(int branchesPerPhase) {
         ),
       );
       connections.add(_wire('p-$id', 's${phaseIndex + 1}p', '${id}p', phase));
-      connections.add(
-        _wire('n-$id', 's1n', '${id}n', PhaseTag.neutral),
-      );
+      connections.add(_wire('n-$id', 's1n', '${id}n', PhaseTag.neutral));
     }
   }
   return CircuitState(
@@ -120,9 +122,10 @@ SourceInstance _source(int index, PhaseTag phase) => SourceInstance(
   parameters: const <String, Object?>{'voltageRmsV': 230.0},
 );
 
-Connection _wire(String id, String from, String to, PhaseTag phase) => Connection(
-  id: ConnectionId(id),
-  fromTerminalId: TerminalId(from),
-  toTerminalId: TerminalId(to),
-  phase: phase,
-);
+Connection _wire(String id, String from, String to, PhaseTag phase) =>
+    Connection(
+      id: ConnectionId(id),
+      fromTerminalId: TerminalId(from),
+      toTerminalId: TerminalId(to),
+      phase: phase,
+    );

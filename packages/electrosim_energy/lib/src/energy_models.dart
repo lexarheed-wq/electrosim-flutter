@@ -30,7 +30,11 @@ final class EnergyPowerSample {
     required this.lossPowerW,
     double balanceToleranceW = 1e-6,
   }) {
-    for (final double value in <double>[inputPowerW, outputPowerW, lossPowerW]) {
+    for (final double value in <double>[
+      inputPowerW,
+      outputPowerW,
+      lossPowerW,
+    ]) {
       if (!value.isFinite || value < 0.0) {
         throw const EnergyException(
           EnergyErrorCode.invalidPower,
@@ -56,21 +60,22 @@ final class EnergyPowerSample {
     }
     final double batteryRawDischargeW =
         result.batteryPresent && result.batteryPowerW > 0.0
-            ? result.batteryPowerW + result.batteryConversionLossW
-            : 0.0;
+        ? result.batteryPowerW + result.batteryConversionLossW
+        : 0.0;
     final double batteryStoredChargeW =
         result.batteryPresent && result.batteryPowerW < 0.0
-            ? (-result.batteryPowerW - result.batteryConversionLossW)
-                .clamp(0.0, double.infinity)
-                .toDouble()
-            : 0.0;
+        ? (-result.batteryPowerW - result.batteryConversionLossW)
+              .clamp(0.0, double.infinity)
+              .toDouble()
+        : 0.0;
     return EnergyPowerSample(
       circuitId: result.circuitId,
       circuitRevision: result.circuitRevision,
       engineVersion: result.engineVersion,
       inputPowerW: result.pvDrawnPowerW + batteryRawDischargeW,
       outputPowerW: result.inverterOutputPowerW + batteryStoredChargeW,
-      lossPowerW: result.controllerConversionLossW +
+      lossPowerW:
+          result.controllerConversionLossW +
           result.inverterConversionLossW +
           result.batteryConversionLossW,
     );
@@ -83,7 +88,8 @@ final class EnergyPowerSample {
   final double outputPowerW;
   final double lossPowerW;
 
-  double get efficiency => inputPowerW <= 1e-15 ? 1.0 : outputPowerW / inputPowerW;
+  double get efficiency =>
+      inputPowerW <= 1e-15 ? 1.0 : outputPowerW / inputPowerW;
 }
 
 final class EnergySnapshot {
@@ -104,19 +110,18 @@ final class EnergySnapshot {
     required CircuitId circuitId,
     required int circuitRevision,
     required String sourceEngineVersion,
-  }) =>
-      EnergySnapshot(
-        circuitId: circuitId,
-        circuitRevision: circuitRevision,
-        sourceEngineVersion: sourceEngineVersion,
-        elapsedSeconds: 0.0,
-        inputPowerW: 0.0,
-        outputPowerW: 0.0,
-        lossPowerW: 0.0,
-        inputEnergyWh: 0.0,
-        outputEnergyWh: 0.0,
-        lossEnergyWh: 0.0,
-      );
+  }) => EnergySnapshot(
+    circuitId: circuitId,
+    circuitRevision: circuitRevision,
+    sourceEngineVersion: sourceEngineVersion,
+    elapsedSeconds: 0.0,
+    inputPowerW: 0.0,
+    outputPowerW: 0.0,
+    lossPowerW: 0.0,
+    inputEnergyWh: 0.0,
+    outputEnergyWh: 0.0,
+    lossEnergyWh: 0.0,
+  );
 
   final CircuitId circuitId;
   final int circuitRevision;
@@ -139,8 +144,10 @@ final class EnergySnapshot {
 }
 
 final class EnergyHistory {
-  EnergyHistory({required this.maxEntries, Iterable<EnergySnapshot> entries = const <EnergySnapshot>[]})
-    : entries = List<EnergySnapshot>.unmodifiable(entries) {
+  EnergyHistory({
+    required this.maxEntries,
+    Iterable<EnergySnapshot> entries = const <EnergySnapshot>[],
+  }) : entries = List<EnergySnapshot>.unmodifiable(entries) {
     if (maxEntries <= 0) {
       throw const EnergyException(
         EnergyErrorCode.invalidHistoryCapacity,

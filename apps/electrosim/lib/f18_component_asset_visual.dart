@@ -89,7 +89,8 @@ abstract final class F18ReferenceComponentVisuals {
         _ => null,
       };
 
-  static bool usesUploadedFive(String modelType) => switch (modelType.toLowerCase()) {
+  static bool usesUploadedFive(String modelType) =>
+      switch (modelType.toLowerCase()) {
         'dc_voltage_source' ||
         'voltage_source' ||
         'switch' ||
@@ -104,58 +105,115 @@ abstract final class F18ReferenceComponentVisuals {
 }
 
 abstract final class F18ReferenceComponentMetrics {
-  static Size boardSizeFor(String modelType) => switch (modelType.toLowerCase()) {
-        'dc_voltage_source' || 'voltage_source' => const Size(140, 160),
-        'switch' || 'switch_spst' => const Size(90, 140),
-        'lamp' => const Size(130, 160),
-        'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
-        'push_button_no' => const Size(90, 140),
-        'resistor' => const Size(280, 110),
-        'push_button_nc' => const Size(180, 180),
-        'buzzer' => const Size(190, 190),
-        'fuse_dc' || 'fuse_ac1' || 'fuse' => const Size(300, 110),
-        'diode' => const Size(270, 105),
-        'fan_dc' => const Size(210, 210),
-        'motor_dc' => const Size(230, 190),
-        'relay_coil' => const Size(190, 230),
-        'capacitor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.capacitor),
-        'inductor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.inductor),
-        'impedance' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.impedance),
-        'contactor_aux_no' || 'relay_contact_no' =>
-          F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNo),
-        'contactor_aux_nc' || 'relay_contact_nc' =>
-          F14LibraryGeometry.boardSizeFor(F14LibraryDevice.auxiliaryNc),
-        'contactor_ac1' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactorAc1),
-        'contactor_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.contactor3p),
-        'breaker_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.breaker3p),
-        'thermal_overload_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.thermalOverload3p),
-        'dc_current_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.dcCurrentSource),
-        'ac_voltage_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.acVoltageSource),
-        'ac_current_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.acCurrentSource),
-        'ac3_voltage_source' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.ac3VoltageSource),
-        'pv_array' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvArray),
-        'pv_controller' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvController),
-        'pv_battery' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvBattery),
-        'pv_inverter' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvInverter),
-        'pv_resistive_load' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvLoad),
-        'motor_3p_6t' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.motor6t),
-        'load_wye_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.wyeLoad),
-        'load_delta_3p' => F17ThreePhaseGeometry.boardSizeFor(F17ThreePhaseDevice.deltaLoad),
-        'catalog_battery' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.battery),
-        'catalog_generator' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.generator),
-        'catalog_appliance_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.appliance2t),
-        'catalog_motor_driven_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.motorDriven2t),
-        'catalog_motor_driven_6t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.motorDriven6t),
-        'catalog_heater' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.heater),
-        'catalog_actuator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.actuator2t),
-        'catalog_sensor_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.sensor2t),
-        'catalog_indicator_2t' => F20CatalogGeometry.boardSizeFor(F20CatalogDevice.indicator2t),
-        'isolator_3p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.isolator3p),
-        'isolator_4p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.isolator4p),
-        'breaker_4p' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.breaker4p),
-        'terminal_block_5' => F23DistributionGeometry.boardSizeFor(F23DistributionDevice.terminalBlock5),
-        _ => const Size(104, 64),
-      };
+  static Size boardSizeFor(String modelType) => switch (modelType
+      .toLowerCase()) {
+    'dc_voltage_source' || 'voltage_source' => const Size(140, 160),
+    'switch' || 'switch_spst' => const Size(90, 140),
+    'lamp' => const Size(130, 160),
+    'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
+    'push_button_no' => const Size(90, 140),
+    'resistor' => const Size(280, 110),
+    'push_button_nc' => const Size(180, 180),
+    'buzzer' => const Size(190, 190),
+    'fuse_dc' || 'fuse_ac1' || 'fuse' => const Size(300, 110),
+    'diode' => const Size(270, 105),
+    'fan_dc' => const Size(210, 210),
+    'motor_dc' => const Size(230, 190),
+    'relay_coil' => const Size(190, 230),
+    'capacitor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.capacitor),
+    'inductor' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.inductor),
+    'impedance' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.impedance),
+    'contactor_aux_no' || 'relay_contact_no' => F14LibraryGeometry.boardSizeFor(
+      F14LibraryDevice.auxiliaryNo,
+    ),
+    'contactor_aux_nc' || 'relay_contact_nc' => F14LibraryGeometry.boardSizeFor(
+      F14LibraryDevice.auxiliaryNc,
+    ),
+    'contactor_ac1' => F14LibraryGeometry.boardSizeFor(
+      F14LibraryDevice.contactorAc1,
+    ),
+    'contactor_3p' => F14LibraryGeometry.boardSizeFor(
+      F14LibraryDevice.contactor3p,
+    ),
+    'breaker_3p' => F14LibraryGeometry.boardSizeFor(F14LibraryDevice.breaker3p),
+    'thermal_overload_3p' => F14LibraryGeometry.boardSizeFor(
+      F14LibraryDevice.thermalOverload3p,
+    ),
+    'dc_current_source' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.dcCurrentSource,
+    ),
+    'ac_voltage_source' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.acVoltageSource,
+    ),
+    'ac_current_source' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.acCurrentSource,
+    ),
+    'ac3_voltage_source' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.ac3VoltageSource,
+    ),
+    'pv_array' => F15SourcePvGeometry.boardSizeFor(F15SourcePvDevice.pvArray),
+    'pv_controller' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.pvController,
+    ),
+    'pv_battery' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.pvBattery,
+    ),
+    'pv_inverter' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.pvInverter,
+    ),
+    'pv_resistive_load' => F15SourcePvGeometry.boardSizeFor(
+      F15SourcePvDevice.pvLoad,
+    ),
+    'motor_3p_6t' => F17ThreePhaseGeometry.boardSizeFor(
+      F17ThreePhaseDevice.motor6t,
+    ),
+    'load_wye_3p' => F17ThreePhaseGeometry.boardSizeFor(
+      F17ThreePhaseDevice.wyeLoad,
+    ),
+    'load_delta_3p' => F17ThreePhaseGeometry.boardSizeFor(
+      F17ThreePhaseDevice.deltaLoad,
+    ),
+    'catalog_battery' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.battery,
+    ),
+    'catalog_generator' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.generator,
+    ),
+    'catalog_appliance_2t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.appliance2t,
+    ),
+    'catalog_motor_driven_2t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.motorDriven2t,
+    ),
+    'catalog_motor_driven_6t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.motorDriven6t,
+    ),
+    'catalog_heater' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.heater,
+    ),
+    'catalog_actuator_2t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.actuator2t,
+    ),
+    'catalog_sensor_2t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.sensor2t,
+    ),
+    'catalog_indicator_2t' => F20CatalogGeometry.boardSizeFor(
+      F20CatalogDevice.indicator2t,
+    ),
+    'isolator_3p' => F23DistributionGeometry.boardSizeFor(
+      F23DistributionDevice.isolator3p,
+    ),
+    'isolator_4p' => F23DistributionGeometry.boardSizeFor(
+      F23DistributionDevice.isolator4p,
+    ),
+    'breaker_4p' => F23DistributionGeometry.boardSizeFor(
+      F23DistributionDevice.breaker4p,
+    ),
+    'terminal_block_5' => F23DistributionGeometry.boardSizeFor(
+      F23DistributionDevice.terminalBlock5,
+    ),
+    _ => const Size(104, 64),
+  };
 
   static Size paletteSizeFor(String modelType) =>
       _fitInside(boardSizeFor(modelType), const Size(82, 58));
@@ -192,8 +250,7 @@ abstract final class F18AdobeComponentAssets {
   static String? pathForModelType(String modelType) =>
       _byModelType[modelType.toLowerCase()];
 
-  static bool hasAsset(String modelType) =>
-      pathForModelType(modelType) != null;
+  static bool hasAsset(String modelType) => pathForModelType(modelType) != null;
 
   static Set<String> get coveredModelTypes =>
       Set<String>.unmodifiable(_byModelType.keys);
@@ -248,17 +305,16 @@ class F18ComponentAssetVisual extends StatelessWidget {
         F18ReferenceComponentVisuals.uploadedDeviceFor(type);
 
     if (uploadedDevice != null) {
-      final double level =
-          (voltageV.abs() / 24.0).clamp(0.0, 1.0).toDouble();
+      final double level = (voltageV.abs() / 24.0).clamp(0.0, 1.0).toDouble();
       final double brightness = energized ? level * level : 0;
       final double temperatureK = 293.15 + brightness * (2700 - 293.15);
       final SupplyMode supplyMode = !active
           ? SupplyMode.off
           : (!energized
-              ? SupplyMode.constantVoltage
-              : (currentA.abs() >= currentLimitA * .98
-                  ? SupplyMode.constantCurrent
-                  : SupplyMode.constantVoltage));
+                ? SupplyMode.constantVoltage
+                : (currentA.abs() >= currentLimitA * .98
+                      ? SupplyMode.constantCurrent
+                      : SupplyMode.constantVoltage));
 
       return ReferenceComponentView(
         device: uploadedDevice,
@@ -324,10 +380,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
       'capacitor' => F14LibraryDevice.capacitor,
       'inductor' => F14LibraryDevice.inductor,
       'impedance' => F14LibraryDevice.impedance,
-      'contactor_aux_no' || 'relay_contact_no' =>
-        F14LibraryDevice.auxiliaryNo,
-      'contactor_aux_nc' || 'relay_contact_nc' =>
-        F14LibraryDevice.auxiliaryNc,
+      'contactor_aux_no' || 'relay_contact_no' => F14LibraryDevice.auxiliaryNo,
+      'contactor_aux_nc' || 'relay_contact_nc' => F14LibraryDevice.auxiliaryNc,
       'contactor_ac1' => F14LibraryDevice.contactorAc1,
       'contactor_3p' => F14LibraryDevice.contactor3p,
       'breaker_3p' => F14LibraryDevice.breaker3p,

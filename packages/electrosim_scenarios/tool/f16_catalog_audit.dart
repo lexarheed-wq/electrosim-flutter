@@ -11,7 +11,9 @@ void main(List<String> args) {
     'catalogVersion': catalog.catalogVersion,
     'examples': <String, Object?>{
       'count': catalog.examples.length,
-      'ids': catalog.examples.map((item) => item.id.value).toList(growable: false),
+      'ids': catalog.examples
+          .map((item) => item.id.value)
+          .toList(growable: false),
       'signed': catalog.examples
           .where((item) => item.validationStamp != null)
           .length,

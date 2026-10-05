@@ -41,7 +41,8 @@ final class Ac1BranchResult {
   final AcComplex voltage;
   final AcComplex? current;
 
-  AcComplex? get complexPower => current == null ? null : voltage * current!.conjugate;
+  AcComplex? get complexPower =>
+      current == null ? null : voltage * current!.conjugate;
   double? get activePowerW => complexPower?.real;
   double? get reactivePowerVar => complexPower?.imaginary;
   double? get apparentPowerVA => complexPower?.magnitude;

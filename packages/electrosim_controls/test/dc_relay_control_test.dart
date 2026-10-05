@@ -43,10 +43,7 @@ void main() {
     expect(outcome.result.isSolved, isTrue);
     expect(outcome.converged, isTrue);
     expect(outcome.relays[ComponentId('k1')]?.actuated, isFalse);
-    expect(
-      outcome.result.branch('component:contact').kind.name,
-      'openCircuit',
-    );
+    expect(outcome.result.branch('component:contact').kind.name, 'openCircuit');
     expect(outcome.result.branch('component:contact').currentA, 0.0);
   });
 }
@@ -114,11 +111,10 @@ Terminal _t(
   String name, {
   TerminalRole role = TerminalRole.generic,
   PhaseTag phase = PhaseTag.none,
-}) =>
-    Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
 
 Connection _w(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);

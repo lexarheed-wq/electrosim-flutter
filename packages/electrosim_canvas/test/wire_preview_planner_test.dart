@@ -81,44 +81,45 @@ void main() {
     expect(plan.route.path!.bends, isNotEmpty);
   });
 
-  test('preview becomes unresolved instead of crossing an impenetrable wall', () {
-    final CircuitState base = buildTestCircuit();
-    final CircuitState circuit = CircuitState(
-      circuitId: base.circuitId,
-      revision: base.revision,
-      mode: base.mode,
-      sources: base.sources,
-      connections: const <Connection>[],
-      components: <ComponentInstance>[
-        base.components.first,
-        ComponentInstance(
-          id: ComponentId('wall'),
-          modelType: 'Wall',
-          terminals: const <Terminal>[],
-        ),
-      ],
-      settings: base.settings,
-      metadata: base.metadata,
-    );
-    final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'source': Offset(120, 120),
-        'resistor': Offset(120, 408),
-        'wall': Offset(120, 264),
-      },
-      elementSizes: const <String, Size>{
-        'wall': Size(1000, 120),
-      },
-    );
+  test(
+    'preview becomes unresolved instead of crossing an impenetrable wall',
+    () {
+      final CircuitState base = buildTestCircuit();
+      final CircuitState circuit = CircuitState(
+        circuitId: base.circuitId,
+        revision: base.revision,
+        mode: base.mode,
+        sources: base.sources,
+        connections: const <Connection>[],
+        components: <ComponentInstance>[
+          base.components.first,
+          ComponentInstance(
+            id: ComponentId('wall'),
+            modelType: 'Wall',
+            terminals: const <Terminal>[],
+          ),
+        ],
+        settings: base.settings,
+        metadata: base.metadata,
+      );
+      final CircuitVisualLayout layout = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'source': Offset(120, 120),
+          'resistor': Offset(120, 408),
+          'wall': Offset(120, 264),
+        },
+        elementSizes: const <String, Size>{'wall': Size(1000, 120)},
+      );
 
-    final WirePreviewPlan plan = planner.plan(
-      circuit: circuit,
-      layout: layout,
-      startTerminalId: TerminalId('src-pos'),
-      pointerWorldPosition: const Offset(68, 408),
-    );
+      final WirePreviewPlan plan = planner.plan(
+        circuit: circuit,
+        layout: layout,
+        startTerminalId: TerminalId('src-pos'),
+        pointerWorldPosition: const Offset(68, 408),
+      );
 
-    expect(plan.route.isResolved, isFalse);
-    expect(plan.route.failure, WireRouteFailure.noCrossingFreeRoute);
-  });
+      expect(plan.route.isResolved, isFalse);
+      expect(plan.route.failure, WireRouteFailure.noCrossingFreeRoute);
+    },
+  );
 }

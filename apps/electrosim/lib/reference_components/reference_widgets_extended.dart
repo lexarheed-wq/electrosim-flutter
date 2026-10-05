@@ -46,15 +46,15 @@ final class ExtendedReferenceVisualState {
 
 abstract final class ExtendedReferenceGeometry {
   static Size designSizeFor(ExtendedReferenceDevice device) => switch (device) {
-        ExtendedReferenceDevice.resistor => const Size(280, 110),
-        ExtendedReferenceDevice.pushButtonNc => const Size(180, 180),
-        ExtendedReferenceDevice.buzzer => const Size(190, 190),
-        ExtendedReferenceDevice.fuse => const Size(300, 110),
-        ExtendedReferenceDevice.diode => const Size(270, 105),
-        ExtendedReferenceDevice.fan => const Size(210, 210),
-        ExtendedReferenceDevice.motor => const Size(230, 190),
-        ExtendedReferenceDevice.relayCoil => const Size(190, 230),
-      };
+    ExtendedReferenceDevice.resistor => const Size(280, 110),
+    ExtendedReferenceDevice.pushButtonNc => const Size(180, 180),
+    ExtendedReferenceDevice.buzzer => const Size(190, 190),
+    ExtendedReferenceDevice.fuse => const Size(300, 110),
+    ExtendedReferenceDevice.diode => const Size(270, 105),
+    ExtendedReferenceDevice.fan => const Size(210, 210),
+    ExtendedReferenceDevice.motor => const Size(230, 190),
+    ExtendedReferenceDevice.relayCoil => const Size(190, 230),
+  };
 
   static Size displaySizeFor(ExtendedReferenceDevice device) =>
       designSizeFor(device);
@@ -64,44 +64,43 @@ abstract final class ExtendedReferenceGeometry {
   static List<Offset> terminalOffsetsFor(ExtendedReferenceDevice device) =>
       switch (device) {
         ExtendedReferenceDevice.resistor => const <Offset>[
-            Offset(62, 55),
-            Offset(218, 55),
-          ],
+          Offset(62, 55),
+          Offset(218, 55),
+        ],
         ExtendedReferenceDevice.pushButtonNc => const <Offset>[
-            Offset(70, 153),
-            Offset(110, 153),
-          ],
+          Offset(70, 153),
+          Offset(110, 153),
+        ],
         ExtendedReferenceDevice.buzzer => const <Offset>[
-            Offset(70, 160),
-            Offset(120, 160),
-          ],
+          Offset(70, 160),
+          Offset(120, 160),
+        ],
         ExtendedReferenceDevice.fuse => const <Offset>[
-            Offset(48, 55),
-            Offset(252, 55),
-          ],
+          Offset(48, 55),
+          Offset(252, 55),
+        ],
         ExtendedReferenceDevice.diode => const <Offset>[
-            Offset(60, 52.5),
-            Offset(210, 52.5),
-          ],
+          Offset(60, 52.5),
+          Offset(210, 52.5),
+        ],
         ExtendedReferenceDevice.fan => const <Offset>[
-            Offset(82, 187),
-            Offset(128, 187),
-          ],
+          Offset(82, 187),
+          Offset(128, 187),
+        ],
         ExtendedReferenceDevice.motor => const <Offset>[
-            Offset(90, 161),
-            Offset(140, 161),
-          ],
+          Offset(90, 161),
+          Offset(140, 161),
+        ],
         ExtendedReferenceDevice.relayCoil => const <Offset>[
-            Offset(65, 202),
-            Offset(125, 202),
-          ],
+          Offset(65, 202),
+          Offset(125, 202),
+        ],
       };
 
   static Offset terminalOffset(
     ExtendedReferenceDevice device, {
     required bool right,
-  }) =>
-      terminalOffsetsFor(device)[right ? 1 : 0];
+  }) => terminalOffsetsFor(device)[right ? 1 : 0];
 }
 
 class ExtendedReferenceComponentView extends StatelessWidget {
@@ -130,7 +129,9 @@ class ExtendedReferenceComponentView extends StatelessWidget {
         ExtendedReferenceDevice.resistor =>
           'Résistance ${state.resistanceOhm.toStringAsFixed(0)} ohms',
         ExtendedReferenceDevice.pushButtonNc =>
-          state.pressed ? 'Bouton normalement fermé appuyé, contact ouvert' : 'Bouton normalement fermé relâché, contact fermé',
+          state.pressed
+              ? 'Bouton normalement fermé appuyé, contact ouvert'
+              : 'Bouton normalement fermé relâché, contact fermé',
         ExtendedReferenceDevice.buzzer =>
           state.active ? 'Buzzer actif' : 'Buzzer inactif',
         ExtendedReferenceDevice.fuse =>
@@ -142,7 +143,9 @@ class ExtendedReferenceComponentView extends StatelessWidget {
         ExtendedReferenceDevice.motor =>
           'Moteur ${state.speedRpm.round()} tours par minute',
         ExtendedReferenceDevice.relayCoil =>
-          state.energized ? 'Bobine de relais alimentée' : 'Bobine de relais au repos',
+          state.energized
+              ? 'Bobine de relais alimentée'
+              : 'Bobine de relais au repos',
       },
       child: SizedBox(
         width: width ?? design.width,
@@ -150,11 +153,7 @@ class ExtendedReferenceComponentView extends StatelessWidget {
         child: Transform.rotate(
           angle: (quarterTurns % 4) * math.pi / 2,
           child: CustomPaint(
-            painter: _ExtendedReferencePainter(
-              device,
-              state,
-              showTerminals,
-            ),
+            painter: _ExtendedReferencePainter(device, state, showTerminals),
           ),
         ),
       ),
@@ -163,20 +162,13 @@ class ExtendedReferenceComponentView extends StatelessWidget {
 }
 
 class _ExtendedReferencePainter extends CustomPainter {
-  const _ExtendedReferencePainter(
-    this.device,
-    this.state,
-    this.showTerminals,
-  );
+  const _ExtendedReferencePainter(this.device, this.state, this.showTerminals);
 
   final ExtendedReferenceDevice device;
   final ExtendedReferenceVisualState state;
   final bool showTerminals;
 
-  Paint _stroke({
-    Color color = const Color(0xFF33434C),
-    double width = 1.4,
-  }) =>
+  Paint _stroke({Color color = const Color(0xFF33434C), double width = 1.4}) =>
       Paint()
         ..color = color
         ..strokeWidth = width
@@ -184,9 +176,12 @@ class _ExtendedReferencePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
 
-  Paint _linear(Rect rect, List<Color> colors,
-      {Alignment begin = Alignment.topLeft,
-      Alignment end = Alignment.bottomRight}) {
+  Paint _linear(
+    Rect rect,
+    List<Color> colors, {
+    Alignment begin = Alignment.topLeft,
+    Alignment end = Alignment.bottomRight,
+  }) {
     return Paint()
       ..shader = LinearGradient(
         begin: begin,
@@ -204,18 +199,10 @@ class _ExtendedReferencePainter extends CustomPainter {
   }) {
     final RRect rr = RRect.fromRectAndRadius(rect, Radius.circular(radius));
     if (shadow) {
-      canvas.drawShadow(
-        Path()..addRRect(rr),
-        const Color(0x88000000),
-        5,
-        true,
-      );
+      canvas.drawShadow(Path()..addRRect(rr), const Color(0x88000000), 5, true);
     }
     canvas.drawRRect(rr, _linear(rect, colors));
-    canvas.drawRRect(
-      rr,
-      _stroke(color: const Color(0x66000000), width: .9),
-    );
+    canvas.drawRRect(rr, _stroke(color: const Color(0x66000000), width: .9));
   }
 
   void _text(
@@ -229,11 +216,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
-        style: TextStyle(
-          fontSize: size,
-          color: color,
-          fontWeight: weight,
-        ),
+        style: TextStyle(fontSize: size, color: color, fontWeight: weight),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -245,14 +228,11 @@ class _ExtendedReferencePainter extends CustomPainter {
     canvas.drawCircle(
       center,
       radius,
-      _linear(
-        r,
-        const <Color>[
-          Color(0xFFF7F8F8),
-          Color(0xFFB7C2C6),
-          Color(0xFF63747B),
-        ],
-      ),
+      _linear(r, const <Color>[
+        Color(0xFFF7F8F8),
+        Color(0xFFB7C2C6),
+        Color(0xFF63747B),
+      ]),
     );
     canvas.drawCircle(
       center,
@@ -282,8 +262,10 @@ class _ExtendedReferencePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
     final Size design = ExtendedReferenceGeometry.designSizeFor(device);
-    final double scale =
-        math.min(size.width / design.width, size.height / design.height);
+    final double scale = math.min(
+      size.width / design.width,
+      size.height / design.height,
+    );
 
     canvas.save();
     canvas.translate(
@@ -315,10 +297,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintResistor(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
     const Rect body = Rect.fromLTWH(69, 28, 142, 54);
 
     if (showTerminals) {
@@ -329,11 +315,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     _box(
       c,
       body,
-      const <Color>[
-        Color(0xFFE5D2A1),
-        Color(0xFFC6A86C),
-        Color(0xFF9C7E48),
-      ],
+      const <Color>[Color(0xFFE5D2A1), Color(0xFFC6A86C), Color(0xFF9C7E48)],
       radius: 25,
       shadow: true,
     );
@@ -346,10 +328,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     ];
     final List<double> xs = <double>[94, 118, 142, 177];
     for (var i = 0; i < xs.length; i++) {
-      c.drawRect(
-        Rect.fromLTWH(xs[i], 31, 9, 48),
-        Paint()..color = bands[i],
-      );
+      c.drawRect(Rect.fromLTWH(xs[i], 31, 9, 48), Paint()..color = bands[i]);
     }
     c.drawOval(
       const Rect.fromLTWH(76, 35, 25, 12),
@@ -367,10 +346,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintPushButtonNc(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
     const Offset center = Offset(90, 88);
     const double bezelR = 55;
 
@@ -383,28 +366,23 @@ class _ExtendedReferencePainter extends CustomPainter {
     c.drawCircle(
       center,
       bezelR,
-      _linear(
-        bezel,
-        const <Color>[
-          Color(0xFFF7F9F9),
-          Color(0xFFC4CDD0),
-          Color(0xFF68787F),
-        ],
-      ),
+      _linear(bezel, const <Color>[
+        Color(0xFFF7F9F9),
+        Color(0xFFC4CDD0),
+        Color(0xFF68787F),
+      ]),
     );
     c.drawCircle(
       center,
       bezelR,
       _stroke(color: const Color(0xFF53636A), width: 1.3),
     );
-    c.drawCircle(
-      center,
-      46,
-      Paint()..color = const Color(0xFF343B3F),
-    );
+    c.drawCircle(center, 46, Paint()..color = const Color(0xFF343B3F));
 
-    final Offset capCenter =
-        Offset(center.dx, center.dy + (state.pressed ? 6 : 0));
+    final Offset capCenter = Offset(
+      center.dx,
+      center.dy + (state.pressed ? 6 : 0),
+    );
     final double capR = state.pressed ? 34 : 39;
     final Rect cap = Rect.fromCircle(center: capCenter, radius: capR);
     c.drawCircle(
@@ -434,10 +412,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintBuzzer(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
     const Offset center = Offset(95, 94);
     const double r = 63;
 
@@ -450,34 +432,28 @@ class _ExtendedReferencePainter extends CustomPainter {
     c.drawCircle(
       center,
       r,
-      _linear(
-        face,
-        const <Color>[
-          Color(0xFF4D555A),
-          Color(0xFF20272B),
-          Color(0xFF0C1012),
-        ],
-      ),
+      _linear(face, const <Color>[
+        Color(0xFF4D555A),
+        Color(0xFF20272B),
+        Color(0xFF0C1012),
+      ]),
     );
-    c.drawCircle(center, r, _stroke(color: const Color(0xFF090C0E), width: 1.4));
-
     c.drawCircle(
       center,
-      42,
-      Paint()..color = const Color(0xFF11171A),
+      r,
+      _stroke(color: const Color(0xFF090C0E), width: 1.4),
     );
+
+    c.drawCircle(center, 42, Paint()..color = const Color(0xFF11171A));
     for (var angle = 0.0; angle < math.pi * 2; angle += math.pi / 5) {
       final Offset p = center + Offset(math.cos(angle), math.sin(angle)) * 22;
-      c.drawCircle(
-        p,
-        4.2,
-        Paint()..color = const Color(0xFF5B666B),
-      );
+      c.drawCircle(p, 4.2, Paint()..color = const Color(0xFF5B666B));
     }
     c.drawCircle(center, 6, Paint()..color = const Color(0xFF69777C));
 
     if (state.active) {
-      final double pulse = .65 + .35 * math.sin(state.animationValue * math.pi * 2);
+      final double pulse =
+          .65 + .35 * math.sin(state.animationValue * math.pi * 2);
       for (final double radius in <double>[73, 82]) {
         c.drawArc(
           Rect.fromCircle(center: center, radius: radius),
@@ -491,14 +467,24 @@ class _ExtendedReferencePainter extends CustomPainter {
         );
       }
     }
-    _text(c, '24 V', const Offset(79, 160), size: 10, color: const Color(0xFF424E54));
+    _text(
+      c,
+      '24 V',
+      const Offset(79, 160),
+      size: 10,
+      color: const Color(0xFF424E54),
+    );
   }
 
   void _paintFuse(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
 
     const Rect glass = Rect.fromLTWH(77, 31, 146, 48);
     const Rect leftCap = Rect.fromLTWH(54, 27, 28, 56);
@@ -512,22 +498,14 @@ class _ExtendedReferencePainter extends CustomPainter {
     _box(
       c,
       leftCap,
-      const <Color>[
-        Color(0xFFF1F4F5),
-        Color(0xFFADB8BC),
-        Color(0xFF65747A),
-      ],
+      const <Color>[Color(0xFFF1F4F5), Color(0xFFADB8BC), Color(0xFF65747A)],
       radius: 4,
       shadow: true,
     );
     _box(
       c,
       rightCap,
-      const <Color>[
-        Color(0xFFF1F4F5),
-        Color(0xFFADB8BC),
-        Color(0xFF65747A),
-      ],
+      const <Color>[Color(0xFFF1F4F5), Color(0xFFADB8BC), Color(0xFF65747A)],
       radius: 4,
       shadow: true,
     );
@@ -577,10 +555,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintDiode(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
     final String variant = state.variantKey ?? 'rectifier';
 
     const Rect body = Rect.fromLTWH(80, 27, 110, 51);
@@ -624,8 +606,9 @@ class _ExtendedReferencePainter extends CustomPainter {
     );
 
     if (led && state.forwardBiased) {
-      final Color glow =
-          variant == 'led-green' ? const Color(0xFF63E98C) : const Color(0xFFFF6868);
+      final Color glow = variant == 'led-green'
+          ? const Color(0xFF63E98C)
+          : const Color(0xFFFF6868);
       c.drawCircle(
         const Offset(134, 52.5),
         30,
@@ -643,7 +626,13 @@ class _ExtendedReferencePainter extends CustomPainter {
         color: const Color(0xFFE9EDF0),
       );
     } else if (variant == 'schottky') {
-      _text(c, 'S', const Offset(132, 52), size: 15, color: const Color(0xFFE9EDF0));
+      _text(
+        c,
+        'S',
+        const Offset(132, 52),
+        size: 15,
+        color: const Color(0xFFE9EDF0),
+      );
     }
 
     _text(c, 'K', const Offset(164, 82), size: 9);
@@ -651,10 +640,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintFan(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
 
     const Rect frame = Rect.fromLTWH(29, 29, 152, 152);
     if (showTerminals) {
@@ -665,11 +658,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     _box(
       c,
       frame,
-      const <Color>[
-        Color(0xFF3A4247),
-        Color(0xFF161D21),
-        Color(0xFF080B0D),
-      ],
+      const <Color>[Color(0xFF3A4247), Color(0xFF161D21), Color(0xFF080B0D)],
       radius: 12,
       shadow: true,
     );
@@ -684,23 +673,15 @@ class _ExtendedReferencePainter extends CustomPainter {
     }
 
     const Offset center = Offset(105, 105);
-    c.drawCircle(
-      center,
-      62,
-      Paint()..color = const Color(0xFF0E1417),
-    );
-    c.drawCircle(
-      center,
-      18,
-      Paint()..color = const Color(0xFF4E5C62),
-    );
+    c.drawCircle(center, 62, Paint()..color = const Color(0xFF0E1417));
+    c.drawCircle(center, 18, Paint()..color = const Color(0xFF4E5C62));
 
     final double phase = state.speedFraction <= 1e-6
         ? 0
         : state.animationValue *
-            math.pi *
-            2 *
-            (0.25 + state.speedFraction * 2.75);
+              math.pi *
+              2 *
+              (0.25 + state.speedFraction * 2.75);
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -714,14 +695,11 @@ class _ExtendedReferencePainter extends CustomPainter {
         ..close();
       c.drawPath(
         blade,
-        _linear(
-          const Rect.fromLTWH(0, -25, 65, 45),
-          const <Color>[
-            Color(0xFF66757B),
-            Color(0xFF263238),
-            Color(0xFF11171A),
-          ],
-        ),
+        _linear(const Rect.fromLTWH(0, -25, 65, 45), const <Color>[
+          Color(0xFF66757B),
+          Color(0xFF263238),
+          Color(0xFF11171A),
+        ]),
       );
       c.restore();
     }
@@ -737,10 +715,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintMotor(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
     const Offset center = Offset(116, 91);
 
     if (showTerminals) {
@@ -752,22 +734,19 @@ class _ExtendedReferencePainter extends CustomPainter {
     c.drawCircle(
       center,
       68,
-      _linear(
-        shell,
-        const <Color>[
-          Color(0xFFE8ECEE),
-          Color(0xFF9AA8AD),
-          Color(0xFF53636A),
-        ],
-      ),
+      _linear(shell, const <Color>[
+        Color(0xFFE8ECEE),
+        Color(0xFF9AA8AD),
+        Color(0xFF53636A),
+      ]),
     );
-    c.drawCircle(center, 68, _stroke(color: const Color(0xFF53636A), width: 1.4));
-
     c.drawCircle(
       center,
-      49,
-      Paint()..color = const Color(0xFF303A3F),
+      68,
+      _stroke(color: const Color(0xFF53636A), width: 1.4),
     );
+
+    c.drawCircle(center, 49, Paint()..color = const Color(0xFF303A3F));
 
     for (var i = 0; i < 10; i++) {
       final double a = i * math.pi * 2 / 10;
@@ -781,16 +760,17 @@ class _ExtendedReferencePainter extends CustomPainter {
       );
     }
 
-    final double speedFraction =
-        (state.speedRpm.abs() / 3000).clamp(0.0, 1.0).toDouble();
+    final double speedFraction = (state.speedRpm.abs() / 3000)
+        .clamp(0.0, 1.0)
+        .toDouble();
     final double direction = state.speedRpm < 0 ? -1 : 1;
     final double phase = speedFraction <= 1e-6
         ? 0
         : state.animationValue *
-            math.pi *
-            2 *
-            (0.2 + speedFraction * 3.8) *
-            direction;
+              math.pi *
+              2 *
+              (0.2 + speedFraction * 3.8) *
+              direction;
     c.save();
     c.translate(center.dx, center.dy);
     c.rotate(phase);
@@ -803,14 +783,11 @@ class _ExtendedReferencePainter extends CustomPainter {
     c.drawCircle(
       center,
       17,
-      _linear(
-        Rect.fromCircle(center: center, radius: 17),
-        const <Color>[
-          Color(0xFFF7F8F8),
-          Color(0xFFB5C0C4),
-          Color(0xFF687980),
-        ],
-      ),
+      _linear(Rect.fromCircle(center: center, radius: 17), const <Color>[
+        Color(0xFFF7F8F8),
+        Color(0xFFB5C0C4),
+        Color(0xFF687980),
+      ]),
     );
     c.drawCircle(center, 6, Paint()..color = const Color(0xFF424E54));
 
@@ -819,10 +796,14 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintRelayCoil(Canvas c, Size s) {
-    final Offset left =
-        ExtendedReferenceGeometry.terminalOffset(device, right: false);
-    final Offset right =
-        ExtendedReferenceGeometry.terminalOffset(device, right: true);
+    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: false,
+    );
+    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+      device,
+      right: true,
+    );
 
     const Rect body = Rect.fromLTWH(35, 24, 120, 182);
     if (showTerminals) {
@@ -833,25 +814,16 @@ class _ExtendedReferencePainter extends CustomPainter {
     _box(
       c,
       body,
-      const <Color>[
-        Color(0xFFDDE9ED),
-        Color(0xFF9CB8C2),
-        Color(0xFF5E7780),
-      ],
+      const <Color>[Color(0xFFDDE9ED), Color(0xFF9CB8C2), Color(0xFF5E7780)],
       radius: 7,
       shadow: true,
     );
 
     final Rect window = const Rect.fromLTWH(52, 50, 86, 91);
-    _box(
-      c,
-      window,
-      const <Color>[
-        Color(0xFF263238),
-        Color(0xFF11191D),
-      ],
-      radius: 5,
-    );
+    _box(c, window, const <Color>[
+      Color(0xFF263238),
+      Color(0xFF11191D),
+    ], radius: 5);
 
     for (var x = 60.0; x <= 130; x += 7) {
       c.drawLine(
@@ -869,13 +841,7 @@ class _ExtendedReferencePainter extends CustomPainter {
     final Rect core = const Rect.fromLTWH(87, 55, 16, 80);
     c.drawRect(
       core,
-      _linear(
-        core,
-        const <Color>[
-          Color(0xFFE2E7E8),
-          Color(0xFF788A91),
-        ],
-      ),
+      _linear(core, const <Color>[Color(0xFFE2E7E8), Color(0xFF788A91)]),
     );
 
     if (state.energized) {
@@ -886,7 +852,8 @@ class _ExtendedReferencePainter extends CustomPainter {
         ),
         _stroke(
           color: const Color(0xFF43C777).withValues(
-            alpha: .55 + .35 * math.sin(state.animationValue * math.pi * 2).abs(),
+            alpha:
+                .55 + .35 * math.sin(state.animationValue * math.pi * 2).abs(),
           ),
           width: 3,
         ),

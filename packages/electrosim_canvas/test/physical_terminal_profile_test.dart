@@ -5,120 +5,91 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  void expectOffset(
-    Offset actual,
-    Offset expected, {
-    required String reason,
-  }) {
-    expect(
-      (actual - expected).distance,
-      lessThan(1e-6),
-      reason: reason,
-    );
+  void expectOffset(Offset actual, Offset expected, {required String reason}) {
+    expect((actual - expected).distance, lessThan(1e-6), reason: reason);
   }
 
-  Terminal terminal(String id, TerminalRole role) => Terminal(
-        id: TerminalId(id),
-        name: id,
-        role: role,
-      );
+  Terminal terminal(String id, TerminalRole role) =>
+      Terminal(id: TerminalId(id), name: id, role: role);
 
-  test('uploaded V2 physical terminals match exact Dart design coordinates', () {
-    const Map<String, (Size, List<Offset>)> cases =
-        <String, (Size, List<Offset>)>{
-      'dc_voltage_source': (
-        Size(140, 160),
-        <Offset>[Offset(-28, 47), Offset(24, 47)],
-      ),
-      'breaker_dc': (
-        Size(72, 160),
-        <Offset>[Offset(0, -57), Offset(0, 57)],
-      ),
-      'switch': (
-        Size(90, 140),
-        <Offset>[Offset(0, -50), Offset(0, 50)],
-      ),
-      'push_button_no': (
-        Size(90, 140),
-        <Offset>[Offset(-14, 49), Offset(14, 49)],
-      ),
-      'lamp': (
-        Size(130, 160),
-        <Offset>[Offset(-25, 59), Offset(25, 59)],
-      ),
-    };
+  test(
+    'uploaded V2 physical terminals match exact Dart design coordinates',
+    () {
+      const Map<String, (Size, List<Offset>)> cases =
+          <String, (Size, List<Offset>)>{
+            'dc_voltage_source': (
+              Size(140, 160),
+              <Offset>[Offset(-28, 47), Offset(24, 47)],
+            ),
+            'breaker_dc': (
+              Size(72, 160),
+              <Offset>[Offset(0, -57), Offset(0, 57)],
+            ),
+            'switch': (Size(90, 140), <Offset>[Offset(0, -50), Offset(0, 50)]),
+            'push_button_no': (
+              Size(90, 140),
+              <Offset>[Offset(-14, 49), Offset(14, 49)],
+            ),
+            'lamp': (Size(130, 160), <Offset>[Offset(-25, 59), Offset(25, 59)]),
+          };
 
-    for (final MapEntry<String, (Size, List<Offset>)> entry
-        in cases.entries) {
-      final Size size = entry.value.$1;
-      final List<Offset> expected = entry.value.$2;
-      for (var index = 0; index < 2; index++) {
-        expectOffset(
-          TerminalVisualProfile.terminalOffset(
-            modelType: entry.key,
-            size: size,
-            index: index,
-            count: 2,
-          ),
-          expected[index],
-          reason: '${entry.key} terminal $index',
-        );
+      for (final MapEntry<String, (Size, List<Offset>)> entry
+          in cases.entries) {
+        final Size size = entry.value.$1;
+        final List<Offset> expected = entry.value.$2;
+        for (var index = 0; index < 2; index++) {
+          expectOffset(
+            TerminalVisualProfile.terminalOffset(
+              modelType: entry.key,
+              size: size,
+              index: index,
+              count: 2,
+            ),
+            expected[index],
+            reason: '${entry.key} terminal $index',
+          );
+        }
       }
-    }
-  });
+    },
+  );
 
-  test('all additional V2 components keep terminals on their physical lugs',
-      () {
-    const Map<String, (Size, List<Offset>)> cases =
-        <String, (Size, List<Offset>)>{
-      'resistor': (
-        Size(280, 110),
-        <Offset>[Offset(-78, 0), Offset(78, 0)],
-      ),
-      'push_button_nc': (
-        Size(180, 180),
-        <Offset>[Offset(-20, 63), Offset(20, 63)],
-      ),
-      'buzzer': (
-        Size(190, 190),
-        <Offset>[Offset(-25, 65), Offset(25, 65)],
-      ),
-      'fuse_dc': (
-        Size(300, 110),
-        <Offset>[Offset(-102, 0), Offset(102, 0)],
-      ),
-      'diode': (
-        Size(270, 105),
-        <Offset>[Offset(-75, 0), Offset(75, 0)],
-      ),
-      'fan_dc': (
-        Size(210, 210),
-        <Offset>[Offset(-23, 82), Offset(23, 82)],
-      ),
-      'motor_dc': (
-        Size(230, 190),
-        <Offset>[Offset(-25, 66), Offset(25, 66)],
-      ),
-      'relay_coil': (
-        Size(190, 230),
-        <Offset>[Offset(-30, 87), Offset(30, 87)],
-      ),
-    };
-    for (final MapEntry<String, (Size, List<Offset>)> entry in cases.entries) {
-      for (var index = 0; index < 2; index++) {
-        expectOffset(
-          TerminalVisualProfile.terminalOffset(
-            modelType: entry.key,
-            size: entry.value.$1,
-            index: index,
-            count: 2,
-          ),
-          entry.value.$2[index],
-          reason: '${entry.key} terminal $index',
-        );
+  test(
+    'all additional V2 components keep terminals on their physical lugs',
+    () {
+      const Map<String, (Size, List<Offset>)>
+      cases = <String, (Size, List<Offset>)>{
+        'resistor': (Size(280, 110), <Offset>[Offset(-78, 0), Offset(78, 0)]),
+        'push_button_nc': (
+          Size(180, 180),
+          <Offset>[Offset(-20, 63), Offset(20, 63)],
+        ),
+        'buzzer': (Size(190, 190), <Offset>[Offset(-25, 65), Offset(25, 65)]),
+        'fuse_dc': (Size(300, 110), <Offset>[Offset(-102, 0), Offset(102, 0)]),
+        'diode': (Size(270, 105), <Offset>[Offset(-75, 0), Offset(75, 0)]),
+        'fan_dc': (Size(210, 210), <Offset>[Offset(-23, 82), Offset(23, 82)]),
+        'motor_dc': (Size(230, 190), <Offset>[Offset(-25, 66), Offset(25, 66)]),
+        'relay_coil': (
+          Size(190, 230),
+          <Offset>[Offset(-30, 87), Offset(30, 87)],
+        ),
+      };
+      for (final MapEntry<String, (Size, List<Offset>)> entry
+          in cases.entries) {
+        for (var index = 0; index < 2; index++) {
+          expectOffset(
+            TerminalVisualProfile.terminalOffset(
+              modelType: entry.key,
+              size: entry.value.$1,
+              index: index,
+              count: 2,
+            ),
+            entry.value.$2[index],
+            reason: '${entry.key} terminal $index',
+          );
+        }
       }
-    }
-  });
+    },
+  );
 
   test('uploaded V2 routing ports follow each physical terminal exit side', () {
     expectOffset(
@@ -199,17 +170,15 @@ void main() {
       ],
     );
     final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'switch-a': Offset(200, 100),
-      },
-      elementSizes: const <String, Size>{
-        'switch-a': Size(90, 140),
-      },
+      elementPositions: const <String, Offset>{'switch-a': Offset(200, 100)},
+      elementSizes: const <String, Size>{'switch-a': Size(90, 140)},
       elementQuarterTurns: const <String, int>{'switch-a': 1},
     );
 
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
 
     expectOffset(
       geometry.terminalPositions[first.id]!,

@@ -90,16 +90,15 @@ void main() {
     expect(points[3].dy, greaterThan(0));
   });
 
-  testWidgets('workspace switches safely from DC to AC1',
-      (WidgetTester tester) async {
+  testWidgets('workspace switches safely from DC to AC1', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(home: app.F9WorkspaceDemoPage()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
     await _openTop(tester);
 
@@ -112,8 +111,9 @@ void main() {
     await tester.tap(find.byKey(const Key('mode-change-confirm')));
     await tester.pumpAndSettle();
 
-    final SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
     expect(canvas.circuit.mode, ElectricalMode.ac1);
     expect(canvas.circuit.components, isEmpty);
     expect(canvas.circuit.sources, isEmpty);
@@ -129,14 +129,12 @@ void main() {
       find.byKey(const Key('palette-item-source-ac1-230v')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(const Key('palette-item-source-dc-24v')),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('palette-item-source-dc-24v')), findsNothing);
   });
 
-  testWidgets('C15 source and PV visuals use native production painters',
-      (WidgetTester tester) async {
+  testWidgets('C15 source and PV visuals use native production painters', (
+    WidgetTester tester,
+  ) async {
     const List<(String, String?, Type)> cases = <(String, String?, Type)>[
       ('dc_current_source', 'dc-current', F15SourcePvComponentView),
       ('ac_voltage_source', 'ac-l1', F15SourcePvComponentView),

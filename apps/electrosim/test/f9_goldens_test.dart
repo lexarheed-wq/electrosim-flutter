@@ -35,20 +35,29 @@ void main() {
     required bool needsPanelButton,
   }) async {
     await pumpWorkspace(tester, size);
-    await expectLater(find.byType(Scaffold), matchesGoldenFile('goldens/${prefix}_base.png'));
+    await expectLater(
+      find.byType(Scaffold),
+      matchesGoldenFile('goldens/${prefix}_base.png'),
+    );
 
     if (needsPanelButton) {
       await tester.tap(find.text('Palette').last);
       await tester.pumpAndSettle();
     }
-    await expectLater(find.byType(Scaffold), matchesGoldenFile('goldens/${prefix}_palette.png'));
+    await expectLater(
+      find.byType(Scaffold),
+      matchesGoldenFile('goldens/${prefix}_palette.png'),
+    );
 
     await pumpWorkspace(tester, size, selected: 'switch-1');
     if (needsPanelButton) {
       await tester.tap(find.text('Propriétés').last);
       await tester.pumpAndSettle();
     }
-    await expectLater(find.byType(Scaffold), matchesGoldenFile('goldens/${prefix}_properties.png'));
+    await expectLater(
+      find.byType(Scaffold),
+      matchesGoldenFile('goldens/${prefix}_properties.png'),
+    );
   }
 
   testWidgets('compact 390x844 reference set', (WidgetTester tester) async {
@@ -84,7 +93,9 @@ void main() {
     );
   });
 
-  testWidgets('student troubleshooting diagnostic reference', (WidgetTester tester) async {
+  testWidgets('student troubleshooting diagnostic reference', (
+    WidgetTester tester,
+  ) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await pumpWorkspace(

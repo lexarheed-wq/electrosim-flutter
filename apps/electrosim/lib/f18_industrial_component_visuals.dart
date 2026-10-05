@@ -163,10 +163,7 @@ final class _IndustrialPainter {
       Radius.circular(math.max(2.5, h * radiusFactor)),
     );
     _shadowRRect(rr, dy: math.max(1.5, h * .035));
-    canvas.drawRRect(
-      rr,
-      _verticalGradient(body, <Color>[top, bottom]),
-    );
+    canvas.drawRRect(rr, _verticalGradient(body, <Color>[top, bottom]));
     canvas.drawRRect(rr, outline);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -192,10 +189,7 @@ final class _IndustrialPainter {
       r,
       _verticalGradient(
         Rect.fromCircle(center: center, radius: r),
-        const <Color>[
-          Color(0xFFFFE29C),
-          Color(0xFFC69136),
-        ],
+        const <Color>[Color(0xFFFFE29C), Color(0xFFC69136)],
       ),
     );
     canvas.drawCircle(center, r, outline);
@@ -309,10 +303,10 @@ final class _IndustrialPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(face, Radius.circular(h * .055)),
-      _verticalGradient(
-        face,
-        const <Color>[Color(0xFF2A3943), Color(0xFF101820)],
-      ),
+      _verticalGradient(face, const <Color>[
+        Color(0xFF2A3943),
+        Color(0xFF101820),
+      ]),
     );
 
     final Rect display = Rect.fromLTWH(
@@ -333,14 +327,38 @@ final class _IndustrialPainter {
     );
 
     final double postR = h * .055;
-    final Offset red = Offset(face.left + face.width * .31, face.bottom - h * .12);
-    final Offset black = Offset(face.right - face.width * .31, face.bottom - h * .12);
-    canvas.drawCircle(red, postR * 1.35, Paint()..color = const Color(0xFF202A31));
+    final Offset red = Offset(
+      face.left + face.width * .31,
+      face.bottom - h * .12,
+    );
+    final Offset black = Offset(
+      face.right - face.width * .31,
+      face.bottom - h * .12,
+    );
+    canvas.drawCircle(
+      red,
+      postR * 1.35,
+      Paint()..color = const Color(0xFF202A31),
+    );
     canvas.drawCircle(red, postR, Paint()..color = const Color(0xFFE65353));
-    canvas.drawCircle(black, postR * 1.35, Paint()..color = const Color(0xFF202A31));
+    canvas.drawCircle(
+      black,
+      postR * 1.35,
+      Paint()..color = const Color(0xFF202A31),
+    );
     canvas.drawCircle(black, postR, Paint()..color = const Color(0xFF10151A));
-    _text('+', red.translate(0, -h * .105), size: h * .09, color: const Color(0xFFF7D5D5));
-    _text('−', black.translate(0, -h * .105), size: h * .09, color: Colors.white);
+    _text(
+      '+',
+      red.translate(0, -h * .105),
+      size: h * .09,
+      color: const Color(0xFFF7D5D5),
+    );
+    _text(
+      '−',
+      black.translate(0, -h * .105),
+      size: h * .09,
+      color: Colors.white,
+    );
 
     for (var i = 0; i < 4; i++) {
       final double x = body.left + body.width * (.18 + i * .16);
@@ -380,27 +398,49 @@ final class _IndustrialPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(rocker, Radius.circular(h * .08)),
-      _verticalGradient(
-        rocker,
-        const <Color>[Color(0xFF7C8B96), Color(0xFF34424D)],
-      ),
+      _verticalGradient(rocker, const <Color>[
+        Color(0xFF7C8B96),
+        Color(0xFF34424D),
+      ]),
     );
     canvas.drawLine(
-      Offset(rocker.left + rocker.width * .25, rocker.top + rocker.height * .22),
-      Offset(rocker.right - rocker.width * .25, rocker.top + rocker.height * .22),
+      Offset(
+        rocker.left + rocker.width * .25,
+        rocker.top + rocker.height * .22,
+      ),
+      Offset(
+        rocker.right - rocker.width * .25,
+        rocker.top + rocker.height * .22,
+      ),
       Paint()
         ..color = const Color(0x88FFFFFF)
         ..strokeWidth = math.max(.8, s * .012),
     );
-    _text('I', Offset(c.dx, rocker.top + rocker.height * .24), size: h * .09, color: Colors.white);
-    _text('O', Offset(c.dx, rocker.bottom - rocker.height * .20), size: h * .085, color: const Color(0xFFD5DEE4));
+    _text(
+      'I',
+      Offset(c.dx, rocker.top + rocker.height * .24),
+      size: h * .09,
+      color: Colors.white,
+    );
+    _text(
+      'O',
+      Offset(c.dx, rocker.bottom - rocker.height * .20),
+      size: h * .085,
+      color: const Color(0xFFD5DEE4),
+    );
   }
 
   void indicatorLamp() {
     final double lensR = h * .27;
     final Offset lens = Offset(c.dx, c.dy - h * .04);
-    _lead(Offset(rect.left + s * .07, c.dy), Offset(lens.dx - lensR * 1.08, c.dy));
-    _lead(Offset(lens.dx + lensR * 1.08, c.dy), Offset(rect.right - s * .07, c.dy));
+    _lead(
+      Offset(rect.left + s * .07, c.dy),
+      Offset(lens.dx - lensR * 1.08, c.dy),
+    );
+    _lead(
+      Offset(lens.dx + lensR * 1.08, c.dy),
+      Offset(rect.right - s * .07, c.dy),
+    );
     _metalTerminal(Offset(rect.left + s * .07, c.dy));
     _metalTerminal(Offset(rect.right - s * .07, c.dy));
 
@@ -450,10 +490,11 @@ final class _IndustrialPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(base, Radius.circular(h * .025)),
-      _horizontalGradient(
-        base,
-        const <Color>[Color(0xFF788690), Color(0xFFD9E1E5), Color(0xFF788690)],
-      ),
+      _horizontalGradient(base, const <Color>[
+        Color(0xFF788690),
+        Color(0xFFD9E1E5),
+        Color(0xFF788690),
+      ]),
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(base, Radius.circular(h * .025)),
@@ -467,12 +508,23 @@ final class _IndustrialPainter {
       width: w * .48,
       height: h * .30,
     );
-    _lead(Offset(rect.left + s * .07, c.dy), Offset(body.left, c.dy), width: s * .035);
-    _lead(Offset(body.right, c.dy), Offset(rect.right - s * .07, c.dy), width: s * .035);
+    _lead(
+      Offset(rect.left + s * .07, c.dy),
+      Offset(body.left, c.dy),
+      width: s * .035,
+    );
+    _lead(
+      Offset(body.right, c.dy),
+      Offset(rect.right - s * .07, c.dy),
+      width: s * .035,
+    );
     _metalTerminal(Offset(rect.left + s * .07, c.dy), scale: .9);
     _metalTerminal(Offset(rect.right - s * .07, c.dy), scale: .9);
 
-    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(body.height / 2));
+    final RRect rr = RRect.fromRectAndRadius(
+      body,
+      Radius.circular(body.height / 2),
+    );
     _shadowRRect(rr, dy: h * .035);
     canvas.drawRRect(
       rr,
@@ -553,10 +605,10 @@ final class _IndustrialPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(lever, Radius.circular(h * .035)),
-      _verticalGradient(
-        lever,
-        const <Color>[Color(0xFF4D5A64), Color(0xFF1A2329)],
-      ),
+      _verticalGradient(lever, const <Color>[
+        Color(0xFF4D5A64),
+        Color(0xFF1A2329),
+      ]),
     );
     canvas.drawLine(
       Offset(lever.left + lever.width * .2, lever.top + lever.height * .18),
@@ -567,10 +619,20 @@ final class _IndustrialPainter {
     );
 
     final Offset indicator = Offset(c.dx, body.bottom - h * .12);
-    canvas.drawCircle(indicator, h * .045, Paint()..color = const Color(0xFF2BAE66));
+    canvas.drawCircle(
+      indicator,
+      h * .045,
+      Paint()..color = const Color(0xFF2BAE66),
+    );
     canvas.drawCircle(indicator, h * .045, outline);
-    _screw(Offset(body.left + body.width * .16, body.top + body.height * .10), scale: .75);
-    _screw(Offset(body.right - body.width * .16, body.bottom - body.height * .10), scale: .75);
+    _screw(
+      Offset(body.left + body.width * .16, body.top + body.height * .10),
+      scale: .75,
+    );
+    _screw(
+      Offset(body.right - body.width * .16, body.bottom - body.height * .10),
+      scale: .75,
+    );
   }
 
   void pushButton({required bool normallyClosed}) {
@@ -614,24 +676,41 @@ final class _IndustrialPainter {
       headCenter,
       ringR * .76,
       Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-.35, -.38),
-          radius: 1,
-          colors: <Color>[const Color(0xFFF8FFFF), top, bottom],
-          stops: const <double>[0, .22, 1],
-        ).createShader(
-          Rect.fromCircle(center: headCenter, radius: ringR * .76),
-        ),
+        ..shader =
+            RadialGradient(
+              center: const Alignment(-.35, -.38),
+              radius: 1,
+              colors: <Color>[const Color(0xFFF8FFFF), top, bottom],
+              stops: const <double>[0, .22, 1],
+            ).createShader(
+              Rect.fromCircle(center: headCenter, radius: ringR * .76),
+            ),
     );
     canvas.drawCircle(headCenter, ringR * .76, outline);
 
     if (normallyClosed) {
-      _text('NC', Offset(c.dx, body.bottom - h * .10), size: h * .075, color: const Color(0xFF6E1C21));
+      _text(
+        'NC',
+        Offset(c.dx, body.bottom - h * .10),
+        size: h * .075,
+        color: const Color(0xFF6E1C21),
+      );
     } else {
-      _text('NO', Offset(c.dx, body.bottom - h * .10), size: h * .075, color: const Color(0xFF166534));
+      _text(
+        'NO',
+        Offset(c.dx, body.bottom - h * .10),
+        size: h * .075,
+        color: const Color(0xFF166534),
+      );
     }
-    _screw(Offset(body.left + body.width * .16, body.bottom - body.height * .14), scale: .65);
-    _screw(Offset(body.right - body.width * .16, body.bottom - body.height * .14), scale: .65);
+    _screw(
+      Offset(body.left + body.width * .16, body.bottom - body.height * .14),
+      scale: .65,
+    );
+    _screw(
+      Offset(body.right - body.width * .16, body.bottom - body.height * .14),
+      scale: .65,
+    );
   }
 
   void buzzer() {
@@ -666,11 +745,7 @@ final class _IndustrialPainter {
     canvas.drawCircle(center, r, outline);
 
     final double inner = r * .58;
-    canvas.drawCircle(
-      center,
-      inner,
-      Paint()..color = const Color(0xFF11191F),
-    );
+    canvas.drawCircle(center, inner, Paint()..color = const Color(0xFF11191F));
     for (var ring = 0; ring < 2; ring++) {
       final double rr = inner * (.42 + ring * .34);
       for (var i = 0; i < 8; i++) {
@@ -686,8 +761,17 @@ final class _IndustrialPainter {
         );
       }
     }
-    canvas.drawCircle(center, math.max(1.6, s * .027), Paint()..color = const Color(0xFF71818C));
-    _text('+', Offset(center.dx, body.top - h * .055), size: h * .09, color: const Color(0xFFD84A4A));
+    canvas.drawCircle(
+      center,
+      math.max(1.6, s * .027),
+      Paint()..color = const Color(0xFF71818C),
+    );
+    _text(
+      '+',
+      Offset(center.dx, body.top - h * .055),
+      size: h * .09,
+      color: const Color(0xFFD84A4A),
+    );
   }
 
   void cartridgeFuse() {
@@ -696,8 +780,16 @@ final class _IndustrialPainter {
       width: w * .50,
       height: h * .25,
     );
-    _lead(Offset(rect.left + s * .07, c.dy), Offset(tube.left, c.dy), width: s * .04);
-    _lead(Offset(tube.right, c.dy), Offset(rect.right - s * .07, c.dy), width: s * .04);
+    _lead(
+      Offset(rect.left + s * .07, c.dy),
+      Offset(tube.left, c.dy),
+      width: s * .04,
+    );
+    _lead(
+      Offset(tube.right, c.dy),
+      Offset(rect.right - s * .07, c.dy),
+      width: s * .04,
+    );
     _metalTerminal(Offset(rect.left + s * .07, c.dy), scale: .9);
     _metalTerminal(Offset(rect.right - s * .07, c.dy), scale: .9);
 
@@ -731,10 +823,11 @@ final class _IndustrialPainter {
     ]) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(cap, Radius.circular(tube.height * .18)),
-        _horizontalGradient(
-          cap,
-          const <Color>[Color(0xFF65757F), Color(0xFFDDE4E8), Color(0xFF65757F)],
-        ),
+        _horizontalGradient(cap, const <Color>[
+          Color(0xFF65757F),
+          Color(0xFFDDE4E8),
+          Color(0xFF65757F),
+        ]),
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(cap, Radius.circular(tube.height * .18)),
@@ -756,19 +849,31 @@ final class _IndustrialPainter {
       width: w * .42,
       height: h * .24,
     );
-    _lead(Offset(rect.left + s * .07, c.dy), Offset(body.left, c.dy), width: s * .04);
-    _lead(Offset(body.right, c.dy), Offset(rect.right - s * .07, c.dy), width: s * .04);
+    _lead(
+      Offset(rect.left + s * .07, c.dy),
+      Offset(body.left, c.dy),
+      width: s * .04,
+    );
+    _lead(
+      Offset(body.right, c.dy),
+      Offset(rect.right - s * .07, c.dy),
+      width: s * .04,
+    );
     _metalTerminal(Offset(rect.left + s * .07, c.dy), scale: .9);
     _metalTerminal(Offset(rect.right - s * .07, c.dy), scale: .9);
 
-    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(body.height / 2));
+    final RRect rr = RRect.fromRectAndRadius(
+      body,
+      Radius.circular(body.height / 2),
+    );
     _shadowRRect(rr, dy: h * .025);
     canvas.drawRRect(
       rr,
-      _verticalGradient(
-        body,
-        const <Color>[Color(0xFF4F5960), Color(0xFF14191D), Color(0xFF2C3338)],
-      ),
+      _verticalGradient(body, const <Color>[
+        Color(0xFF4F5960),
+        Color(0xFF14191D),
+        Color(0xFF2C3338),
+      ]),
     );
     canvas.drawRRect(rr, outline);
 
@@ -780,10 +885,11 @@ final class _IndustrialPainter {
     );
     canvas.drawRect(
       band,
-      _horizontalGradient(
-        band,
-        const <Color>[Color(0xFFD7DEE2), Color(0xFFFFFFFF), Color(0xFF9AA6AD)],
-      ),
+      _horizontalGradient(band, const <Color>[
+        Color(0xFFD7DEE2),
+        Color(0xFFFFFFFF),
+        Color(0xFF9AA6AD),
+      ]),
     );
     canvas.drawLine(
       Offset(body.left + body.width * .10, body.top + body.height * .18),
@@ -809,11 +915,7 @@ final class _IndustrialPainter {
     );
 
     final double fanR = body.shortestSide * .38;
-    canvas.drawCircle(
-      c,
-      fanR,
-      Paint()..color = const Color(0xFF0C151A),
-    );
+    canvas.drawCircle(c, fanR, Paint()..color = const Color(0xFF0C151A));
     canvas.drawCircle(c, fanR, outline);
 
     for (var i = 0; i < 5; i++) {
@@ -836,10 +938,10 @@ final class _IndustrialPainter {
         ..close();
       canvas.drawPath(
         blade,
-        _verticalGradient(
-          blade.getBounds(),
-          const <Color>[Color(0xFF71838E), Color(0xFF2D3A42)],
-        ),
+        _verticalGradient(blade.getBounds(), const <Color>[
+          Color(0xFF71838E),
+          Color(0xFF2D3A42),
+        ]),
       );
     }
     canvas.drawCircle(
@@ -1005,7 +1107,15 @@ final class _IndustrialPainter {
       RRect.fromRectAndRadius(armature, Radius.circular(h * .02)),
       Paint()..color = const Color(0xFFB8C5CC),
     );
-    _text('A1', Offset(body.left + body.width * .18, body.bottom - h * .08), size: h * .07);
-    _text('A2', Offset(body.right - body.width * .18, body.bottom - h * .08), size: h * .07);
+    _text(
+      'A1',
+      Offset(body.left + body.width * .18, body.bottom - h * .08),
+      size: h * .07,
+    );
+    _text(
+      'A2',
+      Offset(body.right - body.width * .18, body.bottom - h * .08),
+      size: h * .07,
+    );
   }
 }

@@ -26,19 +26,14 @@ final class ConductorBundlePlan {
 }
 
 final class ConductorBundlePlanner {
-  const ConductorBundlePlanner({
-    required this.lanePitch,
-    required this.grid,
-  }) : assert(lanePitch > 0),
-       assert(grid > 0);
+  const ConductorBundlePlanner({required this.lanePitch, required this.grid})
+    : assert(lanePitch > 0),
+      assert(grid > 0);
 
   final double lanePitch;
   final double grid;
 
-  ConductorBundlePlan planAc1({
-    required Offset start,
-    required Offset end,
-  }) {
+  ConductorBundlePlan planAc1({required Offset start, required Offset end}) {
     return _plan(
       roles: const <ConductorLaneRole>[
         ConductorLaneRole.l1,
@@ -50,10 +45,7 @@ final class ConductorBundlePlanner {
     );
   }
 
-  ConductorBundlePlan planAc3({
-    required Offset start,
-    required Offset end,
-  }) {
+  ConductorBundlePlan planAc3({required Offset start, required Offset end}) {
     return _plan(
       roles: const <ConductorLaneRole>[
         ConductorLaneRole.l1,
@@ -184,10 +176,7 @@ final class PvVisualZonePlanner {
   final double minimumZoneWidth;
   final double zoneGap;
 
-  PvVisualZonePlan plan({
-    required Offset origin,
-    required double height,
-  }) {
+  PvVisualZonePlan plan({required Offset origin, required double height}) {
     if (height <= 0) {
       throw ArgumentError.value(height, 'height', 'Height must be positive.');
     }
@@ -201,12 +190,7 @@ final class PvVisualZonePlanner {
     final Map<PvVisualZone, Rect> bounds = <PvVisualZone, Rect>{};
     double x = origin.dx;
     for (final PvVisualZone zone in order) {
-      bounds[zone] = Rect.fromLTWH(
-        x,
-        origin.dy,
-        minimumZoneWidth,
-        height,
-      );
+      bounds[zone] = Rect.fromLTWH(x, origin.dy, minimumZoneWidth, height);
       x += minimumZoneWidth + zoneGap;
     }
     return PvVisualZonePlan(zoneOrder: order, bounds: bounds);

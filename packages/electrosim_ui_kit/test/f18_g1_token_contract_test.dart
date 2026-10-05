@@ -23,16 +23,19 @@ void main() {
     expect(ElectroSimColors.focus, const Color(0xFF2563EB));
   });
 
-  test('F18-G1 electrical colors preserve the approved semantic separation', () {
-    expect(ElectroSimColors.dcPositive, const Color(0xFFD92D20));
-    expect(ElectroSimColors.dcNegative, const Color(0xFF101828));
-    expect(ElectroSimColors.phaseL1, const Color(0xFFB42318));
-    expect(ElectroSimColors.phaseL2, const Color(0xFFF79009));
-    expect(ElectroSimColors.phaseL3, const Color(0xFF475467));
-    expect(ElectroSimColors.neutral, const Color(0xFF1570EF));
-    expect(ElectroSimColors.protectiveEarth, const Color(0xFF039855));
-    expect(ElectroSimColors.primary, isNot(ElectroSimColors.dcPositive));
-  });
+  test(
+    'F18-G1 electrical colors preserve the approved semantic separation',
+    () {
+      expect(ElectroSimColors.dcPositive, const Color(0xFFD92D20));
+      expect(ElectroSimColors.dcNegative, const Color(0xFF101828));
+      expect(ElectroSimColors.phaseL1, const Color(0xFFB42318));
+      expect(ElectroSimColors.phaseL2, const Color(0xFFF79009));
+      expect(ElectroSimColors.phaseL3, const Color(0xFF475467));
+      expect(ElectroSimColors.neutral, const Color(0xFF1570EF));
+      expect(ElectroSimColors.protectiveEarth, const Color(0xFF039855));
+      expect(ElectroSimColors.primary, isNot(ElectroSimColors.dcPositive));
+    },
+  );
 
   test('F18-G1 geometry spacing radii and motion match mapping', () {
     expect(
@@ -76,19 +79,25 @@ void main() {
     expect(ElectroSimTypographyTokens.diagnosticMono.fontSize, 12);
   });
 
-  test('F18-G1 component and electrical visual tokens expose qualified contracts', () {
-    expect(ElectroSimComponentTokens.controlHeight, 40);
-    expect(ElectroSimComponentTokens.compactControlHeight, 32);
-    expect(ElectroSimComponentTokens.quickPaletteItemCount, 5);
-    expect(ElectroSimComponentTokens.paletteExpansionLabel, 'Voir tous');
-    expect(ElectroSimElectricalVisualTokens.terminalVisualDiameter, 16);
-    expect(ElectroSimElectricalVisualTokens.terminalHitTarget, 48);
-    expect(ElectroSimElectricalVisualTokens.selectionHaloWidth, 2);
-  });
+  test(
+    'F18-G1 component and electrical visual tokens expose qualified contracts',
+    () {
+      expect(ElectroSimComponentTokens.controlHeight, 40);
+      expect(ElectroSimComponentTokens.compactControlHeight, 32);
+      expect(ElectroSimComponentTokens.quickPaletteItemCount, 5);
+      expect(ElectroSimComponentTokens.paletteExpansionLabel, 'Voir tous');
+      expect(ElectroSimElectricalVisualTokens.terminalVisualDiameter, 16);
+      expect(ElectroSimElectricalVisualTokens.terminalHitTarget, 48);
+      expect(ElectroSimElectricalVisualTokens.selectionHaloWidth, 2);
+    },
+  );
 
   test('breakpoints remain behaviorally identical', () {
     expect(ElectroSimBreakpoints.classify(390), ElectroSimWindowClass.compact);
     expect(ElectroSimBreakpoints.classify(820), ElectroSimWindowClass.medium);
-    expect(ElectroSimBreakpoints.classify(1440), ElectroSimWindowClass.expanded);
+    expect(
+      ElectroSimBreakpoints.classify(1440),
+      ElectroSimWindowClass.expanded,
+    );
   });
 }

@@ -22,7 +22,8 @@ Object? freezeJson(Object? value) {
     return List<Object?>.unmodifiable(value.map<Object?>(freezeJson));
   }
   if (value is Map<String, Object?>) {
-    final SplayTreeMap<String, Object?> sorted = SplayTreeMap<String, Object?>();
+    final SplayTreeMap<String, Object?> sorted =
+        SplayTreeMap<String, Object?>();
     for (final MapEntry<String, Object?> entry in value.entries) {
       sorted[entry.key] = freezeJson(entry.value);
     }

@@ -86,49 +86,50 @@ void main() {
     expect(hitZoomedOut.kind, CanvasHitKind.terminal);
   });
 
+  test(
+    'cross-type visual id collision fails explicitly instead of overwriting geometry',
+    () {
+      final Terminal sourceTerminal = Terminal(
+        id: TerminalId('collision-source-terminal'),
+        name: 'S',
+        role: TerminalRole.positive,
+      );
+      final Terminal componentTerminal = Terminal(
+        id: TerminalId('collision-component-terminal'),
+        name: 'C',
+        role: TerminalRole.input,
+      );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('canvas-collision'),
+        revision: 1,
+        mode: ElectricalMode.dc,
+        sources: <SourceInstance>[
+          SourceInstance(
+            id: SourceId('shared-visual-id'),
+            modelType: 'Source',
+            terminals: <Terminal>[sourceTerminal],
+          ),
+        ],
+        components: <ComponentInstance>[
+          ComponentInstance(
+            id: ComponentId('shared-visual-id'),
+            modelType: 'Load',
+            terminals: <Terminal>[componentTerminal],
+          ),
+        ],
+      );
+      final CircuitVisualLayout layout = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'shared-visual-id': Offset(100, 100),
+        },
+      );
 
-  test('cross-type visual id collision fails explicitly instead of overwriting geometry', () {
-    final Terminal sourceTerminal = Terminal(
-      id: TerminalId('collision-source-terminal'),
-      name: 'S',
-      role: TerminalRole.positive,
-    );
-    final Terminal componentTerminal = Terminal(
-      id: TerminalId('collision-component-terminal'),
-      name: 'C',
-      role: TerminalRole.input,
-    );
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('canvas-collision'),
-      revision: 1,
-      mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        SourceInstance(
-          id: SourceId('shared-visual-id'),
-          modelType: 'Source',
-          terminals: <Terminal>[sourceTerminal],
-        ),
-      ],
-      components: <ComponentInstance>[
-        ComponentInstance(
-          id: ComponentId('shared-visual-id'),
-          modelType: 'Load',
-          terminals: <Terminal>[componentTerminal],
-        ),
-      ],
-    );
-    final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'shared-visual-id': Offset(100, 100),
-      },
-    );
-
-    expect(
-      () => CircuitGeometryIndex.build(circuit, layout),
-      throwsA(isA<StateError>()),
-    );
-  });
-
+      expect(
+        () => CircuitGeometryIndex.build(circuit, layout),
+        throwsA(isA<StateError>()),
+      );
+    },
+  );
 
   test('element and connection visual id collision fails explicitly', () {
     final Terminal sourcePositive = Terminal(
@@ -184,5 +185,4 @@ void main() {
       throwsA(isA<StateError>()),
     );
   });
-
 }

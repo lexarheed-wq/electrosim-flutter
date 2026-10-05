@@ -4,48 +4,61 @@ import 'topology_finding.dart';
 import 'topology_graph.dart';
 
 final class TopologyEngine {
-  const TopologyEngine({ComponentModelRegistry? modelRegistry}) : _modelRegistry = modelRegistry;
+  const TopologyEngine({ComponentModelRegistry? modelRegistry})
+    : _modelRegistry = modelRegistry;
 
   final ComponentModelRegistry? _modelRegistry;
 
-  ComponentModelRegistry get _contracts => _modelRegistry ?? CoreComponentModelContracts.registry;
+  ComponentModelRegistry get _contracts =>
+      _modelRegistry ?? CoreComponentModelContracts.registry;
 
   TopologyGraph compile(CircuitState circuit) {
     final List<Terminal> terminals = <Terminal>[
-      for (final ComponentInstance component in circuit.components) ...component.terminals,
+      for (final ComponentInstance component in circuit.components)
+        ...component.terminals,
       for (final SourceInstance source in circuit.sources) ...source.terminals,
     ]..sort((Terminal a, Terminal b) => a.id.value.compareTo(b.id.value));
 
     final Map<TerminalId, Terminal> terminalById = <TerminalId, Terminal>{
       for (final Terminal terminal in terminals) terminal.id: terminal,
     };
-    final _UnionFind unionFind = _UnionFind(terminals.map((Terminal t) => t.id));
+    final _UnionFind unionFind = _UnionFind(
+      terminals.map((Terminal t) => t.id),
+    );
 
-    final List<Connection> enabledConnections = circuit.connections
-        .where((Connection connection) => connection.enabled)
-        .toList(growable: false)
-      ..sort((Connection a, Connection b) => a.id.value.compareTo(b.id.value));
-    final List<Connection> disabledConnections = circuit.connections
-        .where((Connection connection) => !connection.enabled)
-        .toList(growable: false)
-      ..sort((Connection a, Connection b) => a.id.value.compareTo(b.id.value));
+    final List<Connection> enabledConnections =
+        circuit.connections
+            .where((Connection connection) => connection.enabled)
+            .toList(growable: false)
+          ..sort(
+            (Connection a, Connection b) => a.id.value.compareTo(b.id.value),
+          );
+    final List<Connection> disabledConnections =
+        circuit.connections
+            .where((Connection connection) => !connection.enabled)
+            .toList(growable: false)
+          ..sort(
+            (Connection a, Connection b) => a.id.value.compareTo(b.id.value),
+          );
 
     for (final Connection connection in enabledConnections) {
       unionFind.union(connection.fromTerminalId, connection.toTerminalId);
     }
 
-    final Map<TerminalId, List<TerminalId>> groups = <TerminalId, List<TerminalId>>{};
+    final Map<TerminalId, List<TerminalId>> groups =
+        <TerminalId, List<TerminalId>>{};
     for (final Terminal terminal in terminals) {
       final TerminalId root = unionFind.find(terminal.id);
       groups.putIfAbsent(root, () => <TerminalId>[]).add(terminal.id);
     }
 
-    final List<List<TerminalId>> canonicalGroups = groups.values.toList(growable: false)
-      ..sort((List<TerminalId> a, List<TerminalId> b) {
-        final String aFirst = _sortedTerminalIds(a).first.value;
-        final String bFirst = _sortedTerminalIds(b).first.value;
-        return aFirst.compareTo(bFirst);
-      });
+    final List<List<TerminalId>> canonicalGroups =
+        groups.values.toList(growable: false)
+          ..sort((List<TerminalId> a, List<TerminalId> b) {
+            final String aFirst = _sortedTerminalIds(a).first.value;
+            final String bFirst = _sortedTerminalIds(b).first.value;
+            return aFirst.compareTo(bFirst);
+          });
 
     final List<TopologyNode> nodes = <TopologyNode>[];
     final Map<TerminalId, String> terminalToNode = <TerminalId, String>{};
@@ -69,11 +82,16 @@ final class TopologyEngine {
           enabledConnectionDegree[connection.toTerminalId]! + 1;
     }
 
-    final Map<ComponentId, List<String>> componentNodeIds = <ComponentId, List<String>>{};
+    final Map<ComponentId, List<String>> componentNodeIds =
+        <ComponentId, List<String>>{};
     for (final ComponentInstance component in circuit.components) {
-      componentNodeIds[component.id] = _ownerNodes(component.terminals, terminalToNode);
+      componentNodeIds[component.id] = _ownerNodes(
+        component.terminals,
+        terminalToNode,
+      );
     }
-    final Map<SourceId, List<String>> sourceNodeIds = <SourceId, List<String>>{};
+    final Map<SourceId, List<String>> sourceNodeIds =
+        <SourceId, List<String>>{};
     for (final SourceInstance source in circuit.sources) {
       sourceNodeIds[source.id] = _ownerNodes(source.terminals, terminalToNode);
     }
@@ -81,7 +99,9 @@ final class TopologyEngine {
     final List<TopologyFinding> findings = <TopologyFinding>[];
     final List<TopologyBranch> componentBranches = <TopologyBranch>[];
     for (final ComponentInstance component in circuit.components) {
-      final ComponentModelContract? contract = _contracts.resolve(component.modelType);
+      final ComponentModelContract? contract = _contracts.resolve(
+        component.modelType,
+      );
       if (contract == null) {
         continue;
       }
@@ -90,10 +110,13 @@ final class TopologyEngine {
           TopologyFinding(
             code: TopologyFindingCode.componentModeMismatch,
             severity: TopologyFindingSeverity.error,
-            message: 'Component ${component.id.value} (${component.modelType}) does not support '
+            message:
+                'Component ${component.id.value} (${component.modelType}) does not support '
                 'electrical mode ${circuit.mode.name}.',
             componentId: component.id,
-            terminalIds: component.terminals.map((Terminal t) => t.id).toList(growable: false),
+            terminalIds: component.terminals
+                .map((Terminal t) => t.id)
+                .toList(growable: false),
           ),
         );
       }
@@ -102,18 +125,23 @@ final class TopologyEngine {
           TopologyFinding(
             code: TopologyFindingCode.componentContractMismatch,
             severity: TopologyFindingSeverity.error,
-            message: 'Component ${component.id.value} (${component.modelType}) has '
+            message:
+                'Component ${component.id.value} (${component.modelType}) has '
                 '${component.terminals.length} terminals but its canonical contract requires '
                 '${contract.terminalCount}.',
             componentId: component.id,
-            terminalIds: component.terminals.map((Terminal t) => t.id).toList(growable: false),
+            terminalIds: component.terminals
+                .map((Terminal t) => t.id)
+                .toList(growable: false),
           ),
         );
         continue;
       }
       for (final ComponentBranchDefinition definition in contract.branches) {
-        final Terminal fromTerminal = component.terminals[definition.fromTerminalIndex];
-        final Terminal toTerminal = component.terminals[definition.toTerminalIndex];
+        final Terminal fromTerminal =
+            component.terminals[definition.fromTerminalIndex];
+        final Terminal toTerminal =
+            component.terminals[definition.toTerminalIndex];
         componentBranches.add(
           TopologyBranch(
             componentId: component.id,
@@ -134,9 +162,13 @@ final class TopologyEngine {
         TopologyFinding(
           code: TopologyFindingCode.disabledConnection,
           severity: TopologyFindingSeverity.info,
-          message: 'Connection ${connection.id.value} is disabled and does not merge nodes.',
+          message:
+              'Connection ${connection.id.value} is disabled and does not merge nodes.',
           connectionId: connection.id,
-          terminalIds: <TerminalId>[connection.fromTerminalId, connection.toTerminalId],
+          terminalIds: <TerminalId>[
+            connection.fromTerminalId,
+            connection.toTerminalId,
+          ],
         ),
       );
     }
@@ -150,7 +182,8 @@ final class TopologyEngine {
           TopologyFinding(
             code: TopologyFindingCode.floatingNode,
             severity: TopologyFindingSeverity.warning,
-            message: 'Node ${node.id} is not connected by any enabled conductor.',
+            message:
+                'Node ${node.id} is not connected by any enabled conductor.',
             nodeId: node.id,
             terminalIds: node.terminalIds,
           ),
@@ -188,9 +221,12 @@ final class TopologyEngine {
           TopologyFinding(
             code: TopologyFindingCode.isolatedComponent,
             severity: TopologyFindingSeverity.warning,
-            message: 'Component ${component.id.value} has no terminal on an enabled conductor.',
+            message:
+                'Component ${component.id.value} has no terminal on an enabled conductor.',
             componentId: component.id,
-            terminalIds: component.terminals.map((Terminal t) => t.id).toList(growable: false),
+            terminalIds: component.terminals
+                .map((Terminal t) => t.id)
+                .toList(growable: false),
           ),
         );
       }
@@ -201,9 +237,12 @@ final class TopologyEngine {
           TopologyFinding(
             code: TopologyFindingCode.isolatedSource,
             severity: TopologyFindingSeverity.warning,
-            message: 'Source ${source.id.value} has no terminal on an enabled conductor.',
+            message:
+                'Source ${source.id.value} has no terminal on an enabled conductor.',
             sourceId: source.id,
-            terminalIds: source.terminals.map((Terminal t) => t.id).toList(growable: false),
+            terminalIds: source.terminals
+                .map((Terminal t) => t.id)
+                .toList(growable: false),
           ),
         );
       }
@@ -226,8 +265,9 @@ final class TopologyEngine {
   }
 }
 
-List<TerminalId> _sortedTerminalIds(Iterable<TerminalId> ids) => ids.toList(growable: false)
-  ..sort((TerminalId a, TerminalId b) => a.value.compareTo(b.value));
+List<TerminalId> _sortedTerminalIds(Iterable<TerminalId> ids) =>
+    ids.toList(growable: false)
+      ..sort((TerminalId a, TerminalId b) => a.value.compareTo(b.value));
 
 List<String> _ownerNodes(
   Iterable<Terminal> terminals,
@@ -243,12 +283,11 @@ List<String> _ownerNodes(
 bool _ownerIsIsolated(
   Iterable<Terminal> terminals,
   Map<TerminalId, int> enabledConnectionDegree,
-) => terminals.every((Terminal terminal) => enabledConnectionDegree[terminal.id] == 0);
+) => terminals.every(
+  (Terminal terminal) => enabledConnectionDegree[terminal.id] == 0,
+);
 
-bool _isLimitedDcSourceShortNode(
-  CircuitState circuit,
-  TopologyNode node,
-) {
+bool _isLimitedDcSourceShortNode(CircuitState circuit, TopologyNode node) {
   if (circuit.mode != ElectricalMode.dc) {
     return false;
   }
@@ -278,7 +317,9 @@ bool _hasConflictingPhases(Set<PhaseTag> phases) {
   if (phases.length < 2) {
     return false;
   }
-  final Set<PhaseTag> active = phases.difference(<PhaseTag>{PhaseTag.protectiveEarth});
+  final Set<PhaseTag> active = phases.difference(<PhaseTag>{
+    PhaseTag.protectiveEarth,
+  });
   if (active.length < 2) {
     return false;
   }
@@ -298,12 +339,14 @@ int _compareFindings(TopologyFinding a, TopologyFinding b) {
   if (code != 0) {
     return code;
   }
-  final String aKey = a.nodeId ??
+  final String aKey =
+      a.nodeId ??
       a.connectionId?.value ??
       a.componentId?.value ??
       a.sourceId?.value ??
       '';
-  final String bKey = b.nodeId ??
+  final String bKey =
+      b.nodeId ??
       b.connectionId?.value ??
       b.componentId?.value ??
       b.sourceId?.value ??
@@ -313,7 +356,9 @@ int _compareFindings(TopologyFinding a, TopologyFinding b) {
 
 final class _UnionFind {
   _UnionFind(Iterable<TerminalId> ids)
-    : _parent = <TerminalId, TerminalId>{for (final TerminalId id in ids) id: id};
+    : _parent = <TerminalId, TerminalId>{
+        for (final TerminalId id in ids) id: id,
+      };
 
   final Map<TerminalId, TerminalId> _parent;
 

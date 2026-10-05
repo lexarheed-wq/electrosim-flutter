@@ -23,8 +23,9 @@ final class WireSemantics {
     required Set<TerminalId> junctionTerminalIds,
     required List<NonJunctionWireCrossing> nonJunctionCrossings,
   }) : junctionTerminalIds = Set<TerminalId>.unmodifiable(junctionTerminalIds),
-       nonJunctionCrossings =
-           List<NonJunctionWireCrossing>.unmodifiable(nonJunctionCrossings);
+       nonJunctionCrossings = List<NonJunctionWireCrossing>.unmodifiable(
+         nonJunctionCrossings,
+       );
 
   final Set<TerminalId> junctionTerminalIds;
   final List<NonJunctionWireCrossing> nonJunctionCrossings;
@@ -64,18 +65,13 @@ final class WireSemanticsAnalyzer {
     for (final Connection connection in circuit.connections) {
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
-      final Offset? end =
-          geometry.terminalPositions[connection.toTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null || start == end) {
         continue;
       }
       try {
         paths[connection.id] = OrthogonalWirePath(
-          points: <Offset>[
-            start,
-            ...layout.routeFor(connection.id.value),
-            end,
-          ],
+          points: <Offset>[start, ...layout.routeFor(connection.id.value), end],
         );
       } on ArgumentError {
         // Historical/manual diagonal routes are not classified by the
@@ -83,20 +79,19 @@ final class WireSemanticsAnalyzer {
       }
     }
 
-    final List<NonJunctionWireCrossing> crossings =
-        <NonJunctionWireCrossing>[];
+    final List<NonJunctionWireCrossing> crossings = <NonJunctionWireCrossing>[];
     final List<Connection> connections = circuit.connections;
-    for (var firstIndex = 0;
-        firstIndex < connections.length;
-        firstIndex++) {
+    for (var firstIndex = 0; firstIndex < connections.length; firstIndex++) {
       final Connection first = connections[firstIndex];
       final OrthogonalWirePath? firstPath = paths[first.id];
       if (firstPath == null) {
         continue;
       }
-      for (var secondIndex = firstIndex + 1;
-          secondIndex < connections.length;
-          secondIndex++) {
+      for (
+        var secondIndex = firstIndex + 1;
+        secondIndex < connections.length;
+        secondIndex++
+      ) {
         final Connection second = connections[secondIndex];
         final OrthogonalWirePath? secondPath = paths[second.id];
         if (secondPath == null) {
@@ -108,8 +103,7 @@ final class WireSemanticsAnalyzer {
             if (firstSegment.axis == secondSegment.axis) {
               continue;
             }
-            final Offset? point =
-                firstSegment.intersectionWith(secondSegment);
+            final Offset? point = firstSegment.intersectionWith(secondSegment);
             if (point == null ||
                 _isElectricalJunctionPoint(
                   first: first,
@@ -154,8 +148,9 @@ final class WireSemanticsAnalyzer {
       second.fromTerminalId,
       second.toTerminalId,
     };
-    for (final TerminalId terminalId
-        in firstTerminals.intersection(secondTerminals)) {
+    for (final TerminalId terminalId in firstTerminals.intersection(
+      secondTerminals,
+    )) {
       if (geometry.terminalPositions[terminalId] == point) {
         return true;
       }

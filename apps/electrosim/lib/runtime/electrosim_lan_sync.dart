@@ -37,13 +37,13 @@ final class ElectroSimSyncEnvelope {
   final Map<String, Object?> payload;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'schemaVersion': schemaVersion,
-        'type': type.name,
-        'sessionCode': sessionCode,
-        'senderId': senderId,
-        'sequence': sequence,
-        'payload': payload,
-      };
+    'schemaVersion': schemaVersion,
+    'type': type.name,
+    'sessionCode': sessionCode,
+    'senderId': senderId,
+    'sequence': sequence,
+    'payload': payload,
+  };
 
   String toJsonString() => jsonEncode(toJson());
 
@@ -76,11 +76,12 @@ final class ElectroSimSyncEnvelope {
         payload is! Map<String, dynamic>) {
       throw const FormatException('Invalid sync envelope.');
     }
-    final ElectroSimSyncMessageType type =
-        ElectroSimSyncMessageType.values.firstWhere(
-      (ElectroSimSyncMessageType value) => value.name == typeRaw,
-      orElse: () => throw FormatException('Unknown sync message type: $typeRaw'),
-    );
+    final ElectroSimSyncMessageType type = ElectroSimSyncMessageType.values
+        .firstWhere(
+          (ElectroSimSyncMessageType value) => value.name == typeRaw,
+          orElse: () =>
+              throw FormatException('Unknown sync message type: $typeRaw'),
+        );
     return ElectroSimSyncEnvelope(
       type: type,
       sessionCode: code,
@@ -154,8 +155,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   HttpServer? _server;
   final Map<String, WebSocket> _clients = <String, WebSocket>{};
   final Map<String, String> _clientDisplayNames = <String, String>{};
-  final Map<String, DateTime> _studentLastActivityAtUtc =
-      <String, DateTime>{};
+  final Map<String, DateTime> _studentLastActivityAtUtc = <String, DateTime>{};
   final Map<String, ElectroSimTpSessionController> _studentControllers =
       <String, ElectroSimTpSessionController>{};
   final Map<String, int> _lastClientSequence = <String, int>{};
@@ -172,20 +172,21 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       List<String>.unmodifiable(_clients.keys.toList()..sort());
 
   List<ElectroSimConnectedStudent> get connectedStudents {
-    final List<ElectroSimConnectedStudent> students = _clients.keys
-        .map(
-          (String id) => ElectroSimConnectedStudent(
-            clientId: id,
-            displayName: _clientDisplayNames[id] ?? id,
-          ),
-        )
-        .toList(growable: false)
-      ..sort(
-        (ElectroSimConnectedStudent a, ElectroSimConnectedStudent b) =>
-            a.displayName.toLowerCase().compareTo(
-                  b.displayName.toLowerCase(),
-                ),
-      );
+    final List<ElectroSimConnectedStudent> students =
+        _clients.keys
+            .map(
+              (String id) => ElectroSimConnectedStudent(
+                clientId: id,
+                displayName: _clientDisplayNames[id] ?? id,
+              ),
+            )
+            .toList(growable: false)
+          ..sort(
+            (ElectroSimConnectedStudent a, ElectroSimConnectedStudent b) => a
+                .displayName
+                .toLowerCase()
+                .compareTo(b.displayName.toLowerCase()),
+          );
     return List<ElectroSimConnectedStudent>.unmodifiable(students);
   }
 
@@ -194,24 +195,26 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       ..._studentControllers.keys,
       ..._clients.keys,
     };
-    final List<ElectroSimStudentSupervisionState> states = ids
-        .map(
-          (String id) => ElectroSimStudentSupervisionState(
-            clientId: id,
-            displayName: _clientDisplayNames[id] ?? id,
-            connected: _clients.containsKey(id),
-            session: _studentControllers[id]?.session,
-            lastActivityAtUtc: _studentLastActivityAtUtc[id],
-          ),
-        )
-        .toList(growable: false)
-      ..sort(
-        (ElectroSimStudentSupervisionState a,
-                ElectroSimStudentSupervisionState b) =>
-            a.displayName.toLowerCase().compareTo(
-                  b.displayName.toLowerCase(),
-                ),
-      );
+    final List<ElectroSimStudentSupervisionState> states =
+        ids
+            .map(
+              (String id) => ElectroSimStudentSupervisionState(
+                clientId: id,
+                displayName: _clientDisplayNames[id] ?? id,
+                connected: _clients.containsKey(id),
+                session: _studentControllers[id]?.session,
+                lastActivityAtUtc: _studentLastActivityAtUtc[id],
+              ),
+            )
+            .toList(growable: false)
+          ..sort(
+            (
+              ElectroSimStudentSupervisionState a,
+              ElectroSimStudentSupervisionState b,
+            ) => a.displayName.toLowerCase().compareTo(
+              b.displayName.toLowerCase(),
+            ),
+          );
     return List<ElectroSimStudentSupervisionState>.unmodifiable(states);
   }
 
@@ -224,13 +227,11 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   }
 
   Map<String, TpSession?> get studentSessions =>
-      Map<String, TpSession?>.unmodifiable(
-        <String, TpSession?>{
-          for (final MapEntry<String, ElectroSimTpSessionController> entry
-              in _studentControllers.entries)
-            entry.key: entry.value.session,
-        },
-      );
+      Map<String, TpSession?>.unmodifiable(<String, TpSession?>{
+        for (final MapEntry<String, ElectroSimTpSessionController> entry
+            in _studentControllers.entries)
+          entry.key: entry.value.session,
+      });
 
   ElectroSimTpSessionController _studentController(String clientId) =>
       _studentControllers.putIfAbsent(
@@ -442,8 +443,9 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
 
     if (request.method == 'GET' && request.uri.path != '/electrosim-sync') {
-      final String relativePath =
-          request.uri.path == '/' ? 'index.html' : request.uri.path.substring(1);
+      final String relativePath = request.uri.path == '/'
+          ? 'index.html'
+          : request.uri.path.substring(1);
       await _serveStudentWebAsset(request, relativePath);
       return;
     }
@@ -629,12 +631,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
   }
 
-  void _reconcileStudentState(
-    String clientId,
-    Map<String, Object?> state,
-  ) {
-    final ElectroSimTpSessionController student =
-        _studentController(clientId);
+  void _reconcileStudentState(String clientId, Map<String, Object?> state) {
+    final ElectroSimTpSessionController student = _studentController(clientId);
     if (state['hasSession'] != true) {
       throw const FormatException('Student state has no TP session.');
     }
@@ -664,8 +662,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
           throw FormatException('Unknown student lifecycle: $lifecycleRaw'),
     );
 
-    if (desired == TpLifecycle.evaluated ||
-        desired == TpLifecycle.closed) {
+    if (desired == TpLifecycle.evaluated || desired == TpLifecycle.closed) {
       throw StateError(
         'Student cannot set teacher evaluation or close the TP.',
       );
@@ -692,8 +689,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
 
     if (current.lifecycle == TpLifecycle.started) {
-      if (desired != TpLifecycle.started &&
-          desired != TpLifecycle.submitted) {
+      if (desired != TpLifecycle.started && desired != TpLifecycle.submitted) {
         throw StateError(
           'Student cannot transition active TP to ${desired.name}.',
         );
@@ -745,9 +741,11 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
           throw StateError('Student diagnostic history is append-only.');
         }
       }
-      for (var index = authoritative.length;
-          index < candidates.length;
-          index++) {
+      for (
+        var index = authoritative.length;
+        index < candidates.length;
+        index++
+      ) {
         final DiagnosticEntry entry = candidates[index];
         current = student.addDiagnosticEntry(
           promptId: entry.promptId,
@@ -781,8 +779,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       for (final ElectroSimTpSessionController student
           in _studentControllers.values) {
         TpSession? current = student.session;
-        if (current == null &&
-            teacherSession.lifecycle != TpLifecycle.draft) {
+        if (current == null && teacherSession.lifecycle != TpLifecycle.draft) {
           student.restoreFromPersistenceJson(controller.toPersistenceJson());
           current = student.session;
         }
@@ -830,8 +827,9 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
   }
 
   void _broadcastSnapshot() {
-    for (final MapEntry<String, WebSocket> entry
-        in _clients.entries.toList(growable: false)) {
+    for (final MapEntry<String, WebSocket> entry in _clients.entries.toList(
+      growable: false,
+    )) {
       _sendSnapshot(entry.value, entry.key);
     }
   }
@@ -886,8 +884,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     if (_closed) return;
     _closed = true;
     controller.removeListener(_onControllerChanged);
-    final List<WebSocket> sockets =
-        _clients.values.toList(growable: false);
+    final List<WebSocket> sockets = _clients.values.toList(growable: false);
     _clients.clear();
     _clientDisplayNames.clear();
     _studentLastActivityAtUtc.clear();
@@ -910,15 +907,12 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
 
   static bool _safeClientId(String? value) =>
       value != null &&
-      RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$')
-          .hasMatch(value);
+      RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$').hasMatch(value);
 
-  static String _safeDisplayName(
-    String? value, {
-    required String fallback,
-  }) {
-    final String normalized =
-        (value ?? '').replaceAll(RegExp(r'\s+'), ' ').trim();
+  static String _safeDisplayName(String? value, {required String fallback}) {
+    final String normalized = (value ?? '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
     if (normalized.length >= 2 && normalized.length <= 80) {
       return normalized;
     }
@@ -934,8 +928,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
     this.displayName,
     this.autoReconnect = true,
   }) : sessionCode = sessionCode.trim().toUpperCase() {
-    if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$')
-        .hasMatch(clientId)) {
+    if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$').hasMatch(clientId)) {
       throw ArgumentError.value(clientId, 'clientId', 'Invalid client ID.');
     }
     controller.addListener(_onLocalControllerChanged);
@@ -994,10 +987,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
     _reconnectTimer?.cancel();
     final WebSocket? socket = _socket;
     _socket = null;
-    await socket?.close(
-      WebSocketStatus.goingAway,
-      'Student disconnected.',
-    );
+    await socket?.close(WebSocketStatus.goingAway, 'Student disconnected.');
     _setStatus(ElectroSimLanSyncStatus.disconnected);
   }
 
@@ -1012,10 +1002,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
     }
     _manualDisconnect = false;
     _reconnectTimer?.cancel();
-    await _socket?.close(
-      WebSocketStatus.goingAway,
-      'Manual reconnect.',
-    );
+    await _socket?.close(WebSocketStatus.goingAway, 'Manual reconnect.');
     _socket = null;
     _lastServerSequence = -1;
     _setStatus(ElectroSimLanSyncStatus.reconnecting);
@@ -1124,9 +1111,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
       sessionCode: sessionCode,
       senderId: clientId,
       sequence: _clientSequence++,
-      payload: <String, Object?>{
-        'state': controller.toPersistenceJson(),
-      },
+      payload: <String, Object?>{'state': controller.toPersistenceJson()},
     );
     try {
       socket.add(envelope.toJsonString());
@@ -1156,9 +1141,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
   }
 
   void _scheduleReconnect() {
-    if (_closed ||
-        _manualDisconnect ||
-        _reconnectTimer?.isActive == true) {
+    if (_closed || _manualDisconnect || _reconnectTimer?.isActive == true) {
       return;
     }
     _reconnectTimer = Timer(const Duration(seconds: 1), () async {

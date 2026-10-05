@@ -14,19 +14,16 @@ final class CircuitVisualLayout {
        elementSizes = Map<String, Size>.unmodifiable(elementSizes),
        wireRoutes = Map<String, List<Offset>>.unmodifiable(
          wireRoutes.map(
-           (String key, List<Offset> value) =>
-               MapEntry<String, List<Offset>>(
-                 key,
-                 List<Offset>.unmodifiable(value),
-               ),
+           (String key, List<Offset> value) => MapEntry<String, List<Offset>>(
+             key,
+             List<Offset>.unmodifiable(value),
+           ),
          ),
        ),
        elementQuarterTurns = Map<String, int>.unmodifiable(
          elementQuarterTurns.map(
-           (String key, int value) => MapEntry<String, int>(
-             key,
-             _normalizeQuarterTurns(value),
-           ),
+           (String key, int value) =>
+               MapEntry<String, int>(key, _normalizeQuarterTurns(value)),
          ),
        );
 
@@ -41,8 +38,7 @@ final class CircuitVisualLayout {
   Size sizeOf(String elementId) =>
       elementSizes[elementId] ?? defaultElementSize;
 
-  int quarterTurnsOf(String elementId) =>
-      elementQuarterTurns[elementId] ?? 0;
+  int quarterTurnsOf(String elementId) => elementQuarterTurns[elementId] ?? 0;
 
   Size displaySizeOf(String elementId) {
     final Size size = sizeOf(elementId);
@@ -54,13 +50,8 @@ final class CircuitVisualLayout {
   List<Offset> routeFor(String connectionId) =>
       wireRoutes[connectionId] ?? const <Offset>[];
 
-  CircuitVisualLayout moveElement(
-    String elementId,
-    Offset worldPosition,
-  ) {
-    final Map<String, Offset> next = <String, Offset>{
-      ...elementPositions,
-    };
+  CircuitVisualLayout moveElement(String elementId, Offset worldPosition) {
+    final Map<String, Offset> next = <String, Offset>{...elementPositions};
     next[elementId] = worldPosition;
     return CircuitVisualLayout(
       elementPositions: next,
@@ -78,9 +69,7 @@ final class CircuitVisualLayout {
     if (!elementPositions.containsKey(elementId)) {
       return this;
     }
-    final Map<String, int> next = <String, int>{
-      ...elementQuarterTurns,
-    };
+    final Map<String, int> next = <String, int>{...elementQuarterTurns};
     next[elementId] = _normalizeQuarterTurns(
       quarterTurnsOf(elementId) + deltaQuarterTurns,
     );

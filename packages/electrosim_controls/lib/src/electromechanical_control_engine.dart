@@ -1,4 +1,3 @@
-
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
@@ -49,9 +48,8 @@ final class ElectromechanicalDcOutcome {
     required Iterable<ElectromechanicalControlIssue> issues,
     required this.iterations,
     required this.converged,
-  })  : relays =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
-        issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
+  }) : relays = Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
+       issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
 
   final DcSolveResult result;
   final CircuitState effectiveCircuit;
@@ -69,9 +67,10 @@ final class ElectromechanicalAc1Outcome {
     required Iterable<ElectromechanicalControlIssue> issues,
     required this.iterations,
     required this.converged,
-  })  : contactors =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(contactors),
-        issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
+  }) : contactors = Map<ComponentId, ContactorActuationState>.unmodifiable(
+         contactors,
+       ),
+       issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
 
   final Ac1SolveResult result;
   final CircuitState effectiveCircuit;
@@ -89,9 +88,10 @@ final class ElectromechanicalAc3Outcome {
     required Iterable<ElectromechanicalControlIssue> issues,
     required this.iterations,
     required this.converged,
-  })  : contactors =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(contactors),
-        issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
+  }) : contactors = Map<ComponentId, ContactorActuationState>.unmodifiable(
+         contactors,
+       ),
+       issues = List<ElectromechanicalControlIssue>.unmodifiable(issues);
 
   final Ac3SolveResult result;
   final CircuitState effectiveCircuit;
@@ -113,7 +113,7 @@ final class ElectromechanicalAc3Outcome {
 /// 5. repeat until stable or maxIterations is reached.
 final class ElectromechanicalControlEngine {
   const ElectromechanicalControlEngine({this.maxIterations = 4})
-      : assert(maxIterations > 0);
+    : assert(maxIterations > 0);
 
   final int maxIterations;
 
@@ -144,8 +144,7 @@ final class ElectromechanicalControlEngine {
         issues.add(
           const ElectromechanicalControlIssue(
             code: ElectromechanicalControlIssueCode.solveFailed,
-            message:
-                'DC solve failed before relay state could stabilize.',
+            message: 'DC solve failed before relay state could stabilize.',
           ),
         );
         return ElectromechanicalDcOutcome(
@@ -264,8 +263,7 @@ final class ElectromechanicalControlEngine {
       if (iteration == maxIterations) {
         issues.add(
           const ElectromechanicalControlIssue(
-            code:
-                ElectromechanicalControlIssueCode.iterationLimitExceeded,
+            code: ElectromechanicalControlIssueCode.iterationLimitExceeded,
             message:
                 'Electromechanical AC1 state did not stabilize within the bounded iteration limit.',
           ),
@@ -350,8 +348,7 @@ final class ElectromechanicalControlEngine {
       if (iteration == maxIterations) {
         issues.add(
           const ElectromechanicalControlIssue(
-            code:
-                ElectromechanicalControlIssueCode.iterationLimitExceeded,
+            code: ElectromechanicalControlIssueCode.iterationLimitExceeded,
             message:
                 'Electromechanical AC3 state did not stabilize within the bounded iteration limit.',
           ),
@@ -398,8 +395,8 @@ Map<ComponentId, bool> _initialStates(
     states[component.id] = previousStates.containsKey(component.id)
         ? previousStates[component.id]!
         : raw is bool
-            ? raw
-            : false;
+        ? raw
+        : false;
   }
   return states;
 }
@@ -409,8 +406,9 @@ CircuitState _applyStates(
   Map<ComponentId, bool> states,
   List<ElectromechanicalControlIssue> issues,
 ) {
-  final Set<String> known =
-      states.keys.map((ComponentId id) => id.value).toSet();
+  final Set<String> known = states.keys
+      .map((ComponentId id) => id.value)
+      .toSet();
   final List<ComponentInstance> components = <ComponentInstance>[];
 
   for (final ComponentInstance component in circuit.components) {
@@ -421,17 +419,17 @@ CircuitState _applyStates(
         component.modelType == 'contactor_aux_nc' ||
         component.modelType == 'relay_contact_no' ||
         component.modelType == 'relay_contact_nc') {
-      final bool relayContact = component.modelType == 'relay_contact_no' ||
+      final bool relayContact =
+          component.modelType == 'relay_contact_no' ||
           component.modelType == 'relay_contact_nc';
-      final Object? linked = component.parameters[
-          relayContact ? 'linkedRelayId' : 'linkedContactorId'];
+      final Object? linked = component
+          .parameters[relayContact ? 'linkedRelayId' : 'linkedContactorId'];
       if (linked is String && known.contains(linked)) {
         actuated = states[ComponentId(linked)];
       } else {
         issues.add(
           ElectromechanicalControlIssue(
-            code:
-                ElectromechanicalControlIssueCode.missingLinkedContactor,
+            code: ElectromechanicalControlIssueCode.missingLinkedContactor,
             message:
                 'Linked contact ${component.id.value} does not reference a known coil device.',
             componentId: component.id,
@@ -710,15 +708,9 @@ bool _nextActuation({
   required bool previous,
   required double voltageV,
   required _CoilThresholds thresholds,
-}) =>
-    previous
-        ? voltageV > thresholds.dropout
-        : voltageV >= thresholds.pickup;
+}) => previous ? voltageV > thresholds.dropout : voltageV >= thresholds.pickup;
 
-bool _sameStates(
-  Map<ComponentId, bool> left,
-  Map<ComponentId, bool> right,
-) {
+bool _sameStates(Map<ComponentId, bool> left, Map<ComponentId, bool> right) {
   if (left.length != right.length) return false;
   for (final MapEntry<ComponentId, bool> entry in left.entries) {
     if (right[entry.key] != entry.value) return false;

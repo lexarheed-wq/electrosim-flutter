@@ -40,7 +40,10 @@ void main() {
     expect(result.centers[0].dy, 120);
     expect(result.centers[1].dy, 120);
     expect(result.centers[0].dx + result.centers[1].dx, 384);
-    expect(result.centers[1].dx - result.centers[0].dx, greaterThanOrEqualTo(96));
+    expect(
+      result.centers[1].dx - result.centers[0].dx,
+      greaterThanOrEqualTo(96),
+    );
   });
 
   test('placement refuses a segment that cannot respect bend keep-out', () {

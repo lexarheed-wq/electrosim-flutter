@@ -19,12 +19,15 @@ void main() {
         .map((F9PaletteDefinition item) => item.modelType)
         .toSet();
 
-    expect(types, containsAll(<String>[
-      'push_button_no',
-      'buzzer',
-      'fan_dc',
-      'motor_dc',
-      'relay_coil',
-    ]));
+    expect(
+      types,
+      containsAll(<String>[
+        'push_button_no',
+        'buzzer',
+        'fan_dc',
+        'motor_dc',
+        'relay_coil',
+      ]),
+    );
   });
 }

@@ -51,5 +51,6 @@ final class Terminal {
       deepJsonEquals(other.metadata, metadata);
 
   @override
-  int get hashCode => Object.hash(id, name, role, phase, deepJsonHash(metadata));
+  int get hashCode =>
+      Object.hash(id, name, role, phase, deepJsonHash(metadata));
 }

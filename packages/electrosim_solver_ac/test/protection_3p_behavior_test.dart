@@ -1,4 +1,3 @@
-
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
@@ -8,15 +7,19 @@ void main() {
   const TopologyEngine topologyEngine = TopologyEngine();
   const SolverAC3 solver = SolverAC3();
 
-  for (final String modelType
-      in <String>['breaker_3p', 'thermal_overload_3p']) {
+  for (final String modelType in <String>[
+    'breaker_3p',
+    'thermal_overload_3p',
+  ]) {
     test('$modelType conducts all phases before trip', () {
       final CircuitState circuit = _circuit(
         modelType: modelType,
         tripped: false,
       );
-      final Ac3SolveResult result =
-          solver.solve(circuit, topologyEngine.compile(circuit));
+      final Ac3SolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+      );
 
       expect(result.isSolved, isTrue);
       for (final String phase in <String>['L1', 'L2', 'L3']) {
@@ -38,13 +41,16 @@ void main() {
         modelType: modelType,
         tripped: true,
       );
-      final Ac3SolveResult result =
-          solver.solve(circuit, topologyEngine.compile(circuit));
+      final Ac3SolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+      );
 
       expect(result.isSolved, isTrue);
       for (final String phase in <String>['L1', 'L2', 'L3']) {
-        final Ac3BranchResult branch =
-            result.branch('component:q1:power:$phase');
+        final Ac3BranchResult branch = result.branch(
+          'component:q1:power:$phase',
+        );
         expect(branch.kind, Ac3BranchKind.openCircuit);
         expect(branch.current!.magnitude, closeTo(0.0, 1e-12));
       }
@@ -58,10 +64,7 @@ void main() {
   }
 }
 
-CircuitState _circuit({
-  required String modelType,
-  required bool tripped,
-}) =>
+CircuitState _circuit({required String modelType, required bool tripped}) =>
     CircuitState(
       circuitId: CircuitId('$modelType-$tripped'),
       revision: 0,
@@ -78,13 +81,8 @@ CircuitState _circuit({
             _t('q-l2-out', '4T2', PhaseTag.l2),
             _t('q-l3-out', '6T3', PhaseTag.l3),
           ],
-          parameters: <String, Object?>{
-            ProtectionRating.ratedCurrentKey: 10.0,
-          },
-          controlState: <String, Object?>{
-            'closed': true,
-            'tripped': tripped,
-          },
+          parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: 10.0},
+          controlState: <String, Object?>{'closed': true, 'tripped': tripped},
         ),
         _load('r1', PhaseTag.l1),
         _load('r2', PhaseTag.l2),
@@ -112,30 +110,30 @@ CircuitState _circuit({
     );
 
 ComponentInstance _load(String id, PhaseTag phase) => ComponentInstance(
-      id: ComponentId(id),
-      modelType: 'resistor',
-      terminals: <Terminal>[
-        _t('$id-p', 'L', phase),
-        _t('$id-n', 'N', PhaseTag.neutral),
-      ],
-      parameters: const <String, Object?>{'resistanceOhm': 46.0},
-    );
+  id: ComponentId(id),
+  modelType: 'resistor',
+  terminals: <Terminal>[
+    _t('$id-p', 'L', phase),
+    _t('$id-n', 'N', PhaseTag.neutral),
+  ],
+  parameters: const <String, Object?>{'resistanceOhm': 46.0},
+);
 
 SourceInstance _source(String id, PhaseTag phase) => SourceInstance(
-      id: SourceId(id),
-      modelType: 'ac_voltage_source',
-      terminals: <Terminal>[
-        _t('$id-p', phase.name, phase),
-        _t('$id-n', 'N', PhaseTag.neutral),
-      ],
-      parameters: const <String, Object?>{'voltageRmsV': 230.0},
-    );
+  id: SourceId(id),
+  modelType: 'ac_voltage_source',
+  terminals: <Terminal>[
+    _t('$id-p', phase.name, phase),
+    _t('$id-n', 'N', PhaseTag.neutral),
+  ],
+  parameters: const <String, Object?>{'voltageRmsV': 230.0},
+);
 
 Terminal _t(String id, String name, PhaseTag phase) =>
     Terminal(id: TerminalId(id), name: name, phase: phase);
 
 Connection _wire(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);

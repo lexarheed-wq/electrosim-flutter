@@ -5,9 +5,8 @@ import 'topology_finding.dart';
 final class TopologyNode {
   TopologyNode({required this.id, required Iterable<TerminalId> terminalIds})
     : terminalIds = List<TerminalId>.unmodifiable(
-        terminalIds.toList(growable: false)..sort(
-          (TerminalId a, TerminalId b) => a.value.compareTo(b.value),
-        ),
+        terminalIds.toList(growable: false)
+          ..sort((TerminalId a, TerminalId b) => a.value.compareTo(b.value)),
       );
 
   final String id;
@@ -55,8 +54,12 @@ final class TopologyGraph {
     required Iterable<TopologyFinding> findings,
   }) : nodes = List<TopologyNode>.unmodifiable(nodes),
        terminalToNode = Map<TerminalId, String>.unmodifiable(terminalToNode),
-       enabledConnectionIds = List<ConnectionId>.unmodifiable(enabledConnectionIds),
-       disabledConnectionIds = List<ConnectionId>.unmodifiable(disabledConnectionIds),
+       enabledConnectionIds = List<ConnectionId>.unmodifiable(
+         enabledConnectionIds,
+       ),
+       disabledConnectionIds = List<ConnectionId>.unmodifiable(
+         disabledConnectionIds,
+       ),
        componentNodeIds = _freezeOwnerMap<ComponentId>(componentNodeIds),
        sourceNodeIds = _freezeOwnerMap<SourceId>(sourceNodeIds),
        componentBranches = List<TopologyBranch>.unmodifiable(componentBranches),
@@ -77,14 +80,18 @@ final class TopologyGraph {
   TopologyNode nodeForTerminal(TerminalId terminalId) {
     final String? nodeId = terminalToNode[terminalId];
     if (nodeId == null) {
-      throw StateError('Terminal ${terminalId.value} is not present in topology.');
+      throw StateError(
+        'Terminal ${terminalId.value} is not present in topology.',
+      );
     }
     return nodes.firstWhere((TopologyNode node) => node.id == nodeId);
   }
 
   List<TopologyBranch> branchesForComponent(ComponentId componentId) =>
       List<TopologyBranch>.unmodifiable(
-        componentBranches.where((TopologyBranch branch) => branch.componentId == componentId),
+        componentBranches.where(
+          (TopologyBranch branch) => branch.componentId == componentId,
+        ),
       );
 }
 

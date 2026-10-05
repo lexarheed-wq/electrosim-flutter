@@ -13,13 +13,14 @@ import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_student_web_bundle.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
-typedef F18SessionWorkspaceBuilder = Widget Function(
-  BuildContext context,
-  ElectroSimTpSessionController controller,
-  String workspace,
-  VoidCallback onDashboard,
-  VoidCallback onManageSession,
-);
+typedef F18SessionWorkspaceBuilder =
+    Widget Function(
+      BuildContext context,
+      ElectroSimTpSessionController controller,
+      String workspace,
+      VoidCallback onDashboard,
+      VoidCallback onManageSession,
+    );
 
 class F18TeacherSessionCoordinatorPage extends StatefulWidget {
   const F18TeacherSessionCoordinatorPage({
@@ -69,8 +70,11 @@ class _F18TeacherSessionCoordinatorPageState
         sessionName: widget.sessionName,
         sessionCode: widget.sessionCode,
         connectedStudents: host?.connectedStudents.length ?? 0,
-        connectedStudentNames: host?.connectedStudents
-                .map((ElectroSimConnectedStudent student) => student.displayName)
+        connectedStudentNames:
+            host?.connectedStudents
+                .map(
+                  (ElectroSimConnectedStudent student) => student.displayName,
+                )
                 .toList(growable: false) ??
             const <String>[],
         joinUrl: _lanInfo?.preferredJoinUrl,
@@ -108,7 +112,8 @@ class _F18TeacherSessionCoordinatorPageState
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         settings: RouteSettings(
-          name: 'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-setup',
+          name:
+              'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-setup',
         ),
         builder: (BuildContext setupContext) => F18ActivitySetupPage(
           pageKey: Key(
@@ -134,15 +139,15 @@ class _F18TeacherSessionCoordinatorPageState
     Navigator.of(setupContext).push(
       MaterialPageRoute<void>(
         settings: RouteSettings(
-          name: 'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-workspace',
+          name:
+              'session-${workspace == 'Câblage' ? 'cabling' : 'troubleshooting'}-workspace',
         ),
         builder: (BuildContext routeContext) => widget.workspaceBuilder(
           routeContext,
           _controller,
           workspace,
           () => Navigator.of(routeContext).popUntil(
-            (Route<dynamic> route) =>
-                route.settings.name == 'teacher-session',
+            (Route<dynamic> route) => route.settings.name == 'teacher-session',
           ),
           () {
             unawaited(_showManageSession());
@@ -314,26 +319,26 @@ class F18SessionSupervisionPage extends StatelessWidget {
                     final ElectroSimLanSyncHost? host = lanHost;
                     final List<F17StudentSupervisionItem> students =
                         proofStudents ??
-                            host?.studentSupervisionStates
-                                .map(
-                                  (ElectroSimStudentSupervisionState state) =>
-                                      F17StudentSupervisionItem(
+                        host?.studentSupervisionStates
+                            .map(
+                              (ElectroSimStudentSupervisionState state) =>
+                                  F17StudentSupervisionItem(
                                     clientId: state.clientId,
                                     displayName: state.displayName,
                                     connected: state.connected,
                                     session: state.session,
-                                    lastActivityAtUtc:
-                                        state.lastActivityAtUtc,
+                                    lastActivityAtUtc: state.lastActivityAtUtc,
                                   ),
-                                )
-                                .toList(growable: false) ??
-                            const <F17StudentSupervisionItem>[];
+                            )
+                            .toList(growable: false) ??
+                        const <F17StudentSupervisionItem>[];
 
                     return F18LiveSupervisionPanel(
                       controller: controller,
                       students: students,
                       initialSelectedClientId: initialSelectedClientId,
-                      onGradeStudent: onGradeStudentOverride ??
+                      onGradeStudent:
+                          onGradeStudentOverride ??
                           (host == null
                               ? null
                               : (F17StudentGradeRequest request) {
@@ -342,7 +347,8 @@ class F18SessionSupervisionPage extends StatelessWidget {
                                     score: request.score,
                                   );
                                 }),
-                      onCloseStudent: onCloseStudentOverride ??
+                      onCloseStudent:
+                          onCloseStudentOverride ??
                           (host == null
                               ? null
                               : (String clientId) {
@@ -359,4 +365,3 @@ class F18SessionSupervisionPage extends StatelessWidget {
     );
   }
 }
-

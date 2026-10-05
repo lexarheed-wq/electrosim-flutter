@@ -9,9 +9,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _ensureContextOpen(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimContextRegionKey);
-  final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).left >= width) {
+  final double width =
+      tester.view.physicalSize.width / tester.view.devicePixelRatio;
+  if (region.evaluate().isEmpty || tester.getRect(region).left >= width) {
     await tester.tap(find.byKey(electroSimContextEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -21,8 +21,8 @@ void main() {
   group('F17-R10 PV and energy runtime routing', () {
     test('routes a nominal PV circuit through SolverPV', () {
       final CircuitState circuit = _pvCircuit(loadPowerAt230W: 2000.0);
-      final ElectroSimRuntimeSnapshot snapshot =
-          const ElectroSimRuntimeEngine().evaluate(circuit);
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(circuit);
 
       expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
       expect(snapshot.solved, isTrue);
@@ -36,10 +36,8 @@ void main() {
     });
 
     test('converts the solved PV result into a balanced energy sample', () {
-      final ElectroSimRuntimeSnapshot snapshot =
-          const ElectroSimRuntimeEngine().evaluate(
-        _pvCircuit(loadPowerAt230W: 1900.0),
-      );
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(_pvCircuit(loadPowerAt230W: 1900.0));
 
       final EnergyPowerSample sample = snapshot.energyPowerSample();
 
@@ -53,10 +51,8 @@ void main() {
     });
 
     test('accumulates energy only from explicit simulation duration', () {
-      final ElectroSimRuntimeSnapshot snapshot =
-          const ElectroSimRuntimeEngine().evaluate(
-        _pvCircuit(loadPowerAt230W: 1900.0),
-      );
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(_pvCircuit(loadPowerAt230W: 1900.0));
 
       final EnergySnapshot zeroTime = snapshot.advanceEnergy(
         elapsed: Duration.zero,
@@ -77,8 +73,8 @@ void main() {
 
     test('an unsolved PV circuit cannot fabricate energy', () {
       final CircuitState invalid = _pvCircuit(disconnectDcPositive: true);
-      final ElectroSimRuntimeSnapshot snapshot =
-          const ElectroSimRuntimeEngine().evaluate(invalid);
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(invalid);
 
       expect(snapshot.solved, isFalse);
       expect(snapshot.energyAvailable, isFalse);
@@ -94,8 +90,9 @@ void main() {
       );
     });
 
-    testWidgets('workspace renders PV evidence from the runtime snapshot',
-        (WidgetTester tester) async {
+    testWidgets('workspace renders PV evidence from the runtime snapshot', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1440, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -117,11 +114,15 @@ void main() {
       expect(find.byKey(const Key('pv-runtime-status')), findsOneWidget);
       expect(find.text('Solveur PV actif'), findsOneWidget);
       expect(
-        tester.widget<Text>(find.byKey(const Key('pv-irradiance-reading'))).data,
+        tester
+            .widget<Text>(find.byKey(const Key('pv-irradiance-reading')))
+            .data,
         '1000.0 W/m²',
       );
       expect(
-        tester.widget<Text>(find.byKey(const Key('pv-output-power-reading'))).data,
+        tester
+            .widget<Text>(find.byKey(const Key('pv-output-power-reading')))
+            .data,
         '2000.0 W',
       );
       expect(find.byKey(const Key('pv-energy-time-policy')), findsOneWidget);
@@ -134,8 +135,8 @@ void main() {
         revision: 0,
         mode: ElectricalMode.dc,
       );
-      final ElectroSimRuntimeSnapshot snapshot =
-          const ElectroSimRuntimeEngine().evaluate(dc);
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(dc);
 
       expect(snapshot.energyAvailable, isFalse);
       expect(

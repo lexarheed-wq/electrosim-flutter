@@ -23,9 +23,9 @@ void main() {
 
     test('missing receiver keys means no receiver rating', () {
       expect(
-        ReceiverNominalRating.tryFromParameters(
-          const <String, Object?>{'resistanceOhm': 12},
-        ),
+        ReceiverNominalRating.tryFromParameters(const <String, Object?>{
+          'resistanceOhm': 12,
+        }),
         isNull,
       );
     });
@@ -36,9 +36,9 @@ void main() {
         throwsA(isA<DomainException>()),
       );
       expect(
-        () => ReceiverNominalRating.tryFromParameters(
-          const <String, Object?>{'receiverNominalCurrentA': '2.5'},
-        ),
+        () => ReceiverNominalRating.tryFromParameters(const <String, Object?>{
+          'receiverNominalCurrentA': '2.5',
+        }),
         throwsA(isA<DomainException>()),
       );
     });
@@ -47,10 +47,9 @@ void main() {
   group('ProtectionRating', () {
     test('uses a protection-specific calibre key', () {
       final ProtectionRating rating = ProtectionRating(ratedCurrentA: 10);
-      expect(
-        rating.toParameters(),
-        <String, Object?>{'protectionRatedCurrentA': 10.0},
-      );
+      expect(rating.toParameters(), <String, Object?>{
+        'protectionRatedCurrentA': 10.0,
+      });
       expect(ProtectionRating.tryFromParameters(rating.toParameters()), rating);
     });
 

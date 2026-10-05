@@ -10,8 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _openPalette(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimPaletteRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).right <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).right <= 0) {
     await tester.tap(find.byKey(electroSimPaletteEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -21,8 +20,7 @@ Future<void> _openContext(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimContextRegionKey);
   final double width =
       tester.view.physicalSize.width / tester.view.devicePixelRatio;
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).left >= width) {
+  if (region.evaluate().isEmpty || tester.getRect(region).left >= width) {
     await tester.tap(find.byKey(electroSimContextEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -30,8 +28,7 @@ Future<void> _openContext(WidgetTester tester) async {
 
 Future<void> _openTop(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).bottom <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
     await tester.tap(find.byKey(electroSimTopEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -56,26 +53,36 @@ Future<void> _waitForSessionReady(
 }
 
 void main() {
-  testWidgets('home exposes exactly the three validated first-level entries', (WidgetTester tester) async {
+  testWidgets('home exposes exactly the three validated first-level entries', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const app.ElectroSimApp());
     expect(find.text('Créer une nouvelle session'), findsOneWidget);
     expect(find.text('Centre de maintenance'), findsOneWidget);
     expect(find.text('Centre de conception'), findsOneWidget);
   });
 
-  testWidgets('medium home keeps first two actions on the same row', (WidgetTester tester) async {
+  testWidgets('medium home keeps first two actions on the same row', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const app.ElectroSimApp());
-    final Rect first = tester.getRect(find.byKey(const Key('home-create-session')));
-    final Rect second = tester.getRect(find.byKey(const Key('home-maintenance')));
+    final Rect first = tester.getRect(
+      find.byKey(const Key('home-create-session')),
+    );
+    final Rect second = tester.getRect(
+      find.byKey(const Key('home-maintenance')),
+    );
     expect((first.top - second.top).abs(), lessThan(1));
   });
 
-  testWidgets('active session opens persistent dashboard before simulator', (WidgetTester tester) async {
+  testWidgets('active session opens persistent dashboard before simulator', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -105,7 +112,9 @@ void main() {
     expect(find.byType(SimulatorCanvas), findsNothing);
   });
 
-  testWidgets('dashboard groups wiring troubleshooting and supervision', (WidgetTester tester) async {
+  testWidgets('dashboard groups wiring troubleshooting and supervision', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(820, 1180);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -133,38 +142,46 @@ void main() {
     expect(find.text('Recherche de dérangement'), findsNothing);
   });
 
-  testWidgets('maintenance requires explicit troubleshooting choice before simulator', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(820, 1180);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'maintenance requires explicit troubleshooting choice before simulator',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(820, 1180);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const app.ElectroSimApp());
-    await tester.tap(find.text('Centre de maintenance'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const app.ElectroSimApp());
+      await tester.tap(find.text('Centre de maintenance'));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
-    expect(find.byKey(const Key('maintenance-troubleshooting')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsNothing);
+      expect(find.byKey(const Key('maintenance-center-page')), findsOneWidget);
+      expect(
+        find.byKey(const Key('maintenance-troubleshooting')),
+        findsOneWidget,
+      );
+      expect(find.byType(SimulatorCanvas), findsNothing);
 
-    await tester.tap(find.byKey(const Key('maintenance-troubleshooting')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('maintenance-troubleshooting')));
+      await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('maintenance-troubleshooting-setup-page')),
-      findsOneWidget,
-    );
-    expect(find.byType(SimulatorCanvas), findsNothing);
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
-    await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('maintenance-troubleshooting-setup-page')),
+        findsOneWidget,
+      );
+      expect(find.byType(SimulatorCanvas), findsNothing);
+      await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Recherche de dérangement'), findsWidgets);
-    expect(find.byKey(const Key('session-dashboard-action')), findsNothing);
-    expect(find.byKey(const Key('workspace-exit-action')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsOneWidget);
-  });
+      expect(find.text('Recherche de dérangement'), findsWidgets);
+      expect(find.byKey(const Key('session-dashboard-action')), findsNothing);
+      expect(find.byKey(const Key('workspace-exit-action')), findsOneWidget);
+      expect(find.byType(SimulatorCanvas), findsOneWidget);
+    },
+  );
 
-  testWidgets('workspace keeps validated F8 Canvas interactions mounted', (WidgetTester tester) async {
+  testWidgets('workspace keeps validated F8 Canvas interactions mounted', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -177,7 +194,9 @@ void main() {
     expect(find.byType(SimulatorCanvas), findsOneWidget);
   });
 
-  testWidgets('compact workspace has no permanent side panels', (WidgetTester tester) async {
+  testWidgets('compact workspace has no permanent side panels', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -193,8 +212,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-
-  testWidgets('palette search and one-way show-all remain deterministic', (WidgetTester tester) async {
+  testWidgets('palette search and one-way show-all remain deterministic', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -233,27 +253,47 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('palette quick add creates a real CircuitState element and selects it', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'palette quick add creates a real CircuitState element and selects it',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await _openPalette(tester);
-    expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('3 éléments · 1 source'));
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await _openPalette(tester);
+      expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
+      expect(
+        (tester.widget<Text>(
+          find.byKey(const Key('status-circuit-count')),
+        )).data,
+        contains('3 éléments · 1 source'),
+      );
 
-    await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
+      await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Résistance'));
-    expect(find.textContaining('resistor-1'), findsWidgets);
-    expect(tester.takeException(), isNull);
-  });
+      expect(
+        (tester.widget<Text>(
+          find.byKey(const Key('status-circuit-count')),
+        )).data,
+        contains('4 éléments · 1 source'),
+      );
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Ajout : Résistance'),
+      );
+      expect(find.textContaining('resistor-1'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('palette allocation never collides with an existing element id', (WidgetTester tester) async {
+  testWidgets('palette allocation never collides with an existing element id', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -264,13 +304,21 @@ void main() {
     await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Lampe'));
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data,
+      contains('4 éléments · 1 source'),
+    );
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+      contains('Ajout : Lampe'),
+    );
     expect(find.textContaining('lamp-2'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('drag from palette drops a component on the canvas', (WidgetTester tester) async {
+  testWidgets('drag from palette drops a component on the canvas', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -293,125 +341,145 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect((tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data, contains('4 éléments · 1 source'));
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Ajout : Résistance'));
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data,
+      contains('4 éléments · 1 source'),
+    );
+    expect(
+      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+      contains('Ajout : Résistance'),
+    );
     expect(find.textContaining('resistor-1'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('switch actuates only from a double-click on its physical rocker',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'switch actuates only from a double-click on its physical rocker',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    ComponentInstance switchComponent = canvas.circuit.components.firstWhere(
-      (ComponentInstance item) => item.id.value == 'switch-1',
-    );
-    expect(switchComponent.controlState['closed'], isTrue);
+      SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      ComponentInstance switchComponent = canvas.circuit.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'switch-1',
+      );
+      expect(switchComponent.controlState['closed'], isTrue);
 
-    final Finder visual =
-        find.byKey(const ValueKey<String>('board-v1-visual-switch-1'));
-    expect(visual, findsOneWidget);
-    final Rect rect = tester.getRect(visual);
+      final Finder visual = find.byKey(
+        const ValueKey<String>('board-v1-visual-switch-1'),
+      );
+      expect(visual, findsOneWidget);
+      final Rect rect = tester.getRect(visual);
 
-    // Carcass double-click: selected but not actuated.
-    final Offset carcass = Offset(rect.left + rect.width * .08,
-        rect.top + rect.height * .08);
-    await tester.tapAt(carcass);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tapAt(carcass);
-    await tester.pump(const Duration(milliseconds: 30));
+      // Carcass double-click: selected but not actuated.
+      final Offset carcass = Offset(
+        rect.left + rect.width * .08,
+        rect.top + rect.height * .08,
+      );
+      await tester.tapAt(carcass);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tapAt(carcass);
+      await tester.pump(const Duration(milliseconds: 30));
 
-    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    switchComponent = canvas.circuit.components.firstWhere(
-      (ComponentInstance item) => item.id.value == 'switch-1',
-    );
-    expect(switchComponent.controlState['closed'], isTrue);
+      canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      switchComponent = canvas.circuit.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'switch-1',
+      );
+      expect(switchComponent.controlState['closed'], isTrue);
 
-    // Rocker double-click: real actuation.
-    final Offset rocker = rect.center;
-    await tester.tapAt(rocker);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tapAt(rocker);
-    await tester.pump(const Duration(milliseconds: 30));
+      // Rocker double-click: real actuation.
+      final Offset rocker = rect.center;
+      await tester.tapAt(rocker);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tapAt(rocker);
+      await tester.pump(const Duration(milliseconds: 30));
 
-    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    switchComponent = canvas.circuit.components.firstWhere(
-      (ComponentInstance item) => item.id.value == 'switch-1',
-    );
-    expect(switchComponent.controlState['closed'], isFalse);
-    expect(
-      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
-      contains('Commande directe : switch-1 — ouvert'),
-    );
+      canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      switchComponent = canvas.circuit.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'switch-1',
+      );
+      expect(switchComponent.controlState['closed'], isFalse);
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Commande directe : switch-1 — ouvert'),
+      );
 
-    await _openContext(tester);
-    expect(find.byKey(const Key('properties-primary-toggle')), findsNothing);
-    expect(find.byKey(const Key('properties-direct-control-hint')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      await _openContext(tester);
+      expect(find.byKey(const Key('properties-primary-toggle')), findsNothing);
+      expect(
+        find.byKey(const Key('properties-direct-control-hint')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('push button double-click produces a momentary press and release',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'push button double-click produces a momentary press and release',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: app.F9WorkspaceDemoPage(
-          initialCircuit: _seriesControlCircuit(
-            modelType: 'push_button_no',
-            elementId: 'push-1',
-            controlState: const <String, Object?>{'pressed': false},
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: _seriesControlCircuit(
+              modelType: 'push_button_no',
+              elementId: 'push-1',
+              controlState: const <String, Object?>{'pressed': false},
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final Finder visual =
-        find.byKey(const ValueKey<String>('board-v1-visual-push-1'));
-    final Rect rect = tester.getRect(visual);
-    final Offset head = Offset(
-      rect.left + rect.width * .5,
-      rect.top + rect.height * (58 / 140),
-    );
+      final Finder visual = find.byKey(
+        const ValueKey<String>('board-v1-visual-push-1'),
+      );
+      final Rect rect = tester.getRect(visual);
+      final Offset head = Offset(
+        rect.left + rect.width * .5,
+        rect.top + rect.height * (58 / 140),
+      );
 
-    await tester.tapAt(head);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.tapAt(head);
-    await tester.pump(const Duration(milliseconds: 20));
+      await tester.tapAt(head);
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.tapAt(head);
+      await tester.pump(const Duration(milliseconds: 20));
 
-    SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    ComponentInstance button = canvas.circuit.components.firstWhere(
-      (ComponentInstance item) => item.id.value == 'push-1',
-    );
-    expect(button.controlState['pressed'], isTrue);
+      SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      ComponentInstance button = canvas.circuit.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'push-1',
+      );
+      expect(button.controlState['pressed'], isTrue);
 
-    await tester.pump(const Duration(milliseconds: 300));
-    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    button = canvas.circuit.components.firstWhere(
-      (ComponentInstance item) => item.id.value == 'push-1',
-    );
-    expect(button.controlState['pressed'], isFalse);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.pump(const Duration(milliseconds: 300));
+      canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      button = canvas.circuit.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'push-1',
+      );
+      expect(button.controlState['pressed'], isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('breaker handle double-click opens and recloses the breaker',
-      (WidgetTester tester) async {
+  testWidgets('breaker handle double-click opens and recloses the breaker', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -433,8 +501,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final Finder visual =
-        find.byKey(const ValueKey<String>('board-v1-visual-breaker-1'));
+    final Finder visual = find.byKey(
+      const ValueKey<String>('board-v1-visual-breaker-1'),
+    );
     final Rect rect = tester.getRect(visual);
     final Offset handle = Offset(
       rect.left + rect.width * .5,
@@ -449,8 +518,9 @@ void main() {
     }
 
     await doubleClickHandle();
-    SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
     ComponentInstance breaker = canvas.circuit.components.firstWhere(
       (ComponentInstance item) => item.id.value == 'breaker-1',
     );
@@ -465,95 +535,99 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'selected wire is deletable from the topbar without deleting components',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-  testWidgets('selected wire is deletable from the topbar without deleting components',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(
-          initialSelectedElementId: 'wire-2',
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'wire-2'),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    expect(canvas.circuit.connections.length, 3);
-    expect(canvas.circuit.components.length, 2);
+      SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      expect(canvas.circuit.connections.length, 3);
+      expect(canvas.circuit.components.length, 2);
 
-    await _openTop(tester);
-    final IconButton deleteButton = tester.widget<IconButton>(
-      find.byKey(const Key('workspace-delete-action')),
-    );
-    expect(deleteButton.onPressed, isNotNull);
+      await _openTop(tester);
+      final IconButton deleteButton = tester.widget<IconButton>(
+        find.byKey(const Key('workspace-delete-action')),
+      );
+      expect(deleteButton.onPressed, isNotNull);
 
-    await tester.tap(find.byKey(const Key('workspace-delete-action')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-delete-action')));
+      await tester.pumpAndSettle();
 
-    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    expect(
-      canvas.circuit.connections
-          .map((Connection item) => item.id.value),
-      isNot(contains('wire-2')),
-    );
-    expect(canvas.circuit.connections.length, 2);
-    expect(canvas.circuit.components.length, 2);
-    expect(
-      (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
-      contains('Suppression : fil — wire-2'),
-    );
-    expect(tester.takeException(), isNull);
-  });
+      canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      expect(
+        canvas.circuit.connections.map((Connection item) => item.id.value),
+        isNot(contains('wire-2')),
+      );
+      expect(canvas.circuit.connections.length, 2);
+      expect(canvas.circuit.components.length, 2);
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Suppression : fil — wire-2'),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('selected wire is described in Properties and Delete key removes it',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'selected wire is described in Properties and Delete key removes it',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(
-          initialSelectedElementId: 'wire-1',
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'wire-1'),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await _openContext(tester);
+      );
+      await tester.pumpAndSettle();
+      await _openContext(tester);
 
-    expect(
-      (tester.widget<Text>(find.byKey(const Key('properties-model-type')))).data,
-      'Fil',
-    );
-    expect(
-      (tester.widget<Text>(find.byKey(const Key('properties-element-id')))).data,
-      'wire-1',
-    );
-    expect(find.text('Fil · wire-1'), findsOneWidget);
+      expect(
+        (tester.widget<Text>(
+          find.byKey(const Key('properties-model-type')),
+        )).data,
+        'Fil',
+      );
+      expect(
+        (tester.widget<Text>(
+          find.byKey(const Key('properties-element-id')),
+        )).data,
+        'wire-1',
+      );
+      expect(find.text('Fil · wire-1'), findsOneWidget);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
-    await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      await tester.pumpAndSettle();
 
-    final SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    expect(
-      canvas.circuit.connections
-          .map((Connection item) => item.id.value),
-      isNot(contains('wire-1')),
-    );
-    expect(canvas.circuit.connections.length, 2);
-    expect(tester.takeException(), isNull);
-  });
+      final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      expect(
+        canvas.circuit.connections.map((Connection item) => item.id.value),
+        isNot(contains('wire-1')),
+      );
+      expect(canvas.circuit.connections.length, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-
-  testWidgets('diagnostic sheet exists only for student troubleshooting', (WidgetTester tester) async {
+  testWidgets('diagnostic sheet exists only for student troubleshooting', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -587,7 +661,62 @@ void main() {
     expect(find.byKey(const Key('diagnostic-symptom')), findsOneWidget);
   });
 
-  testWidgets('keyboard selector provides an alternative to pointer-only selection', (WidgetTester tester) async {
+  testWidgets(
+    'keyboard selector provides an alternative to pointer-only selection',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await tester.pumpAndSettle();
+      await _openContext(tester);
+      await tester.tap(find.byKey(const Key('properties-element-selector')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lampe · lamp-1').last);
+      await tester.pumpAndSettle();
+      expect(find.text('lamp-1'), findsWidgets);
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Sélection clavier'),
+      );
+    },
+  );
+
+  testWidgets(
+    'escape shortcut resets canvas interaction without mutating circuit revision',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await tester.pumpAndSettle();
+      final String before = (tester.widget<Text>(
+        find.byKey(const Key('status-circuit-count')),
+      )).data!;
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('annulée'),
+      );
+      final String after = (tester.widget<Text>(
+        find.byKey(const Key('status-circuit-count')),
+      )).data!;
+      expect(after, before);
+    },
+  );
+
+  testWidgets('breakpoint transition does not mutate CircuitState', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -595,40 +724,9 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
-    await _openContext(tester);
-    await tester.tap(find.byKey(const Key('properties-element-selector')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Lampe · lamp-1').last);
-    await tester.pumpAndSettle();
-    expect(find.text('lamp-1'), findsWidgets);
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Sélection clavier'));
-  });
-
-  testWidgets('escape shortcut resets canvas interaction without mutating circuit revision', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await tester.pumpAndSettle();
-    final String before = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('annulée'));
-    final String after = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
-    expect(after, before);
-  });
-
-  testWidgets('breakpoint transition does not mutate CircuitState', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await tester.pumpAndSettle();
-    final String before = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
+    final String before = (tester.widget<Text>(
+      find.byKey(const Key('status-circuit-count')),
+    )).data!;
     expect(before, contains('Révision 1'));
 
     tester.view.physicalSize = const Size(390, 844);
@@ -636,78 +734,105 @@ void main() {
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(1440, 900);
     await tester.pumpAndSettle();
-    final String after = (tester.widget<Text>(find.byKey(const Key('status-circuit-count')))).data!;
+    final String after = (tester.widget<Text>(
+      find.byKey(const Key('status-circuit-count')),
+    )).data!;
     expect(after, before);
   });
 
-  testWidgets('selected component can be replaced without losing its identity', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'selected component can be replaced without losing its identity',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1')),
-    );
-    await tester.pumpAndSettle();
-    await _openContext(tester);
-    await tester.tap(find.byKey(const Key('properties-replace-element')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('replace-resistor')));
-    await tester.pumpAndSettle();
-    expect(find.text('Résistance'), findsWidgets);
-    expect(find.text('switch-1'), findsWidgets);
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Remplacement'));
-  });
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _openContext(tester);
+      await tester.tap(find.byKey(const Key('properties-replace-element')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('replace-resistor')));
+      await tester.pumpAndSettle();
+      expect(find.text('Résistance'), findsWidgets);
+      expect(find.text('switch-1'), findsWidgets);
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Remplacement'),
+      );
+    },
+  );
 
+  testWidgets(
+    'compact layout tolerates increased text scale without overflow',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-  testWidgets('compact layout tolerates increased text scale without overflow', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.35)),
+          child: const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(SimulatorCanvas), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-    await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(textScaler: TextScaler.linear(1.35)),
-        child: const MaterialApp(home: app.F9WorkspaceDemoPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byType(SimulatorCanvas), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'F9 component moves immediately with pointer drag and canvas is clipped',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await tester.pumpAndSettle();
 
-  testWidgets('F9 component moves immediately with pointer drag and canvas is clipped', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1440, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      final Finder canvas = find.byType(SimulatorCanvas);
+      expect(canvas, findsOneWidget);
+      expect(
+        find.ancestor(of: canvas, matching: find.byType(ClipRect)),
+        findsWidgets,
+      );
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
-    await tester.pumpAndSettle();
+      final SimulatorCanvas canvasWidget = tester.widget<SimulatorCanvas>(
+        canvas,
+      );
+      final Offset canvasTopLeft = tester.getTopLeft(canvas);
+      final Offset switchWorld = canvasWidget.layout.positionOf('switch-1')!;
+      final Offset switchLocal = canvasWidget.viewportController!.worldToScreen(
+        switchWorld,
+      );
+      final Offset switchCenter = canvasTopLeft + switchLocal;
+      final TestGesture gesture = await tester.startGesture(switchCenter);
+      await gesture.moveBy(
+        const Offset(72, 24),
+        timeStamp: const Duration(milliseconds: 60),
+      );
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
 
-    final Finder canvas = find.byType(SimulatorCanvas);
-    expect(canvas, findsOneWidget);
-    expect(find.ancestor(of: canvas, matching: find.byType(ClipRect)), findsWidgets);
-
-    final SimulatorCanvas canvasWidget = tester.widget<SimulatorCanvas>(canvas);
-    final Offset canvasTopLeft = tester.getTopLeft(canvas);
-    final Offset switchWorld = canvasWidget.layout.positionOf('switch-1')!;
-    final Offset switchLocal =
-        canvasWidget.viewportController!.worldToScreen(switchWorld);
-    final Offset switchCenter = canvasTopLeft + switchLocal;
-    final TestGesture gesture = await tester.startGesture(switchCenter);
-    await gesture.moveBy(const Offset(72, 24), timeStamp: const Duration(milliseconds: 60));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-
-    expect((tester.widget<Text>(find.byKey(const Key('status-message')))).data, contains('Position graphique mise à jour'));
-    expect(tester.takeException(), isNull);
-  });
-
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-message')))).data,
+        contains('Position graphique mise à jour'),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 CircuitState _seriesControlCircuit({
@@ -796,4 +921,3 @@ CircuitState _seriesControlCircuit({
     ],
   );
 }
-

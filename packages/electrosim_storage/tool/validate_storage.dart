@@ -5,7 +5,9 @@ import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 
 Future<void> main() async {
-  final Directory temp = await Directory.systemTemp.createTemp('electrosim-f14-validator-');
+  final Directory temp = await Directory.systemTemp.createTemp(
+    'electrosim-f14-validator-',
+  );
   try {
     final LocalStorageRepository repository = LocalStorageRepository(temp);
     final circuit = buildF10ExampleRepository().all.first.circuit;
@@ -18,7 +20,9 @@ Future<void> main() async {
       engineVersion: 'validator',
     );
     await repository.save(document);
-    final SavedCircuitDocument reopened = await repository.open(document.saveId);
+    final SavedCircuitDocument reopened = await repository.open(
+      document.saveId,
+    );
     final ExportService exports = const ExportService();
     final Map<String, Object?> report = <String, Object?>{
       'phase': 'F14-R1',

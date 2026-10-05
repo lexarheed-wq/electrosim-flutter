@@ -60,10 +60,14 @@ final class CircuitState {
           )
           .toList(growable: false),
       connections: requireList(json, 'connections')
-          .map<Connection>((Object? value) => Connection.fromJson(value! as JsonMap))
+          .map<Connection>(
+            (Object? value) => Connection.fromJson(value! as JsonMap),
+          )
           .toList(growable: false),
       sources: requireList(json, 'sources')
-          .map<SourceInstance>((Object? value) => SourceInstance.fromJson(value! as JsonMap))
+          .map<SourceInstance>(
+            (Object? value) => SourceInstance.fromJson(value! as JsonMap),
+          )
           .toList(growable: false),
       settings: requireMap(json, 'settings'),
       metadata: requireMap(json, 'metadata'),
@@ -103,7 +107,9 @@ final class CircuitState {
     'connections': connections
         .map<JsonMap>((Connection item) => item.toJson())
         .toList(),
-    'sources': sources.map<JsonMap>((SourceInstance item) => item.toJson()).toList(),
+    'sources': sources
+        .map<JsonMap>((SourceInstance item) => item.toJson())
+        .toList(),
     'settings': settings,
     'metadata': metadata,
   };
@@ -144,7 +150,8 @@ final class CircuitState {
           !terminalIds.contains(connection.toTerminalId)) {
         throw DomainException(
           code: DomainErrorCode.invalidTerminalReference,
-          message: 'Connection ${connection.id.value} references an unknown terminal.',
+          message:
+              'Connection ${connection.id.value} references an unknown terminal.',
           context: <String, Object?>{
             'connectionId': connection.id.value,
             'fromTerminalId': connection.fromTerminalId.value,

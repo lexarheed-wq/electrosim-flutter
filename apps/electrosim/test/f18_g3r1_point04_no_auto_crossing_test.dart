@@ -4,25 +4,26 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim/f18_workspace_wire_safety.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Terminal _terminal(String id) => Terminal(
-      id: TerminalId(id),
-      name: id,
-      role: TerminalRole.input,
-    );
+Terminal _terminal(String id) =>
+    Terminal(id: TerminalId(id), name: id, role: TerminalRole.input);
 
 ComponentInstance _component(String id, Terminal terminal) => ComponentInstance(
-      id: ComponentId(id),
-      modelType: 'test',
-      terminals: <Terminal>[terminal],
-    );
+  id: ComponentId(id),
+  modelType: 'test',
+  terminals: <Terminal>[terminal],
+);
 
 void main() {
-  test('real workspace enforces crossing safety on connection and drag commits', () {
-    final String source = File('lib/main.dart').readAsStringSync();
-    final int uses =
-        'F18WorkspaceWireSafety.isCrossingFree'.allMatches(source).length;
-    expect(uses, greaterThanOrEqualTo(2));
-  });
+  test(
+    'real workspace enforces crossing safety on connection and drag commits',
+    () {
+      final String source = File('lib/main.dart').readAsStringSync();
+      final int uses = 'F18WorkspaceWireSafety.isCrossingFree'
+          .allMatches(source)
+          .length;
+      expect(uses, greaterThanOrEqualTo(2));
+    },
+  );
 
   test('different-net geometric crossing is rejected', () {
     final Terminal a = _terminal('a');
@@ -65,10 +66,7 @@ void main() {
     );
 
     expect(
-      F18WorkspaceWireSafety.isCrossingFree(
-        circuit: circuit,
-        layout: layout,
-      ),
+      F18WorkspaceWireSafety.isCrossingFree(circuit: circuit, layout: layout),
       isFalse,
     );
   });
@@ -114,10 +112,7 @@ void main() {
     );
 
     expect(
-      F18WorkspaceWireSafety.isCrossingFree(
-        circuit: circuit,
-        layout: layout,
-      ),
+      F18WorkspaceWireSafety.isCrossingFree(circuit: circuit, layout: layout),
       isTrue,
     );
   });

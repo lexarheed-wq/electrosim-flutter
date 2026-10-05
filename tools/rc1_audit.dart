@@ -27,7 +27,9 @@ void main(List<String> args) {
     },
   };
   final String output = const JsonEncoder.withIndent('  ').convert(report);
-  final String path = args.isEmpty ? 'docs/rc1/audit_release_candidate.json' : args.first;
+  final String path = args.isEmpty
+      ? 'docs/rc1/audit_release_candidate.json'
+      : args.first;
   final File file = File(path);
   file.parent.createSync(recursive: true);
   file.writeAsStringSync('$output\n');

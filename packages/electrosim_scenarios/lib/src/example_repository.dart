@@ -20,8 +20,9 @@ final class ExampleRepository {
     return null;
   }
 
-  List<ExampleValidationResult> validateAll() =>
-      _examples.map<ExampleValidationResult>(_validator.validate).toList(growable: false);
+  List<ExampleValidationResult> validateAll() => _examples
+      .map<ExampleValidationResult>(_validator.validate)
+      .toList(growable: false);
 
   static List<ExampleDefinition> _prepare(
     List<ExampleDefinition> examples,
@@ -35,7 +36,9 @@ final class ExampleRepository {
       }
       final ExampleValidationResult result = validator.validate(example);
       if (!result.isValid) {
-        final String details = result.issues.map((ExampleValidationIssue issue) => issue.code).join(', ');
+        final String details = result.issues
+            .map((ExampleValidationIssue issue) => issue.code)
+            .join(', ');
         throw ArgumentError('Invalid example ${example.id.value}: $details');
       }
       validated.add(example.withValidationStamp(result.stamp));

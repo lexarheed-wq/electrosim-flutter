@@ -151,13 +151,13 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
         final double paletteWidth = compact
             ? constraints.maxWidth * .88
             : medium
-                ? ElectroSimGeometry.mediumPanelWidth
-                : ElectroSimGeometry.expandedPaletteWidth;
+            ? ElectroSimGeometry.mediumPanelWidth
+            : ElectroSimGeometry.expandedPaletteWidth;
         final double contextWidth = compact
             ? constraints.maxWidth * .88
             : medium
-                ? ElectroSimGeometry.mediumPanelWidth
-                : ElectroSimGeometry.expandedContextWidth;
+            ? ElectroSimGeometry.mediumPanelWidth
+            : ElectroSimGeometry.expandedContextWidth;
 
         return Material(
           color: ElectroSimColors.surface,
@@ -260,19 +260,12 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             : ElectroSimColors.surfaceElevated.withValues(alpha: .92),
         borderRadius: BorderRadius.circular(8),
         boxShadow: const <BoxShadow>[
-          BoxShadow(
-            blurRadius: 4,
-            color: Color(0x22000000),
-          ),
+          BoxShadow(blurRadius: 4, color: Color(0x22000000)),
         ],
       ),
       alignment: Alignment.center,
       child: open
-          ? Icon(
-              icon,
-              size: 8,
-              color: ElectroSimColors.textSecondary,
-            )
+          ? Icon(icon, size: 8, color: ElectroSimColors.textSecondary)
           : null,
     );
 
@@ -369,11 +362,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                     top: 4,
                     right: left ? 4 : null,
                     left: left ? null : 4,
-                    child: _pinButton(
-                      panel: panel,
-                      key: pinKey,
-                      compact: true,
-                    ),
+                    child: _pinButton(panel: panel, key: pinKey, compact: true),
                   ),
                 ],
               ),
@@ -413,17 +402,9 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  if (!top)
-                    _horizontalPinRail(
-                      panel: panel,
-                      pinKey: pinKey,
-                    ),
+                  if (!top) _horizontalPinRail(panel: panel, pinKey: pinKey),
                   child,
-                  if (top)
-                    _horizontalPinRail(
-                      panel: panel,
-                      pinKey: pinKey,
-                    ),
+                  if (top) _horizontalPinRail(panel: panel, pinKey: pinKey),
                 ],
               ),
             ),
@@ -443,11 +424,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
         alignment: Alignment.centerRight,
         child: Padding(
           padding: const EdgeInsets.only(right: 4),
-          child: _pinButton(
-            panel: panel,
-            key: pinKey,
-            compact: true,
-          ),
+          child: _pinButton(panel: panel, key: pinKey, compact: true),
         ),
       ),
     );

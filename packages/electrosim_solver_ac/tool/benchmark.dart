@@ -87,7 +87,10 @@ CircuitState _benchmarkCircuit(int branches) {
           Terminal(id: TerminalId('vp'), name: 'L'),
           Terminal(id: TerminalId('vn'), name: 'N'),
         ],
-        parameters: const <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': 0.0},
+        parameters: const <String, Object?>{
+          'voltageRmsV': 230.0,
+          'phaseDeg': 0.0,
+        },
       ),
     ],
     settings: const <String, Object?>{'frequencyHz': 50.0},

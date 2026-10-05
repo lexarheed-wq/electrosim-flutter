@@ -123,14 +123,9 @@ void main() {
         'resistor': Offset(120, 408),
         'wall': Offset(120, 264),
       },
-      elementSizes: const <String, Size>{
-        'wall': Size(1000, 120),
-      },
+      elementSizes: const <String, Size>{'wall': Size(1000, 120)},
       wireRoutes: const <String, List<Offset>>{
-        'wire-a': <Offset>[
-          Offset(24, 120),
-          Offset(24, 408),
-        ],
+        'wire-a': <Offset>[Offset(24, 120), Offset(24, 408)],
       },
     );
 
@@ -142,85 +137,89 @@ void main() {
     expect(routed.routeFor('wire-a'), layout.routeFor('wire-a'));
   });
 
-  test('rotated terminal exits owner body through an outward orthogonal stub', () {
-    final Terminal aIn = Terminal(
-      id: TerminalId('a-in'),
-      name: '1',
-      role: TerminalRole.input,
-    );
-    final Terminal aOut = Terminal(
-      id: TerminalId('a-out'),
-      name: '2',
-      role: TerminalRole.output,
-    );
-    final Terminal bIn = Terminal(
-      id: TerminalId('b-in'),
-      name: '1',
-      role: TerminalRole.input,
-    );
-    final Terminal bOut = Terminal(
-      id: TerminalId('b-out'),
-      name: '2',
-      role: TerminalRole.output,
-    );
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('rotated-stub'),
-      revision: 1,
-      mode: ElectricalMode.dc,
-      components: <ComponentInstance>[
-        ComponentInstance(
-          id: ComponentId('A'),
-          modelType: 'switch',
-          terminals: <Terminal>[aIn, aOut],
-        ),
-        ComponentInstance(
-          id: ComponentId('B'),
-          modelType: 'lamp',
-          terminals: <Terminal>[bIn, bOut],
-        ),
-      ],
-      sources: const <SourceInstance>[],
-      connections: <Connection>[
-        Connection(
-          id: ConnectionId('wire'),
-          fromTerminalId: aOut.id,
-          toTerminalId: bIn.id,
-        ),
-      ],
-    );
-    final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'A': Offset(240, 240),
-        'B': Offset(528, 360),
-      },
-      elementQuarterTurns: const <String, int>{'A': 1},
-    );
+  test(
+    'rotated terminal exits owner body through an outward orthogonal stub',
+    () {
+      final Terminal aIn = Terminal(
+        id: TerminalId('a-in'),
+        name: '1',
+        role: TerminalRole.input,
+      );
+      final Terminal aOut = Terminal(
+        id: TerminalId('a-out'),
+        name: '2',
+        role: TerminalRole.output,
+      );
+      final Terminal bIn = Terminal(
+        id: TerminalId('b-in'),
+        name: '1',
+        role: TerminalRole.input,
+      );
+      final Terminal bOut = Terminal(
+        id: TerminalId('b-out'),
+        name: '2',
+        role: TerminalRole.output,
+      );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('rotated-stub'),
+        revision: 1,
+        mode: ElectricalMode.dc,
+        components: <ComponentInstance>[
+          ComponentInstance(
+            id: ComponentId('A'),
+            modelType: 'switch',
+            terminals: <Terminal>[aIn, aOut],
+          ),
+          ComponentInstance(
+            id: ComponentId('B'),
+            modelType: 'lamp',
+            terminals: <Terminal>[bIn, bOut],
+          ),
+        ],
+        sources: const <SourceInstance>[],
+        connections: <Connection>[
+          Connection(
+            id: ConnectionId('wire'),
+            fromTerminalId: aOut.id,
+            toTerminalId: bIn.id,
+          ),
+        ],
+      );
+      final CircuitVisualLayout layout = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'A': Offset(240, 240),
+          'B': Offset(528, 360),
+        },
+        elementQuarterTurns: const <String, int>{'A': 1},
+      );
 
-    final CircuitVisualLayout routed = engine.routeAll(
-      circuit: circuit,
-      layout: layout,
-    );
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, routed);
-    final Offset start = geometry.terminalPositions[aOut.id]!;
-    final Offset end = geometry.terminalPositions[bIn.id]!;
-    final List<Offset> points = <Offset>[
-      start,
-      ...routed.routeFor('wire'),
-      end,
-    ];
+      final CircuitVisualLayout routed = engine.routeAll(
+        circuit: circuit,
+        layout: layout,
+      );
+      final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+        circuit,
+        routed,
+      );
+      final Offset start = geometry.terminalPositions[aOut.id]!;
+      final Offset end = geometry.terminalPositions[bIn.id]!;
+      final List<Offset> points = <Offset>[
+        start,
+        ...routed.routeFor('wire'),
+        end,
+      ];
 
-    expect(points.length, greaterThanOrEqualTo(4));
-    expect(points[1].dx, start.dx);
-    expect(points[1].dy, greaterThan(start.dy));
-    expect(
-      OrthogonalWirePath(points: points).segments.every(
-        (OrthogonalSegment segment) =>
-            segment.axis == WireAxis.horizontal ||
-            segment.axis == WireAxis.vertical,
-      ),
-      isTrue,
-    );
-  });
-
+      expect(points.length, greaterThanOrEqualTo(4));
+      expect(points[1].dx, start.dx);
+      expect(points[1].dy, greaterThan(start.dy));
+      expect(
+        OrthogonalWirePath(points: points).segments.every(
+          (OrthogonalSegment segment) =>
+              segment.axis == WireAxis.horizontal ||
+              segment.axis == WireAxis.vertical,
+        ),
+        isTrue,
+      );
+    },
+  );
 }

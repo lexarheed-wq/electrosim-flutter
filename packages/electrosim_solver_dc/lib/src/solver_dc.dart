@@ -16,7 +16,8 @@ final class SolverDC {
 
   DcSolveResult solve(CircuitState circuit, TopologyGraph topology) {
     final List<DcSolverDiagnostic> diagnostics = <DcSolverDiagnostic>[];
-    if (circuit.mode != ElectricalMode.dc || topology.mode != ElectricalMode.dc) {
+    if (circuit.mode != ElectricalMode.dc ||
+        topology.mode != ElectricalMode.dc) {
       diagnostics.add(
         DcSolverDiagnostic(
           code: DcDiagnosticCode.wrongElectricalMode,
@@ -26,12 +27,14 @@ final class SolverDC {
       );
       return _failure(circuit, DcSolveStatus.invalid, diagnostics);
     }
-    if (circuit.circuitId != topology.circuitId || circuit.revision != topology.circuitRevision) {
+    if (circuit.circuitId != topology.circuitId ||
+        circuit.revision != topology.circuitRevision) {
       diagnostics.add(
         DcSolverDiagnostic(
           code: DcDiagnosticCode.topologyIdentityMismatch,
           severity: DcDiagnosticSeverity.error,
-          message: 'TopologyGraph does not match the CircuitState identity/revision.',
+          message:
+              'TopologyGraph does not match the CircuitState identity/revision.',
         ),
       );
       return _failure(circuit, DcSolveStatus.invalid, diagnostics);
@@ -62,7 +65,11 @@ final class SolverDC {
       }
     }
 
-    final _CompiledModel compiled = _compileModel(circuit, topology, diagnostics);
+    final _CompiledModel compiled = _compileModel(
+      circuit,
+      topology,
+      diagnostics,
+    );
     if (compiled.hasErrors || diagnostics.any(_isError)) {
       return _failure(circuit, DcSolveStatus.invalid, diagnostics);
     }
@@ -147,26 +154,26 @@ final class SolverDC {
           case _DiodeMode.off:
             if (forwardBias >
                 element.diodeForwardVoltageV! + options.residualTolerance) {
-              diodeUpdates[element.id] =
-                  element.withDiodeMode(_DiodeMode.forward);
+              diodeUpdates[element.id] = element.withDiodeMode(
+                _DiodeMode.forward,
+              );
             } else if (element.diodeReverseBreakdownVoltageV != null &&
                 forwardBias <
                     -element.diodeReverseBreakdownVoltageV! -
                         options.residualTolerance) {
-              diodeUpdates[element.id] =
-                  element.withDiodeMode(_DiodeMode.reverseBreakdown);
+              diodeUpdates[element.id] = element.withDiodeMode(
+                _DiodeMode.reverseBreakdown,
+              );
             }
           case _DiodeMode.forward:
             final double? current = network.idealCurrentA(element.id);
             if (current != null && current < -options.residualTolerance) {
-              diodeUpdates[element.id] =
-                  element.withDiodeMode(_DiodeMode.off);
+              diodeUpdates[element.id] = element.withDiodeMode(_DiodeMode.off);
             }
           case _DiodeMode.reverseBreakdown:
             final double? current = network.idealCurrentA(element.id);
             if (current != null && current > options.residualTolerance) {
-              diodeUpdates[element.id] =
-                  element.withDiodeMode(_DiodeMode.off);
+              diodeUpdates[element.id] = element.withDiodeMode(_DiodeMode.off);
             }
         }
       }
@@ -205,7 +212,8 @@ final class SolverDC {
         }
         final double? current = network.idealCurrentA(element.id);
         if (current != null &&
-            current.abs() > element.currentLimitA! + options.residualTolerance) {
+            current.abs() >
+                element.currentLimitA! + options.residualTolerance) {
           violations.add(element);
         }
       }
@@ -217,7 +225,8 @@ final class SolverDC {
           DcSolverDiagnostic(
             code: DcDiagnosticCode.currentLimitIterationExceeded,
             severity: DcDiagnosticSeverity.error,
-            message: 'DC source current-limit active set did not converge within the configured bound.',
+            message:
+                'DC source current-limit active set did not converge within the configured bound.',
           ),
         );
         return _failure(
@@ -239,7 +248,8 @@ final class SolverDC {
           DcSolverDiagnostic(
             code: DcDiagnosticCode.sourceCurrentLimited,
             severity: DcDiagnosticSeverity.warning,
-            message: 'DC voltage source entered current-limited regulation at ${limit} A.',
+            message:
+                'DC voltage source entered current-limited regulation at ${limit} A.',
             sourceId: element.sourceId,
             nodeIds: <String>[element.fromNodeId, element.toNodeId],
           ),
@@ -290,7 +300,9 @@ final class SolverDC {
           toNodeId: element.toNodeId,
           voltageV: voltage,
           currentA: current,
-          powerW: current == null ? null : _clean(voltage * current, options.residualTolerance),
+          powerW: current == null
+              ? null
+              : _clean(voltage * current, options.residualTolerance),
         ),
       );
     }
@@ -321,7 +333,9 @@ final class SolverDC {
     );
     final Map<String, double> kvlResiduals = _calculateKvlResiduals(
       nodeVoltages,
-      branches.where((DcBranchResult branch) => branch.kind != DcBranchKind.openCircuit),
+      branches.where(
+        (DcBranchResult branch) => branch.kind != DcBranchKind.openCircuit,
+      ),
       options.residualTolerance,
     );
 
@@ -347,23 +361,27 @@ final class SolverDC {
   ) {
     final List<_Element> active = <_Element>[];
     final List<_InactiveElement> inactive = <_InactiveElement>[];
-    final List<ComponentInstance> components = circuit.components.toList(growable: false)
-      ..sort((ComponentInstance a, ComponentInstance b) => a.id.value.compareTo(b.id.value));
+    final List<ComponentInstance> components =
+        circuit.components.toList(growable: false)..sort(
+          (ComponentInstance a, ComponentInstance b) =>
+              a.id.value.compareTo(b.id.value),
+        );
     for (final ComponentInstance component in components) {
       if (!_supportedDcComponentModels.contains(component.modelType)) {
         diagnostics.add(
           DcSolverDiagnostic(
             code: DcDiagnosticCode.unsupportedComponentModel,
             severity: DcDiagnosticSeverity.error,
-            message: 'Unsupported M3 DC component model: ${component.modelType}.',
+            message:
+                'Unsupported M3 DC component model: ${component.modelType}.',
             componentId: component.id,
           ),
         );
         continue;
       }
 
-      final List<TopologyBranch> topologyBranches =
-          topology.branchesForComponent(component.id);
+      final List<TopologyBranch> topologyBranches = topology
+          .branchesForComponent(component.id);
       if (component.modelType == 'terminal_block_5') {
         if (topologyBranches.length != 5) {
           diagnostics.add(
@@ -383,8 +401,7 @@ final class SolverDC {
             if (open) {
               inactive.add(
                 _InactiveElement(
-                  id:
-                      'component:${component.id.value}:${branch.branchId}',
+                  id: 'component:${component.id.value}:${branch.branchId}',
                   modelType: component.modelType,
                   fromNodeId: branch.fromNodeId,
                   toNodeId: branch.toNodeId,
@@ -393,8 +410,7 @@ final class SolverDC {
             } else {
               active.add(
                 _Element.idealVoltage(
-                  id:
-                      'component:${component.id.value}:${branch.branchId}',
+                  id: 'component:${component.id.value}:${branch.branchId}',
                   modelType: component.modelType,
                   publicKind: DcBranchKind.idealShort,
                   fromNodeId: branch.fromNodeId,
@@ -413,7 +429,8 @@ final class SolverDC {
           DcSolverDiagnostic(
             code: DcDiagnosticCode.invalidTerminalCount,
             severity: DcDiagnosticSeverity.error,
-            message: 'Canonical DC component ${component.id.value} must expose exactly one topology branch.',
+            message:
+                'Canonical DC component ${component.id.value} must expose exactly one topology branch.',
             componentId: component.id,
           ),
         );
@@ -463,15 +480,16 @@ final class SolverDC {
 
       switch (component.modelType) {
         case 'capacitor':
-          final double? capacitance =
-              _positiveParameter(component.parameters, 'capacitanceF');
+          final double? capacitance = _positiveParameter(
+            component.parameters,
+            'capacitanceF',
+          );
           if (capacitance == null) {
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message:
-                    'DC capacitor requires finite capacitanceF > 0.',
+                message: 'DC capacitor requires finite capacitanceF > 0.',
                 componentId: component.id,
               ),
             );
@@ -486,15 +504,16 @@ final class SolverDC {
             );
           }
         case 'inductor':
-          final double? inductance =
-              _positiveParameter(component.parameters, 'inductanceH');
+          final double? inductance = _positiveParameter(
+            component.parameters,
+            'inductanceH',
+          );
           if (inductance == null) {
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message:
-                    'DC inductor requires finite inductanceH > 0.',
+                message: 'DC inductor requires finite inductanceH > 0.',
                 componentId: component.id,
               ),
             );
@@ -517,13 +536,17 @@ final class SolverDC {
         case 'fan_dc':
         case 'motor_dc':
         case 'relay_coil':
-          final double? resistance = _positiveParameter(component.parameters, 'resistanceOhm');
+          final double? resistance = _positiveParameter(
+            component.parameters,
+            'resistanceOhm',
+          );
           if (resistance == null) {
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message: 'Resistive DC receiver requires finite resistanceOhm > 0.',
+                message:
+                    'Resistive DC receiver requires finite resistanceOhm > 0.',
                 componentId: component.id,
               ),
             );
@@ -547,18 +570,18 @@ final class SolverDC {
           final double forwardVoltageV = rawForward == null
               ? 0.7
               : rawForward is num
-                  ? rawForward.toDouble()
-                  : double.nan;
+              ? rawForward.toDouble()
+              : double.nan;
           final double offResistanceOhm = rawOffResistance == null
               ? 1e12
               : rawOffResistance is num
-                  ? rawOffResistance.toDouble()
-                  : double.nan;
+              ? rawOffResistance.toDouble()
+              : double.nan;
           final double? reverseBreakdownVoltageV = rawBreakdown == null
               ? null
               : rawBreakdown is num
-                  ? rawBreakdown.toDouble()
-                  : double.nan;
+              ? rawBreakdown.toDouble()
+              : double.nan;
           if (!forwardVoltageV.isFinite ||
               forwardVoltageV < 0.0 ||
               !offResistanceOhm.isFinite ||
@@ -670,8 +693,7 @@ final class SolverDC {
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message:
-                    'Push-button requires boolean controlState.pressed.',
+                message: 'Push-button requires boolean controlState.pressed.',
                 componentId: component.id,
               ),
             );
@@ -704,14 +726,17 @@ final class SolverDC {
           }
         case 'breaker_dc':
         case 'fuse_dc':
-          final double? ratedCurrent =
-              _positiveParameter(component.parameters, ProtectionRating.ratedCurrentKey);
+          final double? ratedCurrent = _positiveParameter(
+            component.parameters,
+            ProtectionRating.ratedCurrentKey,
+          );
           if (ratedCurrent == null) {
             diagnostics.add(
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message: 'DC protection requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
+                message:
+                    'DC protection requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
                 componentId: component.id,
               ),
             );
@@ -725,7 +750,8 @@ final class SolverDC {
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.invalidParameter,
                 severity: DcDiagnosticSeverity.error,
-                message: 'DC protection controlState.closed/tripped must be boolean when provided.',
+                message:
+                    'DC protection controlState.closed/tripped must be boolean when provided.',
                 componentId: component.id,
               ),
             );
@@ -759,14 +785,18 @@ final class SolverDC {
     }
 
     final List<SourceInstance> sources = circuit.sources.toList(growable: false)
-      ..sort((SourceInstance a, SourceInstance b) => a.id.value.compareTo(b.id.value));
+      ..sort(
+        (SourceInstance a, SourceInstance b) =>
+            a.id.value.compareTo(b.id.value),
+      );
     for (final SourceInstance source in sources) {
       if (source.terminals.length != 2) {
         diagnostics.add(
           DcSolverDiagnostic(
             code: DcDiagnosticCode.invalidTerminalCount,
             severity: DcDiagnosticSeverity.error,
-            message: 'DC source ${source.id.value} must expose exactly two terminals.',
+            message:
+                'DC source ${source.id.value} must expose exactly two terminals.',
             sourceId: source.id,
           ),
         );
@@ -788,7 +818,10 @@ final class SolverDC {
       switch (source.modelType) {
         case 'dc_voltage_source':
         case 'voltage_source':
-          final double? voltage = _finiteParameter(source.parameters, 'voltageV');
+          final double? voltage = _finiteParameter(
+            source.parameters,
+            'voltageV',
+          );
           if (voltage == null) {
             diagnostics.add(
               DcSolverDiagnostic(
@@ -802,13 +835,17 @@ final class SolverDC {
           }
           double? currentLimitA;
           if (source.parameters.containsKey('currentLimitA')) {
-            currentLimitA = _positiveParameter(source.parameters, 'currentLimitA');
+            currentLimitA = _positiveParameter(
+              source.parameters,
+              'currentLimitA',
+            );
             if (currentLimitA == null) {
               diagnostics.add(
                 DcSolverDiagnostic(
                   code: DcDiagnosticCode.invalidParameter,
                   severity: DcDiagnosticSeverity.error,
-                  message: 'DC voltage source currentLimitA must be finite and greater than zero.',
+                  message:
+                      'DC voltage source currentLimitA must be finite and greater than zero.',
                   sourceId: source.id,
                 ),
               );
@@ -844,7 +881,8 @@ final class SolverDC {
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.contradictoryIdealSource,
                 severity: DcDiagnosticSeverity.error,
-                message: 'Non-zero ideal voltage source is shorted onto one topology node.',
+                message:
+                    'Non-zero ideal voltage source is shorted onto one topology node.',
                 sourceId: source.id,
                 nodeIds: <String>[fromNode],
               ),
@@ -857,7 +895,8 @@ final class SolverDC {
               DcSolverDiagnostic(
                 code: DcDiagnosticCode.redundantIdealConstraint,
                 severity: DcDiagnosticSeverity.warning,
-                message: 'Zero-volt ideal source constraint is redundant; branch current is indeterminate.',
+                message:
+                    'Zero-volt ideal source constraint is redundant; branch current is indeterminate.',
                 sourceId: source.id,
                 nodeIds: <String>[fromNode],
               ),
@@ -878,7 +917,10 @@ final class SolverDC {
           );
         case 'dc_current_source':
         case 'current_source':
-          final double? current = _finiteParameter(source.parameters, 'currentA');
+          final double? current = _finiteParameter(
+            source.parameters,
+            'currentA',
+          );
           if (current == null) {
             diagnostics.add(
               DcSolverDiagnostic(
@@ -943,7 +985,8 @@ final class SolverDC {
           element.kind == _ElementKind.idealVoltage &&
           element.currentLimitA != null &&
           element.value.abs() > tolerance;
-      final bool shorted = limitedVoltageSource &&
+      final bool shorted =
+          limitedVoltageSource &&
           zeroPath.find(element.fromNodeId) == zeroPath.find(element.toNodeId);
       if (!shorted) {
         result.add(element);
@@ -962,9 +1005,7 @@ final class SolverDC {
         ),
       );
       result.add(
-        element.asCurrentLimited(
-          _limitedSourceCurrent(element.value, limit),
-        ),
+        element.asCurrentLimited(_limitedSourceCurrent(element.value, limit)),
       );
     }
     return result;
@@ -986,8 +1027,8 @@ final class SolverDC {
       preferred.sort();
       return preferred.first;
     }
-    final List<String> nodes = topology.nodes.map((TopologyNode node) => node.id).toList()
-      ..sort();
+    final List<String> nodes =
+        topology.nodes.map((TopologyNode node) => node.id).toList()..sort();
     return nodes.first;
   }
 
@@ -1017,8 +1058,9 @@ final class SolverDC {
         }
       }
     }
-    final List<String> floating = adjacency.keys.where((String node) => !visited.contains(node)).toList()
-      ..sort();
+    final List<String> floating =
+        adjacency.keys.where((String node) => !visited.contains(node)).toList()
+          ..sort();
     return floating;
   }
 
@@ -1027,19 +1069,26 @@ final class SolverDC {
     String referenceNodeId,
     List<_Element> activeElements,
   ) {
-    final List<String> unknownNodes = allNodeIds
-        .where((String nodeId) => nodeId != referenceNodeId)
-        .toList(growable: false)
-      ..sort();
+    final List<String> unknownNodes =
+        allNodeIds
+            .where((String nodeId) => nodeId != referenceNodeId)
+            .toList(growable: false)
+          ..sort();
     final Map<String, int> nodeIndex = <String, int>{
       for (var i = 0; i < unknownNodes.length; i++) unknownNodes[i]: i,
     };
-    final List<_Element> idealConstraints = activeElements
-        .where((_Element element) => element.kind == _ElementKind.idealVoltage && !element.redundant)
-        .toList(growable: false)
-      ..sort((_Element a, _Element b) => a.id.compareTo(b.id));
+    final List<_Element> idealConstraints =
+        activeElements
+            .where(
+              (_Element element) =>
+                  element.kind == _ElementKind.idealVoltage &&
+                  !element.redundant,
+            )
+            .toList(growable: false)
+          ..sort((_Element a, _Element b) => a.id.compareTo(b.id));
     final Map<String, int> idealIndex = <String, int>{
-      for (var i = 0; i < idealConstraints.length; i++) idealConstraints[i].id: i,
+      for (var i = 0; i < idealConstraints.length; i++)
+        idealConstraints[i].id: i,
     };
 
     final int nodeCount = unknownNodes.length;
@@ -1158,7 +1207,8 @@ const Set<String> _supportedDcComponentModels = <String>{
   'fuse_dc',
 };
 
-bool _isError(DcSolverDiagnostic diagnostic) => diagnostic.severity == DcDiagnosticSeverity.error;
+bool _isError(DcSolverDiagnostic diagnostic) =>
+    diagnostic.severity == DcDiagnosticSeverity.error;
 
 double? _finiteParameter(Map<String, Object?> parameters, String key) {
   final Object? raw = parameters[key];
@@ -1327,7 +1377,9 @@ Map<String, double> _calculateKclResiduals(
   Iterable<DcBranchResult> branches,
   double tolerance,
 ) {
-  final Map<String, double> residuals = <String, double>{for (final String id in nodeIds) id: 0.0};
+  final Map<String, double> residuals = <String, double>{
+    for (final String id in nodeIds) id: 0.0,
+  };
   for (final DcBranchResult branch in branches) {
     final double? current = branch.currentA;
     if (current == null) {
@@ -1337,7 +1389,8 @@ Map<String, double> _calculateKclResiduals(
     residuals[branch.toNodeId] = residuals[branch.toNodeId]! - current;
   }
   return <String, double>{
-    for (final MapEntry<String, double> entry in residuals.entries) entry.key: _clean(entry.value, tolerance),
+    for (final MapEntry<String, double> entry in residuals.entries)
+      entry.key: _clean(entry.value, tolerance),
   };
 }
 
@@ -1346,10 +1399,13 @@ Map<String, double> _calculateKvlResiduals(
   Iterable<DcBranchResult> inputBranches,
   double tolerance,
 ) {
-  final List<DcBranchResult> branches = inputBranches
-      .where((DcBranchResult branch) => branch.fromNodeId != branch.toNodeId)
-      .toList(growable: false)
-    ..sort((DcBranchResult a, DcBranchResult b) => a.id.compareTo(b.id));
+  final List<DcBranchResult> branches =
+      inputBranches
+          .where(
+            (DcBranchResult branch) => branch.fromNodeId != branch.toNodeId,
+          )
+          .toList(growable: false)
+        ..sort((DcBranchResult a, DcBranchResult b) => a.id.compareTo(b.id));
   final _StringUnionFind union = _StringUnionFind(nodeVoltages.keys);
   final Map<String, List<String>> tree = <String, List<String>>{
     for (final String node in nodeVoltages.keys) node: <String>[],
@@ -1366,7 +1422,11 @@ Map<String, double> _calculateKvlResiduals(
   }
   final Map<String, double> result = <String, double>{};
   for (final DcBranchResult chord in chords) {
-    final List<String>? path = _treePath(tree, chord.toNodeId, chord.fromNodeId);
+    final List<String>? path = _treePath(
+      tree,
+      chord.toNodeId,
+      chord.fromNodeId,
+    );
     if (path == null) {
       continue;
     }
@@ -1379,7 +1439,11 @@ Map<String, double> _calculateKvlResiduals(
   return result;
 }
 
-List<String>? _treePath(Map<String, List<String>> tree, String start, String target) {
+List<String>? _treePath(
+  Map<String, List<String>> tree,
+  String start,
+  String target,
+) {
   final Map<String, String?> parent = <String, String?>{start: null};
   final List<String> queue = <String>[start];
   for (var index = 0; index < queue.length; index++) {
@@ -1407,9 +1471,11 @@ List<String>? _treePath(Map<String, List<String>> tree, String start, String tar
 double _limitedSourceCurrent(double voltageV, double currentLimitA) =>
     voltageV >= 0.0 ? -currentLimitA : currentLimitA;
 
-double _clean(double value, double tolerance) => value.abs() <= tolerance ? 0.0 : value;
+double _clean(double value, double tolerance) =>
+    value.abs() <= tolerance ? 0.0 : value;
 
 enum _ElementKind { resistor, idealVoltage, currentSource }
+
 enum _DiodeMode { off, forward, reverseBreakdown }
 
 final class _Element {
@@ -1591,7 +1657,9 @@ final class _Element {
 
   _Element asCurrentLimited(double currentA) {
     if (kind != _ElementKind.idealVoltage || currentLimitA == null) {
-      throw StateError('Only a current-limited ideal voltage source can enter current regulation.');
+      throw StateError(
+        'Only a current-limited ideal voltage source can enter current regulation.',
+      );
     }
     return _Element.currentSource(
       id: id,

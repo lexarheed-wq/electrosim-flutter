@@ -35,16 +35,16 @@ final class F20CatalogState {
 
 abstract final class F20CatalogGeometry {
   static Size boardSizeFor(F20CatalogDevice device) => switch (device) {
-        F20CatalogDevice.battery => const Size(170, 160),
-        F20CatalogDevice.generator => const Size(180, 180),
-        F20CatalogDevice.appliance2t => const Size(180, 190),
-        F20CatalogDevice.motorDriven2t => const Size(210, 180),
-        F20CatalogDevice.motorDriven6t => const Size(240, 220),
-        F20CatalogDevice.heater => const Size(190, 170),
-        F20CatalogDevice.actuator2t => const Size(180, 180),
-        F20CatalogDevice.sensor2t => const Size(150, 170),
-        F20CatalogDevice.indicator2t => const Size(150, 160),
-      };
+    F20CatalogDevice.battery => const Size(170, 160),
+    F20CatalogDevice.generator => const Size(180, 180),
+    F20CatalogDevice.appliance2t => const Size(180, 190),
+    F20CatalogDevice.motorDriven2t => const Size(210, 180),
+    F20CatalogDevice.motorDriven6t => const Size(240, 220),
+    F20CatalogDevice.heater => const Size(190, 170),
+    F20CatalogDevice.actuator2t => const Size(180, 180),
+    F20CatalogDevice.sensor2t => const Size(150, 170),
+    F20CatalogDevice.indicator2t => const Size(150, 160),
+  };
 }
 
 class F20CatalogComponentView extends StatelessWidget {
@@ -61,12 +61,12 @@ class F20CatalogComponentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size.width,
-        height: size.height,
-        child: CustomPaint(
-          painter: _F20Painter(device: device, state: state),
-        ),
-      );
+    width: size.width,
+    height: size.height,
+    child: CustomPaint(
+      painter: _F20Painter(device: device, state: state),
+    ),
+  );
 }
 
 final class _F20Painter extends CustomPainter {
@@ -147,17 +147,29 @@ final class _P {
       colors: colors,
     ).createShader(r);
 
-  void box(Rect body, {Color top = const Color(0xFFF7FAFB), Color bottom = const Color(0xFFC8D2D8)}) {
+  void box(
+    Rect body, {
+    Color top = const Color(0xFFF7FAFB),
+    Color bottom = const Color(0xFFC8D2D8),
+  }) {
     final RRect rr = RRect.fromRectAndRadius(
       body,
       Radius.circular(math.max(5, h * .035)),
     );
-    canvas.drawRRect(rr.shift(Offset(0, h * .018)), Paint()..color = const Color(0x24000000));
+    canvas.drawRRect(
+      rr.shift(Offset(0, h * .018)),
+      Paint()..color = const Color(0x24000000),
+    );
     canvas.drawRRect(rr, grad(body, <Color>[top, bottom]));
     canvas.drawRRect(rr, outline);
   }
 
-  void text(String value, Offset center, {double? size, Color color = const Color(0xFF273943)}) {
+  void text(
+    String value,
+    Offset center, {
+    double? size,
+    Color color = const Color(0xFF273943),
+  }) {
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
@@ -171,10 +183,17 @@ final class _P {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
-    tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
+    tp.paint(
+      canvas,
+      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+    );
   }
 
-  void terminal(Offset p, String label, {Color color = const Color(0xFFC99A3A)}) {
+  void terminal(
+    Offset p,
+    String label, {
+    Color color = const Color(0xFFC99A3A),
+  }) {
     final double r = math.max(3.5, s * .033);
     canvas.drawCircle(p, r, Paint()..color = color);
     canvas.drawCircle(p, r, outline);
@@ -189,42 +208,42 @@ final class _P {
   }
 
   List<Offset> bottomPair() => <Offset>[
-        Offset(c.dx - w * .17, rect.bottom - h * .08),
-        Offset(c.dx + w * .17, rect.bottom - h * .08),
-      ];
+    Offset(c.dx - w * .17, rect.bottom - h * .08),
+    Offset(c.dx + w * .17, rect.bottom - h * .08),
+  ];
 
   String shortLabel() => switch (variant) {
-        'air-conditioner' => 'CLIM',
-        'freezer' => 'CONGÉL.',
-        'computer' => 'PC',
-        'refrigerator' => 'FRIGO',
-        'refrigerator-dc' => 'FRIGO DC',
-        'television' => 'TV',
-        'iron' => 'FER',
-        'pump' => 'POMPE',
-        'compressor' => 'COMP.',
-        'conveyor' => 'CONVOY.',
-        'mixer' => 'MÉLANGEUR',
-        'crusher' => 'BROYEUR',
-        'fan' => 'VENTIL.',
-        'horn' => 'KLAXON',
-        'siren' => 'SIRÈNE',
-        'bell' => 'SONNERIE',
-        'speaker' => 'HP',
-        'solenoid' => 'SOLÉNOÏDE',
-        'valve' => 'ÉLECTROV.',
-        'brake' => 'FREIN',
-        'electromagnet' => 'ÉLECTRO.',
-        'ldr' => 'LDR',
-        'ntc' => 'NTC',
-        'ptc' => 'PTC',
-        'shunt' => 'SHUNT',
-        'rheostat' => 'RÉOSTAT',
-        'beacon-red' => 'ROUGE',
-        'beacon-green' => 'VERT',
-        'neon' => 'NÉON',
-        _ => variant.isEmpty ? 'APPAREIL' : variant.toUpperCase(),
-      };
+    'air-conditioner' => 'CLIM',
+    'freezer' => 'CONGÉL.',
+    'computer' => 'PC',
+    'refrigerator' => 'FRIGO',
+    'refrigerator-dc' => 'FRIGO DC',
+    'television' => 'TV',
+    'iron' => 'FER',
+    'pump' => 'POMPE',
+    'compressor' => 'COMP.',
+    'conveyor' => 'CONVOY.',
+    'mixer' => 'MÉLANGEUR',
+    'crusher' => 'BROYEUR',
+    'fan' => 'VENTIL.',
+    'horn' => 'KLAXON',
+    'siren' => 'SIRÈNE',
+    'bell' => 'SONNERIE',
+    'speaker' => 'HP',
+    'solenoid' => 'SOLÉNOÏDE',
+    'valve' => 'ÉLECTROV.',
+    'brake' => 'FREIN',
+    'electromagnet' => 'ÉLECTRO.',
+    'ldr' => 'LDR',
+    'ntc' => 'NTC',
+    'ptc' => 'PTC',
+    'shunt' => 'SHUNT',
+    'rheostat' => 'RÉOSTAT',
+    'beacon-red' => 'ROUGE',
+    'beacon-green' => 'VERT',
+    'neon' => 'NÉON',
+    _ => variant.isEmpty ? 'APPAREIL' : variant.toUpperCase(),
+  };
 
   void battery() {
     final Rect body = Rect.fromCenter(
@@ -265,10 +284,10 @@ final class _P {
     canvas.drawCircle(
       center,
       r,
-      grad(
-        Rect.fromCircle(center: center, radius: r),
-        const <Color>[Color(0xFFE7ECEF), Color(0xFF7B8992)],
-      ),
+      grad(Rect.fromCircle(center: center, radius: r), const <Color>[
+        Color(0xFFE7ECEF),
+        Color(0xFF7B8992),
+      ]),
     );
     canvas.drawCircle(center, r, outline);
     text(variant.contains('ac') ? 'G~' : 'G⎓', center, size: h * .15);
@@ -283,7 +302,9 @@ final class _P {
       width: w * .66,
       height: h * .67,
     );
-    final Color top = state.energized ? const Color(0xFFF3F7F8) : const Color(0xFFE3E8EA);
+    final Color top = state.energized
+        ? const Color(0xFFF3F7F8)
+        : const Color(0xFFE3E8EA);
     box(body, top: top, bottom: const Color(0xFFB3BFC6));
     final Rect face = Rect.fromLTWH(
       body.left + body.width * .12,
@@ -299,7 +320,10 @@ final class _P {
     canvas.drawCircle(
       Offset(body.right - body.width * .16, body.bottom - body.height * .15),
       h * .022,
-      Paint()..color = state.energized ? const Color(0xFF4DCE73) : const Color(0xFF78858C),
+      Paint()
+        ..color = state.energized
+            ? const Color(0xFF4DCE73)
+            : const Color(0xFF78858C),
     );
     final List<Offset> t = bottomPair();
     terminal(t[0], '1');
@@ -313,7 +337,10 @@ final class _P {
       height: h * .48,
     );
     final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .12));
-    canvas.drawRRect(rr, grad(body, const <Color>[Color(0xFFE4EAED), Color(0xFF77868F)]));
+    canvas.drawRRect(
+      rr,
+      grad(body, const <Color>[Color(0xFFE4EAED), Color(0xFF77868F)]),
+    );
     canvas.drawRRect(rr, outline);
 
     final Offset shaft = Offset(body.right + w * .12, c.dy);
@@ -329,7 +356,9 @@ final class _P {
     final double rotorR = h * .075;
     canvas.save();
     canvas.translate(shaft.dx, shaft.dy);
-    canvas.rotate(state.energized ? state.animationValue * math.pi * 2 * 2.2 : 0);
+    canvas.rotate(
+      state.energized ? state.animationValue * math.pi * 2 * 2.2 : 0,
+    );
     for (var i = 0; i < 4; i++) {
       canvas.rotate(math.pi / 2);
       canvas.drawLine(
@@ -346,8 +375,14 @@ final class _P {
     if (sixTerminals) {
       final List<double> xs = <double>[c.dx - w * .20, c.dx, c.dx + w * .20];
       for (var i = 0; i < 3; i++) {
-        terminal(Offset(xs[i], rect.top + h * .08), <String>['U1','V1','W1'][i]);
-        terminal(Offset(xs[i], rect.bottom - h * .08), <String>['U2','V2','W2'][i]);
+        terminal(
+          Offset(xs[i], rect.top + h * .08),
+          <String>['U1', 'V1', 'W1'][i],
+        );
+        terminal(
+          Offset(xs[i], rect.bottom - h * .08),
+          <String>['U2', 'V2', 'W2'][i],
+        );
       }
     } else {
       final List<Offset> t = bottomPair();
@@ -357,7 +392,11 @@ final class _P {
   }
 
   void heater() {
-    final Rect body = Rect.fromCenter(center: c, width: w * .66, height: h * .52);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .66,
+      height: h * .52,
+    );
     box(body, top: const Color(0xFFF4E6D8), bottom: const Color(0xFFBE9B7D));
     final Path coil = Path();
     for (var i = 0; i <= 40; i++) {
@@ -375,7 +414,9 @@ final class _P {
     canvas.drawPath(
       coil,
       Paint()
-        ..color = state.energized ? const Color(0xFFEF5E34) : const Color(0xFF6E5748)
+        ..color = state.energized
+            ? const Color(0xFFEF5E34)
+            : const Color(0xFF6E5748)
         ..style = PaintingStyle.stroke
         ..strokeWidth = math.max(2.2, s * .022),
     );
@@ -386,7 +427,11 @@ final class _P {
   }
 
   void actuator() {
-    final Rect coil = Rect.fromCenter(center: Offset(c.dx - w * .08, c.dy), width: w * .45, height: h * .42);
+    final Rect coil = Rect.fromCenter(
+      center: Offset(c.dx - w * .08, c.dy),
+      width: w * .45,
+      height: h * .42,
+    );
     box(coil, top: const Color(0xFFB06C3C), bottom: const Color(0xFF5B3523));
     for (var i = 0; i < 6; i++) {
       final double x = coil.left + coil.width * (.14 + i * .13);
@@ -416,7 +461,11 @@ final class _P {
   }
 
   void sensor() {
-    final Rect body = Rect.fromCenter(center: c, width: w * .56, height: h * .55);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .56,
+      height: h * .55,
+    );
     box(body, top: const Color(0xFFE9F0F3), bottom: const Color(0xFF9EB0B9));
     final double r = h * .13;
     canvas.drawCircle(
@@ -436,7 +485,12 @@ final class _P {
         );
       }
     } else {
-      text(shortLabel(), Offset(c.dx, c.dy - h * .035), size: h * .075, color: Colors.white);
+      text(
+        shortLabel(),
+        Offset(c.dx, c.dy - h * .035),
+        size: h * .075,
+        color: Colors.white,
+      );
     }
     final List<Offset> t = bottomPair();
     terminal(t[0], '1');
@@ -449,8 +503,8 @@ final class _P {
     final Color color = variant.contains('green')
         ? const Color(0xFF41C96B)
         : variant.contains('red')
-            ? const Color(0xFFE54A4A)
-            : const Color(0xFFE1C24A);
+        ? const Color(0xFFE54A4A)
+        : const Color(0xFFE1C24A);
     if (state.energized) {
       canvas.drawCircle(
         lens,

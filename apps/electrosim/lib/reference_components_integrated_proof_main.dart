@@ -9,18 +9,13 @@ void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: IntegratedReferenceComponentsProof(
-        fixedPhase: fixedPhase,
-      ),
+      home: IntegratedReferenceComponentsProof(fixedPhase: fixedPhase),
     ),
   );
 }
 
 class IntegratedReferenceComponentsProof extends StatefulWidget {
-  const IntegratedReferenceComponentsProof({
-    super.key,
-    this.fixedPhase,
-  });
+  const IntegratedReferenceComponentsProof({super.key, this.fixedPhase});
 
   final double? fixedPhase;
 
@@ -72,10 +67,7 @@ class _IntegratedReferenceComponentsProofState
       maxHeight / natural.height,
       1.0,
     ].reduce((double a, double b) => a < b ? a : b);
-    final Size display = Size(
-      natural.width * scale,
-      natural.height * scale,
-    );
+    final Size display = Size(natural.width * scale, natural.height * scale);
     return SizedBox(
       width: 255,
       child: Column(
@@ -132,10 +124,7 @@ class _IntegratedReferenceComponentsProofState
                   const SizedBox(height: 5),
                   const Text(
                     'C13 + C14 Wave 1 • renderer de production • états électriques et électromécaniques',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF52666F),
-                    ),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF52666F)),
                   ),
                   const SizedBox(height: 22),
                   Wrap(

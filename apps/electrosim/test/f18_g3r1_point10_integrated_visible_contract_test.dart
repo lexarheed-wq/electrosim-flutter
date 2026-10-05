@@ -33,8 +33,7 @@ Future<void> _openContext(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimContextRegionKey);
   final double width =
       tester.view.physicalSize.width / tester.view.devicePixelRatio;
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).left >= width) {
+  if (region.evaluate().isEmpty || tester.getRect(region).left >= width) {
     await tester.tap(find.byKey(electroSimContextEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -42,22 +41,21 @@ Future<void> _openContext(WidgetTester tester) async {
 
 Future<void> _openTop(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).bottom <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
     await tester.tap(find.byKey(electroSimTopEdgeKey));
     await tester.pumpAndSettle();
   }
 }
 
 void _expectOrthogonalCommittedRoutes(SimulatorCanvas canvas) {
-  final CircuitGeometryIndex geometry =
-      CircuitGeometryIndex.build(canvas.circuit, canvas.layout);
+  final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+    canvas.circuit,
+    canvas.layout,
+  );
 
   for (final connection in canvas.circuit.connections) {
-    final Offset start =
-        geometry.terminalPositions[connection.fromTerminalId]!;
-    final Offset end =
-        geometry.terminalPositions[connection.toTerminalId]!;
+    final Offset start = geometry.terminalPositions[connection.fromTerminalId]!;
+    final Offset end = geometry.terminalPositions[connection.toTerminalId]!;
     final List<Offset> points = <Offset>[
       start,
       ...canvas.layout.routeFor(connection.id.value),
@@ -69,16 +67,16 @@ void _expectOrthogonalCommittedRoutes(SimulatorCanvas canvas) {
       expect(
         a.dx == b.dx || a.dy == b.dy,
         isTrue,
-        reason:
-            '${connection.id.value} must remain orthogonal: $points',
+        reason: '${connection.id.value} must remain orthogonal: $points',
       );
     }
   }
 }
 
 void main() {
-  testWidgets('desktop F18 workspace satisfies the complete visible contract',
-      (WidgetTester tester) async {
+  testWidgets('desktop F18 workspace satisfies the complete visible contract', (
+    WidgetTester tester,
+  ) async {
     await _openDesignWorkspace(tester);
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
@@ -99,8 +97,9 @@ void main() {
     expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);
     expect(find.text('Supprimer du circuit'), findsNothing);
 
-    SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
     expect(canvas.wireLayoutEngine, isNotNull);
     expect(canvas.wirePreviewPlanner, isNotNull);
 
@@ -118,8 +117,7 @@ void main() {
 
     const double bendKeepOut = 48;
     const double minimumStub = 24;
-    final double required =
-        bendKeepOut + minimumStub + seriesSize.width / 2;
+    final double required = bendKeepOut + minimumStub + seriesSize.width / 2;
     expect(series.dx - source.dx, greaterThanOrEqualTo(required));
     expect(load.dx - series.dx, greaterThanOrEqualTo(required));
 
@@ -154,12 +152,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact F18 workspace remains usable without layout overflow',
-      (WidgetTester tester) async {
-    await _openDesignWorkspace(
-      tester,
-      size: const Size(390, 844),
-    );
+  testWidgets('compact F18 workspace remains usable without layout overflow', (
+    WidgetTester tester,
+  ) async {
+    await _openDesignWorkspace(tester, size: const Size(390, 844));
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);

@@ -23,7 +23,8 @@ void main() {
         expect(example.circuit.metadata['healthy'], isTrue);
         expect(
           example.circuit.components.every(
-            (ComponentInstance item) => item.condition == ComponentCondition.normal,
+            (ComponentInstance item) =>
+                item.condition == ComponentCondition.normal,
           ),
           isTrue,
         );
@@ -34,12 +35,24 @@ void main() {
     test('all fault scenarios are autonomous, private and repairable', () {
       const FaultScenarioValidator validator = FaultScenarioValidator();
       for (final FaultScenarioDefinition scenario in catalog.faultScenarios) {
-        final String student = jsonEncode(scenario.studentPayload()).toLowerCase();
+        final String student = jsonEncode(
+          scenario.studentPayload(),
+        ).toLowerCase();
         expect(student, isNot(contains('teachertruth')));
         expect(student, isNot(contains('rootcauses')));
         expect(student, isNot(contains('acceptablerepairs')));
-        expect(student, isNot(contains('example' 'id')));
-        final FaultScenarioValidationResult result = validator.validate(scenario);
+        expect(
+          student,
+          isNot(
+            contains(
+              'example'
+              'id',
+            ),
+          ),
+        );
+        final FaultScenarioValidationResult result = validator.validate(
+          scenario,
+        );
         expect(result.isValid, isTrue);
         expect(result.repairable, isTrue);
       }
@@ -62,17 +75,28 @@ void main() {
       const TopologyEngine topology = TopologyEngine();
       const SolverDC solver = SolverDC();
       final FaultScenarioDefinition scenario = catalog.faultScenarios
-          .singleWhere((FaultScenarioDefinition item) => item.id.value == 'FAULT-DC-003');
-      final CircuitState repaired =
-          scenario.teacherTruth.acceptableRepairs.first.apply(scenario.faultyCircuit);
-      final DcSolveResult result = solver.solve(repaired, topology.compile(repaired));
+          .singleWhere(
+            (FaultScenarioDefinition item) => item.id.value == 'FAULT-DC-003',
+          );
+      final CircuitState repaired = scenario
+          .teacherTruth
+          .acceptableRepairs
+          .first
+          .apply(scenario.faultyCircuit);
+      final DcSolveResult result = solver.solve(
+        repaired,
+        topology.compile(repaired),
+      );
       expect(result.status, DcSolveStatus.solved);
       expect(repaired.revision, scenario.faultyCircuit.revision + 1);
     });
 
     test('no legacy content marker is published', () {
       for (final ExampleDefinition example in catalog.examples) {
-        expect(example.canonicalPayload().toLowerCase(), isNot(contains('legacy')));
+        expect(
+          example.canonicalPayload().toLowerCase(),
+          isNot(contains('legacy')),
+        );
       }
       for (final FaultScenarioDefinition scenario in catalog.faultScenarios) {
         expect(

@@ -64,7 +64,9 @@ final class ComponentInstance {
   JsonMap toJson() => <String, Object?>{
     'id': id.value,
     'modelType': modelType,
-    'terminals': terminals.map<JsonMap>((Terminal item) => item.toJson()).toList(),
+    'terminals': terminals
+        .map<JsonMap>((Terminal item) => item.toJson())
+        .toList(),
     'parameters': parameters,
     'condition': condition.name,
     'controlState': controlState,

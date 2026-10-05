@@ -37,16 +37,16 @@ final class F14LibraryVisualState {
 
 abstract final class F14LibraryGeometry {
   static Size boardSizeFor(F14LibraryDevice device) => switch (device) {
-        F14LibraryDevice.capacitor => const Size(220, 110),
-        F14LibraryDevice.inductor => const Size(220, 110),
-        F14LibraryDevice.impedance => const Size(220, 110),
-        F14LibraryDevice.auxiliaryNo => const Size(120, 170),
-        F14LibraryDevice.auxiliaryNc => const Size(120, 170),
-        F14LibraryDevice.contactorAc1 => const Size(160, 210),
-        F14LibraryDevice.contactor3p => const Size(220, 240),
-        F14LibraryDevice.breaker3p => const Size(190, 220),
-        F14LibraryDevice.thermalOverload3p => const Size(200, 220),
-      };
+    F14LibraryDevice.capacitor => const Size(220, 110),
+    F14LibraryDevice.inductor => const Size(220, 110),
+    F14LibraryDevice.impedance => const Size(220, 110),
+    F14LibraryDevice.auxiliaryNo => const Size(120, 170),
+    F14LibraryDevice.auxiliaryNc => const Size(120, 170),
+    F14LibraryDevice.contactorAc1 => const Size(160, 210),
+    F14LibraryDevice.contactor3p => const Size(220, 240),
+    F14LibraryDevice.breaker3p => const Size(190, 220),
+    F14LibraryDevice.thermalOverload3p => const Size(200, 220),
+  };
 }
 
 class F14LibraryComponentView extends StatelessWidget {
@@ -63,12 +63,12 @@ class F14LibraryComponentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size.width,
-        height: size.height,
-        child: CustomPaint(
-          painter: _F14LibraryPainter(device: device, state: state),
-        ),
-      );
+    width: size.width,
+    height: size.height,
+    child: CustomPaint(
+      painter: _F14LibraryPainter(device: device, state: state),
+    ),
+  );
 }
 
 final class _F14LibraryPainter extends CustomPainter {
@@ -145,10 +145,7 @@ final class _Painter {
 
   void housing(
     Rect body, {
-    List<Color> colors = const <Color>[
-      Color(0xFFF9FBFC),
-      Color(0xFFD5DEE4),
-    ],
+    List<Color> colors = const <Color>[Color(0xFFF9FBFC), Color(0xFFD5DEE4)],
     double radius = 8,
   }) {
     final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(radius));
@@ -240,8 +237,11 @@ final class _Painter {
   void capacitor() {
     final Offset left = Offset(rect.left + w * .22, c.dy);
     final Offset right = Offset(rect.right - w * .22, c.dy);
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .38, height: h * .56);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .38,
+      height: h * .56,
+    );
     lead(left, Offset(body.left, c.dy));
     lead(Offset(body.right, c.dy), right);
     terminal(left);
@@ -272,8 +272,11 @@ final class _Painter {
   void inductor() {
     final Offset left = Offset(rect.left + w * .22, c.dy);
     final Offset right = Offset(rect.right - w * .22, c.dy);
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .42, height: h * .58);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .42,
+      height: h * .58,
+    );
     lead(left, Offset(body.left, c.dy));
     lead(Offset(body.right, c.dy), right);
     terminal(left);
@@ -300,8 +303,11 @@ final class _Painter {
   void impedance() {
     final Offset left = Offset(rect.left + w * .22, c.dy);
     final Offset right = Offset(rect.right - w * .22, c.dy);
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .42, height: h * .58);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .42,
+      height: h * .58,
+    );
     lead(left, Offset(body.left, c.dy));
     lead(Offset(body.right, c.dy), right);
     terminal(left);
@@ -321,17 +327,17 @@ final class _Painter {
   }
 
   void auxiliaryContact({required bool normallyClosed}) {
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .62, height: h * .68);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .62,
+      height: h * .68,
+    );
     housing(body, radius: h * .035);
     final Offset top = Offset(c.dx, rect.top + h * .12);
     final Offset bottom = Offset(c.dx, rect.bottom - h * .12);
     terminal(top, label: normallyClosed ? '21' : '13');
     terminal(bottom, label: normallyClosed ? '22' : '14');
-    lead(
-      top.translate(0, h * .04),
-      Offset(c.dx, body.top + body.height * .22),
-    );
+    lead(top.translate(0, h * .04), Offset(c.dx, body.top + body.height * .22));
     lead(
       Offset(c.dx, body.bottom - body.height * .22),
       bottom.translate(0, -h * .04),
@@ -380,25 +386,17 @@ final class _Painter {
     final int poles = singlePhase ? 1 : 3;
     final List<double> xs = poles == 1
         ? <double>[c.dx - body.width * .18]
-        : <double>[
-            c.dx - body.width * .28,
-            c.dx,
-            c.dx + body.width * .28,
-          ];
+        : <double>[c.dx - body.width * .28, c.dx, c.dx + body.width * .28];
     for (var i = 0; i < poles; i++) {
       final Offset top = Offset(xs[i], rect.top + h * .08);
       final Offset bottom = Offset(xs[i], rect.bottom - h * .08);
       terminal(
         top,
-        label: poles == 1
-            ? '1L1'
-            : <String>['1L1', '3L2', '5L3'][i],
+        label: poles == 1 ? '1L1' : <String>['1L1', '3L2', '5L3'][i],
       );
       terminal(
         bottom,
-        label: poles == 1
-            ? '2T1'
-            : <String>['2T1', '4T2', '6T3'][i],
+        label: poles == 1 ? '2T1' : <String>['2T1', '4T2', '6T3'][i],
       );
       lead(
         top.translate(0, h * .03),
@@ -421,9 +419,7 @@ final class _Painter {
         Rect.fromCenter(
           center: poleWindow.center.translate(
             0,
-            state.actuated
-                ? poleWindow.height * .12
-                : -poleWindow.height * .12,
+            state.actuated ? poleWindow.height * .12 : -poleWindow.height * .12,
           ),
           width: poleWindow.width * .55,
           height: poleWindow.height * .24,
@@ -465,15 +461,16 @@ final class _Painter {
       state.actuated ? 'I' : 'O',
       Offset(c.dx, body.top + h * .09),
       size: h * .11,
-      color: state.actuated
-          ? const Color(0xFF167A3E)
-          : const Color(0xFF5A6871),
+      color: state.actuated ? const Color(0xFF167A3E) : const Color(0xFF5A6871),
     );
   }
 
   void breaker3p() {
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .72, height: h * .78);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .72,
+      height: h * .78,
+    );
     housing(body, radius: h * .03);
     final List<double> xs = <double>[
       c.dx - body.width * .28,
@@ -497,8 +494,8 @@ final class _Painter {
       final double y = state.tripped
           ? slot.center.dy
           : (state.closed
-              ? slot.top + slot.height * .34
-              : slot.bottom - slot.height * .34);
+                ? slot.top + slot.height * .34
+                : slot.bottom - slot.height * .34);
       final Rect lever = Rect.fromCenter(
         center: Offset(xs[i], y),
         width: slot.width * .72,
@@ -506,22 +503,13 @@ final class _Painter {
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(lever, Radius.circular(h * .02)),
-        gradient(
-          lever,
-          const <Color>[Color(0xFF515E67), Color(0xFF172027)],
-        ),
+        gradient(lever, const <Color>[Color(0xFF515E67), Color(0xFF172027)]),
       );
     }
-    text(
-      'C10  3P',
-      Offset(c.dx, body.top + h * .08),
-      size: h * .07,
-    );
+    text('C10  3P', Offset(c.dx, body.top + h * .08), size: h * .07);
     final Color indicator = state.tripped
         ? const Color(0xFFD64545)
-        : (state.closed
-            ? const Color(0xFF3AA964)
-            : const Color(0xFF9AA7AE));
+        : (state.closed ? const Color(0xFF3AA964) : const Color(0xFF9AA7AE));
     canvas.drawCircle(
       Offset(c.dx, body.bottom - h * .08),
       h * .025,
@@ -530,8 +518,11 @@ final class _Painter {
   }
 
   void thermalOverload3p() {
-    final Rect body =
-        Rect.fromCenter(center: c, width: w * .74, height: h * .76);
+    final Rect body = Rect.fromCenter(
+      center: c,
+      width: w * .74,
+      height: h * .76,
+    );
     housing(
       body,
       colors: const <Color>[Color(0xFFF3F1EA), Color(0xFFC8C4B7)],
@@ -574,11 +565,7 @@ final class _Painter {
       c.dx - body.width * .20,
       body.top + body.height * .22,
     );
-    canvas.drawCircle(
-      dial,
-      h * .075,
-      Paint()..color = const Color(0xFF28353D),
-    );
+    canvas.drawCircle(dial, h * .075, Paint()..color = const Color(0xFF28353D));
     canvas.drawArc(
       Rect.fromCircle(center: dial, radius: h * .055),
       -math.pi * .75,
@@ -591,19 +578,14 @@ final class _Painter {
     );
     text(
       'RESET',
-      Offset(
-        c.dx + body.width * .18,
-        body.top + body.height * .18,
-      ),
+      Offset(c.dx + body.width * .18, body.top + body.height * .18),
       size: h * .055,
     );
     text(
       state.tripped ? 'TRIP' : '5.0 A',
       Offset(c.dx, body.top + body.height * .38),
       size: h * .075,
-      color: state.tripped
-          ? const Color(0xFFB42318)
-          : const Color(0xFF34454F),
+      color: state.tripped ? const Color(0xFFB42318) : const Color(0xFF34454F),
     );
   }
 }

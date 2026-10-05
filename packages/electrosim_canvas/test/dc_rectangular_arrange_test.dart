@@ -71,23 +71,23 @@ void main() {
     }
   });
 
-  test('undersized rectangle returns unresolved instead of placing on bends', () {
-    final DcRectangularArrangement result = policy.arrange(
-      topLeft: const Offset(48, 48),
-      width: 240,
-      height: 192,
-      sourceId: 'G1',
-      loadId: 'H1',
-      topInlineElements: const <DcInlineElement>[
-        DcInlineElement(id: 'QF1', extent: 72),
-        DcInlineElement(id: 'S1', extent: 72),
-      ],
-    );
+  test(
+    'undersized rectangle returns unresolved instead of placing on bends',
+    () {
+      final DcRectangularArrangement result = policy.arrange(
+        topLeft: const Offset(48, 48),
+        width: 240,
+        height: 192,
+        sourceId: 'G1',
+        loadId: 'H1',
+        topInlineElements: const <DcInlineElement>[
+          DcInlineElement(id: 'QF1', extent: 72),
+          DcInlineElement(id: 'S1', extent: 72),
+        ],
+      );
 
-    expect(result.isResolved, isFalse);
-    expect(
-      result.failure,
-      DcArrangeFailure.insufficientStraightBranchLength,
-    );
-  });
+      expect(result.isResolved, isFalse);
+      expect(result.failure, DcArrangeFailure.insufficientStraightBranchLength);
+    },
+  );
 }

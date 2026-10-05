@@ -31,8 +31,8 @@ class F18HomeSurface extends StatelessWidget {
                       ElectroSimBreakpoints.classify(constraints.maxWidth);
                   final double horizontalPadding =
                       windowClass == ElectroSimWindowClass.compact
-                          ? ElectroSimSpacing.md
-                          : ElectroSimSpacing.xl;
+                      ? ElectroSimSpacing.md
+                      : ElectroSimSpacing.xl;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
@@ -118,8 +118,7 @@ class _HomeHeader extends StatelessWidget {
               constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
           return Padding(
             padding: EdgeInsets.symmetric(
-              horizontal:
-                  compact ? ElectroSimSpacing.md : ElectroSimSpacing.xl,
+              horizontal: compact ? ElectroSimSpacing.md : ElectroSimSpacing.xl,
             ),
             child: Center(
               child: ConstrainedBox(
@@ -131,8 +130,9 @@ class _HomeHeader extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         color: ElectroSimColors.primaryStrong,
-                        borderRadius:
-                            BorderRadius.circular(ElectroSimRadii.panel),
+                        borderRadius: BorderRadius.circular(
+                          ElectroSimRadii.panel,
+                        ),
                         boxShadow: ElectroSimComponentTokens.cardElevation,
                       ),
                       child: const Icon(
@@ -178,8 +178,9 @@ class _HomeHeader extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: ElectroSimColors.surfaceMuted,
-                          borderRadius:
-                              BorderRadius.circular(ElectroSimRadii.pill),
+                          borderRadius: BorderRadius.circular(
+                            ElectroSimRadii.pill,
+                          ),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -228,38 +229,35 @@ class _Hero extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 28,
-                height: 1,
-                color: ElectroSimColors.info,
-              ),
+              Container(width: 28, height: 1, color: ElectroSimColors.info),
               const SizedBox(width: ElectroSimSpacing.xs),
               Text(
                 'ENVIRONNEMENT DE TRAVAIL',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: ElectroSimColors.info,
-                      letterSpacing: 1.4,
-                    ),
+                  color: ElectroSimColors.info,
+                  letterSpacing: 1.4,
+                ),
               ),
             ],
           ),
           const SizedBox(height: ElectroSimSpacing.md),
           Text(
             'Concevoir, diagnostiquer et comprendre les systèmes électriques.',
-            style: (compact
-                    ? Theme.of(context).textTheme.headlineMedium
-                    : Theme.of(context).textTheme.displayLarge)
-                ?.copyWith(
-              color: ElectroSimColors.textPrimary,
-              letterSpacing: -1,
-            ),
+            style:
+                (compact
+                        ? Theme.of(context).textTheme.headlineMedium
+                        : Theme.of(context).textTheme.displayLarge)
+                    ?.copyWith(
+                      color: ElectroSimColors.textPrimary,
+                      letterSpacing: -1,
+                    ),
           ),
           const SizedBox(height: ElectroSimSpacing.md),
           Text(
             'Un espace professionnel pour l’apprentissage, la simulation et la supervision des activités d’électrotechnique.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: ElectroSimColors.textSecondary,
-                ),
+              color: ElectroSimColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -268,10 +266,7 @@ class _Hero extends StatelessWidget {
 }
 
 class _HomeActionGrid extends StatelessWidget {
-  const _HomeActionGrid({
-    required this.windowClass,
-    required this.actions,
-  });
+  const _HomeActionGrid({required this.windowClass, required this.actions});
 
   final ElectroSimWindowClass windowClass;
   final List<_HomeAction> actions;
@@ -377,8 +372,7 @@ class _HomeActionCard extends StatelessWidget {
                     color: action.emphasized
                         ? Colors.white.withValues(alpha: .10)
                         : const Color(0xFFF3F7FB),
-                    borderRadius:
-                        BorderRadius.circular(ElectroSimRadii.panel),
+                    borderRadius: BorderRadius.circular(ElectroSimRadii.panel),
                     border: Border.all(
                       color: action.emphasized
                           ? Colors.white.withValues(alpha: .20)
@@ -391,23 +385,23 @@ class _HomeActionCard extends StatelessWidget {
                 Text(
                   action.eyebrow,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: secondary,
-                        letterSpacing: 1.4,
-                      ),
+                    color: secondary,
+                    letterSpacing: 1.4,
+                  ),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xs),
                 Text(
                   action.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: foreground,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(color: foreground),
                 ),
                 const SizedBox(height: ElectroSimSpacing.sm),
                 Text(
                   action.description,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: secondary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: secondary),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
                 Row(
@@ -417,10 +411,9 @@ class _HomeActionCard extends StatelessWidget {
                       child: Text(
                         action.actionLabel,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: foreground,
-                                ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(color: foreground),
                       ),
                     ),
                     const SizedBox(width: ElectroSimSpacing.xs),
@@ -514,10 +507,7 @@ class _HomeFooter extends StatelessWidget {
         SizedBox(width: ElectroSimSpacing.md),
         Text(
           'Mode local disponible',
-          style: TextStyle(
-            fontSize: 10,
-            color: ElectroSimColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 10, color: ElectroSimColors.textSecondary),
         ),
       ],
     );

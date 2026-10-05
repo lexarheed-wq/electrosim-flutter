@@ -76,8 +76,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           return AnimatedBuilder(
             animation: widget.viewport,
             builder: (BuildContext context, Widget? child) {
-              final CircuitGeometryIndex geometry =
-                  CircuitGeometryIndex.build(widget.circuit, widget.layout);
+              final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+                widget.circuit,
+                widget.layout,
+              );
               return Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
@@ -152,24 +154,24 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
             child: Transform.rotate(
               angle: math.pi / 2 * quarterTurns,
               child: F18ComponentAssetVisual(
-              key: ValueKey<String>('board-v1-visual-$elementId'),
-              modelType: renderedModelType,
-              variantKey: visualVariant,
-              size: baseVisualSize,
-              active: enabled,
-              energized: energized,
-              closed: closed,
-              tripped: tripped,
-              pressed: pressed,
-              actuated: actuated,
-              animationValue: _motion.value,
-              showTerminals: true,
-              currentA: currentA,
-              voltageV: voltageV,
-              batterySoc: batterySoc,
-              ratedCurrentA: ratedCurrentA,
-              currentLimitA: currentLimitA,
-              resistanceOhm: resistanceOhm,
+                key: ValueKey<String>('board-v1-visual-$elementId'),
+                modelType: renderedModelType,
+                variantKey: visualVariant,
+                size: baseVisualSize,
+                active: enabled,
+                energized: energized,
+                closed: closed,
+                tripped: tripped,
+                pressed: pressed,
+                actuated: actuated,
+                animationValue: _motion.value,
+                showTerminals: true,
+                currentA: currentA,
+                voltageV: voltageV,
+                batterySoc: batterySoc,
+                ratedCurrentA: ratedCurrentA,
+                currentLimitA: currentLimitA,
+                resistanceOhm: resistanceOhm,
               ),
             ),
           ),
@@ -179,10 +181,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
-      final double currentA =
-          _sourceCurrentA(runtime, source.id, source.modelType);
-      final double voltageV =
-          _sourceVoltageV(runtime, source.id, source.modelType);
+      final double currentA = _sourceCurrentA(
+        runtime,
+        source.id,
+        source.modelType,
+      );
+      final double voltageV = _sourceVoltageV(
+        runtime,
+        source.id,
+        source.modelType,
+      );
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
@@ -190,7 +198,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         visualVariant: source.parameters['_visualVariant'] as String?,
         enabled: source.enabled,
         energized:
-            widget.simulationRunning && (runtime?.solved ?? false) && source.enabled,
+            widget.simulationRunning &&
+            (runtime?.solved ?? false) &&
+            source.enabled,
         closed: true,
         tripped: false,
         pressed: false,
@@ -215,11 +225,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         component.id,
         component.modelType,
       );
-      final double batterySoc = component.modelType == 'pv_battery' &&
+      final double batterySoc =
+          component.modelType == 'pv_battery' &&
               (runtime?.pvResult?.isSolved ?? false)
           ? runtime!.pvResult!.batterySoc
           : 0;
-      final bool energized = widget.simulationRunning &&
+      final bool energized =
+          widget.simulationRunning &&
           (runtime?.solved ?? false) &&
           currentA.abs() > 1e-6;
       final String type = component.modelType.toLowerCase();
@@ -229,19 +241,20 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         'push_button_nc' => !pressed,
         _ => (component.controlState['closed'] as bool?) ?? true,
       };
-      final bool tripped = (runtime?.protectionTripped(component.id) ?? false) ||
+      final bool tripped =
+          (runtime?.protectionTripped(component.id) ?? false) ||
           component.controlState['tripped'] == true;
       final bool contactorAux =
           type == 'contactor_aux_no' || type == 'contactor_aux_nc';
       final bool relayAux =
           type == 'relay_contact_no' || type == 'relay_contact_nc';
-      final Object? linkedId = component.parameters[
-          relayAux ? 'linkedRelayId' : 'linkedContactorId'];
+      final Object? linkedId = component
+          .parameters[relayAux ? 'linkedRelayId' : 'linkedContactorId'];
       final bool actuated = (contactorAux || relayAux) && linkedId is String
           ? (runtime?.contactorActuated(ComponentId(linkedId)) ??
-              (component.controlState['actuated'] == true))
+                (component.controlState['actuated'] == true))
           : (runtime?.contactorActuated(component.id) ??
-              (component.controlState['actuated'] == true));
+                (component.controlState['actuated'] == true));
 
       addVisual(
         elementId: component.id.value,
@@ -281,7 +294,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in dc.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         final double? current = branch.currentA;
-        if (current != null && current.isFinite && current.abs() > value.abs()) {
+        if (current != null &&
+            current.isFinite &&
+            current.abs() > value.abs()) {
           value = current;
         }
       }
@@ -294,7 +309,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac1.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) value = math.max(value, current);
+        if (current != null && current.isFinite)
+          value = math.max(value, current);
       }
       return value;
     }
@@ -305,7 +321,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac3.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) value = math.max(value, current);
+        if (current != null && current.isFinite)
+          value = math.max(value, current);
       }
       return value;
     }
@@ -352,7 +369,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac1.branchResults) {
         if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) value = math.max(value, current);
+        if (current != null && current.isFinite)
+          value = math.max(value, current);
       }
       if (value > 0) return value;
     }
@@ -362,7 +380,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       for (final branch in ac3.branchResults) {
         if (branch.id != target && !branch.id.startsWith('$target:')) continue;
         final double? current = branch.current?.magnitude;
-        if (current != null && current.isFinite) value = math.max(value, current);
+        if (current != null && current.isFinite)
+          value = math.max(value, current);
       }
       if (value > 0) return value;
     }
@@ -429,7 +448,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (dc != null && dc.isSolved) {
       for (final branch in dc.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltageV.isFinite) value = math.max(value, branch.voltageV.abs());
+        if (branch.voltageV.isFinite)
+          value = math.max(value, branch.voltageV.abs());
       }
       return value;
     }
@@ -437,7 +457,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (ac1 != null && ac1.isSolved) {
       for (final branch in ac1.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltage.magnitude.isFinite) value = math.max(value, branch.voltage.magnitude);
+        if (branch.voltage.magnitude.isFinite)
+          value = math.max(value, branch.voltage.magnitude);
       }
       return value;
     }
@@ -445,7 +466,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     if (ac3 != null && ac3.isSolved) {
       for (final branch in ac3.branchResults) {
         if (branch.id != prefix && !branch.id.startsWith('$prefix:')) continue;
-        if (branch.voltage.magnitude.isFinite) value = math.max(value, branch.voltage.magnitude);
+        if (branch.voltage.magnitude.isFinite)
+          value = math.max(value, branch.voltage.magnitude);
       }
       return value;
     }
@@ -500,8 +522,10 @@ class _F9CanvasOverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
     _paintLiveWires(canvas, geometry);
     _paintSmartWirePreview(canvas);
 
@@ -637,12 +661,11 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     if (pv != null && pv.isSolved) {
       return switch (connection.phase) {
         PhaseTag.dcPositive || PhaseTag.dcNegative => pv.pvDrawnCurrentA.abs(),
-        PhaseTag.l1 || PhaseTag.neutral =>
-          pv.inverterOutputCurrentRmsA.abs(),
+        PhaseTag.l1 || PhaseTag.neutral => pv.inverterOutputCurrentRmsA.abs(),
         _ => math.max(
-            pv.pvDrawnCurrentA.abs(),
-            pv.inverterOutputCurrentRmsA.abs(),
-          ),
+          pv.pvDrawnCurrentA.abs(),
+          pv.inverterOutputCurrentRmsA.abs(),
+        ),
       };
     }
     return current;
@@ -787,19 +810,23 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   bool _isReferenceTerminal(TerminalId terminalId) {
     for (final SourceInstance source in circuit.sources) {
       final String rendered =
-          (source.parameters['_visualModelType'] as String?) ?? source.modelType;
+          (source.parameters['_visualModelType'] as String?) ??
+          source.modelType;
       if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (source.terminals.any((Terminal terminal) => terminal.id == terminalId)) {
+      if (source.terminals.any(
+        (Terminal terminal) => terminal.id == terminalId,
+      )) {
         return true;
       }
     }
     for (final ComponentInstance component in circuit.components) {
       final String rendered =
           (component.parameters['_visualModelType'] as String?) ??
-              component.modelType;
+          component.modelType;
       if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (component.terminals
-          .any((Terminal terminal) => terminal.id == terminalId)) {
+      if (component.terminals.any(
+        (Terminal terminal) => terminal.id == terminalId,
+      )) {
         return true;
       }
     }
@@ -813,12 +840,16 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         in geometry.terminalPositions.entries) {
       final Offset screen = viewport.worldToScreen(entry.value);
       if (entry.key == pending) continue;
-      final F9WiringDecision decision =
-          F9WiringPolicy.evaluateAndBuild(circuit, pending, entry.key);
+      final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
+        circuit,
+        pending,
+        entry.key,
+      );
       final bool hovered = entry.key == hoverTerminalId;
       if (!decision.accepted && !hovered) continue;
-      final Color color =
-          decision.accepted ? ElectroSimColors.success : ElectroSimColors.danger;
+      final Color color = decision.accepted
+          ? ElectroSimColors.success
+          : ElectroSimColors.danger;
       canvas.drawCircle(
         screen,
         hovered ? 12 : 9,
@@ -854,8 +885,9 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   }) {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final Size visualSize = _f9VisualSize(worldRect, viewport);
-    final Color color =
-        active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
+    final Color color = active
+        ? ElectroSimColors.primary
+        : ElectroSimColors.textSecondary;
 
     if (!F18ReferenceComponentVisuals.supports(modelType)) {
       canvas.save();
@@ -926,24 +958,21 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   }
 
   static Color _phaseColor(PhaseTag phase) => switch (phase) {
-        PhaseTag.dcPositive => const Color(0xFFDC2626),
-        PhaseTag.dcNegative => const Color(0xFF111827),
-        PhaseTag.l1 => const Color(0xFF92400E),
-        PhaseTag.l2 => const Color(0xFF111827),
-        PhaseTag.l3 => const Color(0xFF6B7280),
-        PhaseTag.neutral => const Color(0xFF2563EB),
-        PhaseTag.protectiveEarth => const Color(0xFF15803D),
-        PhaseTag.none => const Color(0xFF475569),
-      };
+    PhaseTag.dcPositive => const Color(0xFFDC2626),
+    PhaseTag.dcNegative => const Color(0xFF111827),
+    PhaseTag.l1 => const Color(0xFF92400E),
+    PhaseTag.l2 => const Color(0xFF111827),
+    PhaseTag.l3 => const Color(0xFF6B7280),
+    PhaseTag.neutral => const Color(0xFF2563EB),
+    PhaseTag.protectiveEarth => const Color(0xFF15803D),
+    PhaseTag.none => const Color(0xFF475569),
+  };
 
   @override
   bool shouldRepaint(_F9CanvasOverlayPainter oldDelegate) => true;
 }
 
-Size _f9VisualSize(
-  Rect worldRect,
-  ViewportController viewport,
-) {
+Size _f9VisualSize(Rect worldRect, ViewportController viewport) {
   final double scale = viewport.scale;
   return Size(
     (worldRect.width * scale * 0.96).clamp(72.0, 136.0).toDouble(),

@@ -10,112 +10,126 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Reference component production integration', () {
-    testWidgets('every palette model uses the reference wrapper and size contract',
-        (WidgetTester tester) async {
-      for (final F9PaletteDefinition item in f9PaletteCatalog) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Center(
-              child: F9ComponentPreview(
-                definition: item,
-                compact: true,
+    testWidgets(
+      'every palette model uses the reference wrapper and size contract',
+      (WidgetTester tester) async {
+        for (final F9PaletteDefinition item in f9PaletteCatalog) {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Center(
+                child: F9ComponentPreview(definition: item, compact: true),
               ),
             ),
-          ),
-        );
-        await tester.pump();
+          );
+          await tester.pump();
 
-        final Finder finder = find.byType(F18ComponentAssetVisual);
-        expect(finder, findsOneWidget, reason: item.modelType);
-        final F18ComponentAssetVisual visual =
-            tester.widget<F18ComponentAssetVisual>(finder);
-        expect(visual.modelType, item.renderedModelType);
-        expect(
-          visual.size,
-          F18ReferenceComponentMetrics.paletteSizeFor(item.renderedModelType),
-          reason: item.renderedModelType,
-        );
-        expect(tester.takeException(), isNull, reason: item.modelType);
-      }
-    });
+          final Finder finder = find.byType(F18ComponentAssetVisual);
+          expect(finder, findsOneWidget, reason: item.modelType);
+          final F18ComponentAssetVisual visual = tester
+              .widget<F18ComponentAssetVisual>(finder);
+          expect(visual.modelType, item.renderedModelType);
+          expect(
+            visual.size,
+            F18ReferenceComponentMetrics.paletteSizeFor(item.renderedModelType),
+            reason: item.renderedModelType,
+          );
+          expect(tester.takeException(), isNull, reason: item.modelType);
+        }
+      },
+    );
 
-    testWidgets('uploaded five render through uploaded ReferenceComponentView',
-        (WidgetTester tester) async {
-      const List<String> models = <String>[
-        'dc_voltage_source',
-        'switch',
-        'lamp',
-        'breaker_dc',
-        'push_button_no',
-      ];
-      for (final String modelType in models) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Center(
-              child: F18ComponentAssetVisual(
-                modelType: modelType,
-                size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
-                energized: modelType == 'dc_voltage_source' || modelType == 'lamp',
-                currentA: .5,
-                voltageV: 24,
-                closed: modelType == 'switch' || modelType == 'breaker_dc',
-                pressed: modelType == 'push_button_no',
+    testWidgets(
+      'uploaded five render through uploaded ReferenceComponentView',
+      (WidgetTester tester) async {
+        const List<String> models = <String>[
+          'dc_voltage_source',
+          'switch',
+          'lamp',
+          'breaker_dc',
+          'push_button_no',
+        ];
+        for (final String modelType in models) {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Center(
+                child: F18ComponentAssetVisual(
+                  modelType: modelType,
+                  size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
+                  energized:
+                      modelType == 'dc_voltage_source' || modelType == 'lamp',
+                  currentA: .5,
+                  voltageV: 24,
+                  closed: modelType == 'switch' || modelType == 'breaker_dc',
+                  pressed: modelType == 'push_button_no',
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pump();
+          );
+          await tester.pump();
 
-        expect(find.byType(ReferenceComponentView), findsOneWidget,
-            reason: modelType);
-        expect(find.byType(ExtendedReferenceComponentView), findsNothing,
-            reason: modelType);
-        expect(tester.takeException(), isNull, reason: modelType);
-      }
-    });
+          expect(
+            find.byType(ReferenceComponentView),
+            findsOneWidget,
+            reason: modelType,
+          );
+          expect(
+            find.byType(ExtendedReferenceComponentView),
+            findsNothing,
+            reason: modelType,
+          );
+          expect(tester.takeException(), isNull, reason: modelType);
+        }
+      },
+    );
 
-    testWidgets('eight additional models use dedicated extended vector painters',
-        (WidgetTester tester) async {
-      const List<String> models = <String>[
-        'resistor',
-        'push_button_nc',
-        'buzzer',
-        'fuse_dc',
-        'diode',
-        'fan_dc',
-        'motor_dc',
-        'relay_coil',
-      ];
-      for (final String modelType in models) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Center(
-              child: F18ComponentAssetVisual(
-                modelType: modelType,
-                size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
-                energized: true,
-                currentA: .5,
-                voltageV: 24,
-                resistanceOhm: 100,
-                animationValue: .25,
+    testWidgets(
+      'eight additional models use dedicated extended vector painters',
+      (WidgetTester tester) async {
+        const List<String> models = <String>[
+          'resistor',
+          'push_button_nc',
+          'buzzer',
+          'fuse_dc',
+          'diode',
+          'fan_dc',
+          'motor_dc',
+          'relay_coil',
+        ];
+        for (final String modelType in models) {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Center(
+                child: F18ComponentAssetVisual(
+                  modelType: modelType,
+                  size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
+                  energized: true,
+                  currentA: .5,
+                  voltageV: 24,
+                  resistanceOhm: 100,
+                  animationValue: .25,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pump();
+          );
+          await tester.pump();
 
-        expect(find.byType(ExtendedReferenceComponentView), findsOneWidget,
-            reason: modelType);
-        expect(tester.takeException(), isNull, reason: modelType);
-      }
-    });
+          expect(
+            find.byType(ExtendedReferenceComponentView),
+            findsOneWidget,
+            reason: modelType,
+          );
+          expect(tester.takeException(), isNull, reason: modelType);
+        }
+      },
+    );
 
     test('production palette is fully covered by the reference renderer', () {
       for (final F9PaletteDefinition item in f9PaletteCatalog) {
         expect(
           F18ReferenceComponentVisuals.supports(item.renderedModelType),
           isTrue,
-          reason: '${item.title} (${item.modelType} → ${item.renderedModelType})',
+          reason:
+              '${item.title} (${item.modelType} → ${item.renderedModelType})',
         );
       }
     });
@@ -149,11 +163,7 @@ void main() {
         Offset expected, {
         required String reason,
       }) {
-        expect(
-          (actual - expected).distance,
-          lessThan(1e-6),
-          reason: reason,
-        );
+        expect((actual - expected).distance, lessThan(1e-6), reason: reason);
       }
 
       expectOffset(
@@ -276,8 +286,9 @@ void main() {
     });
 
     test('board uses reference widgets and live runtime animation', () {
-      final String board =
-          File('lib/f9_component_visuals.dart').readAsStringSync();
+      final String board = File(
+        'lib/f9_component_visuals.dart',
+      ).readAsStringSync();
       expect(board, contains('F18ReferenceComponentVisuals.supports'));
       expect(board, contains('_paintLiveWires'));
       expect(board, contains('_paintMovingDashes'));
@@ -288,13 +299,17 @@ void main() {
       expect(board, contains('voltageV: voltageV'));
     });
 
-    test('no photographic renderer is used by the shared production wrapper', () {
-      final String wrapper =
-          File('lib/f18_component_asset_visual.dart').readAsStringSync();
-      expect(wrapper, contains('ReferenceComponentView'));
-      expect(wrapper, contains('ExtendedReferenceComponentView'));
-      expect(wrapper, isNot(contains('Image.asset(')));
-    });
+    test(
+      'no photographic renderer is used by the shared production wrapper',
+      () {
+        final String wrapper = File(
+          'lib/f18_component_asset_visual.dart',
+        ).readAsStringSync();
+        expect(wrapper, contains('ReferenceComponentView'));
+        expect(wrapper, contains('ExtendedReferenceComponentView'));
+        expect(wrapper, isNot(contains('Image.asset(')));
+      },
+    );
 
     test('quick catalog has no duplicate component identity key', () {
       final Set<String> keyNames = <String>{};

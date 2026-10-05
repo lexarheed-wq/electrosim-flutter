@@ -43,7 +43,9 @@ final class ViewportController extends ChangeNotifier {
       return;
     }
     final Offset worldBefore = screenToWorld(screenFocalPoint);
-    final double nextScale = (_scale * factor).clamp(minScale, maxScale).toDouble();
+    final double nextScale = (_scale * factor)
+        .clamp(minScale, maxScale)
+        .toDouble();
     if (nextScale == _scale) {
       return;
     }

@@ -9,19 +9,42 @@ void main() {
   group('M6 receiver load states', () {
     test('validated receiver thresholds remain exact', () {
       final ComponentInstance load = _load(10.0);
-      expect(loads.evaluate(component: load, currentA: 0)!.code, ReceiverLoadCode.off);
-      expect(loads.evaluate(component: load, currentA: 7.4)!.code, ReceiverLoadCode.underload);
-      expect(loads.evaluate(component: load, currentA: 7.5)!.code, ReceiverLoadCode.normal);
-      expect(loads.evaluate(component: load, currentA: 10.5)!.code, ReceiverLoadCode.normal);
-      expect(loads.evaluate(component: load, currentA: 10.5001)!.code, ReceiverLoadCode.overload);
-      expect(loads.evaluate(component: load, currentA: 15.0)!.code, ReceiverLoadCode.overload);
-      expect(loads.evaluate(component: load, currentA: 15.0001)!.code, ReceiverLoadCode.severeOverload);
+      expect(
+        loads.evaluate(component: load, currentA: 0)!.code,
+        ReceiverLoadCode.off,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 7.4)!.code,
+        ReceiverLoadCode.underload,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 7.5)!.code,
+        ReceiverLoadCode.normal,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 10.5)!.code,
+        ReceiverLoadCode.normal,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 10.5001)!.code,
+        ReceiverLoadCode.overload,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 15.0)!.code,
+        ReceiverLoadCode.overload,
+      );
+      expect(
+        loads.evaluate(component: load, currentA: 15.0001)!.code,
+        ReceiverLoadCode.severeOverload,
+      );
     });
 
     test('receiver rating is independent from protection rating', () {
       final ComponentInstance load = _load(1.5);
-      final ReceiverLoadState state =
-          loads.evaluate(component: load, currentA: 3.0)!;
+      final ReceiverLoadState state = loads.evaluate(
+        component: load,
+        currentA: 3.0,
+      )!;
       expect(state.code, ReceiverLoadCode.severeOverload);
       expect(state.loadRatio, closeTo(2.0, 1e-12));
 
@@ -44,18 +67,27 @@ void main() {
       expect(protections.shouldOpenInstantaneously(breaker, 4.59), isFalse);
     });
 
-    test('curve C magnetic threshold is 5-10 x In and hard opening at 10 x', () {
-      final ComponentInstance breaker = _protection(
-        modelType: 'breaker_dc',
-        ratedCurrentA: 5.0,
-        parameters: const <String, Object?>{'tripCurve': 'C'},
-      );
-      expect(protections.zone(breaker, 25.0), ProtectionZone.magneticFast);
-      expect(protections.shouldOpenInstantaneously(breaker, 25.0), isFalse);
-      expect(protections.zone(breaker, 50.0), ProtectionZone.magneticInstantaneous);
-      expect(protections.shouldOpenInstantaneously(breaker, 50.0), isTrue);
-      expect(protections.tripTimeSeconds(breaker, 50.0), closeTo(0.02, 1e-12));
-    });
+    test(
+      'curve C magnetic threshold is 5-10 x In and hard opening at 10 x',
+      () {
+        final ComponentInstance breaker = _protection(
+          modelType: 'breaker_dc',
+          ratedCurrentA: 5.0,
+          parameters: const <String, Object?>{'tripCurve': 'C'},
+        );
+        expect(protections.zone(breaker, 25.0), ProtectionZone.magneticFast);
+        expect(protections.shouldOpenInstantaneously(breaker, 25.0), isFalse);
+        expect(
+          protections.zone(breaker, 50.0),
+          ProtectionZone.magneticInstantaneous,
+        );
+        expect(protections.shouldOpenInstantaneously(breaker, 50.0), isTrue);
+        expect(
+          protections.tripTimeSeconds(breaker, 50.0),
+          closeTo(0.02, 1e-12),
+        );
+      },
+    );
 
     test('thermal overload does not have a magnetic instantaneous band', () {
       final ComponentInstance thermal = _protection(

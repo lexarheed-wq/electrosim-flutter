@@ -30,15 +30,15 @@ final class SavedCircuitDocument {
   final Map<String, Object?> appState;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'schemaVersion': currentSchemaVersion,
-        'saveId': saveId,
-        'title': title,
-        'createdAtUtc': createdAtUtc.toUtc().toIso8601String(),
-        'updatedAtUtc': updatedAtUtc.toUtc().toIso8601String(),
-        'engineVersion': engineVersion,
-        'circuit': circuit.toJson(),
-        'appState': appState,
-      };
+    'schemaVersion': currentSchemaVersion,
+    'saveId': saveId,
+    'title': title,
+    'createdAtUtc': createdAtUtc.toUtc().toIso8601String(),
+    'updatedAtUtc': updatedAtUtc.toUtc().toIso8601String(),
+    'engineVersion': engineVersion,
+    'circuit': circuit.toJson(),
+    'appState': appState,
+  };
 
   String toJsonString() => jsonEncode(toJson());
 
@@ -62,7 +62,9 @@ final class SavedCircuitDocument {
       return _migrateV1(json);
     }
     if (schemaRaw != currentSchemaVersion) {
-      throw FormatException('Unsupported saved circuit schemaVersion: $schemaRaw.');
+      throw FormatException(
+        'Unsupported saved circuit schemaVersion: $schemaRaw.',
+      );
     }
     return _parseV2(json);
   }

@@ -4,18 +4,13 @@ import 'inline_component_placement.dart';
 import 'wire_geometry.dart';
 
 final class DcInlineElement {
-  const DcInlineElement({
-    required this.id,
-    required this.extent,
-  });
+  const DcInlineElement({required this.id, required this.extent});
 
   final String id;
   final double extent;
 }
 
-enum DcArrangeFailure {
-  insufficientStraightBranchLength,
-}
+enum DcArrangeFailure { insufficientStraightBranchLength }
 
 final class DcRectangularArrangement {
   DcRectangularArrangement._({
@@ -36,8 +31,8 @@ final class DcRectangularArrangement {
   }
 
   const DcRectangularArrangement.unresolved(this.failure)
-      : positions = const <String, Offset>{},
-        outerLoop = null;
+    : positions = const <String, Offset>{},
+      outerLoop = null;
 
   final Map<String, Offset> positions;
   final OrthogonalWirePath? outerLoop;
@@ -77,30 +72,15 @@ final class DcRectangularArrangePolicy {
     }
 
     final Offset topRight = Offset(topLeft.dx + width, topLeft.dy);
-    final Offset bottomRight = Offset(
-      topLeft.dx + width,
-      topLeft.dy + height,
-    );
+    final Offset bottomRight = Offset(topLeft.dx + width, topLeft.dy + height);
     final Offset bottomLeft = Offset(topLeft.dx, topLeft.dy + height);
     final OrthogonalWirePath loop = OrthogonalWirePath(
-      points: <Offset>[
-        topLeft,
-        topRight,
-        bottomRight,
-        bottomLeft,
-        topLeft,
-      ],
+      points: <Offset>[topLeft, topRight, bottomRight, bottomLeft, topLeft],
     );
 
     final Map<String, Offset> positions = <String, Offset>{
-      sourceId: Offset(
-        topLeft.dx,
-        _snap(topLeft.dy + height / 2),
-      ),
-      loadId: Offset(
-        topRight.dx,
-        _snap(topRight.dy + height / 2),
-      ),
+      sourceId: Offset(topLeft.dx, _snap(topLeft.dy + height / 2)),
+      loadId: Offset(topRight.dx, _snap(topRight.dy + height / 2)),
     };
 
     if (topInlineElements.isEmpty) {
@@ -149,17 +129,18 @@ final class DcRectangularArrangePolicy {
       (DcInlineElement element) => element.extent == elements.first.extent,
     );
     if (!equalExtents) {
-      final InlinePlacementResult fallback = InlinePlacementPolicy(
-        grid: grid,
-        bendKeepOut: bendKeepOut,
-        minimumTerminalStub: minimumTerminalStub,
-        minimumComponentGap: minimumComponentGap,
-      ).placeCentered(
-        host: host,
-        componentExtents: elements
-            .map((DcInlineElement element) => element.extent)
-            .toList(growable: false),
-      );
+      final InlinePlacementResult fallback =
+          InlinePlacementPolicy(
+            grid: grid,
+            bendKeepOut: bendKeepOut,
+            minimumTerminalStub: minimumTerminalStub,
+            minimumComponentGap: minimumComponentGap,
+          ).placeCentered(
+            host: host,
+            componentExtents: elements
+                .map((DcInlineElement element) => element.extent)
+                .toList(growable: false),
+          );
       return fallback.isResolved ? fallback.centers : null;
     }
 
@@ -180,8 +161,7 @@ final class DcRectangularArrangePolicy {
           ..add(midpoint + ring * step);
       }
     } else {
-      final double halfStep =
-          _ceilToGrid((extent + minimumComponentGap) / 2);
+      final double halfStep = _ceilToGrid((extent + minimumComponentGap) / 2);
       for (var ring = elements.length ~/ 2 - 1; ring >= 0; ring--) {
         xs.add(midpoint - (2 * ring + 1) * halfStep);
       }

@@ -45,7 +45,8 @@ final class Ac3BranchResult {
   final AcComplex? current;
   final PhaseTag? phase;
 
-  AcComplex? get complexPower => current == null ? null : voltage * current!.conjugate;
+  AcComplex? get complexPower =>
+      current == null ? null : voltage * current!.conjugate;
   double? get activePowerW => complexPower?.real;
   double? get reactivePowerVar => complexPower?.imaginary;
   double? get apparentPowerVA => complexPower?.magnitude;
@@ -103,7 +104,9 @@ final class Ac3SolveResult {
        kclResiduals = Map<String, double>.unmodifiable(kclResiduals),
        phaseVoltages = Map<PhaseTag, AcComplex>.unmodifiable(phaseVoltages),
        lineCurrents = Map<PhaseTag, AcComplex>.unmodifiable(lineCurrents),
-       lineToLineVoltages = Map<String, AcComplex>.unmodifiable(lineToLineVoltages),
+       lineToLineVoltages = Map<String, AcComplex>.unmodifiable(
+         lineToLineVoltages,
+       ),
        missingPhases = List<PhaseTag>.unmodifiable(missingPhases),
        phaseOrderObservations = List<Ac3PhaseOrderObservation>.unmodifiable(
          phaseOrderObservations,
@@ -137,7 +140,8 @@ final class Ac3SolveResult {
   Ac3BranchResult branch(String id) =>
       branchResults.firstWhere((Ac3BranchResult branch) => branch.id == id);
 
-  AcComplex lineCurrent(PhaseTag phase) => lineCurrents[phase] ?? AcComplex.zero;
+  AcComplex lineCurrent(PhaseTag phase) =>
+      lineCurrents[phase] ?? AcComplex.zero;
 
   AcComplex? phaseVoltage(PhaseTag phase) => phaseVoltages[phase];
 }

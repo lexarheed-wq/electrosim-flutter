@@ -15,7 +15,11 @@ final class DiagnosticEngine {
     Iterable<ReceiverLoadState> receiverLoadStates =
         const <ReceiverLoadState>[],
   }) {
-    _requireIdentity(topology, simulation.circuitId, simulation.circuitRevision);
+    _requireIdentity(
+      topology,
+      simulation.circuitId,
+      simulation.circuitRevision,
+    );
     final _ReportBuilder builder = _ReportBuilder(
       circuitId: simulation.circuitId,
       circuitRevision: simulation.circuitRevision,
@@ -40,7 +44,11 @@ final class DiagnosticEngine {
     Iterable<ReceiverLoadState> receiverLoadStates =
         const <ReceiverLoadState>[],
   }) {
-    _requireIdentity(topology, simulation.circuitId, simulation.circuitRevision);
+    _requireIdentity(
+      topology,
+      simulation.circuitId,
+      simulation.circuitRevision,
+    );
     final _ReportBuilder builder = _ReportBuilder(
       circuitId: simulation.circuitId,
       circuitRevision: simulation.circuitRevision,
@@ -65,7 +73,11 @@ final class DiagnosticEngine {
     Iterable<ReceiverLoadState> receiverLoadStates =
         const <ReceiverLoadState>[],
   }) {
-    _requireIdentity(topology, simulation.circuitId, simulation.circuitRevision);
+    _requireIdentity(
+      topology,
+      simulation.circuitId,
+      simulation.circuitRevision,
+    );
     final _ReportBuilder builder = _ReportBuilder(
       circuitId: simulation.circuitId,
       circuitRevision: simulation.circuitRevision,
@@ -87,9 +99,7 @@ final class DiagnosticEngine {
 
 bool _shouldReportOpenBranch(String modelType) {
   final String type = modelType.toLowerCase();
-  return type != 'switch' &&
-      type != 'switch_spst' &&
-      type != 'push_button_no';
+  return type != 'switch' && type != 'switch_spst' && type != 'push_button_no';
 }
 
 void _requireIdentity(
@@ -106,10 +116,7 @@ void _requireIdentity(
 }
 
 final class _ReportBuilder {
-  _ReportBuilder({
-    required this.circuitId,
-    required this.circuitRevision,
-  });
+  _ReportBuilder({required this.circuitId, required this.circuitRevision});
 
   final CircuitId circuitId;
   final int circuitRevision;
@@ -228,7 +235,8 @@ _MappedEvidence? _fromTopology(TopologyFinding finding) {
     TopologyFindingCode.disabledConnection => null,
   };
   if (code == null) return null;
-  final String key = finding.nodeId ??
+  final String key =
+      finding.nodeId ??
       finding.connectionId?.value ??
       finding.componentId?.value ??
       finding.sourceId?.value ??

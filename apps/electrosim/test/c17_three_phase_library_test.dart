@@ -40,8 +40,9 @@ void main() {
     expect(points.length, 6);
   });
 
-  testWidgets('C17 three-phase models use native production painter',
-      (WidgetTester tester) async {
+  testWidgets('C17 three-phase models use native production painter', (
+    WidgetTester tester,
+  ) async {
     const List<(String, Type)> cases = <(String, Type)>[
       ('motor_3p_6t', F17ThreePhaseComponentView),
       ('load_wye_3p', F17ThreePhaseComponentView),

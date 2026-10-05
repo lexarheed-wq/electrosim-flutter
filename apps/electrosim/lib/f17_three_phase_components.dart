@@ -2,11 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-enum F17ThreePhaseDevice {
-  motor6t,
-  wyeLoad,
-  deltaLoad,
-}
+enum F17ThreePhaseDevice { motor6t, wyeLoad, deltaLoad }
 
 @immutable
 final class F17ThreePhaseState {
@@ -25,10 +21,10 @@ final class F17ThreePhaseState {
 
 abstract final class F17ThreePhaseGeometry {
   static Size boardSizeFor(F17ThreePhaseDevice device) => switch (device) {
-        F17ThreePhaseDevice.motor6t => const Size(260, 240),
-        F17ThreePhaseDevice.wyeLoad => const Size(210, 200),
-        F17ThreePhaseDevice.deltaLoad => const Size(210, 200),
-      };
+    F17ThreePhaseDevice.motor6t => const Size(260, 240),
+    F17ThreePhaseDevice.wyeLoad => const Size(210, 200),
+    F17ThreePhaseDevice.deltaLoad => const Size(210, 200),
+  };
 }
 
 class F17ThreePhaseComponentView extends StatelessWidget {
@@ -45,19 +41,16 @@ class F17ThreePhaseComponentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size.width,
-        height: size.height,
-        child: CustomPaint(
-          painter: _F17ThreePhasePainter(device: device, state: state),
-        ),
-      );
+    width: size.width,
+    height: size.height,
+    child: CustomPaint(
+      painter: _F17ThreePhasePainter(device: device, state: state),
+    ),
+  );
 }
 
 final class _F17ThreePhasePainter extends CustomPainter {
-  const _F17ThreePhasePainter({
-    required this.device,
-    required this.state,
-  });
+  const _F17ThreePhasePainter({required this.device, required this.state});
 
   final F17ThreePhaseDevice device;
   final F17ThreePhaseState state;
@@ -113,8 +106,12 @@ final class _P {
       colors: colors,
     ).createShader(target);
 
-  void text(String value, Offset center,
-      {double? size, Color color = const Color(0xFF24343B)}) {
+  void text(
+    String value,
+    Offset center, {
+    double? size,
+    Color color = const Color(0xFF24343B),
+  }) {
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
@@ -169,10 +166,10 @@ final class _P {
   }
 
   Color phase(int index) => switch (index) {
-        0 => const Color(0xFF8B5A2B),
-        1 => const Color(0xFF242A30),
-        _ => const Color(0xFF777F86),
-      };
+    0 => const Color(0xFF8B5A2B),
+    1 => const Color(0xFF242A30),
+    _ => const Color(0xFF777F86),
+  };
 
   void motor6t() {
     final Rect shell = Rect.fromCenter(
@@ -180,22 +177,18 @@ final class _P {
       width: w * .60,
       height: h * .54,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(shell, Radius.circular(h * .17));
+    final RRect rr = RRect.fromRectAndRadius(shell, Radius.circular(h * .17));
     canvas.drawRRect(
       rr.shift(Offset(0, h * .018)),
       Paint()..color = const Color(0x26000000),
     );
     canvas.drawRRect(
       rr,
-      grad(
-        shell,
-        const <Color>[
-          Color(0xFFE7ECEF),
-          Color(0xFF9AA8B0),
-          Color(0xFF687780),
-        ],
-      ),
+      grad(shell, const <Color>[
+        Color(0xFFE7ECEF),
+        Color(0xFF9AA8B0),
+        Color(0xFF687780),
+      ]),
     );
     canvas.drawRRect(rr, outline);
 
@@ -242,11 +235,7 @@ final class _P {
       Paint()..color = const Color(0xFFD5DEE3),
     );
 
-    final List<double> xs = <double>[
-      c.dx - w * .20,
-      c.dx,
-      c.dx + w * .20,
-    ];
+    final List<double> xs = <double>[c.dx - w * .20, c.dx, c.dx + w * .20];
     const List<String> upper = <String>['U1', 'V1', 'W1'];
     const List<String> lower = <String>['U2', 'V2', 'W2'];
     for (var i = 0; i < 3; i++) {
@@ -268,9 +257,7 @@ final class _P {
       outline,
     );
     text(
-      state.energized
-          ? 'M 3~  ${state.currentA.toStringAsFixed(1)} A'
-          : 'M 3~',
+      state.energized ? 'M 3~  ${state.currentA.toStringAsFixed(1)} A' : 'M 3~',
       plate.center,
       size: h * .043,
     );
@@ -282,8 +269,7 @@ final class _P {
       width: w * .66,
       height: h * .62,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(body, Radius.circular(h * .04));
+    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .04));
     canvas.drawRRect(
       rr,
       grad(body, const <Color>[Color(0xFFF3F5F6), Color(0xFFBCC5CA)]),
@@ -305,24 +291,19 @@ final class _P {
           ..strokeWidth = math.max(3, s * .024)
           ..strokeCap = StrokeCap.round,
       );
-      terminal(Offset(nodes[i].dx, rect.top + h * .08),
-          <String>['L1', 'L2', 'L3'][i], phase(i));
+      terminal(
+        Offset(nodes[i].dx, rect.top + h * .08),
+        <String>['L1', 'L2', 'L3'][i],
+        phase(i),
+      );
       canvas.drawLine(
         Offset(nodes[i].dx, rect.top + h * .11),
         nodes[i],
         outline,
       );
     }
-    terminal(
-      Offset(c.dx, rect.bottom - h * .08),
-      'N',
-      const Color(0xFF2563EB),
-    );
-    canvas.drawLine(
-      star,
-      Offset(c.dx, rect.bottom - h * .11),
-      outline,
-    );
+    terminal(Offset(c.dx, rect.bottom - h * .08), 'N', const Color(0xFF2563EB));
+    canvas.drawLine(star, Offset(c.dx, rect.bottom - h * .11), outline);
     canvas.drawCircle(star, s * .025, Paint()..color = const Color(0xFF34434B));
     text('Y', Offset(c.dx, body.top + h * .08), size: h * .12);
   }
@@ -333,8 +314,7 @@ final class _P {
       width: w * .66,
       height: h * .62,
     );
-    final RRect rr =
-        RRect.fromRectAndRadius(body, Radius.circular(h * .04));
+    final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .04));
     canvas.drawRRect(
       rr,
       grad(body, const <Color>[Color(0xFFF3F5F6), Color(0xFFBCC5CA)]),
@@ -368,11 +348,7 @@ final class _P {
     ];
     for (var i = 0; i < 3; i++) {
       terminal(terminals[i], <String>['L1', 'L2', 'L3'][i], phase(i));
-      canvas.drawLine(
-        terminals[i].translate(0, h * .035),
-        nodes[i],
-        outline,
-      );
+      canvas.drawLine(terminals[i].translate(0, h * .035), nodes[i], outline);
     }
     text('Δ', Offset(c.dx, body.bottom - h * .08), size: h * .14);
   }

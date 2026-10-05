@@ -40,7 +40,11 @@ void main(List<String> args) {
     'iterations': samples.length,
     'minMicros': samples.first,
     'p50Micros': samples[(samples.length * 0.50).floor()],
-    'p95Micros': samples[(samples.length * 0.95).floor().clamp(0, samples.length - 1).toInt()],
+    'p95Micros':
+        samples[(samples.length * 0.95)
+            .floor()
+            .clamp(0, samples.length - 1)
+            .toInt()],
     'maxMicros': samples.last,
   };
   final String encoded = const JsonEncoder.withIndent('  ').convert(report);
@@ -67,7 +71,11 @@ CircuitState _benchmarkCircuit(int count) {
     );
     if (i == 0) {
       connections.add(
-        Connection(id: ConnectionId('w-start'), fromTerminalId: TerminalId('vp'), toTerminalId: TerminalId('r0a')),
+        Connection(
+          id: ConnectionId('w-start'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('r0a'),
+        ),
       );
     } else {
       connections.add(
@@ -97,8 +105,18 @@ CircuitState _benchmarkCircuit(int count) {
         id: SourceId('v1'),
         modelType: 'dc_voltage_source',
         terminals: <Terminal>[
-          Terminal(id: TerminalId('vp'), name: '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
-          Terminal(id: TerminalId('vn'), name: '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
+          Terminal(
+            id: TerminalId('vp'),
+            name: '+',
+            role: TerminalRole.positive,
+            phase: PhaseTag.dcPositive,
+          ),
+          Terminal(
+            id: TerminalId('vn'),
+            name: '-',
+            role: TerminalRole.negative,
+            phase: PhaseTag.dcNegative,
+          ),
         ],
         parameters: const <String, Object?>{'voltageV': 400.0},
       ),

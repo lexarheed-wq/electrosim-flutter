@@ -32,14 +32,8 @@ final class F9AutoPlacement {
     // large realistic components would otherwise skip viable gaps entirely.
     // Keep a bounded world-space lattice, with a little adaptation for very
     // small items, then rank candidates by distance from the preferred zone.
-    final double stepX = math.max(
-      24,
-      math.min(72, elementSize.width / 3),
-    );
-    final double stepY = math.max(
-      24,
-      math.min(72, elementSize.height / 3),
-    );
+    final double stepX = math.max(24, math.min(72, elementSize.width / 3));
+    final double stepY = math.max(24, math.min(72, elementSize.height / 3));
     final Offset preferred = Offset(
       safe.center.dx,
       (safe.center.dy + math.min(120, stepY * 2))
@@ -47,10 +41,7 @@ final class F9AutoPlacement {
           .toDouble(),
     );
 
-    final List<Offset> candidates = <Offset>[
-      preferred,
-      safe.center,
-    ];
+    final List<Offset> candidates = <Offset>[preferred, safe.center];
     for (double y = safe.top; y <= safe.bottom + 1e-6; y += stepY) {
       for (double x = safe.left; x <= safe.right + 1e-6; x += stepX) {
         candidates.add(Offset(x, y));
@@ -76,7 +67,9 @@ final class F9AutoPlacement {
     });
 
     final List<Rect> occupied = occupiedElements.toList(growable: false);
-    final List<List<Offset>> polylines = occupiedPolylines.toList(growable: false);
+    final List<List<Offset>> polylines = occupiedPolylines.toList(
+      growable: false,
+    );
     for (final Offset candidate in candidates) {
       final Rect rect = Rect.fromCenter(
         center: candidate,
@@ -97,7 +90,11 @@ final class F9AutoPlacement {
     return null;
   }
 
-  static bool _overlapsElement(Rect candidate, List<Rect> occupied, double clearance) {
+  static bool _overlapsElement(
+    Rect candidate,
+    List<Rect> occupied,
+    double clearance,
+  ) {
     final Rect padded = candidate.inflate(clearance);
     for (final Rect rect in occupied) {
       if (padded.overlaps(rect.inflate(clearance / 2))) {
@@ -158,8 +155,10 @@ final class F9AutoPlacement {
     final double cdA = cross(c, d, a);
     final double cdB = cross(c, d, b);
 
-    if (((abC > epsilon && abD < -epsilon) || (abC < -epsilon && abD > epsilon)) &&
-        ((cdA > epsilon && cdB < -epsilon) || (cdA < -epsilon && cdB > epsilon))) {
+    if (((abC > epsilon && abD < -epsilon) ||
+            (abC < -epsilon && abD > epsilon)) &&
+        ((cdA > epsilon && cdB < -epsilon) ||
+            (cdA < -epsilon && cdB > epsilon))) {
       return true;
     }
     if (abC.abs() <= epsilon && onSegment(a, c, b)) {

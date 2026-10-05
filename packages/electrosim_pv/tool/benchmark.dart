@@ -64,8 +64,16 @@ CircuitState _circuit() => CircuitState(
       id: ComponentId('inv'),
       modelType: 'pv_inverter',
       terminals: <Terminal>[
-        Terminal(id: TerminalId('idp'), name: 'DC+', phase: PhaseTag.dcPositive),
-        Terminal(id: TerminalId('idn'), name: 'DC-', phase: PhaseTag.dcNegative),
+        Terminal(
+          id: TerminalId('idp'),
+          name: 'DC+',
+          phase: PhaseTag.dcPositive,
+        ),
+        Terminal(
+          id: TerminalId('idn'),
+          name: 'DC-',
+          phase: PhaseTag.dcNegative,
+        ),
         Terminal(id: TerminalId('il'), name: 'L', phase: PhaseTag.l1),
         Terminal(id: TerminalId('in'), name: 'N', phase: PhaseTag.neutral),
       ],
@@ -113,9 +121,10 @@ CircuitState _circuit() => CircuitState(
   },
 );
 
-Connection _wire(String id, String from, String to, PhaseTag phase) => Connection(
-  id: ConnectionId(id),
-  fromTerminalId: TerminalId(from),
-  toTerminalId: TerminalId(to),
-  phase: phase,
-);
+Connection _wire(String id, String from, String to, PhaseTag phase) =>
+    Connection(
+      id: ConnectionId(id),
+      fromTerminalId: TerminalId(from),
+      toTerminalId: TerminalId(to),
+      phase: phase,
+    );

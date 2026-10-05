@@ -39,7 +39,9 @@ final class HitTestEngine {
     Map<String, Offset> previewPositions = const <String, Offset>{},
     double viewportScale = 1,
   }) {
-    final double safeScale = viewportScale.isFinite && viewportScale > 0 ? viewportScale : 1;
+    final double safeScale = viewportScale.isFinite && viewportScale > 0
+        ? viewportScale
+        : 1;
     final double terminalWorldRadius = terminalRadius / safeScale;
     final double wireWorldTolerance = wireTolerance / safeScale;
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
@@ -48,7 +50,8 @@ final class HitTestEngine {
       previewPositions: previewPositions,
     );
 
-    for (final MapEntry<TerminalId, Offset> entry in geometry.terminalPositions.entries) {
+    for (final MapEntry<TerminalId, Offset> entry
+        in geometry.terminalPositions.entries) {
       if ((entry.value - worldPoint).distance <= terminalWorldRadius) {
         return CanvasHitResult(
           kind: CanvasHitKind.terminal,
@@ -81,14 +84,20 @@ final class HitTestEngine {
     }
 
     for (final Connection connection in circuit.connections.reversed) {
-      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null) {
         continue;
       }
-      final List<Offset> points = <Offset>[start, ...layout.routeFor(connection.id.value), end];
+      final List<Offset> points = <Offset>[
+        start,
+        ...layout.routeFor(connection.id.value),
+        end,
+      ];
       for (var index = 0; index < points.length - 1; index++) {
-        if (_distanceToSegment(worldPoint, points[index], points[index + 1]) <= wireWorldTolerance) {
+        if (_distanceToSegment(worldPoint, points[index], points[index + 1]) <=
+            wireWorldTolerance) {
           return CanvasHitResult(
             kind: CanvasHitKind.wire,
             worldPosition: worldPoint,
@@ -108,8 +117,9 @@ final class HitTestEngine {
     if (lengthSquared == 0) {
       return (point - a).distance;
     }
-    final double t = (((point.dx - a.dx) * dx + (point.dy - a.dy) * dy) / lengthSquared)
-        .clamp(0.0, 1.0);
+    final double t =
+        (((point.dx - a.dx) * dx + (point.dy - a.dy) * dy) / lengthSquared)
+            .clamp(0.0, 1.0);
     final Offset projection = Offset(a.dx + t * dx, a.dy + t * dy);
     return (point - projection).distance;
   }

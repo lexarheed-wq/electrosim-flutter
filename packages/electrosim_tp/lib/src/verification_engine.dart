@@ -9,7 +9,8 @@ final class VerificationEngine {
   const VerificationEngine({
     TopologyEngine topology = const TopologyEngine(),
     SolverDC solver = const SolverDC(),
-  }) : _topology = topology, _solver = solver;
+  }) : _topology = topology,
+       _solver = solver;
 
   final TopologyEngine _topology;
   final SolverDC _solver;
@@ -17,11 +18,16 @@ final class VerificationEngine {
   TpEvaluation evaluateWiring(TpDefinition definition, CircuitState circuit) {
     if (definition.mode != TpMode.wiring) throw StateError('Not a wiring TP.');
     final result = _solver.solve(circuit, _topology.compile(circuit));
-    final functional = result.status == DcSolveStatus.solved && _criticalConditionsNormal(circuit);
-    final structureMatches = definition.referenceCircuit != null &&
-        circuit.components.length == definition.referenceCircuit!.components.length &&
+    final functional =
+        result.status == DcSolveStatus.solved &&
+        _criticalConditionsNormal(circuit);
+    final structureMatches =
+        definition.referenceCircuit != null &&
+        circuit.components.length ==
+            definition.referenceCircuit!.components.length &&
         circuit.sources.length == definition.referenceCircuit!.sources.length &&
-        circuit.connections.length == definition.referenceCircuit!.connections.length;
+        circuit.connections.length ==
+            definition.referenceCircuit!.connections.length;
     final passed = functional && structureMatches;
     return TpEvaluation(
       score: passed ? definition.maxScore : 0,
@@ -36,7 +42,8 @@ final class VerificationEngine {
     CircuitState circuit,
     FaultScenarioDefinition scenario,
   ) {
-    if (definition.mode != TpMode.troubleshooting) throw StateError('Not a troubleshooting TP.');
+    if (definition.mode != TpMode.troubleshooting)
+      throw StateError('Not a troubleshooting TP.');
     final result = _solver.solve(circuit, _topology.compile(circuit));
     final solved = result.status == DcSolveStatus.solved;
     final causesRemoved = _rootCausesRemoved(scenario, circuit);
@@ -51,18 +58,30 @@ final class VerificationEngine {
   }
 
   static bool _criticalConditionsNormal(CircuitState circuit) =>
-      circuit.components.every((item) => item.condition == ComponentCondition.normal) &&
+      circuit.components.every(
+        (item) => item.condition == ComponentCondition.normal,
+      ) &&
       circuit.sources.every((item) => item.enabled);
 
-  static bool _rootCausesRemoved(FaultScenarioDefinition scenario, CircuitState repaired) {
+  static bool _rootCausesRemoved(
+    FaultScenarioDefinition scenario,
+    CircuitState repaired,
+  ) {
     for (final cause in scenario.teacherTruth.rootCauses) {
       switch (cause.kind) {
         case RootCauseKind.missingConnection:
-          if (!repaired.connections.any((item) => item.id.value == cause.targetId && item.enabled)) return false;
+          if (!repaired.connections.any(
+            (item) => item.id.value == cause.targetId && item.enabled,
+          ))
+            return false;
           break;
         case RootCauseKind.componentOpen:
-          final matches = repaired.components.where((item) => item.id.value == cause.targetId);
-          if (matches.length != 1 || matches.single.condition != ComponentCondition.normal) return false;
+          final matches = repaired.components.where(
+            (item) => item.id.value == cause.targetId,
+          );
+          if (matches.length != 1 ||
+              matches.single.condition != ComponentCondition.normal)
+            return false;
           break;
       }
     }

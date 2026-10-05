@@ -41,8 +41,16 @@ void main() {
         ),
       ],
       connections: <Connection>[
-        Connection(id: ConnectionId('w1'), fromTerminalId: vp.id, toTerminalId: a.id),
-        Connection(id: ConnectionId('w2'), fromTerminalId: b.id, toTerminalId: vn.id),
+        Connection(
+          id: ConnectionId('w1'),
+          fromTerminalId: vp.id,
+          toTerminalId: a.id,
+        ),
+        Connection(
+          id: ConnectionId('w2'),
+          fromTerminalId: b.id,
+          toTerminalId: vn.id,
+        ),
       ],
     );
 

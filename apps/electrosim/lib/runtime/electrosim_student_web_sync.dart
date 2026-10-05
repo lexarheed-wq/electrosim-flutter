@@ -37,8 +37,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   StreamSubscription<html.CloseEvent>? _closeSubscription;
   StreamSubscription<html.Event>? _errorSubscription;
   Completer<void>? _firstSnapshot;
-  ElectroSimBrowserSessionStatus _status =
-      ElectroSimBrowserSessionStatus.idle;
+  ElectroSimBrowserSessionStatus _status = ElectroSimBrowserSessionStatus.idle;
   String? _lastError;
   String _sessionName = 'Session ElectroSim';
   bool _sessionStarted = false;
@@ -51,12 +50,9 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   String get sessionName => _sessionName;
   bool get sessionStarted => _sessionStarted;
   bool get simulatorEnabled => _simulatorEnabled;
-  bool get sessionUsable =>
-      _status == ElectroSimBrowserSessionStatus.connected;
+  bool get sessionUsable => _status == ElectroSimBrowserSessionStatus.connected;
 
-  Future<void> connect({
-    Duration timeout = const Duration(seconds: 6),
-  }) async {
+  Future<void> connect({Duration timeout = const Duration(seconds: 6)}) async {
     if (_status == ElectroSimBrowserSessionStatus.connected ||
         _status == ElectroSimBrowserSessionStatus.connecting) {
       return;
@@ -79,8 +75,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
       _lastError = null;
       notifyListeners();
     });
-    _messageSubscription =
-        socket.onMessage.listen((html.MessageEvent event) {
+    _messageSubscription = socket.onMessage.listen((html.MessageEvent event) {
       if (event.data is String) {
         _handleMessage(event.data as String);
       }
@@ -194,16 +189,16 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     if (socket == null || socket.readyState != html.WebSocket.OPEN) {
       return;
     }
-    socket.send(jsonEncode(<String, Object?>{
-      'schemaVersion': 1,
-      'type': 'studentState',
-      'sessionCode': sessionCode,
-      'senderId': clientId,
-      'sequence': _clientSequence++,
-      'payload': <String, Object?>{
-        'state': controller.toPersistenceJson(),
-      },
-    }));
+    socket.send(
+      jsonEncode(<String, Object?>{
+        'schemaVersion': 1,
+        'type': 'studentState',
+        'sessionCode': sessionCode,
+        'senderId': clientId,
+        'sequence': _clientSequence++,
+        'payload': <String, Object?>{'state': controller.toPersistenceJson()},
+      }),
+    );
   }
 
   void _setStatus(ElectroSimBrowserSessionStatus value) {

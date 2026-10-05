@@ -28,8 +28,9 @@ void main() {
   group('F14 SavedCircuitDocument', () {
     test('round-trip preserves circuit and metadata', () {
       final SavedCircuitDocument original = _document();
-      final SavedCircuitDocument decoded =
-          SavedCircuitDocument.fromJsonString(original.toJsonString());
+      final SavedCircuitDocument decoded = SavedCircuitDocument.fromJsonString(
+        original.toJsonString(),
+      );
       expect(decoded.saveId, original.saveId);
       expect(decoded.title, original.title);
       expect(decoded.createdAtUtc, original.createdAtUtc);
@@ -46,10 +47,14 @@ void main() {
           'tp': <String, Object?>{'lifecycle': 'started'},
         },
       );
-      final SavedCircuitDocument decoded =
-          SavedCircuitDocument.fromJsonString(original.toJsonString());
+      final SavedCircuitDocument decoded = SavedCircuitDocument.fromJsonString(
+        original.toJsonString(),
+      );
       expect(decoded.appState['workspace'], 'Recherche de dérangement');
-      expect((decoded.appState['tp'] as Map<String, dynamic>)['lifecycle'], 'started');
+      expect(
+        (decoded.appState['tp'] as Map<String, dynamic>)['lifecycle'],
+        'started',
+      );
     });
 
     test('schema v1 migrates with empty application state', () {
@@ -94,27 +99,40 @@ void main() {
 
     test('supports multiple explicit saves and explicit open', () async {
       await repository.save(_document(saveId: 'alpha', title: 'Alpha'));
-      await repository.save(_document(
-        saveId: 'beta',
-        title: 'Beta',
-        updated: DateTime.utc(2026, 9, 29, 13),
-      ));
+      await repository.save(
+        _document(
+          saveId: 'beta',
+          title: 'Beta',
+          updated: DateTime.utc(2026, 9, 29, 13),
+        ),
+      );
       final List<SavedCircuitSummary> saves = await repository.listSaves();
-      expect(saves.map((SavedCircuitSummary e) => e.saveId), <String>['beta', 'alpha']);
+      expect(saves.map((SavedCircuitSummary e) => e.saveId), <String>[
+        'beta',
+        'alpha',
+      ]);
       expect((await repository.open('alpha')).title, 'Alpha');
       expect((await repository.open('beta')).title, 'Beta');
     });
 
     test('save updates an existing save atomically', () async {
       await repository.save(_document(saveId: 'same', title: 'Before'));
-      await repository.save(_document(
-        saveId: 'same',
-        title: 'After',
-        updated: DateTime.utc(2026, 9, 29, 14),
-      ));
+      await repository.save(
+        _document(
+          saveId: 'same',
+          title: 'After',
+          updated: DateTime.utc(2026, 9, 29, 14),
+        ),
+      );
       expect((await repository.open('same')).title, 'After');
-      expect(await File('${temp.path}/same.electrosim.json.bak').exists(), isFalse);
-      expect(await File('${temp.path}/same.electrosim.json.tmp').exists(), isFalse);
+      expect(
+        await File('${temp.path}/same.electrosim.json.bak').exists(),
+        isFalse,
+      );
+      expect(
+        await File('${temp.path}/same.electrosim.json.tmp').exists(),
+        isFalse,
+      );
     });
 
     test('recovers a valid backup after an interrupted replacement', () async {
@@ -125,18 +143,24 @@ void main() {
       expect(await backup.exists(), isFalse);
     });
 
-    test('removes abandoned temp files without treating them as saves', () async {
-      final File abandoned = File('${temp.path}/ghost.electrosim.json.tmp');
-      await abandoned.writeAsString('partial');
-      await repository.initialize();
-      expect(await abandoned.exists(), isFalse);
-      expect(await repository.listSaves(), isEmpty);
-    });
+    test(
+      'removes abandoned temp files without treating them as saves',
+      () async {
+        final File abandoned = File('${temp.path}/ghost.electrosim.json.tmp');
+        await abandoned.writeAsString('partial');
+        await repository.initialize();
+        expect(await abandoned.exists(), isFalse);
+        expect(await repository.listSaves(), isEmpty);
+      },
+    );
 
     test('import does not overwrite silently', () async {
       final String source = _document(saveId: 'imported').toJsonString();
       await repository.importJson(source);
-      await expectLater(repository.importJson(source), throwsA(isA<FileSystemException>()));
+      await expectLater(
+        repository.importJson(source),
+        throwsA(isA<FileSystemException>()),
+      );
       await repository.importJson(
         _document(saveId: 'imported', title: 'Replacement').toJsonString(),
         overwrite: true,
@@ -146,7 +170,10 @@ void main() {
 
     test('unsafe save IDs cannot escape the save directory', () async {
       await expectLater(repository.open('../escape'), throwsArgumentError);
-      await expectLater(repository.save(_document(saveId: '../escape')), throwsArgumentError);
+      await expectLater(
+        repository.save(_document(saveId: '../escape')),
+        throwsArgumentError,
+      );
     });
   });
 
@@ -162,7 +189,10 @@ void main() {
     test('PDF export produces a standalone PDF document', () {
       final List<int> pdf = exports.toPdf(_document());
       expect(utf8.decode(pdf.take(8).toList()), startsWith('%PDF-1.4'));
-      expect(utf8.decode(pdf, allowMalformed: true), contains('ElectroSim - Saved circuit'));
+      expect(
+        utf8.decode(pdf, allowMalformed: true),
+        contains('ElectroSim - Saved circuit'),
+      );
       expect(utf8.decode(pdf, allowMalformed: true), endsWith('%%EOF\n'));
     });
   });

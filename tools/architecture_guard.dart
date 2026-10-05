@@ -13,14 +13,18 @@ Future<void> main() async {
     return;
   }
 
-  await for (final FileSystemEntity entity in domain
-      .list(recursive: true, followLinks: false)) {
+  await for (final FileSystemEntity entity in domain.list(
+    recursive: true,
+    followLinks: false,
+  )) {
     if (entity is! File || !entity.path.endsWith('.dart')) {
       continue;
     }
     scanned++;
     final String source = await entity.readAsString();
-    final RegExp directive = RegExp(r'''(?:import|export)\s+['"]([^'"]+)['"]''');
+    final RegExp directive = RegExp(
+      r'''(?:import|export)\s+['"]([^'"]+)['"]''',
+    );
     for (final RegExpMatch match in directive.allMatches(source)) {
       final String uri = match.group(1)!;
       if (uri.startsWith('package:flutter') || uri == 'dart:ui') {
@@ -33,7 +37,9 @@ Future<void> main() async {
     }
   }
 
-  final String pubspec = await File('${domain.path}/pubspec.yaml').readAsString();
+  final String pubspec = await File(
+    '${domain.path}/pubspec.yaml',
+  ).readAsString();
   if (RegExp(r'^\s*flutter\s*:', multiLine: true).hasMatch(pubspec)) {
     errors.add('flutter-dependency-in-domain-pubspec');
   }

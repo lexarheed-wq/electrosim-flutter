@@ -13,14 +13,11 @@ void main() {
       end: const Offset(432, 72),
     );
 
-    expect(
-      plan.laneOrder,
-      const <ConductorLaneRole>[
-        ConductorLaneRole.l1,
-        ConductorLaneRole.neutral,
-        ConductorLaneRole.protectiveEarth,
-      ],
-    );
+    expect(plan.laneOrder, const <ConductorLaneRole>[
+      ConductorLaneRole.l1,
+      ConductorLaneRole.neutral,
+      ConductorLaneRole.protectiveEarth,
+    ]);
     expect(plan.paths, hasLength(3));
 
     final List<double> startYs = plan.laneOrder
@@ -43,16 +40,13 @@ void main() {
       end: const Offset(480, 72),
     );
 
-    expect(
-      plan.laneOrder,
-      const <ConductorLaneRole>[
-        ConductorLaneRole.l1,
-        ConductorLaneRole.l2,
-        ConductorLaneRole.l3,
-        ConductorLaneRole.neutral,
-        ConductorLaneRole.protectiveEarth,
-      ],
-    );
+    expect(plan.laneOrder, const <ConductorLaneRole>[
+      ConductorLaneRole.l1,
+      ConductorLaneRole.l2,
+      ConductorLaneRole.l3,
+      ConductorLaneRole.neutral,
+      ConductorLaneRole.protectiveEarth,
+    ]);
 
     final List<OrthogonalWirePath> occupied = <OrthogonalWirePath>[];
     for (final ConductorLaneRole role in plan.laneOrder) {
@@ -74,13 +68,10 @@ void main() {
       end: const Offset(384, 96),
     );
 
-    expect(
-      plan.laneOrder,
-      const <ConductorLaneRole>[
-        ConductorLaneRole.dcPositive,
-        ConductorLaneRole.dcNegative,
-      ],
-    );
+    expect(plan.laneOrder, const <ConductorLaneRole>[
+      ConductorLaneRole.dcPositive,
+      ConductorLaneRole.dcNegative,
+    ]);
     expect(
       plan.paths[ConductorLaneRole.dcPositive]!.points.first.dy,
       lessThan(plan.paths[ConductorLaneRole.dcNegative]!.points.first.dy),
@@ -98,16 +89,13 @@ void main() {
       height: 288,
     );
 
-    expect(
-      plan.zoneOrder,
-      const <PvVisualZone>[
-        PvVisualZone.generation,
-        PvVisualZone.dcProtection,
-        PvVisualZone.regulationStorage,
-        PvVisualZone.conversion,
-        PvVisualZone.acDistributionLoad,
-      ],
-    );
+    expect(plan.zoneOrder, const <PvVisualZone>[
+      PvVisualZone.generation,
+      PvVisualZone.dcProtection,
+      PvVisualZone.regulationStorage,
+      PvVisualZone.conversion,
+      PvVisualZone.acDistributionLoad,
+    ]);
     expect(
       plan.bounds[PvVisualZone.regulationStorage]!.right,
       lessThan(plan.bounds[PvVisualZone.conversion]!.left),

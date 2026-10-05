@@ -94,7 +94,8 @@ final class ComponentModelContract {
     required this.family,
     required this.terminalCount,
     required Iterable<ElectricalMode> supportedModes,
-    Iterable<ComponentBranchDefinition> branches = const <ComponentBranchDefinition>[],
+    Iterable<ComponentBranchDefinition> branches =
+        const <ComponentBranchDefinition>[],
   }) : modelType = _validateModelType(modelType),
        supportedModes = Set<ElectricalMode>.unmodifiable(supportedModes),
        branches = List<ComponentBranchDefinition>.unmodifiable(branches) {
@@ -102,7 +103,10 @@ final class ComponentModelContract {
       throw DomainException(
         code: DomainErrorCode.invalidValue,
         message: 'Component model terminalCount must be greater than zero.',
-        context: <String, Object?>{'modelType': this.modelType, 'terminalCount': terminalCount},
+        context: <String, Object?>{
+          'modelType': this.modelType,
+          'terminalCount': terminalCount,
+        },
       );
     }
     if (this.supportedModes.isEmpty) {
@@ -119,10 +123,14 @@ final class ComponentModelContract {
         throw DomainException(
           code: DomainErrorCode.duplicateId,
           message: 'Duplicate component branch id ${branch.id}.',
-          context: <String, Object?>{'modelType': this.modelType, 'branchId': branch.id},
+          context: <String, Object?>{
+            'modelType': this.modelType,
+            'branchId': branch.id,
+          },
         );
       }
-      if (branch.fromTerminalIndex >= terminalCount || branch.toTerminalIndex >= terminalCount) {
+      if (branch.fromTerminalIndex >= terminalCount ||
+          branch.toTerminalIndex >= terminalCount) {
         throw DomainException(
           code: DomainErrorCode.invalidValue,
           message: 'Component branch terminal index exceeds terminalCount.',
@@ -148,7 +156,8 @@ final class ComponentModelContract {
     if (value.isEmpty || value != value.trim()) {
       throw DomainException(
         code: DomainErrorCode.invalidValue,
-        message: 'Component model contract modelType must be non-empty and trimmed.',
+        message:
+            'Component model contract modelType must be non-empty and trimmed.',
         context: <String, Object?>{'modelType': value},
       );
     }
@@ -170,7 +179,8 @@ final class ComponentModelRegistry {
   static Map<String, ComponentModelContract> _buildMap(
     Iterable<ComponentModelContract> contracts,
   ) {
-    final Map<String, ComponentModelContract> result = <String, ComponentModelContract>{};
+    final Map<String, ComponentModelContract> result =
+        <String, ComponentModelContract>{};
     for (final ComponentModelContract contract in contracts) {
       if (result.containsKey(contract.modelType)) {
         throw DomainException(
@@ -193,597 +203,598 @@ final class ComponentModelRegistry {
 final class CoreComponentModelContracts {
   CoreComponentModelContracts._();
 
-  static final ComponentModelRegistry registry = ComponentModelRegistry(
-    <ComponentModelContract>[
-      ComponentModelContract(
-        modelType: 'resistor',
-        family: ComponentFamily.passive,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-          ElectricalMode.pv,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'inductor',
-        family: ComponentFamily.passive,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'capacitor',
-        family: ComponentFamily.passive,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'impedance',
-        family: ComponentFamily.passive,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'diode',
-        family: ComponentFamily.passive,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'lamp',
-        family: ComponentFamily.receiver,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-          ElectricalMode.pv,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'push_button_no',
-        family: ComponentFamily.switching,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'push_button_nc',
-        family: ComponentFamily.switching,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'buzzer',
-        family: ComponentFamily.receiver,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'fan_dc',
-        family: ComponentFamily.receiver,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'motor_dc',
-        family: ComponentFamily.receiver,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'relay_coil',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'control:coil',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.controlCoil,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'relay_contact_no',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'aux:no',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.auxiliaryNormallyOpen,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'relay_contact_nc',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'aux:nc',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.auxiliaryNormallyClosed,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'switch',
-        family: ComponentFamily.switching,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac1, ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'switch_spst',
-        family: ComponentFamily.switching,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac1, ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ..._singlePoleProtectionContracts,
-      ComponentModelContract(
-        modelType: 'motor_3p_6t',
-        family: ComponentFamily.receiver,
-        terminalCount: 6,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'winding:U',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-            poleIndex: 0,
-          ),
-          ComponentBranchDefinition(
-            id: 'winding:V',
-            fromTerminalIndex: 1,
-            toTerminalIndex: 4,
-            role: ElectricalBranchRole.main,
-            poleIndex: 1,
-          ),
-          ComponentBranchDefinition(
-            id: 'winding:W',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 5,
-            role: ElectricalBranchRole.main,
-            poleIndex: 2,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'load_wye_3p',
-        family: ComponentFamily.receiver,
-        terminalCount: 4,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'branch:L1',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-            poleIndex: 0,
-          ),
-          ComponentBranchDefinition(
-            id: 'branch:L2',
-            fromTerminalIndex: 1,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-            poleIndex: 1,
-          ),
-          ComponentBranchDefinition(
-            id: 'branch:L3',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-            poleIndex: 2,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'load_delta_3p',
-        family: ComponentFamily.receiver,
-        terminalCount: 3,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'branch:L1-L2',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-            poleIndex: 0,
-          ),
-          ComponentBranchDefinition(
-            id: 'branch:L2-L3',
-            fromTerminalIndex: 1,
-            toTerminalIndex: 2,
-            role: ElectricalBranchRole.main,
-            poleIndex: 1,
-          ),
-          ComponentBranchDefinition(
-            id: 'branch:L3-L1',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 0,
-            role: ElectricalBranchRole.main,
-            poleIndex: 2,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'breaker_3p',
-        family: ComponentFamily.protection,
-        terminalCount: 6,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: _threePowerPoles,
-      ),
-      ComponentModelContract(
-        modelType: 'isolator_3p',
-        family: ComponentFamily.switching,
-        terminalCount: 6,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: _threePowerPoles,
-      ),
-      ComponentModelContract(
-        modelType: 'isolator_4p',
-        family: ComponentFamily.switching,
-        terminalCount: 8,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: _fourPowerPoles,
-      ),
-      ComponentModelContract(
-        modelType: 'breaker_4p',
-        family: ComponentFamily.protection,
-        terminalCount: 8,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: _fourPowerPoles,
-      ),
-      ComponentModelContract(
-        modelType: 'terminal_block_5',
-        family: ComponentFamily.passive,
-        terminalCount: 10,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.dc,
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: _fiveFeedThroughPoles,
-      ),
+  static final ComponentModelRegistry
+  registry = ComponentModelRegistry(<ComponentModelContract>[
+    ComponentModelContract(
+      modelType: 'resistor',
+      family: ComponentFamily.passive,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+        ElectricalMode.pv,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'inductor',
+      family: ComponentFamily.passive,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'capacitor',
+      family: ComponentFamily.passive,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'impedance',
+      family: ComponentFamily.passive,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'diode',
+      family: ComponentFamily.passive,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'lamp',
+      family: ComponentFamily.receiver,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+        ElectricalMode.pv,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'push_button_no',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'push_button_nc',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'buzzer',
+      family: ComponentFamily.receiver,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'fan_dc',
+      family: ComponentFamily.receiver,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'motor_dc',
+      family: ComponentFamily.receiver,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'relay_coil',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'control:coil',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.controlCoil,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'relay_contact_no',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'aux:no',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.auxiliaryNormallyOpen,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'relay_contact_nc',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'aux:nc',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.auxiliaryNormallyClosed,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'switch',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'switch_spst',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ..._singlePoleProtectionContracts,
+    ComponentModelContract(
+      modelType: 'motor_3p_6t',
+      family: ComponentFamily.receiver,
+      terminalCount: 6,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'winding:U',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'winding:V',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.main,
+          poleIndex: 1,
+        ),
+        ComponentBranchDefinition(
+          id: 'winding:W',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 5,
+          role: ElectricalBranchRole.main,
+          poleIndex: 2,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'load_wye_3p',
+      family: ComponentFamily.receiver,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'branch:L1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'branch:L2',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+          poleIndex: 1,
+        ),
+        ComponentBranchDefinition(
+          id: 'branch:L3',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+          poleIndex: 2,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'load_delta_3p',
+      family: ComponentFamily.receiver,
+      terminalCount: 3,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'branch:L1-L2',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'branch:L2-L3',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 2,
+          role: ElectricalBranchRole.main,
+          poleIndex: 1,
+        ),
+        ComponentBranchDefinition(
+          id: 'branch:L3-L1',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 0,
+          role: ElectricalBranchRole.main,
+          poleIndex: 2,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'breaker_3p',
+      family: ComponentFamily.protection,
+      terminalCount: 6,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: _threePowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'isolator_3p',
+      family: ComponentFamily.switching,
+      terminalCount: 6,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: _threePowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'isolator_4p',
+      family: ComponentFamily.switching,
+      terminalCount: 8,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: _fourPowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'breaker_4p',
+      family: ComponentFamily.protection,
+      terminalCount: 8,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: _fourPowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'terminal_block_5',
+      family: ComponentFamily.passive,
+      terminalCount: 10,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: _fiveFeedThroughPoles,
+    ),
 
-      ComponentModelContract(
-        modelType: 'thermal_overload_3p',
-        family: ComponentFamily.protection,
-        terminalCount: 6,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: _threePowerPoles,
-      ),
-      ComponentModelContract(
-        modelType: 'contactor_aux_no',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'aux:no',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.auxiliaryNormallyOpen,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'contactor_aux_nc',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{
-          ElectricalMode.ac1,
-          ElectricalMode.ac3,
-        },
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'aux:nc',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.auxiliaryNormallyClosed,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'contactor_ac1',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 4,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac1},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'power:1',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.powerPole,
-            poleIndex: 0,
-          ),
-          ComponentBranchDefinition(
-            id: 'control:coil',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.controlCoil,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'contactor_3p',
-        family: ComponentFamily.electromechanicalControl,
-        terminalCount: 8,
-        supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-        branches: <ComponentBranchDefinition>[
-          ..._threePowerPoles,
-          ComponentBranchDefinition(
-            id: 'control:coil',
-            fromTerminalIndex: 6,
-            toTerminalIndex: 7,
-            role: ElectricalBranchRole.controlCoil,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'pv_inverter',
-        family: ComponentFamily.conversion,
-        terminalCount: 4,
-        supportedModes: <ElectricalMode>{ElectricalMode.pv},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'dc:input',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-          ComponentBranchDefinition(
-            id: 'ac:output',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'pv_controller',
-        family: ComponentFamily.conversion,
-        terminalCount: 4,
-        supportedModes: <ElectricalMode>{ElectricalMode.pv},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'pv:input',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-          ComponentBranchDefinition(
-            id: 'dc:output',
-            fromTerminalIndex: 2,
-            toTerminalIndex: 3,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'pv_battery',
-        family: ComponentFamily.other,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.pv},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'storage',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-      ComponentModelContract(
-        modelType: 'pv_resistive_load',
-        family: ComponentFamily.receiver,
-        terminalCount: 2,
-        supportedModes: <ElectricalMode>{ElectricalMode.pv},
-        branches: <ComponentBranchDefinition>[
-          ComponentBranchDefinition(
-            id: 'main',
-            fromTerminalIndex: 0,
-            toTerminalIndex: 1,
-            role: ElectricalBranchRole.main,
-          ),
-        ],
-      ),
-    ],
-  );
+    ComponentModelContract(
+      modelType: 'thermal_overload_3p',
+      family: ComponentFamily.protection,
+      terminalCount: 6,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: _threePowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'contactor_aux_no',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'aux:no',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.auxiliaryNormallyOpen,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'contactor_aux_nc',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'aux:nc',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.auxiliaryNormallyClosed,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'contactor_ac1',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'control:coil',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.controlCoil,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'contactor_3p',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 8,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ..._threePowerPoles,
+        ComponentBranchDefinition(
+          id: 'control:coil',
+          fromTerminalIndex: 6,
+          toTerminalIndex: 7,
+          role: ElectricalBranchRole.controlCoil,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'pv_inverter',
+      family: ComponentFamily.conversion,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'dc:input',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+        ComponentBranchDefinition(
+          id: 'ac:output',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'pv_controller',
+      family: ComponentFamily.conversion,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'pv:input',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+        ComponentBranchDefinition(
+          id: 'dc:output',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'pv_battery',
+      family: ComponentFamily.other,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'storage',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'pv_resistive_load',
+      family: ComponentFamily.receiver,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+  ]);
 
-  static final List<ComponentModelContract> _singlePoleProtectionContracts =
-      <ComponentModelContract>[
-        ComponentModelContract(
-          modelType: 'breaker_dc',
-          family: ComponentFamily.protection,
-          terminalCount: 2,
-          supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
-          branches: <ComponentBranchDefinition>[
-            ComponentBranchDefinition(
-              id: 'power:1',
-              fromTerminalIndex: 0,
-              toTerminalIndex: 1,
-              role: ElectricalBranchRole.powerPole,
-              poleIndex: 0,
-            ),
-          ],
+  static final List<ComponentModelContract>
+  _singlePoleProtectionContracts = <ComponentModelContract>[
+    ComponentModelContract(
+      modelType: 'breaker_dc',
+      family: ComponentFamily.protection,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
         ),
-        ComponentModelContract(
-          modelType: 'breaker_ac1',
-          family: ComponentFamily.protection,
-          terminalCount: 2,
-          supportedModes: <ElectricalMode>{ElectricalMode.ac1},
-          branches: <ComponentBranchDefinition>[
-            ComponentBranchDefinition(
-              id: 'power:1',
-              fromTerminalIndex: 0,
-              toTerminalIndex: 1,
-              role: ElectricalBranchRole.powerPole,
-              poleIndex: 0,
-            ),
-          ],
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'breaker_ac1',
+      family: ComponentFamily.protection,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
         ),
-        ComponentModelContract(
-          modelType: 'fuse_dc',
-          family: ComponentFamily.protection,
-          terminalCount: 2,
-          supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
-          branches: <ComponentBranchDefinition>[
-            ComponentBranchDefinition(
-              id: 'power:1',
-              fromTerminalIndex: 0,
-              toTerminalIndex: 1,
-              role: ElectricalBranchRole.powerPole,
-              poleIndex: 0,
-            ),
-          ],
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'fuse_dc',
+      family: ComponentFamily.protection,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
         ),
-        ComponentModelContract(
-          modelType: 'fuse_ac1',
-          family: ComponentFamily.protection,
-          terminalCount: 2,
-          supportedModes: <ElectricalMode>{ElectricalMode.ac1},
-          branches: <ComponentBranchDefinition>[
-            ComponentBranchDefinition(
-              id: 'power:1',
-              fromTerminalIndex: 0,
-              toTerminalIndex: 1,
-              role: ElectricalBranchRole.powerPole,
-              poleIndex: 0,
-            ),
-          ],
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'fuse_ac1',
+      family: ComponentFamily.protection,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:1',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
         ),
-      ];
+      ],
+    ),
+  ];
 
   static final List<ComponentBranchDefinition> _threePowerPoles =
       <ComponentBranchDefinition>[

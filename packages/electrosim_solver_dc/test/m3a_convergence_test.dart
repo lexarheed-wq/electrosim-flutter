@@ -11,20 +11,28 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('M3A DC convergence', () {
-    test('voltage source enters bounded current regulation without breaking KCL', () {
-      final DcSolveResult result = solve(_resistiveCircuit(currentLimitA: 1.0));
+    test(
+      'voltage source enters bounded current regulation without breaking KCL',
+      () {
+        final DcSolveResult result = solve(
+          _resistiveCircuit(currentLimitA: 1.0),
+        );
 
-      expect(result.status, DcSolveStatus.solved);
-      expect(result.branch('component:r1').currentA, closeTo(1.0, 1e-9));
-      expect(result.branch('component:r1').voltageV.abs(), closeTo(12.0, 1e-9));
-      expect(result.branch('source:v1').currentA?.abs(), closeTo(1.0, 1e-9));
-      expect(result.branch('source:v1').voltageV.abs(), closeTo(12.0, 1e-9));
-      expect(
-        result.diagnostics.map((DcSolverDiagnostic d) => d.code),
-        contains(DcDiagnosticCode.sourceCurrentLimited),
-      );
-      _expectResiduals(result);
-    });
+        expect(result.status, DcSolveStatus.solved);
+        expect(result.branch('component:r1').currentA, closeTo(1.0, 1e-9));
+        expect(
+          result.branch('component:r1').voltageV.abs(),
+          closeTo(12.0, 1e-9),
+        );
+        expect(result.branch('source:v1').currentA?.abs(), closeTo(1.0, 1e-9));
+        expect(result.branch('source:v1').voltageV.abs(), closeTo(12.0, 1e-9));
+        expect(
+          result.diagnostics.map((DcSolverDiagnostic d) => d.code),
+          contains(DcDiagnosticCode.sourceCurrentLimited),
+        );
+        _expectResiduals(result);
+      },
+    );
 
     test('voltage source stays in voltage regulation below current limit', () {
       final DcSolveResult result = solve(_resistiveCircuit(currentLimitA: 3.0));
@@ -48,51 +56,63 @@ void main() {
       );
     });
 
-    test('DC breaker is a canonical topology branch and can be tripped open', () {
-      final DcSolveResult closed = solve(_breakerCircuit(tripped: false));
-      expect(closed.status, DcSolveStatus.solved);
-      expect(closed.branch('component:q1').kind, DcBranchKind.idealProtection);
-      expect(closed.branch('component:q1').currentA?.abs(), closeTo(2.0, 1e-9));
-      _expectResiduals(closed);
+    test(
+      'DC breaker is a canonical topology branch and can be tripped open',
+      () {
+        final DcSolveResult closed = solve(_breakerCircuit(tripped: false));
+        expect(closed.status, DcSolveStatus.solved);
+        expect(
+          closed.branch('component:q1').kind,
+          DcBranchKind.idealProtection,
+        );
+        expect(
+          closed.branch('component:q1').currentA?.abs(),
+          closeTo(2.0, 1e-9),
+        );
+        _expectResiduals(closed);
 
-      final DcSolveResult open = solve(_breakerCircuit(tripped: true));
-      expect(open.status, DcSolveStatus.solved);
-      expect(open.branch('component:q1').kind, DcBranchKind.openCircuit);
-      expect(open.branch('component:q1').currentA, 0.0);
-      expect(open.branch('component:r1').currentA, closeTo(0.0, 1e-12));
-      _expectResiduals(open);
-    });
+        final DcSolveResult open = solve(_breakerCircuit(tripped: true));
+        expect(open.status, DcSolveStatus.solved);
+        expect(open.branch('component:q1').kind, DcBranchKind.openCircuit);
+        expect(open.branch('component:q1').currentA, 0.0);
+        expect(open.branch('component:r1').currentA, closeTo(0.0, 1e-12));
+        _expectResiduals(open);
+      },
+    );
 
-    test('receiver nominal current is descriptive and never a source limit', () {
-      final CircuitState base = _resistiveCircuit();
-      final ComponentInstance original = base.components.single;
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('receiver-rating-separation'),
-        revision: 0,
-        mode: ElectricalMode.dc,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: original.id,
-            modelType: original.modelType,
-            terminals: original.terminals,
-            parameters: <String, Object?>{
-              ...original.parameters,
-              ReceiverNominalRating.currentKey: 0.5,
-            },
-          ),
-        ],
-        connections: base.connections,
-        sources: base.sources,
-      );
+    test(
+      'receiver nominal current is descriptive and never a source limit',
+      () {
+        final CircuitState base = _resistiveCircuit();
+        final ComponentInstance original = base.components.single;
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('receiver-rating-separation'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: original.id,
+              modelType: original.modelType,
+              terminals: original.terminals,
+              parameters: <String, Object?>{
+                ...original.parameters,
+                ReceiverNominalRating.currentKey: 0.5,
+              },
+            ),
+          ],
+          connections: base.connections,
+          sources: base.sources,
+        );
 
-      final DcSolveResult result = solve(circuit);
-      expect(result.status, DcSolveStatus.solved);
-      expect(result.branch('component:r1').currentA, closeTo(2.0, 1e-9));
-      expect(
-        result.diagnostics.map((DcSolverDiagnostic d) => d.code),
-        isNot(contains(DcDiagnosticCode.sourceCurrentLimited)),
-      );
-    });
+        final DcSolveResult result = solve(circuit);
+        expect(result.status, DcSolveStatus.solved);
+        expect(result.branch('component:r1').currentA, closeTo(2.0, 1e-9));
+        expect(
+          result.diagnostics.map((DcSolverDiagnostic d) => d.code),
+          isNot(contains(DcDiagnosticCode.sourceCurrentLimited)),
+        );
+      },
+    );
   });
 }
 
@@ -155,9 +175,7 @@ CircuitState _breakerCircuit({required bool tripped}) => CircuitState(
       id: ComponentId('q1'),
       modelType: 'breaker_dc',
       terminals: <Terminal>[_terminal('q1a', 'in'), _terminal('q1b', 'out')],
-      parameters: <String, Object?>{
-        ProtectionRating.ratedCurrentKey: 5.0,
-      },
+      parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: 5.0},
       controlState: <String, Object?>{'tripped': tripped},
     ),
     ComponentInstance(
@@ -212,12 +230,7 @@ Terminal _terminal(
   String name, {
   TerminalRole role = TerminalRole.generic,
   PhaseTag phase = PhaseTag.none,
-}) => Terminal(
-  id: TerminalId(id),
-  name: name,
-  role: role,
-  phase: phase,
-);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
 
 void _expectResiduals(DcSolveResult result) {
   expect(result.maxMatrixResidual, isNotNull);

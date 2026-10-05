@@ -37,16 +37,16 @@ final class F15SourcePvState {
 
 abstract final class F15SourcePvGeometry {
   static Size boardSizeFor(F15SourcePvDevice device) => switch (device) {
-        F15SourcePvDevice.dcCurrentSource => const Size(140, 160),
-        F15SourcePvDevice.acVoltageSource => const Size(140, 160),
-        F15SourcePvDevice.acCurrentSource => const Size(140, 160),
-        F15SourcePvDevice.ac3VoltageSource => const Size(210, 210),
-        F15SourcePvDevice.pvArray => const Size(220, 170),
-        F15SourcePvDevice.pvController => const Size(200, 200),
-        F15SourcePvDevice.pvBattery => const Size(210, 170),
-        F15SourcePvDevice.pvInverter => const Size(190, 230),
-        F15SourcePvDevice.pvLoad => const Size(170, 160),
-      };
+    F15SourcePvDevice.dcCurrentSource => const Size(140, 160),
+    F15SourcePvDevice.acVoltageSource => const Size(140, 160),
+    F15SourcePvDevice.acCurrentSource => const Size(140, 160),
+    F15SourcePvDevice.ac3VoltageSource => const Size(210, 210),
+    F15SourcePvDevice.pvArray => const Size(220, 170),
+    F15SourcePvDevice.pvController => const Size(200, 200),
+    F15SourcePvDevice.pvBattery => const Size(210, 170),
+    F15SourcePvDevice.pvInverter => const Size(190, 230),
+    F15SourcePvDevice.pvLoad => const Size(170, 160),
+  };
 }
 
 class F15SourcePvComponentView extends StatelessWidget {
@@ -63,12 +63,12 @@ class F15SourcePvComponentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size.width,
-        height: size.height,
-        child: CustomPaint(
-          painter: _F15SourcePvPainter(device: device, state: state),
-        ),
-      );
+    width: size.width,
+    height: size.height,
+    child: CustomPaint(
+      painter: _F15SourcePvPainter(device: device, state: state),
+    ),
+  );
 }
 
 final class _F15SourcePvPainter extends CustomPainter {
@@ -157,11 +157,7 @@ final class _P {
     );
     canvas.drawRRect(
       rr,
-      grad(
-        body,
-        colors ??
-            const <Color>[Color(0xFFF8FAFB), Color(0xFFD3DDE3)],
-      ),
+      grad(body, colors ?? const <Color>[Color(0xFFF8FAFB), Color(0xFFD3DDE3)]),
     );
     canvas.drawRRect(rr, outline);
   }
@@ -260,7 +256,11 @@ final class _P {
 
     final double symbolR = h * .085;
     final Offset symbol = Offset(c.dx, body.bottom - h * .15);
-    canvas.drawCircle(symbol, symbolR, Paint()..color = const Color(0xFFF7FAFB));
+    canvas.drawCircle(
+      symbol,
+      symbolR,
+      Paint()..color = const Color(0xFFF7FAFB),
+    );
     canvas.drawCircle(symbol, symbolR, outline);
     if (currentSource) {
       canvas.drawLine(
@@ -383,11 +383,7 @@ final class _P {
       Color(0xFF2563EB),
     ];
     for (var i = 0; i < 4; i++) {
-      terminal(
-        Offset(xs[i], rect.bottom - h * .08),
-        colors[i],
-        labels[i],
-      );
+      terminal(Offset(xs[i], rect.bottom - h * .08), colors[i], labels[i]);
     }
   }
 
@@ -530,12 +526,11 @@ final class _P {
       width: w * .72,
       height: h * .58,
     );
-    final RRect outer =
-        RRect.fromRectAndRadius(body, Radius.circular(h * .035));
-    canvas.drawRRect(
-      outer,
-      Paint()..color = const Color(0xFF2B353B),
+    final RRect outer = RRect.fromRectAndRadius(
+      body,
+      Radius.circular(h * .035),
     );
+    canvas.drawRRect(outer, Paint()..color = const Color(0xFF2B353B));
     final Rect inner = body.deflate(h * .035);
     canvas.drawRRect(
       RRect.fromRectAndRadius(inner, Radius.circular(h * .02)),
@@ -578,7 +573,9 @@ final class _P {
       color: soc > .45 ? Colors.white : const Color(0xFF26363E),
     );
     text(
-      state.voltageV > 0 ? '${state.voltageV.toStringAsFixed(0)} V' : 'BATTERIE',
+      state.voltageV > 0
+          ? '${state.voltageV.toStringAsFixed(0)} V'
+          : 'BATTERIE',
       c.translate(0, h * .13),
       size: h * .055,
       color: soc > .32 ? Colors.white : const Color(0xFF26363E),
@@ -619,7 +616,11 @@ final class _P {
     );
     final Offset centerSymbol = Offset(c.dx, c.dy - h * .02);
     final double r = h * .10;
-    canvas.drawCircle(centerSymbol, r, Paint()..color = const Color(0xFFE5ECE8));
+    canvas.drawCircle(
+      centerSymbol,
+      r,
+      Paint()..color = const Color(0xFFE5ECE8),
+    );
     canvas.drawCircle(centerSymbol, r, outline);
     text('DC', centerSymbol.translate(-r * .75, 0), size: h * .045);
     text('AC', centerSymbol.translate(r * .75, 0), size: h * .045);
@@ -672,10 +673,6 @@ final class _P {
         ..strokeWidth = math.max(2, s * .022)
         ..strokeJoin = StrokeJoin.round,
     );
-    text(
-      'CHARGE',
-      Offset(c.dx, body.top + h * .08),
-      size: h * .06,
-    );
+    text('CHARGE', Offset(c.dx, body.top + h * .08), size: h * .06);
   }
 }

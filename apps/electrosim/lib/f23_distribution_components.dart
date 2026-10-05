@@ -20,11 +20,11 @@ final class F23DistributionState {
 
 abstract final class F23DistributionGeometry {
   static Size boardSizeFor(F23DistributionDevice device) => switch (device) {
-        F23DistributionDevice.isolator3p => const Size(200, 230),
-        F23DistributionDevice.isolator4p => const Size(240, 230),
-        F23DistributionDevice.breaker4p => const Size(240, 230),
-        F23DistributionDevice.terminalBlock5 => const Size(280, 210),
-      };
+    F23DistributionDevice.isolator3p => const Size(200, 230),
+    F23DistributionDevice.isolator4p => const Size(240, 230),
+    F23DistributionDevice.breaker4p => const Size(240, 230),
+    F23DistributionDevice.terminalBlock5 => const Size(280, 210),
+  };
 }
 
 class F23DistributionComponentView extends StatelessWidget {
@@ -40,12 +40,12 @@ class F23DistributionComponentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: size.width,
-        height: size.height,
-        child: CustomPaint(
-          painter: _F23DistributionPainter(device: device, state: state),
-        ),
-      );
+    width: size.width,
+    height: size.height,
+    child: CustomPaint(
+      painter: _F23DistributionPainter(device: device, state: state),
+    ),
+  );
 }
 
 final class _F23DistributionPainter extends CustomPainter {
@@ -106,8 +106,12 @@ final class _P {
       colors: colors,
     ).createShader(target);
 
-  void text(String value, Offset center,
-      {double? size, Color color = const Color(0xFF26363E)}) {
+  void text(
+    String value,
+    Offset center, {
+    double? size,
+    Color color = const Color(0xFF26363E),
+  }) {
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
@@ -121,31 +125,39 @@ final class _P {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
-    tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
+    tp.paint(
+      canvas,
+      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+    );
   }
 
   Color phaseColor(int pole) => switch (pole) {
-        0 => const Color(0xFF8B5A2B),
-        1 => const Color(0xFF242A30),
-        2 => const Color(0xFF777F86),
-        _ => const Color(0xFF2563EB),
-      };
+    0 => const Color(0xFF8B5A2B),
+    1 => const Color(0xFF242A30),
+    2 => const Color(0xFF777F86),
+    _ => const Color(0xFF2563EB),
+  };
 
   String topLabel(int pole, int poles) => switch (pole) {
-        0 => '1L1',
-        1 => '3L2',
-        2 => '5L3',
-        _ => poles == 4 ? 'N' : '',
-      };
+    0 => '1L1',
+    1 => '3L2',
+    2 => '5L3',
+    _ => poles == 4 ? 'N' : '',
+  };
 
   String bottomLabel(int pole, int poles) => switch (pole) {
-        0 => '2T1',
-        1 => '4T2',
-        2 => '6T3',
-        _ => poles == 4 ? 'N' : '',
-      };
+    0 => '2T1',
+    1 => '4T2',
+    2 => '6T3',
+    _ => poles == 4 ? 'N' : '',
+  };
 
-  void terminal(Offset p, String label, Color color, {bool labelAbove = false}) {
+  void terminal(
+    Offset p,
+    String label,
+    Color color, {
+    bool labelAbove = false,
+  }) {
     final double r = math.max(3.8, s * .027);
     canvas.drawCircle(
       p,
@@ -203,7 +215,12 @@ final class _P {
       final Offset top = Offset(x, rect.top + h * .075);
       final Offset bottom = Offset(x, rect.bottom - h * .075);
       terminal(top, topLabel(pole, poles), phaseColor(pole));
-      terminal(bottom, bottomLabel(pole, poles), phaseColor(pole), labelAbove: true);
+      terminal(
+        bottom,
+        bottomLabel(pole, poles),
+        phaseColor(pole),
+        labelAbove: true,
+      );
 
       final Rect channel = Rect.fromCenter(
         center: Offset(x, c.dy + h * .005),
@@ -219,8 +236,8 @@ final class _P {
       final double leverY = state.tripped
           ? channel.center.dy
           : effectiveClosed
-              ? channel.top + channel.height * .30
-              : channel.bottom - channel.height * .30;
+          ? channel.top + channel.height * .30
+          : channel.bottom - channel.height * .30;
       final Rect lever = Rect.fromCenter(
         center: Offset(x, leverY),
         width: channel.width * .72,
@@ -245,8 +262,8 @@ final class _P {
     final Color indicator = state.tripped
         ? const Color(0xFFD64A42)
         : state.closed
-            ? const Color(0xFF3B9B5E)
-            : const Color(0xFF9AA4A9);
+        ? const Color(0xFF3B9B5E)
+        : const Color(0xFF9AA4A9);
     canvas.drawCircle(
       Offset(c.dx, body.bottom - h * .055),
       h * .018,
@@ -263,10 +280,7 @@ final class _P {
     final RRect rr = RRect.fromRectAndRadius(rail, Radius.circular(h * .028));
     canvas.drawRRect(
       rr,
-      gradient(
-        rail,
-        const <Color>[Color(0xFFF4F5F1), Color(0xFFD3D5CE)],
-      ),
+      gradient(rail, const <Color>[Color(0xFFF4F5F1), Color(0xFFD3D5CE)]),
     );
     canvas.drawRRect(rr, outline);
 

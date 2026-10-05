@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'reference_widgets_extended.dart';
 
-void main() => runApp(const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ExtendedReferenceComponentsProof(),
-    ));
+void main() => runApp(
+  const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: ExtendedReferenceComponentsProof(),
+  ),
+);
 
 class ExtendedReferenceComponentsProof extends StatelessWidget {
   const ExtendedReferenceComponentsProof({super.key});
@@ -21,10 +23,7 @@ class ExtendedReferenceComponentsProof extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          ExtendedReferenceComponentView(
-            device: device,
-            state: state,
-          ),
+          ExtendedReferenceComponentView(device: device, state: state),
           const SizedBox(height: 10),
           Text(
             label,
@@ -61,10 +60,7 @@ class ExtendedReferenceComponentsProof extends StatelessWidget {
               const SizedBox(height: 6),
               const Text(
                 'Même méthode Dart/vectorielle que les cinq composants de référence validés',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF52666F),
-                ),
+                style: TextStyle(fontSize: 15, color: Color(0xFF52666F)),
               ),
               const SizedBox(height: 28),
               Expanded(
@@ -85,9 +81,7 @@ class ExtendedReferenceComponentsProof extends StatelessWidget {
                       item(
                         'Bouton-poussoir NC',
                         ExtendedReferenceDevice.pushButtonNc,
-                        const ExtendedReferenceVisualState(
-                          pressed: false,
-                        ),
+                        const ExtendedReferenceVisualState(pressed: false),
                       ),
                       item(
                         'Buzzer 24 V',

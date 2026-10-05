@@ -13,51 +13,81 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('SolverAC3', () {
-    test('AC3-001 balanced star has explicit L1/L2/L3/N and balanced currents', () {
-      final Ac3SolveResult result = solve(_starCircuit());
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.sourceSequence, Ac3PhaseSequence.positive);
-      expect(result.voltageBalanced, isTrue);
-      expect(result.currentBalanced, isTrue);
-      expect(result.neutralConnected, isTrue);
-      expect(result.missingPhases, isEmpty);
-      expect(result.phaseVoltage(PhaseTag.l1)!.magnitude, closeTo(230.0, 1e-8));
-      expect(result.phaseVoltage(PhaseTag.l2)!.magnitude, closeTo(230.0, 1e-8));
-      expect(result.phaseVoltage(PhaseTag.l3)!.magnitude, closeTo(230.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(10.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l2).magnitude, closeTo(10.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l3).magnitude, closeTo(10.0, 1e-8));
-      expect(result.neutralCurrent.magnitude, lessThan(1e-8));
-      expect(result.lineToLineVoltages['L1-L2']!.magnitude, closeTo(230.0 * math.sqrt(3.0), 1e-8));
-      _expectResiduals(result);
-    });
+    test(
+      'AC3-001 balanced star has explicit L1/L2/L3/N and balanced currents',
+      () {
+        final Ac3SolveResult result = solve(_starCircuit());
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.sourceSequence, Ac3PhaseSequence.positive);
+        expect(result.voltageBalanced, isTrue);
+        expect(result.currentBalanced, isTrue);
+        expect(result.neutralConnected, isTrue);
+        expect(result.missingPhases, isEmpty);
+        expect(
+          result.phaseVoltage(PhaseTag.l1)!.magnitude,
+          closeTo(230.0, 1e-8),
+        );
+        expect(
+          result.phaseVoltage(PhaseTag.l2)!.magnitude,
+          closeTo(230.0, 1e-8),
+        );
+        expect(
+          result.phaseVoltage(PhaseTag.l3)!.magnitude,
+          closeTo(230.0, 1e-8),
+        );
+        expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(10.0, 1e-8));
+        expect(result.lineCurrent(PhaseTag.l2).magnitude, closeTo(10.0, 1e-8));
+        expect(result.lineCurrent(PhaseTag.l3).magnitude, closeTo(10.0, 1e-8));
+        expect(result.neutralCurrent.magnitude, lessThan(1e-8));
+        expect(
+          result.lineToLineVoltages['L1-L2']!.magnitude,
+          closeTo(230.0 * math.sqrt(3.0), 1e-8),
+        );
+        _expectResiduals(result);
+      },
+    );
 
     test('balanced delta is solved from three real line-to-line branches', () {
       final Ac3SolveResult result = solve(_deltaCircuit());
       expect(result.status, Ac3SolveStatus.solved);
       expect(result.neutralConnected, isFalse);
       expect(result.currentBalanced, isTrue);
-      expect(result.branch('component:d12').current!.magnitude, closeTo(10.0, 1e-8));
-      expect(result.branch('component:d23').current!.magnitude, closeTo(10.0, 1e-8));
-      expect(result.branch('component:d31').current!.magnitude, closeTo(10.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(10.0 * math.sqrt(3.0), 1e-8));
+      expect(
+        result.branch('component:d12').current!.magnitude,
+        closeTo(10.0, 1e-8),
+      );
+      expect(
+        result.branch('component:d23').current!.magnitude,
+        closeTo(10.0, 1e-8),
+      );
+      expect(
+        result.branch('component:d31').current!.magnitude,
+        closeTo(10.0, 1e-8),
+      );
+      expect(
+        result.lineCurrent(PhaseTag.l1).magnitude,
+        closeTo(10.0 * math.sqrt(3.0), 1e-8),
+      );
       expect(result.neutralCurrent.magnitude, lessThan(1e-8));
       _expectResiduals(result);
     });
 
-    test('unbalanced four-wire star produces a real neutral return current', () {
-      final Ac3SolveResult result = solve(
-        _starCircuit(resistances: const <double>[23.0, 46.0, 92.0]),
-      );
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.currentBalanced, isFalse);
-      expect(result.neutralConnected, isTrue);
-      expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(10.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l2).magnitude, closeTo(5.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l3).magnitude, closeTo(2.5, 1e-8));
-      expect(result.neutralCurrent.magnitude, greaterThan(1.0));
-      _expectResiduals(result);
-    });
+    test(
+      'unbalanced four-wire star produces a real neutral return current',
+      () {
+        final Ac3SolveResult result = solve(
+          _starCircuit(resistances: const <double>[23.0, 46.0, 92.0]),
+        );
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.currentBalanced, isFalse);
+        expect(result.neutralConnected, isTrue);
+        expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(10.0, 1e-8));
+        expect(result.lineCurrent(PhaseTag.l2).magnitude, closeTo(5.0, 1e-8));
+        expect(result.lineCurrent(PhaseTag.l3).magnitude, closeTo(2.5, 1e-8));
+        expect(result.neutralCurrent.magnitude, greaterThan(1.0));
+        _expectResiduals(result);
+      },
+    );
 
     test('three-wire unbalanced star shifts its floating star point', () {
       final Ac3SolveResult result = solve(
@@ -69,47 +99,66 @@ void main() {
       expect(result.status, Ac3SolveStatus.solved);
       expect(result.neutralConnected, isFalse);
       expect(result.neutralCurrent.magnitude, lessThan(1e-8));
-      expect(result.branch('component:r1').voltage.magnitude, isNot(closeTo(230.0, 1e-4)));
+      expect(
+        result.branch('component:r1').voltage.magnitude,
+        isNot(closeTo(230.0, 1e-4)),
+      );
       _expectResiduals(result);
     });
 
     test('AC3-002 loss of L2 is an explicit degraded solved state', () {
-      final Ac3SolveResult result = solve(_starCircuit(disabledPhase: PhaseTag.l2));
+      final Ac3SolveResult result = solve(
+        _starCircuit(disabledPhase: PhaseTag.l2),
+      );
       expect(result.status, Ac3SolveStatus.solved);
       expect(result.isDegradedThreePhase, isTrue);
       expect(result.missingPhases, contains(PhaseTag.l2));
       expect(result.lineCurrent(PhaseTag.l2), AcComplex.zero);
       expect(result.branch('component:r2').current!.magnitude, lessThan(1e-10));
       expect(
-        result.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
+        result.diagnostics.map(
+          (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+        ),
         contains(Ac3DiagnosticCode.phaseLoss),
       );
       expect(result.currentBalanced, isFalse);
     });
 
-    test('AC3-003 swapping two physical conductors changes observed phase sequence', () {
-      final Ac3SolveResult positive = solve(_starCircuit(probeOrder: const <PhaseTag>[
-        PhaseTag.l1,
-        PhaseTag.l2,
-        PhaseTag.l3,
-      ]));
-      final Ac3SolveResult inverted = solve(_starCircuit(probeOrder: const <PhaseTag>[
-        PhaseTag.l1,
-        PhaseTag.l3,
-        PhaseTag.l2,
-      ]));
-      expect(positive.phaseOrderObservations.single.sequence, Ac3PhaseSequence.positive);
-      expect(inverted.phaseOrderObservations.single.sequence, Ac3PhaseSequence.negative);
-      expect(inverted.sourceSequence, Ac3PhaseSequence.positive);
-    });
+    test(
+      'AC3-003 swapping two physical conductors changes observed phase sequence',
+      () {
+        final Ac3SolveResult positive = solve(
+          _starCircuit(
+            probeOrder: const <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3],
+          ),
+        );
+        final Ac3SolveResult inverted = solve(
+          _starCircuit(
+            probeOrder: const <PhaseTag>[PhaseTag.l1, PhaseTag.l3, PhaseTag.l2],
+          ),
+        );
+        expect(
+          positive.phaseOrderObservations.single.sequence,
+          Ac3PhaseSequence.positive,
+        );
+        expect(
+          inverted.phaseOrderObservations.single.sequence,
+          Ac3PhaseSequence.negative,
+        );
+        expect(inverted.sourceSequence, Ac3PhaseSequence.positive);
+      },
+    );
 
-    test('explicit source phasors can represent a negative source sequence', () {
-      final Ac3SolveResult result = solve(
-        _starCircuit(sourcePhases: const <double>[0.0, 120.0, -120.0]),
-      );
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.sourceSequence, Ac3PhaseSequence.negative);
-    });
+    test(
+      'explicit source phasors can represent a negative source sequence',
+      () {
+        final Ac3SolveResult result = solve(
+          _starCircuit(sourcePhases: const <double>[0.0, 120.0, -120.0]),
+        );
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.sourceSequence, Ac3PhaseSequence.negative);
+      },
+    );
 
     test('R L C and general impedance models are supported in AC3', () {
       final Ac3SolveResult result = solve(_mixedLoadCircuit());
@@ -179,28 +228,36 @@ void main() {
       }
     });
 
-    test('invalid passive models parameters conditions and terminal counts fail', () {
-      for (final CircuitState circuit in <CircuitState>[
-        _badComponent(modelType: 'mystery'),
-        _badComponent(parameters: const <String, Object?>{'resistanceOhm': 0.0}),
-        _badComponent(condition: ComponentCondition.degraded),
-        _badComponent(oneTerminal: true),
-        _badProbe(),
-      ]) {
-        expect(solve(circuit).status, Ac3SolveStatus.invalid);
-      }
-    });
+    test(
+      'invalid passive models parameters conditions and terminal counts fail',
+      () {
+        for (final CircuitState circuit in <CircuitState>[
+          _badComponent(modelType: 'mystery'),
+          _badComponent(
+            parameters: const <String, Object?>{'resistanceOhm': 0.0},
+          ),
+          _badComponent(condition: ComponentCondition.degraded),
+          _badComponent(oneTerminal: true),
+          _badProbe(),
+        ]) {
+          expect(solve(circuit).status, Ac3SolveStatus.invalid);
+        }
+      },
+    );
 
-    test('invalid source model phase tag parameter and terminal count fail', () {
-      for (final CircuitState circuit in <CircuitState>[
-        _badSource(modelType: 'mystery_source'),
-        _badSource(noPhaseTag: true),
-        _badSource(parameters: const <String, Object?>{'voltageRmsV': -1.0}),
-        _badSource(oneTerminal: true),
-      ]) {
-        expect(solve(circuit).status, Ac3SolveStatus.invalid);
-      }
-    });
+    test(
+      'invalid source model phase tag parameter and terminal count fail',
+      () {
+        for (final CircuitState circuit in <CircuitState>[
+          _badSource(modelType: 'mystery_source'),
+          _badSource(noPhaseTag: true),
+          _badSource(parameters: const <String, Object?>{'voltageRmsV': -1.0}),
+          _badSource(oneTerminal: true),
+        ]) {
+          expect(solve(circuit).status, Ac3SolveStatus.invalid);
+        }
+      },
+    );
 
     test('separate passive island is detected before matrix solve', () {
       final CircuitState base = _starCircuit();
@@ -213,10 +270,7 @@ void main() {
           ComponentInstance(
             id: ComponentId('island'),
             modelType: 'resistor',
-            terminals: <Terminal>[
-              _terminal('ia', 'IA'),
-              _terminal('ib', 'IB'),
-            ],
+            terminals: <Terminal>[_terminal('ia', 'IA'), _terminal('ib', 'IB')],
             parameters: const <String, Object?>{'resistanceOhm': 10.0},
           ),
         ],
@@ -227,7 +281,9 @@ void main() {
       final Ac3SolveResult result = solve(circuit);
       expect(result.status, Ac3SolveStatus.singular);
       expect(
-        result.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
+        result.diagnostics.map(
+          (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+        ),
         contains(Ac3DiagnosticCode.floatingElectricalIsland),
       );
     });
@@ -237,91 +293,144 @@ void main() {
       final Ac3SolveResult result = solve(circuit);
       expect(result.status, Ac3SolveStatus.singular);
       expect(
-        result.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
+        result.diagnostics.map(
+          (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+        ),
         contains(Ac3DiagnosticCode.singularMatrix),
       );
       expect(
-        result.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
+        result.diagnostics.map(
+          (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+        ),
         contains(Ac3DiagnosticCode.duplicatePhaseSource),
       );
     });
 
-    test('AC current source is stamped explicitly in the three-phase network', () {
-      final Ac3SolveResult result = solve(_currentSourceCircuit());
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.branch('source:i1').kind, Ac3BranchKind.currentSource);
-      expect(result.branch('source:i1').current!.magnitude, closeTo(2.0, 1e-10));
-      expect(result.branch('component:r').current!.magnitude, closeTo(2.0, 1e-10));
-      expect(result.missingPhases, containsAll(<PhaseTag>[PhaseTag.l2, PhaseTag.l3]));
-    });
-
-    test('invalid L C impedance and current-source parameters are rejected', () {
-      final List<CircuitState> circuits = <CircuitState>[
-        _badComponent(modelType: 'inductor', parameters: const <String, Object?>{'inductanceH': 0.0}),
-        _badComponent(modelType: 'capacitor', parameters: const <String, Object?>{'capacitanceF': -1.0}),
-        _badComponent(
-          modelType: 'impedance',
-          parameters: const <String, Object?>{'resistanceOhm': 0.0, 'reactanceOhm': 0.0},
-        ),
-        _badSource(
-          modelType: 'ac_current_source',
-          parameters: const <String, Object?>{'currentRmsA': 'bad'},
-        ),
-      ];
-      for (final CircuitState circuit in circuits) {
-        expect(solve(circuit).status, Ac3SolveStatus.invalid);
-      }
-    });
-
-    test('ideal short and near-zero impedance create explicit singular constraints', () {
-      for (final CircuitState circuit in <CircuitState>[
-        _conditionCircuit(ComponentCondition.shortCircuit),
-        _nearZeroImpedanceCircuit(),
-      ]) {
-        final Ac3SolveResult result = solve(circuit);
-        expect(result.status, Ac3SolveStatus.singular);
+    test(
+      'AC current source is stamped explicitly in the three-phase network',
+      () {
+        final Ac3SolveResult result = solve(_currentSourceCircuit());
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.branch('source:i1').kind, Ac3BranchKind.currentSource);
         expect(
-          result.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
-          contains(Ac3DiagnosticCode.singularMatrix),
+          result.branch('source:i1').current!.magnitude,
+          closeTo(2.0, 1e-10),
         );
-      }
-    });
+        expect(
+          result.branch('component:r').current!.magnitude,
+          closeTo(2.0, 1e-10),
+        );
+        expect(
+          result.missingPhases,
+          containsAll(<PhaseTag>[PhaseTag.l2, PhaseTag.l3]),
+        );
+      },
+    );
 
-    test('empty circuit and conflicting phase topology are rejected explicitly', () {
-      final CircuitState empty = CircuitState(
-        circuitId: CircuitId('empty-ac3'),
-        revision: 0,
-        mode: ElectricalMode.ac3,
-        settings: const <String, Object?>{'frequencyHz': 50.0},
-      );
-      expect(solve(empty).status, Ac3SolveStatus.invalid);
+    test(
+      'invalid L C impedance and current-source parameters are rejected',
+      () {
+        final List<CircuitState> circuits = <CircuitState>[
+          _badComponent(
+            modelType: 'inductor',
+            parameters: const <String, Object?>{'inductanceH': 0.0},
+          ),
+          _badComponent(
+            modelType: 'capacitor',
+            parameters: const <String, Object?>{'capacitanceF': -1.0},
+          ),
+          _badComponent(
+            modelType: 'impedance',
+            parameters: const <String, Object?>{
+              'resistanceOhm': 0.0,
+              'reactanceOhm': 0.0,
+            },
+          ),
+          _badSource(
+            modelType: 'ac_current_source',
+            parameters: const <String, Object?>{'currentRmsA': 'bad'},
+          ),
+        ];
+        for (final CircuitState circuit in circuits) {
+          expect(solve(circuit).status, Ac3SolveStatus.invalid);
+        }
+      },
+    );
 
-      final CircuitState conflicting = _conflictingPhaseCircuit();
-      final Ac3SolveResult conflictResult = solve(conflicting);
-      expect(conflictResult.status, Ac3SolveStatus.invalid);
-      expect(
-        conflictResult.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
-        contains(Ac3DiagnosticCode.topologyError),
-      );
-    });
+    test(
+      'ideal short and near-zero impedance create explicit singular constraints',
+      () {
+        for (final CircuitState circuit in <CircuitState>[
+          _conditionCircuit(ComponentCondition.shortCircuit),
+          _nearZeroImpedanceCircuit(),
+        ]) {
+          final Ac3SolveResult result = solve(circuit);
+          expect(result.status, Ac3SolveStatus.singular);
+          expect(
+            result.diagnostics.map(
+              (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+            ),
+            contains(Ac3DiagnosticCode.singularMatrix),
+          );
+        }
+      },
+    );
 
-    test('source with line terminal second is oriented phase-to-neutral correctly', () {
-      final CircuitState circuit = _reversedTerminalSourceCircuit();
-      final Ac3SolveResult result = solve(circuit);
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.phaseVoltage(PhaseTag.l1)!.magnitude, closeTo(230.0, 1e-8));
-      expect(result.branch('component:r').current!.magnitude, closeTo(10.0, 1e-8));
-    });
+    test(
+      'empty circuit and conflicting phase topology are rejected explicitly',
+      () {
+        final CircuitState empty = CircuitState(
+          circuitId: CircuitId('empty-ac3'),
+          revision: 0,
+          mode: ElectricalMode.ac3,
+          settings: const <String, Object?>{'frequencyHz': 50.0},
+        );
+        expect(solve(empty).status, Ac3SolveStatus.invalid);
 
-    test('zero-voltage three-phase source has indeterminate sequence and zero power', () {
-      final Ac3SolveResult result = solve(_zeroVoltageCircuit());
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.sourceSequence, Ac3PhaseSequence.indeterminate);
-      expect(result.voltageBalanced, isTrue);
-      expect(result.currentBalanced, isTrue);
-      expect(result.branch('component:r1').apparentPowerVA, closeTo(0.0, 1e-12));
-      expect(result.branch('component:r1').powerFactor, 1.0);
-    });
+        final CircuitState conflicting = _conflictingPhaseCircuit();
+        final Ac3SolveResult conflictResult = solve(conflicting);
+        expect(conflictResult.status, Ac3SolveStatus.invalid);
+        expect(
+          conflictResult.diagnostics.map(
+            (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+          ),
+          contains(Ac3DiagnosticCode.topologyError),
+        );
+      },
+    );
+
+    test(
+      'source with line terminal second is oriented phase-to-neutral correctly',
+      () {
+        final CircuitState circuit = _reversedTerminalSourceCircuit();
+        final Ac3SolveResult result = solve(circuit);
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(
+          result.phaseVoltage(PhaseTag.l1)!.magnitude,
+          closeTo(230.0, 1e-8),
+        );
+        expect(
+          result.branch('component:r').current!.magnitude,
+          closeTo(10.0, 1e-8),
+        );
+      },
+    );
+
+    test(
+      'zero-voltage three-phase source has indeterminate sequence and zero power',
+      () {
+        final Ac3SolveResult result = solve(_zeroVoltageCircuit());
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.sourceSequence, Ac3PhaseSequence.indeterminate);
+        expect(result.voltageBalanced, isTrue);
+        expect(result.currentBalanced, isTrue);
+        expect(
+          result.branch('component:r1').apparentPowerVA,
+          closeTo(0.0, 1e-12),
+        );
+        expect(result.branch('component:r1').powerFactor, 1.0);
+      },
+    );
 
     test('non-120-degree phasors produce an indeterminate source sequence', () {
       final Ac3SolveResult result = solve(
@@ -344,7 +453,9 @@ void main() {
       ).solve(circuit, topology);
       expect(residualFailure.status, Ac3SolveStatus.invalid);
       expect(
-        residualFailure.diagnostics.map((Ac3SolverDiagnostic diagnostic) => diagnostic.code),
+        residualFailure.diagnostics.map(
+          (Ac3SolverDiagnostic diagnostic) => diagnostic.code,
+        ),
         contains(Ac3DiagnosticCode.numericalResidualExceeded),
       );
     });
@@ -352,7 +463,10 @@ void main() {
     test('disabled three-phase sources settle a passive network at zero', () {
       final Ac3SolveResult result = solve(_allSourcesDisabledCircuit());
       expect(result.status, Ac3SolveStatus.solved);
-      expect(result.missingPhases, containsAll(<PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]));
+      expect(
+        result.missingPhases,
+        containsAll(<PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]),
+      );
       expect(result.branch('component:r1').current, AcComplex.zero);
       expect(result.phaseVoltage(PhaseTag.l1), isNull);
     });
@@ -428,8 +542,18 @@ SourceInstance _phaseSource(
     id: SourceId('s$key'),
     modelType: 'ac_voltage_source',
     terminals: <Terminal>[
-      _terminal('s${key}p', phase.name.toUpperCase(), phase: phase, role: _phaseRole(phase)),
-      _terminal('s${key}n', 'N', phase: PhaseTag.neutral, role: TerminalRole.neutral),
+      _terminal(
+        's${key}p',
+        phase.name.toUpperCase(),
+        phase: phase,
+        role: _phaseRole(phase),
+      ),
+      _terminal(
+        's${key}n',
+        'N',
+        phase: PhaseTag.neutral,
+        role: TerminalRole.neutral,
+      ),
     ],
     parameters: <String, Object?>{
       'voltageRmsV': voltage,
@@ -446,7 +570,11 @@ CircuitState _starCircuit({
   List<double>? sourcePhases,
   List<PhaseTag>? probeOrder,
 }) {
-  final List<PhaseTag> phases = <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3];
+  final List<PhaseTag> phases = <PhaseTag>[
+    PhaseTag.l1,
+    PhaseTag.l2,
+    PhaseTag.l3,
+  ];
   final List<ComponentInstance> components = <ComponentInstance>[
     for (var i = 0; i < 3; i++)
       ComponentInstance(
@@ -589,12 +717,13 @@ ComponentInstance _deltaResistor(String id, PhaseTag a, PhaseTag b) =>
       parameters: const <String, Object?>{'resistanceOhm': 40.0},
     );
 
-Connection _wire(String id, String from, String to, PhaseTag phase) => Connection(
-  id: ConnectionId(id),
-  fromTerminalId: TerminalId(from),
-  toTerminalId: TerminalId(to),
-  phase: phase,
-);
+Connection _wire(String id, String from, String to, PhaseTag phase) =>
+    Connection(
+      id: ConnectionId(id),
+      fromTerminalId: TerminalId(from),
+      toTerminalId: TerminalId(to),
+      phase: phase,
+    );
 
 CircuitState _mixedLoadCircuit() {
   final CircuitState base = _starCircuit();
@@ -691,7 +820,9 @@ CircuitState _conditionCircuit(ComponentCondition condition) {
 
 CircuitState _badComponent({
   String modelType = 'resistor',
-  Map<String, Object?> parameters = const <String, Object?>{'resistanceOhm': 23.0},
+  Map<String, Object?> parameters = const <String, Object?>{
+    'resistanceOhm': 23.0,
+  },
   ComponentCondition condition = ComponentCondition.normal,
   bool oneTerminal = false,
 }) {
@@ -749,7 +880,9 @@ CircuitState _badProbe() {
 
 CircuitState _badSource({
   String modelType = 'ac_voltage_source',
-  Map<String, Object?> parameters = const <String, Object?>{'voltageRmsV': 230.0},
+  Map<String, Object?> parameters = const <String, Object?>{
+    'voltageRmsV': 230.0,
+  },
   bool noPhaseTag = false,
   bool oneTerminal = false,
 }) {
@@ -757,13 +890,14 @@ CircuitState _badSource({
     id: SourceId('badsource'),
     modelType: modelType,
     terminals: <Terminal>[
-      _terminal(
-        'bsp',
-        'L1',
-        phase: noPhaseTag ? PhaseTag.none : PhaseTag.l1,
-      ),
+      _terminal('bsp', 'L1', phase: noPhaseTag ? PhaseTag.none : PhaseTag.l1),
       if (!oneTerminal)
-        _terminal('bsn', 'N', phase: PhaseTag.neutral, role: TerminalRole.neutral),
+        _terminal(
+          'bsn',
+          'N',
+          phase: PhaseTag.neutral,
+          role: TerminalRole.neutral,
+        ),
     ],
     parameters: parameters,
   );
@@ -817,7 +951,12 @@ CircuitState _currentSourceCircuit() => CircuitState(
       modelType: 'ac_current_source',
       terminals: <Terminal>[
         _terminal('i1p', 'L1', phase: PhaseTag.l1),
-        _terminal('i1n', 'N', phase: PhaseTag.neutral, role: TerminalRole.neutral),
+        _terminal(
+          'i1n',
+          'N',
+          phase: PhaseTag.neutral,
+          role: TerminalRole.neutral,
+        ),
       ],
       parameters: const <String, Object?>{'currentRmsA': 2.0, 'phaseDeg': 0.0},
     ),
@@ -918,10 +1057,23 @@ CircuitState _reversedTerminalSourceCircuit() => CircuitState(
       id: SourceId('rev-source'),
       modelType: 'ac_voltage_source',
       terminals: <Terminal>[
-        _terminal('rev-sn', 'N', phase: PhaseTag.neutral, role: TerminalRole.neutral),
-        _terminal('rev-sp', 'L1', phase: PhaseTag.l1, role: TerminalRole.phaseL1),
+        _terminal(
+          'rev-sn',
+          'N',
+          phase: PhaseTag.neutral,
+          role: TerminalRole.neutral,
+        ),
+        _terminal(
+          'rev-sp',
+          'L1',
+          phase: PhaseTag.l1,
+          role: TerminalRole.phaseL1,
+        ),
       ],
-      parameters: const <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': 0.0},
+      parameters: const <String, Object?>{
+        'voltageRmsV': 230.0,
+        'phaseDeg': 0.0,
+      },
     ),
   ],
   settings: const <String, Object?>{'frequencyHz': 50.0},

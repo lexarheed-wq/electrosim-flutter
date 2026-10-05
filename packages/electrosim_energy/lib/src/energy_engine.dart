@@ -27,7 +27,8 @@ final class EnergyEngine {
       circuitId: sample.circuitId,
       circuitRevision: sample.circuitRevision,
       sourceEngineVersion: sample.engineVersion,
-      elapsedSeconds: previous.elapsedSeconds + elapsed.inMicroseconds / 1000000.0,
+      elapsedSeconds:
+          previous.elapsedSeconds + elapsed.inMicroseconds / 1000000.0,
       inputPowerW: sample.inputPowerW,
       outputPowerW: sample.outputPowerW,
       lossPowerW: sample.lossPowerW,

@@ -17,7 +17,8 @@ final class SolverAC3 {
 
   Ac3SolveResult solve(CircuitState circuit, TopologyGraph topology) {
     final List<Ac3SolverDiagnostic> diagnostics = <Ac3SolverDiagnostic>[];
-    if (circuit.mode != ElectricalMode.ac3 || topology.mode != ElectricalMode.ac3) {
+    if (circuit.mode != ElectricalMode.ac3 ||
+        topology.mode != ElectricalMode.ac3) {
       diagnostics.add(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.wrongElectricalMode,
@@ -33,7 +34,8 @@ final class SolverAC3 {
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.topologyIdentityMismatch,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'TopologyGraph does not match the CircuitState identity/revision.',
+          message:
+              'TopologyGraph does not match the CircuitState identity/revision.',
         ),
       );
       return _failure(circuit, Ac3SolveStatus.invalid, diagnostics);
@@ -90,14 +92,17 @@ final class SolverAC3 {
     }
 
     final List<PhaseTag> missingPhases = _threePhases
-        .where((PhaseTag phase) => !compiled.presentSourcePhases.contains(phase))
+        .where(
+          (PhaseTag phase) => !compiled.presentSourcePhases.contains(phase),
+        )
         .toList(growable: false);
     for (final PhaseTag phase in missingPhases) {
       diagnostics.add(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.phaseLoss,
           severity: Ac3DiagnosticSeverity.warning,
-          message: 'Phase ${phase.name.toUpperCase()} has no enabled AC source.',
+          message:
+              'Phase ${phase.name.toUpperCase()} has no enabled AC source.',
           phase: phase,
         ),
       );
@@ -114,7 +119,8 @@ final class SolverAC3 {
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.floatingElectricalIsland,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'Electrical island is not connected to the AC3 reference node.',
+          message:
+              'Electrical island is not connected to the AC3 reference node.',
           nodeIds: floatingNodes,
         ),
       );
@@ -128,20 +134,26 @@ final class SolverAC3 {
       );
     }
 
-    final List<String> unknownNodes = topology.nodes
-        .map((TopologyNode node) => node.id)
-        .where((String nodeId) => nodeId != referenceNodeId)
-        .toList(growable: false)
-      ..sort();
+    final List<String> unknownNodes =
+        topology.nodes
+            .map((TopologyNode node) => node.id)
+            .where((String nodeId) => nodeId != referenceNodeId)
+            .toList(growable: false)
+          ..sort();
     final Map<String, int> nodeIndex = <String, int>{
       for (var i = 0; i < unknownNodes.length; i++) unknownNodes[i]: i,
     };
-    final List<_Ac3Element> idealConstraints = compiled.activeElements
-        .where((_Ac3Element element) => element.kind == _Ac3ElementKind.idealVoltage)
-        .toList(growable: false)
-      ..sort((_Ac3Element a, _Ac3Element b) => a.id.compareTo(b.id));
+    final List<_Ac3Element> idealConstraints =
+        compiled.activeElements
+            .where(
+              (_Ac3Element element) =>
+                  element.kind == _Ac3ElementKind.idealVoltage,
+            )
+            .toList(growable: false)
+          ..sort((_Ac3Element a, _Ac3Element b) => a.id.compareTo(b.id));
     final Map<String, int> idealIndex = <String, int>{
-      for (var i = 0; i < idealConstraints.length; i++) idealConstraints[i].id: i,
+      for (var i = 0; i < idealConstraints.length; i++)
+        idealConstraints[i].id: i,
     };
 
     final int nodeCount = unknownNodes.length;
@@ -198,7 +210,8 @@ final class SolverAC3 {
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.singularMatrix,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'Complex AC3 MNA matrix is singular or numerically rank-deficient.',
+          message:
+              'Complex AC3 MNA matrix is singular or numerically rank-deficient.',
         ),
       );
       return _failure(
@@ -293,10 +306,13 @@ final class SolverAC3 {
         }
       }
     }
-    branches.sort((Ac3BranchResult a, Ac3BranchResult b) => a.id.compareTo(b.id));
+    branches.sort(
+      (Ac3BranchResult a, Ac3BranchResult b) => a.id.compareTo(b.id),
+    );
 
     final Map<String, double> kclResiduals = <String, double>{
-      for (final MapEntry<String, AcComplex> entry in nodeCurrentBalance.entries)
+      for (final MapEntry<String, AcComplex> entry
+          in nodeCurrentBalance.entries)
         entry.key: entry.value.magnitude,
     };
     var worstKcl = 0.0;
@@ -325,20 +341,30 @@ final class SolverAC3 {
 
     final AcComplex sumLineCurrent = _threePhases.fold<AcComplex>(
       AcComplex.zero,
-      (AcComplex sum, PhaseTag phase) => sum + (lineCurrents[phase] ?? AcComplex.zero),
+      (AcComplex sum, PhaseTag phase) =>
+          sum + (lineCurrents[phase] ?? AcComplex.zero),
     );
     final AcComplex neutralCurrent = -sumLineCurrent;
-    final Map<String, AcComplex> lineToLineVoltages = _lineToLine(phaseVoltages);
+    final Map<String, AcComplex> lineToLineVoltages = _lineToLine(
+      phaseVoltages,
+    );
     final Ac3PhaseSequence sourceSequence = _sequence(
-      _threePhases.map((PhaseTag phase) => phaseVoltages[phase]).toList(growable: false),
+      _threePhases
+          .map((PhaseTag phase) => phaseVoltages[phase])
+          .toList(growable: false),
       options.phaseAngleToleranceDegrees,
     );
     final bool voltageBalanced = _balancedMagnitudes(
-      _threePhases.map((PhaseTag phase) => phaseVoltages[phase]).toList(growable: false),
+      _threePhases
+          .map((PhaseTag phase) => phaseVoltages[phase])
+          .toList(growable: false),
       options.balanceRelativeTolerance,
     );
-    final bool currentBalanced = _balancedMagnitudes(
-          _threePhases.map((PhaseTag phase) => lineCurrents[phase]).toList(growable: false),
+    final bool currentBalanced =
+        _balancedMagnitudes(
+          _threePhases
+              .map((PhaseTag phase) => lineCurrents[phase])
+              .toList(growable: false),
           options.balanceRelativeTolerance,
         ) &&
         neutralCurrent.magnitude <=
@@ -346,14 +372,19 @@ final class SolverAC3 {
                 math.max(
                   1.0,
                   _threePhases
-                      .map((PhaseTag phase) => lineCurrents[phase]?.magnitude ?? 0.0)
+                      .map(
+                        (PhaseTag phase) =>
+                            lineCurrents[phase]?.magnitude ?? 0.0,
+                      )
                       .fold<double>(
                         0.0,
-                        (double maximum, double value) => math.max(maximum, value),
+                        (double maximum, double value) =>
+                            math.max(maximum, value),
                       ),
                 );
 
-    final List<Ac3PhaseOrderObservation> observations = <Ac3PhaseOrderObservation>[];
+    final List<Ac3PhaseOrderObservation> observations =
+        <Ac3PhaseOrderObservation>[];
     for (final _Ac3Probe probe in compiled.probes) {
       final List<AcComplex> voltages = probe.nodeIds
           .map((String nodeId) => nodeVoltages[nodeId]!)
@@ -453,8 +484,11 @@ _CompiledAc3Model _compileModel(
   final Set<PhaseTag> sourcePhases = <PhaseTag>{};
   final Set<PhaseTag> voltageSourcePhases = <PhaseTag>{};
 
-  final List<ComponentInstance> components = circuit.components.toList(growable: false)
-    ..sort((ComponentInstance a, ComponentInstance b) => a.id.value.compareTo(b.id.value));
+  final List<ComponentInstance> components =
+      circuit.components.toList(growable: false)..sort(
+        (ComponentInstance a, ComponentInstance b) =>
+            a.id.value.compareTo(b.id.value),
+      );
   for (final ComponentInstance component in components) {
     if (component.modelType == 'phase_sequence_probe') {
       if (component.terminals.length != 3) {
@@ -462,7 +496,8 @@ _CompiledAc3Model _compileModel(
           Ac3SolverDiagnostic(
             code: Ac3DiagnosticCode.invalidTerminalCount,
             severity: Ac3DiagnosticSeverity.error,
-            message: 'phase_sequence_probe ${component.id.value} must expose exactly three terminals.',
+            message:
+                'phase_sequence_probe ${component.id.value} must expose exactly three terminals.',
             componentId: component.id,
           ),
         );
@@ -471,7 +506,9 @@ _CompiledAc3Model _compileModel(
           _Ac3Probe(
             component.id,
             component.terminals
-                .map((Terminal terminal) => topology.terminalToNode[terminal.id]!)
+                .map(
+                  (Terminal terminal) => topology.terminalToNode[terminal.id]!,
+                )
                 .toList(growable: false),
           ),
         );
@@ -491,7 +528,9 @@ _CompiledAc3Model _compileModel(
       continue;
     }
 
-    final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    final List<TopologyBranch> topologyBranches = topology.branchesForComponent(
+      component.id,
+    );
     if (_compileFeedThroughAc3(
       component: component,
       branches: topologyBranches,
@@ -539,7 +578,8 @@ _CompiledAc3Model _compileModel(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.invalidTerminalCount,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'Canonical AC3 component ${component.id.value} must expose exactly one topology branch.',
+          message:
+              'Canonical AC3 component ${component.id.value} must expose exactly one topology branch.',
           componentId: component.id,
         ),
       );
@@ -636,8 +676,7 @@ _CompiledAc3Model _compileModel(
             Ac3SolverDiagnostic(
               code: Ac3DiagnosticCode.invalidParameter,
               severity: Ac3DiagnosticSeverity.error,
-              message:
-                  'AC3 push-button requires boolean controlState.pressed.',
+              message: 'AC3 push-button requires boolean controlState.pressed.',
               componentId: component.id,
             ),
           );
@@ -743,7 +782,7 @@ _CompiledAc3Model _compileModel(
       }
       final Object? rawMagnitude =
           source.parameters['phaseVoltageRmsV'] ??
-              source.parameters['voltageRmsV'];
+          source.parameters['voltageRmsV'];
       if (rawMagnitude is! num ||
           !rawMagnitude.toDouble().isFinite ||
           rawMagnitude.toDouble() < 0.0) {
@@ -759,10 +798,12 @@ _CompiledAc3Model _compileModel(
         continue;
       }
       final double magnitude = rawMagnitude.toDouble();
-      final String neutralNode =
-          topology.terminalToNode[neutral.id]!;
-      for (final PhaseTag phase
-          in <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]) {
+      final String neutralNode = topology.terminalToNode[neutral.id]!;
+      for (final PhaseTag phase in <PhaseTag>[
+        PhaseTag.l1,
+        PhaseTag.l2,
+        PhaseTag.l3,
+      ]) {
         final Terminal terminal = phaseTerminals[phase]!;
         sourcePhases.add(phase);
         if (!voltageSourcePhases.add(phase)) {
@@ -786,10 +827,7 @@ _CompiledAc3Model _compileModel(
             branchKind: Ac3BranchKind.voltageSource,
             fromNodeId: topology.terminalToNode[terminal.id]!,
             toNodeId: neutralNode,
-            value: AcComplex.polar(
-              magnitude,
-              angleDeg * math.pi / 180.0,
-            ),
+            value: AcComplex.polar(magnitude, angleDeg * math.pi / 180.0),
             phase: phase,
             isSource: true,
           ),
@@ -803,7 +841,8 @@ _CompiledAc3Model _compileModel(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.invalidTerminalCount,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'AC3 source ${source.id.value} must expose exactly two terminals.',
+          message:
+              'AC3 source ${source.id.value} must expose exactly two terminals.',
           sourceId: source.id,
         ),
       );
@@ -817,7 +856,8 @@ _CompiledAc3Model _compileModel(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.missingSourcePhaseTag,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'AC3 source ${source.id.value} must identify L1, L2 or L3 on a terminal.',
+          message:
+              'AC3 source ${source.id.value} must identify L1, L2 or L3 on a terminal.',
           sourceId: source.id,
         ),
       );
@@ -837,7 +877,8 @@ _CompiledAc3Model _compileModel(
             Ac3SolverDiagnostic(
               code: Ac3DiagnosticCode.duplicatePhaseSource,
               severity: Ac3DiagnosticSeverity.warning,
-              message: 'Multiple enabled AC voltage sources are tagged ${phase.name}.',
+              message:
+                  'Multiple enabled AC voltage sources are tagged ${phase.name}.',
               sourceId: source.id,
               phase: phase,
             ),
@@ -908,8 +949,6 @@ _CompiledAc3Model _compileModel(
   );
 }
 
-
-
 bool _compileFeedThroughAc3({
   required ComponentInstance component,
   required List<TopologyBranch> branches,
@@ -928,18 +967,16 @@ bool _compileFeedThroughAc3({
     );
     return true;
   }
-  final bool open = component.condition == ComponentCondition.openCircuit ||
+  final bool open =
+      component.condition == ComponentCondition.openCircuit ||
       component.condition == ComponentCondition.disabled;
   for (final TopologyBranch branch in branches) {
     elements.add(
       _Ac3Element(
         id: _componentBranchElementIdAc3(component, branch, branches.length),
         modelType: component.modelType,
-        kind: open
-            ? _Ac3ElementKind.impedance
-            : _Ac3ElementKind.idealVoltage,
-        branchKind:
-            open ? Ac3BranchKind.openCircuit : Ac3BranchKind.idealShort,
+        kind: open ? _Ac3ElementKind.impedance : _Ac3ElementKind.idealVoltage,
+        branchKind: open ? Ac3BranchKind.openCircuit : Ac3BranchKind.idealShort,
         fromNodeId: branch.fromNodeId,
         toNodeId: branch.toNodeId,
         value: open ? const AcComplex(1e300, 0.0) : AcComplex.zero,
@@ -986,8 +1023,7 @@ bool _compileMultipoleSwitchAc3({
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidParameter,
         severity: Ac3DiagnosticSeverity.error,
-        message:
-            '${component.modelType} controlState.closed must be boolean.',
+        message: '${component.modelType} controlState.closed must be boolean.',
         componentId: component.id,
       ),
     );
@@ -1007,8 +1043,9 @@ bool _compileMultipoleSwitchAc3({
         kind: conducting
             ? _Ac3ElementKind.idealVoltage
             : _Ac3ElementKind.impedance,
-        branchKind:
-            conducting ? Ac3BranchKind.idealSwitch : Ac3BranchKind.openCircuit,
+        branchKind: conducting
+            ? Ac3BranchKind.idealSwitch
+            : Ac3BranchKind.openCircuit,
         fromNodeId: branch.fromNodeId,
         toNodeId: branch.toNodeId,
         value: conducting ? AcComplex.zero : const AcComplex(1e300, 0.0),
@@ -1027,7 +1064,8 @@ bool _compileThreePhaseImpedanceDeviceAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
-  final bool supported = component.modelType == 'motor_3p_6t' ||
+  final bool supported =
+      component.modelType == 'motor_3p_6t' ||
       component.modelType == 'load_wye_3p' ||
       component.modelType == 'load_delta_3p';
   if (!supported) return false;
@@ -1061,14 +1099,16 @@ bool _compileThreePhaseImpedanceDeviceAc3({
     return true;
   }
 
-  final double? resistance =
-      _positiveParameter(component.parameters, 'resistanceOhm');
+  final double? resistance = _positiveParameter(
+    component.parameters,
+    'resistanceOhm',
+  );
   final Object? rawInductance = component.parameters['inductanceH'];
   final double inductance = rawInductance == null
       ? 0.0
       : rawInductance is num
-          ? rawInductance.toDouble()
-          : double.nan;
+      ? rawInductance.toDouble()
+      : double.nan;
   if (resistance == null || !inductance.isFinite || inductance < 0.0) {
     diagnostics.add(
       Ac3SolverDiagnostic(
@@ -1082,7 +1122,8 @@ bool _compileThreePhaseImpedanceDeviceAc3({
     return true;
   }
 
-  final bool open = component.condition == ComponentCondition.openCircuit ||
+  final bool open =
+      component.condition == ComponentCondition.openCircuit ||
       component.condition == ComponentCondition.disabled;
   final bool shorted = component.condition == ComponentCondition.shortCircuit;
   final AcComplex impedance = AcComplex(
@@ -1091,8 +1132,11 @@ bool _compileThreePhaseImpedanceDeviceAc3({
   );
 
   for (final TopologyBranch branch in branches) {
-    final String id =
-        _componentBranchElementIdAc3(component, branch, branches.length);
+    final String id = _componentBranchElementIdAc3(
+      component,
+      branch,
+      branches.length,
+    );
     if (open) {
       elements.add(
         _Ac3Element(
@@ -1154,8 +1198,10 @@ bool _compileThreePoleProtectionAc3({
 
   final int expectedPoles = component.modelType == 'breaker_4p' ? 4 : 3;
   if (branches.length != expectedPoles ||
-      branches.any((TopologyBranch branch) =>
-          branch.role != ElectricalBranchRole.powerPole)) {
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role != ElectricalBranchRole.powerPole,
+      )) {
     diagnostics.add(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidTerminalCount,
@@ -1219,9 +1265,7 @@ bool _compileThreePoleProtectionAc3({
   final bool closed = (rawClosed as bool?) ?? true;
   final bool tripped = (rawTripped as bool?) ?? false;
   final bool conducting =
-      component.condition == ComponentCondition.normal &&
-      closed &&
-      !tripped;
+      component.condition == ComponentCondition.normal && closed && !tripped;
 
   for (final TopologyBranch branch in branches) {
     elements.add(
@@ -1311,9 +1355,7 @@ bool _compileElectromechanicalAc3({
       _Ac3Element(
         id: _componentBranchElementIdAc3(component, branch, branches.length),
         modelType: component.modelType,
-        kind: closed
-            ? _Ac3ElementKind.idealVoltage
-            : _Ac3ElementKind.impedance,
+        kind: closed ? _Ac3ElementKind.idealVoltage : _Ac3ElementKind.impedance,
         branchKind: Ac3BranchKind.contactorContact,
         fromNodeId: branch.fromNodeId,
         toNodeId: branch.toNodeId,
@@ -1330,8 +1372,10 @@ bool _compileElectromechanicalAc3({
     ElectricalBranchRole.controlCoil,
   );
   final List<TopologyBranch> powerPoles = branches
-      .where((TopologyBranch branch) =>
-          branch.role == ElectricalBranchRole.powerPole)
+      .where(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.powerPole,
+      )
       .toList(growable: false);
   if (coil == null || powerPoles.length != 3 || branches.length != 4) {
     diagnostics.add(
@@ -1346,14 +1390,16 @@ bool _compileElectromechanicalAc3({
     return true;
   }
 
-  final double? coilResistance =
-      _positiveParameter(component.parameters, 'coilResistanceOhm');
+  final double? coilResistance = _positiveParameter(
+    component.parameters,
+    'coilResistanceOhm',
+  );
   final Object? inductanceRaw = component.parameters['coilInductanceH'];
   final double coilInductance = inductanceRaw == null
       ? 0.0
       : inductanceRaw is num
-          ? inductanceRaw.toDouble()
-          : double.nan;
+      ? inductanceRaw.toDouble()
+      : double.nan;
   if (coilResistance == null ||
       !coilInductance.isFinite ||
       coilInductance < 0.0) {
@@ -1420,14 +1466,13 @@ TopologyBranch? _branchWithRoleAc3(
   return null;
 }
 
-PhaseTag? _phaseForBranch(
-  ComponentInstance component,
-  TopologyBranch branch,
-) {
+PhaseTag? _phaseForBranch(ComponentInstance component, TopologyBranch branch) {
   final List<Terminal> terminals = component.terminals
-      .where((Terminal terminal) =>
-          terminal.id == branch.fromTerminalId ||
-          terminal.id == branch.toTerminalId)
+      .where(
+        (Terminal terminal) =>
+            terminal.id == branch.fromTerminalId ||
+            terminal.id == branch.toTerminalId,
+      )
       .toList(growable: false);
   return _singlePhase(terminals);
 }
@@ -1436,10 +1481,9 @@ String _componentBranchElementIdAc3(
   ComponentInstance component,
   TopologyBranch branch,
   int branchCount,
-) =>
-    branchCount == 1
-        ? 'component:${component.id.value}'
-        : 'component:${component.id.value}:${branch.branchId}';
+) => branchCount == 1
+    ? 'component:${component.id.value}'
+    : 'component:${component.id.value}:${branch.branchId}';
 
 AcComplex? _componentImpedance(
   ComponentInstance component,
@@ -1544,7 +1588,8 @@ AcComplex? _phasorParameter(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidParameter,
         severity: Ac3DiagnosticSeverity.error,
-        message: 'AC3 phasor magnitude/phase must be finite and magnitude non-negative.',
+        message:
+            'AC3 phasor magnitude/phase must be finite and magnitude non-negative.',
         sourceId: sourceId,
       ),
     );
@@ -1593,7 +1638,8 @@ double _defaultPhaseDegrees(PhaseTag phase) {
 String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
   for (final SourceInstance source in circuit.sources) {
     for (final Terminal terminal in source.terminals) {
-      if (terminal.phase == PhaseTag.neutral || terminal.role == TerminalRole.neutral) {
+      if (terminal.phase == PhaseTag.neutral ||
+          terminal.role == TerminalRole.neutral) {
         final String? node = topology.terminalToNode[terminal.id];
         if (node != null) {
           return node;
@@ -1601,10 +1647,9 @@ String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
       }
     }
   }
-  final List<String> ids = topology.nodes
-      .map((TopologyNode node) => node.id)
-      .toList(growable: false)
-    ..sort();
+  final List<String> ids =
+      topology.nodes.map((TopologyNode node) => node.id).toList(growable: false)
+        ..sort();
   return ids.first;
 }
 
@@ -1615,7 +1660,8 @@ bool _neutralConnected(
 ) {
   for (final ComponentInstance component in circuit.components) {
     for (final Terminal terminal in component.terminals) {
-      if ((terminal.phase == PhaseTag.neutral || terminal.role == TerminalRole.neutral) &&
+      if ((terminal.phase == PhaseTag.neutral ||
+              terminal.role == TerminalRole.neutral) &&
           topology.terminalToNode[terminal.id] == referenceNodeId) {
         return true;
       }
@@ -1649,10 +1695,11 @@ List<String> _findFloatingNodes(
       }
     }
   }
-  final List<String> result = adjacency.keys
-      .where((String node) => !reached.contains(node))
-      .toList(growable: false)
-    ..sort();
+  final List<String> result =
+      adjacency.keys
+          .where((String node) => !reached.contains(node))
+          .toList(growable: false)
+        ..sort();
   return result;
 }
 
@@ -1804,16 +1851,19 @@ Map<String, AcComplex> _lineToLine(Map<PhaseTag, AcComplex> phaseVoltages) {
   return result;
 }
 
-Ac3PhaseSequence _sequence(
-  List<AcComplex?> values,
-  double toleranceDegrees,
-) {
+Ac3PhaseSequence _sequence(List<AcComplex?> values, double toleranceDegrees) {
   if (values.length != 3 ||
-      values.any((AcComplex? value) => value == null || value.magnitude <= 1e-12)) {
+      values.any(
+        (AcComplex? value) => value == null || value.magnitude <= 1e-12,
+      )) {
     return Ac3PhaseSequence.indeterminate;
   }
-  final double d12 = _normalizeAngle(values[1]!.angleDegrees - values[0]!.angleDegrees);
-  final double d23 = _normalizeAngle(values[2]!.angleDegrees - values[1]!.angleDegrees);
+  final double d12 = _normalizeAngle(
+    values[1]!.angleDegrees - values[0]!.angleDegrees,
+  );
+  final double d23 = _normalizeAngle(
+    values[2]!.angleDegrees - values[1]!.angleDegrees,
+  );
   if (_angleClose(d12, -120.0, toleranceDegrees) &&
       _angleClose(d23, -120.0, toleranceDegrees)) {
     return Ac3PhaseSequence.positive;

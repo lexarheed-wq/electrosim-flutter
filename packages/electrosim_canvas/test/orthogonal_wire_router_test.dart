@@ -17,10 +17,10 @@ void main() {
     );
 
     expect(result.isResolved, isTrue);
-    expect(
-      result.path!.points,
-      const <Offset>[Offset(24, 120), Offset(312, 120)],
-    );
+    expect(result.path!.points, const <Offset>[
+      Offset(24, 120),
+      Offset(312, 120),
+    ]);
   });
 
   test('detours orthogonally around a component obstacle', () {
@@ -33,7 +33,12 @@ void main() {
     );
 
     expect(result.isResolved, isTrue);
-    expect(result.path!.segments.every((s) => s.axis == WireAxis.horizontal || s.axis == WireAxis.vertical), isTrue);
+    expect(
+      result.path!.segments.every(
+        (s) => s.axis == WireAxis.horizontal || s.axis == WireAxis.vertical,
+      ),
+      isTrue,
+    );
     expect(
       result.path!.segments.any(
         (segment) => segment.isHorizontal && segment.start.dy != 120,
@@ -44,10 +49,7 @@ void main() {
 
   test('routes around an occupied different-net path without crossing it', () {
     final OrthogonalWirePath occupied = OrthogonalWirePath(
-      points: const <Offset>[
-        Offset(168, 24),
-        Offset(168, 168),
-      ],
+      points: const <Offset>[Offset(168, 24), Offset(168, 168)],
     );
 
     final WireRouteResult result = router.route(
@@ -66,23 +68,23 @@ void main() {
     );
   });
 
-  test('returns unresolved instead of crossing an impenetrable conductor barrier', () {
-    final OrthogonalWirePath barrier = OrthogonalWirePath(
-      points: const <Offset>[
-        Offset(168, -500),
-        Offset(168, 500),
-      ],
-    );
+  test(
+    'returns unresolved instead of crossing an impenetrable conductor barrier',
+    () {
+      final OrthogonalWirePath barrier = OrthogonalWirePath(
+        points: const <Offset>[Offset(168, -500), Offset(168, 500)],
+      );
 
-    final WireRouteResult result = router.route(
-      start: const Offset(24, 120),
-      end: const Offset(312, 120),
-      occupiedDifferentNetPaths: <OrthogonalWirePath>[barrier],
-    );
+      final WireRouteResult result = router.route(
+        start: const Offset(24, 120),
+        end: const Offset(312, 120),
+        occupiedDifferentNetPaths: <OrthogonalWirePath>[barrier],
+      );
 
-    expect(result.isResolved, isFalse);
-    expect(result.failure, WireRouteFailure.noCrossingFreeRoute);
-  });
+      expect(result.isResolved, isFalse);
+      expect(result.failure, WireRouteFailure.noCrossingFreeRoute);
+    },
+  );
 
   test('falls back to Manhattan A* for a staggered multi-turn corridor', () {
     const OrthogonalWireRouter mazeRouter = OrthogonalWireRouter(

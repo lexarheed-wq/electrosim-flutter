@@ -35,7 +35,9 @@ Widget _host({
 );
 
 void main() {
-  testWidgets('click selects component without moving it', (WidgetTester tester) async {
+  testWidgets('click selects component without moving it', (
+    WidgetTester tester,
+  ) async {
     final CircuitState circuit = buildTestCircuit();
     final CircuitVisualLayout layout = buildTestLayout();
     String? selected;
@@ -57,7 +59,9 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('long press plus drag requests a graphical move', (WidgetTester tester) async {
+  testWidgets('long press plus drag requests a graphical move', (
+    WidgetTester tester,
+  ) async {
     final CircuitState circuit = buildTestCircuit();
     final CircuitVisualLayout layout = buildTestLayout();
     String? movedId;
@@ -73,7 +77,9 @@ void main() {
       ),
     );
 
-    final TestGesture gesture = await tester.startGesture(const Offset(320, 120));
+    final TestGesture gesture = await tester.startGesture(
+      const Offset(320, 120),
+    );
     await tester.pump(const Duration(milliseconds: 550));
     await gesture.moveTo(const Offset(390, 170));
     await tester.pump();
@@ -85,36 +91,40 @@ void main() {
     expect((movedPosition! - const Offset(390, 170)).distance, lessThan(1));
   });
 
-  testWidgets('two terminal taps request a connection and do not mutate CircuitState', (
-    WidgetTester tester,
-  ) async {
-    final CircuitState circuit = buildTestCircuit();
-    final String before = circuit.toJsonString();
-    final CircuitVisualLayout layout = buildTestLayout();
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
-    TerminalId? from;
-    TerminalId? to;
+  testWidgets(
+    'two terminal taps request a connection and do not mutate CircuitState',
+    (WidgetTester tester) async {
+      final CircuitState circuit = buildTestCircuit();
+      final String before = circuit.toJsonString();
+      final CircuitVisualLayout layout = buildTestLayout();
+      final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+        circuit,
+        layout,
+      );
+      TerminalId? from;
+      TerminalId? to;
 
-    await tester.pumpWidget(
-      _host(
-        circuit: circuit,
-        layout: layout,
-        onConnectionRequested: (TerminalId a, TerminalId b) {
-          from = a;
-          to = b;
-        },
-      ),
-    );
+      await tester.pumpWidget(
+        _host(
+          circuit: circuit,
+          layout: layout,
+          onConnectionRequested: (TerminalId a, TerminalId b) {
+            from = a;
+            to = b;
+          },
+        ),
+      );
 
-    await tester.tapAt(geometry.terminalPositions[TerminalId('src-pos')]!);
-    await tester.pump(const Duration(milliseconds: 320));
-    await tester.tapAt(geometry.terminalPositions[TerminalId('res-in')]!);
-    await tester.pump(const Duration(milliseconds: 320));
+      await tester.tapAt(geometry.terminalPositions[TerminalId('src-pos')]!);
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.tapAt(geometry.terminalPositions[TerminalId('res-in')]!);
+      await tester.pump(const Duration(milliseconds: 320));
 
-    expect(from?.value, 'src-pos');
-    expect(to?.value, 'res-in');
-    expect(circuit.toJsonString(), before);
-  });
+      expect(from?.value, 'src-pos');
+      expect(to?.value, 'res-in');
+      expect(circuit.toJsonString(), before);
+    },
+  );
 
   testWidgets('background drag pans viewport but leaves layout unchanged', (
     WidgetTester tester,
@@ -155,33 +165,40 @@ void main() {
     expect(contextHit?.elementId, 'resistor');
   });
 
-  testWidgets('background tap cancels pending wiring before another terminal tap', (
+  testWidgets(
+    'background tap cancels pending wiring before another terminal tap',
+    (WidgetTester tester) async {
+      final CircuitState circuit = buildTestCircuit();
+      final CircuitVisualLayout layout = buildTestLayout();
+      final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+        circuit,
+        layout,
+      );
+      var connectionCount = 0;
+
+      await tester.pumpWidget(
+        _host(
+          circuit: circuit,
+          layout: layout,
+          onConnectionRequested: (TerminalId _, TerminalId __) =>
+              connectionCount++,
+        ),
+      );
+
+      await tester.tapAt(geometry.terminalPositions[TerminalId('src-pos')]!);
+      await tester.pump();
+      await tester.tapAt(const Offset(620, 500));
+      await tester.pump();
+      await tester.tapAt(geometry.terminalPositions[TerminalId('res-in')]!);
+      await tester.pump();
+
+      expect(connectionCount, 0);
+    },
+  );
+
+  testWidgets('clicking a wire selects its connection id', (
     WidgetTester tester,
   ) async {
-    final CircuitState circuit = buildTestCircuit();
-    final CircuitVisualLayout layout = buildTestLayout();
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
-    var connectionCount = 0;
-
-    await tester.pumpWidget(
-      _host(
-        circuit: circuit,
-        layout: layout,
-        onConnectionRequested: (TerminalId _, TerminalId __) => connectionCount++,
-      ),
-    );
-
-    await tester.tapAt(geometry.terminalPositions[TerminalId('src-pos')]!);
-    await tester.pump();
-    await tester.tapAt(const Offset(620, 500));
-    await tester.pump();
-    await tester.tapAt(geometry.terminalPositions[TerminalId('res-in')]!);
-    await tester.pump();
-
-    expect(connectionCount, 0);
-  });
-
-  testWidgets('clicking a wire selects its connection id', (WidgetTester tester) async {
     final CircuitState circuit = buildTestCircuit();
     final CircuitVisualLayout layout = buildTestLayout();
     String? selected;
@@ -255,7 +272,9 @@ void main() {
     expect(circuit.toJsonString(), before);
   });
 
-  testWidgets('wheel zoom changes viewport around pointer', (WidgetTester tester) async {
+  testWidgets('wheel zoom changes viewport around pointer', (
+    WidgetTester tester,
+  ) async {
     final CircuitState circuit = buildTestCircuit();
     final CircuitVisualLayout layout = buildTestLayout();
     final ViewportController viewport = ViewportController();

@@ -8,9 +8,7 @@ import 'orthogonal_wire_router.dart';
 import 'wire_geometry.dart';
 
 final class CircuitWireLayoutEngine {
-  const CircuitWireLayoutEngine({
-    required this.router,
-  });
+  const CircuitWireLayoutEngine({required this.router});
 
   final OrthogonalWireRouter router;
 
@@ -22,8 +20,9 @@ final class CircuitWireLayoutEngine {
       circuit,
       layout,
     );
-    final List<Connection> original =
-        List<Connection>.unmodifiable(circuit.connections);
+    final List<Connection> original = List<Connection>.unmodifiable(
+      circuit.connections,
+    );
 
     final _RoutePass primary = _routePass(
       circuit: circuit,
@@ -45,14 +44,13 @@ final class CircuitWireLayoutEngine {
     // left/right.
     final List<List<Connection>> retries = <List<Connection>>[
       original.reversed.toList(growable: false),
-      <Connection>[...original]
-        ..sort((Connection a, Connection b) {
-          final double aDistance = _routingDistance(a, geometry);
-          final double bDistance = _routingDistance(b, geometry);
-          final int byDistance = bDistance.compareTo(aDistance);
-          if (byDistance != 0) return byDistance;
-          return a.id.value.compareTo(b.id.value);
-        }),
+      <Connection>[...original]..sort((Connection a, Connection b) {
+        final double aDistance = _routingDistance(a, geometry);
+        final double bDistance = _routingDistance(b, geometry);
+        final int byDistance = bDistance.compareTo(aDistance);
+        if (byDistance != 0) return byDistance;
+        return a.id.value.compareTo(b.id.value);
+      }),
     ];
 
     _RoutePass best = primary;
@@ -81,8 +79,9 @@ final class CircuitWireLayoutEngine {
     required List<Connection> orderedConnections,
     required bool preferPerimeterAligned,
   }) {
-    final Map<String, List<Offset>> nextRoutes =
-        <String, List<Offset>>{...layout.wireRoutes};
+    final Map<String, List<Offset>> nextRoutes = <String, List<Offset>>{
+      ...layout.wireRoutes,
+    };
     final List<OrthogonalWirePath> occupied = <OrthogonalWirePath>[];
     var eligibleCount = 0;
     var resolvedCount = 0;
@@ -90,8 +89,7 @@ final class CircuitWireLayoutEngine {
     for (final Connection connection in orderedConnections) {
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
-      final Offset? end =
-          geometry.terminalPositions[connection.toTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       final Offset? startRouting =
           geometry.terminalRoutingPositions[connection.fromTerminalId];
       final Offset? endRouting =
@@ -107,12 +105,13 @@ final class CircuitWireLayoutEngine {
 
       final String? fromOwner =
           geometry.terminalOwners[connection.fromTerminalId];
-      final String? toOwner =
-          geometry.terminalOwners[connection.toTerminalId];
-      final Rect? fromRect =
-          fromOwner == null ? null : geometry.elementRects[fromOwner];
-      final Rect? toRect =
-          toOwner == null ? null : geometry.elementRects[toOwner];
+      final String? toOwner = geometry.terminalOwners[connection.toTerminalId];
+      final Rect? fromRect = fromOwner == null
+          ? null
+          : geometry.elementRects[fromOwner];
+      final Rect? toRect = toOwner == null
+          ? null
+          : geometry.elementRects[toOwner];
 
       final Offset startStub = fromRect == null
           ? startRouting
@@ -131,14 +130,12 @@ final class CircuitWireLayoutEngine {
       final List<OrthogonalWirePath> crossingObstacles = occupied
           .where(
             (OrthogonalWirePath path) =>
-                !_sharesEndpoint(path, start) &&
-                !_sharesEndpoint(path, end),
+                !_sharesEndpoint(path, start) && !_sharesEndpoint(path, end),
           )
           .toList(growable: false);
 
       if (preferPerimeterAligned) {
-        final OrthogonalWirePath? preferredPerimeter =
-            _perimeterEscapePath(
+        final OrthogonalWirePath? preferredPerimeter = _perimeterEscapePath(
           start: startStub,
           end: endStub,
           geometry: geometry,
@@ -287,45 +284,24 @@ final class CircuitWireLayoutEngine {
     for (final Rect rect in geometry.elementRects.values.skip(1)) {
       bounds = bounds.expandToInclude(rect);
     }
-    final double escape =
-        router.obstacleClearance + router.grid * 2;
+    final double escape = router.obstacleClearance + router.grid * 2;
 
     List<Offset>? raw;
     if ((start.dy - end.dy).abs() <= 0.001) {
       if (start.dy >= bounds.bottom && end.dy >= bounds.bottom) {
         final double y = bounds.bottom + escape;
-        raw = <Offset>[
-          start,
-          Offset(start.dx, y),
-          Offset(end.dx, y),
-          end,
-        ];
+        raw = <Offset>[start, Offset(start.dx, y), Offset(end.dx, y), end];
       } else if (start.dy <= bounds.top && end.dy <= bounds.top) {
         final double y = bounds.top - escape;
-        raw = <Offset>[
-          start,
-          Offset(start.dx, y),
-          Offset(end.dx, y),
-          end,
-        ];
+        raw = <Offset>[start, Offset(start.dx, y), Offset(end.dx, y), end];
       }
     } else if ((start.dx - end.dx).abs() <= 0.001) {
       if (start.dx >= bounds.right && end.dx >= bounds.right) {
         final double x = bounds.right + escape;
-        raw = <Offset>[
-          start,
-          Offset(x, start.dy),
-          Offset(x, end.dy),
-          end,
-        ];
+        raw = <Offset>[start, Offset(x, start.dy), Offset(x, end.dy), end];
       } else if (start.dx <= bounds.left && end.dx <= bounds.left) {
         final double x = bounds.left - escape;
-        raw = <Offset>[
-          start,
-          Offset(x, start.dy),
-          Offset(x, end.dy),
-          end,
-        ];
+        raw = <Offset>[start, Offset(x, start.dy), Offset(x, end.dy), end];
       }
     }
     if (raw == null) return null;
@@ -341,10 +317,8 @@ final class CircuitWireLayoutEngine {
       final Offset before = normalized[index - 1];
       final Offset current = normalized[index];
       final Offset after = normalized[index + 1];
-      final bool horizontal =
-          before.dy == current.dy && current.dy == after.dy;
-      final bool vertical =
-          before.dx == current.dx && current.dx == after.dx;
+      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
+      final bool vertical = before.dx == current.dx && current.dx == after.dx;
       if (horizontal || vertical) {
         normalized.removeAt(index);
       } else {
@@ -408,9 +382,9 @@ final class CircuitWireLayoutEngine {
       start,
       if (startRouting != start) startRouting,
       if (startStub != startRouting) startStub,
-      ...routed.points.skip(1).take(
-        routed.points.length > 2 ? routed.points.length - 2 : 0,
-      ),
+      ...routed.points
+          .skip(1)
+          .take(routed.points.length > 2 ? routed.points.length - 2 : 0),
       if (endStub != endRouting) endStub,
       if (endRouting != end) endRouting,
       end,
@@ -427,10 +401,8 @@ final class CircuitWireLayoutEngine {
       final Offset before = normalized[index - 1];
       final Offset current = normalized[index];
       final Offset after = normalized[index + 1];
-      final bool horizontal =
-          before.dy == current.dy && current.dy == after.dy;
-      final bool vertical =
-          before.dx == current.dx && current.dx == after.dx;
+      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
+      final bool vertical = before.dx == current.dx && current.dx == after.dx;
       if (horizontal || vertical) {
         normalized.removeAt(index);
       } else {
@@ -477,10 +449,8 @@ final class CircuitWireLayoutEngine {
       final Offset before = points[index - 1];
       final Offset current = points[index];
       final Offset after = points[index + 1];
-      final bool horizontal =
-          before.dy == current.dy && current.dy == after.dy;
-      final bool vertical =
-          before.dx == current.dx && current.dx == after.dx;
+      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
+      final bool vertical = before.dx == current.dx && current.dx == after.dx;
       if (horizontal || vertical) {
         points.removeAt(index);
       } else {

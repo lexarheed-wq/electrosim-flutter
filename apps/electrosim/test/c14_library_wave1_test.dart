@@ -24,14 +24,15 @@ void main() {
   test('C14 wave 1 palette exposes canonical engine model names', () {
     final Map<String, F9PaletteDefinition> byType =
         <String, F9PaletteDefinition>{
-      for (final F9PaletteDefinition item in f9PaletteCatalog)
-        item.modelType: item,
-    };
+          for (final F9PaletteDefinition item in f9PaletteCatalog)
+            item.modelType: item,
+        };
     expect(byType.keys, containsAll(wave1Models));
 
     for (final String modelType in wave1Models) {
-      final ComponentModelContract? contract =
-          CoreComponentModelContracts.registry.resolve(modelType);
+      final ComponentModelContract? contract = CoreComponentModelContracts
+          .registry
+          .resolve(modelType);
       expect(contract, isNotNull, reason: modelType);
       final F9PaletteDefinition definition = byType[modelType]!;
       final int terminalCount = definition.terminals.isNotEmpty
@@ -46,45 +47,44 @@ void main() {
     }
   });
 
-  testWidgets(
-    'C14 vector library painters render through production wrapper',
-    (WidgetTester tester) async {
-      const List<String> nativeLibraryModels = <String>[
-        'capacitor',
-        'inductor',
-        'impedance',
-        'contactor_aux_no',
-        'contactor_aux_nc',
-        'contactor_ac1',
-        'contactor_3p',
-        'breaker_3p',
-        'thermal_overload_3p',
-      ];
-      for (final String modelType in nativeLibraryModels) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Center(
-              child: F18ComponentAssetVisual(
-                modelType: modelType,
-                size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
-                energized: true,
-                currentA: 2.5,
-                voltageV: 230,
-                actuated: modelType.startsWith('contactor'),
-              ),
+  testWidgets('C14 vector library painters render through production wrapper', (
+    WidgetTester tester,
+  ) async {
+    const List<String> nativeLibraryModels = <String>[
+      'capacitor',
+      'inductor',
+      'impedance',
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'contactor_ac1',
+      'contactor_3p',
+      'breaker_3p',
+      'thermal_overload_3p',
+    ];
+    for (final String modelType in nativeLibraryModels) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: F18ComponentAssetVisual(
+              modelType: modelType,
+              size: F18ReferenceComponentMetrics.dragSizeFor(modelType),
+              energized: true,
+              currentA: 2.5,
+              voltageV: 230,
+              actuated: modelType.startsWith('contactor'),
             ),
           ),
-        );
-        await tester.pump();
-        expect(
-          find.byType(F14LibraryComponentView),
-          findsOneWidget,
-          reason: modelType,
-        );
-        expect(tester.takeException(), isNull, reason: modelType);
-      }
-    },
-  );
+        ),
+      );
+      await tester.pump();
+      expect(
+        find.byType(F14LibraryComponentView),
+        findsOneWidget,
+        reason: modelType,
+      );
+      expect(tester.takeException(), isNull, reason: modelType);
+    }
+  });
 
   test('C14 multipole terminal anchors are unique and physical', () {
     const Map<String, (Size, int)> cases = <String, (Size, int)>{

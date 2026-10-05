@@ -55,7 +55,9 @@ final class SourceInstance {
   JsonMap toJson() => <String, Object?>{
     'id': id.value,
     'modelType': modelType,
-    'terminals': terminals.map<JsonMap>((Terminal item) => item.toJson()).toList(),
+    'terminals': terminals
+        .map<JsonMap>((Terminal item) => item.toJson())
+        .toList(),
     'parameters': parameters,
     'enabled': enabled,
   };

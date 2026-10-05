@@ -5,51 +5,78 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('describes and toggles a switch without changing topology', () {
     final CircuitState circuit = _circuit();
-    final F9ElementDetails? details = F9ElementEditor.describe(circuit, 'switch-1');
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      circuit,
+      'switch-1',
+    );
     expect(details, isNotNull);
     expect(details!.primaryToggleValue, isTrue);
 
-    final CircuitState next = F9ElementEditor.togglePrimaryState(circuit, 'switch-1');
+    final CircuitState next = F9ElementEditor.togglePrimaryState(
+      circuit,
+      'switch-1',
+    );
     expect(next.revision, circuit.revision + 1);
     expect(next.connections, circuit.connections);
-    expect(F9ElementEditor.describe(next, 'switch-1')!.primaryToggleValue, isFalse);
+    expect(
+      F9ElementEditor.describe(next, 'switch-1')!.primaryToggleValue,
+      isFalse,
+    );
   });
 
   test('toggles a source enabled state explicitly', () {
     final CircuitState circuit = _circuit();
-    final CircuitState next = F9ElementEditor.togglePrimaryState(circuit, 'source-24v');
+    final CircuitState next = F9ElementEditor.togglePrimaryState(
+      circuit,
+      'source-24v',
+    );
     expect(next.sources.single.enabled, isFalse);
     expect(next.revision, circuit.revision + 1);
   });
 
-  test('replaces a component while preserving id, terminals and connections', () {
-    final CircuitState circuit = _circuit();
-    final CircuitState next = F9ElementEditor.replaceComponent(
-      circuit,
-      'switch-1',
-      modelType: 'Résistance',
-      parameters: const <String, Object?>{'resistanceOhm': 100.0},
-    );
-    expect(next.revision, circuit.revision + 1);
-    final ComponentInstance replaced = next.components.firstWhere((ComponentInstance item) => item.id.value == 'switch-1');
-    expect(replaced.modelType, 'Résistance');
-    expect(replaced.terminals.map((Terminal item) => item.id), circuit.components.first.terminals.map((Terminal item) => item.id));
-    expect(next.connections, circuit.connections);
-  });
+  test(
+    'replaces a component while preserving id, terminals and connections',
+    () {
+      final CircuitState circuit = _circuit();
+      final CircuitState next = F9ElementEditor.replaceComponent(
+        circuit,
+        'switch-1',
+        modelType: 'Résistance',
+        parameters: const <String, Object?>{'resistanceOhm': 100.0},
+      );
+      expect(next.revision, circuit.revision + 1);
+      final ComponentInstance replaced = next.components.firstWhere(
+        (ComponentInstance item) => item.id.value == 'switch-1',
+      );
+      expect(replaced.modelType, 'Résistance');
+      expect(
+        replaced.terminals.map((Terminal item) => item.id),
+        circuit.components.first.terminals.map((Terminal item) => item.id),
+      );
+      expect(next.connections, circuit.connections);
+    },
+  );
 
   test('deleting an element also removes only its attached connections', () {
     final CircuitState circuit = _circuit();
     final CircuitState next = F9ElementEditor.deleteElement(circuit, 'lamp-1');
-    expect(next.components.map((ComponentInstance item) => item.id.value), <String>['switch-1']);
-    expect(next.connections.map((Connection item) => item.id.value), <String>['wire-1']);
+    expect(
+      next.components.map((ComponentInstance item) => item.id.value),
+      <String>['switch-1'],
+    );
+    expect(next.connections.map((Connection item) => item.id.value), <String>[
+      'wire-1',
+    ]);
     expect(next.sources.single.id.value, 'source-24v');
     expect(next.revision, circuit.revision + 1);
   });
 
   test('describes a wire as a first-class selectable connection', () {
     final CircuitState circuit = _circuit();
-    final F9ElementDetails? details =
-        F9ElementEditor.describe(circuit, 'wire-2');
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      circuit,
+      'wire-2',
+    );
     expect(details, isNotNull);
     expect(details!.kind, F9ElementKind.connection);
     expect(details.modelType, 'wire');
@@ -59,12 +86,14 @@ void main() {
 
   test('deleting a selected wire removes only that connection', () {
     final CircuitState circuit = _circuit();
-    final CircuitState next =
-        F9ElementEditor.deleteConnection(circuit, 'wire-2');
-    expect(
-      next.connections.map((Connection item) => item.id.value),
-      <String>['wire-1', 'wire-3'],
+    final CircuitState next = F9ElementEditor.deleteConnection(
+      circuit,
+      'wire-2',
     );
+    expect(next.connections.map((Connection item) => item.id.value), <String>[
+      'wire-1',
+      'wire-3',
+    ]);
     expect(next.components, circuit.components);
     expect(next.sources, circuit.sources);
     expect(next.revision, circuit.revision + 1);
@@ -73,12 +102,21 @@ void main() {
   test('unknown element is a no-op', () {
     final CircuitState circuit = _circuit();
     expect(F9ElementEditor.describe(circuit, 'missing'), isNull);
-    expect(identical(F9ElementEditor.deleteElement(circuit, 'missing'), circuit), isTrue);
+    expect(
+      identical(F9ElementEditor.deleteElement(circuit, 'missing'), circuit),
+      isTrue,
+    );
     expect(
       identical(F9ElementEditor.deleteConnection(circuit, 'missing'), circuit),
       isTrue,
     );
-    expect(identical(F9ElementEditor.togglePrimaryState(circuit, 'missing'), circuit), isTrue);
+    expect(
+      identical(
+        F9ElementEditor.togglePrimaryState(circuit, 'missing'),
+        circuit,
+      ),
+      isTrue,
+    );
   });
 }
 

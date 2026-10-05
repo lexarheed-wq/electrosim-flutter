@@ -11,53 +11,68 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('SolverPV', () {
-    test('PV-002 nominal PV/inverter/load power flow is physically balanced', () {
-      final PvSolveResult result = solve(_pvCircuit(loadPowerAt230W: 2000.0));
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.engineVersion, SolverPV.engineVersion);
-      expect(result.pvOperatingVoltageV, closeTo(400.0, 1e-9));
-      expect(result.pvAvailableCurrentA, closeTo(10.0, 1e-9));
-      expect(result.pvAvailablePowerW, closeTo(4000.0, 1e-9));
-      expect(result.inverterState, PvInverterState.running);
-      expect(result.inverterOutputVoltageRmsV, closeTo(230.0, 1e-9));
-      expect(result.inverterOutputPowerW, closeTo(2000.0, 1e-7));
-      expect(result.pvDrawnPowerW, closeTo(2000.0 / 0.95, 1e-7));
-      expect(
-        result.inverterConversionLossW,
-        closeTo((2000.0 / 0.95) - 2000.0, 1e-7),
-      );
-      expect(
-        result.pvDrawnPowerW,
-        closeTo(result.inverterOutputPowerW + result.inverterConversionLossW, 1e-8),
-      );
-      expect(result.curtailedPowerW, greaterThan(1800.0));
-      expect(result.load(ComponentId('load')).activePowerW, closeTo(2000.0, 1e-7));
-    });
+    test(
+      'PV-002 nominal PV/inverter/load power flow is physically balanced',
+      () {
+        final PvSolveResult result = solve(_pvCircuit(loadPowerAt230W: 2000.0));
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.engineVersion, SolverPV.engineVersion);
+        expect(result.pvOperatingVoltageV, closeTo(400.0, 1e-9));
+        expect(result.pvAvailableCurrentA, closeTo(10.0, 1e-9));
+        expect(result.pvAvailablePowerW, closeTo(4000.0, 1e-9));
+        expect(result.inverterState, PvInverterState.running);
+        expect(result.inverterOutputVoltageRmsV, closeTo(230.0, 1e-9));
+        expect(result.inverterOutputPowerW, closeTo(2000.0, 1e-7));
+        expect(result.pvDrawnPowerW, closeTo(2000.0 / 0.95, 1e-7));
+        expect(
+          result.inverterConversionLossW,
+          closeTo((2000.0 / 0.95) - 2000.0, 1e-7),
+        );
+        expect(
+          result.pvDrawnPowerW,
+          closeTo(
+            result.inverterOutputPowerW + result.inverterConversionLossW,
+            1e-8,
+          ),
+        );
+        expect(result.curtailedPowerW, greaterThan(1800.0));
+        expect(
+          result.load(ComponentId('load')).activePowerW,
+          closeTo(2000.0, 1e-7),
+        );
+      },
+    );
 
-    test('PV-002 low irradiance reduces available power and causes real output droop', () {
-      final PvSolveResult result = solve(
-        _pvCircuit(loadPowerAt230W: 3000.0, irradianceWm2: 500.0),
-      );
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.pvAvailablePowerW, closeTo(2000.0, 1e-7));
-      expect(result.inverterState, PvInverterState.powerLimited);
-      expect(result.inverterOutputPowerW, closeTo(1900.0, 1e-6));
-      expect(result.inverterOutputVoltageRmsV, lessThan(230.0));
-      expect(result.inverterOutputVoltageRmsV, greaterThan(0.0));
-    });
+    test(
+      'PV-002 low irradiance reduces available power and causes real output droop',
+      () {
+        final PvSolveResult result = solve(
+          _pvCircuit(loadPowerAt230W: 3000.0, irradianceWm2: 500.0),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.pvAvailablePowerW, closeTo(2000.0, 1e-7));
+        expect(result.inverterState, PvInverterState.powerLimited);
+        expect(result.inverterOutputPowerW, closeTo(1900.0, 1e-6));
+        expect(result.inverterOutputVoltageRmsV, lessThan(230.0));
+        expect(result.inverterOutputVoltageRmsV, greaterThan(0.0));
+      },
+    );
 
-    test('M8 shading reduces effective irradiance without changing raw setting semantics', () {
-      final PvSolveResult result = solve(
-        _pvCircuit(
-          loadPowerAt230W: 3000.0,
-          irradianceWm2: 800.0,
-          shadingPct: 25.0,
-        ),
-      );
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.irradianceWm2, closeTo(600.0, 1e-9));
-      expect(result.pvAvailablePowerW, closeTo(2400.0, 1e-7));
-    });
+    test(
+      'M8 shading reduces effective irradiance without changing raw setting semantics',
+      () {
+        final PvSolveResult result = solve(
+          _pvCircuit(
+            loadPowerAt230W: 3000.0,
+            irradianceWm2: 800.0,
+            shadingPct: 25.0,
+          ),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.irradianceWm2, closeTo(600.0, 1e-9));
+        expect(result.pvAvailablePowerW, closeTo(2400.0, 1e-7));
+      },
+    );
 
     test('M8 invalid shading fails explicitly', () {
       final PvSolveResult result = solve(
@@ -84,28 +99,31 @@ void main() {
       expect(result.pvOperatingVoltageV, closeTo(380.0, 1e-7));
     });
 
-    test('PV-001 inverter fault conditions stop downstream output physically', () {
-      for (final ComponentCondition condition in <ComponentCondition>[
-        ComponentCondition.disabled,
-        ComponentCondition.openCircuit,
-        ComponentCondition.shortCircuit,
-      ]) {
-        final PvSolveResult result = solve(
-          _pvCircuit(loadPowerAt230W: 1200.0, inverterCondition: condition),
-        );
-        expect(result.status, PvSolveStatus.solved);
-        expect(result.inverterState, PvInverterState.faulted);
-        expect(result.inverterOutputVoltageRmsV, 0.0);
-        expect(result.inverterOutputCurrentRmsA, 0.0);
-        expect(result.inverterOutputPowerW, 0.0);
-        expect(result.pvDrawnPowerW, 0.0);
-        expect(result.load(ComponentId('load')).activePowerW, 0.0);
-        expect(
-          result.diagnostics.map((PvSolverDiagnostic item) => item.code),
-          contains(PvDiagnosticCode.inverterFaulted),
-        );
-      }
-    });
+    test(
+      'PV-001 inverter fault conditions stop downstream output physically',
+      () {
+        for (final ComponentCondition condition in <ComponentCondition>[
+          ComponentCondition.disabled,
+          ComponentCondition.openCircuit,
+          ComponentCondition.shortCircuit,
+        ]) {
+          final PvSolveResult result = solve(
+            _pvCircuit(loadPowerAt230W: 1200.0, inverterCondition: condition),
+          );
+          expect(result.status, PvSolveStatus.solved);
+          expect(result.inverterState, PvInverterState.faulted);
+          expect(result.inverterOutputVoltageRmsV, 0.0);
+          expect(result.inverterOutputCurrentRmsA, 0.0);
+          expect(result.inverterOutputPowerW, 0.0);
+          expect(result.pvDrawnPowerW, 0.0);
+          expect(result.load(ComponentId('load')).activePowerW, 0.0);
+          expect(
+            result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+            contains(PvDiagnosticCode.inverterFaulted),
+          );
+        }
+      },
+    );
 
     test('PV-005 inverter DC limits prevent fictitious AC output', () {
       final PvSolveResult result = solve(
@@ -138,16 +156,19 @@ void main() {
       );
     });
 
-    test('idle inverter regulates nominal voltage without inventing load power', () {
-      final PvSolveResult result = solve(_pvCircuit(includeLoad: false));
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.inverterState, PvInverterState.idle);
-      expect(result.inverterOutputVoltageRmsV, closeTo(230.0, 1e-9));
-      expect(result.inverterOutputCurrentRmsA, 0.0);
-      expect(result.inverterOutputPowerW, 0.0);
-      expect(result.pvDrawnPowerW, 0.0);
-      expect(result.inverterConversionLossW, 0.0);
-    });
+    test(
+      'idle inverter regulates nominal voltage without inventing load power',
+      () {
+        final PvSolveResult result = solve(_pvCircuit(includeLoad: false));
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.inverterState, PvInverterState.idle);
+        expect(result.inverterOutputVoltageRmsV, closeTo(230.0, 1e-9));
+        expect(result.inverterOutputCurrentRmsA, 0.0);
+        expect(result.inverterOutputPowerW, 0.0);
+        expect(result.pvDrawnPowerW, 0.0);
+        expect(result.inverterConversionLossW, 0.0);
+      },
+    );
 
     test('disconnected DC input is an explicit invalid topology', () {
       final CircuitState circuit = _pvCircuit(disconnectDcPositive: true);
@@ -195,19 +216,22 @@ void main() {
       );
     });
 
-    test('invalid PV/inverter/load parameters do not fall back to magic values', () {
-      for (final CircuitState circuit in <CircuitState>[
-        _pvCircuit(mppVoltageV: 0.0),
-        _pvCircuit(efficiency: 1.2),
-        _pvCircuit(loadResistanceOverride: -1.0),
-        _pvCircuit(
-          inverterCondition: ComponentCondition.degraded,
-          deratingFactor: 1.2,
-        ),
-      ]) {
-        expect(solve(circuit).status, PvSolveStatus.invalid);
-      }
-    });
+    test(
+      'invalid PV/inverter/load parameters do not fall back to magic values',
+      () {
+        for (final CircuitState circuit in <CircuitState>[
+          _pvCircuit(mppVoltageV: 0.0),
+          _pvCircuit(efficiency: 1.2),
+          _pvCircuit(loadResistanceOverride: -1.0),
+          _pvCircuit(
+            inverterCondition: ComponentCondition.degraded,
+            deratingFactor: 1.2,
+          ),
+        ]) {
+          expect(solve(circuit).status, PvSolveStatus.invalid);
+        }
+      },
+    );
 
     test('missing environmental settings use documented solver defaults', () {
       final PvSolveResult result = solve(
@@ -226,7 +250,9 @@ void main() {
       expect(invalidIrradiance.status, PvSolveStatus.invalid);
       expect(invalidIrradiance.isSolved, isFalse);
       expect(
-        invalidIrradiance.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        invalidIrradiance.diagnostics.map(
+          (PvSolverDiagnostic item) => item.code,
+        ),
         contains(PvDiagnosticCode.invalidPvParameter),
       );
 
@@ -235,7 +261,9 @@ void main() {
       );
       expect(invalidTemperature.status, PvSolveStatus.invalid);
       expect(
-        invalidTemperature.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        invalidTemperature.diagnostics.map(
+          (PvSolverDiagnostic item) => item.code,
+        ),
         contains(PvDiagnosticCode.invalidPvParameter),
       );
     });
@@ -260,86 +288,98 @@ void main() {
       );
     });
 
-    test('zero PV operating voltage cannot invent available current or AC output', () {
-      final PvSolveResult result = solve(
-        _pvCircuit(
-          cellTemperatureC: 125.0,
-          voltageTemperatureCoefficientPerC: -0.01,
-        ),
-      );
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.pvOperatingVoltageV, 0.0);
-      expect(result.pvAvailableCurrentA, 0.0);
-      expect(result.pvDrawnCurrentA, 0.0);
-      expect(result.inverterState, PvInverterState.inputOutOfRange);
-      expect(result.inverterOutputPowerW, 0.0);
-    });
+    test(
+      'zero PV operating voltage cannot invent available current or AC output',
+      () {
+        final PvSolveResult result = solve(
+          _pvCircuit(
+            cellTemperatureC: 125.0,
+            voltageTemperatureCoefficientPerC: -0.01,
+          ),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.pvOperatingVoltageV, 0.0);
+        expect(result.pvAvailableCurrentA, 0.0);
+        expect(result.pvDrawnCurrentA, 0.0);
+        expect(result.inverterState, PvInverterState.inputOutOfRange);
+        expect(result.inverterOutputPowerW, 0.0);
+      },
+    );
 
-    test('zero reference irradiance is handled deterministically without division by zero', () {
-      const SolverPV zeroReferenceSolver = SolverPV(
-        options: PvSolverOptions(referenceIrradianceWm2: 0.0),
-      );
-      final CircuitState circuit = _pvCircuit(loadPowerAt230W: 1000.0);
-      final PvSolveResult result = zeroReferenceSolver.solve(
-        circuit,
-        topologyEngine.compile(circuit),
-      );
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.pvAvailablePowerW, 0.0);
-      expect(result.pvAvailableCurrentA, 0.0);
-      expect(result.inverterOutputPowerW, 0.0);
-      expect(result.inverterOutputVoltageRmsV, 0.0);
-      expect(result.inverterState, PvInverterState.powerLimited);
-    });
+    test(
+      'zero reference irradiance is handled deterministically without division by zero',
+      () {
+        const SolverPV zeroReferenceSolver = SolverPV(
+          options: PvSolverOptions(referenceIrradianceWm2: 0.0),
+        );
+        final CircuitState circuit = _pvCircuit(loadPowerAt230W: 1000.0);
+        final PvSolveResult result = zeroReferenceSolver.solve(
+          circuit,
+          topologyEngine.compile(circuit),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.pvAvailablePowerW, 0.0);
+        expect(result.pvAvailableCurrentA, 0.0);
+        expect(result.inverterOutputPowerW, 0.0);
+        expect(result.inverterOutputVoltageRmsV, 0.0);
+        expect(result.inverterState, PvInverterState.powerLimited);
+      },
+    );
 
-    test('C25 storage charges battery and SOC advances only with explicit simulation time', () {
-      final CircuitState circuit = _pvStorageCircuit(
-        loadPowerAt230W: 1000.0,
-        initialSoc: 0.50,
-      );
-      final TopologyGraph topology = topologyEngine.compile(circuit);
-      final PvSolveResult zeroTime = solver.solve(
-        circuit,
-        topology,
-        previousBatterySoc: 0.50,
-        elapsed: Duration.zero,
-      );
-      expect(zeroTime.status, PvSolveStatus.solved);
-      expect(zeroTime.controllerPresent, isTrue);
-      expect(zeroTime.batteryPresent, isTrue);
-      expect(zeroTime.batteryPowerW, lessThan(0.0));
-      expect(zeroTime.batterySoc, closeTo(0.50, 1e-12));
+    test(
+      'C25 storage charges battery and SOC advances only with explicit simulation time',
+      () {
+        final CircuitState circuit = _pvStorageCircuit(
+          loadPowerAt230W: 1000.0,
+          initialSoc: 0.50,
+        );
+        final TopologyGraph topology = topologyEngine.compile(circuit);
+        final PvSolveResult zeroTime = solver.solve(
+          circuit,
+          topology,
+          previousBatterySoc: 0.50,
+          elapsed: Duration.zero,
+        );
+        expect(zeroTime.status, PvSolveStatus.solved);
+        expect(zeroTime.controllerPresent, isTrue);
+        expect(zeroTime.batteryPresent, isTrue);
+        expect(zeroTime.batteryPowerW, lessThan(0.0));
+        expect(zeroTime.batterySoc, closeTo(0.50, 1e-12));
 
-      final PvSolveResult afterHour = solver.solve(
-        circuit,
-        topology,
-        previousBatterySoc: zeroTime.batterySoc,
-        elapsed: const Duration(hours: 1),
-      );
-      expect(afterHour.status, PvSolveStatus.solved);
-      expect(afterHour.batteryPowerW, lessThan(0.0));
-      expect(afterHour.batterySoc, greaterThan(0.50));
-      expect(afterHour.batterySoc, lessThanOrEqualTo(0.95));
-    });
+        final PvSolveResult afterHour = solver.solve(
+          circuit,
+          topology,
+          previousBatterySoc: zeroTime.batterySoc,
+          elapsed: const Duration(hours: 1),
+        );
+        expect(afterHour.status, PvSolveStatus.solved);
+        expect(afterHour.batteryPowerW, lessThan(0.0));
+        expect(afterHour.batterySoc, greaterThan(0.50));
+        expect(afterHour.batterySoc, lessThanOrEqualTo(0.95));
+      },
+    );
 
-    test('C25 battery discharges at low irradiance and sustains the AC load', () {
-      final CircuitState circuit = _pvStorageCircuit(
-        irradianceWm2: 100.0,
-        loadPowerAt230W: 2000.0,
-        initialSoc: 0.60,
-      );
-      final PvSolveResult result = solver.solve(
-        circuit,
-        topologyEngine.compile(circuit),
-        previousBatterySoc: 0.60,
-        elapsed: const Duration(hours: 1),
-      );
-      expect(result.status, PvSolveStatus.solved);
-      expect(result.batteryPowerW, greaterThan(0.0));
-      expect(result.batterySoc, lessThan(0.60));
-      expect(result.inverterOutputPowerW, closeTo(2000.0, 1e-6));
-      expect(result.inverterState, PvInverterState.running);
-    });
+    test(
+      'C25 battery discharges at low irradiance and sustains the AC load',
+      () {
+        final CircuitState circuit = _pvStorageCircuit(
+          irradianceWm2: 100.0,
+          loadPowerAt230W: 2000.0,
+          initialSoc: 0.60,
+        );
+        final PvSolveResult result = solver.solve(
+          circuit,
+          topologyEngine.compile(circuit),
+          previousBatterySoc: 0.60,
+          elapsed: const Duration(hours: 1),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.batteryPowerW, greaterThan(0.0));
+        expect(result.batterySoc, lessThan(0.60));
+        expect(result.inverterOutputPowerW, closeTo(2000.0, 1e-6));
+        expect(result.inverterState, PvInverterState.running);
+      },
+    );
 
     test('C25 SOC is bounded by configured minimum and maximum', () {
       final CircuitState charging = _pvStorageCircuit(
@@ -373,22 +413,25 @@ void main() {
       expect(discharged.inverterState, PvInverterState.powerLimited);
     });
 
-    test('C25 controller and battery cannot be silently used independently', () {
-      for (final CircuitState circuit in <CircuitState>[
-        _pvStorageCircuit(includeBattery: false),
-        _pvStorageCircuit(includeController: false),
-      ]) {
-        final PvSolveResult result = solver.solve(
-          circuit,
-          topologyEngine.compile(circuit),
-        );
-        expect(result.status, PvSolveStatus.invalid);
-        expect(
-          result.diagnostics.map((PvSolverDiagnostic item) => item.code),
-          contains(PvDiagnosticCode.storageTopologyInvalid),
-        );
-      }
-    });
+    test(
+      'C25 controller and battery cannot be silently used independently',
+      () {
+        for (final CircuitState circuit in <CircuitState>[
+          _pvStorageCircuit(includeBattery: false),
+          _pvStorageCircuit(includeController: false),
+        ]) {
+          final PvSolveResult result = solver.solve(
+            circuit,
+            topologyEngine.compile(circuit),
+          );
+          expect(result.status, PvSolveStatus.invalid);
+          expect(
+            result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+            contains(PvDiagnosticCode.storageTopologyInvalid),
+          );
+        }
+      },
+    );
 
     test('same PV input is deterministic', () {
       final CircuitState circuit = _pvCircuit(
@@ -536,7 +579,8 @@ CircuitState _pvCircuit({
           'mppVoltageV': mppVoltageV,
           'mppCurrentA': mppCurrentA,
           'powerTemperatureCoefficientPerC': powerTemperatureCoefficientPerC,
-          'voltageTemperatureCoefficientPerC': voltageTemperatureCoefficientPerC,
+          'voltageTemperatureCoefficientPerC':
+              voltageTemperatureCoefficientPerC,
         },
       ),
     ],
@@ -743,18 +787,8 @@ CircuitState _pvStorageCircuit({
         PhaseTag.dcNegative,
       ),
     ],
-    _wire(
-      'storage-ac-l',
-      'storage-inv-l',
-      'storage-load-l',
-      PhaseTag.l1,
-    ),
-    _wire(
-      'storage-ac-n',
-      'storage-inv-n',
-      'storage-load-n',
-      PhaseTag.neutral,
-    ),
+    _wire('storage-ac-l', 'storage-inv-l', 'storage-load-l', PhaseTag.l1),
+    _wire('storage-ac-n', 'storage-inv-n', 'storage-load-n', PhaseTag.neutral),
   ];
 
   return CircuitState(
@@ -797,9 +831,10 @@ CircuitState _pvStorageCircuit({
   );
 }
 
-Connection _wire(String id, String from, String to, PhaseTag phase) => Connection(
-  id: ConnectionId(id),
-  fromTerminalId: TerminalId(from),
-  toTerminalId: TerminalId(to),
-  phase: phase,
-);
+Connection _wire(String id, String from, String to, PhaseTag phase) =>
+    Connection(
+      id: ConnectionId(id),
+      fromTerminalId: TerminalId(from),
+      toTerminalId: TerminalId(to),
+      phase: phase,
+    );

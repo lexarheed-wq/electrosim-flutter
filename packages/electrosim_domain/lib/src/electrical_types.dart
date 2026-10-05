@@ -21,7 +21,13 @@ enum ElectricalUnit {
   final String symbol;
 }
 
-enum ComponentCondition { normal, openCircuit, shortCircuit, degraded, disabled }
+enum ComponentCondition {
+  normal,
+  openCircuit,
+  shortCircuit,
+  degraded,
+  disabled,
+}
 
 enum TerminalRole {
   generic,
@@ -84,7 +90,10 @@ final class ElectricalQuantity {
       throw DomainException(
         code: DomainErrorCode.invalidValue,
         message: 'Electrical quantities must be finite.',
-        context: <String, Object?>{'value': value.toString(), 'unit': unit.name},
+        context: <String, Object?>{
+          'value': value.toString(),
+          'unit': unit.name,
+        },
       );
     }
   }

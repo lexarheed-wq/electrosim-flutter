@@ -3,22 +3,28 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('accepts compatible generic-to-phase wiring and appends a connection', () {
-    final CircuitState circuit = _circuit();
-    final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
-      circuit,
-      TerminalId('source-pos'),
-      TerminalId('switch-in'),
-    );
-    expect(decision.accepted, isTrue);
-    expect(decision.connection, isNotNull);
-    expect(decision.connection!.id.value, 'wire-1');
-    expect(decision.connection!.phase, PhaseTag.dcPositive);
+  test(
+    'accepts compatible generic-to-phase wiring and appends a connection',
+    () {
+      final CircuitState circuit = _circuit();
+      final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
+        circuit,
+        TerminalId('source-pos'),
+        TerminalId('switch-in'),
+      );
+      expect(decision.accepted, isTrue);
+      expect(decision.connection, isNotNull);
+      expect(decision.connection!.id.value, 'wire-1');
+      expect(decision.connection!.phase, PhaseTag.dcPositive);
 
-    final CircuitState next = F9WiringPolicy.append(circuit, decision.connection!);
-    expect(next.revision, circuit.revision + 1);
-    expect(next.connections.length, 1);
-  });
+      final CircuitState next = F9WiringPolicy.append(
+        circuit,
+        decision.connection!,
+      );
+      expect(next.revision, circuit.revision + 1);
+      expect(next.connections.length, 1);
+    },
+  );
 
   test('rejects incompatible explicit phases', () {
     final CircuitState circuit = _circuit();
@@ -87,8 +93,16 @@ CircuitState _circuit() {
         id: ComponentId('switch'),
         modelType: 'Interrupteur',
         terminals: <Terminal>[
-          Terminal(id: TerminalId('switch-in'), name: '1', role: TerminalRole.input),
-          Terminal(id: TerminalId('switch-out'), name: '2', role: TerminalRole.output),
+          Terminal(
+            id: TerminalId('switch-in'),
+            name: '1',
+            role: TerminalRole.input,
+          ),
+          Terminal(
+            id: TerminalId('switch-out'),
+            name: '2',
+            role: TerminalRole.output,
+          ),
         ],
       ),
       ComponentInstance(

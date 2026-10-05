@@ -32,8 +32,10 @@ final class LabSupplyModel {
     this.enabled = true,
   }) : _voltageV = _positive('voltageV', voltageV),
        _currentLimitA = _positive('currentLimitA', currentLimitA),
-       internalResistanceOhm =
-           _positive('internalResistanceOhm', internalResistanceOhm);
+       internalResistanceOhm = _positive(
+         'internalResistanceOhm',
+         internalResistanceOhm,
+       );
 
   double _voltageV;
   double _currentLimitA;
@@ -55,8 +57,7 @@ final class LabSupplyModel {
     if (loadResistanceOhm == double.infinity) {
       return SupplyReading(voltageV, 0, SupplyMode.constantVoltage);
     }
-    final requested = voltageV /
-        (loadResistanceOhm + internalResistanceOhm);
+    final requested = voltageV / (loadResistanceOhm + internalResistanceOhm);
     if (requested > currentLimitA) {
       return SupplyReading(
         currentLimitA * loadResistanceOhm,
@@ -74,12 +75,13 @@ final class LabSupplyModel {
 
 class SwitchModel {
   SwitchModel({double contactResistanceOhm = .02, this.closed = false})
-      : contactResistanceOhm =
-            _positive('contactResistanceOhm', contactResistanceOhm);
+    : contactResistanceOhm = _positive(
+        'contactResistanceOhm',
+        contactResistanceOhm,
+      );
   final double contactResistanceOhm;
   bool closed;
-  double get resistanceOhm =>
-      closed ? contactResistanceOhm : double.infinity;
+  double get resistanceOhm => closed ? contactResistanceOhm : double.infinity;
 }
 
 final class PushButtonModel extends SwitchModel {
@@ -99,11 +101,15 @@ final class DcBreakerModel {
     double coolingTimeSeconds = 30,
     this.closed = true,
   }) : _ratedCurrentA = _positive('ratedCurrentA', ratedCurrentA),
-       contactResistanceOhm =
-           _positive('contactResistanceOhm', contactResistanceOhm),
+       contactResistanceOhm = _positive(
+         'contactResistanceOhm',
+         contactResistanceOhm,
+       ),
        magneticMultiple = _positive('magneticMultiple', magneticMultiple),
-       coolingTimeSeconds =
-           _positive('coolingTimeSeconds', coolingTimeSeconds) {
+       coolingTimeSeconds = _positive(
+         'coolingTimeSeconds',
+         coolingTimeSeconds,
+       ) {
     if (magneticMultiple <= 1) {
       throw ArgumentError('Magnetic multiple must exceed 1.');
     }
@@ -176,12 +182,16 @@ final class FilamentLampModel {
   }) : ratedVoltageV = _positive('ratedVoltageV', ratedVoltageV),
        ratedPowerW = _positive('ratedPowerW', ratedPowerW),
        ambientK = _positive('ambientK', ambientK),
-       nominalTemperatureK =
-           _positive('nominalTemperatureK', nominalTemperatureK),
+       nominalTemperatureK = _positive(
+         'nominalTemperatureK',
+         nominalTemperatureK,
+       ),
        alphaPerK = _positive('alphaPerK', alphaPerK),
        heatCapacityJPerK = _positive('heatCapacityJPerK', heatCapacityJPerK),
-       maximumTemperatureK =
-           _positive('maximumTemperatureK', maximumTemperatureK),
+       maximumTemperatureK = _positive(
+         'maximumTemperatureK',
+         maximumTemperatureK,
+       ),
        _temperatureK = ambientK {
     if (nominalTemperatureK <= ambientK ||
         maximumTemperatureK <= nominalTemperatureK) {
@@ -198,17 +208,23 @@ final class FilamentLampModel {
   final double maximumTemperatureK;
   double _temperatureK;
   double get temperatureK => _temperatureK;
-  double get nominalResistanceOhm => ratedVoltageV * ratedVoltageV / ratedPowerW;
-  double get coldResistanceOhm => nominalResistanceOhm /
-      (1 + alphaPerK * (nominalTemperatureK - ambientK));
-  double get resistanceOhm => coldResistanceOhm *
-      (1 + alphaPerK * (temperatureK - ambientK));
+  double get nominalResistanceOhm =>
+      ratedVoltageV * ratedVoltageV / ratedPowerW;
+  double get coldResistanceOhm =>
+      nominalResistanceOhm / (1 + alphaPerK * (nominalTemperatureK - ambientK));
+  double get resistanceOhm =>
+      coldResistanceOhm * (1 + alphaPerK * (temperatureK - ambientK));
   double get thermalConductanceWPerK =>
       ratedPowerW / (nominalTemperatureK - ambientK);
-  double get brightness => math.pow(
-    ((temperatureK - ambientK) / (nominalTemperatureK - ambientK))
-        .clamp(0.0, 1.0), 4,
-  ).toDouble();
+  double get brightness => math
+      .pow(
+        ((temperatureK - ambientK) / (nominalTemperatureK - ambientK)).clamp(
+          0.0,
+          1.0,
+        ),
+        4,
+      )
+      .toDouble();
 
   // Power is held constant during this small physical step. Re-solve the
   // network between steps; a single large step cannot model the inrush.
@@ -222,7 +238,8 @@ final class FilamentLampModel {
     final equilibrium = ambientK + power / conductance;
     final decay = math.exp(-conductance * seconds / heatCapacityJPerK);
     final next = equilibrium + (temperatureK - equilibrium) * decay;
-    if (!next.isFinite || next < ambientK - 1e-9 ||
+    if (!next.isFinite ||
+        next < ambientK - 1e-9 ||
         next > maximumTemperatureK) {
       throw StateError('Lamp model outside its published temperature range.');
     }
@@ -247,8 +264,10 @@ final class ReferenceSeriesCircuit {
       return supply.solveResistiveLoad(double.infinity);
     }
     return supply.solveResistiveLoad(
-      breaker.resistanceOhm + toggle.resistanceOhm +
-      button.resistanceOhm + lamp.resistanceOhm,
+      breaker.resistanceOhm +
+          toggle.resistanceOhm +
+          button.resistanceOhm +
+          lamp.resistanceOhm,
     );
   }
 

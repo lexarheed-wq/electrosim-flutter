@@ -64,8 +64,8 @@ void main() {
       ],
     );
 
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
 
     expect(snapshot.dc.status, DcSolveStatus.solved);
     expect(snapshot.dc.branch('component:r1').currentA, closeTo(1.0, 1e-9));
@@ -73,87 +73,94 @@ void main() {
     expect(snapshot.diagnostics.circuitRevision, 1);
   });
 
-  test('F17 runtime preserves circuit identity through topology, solver and EIE', () {
-    final Terminal p = Terminal(
-      id: TerminalId('p'),
-      name: '+',
-      role: TerminalRole.positive,
-      phase: PhaseTag.dcPositive,
-    );
-    final Terminal n = Terminal(
-      id: TerminalId('n'),
-      name: '-',
-      role: TerminalRole.negative,
-      phase: PhaseTag.dcNegative,
-    );
+  test(
+    'F17 runtime preserves circuit identity through topology, solver and EIE',
+    () {
+      final Terminal p = Terminal(
+        id: TerminalId('p'),
+        name: '+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      );
+      final Terminal n = Terminal(
+        id: TerminalId('n'),
+        name: '-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      );
 
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('f17-identity'),
-      revision: 7,
-      mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        SourceInstance(
-          id: SourceId('source'),
-          modelType: 'dc_voltage_source',
-          terminals: <Terminal>[p, n],
-          parameters: const <String, Object?>{'voltageV': 12.0},
-        ),
-      ],
-    );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('f17-identity'),
+        revision: 7,
+        mode: ElectricalMode.dc,
+        sources: <SourceInstance>[
+          SourceInstance(
+            id: SourceId('source'),
+            modelType: 'dc_voltage_source',
+            terminals: <Terminal>[p, n],
+            parameters: const <String, Object?>{'voltageV': 12.0},
+          ),
+        ],
+      );
 
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(circuit);
 
-    expect(snapshot.topology.circuitId, circuit.circuitId);
-    expect(snapshot.topology.circuitRevision, circuit.revision);
-    expect(snapshot.dc.circuitId, circuit.circuitId);
-    expect(snapshot.dc.circuitRevision, circuit.revision);
-    expect(snapshot.diagnostics.circuitId, circuit.circuitId);
-    expect(snapshot.diagnostics.circuitRevision, circuit.revision);
-  });
-  test('F17-R9 runtime routes AC1 to SolverAC1 without fabricating DC measurements', () {
-    final CircuitState circuit = _ac1Circuit();
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+      expect(snapshot.topology.circuitId, circuit.circuitId);
+      expect(snapshot.topology.circuitRevision, circuit.revision);
+      expect(snapshot.dc.circuitId, circuit.circuitId);
+      expect(snapshot.dc.circuitRevision, circuit.revision);
+      expect(snapshot.diagnostics.circuitId, circuit.circuitId);
+      expect(snapshot.diagnostics.circuitRevision, circuit.revision);
+    },
+  );
+  test(
+    'F17-R9 runtime routes AC1 to SolverAC1 without fabricating DC measurements',
+    () {
+      final CircuitState circuit = _ac1Circuit();
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(circuit);
 
-    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac1);
-    expect(snapshot.solved, isTrue);
-    expect(snapshot.ac1.status, Ac1SolveStatus.solved);
-    expect(
-      snapshot.ac1.branch('component:load').current!.magnitude,
-      closeTo(5.0, 1e-9),
-    );
-    expect(snapshot.dcResult, isNull);
-    expect(snapshot.diagnosticsAvailable, isTrue);
+      expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac1);
+      expect(snapshot.solved, isTrue);
+      expect(snapshot.ac1.status, Ac1SolveStatus.solved);
+      expect(
+        snapshot.ac1.branch('component:load').current!.magnitude,
+        closeTo(5.0, 1e-9),
+      );
+      expect(snapshot.dcResult, isNull);
+      expect(snapshot.diagnosticsAvailable, isTrue);
 
-    final MeasurementResult dcMeasurement = snapshot.measureVoltage(
-      positiveProbe: TerminalId('ac1-load-a'),
-      negativeProbe: TerminalId('ac1-load-b'),
-    );
-    expect(dcMeasurement.isValid, isFalse);
-    expect(dcMeasurement.errorCode, MeasurementErrorCode.wrongElectricalMode);
+      final MeasurementResult dcMeasurement = snapshot.measureVoltage(
+        positiveProbe: TerminalId('ac1-load-a'),
+        negativeProbe: TerminalId('ac1-load-b'),
+      );
+      expect(dcMeasurement.isValid, isFalse);
+      expect(dcMeasurement.errorCode, MeasurementErrorCode.wrongElectricalMode);
 
-    final MeasurementResult acVoltage = snapshot.measureAcVoltage(
-      positiveProbe: TerminalId('ac1-load-a'),
-      negativeProbe: TerminalId('ac1-load-b'),
-    );
-    expect(acVoltage.isValid, isTrue);
-    expect(acVoltage.reading!.value, closeTo(230.0, 1e-8));
+      final MeasurementResult acVoltage = snapshot.measureAcVoltage(
+        positiveProbe: TerminalId('ac1-load-a'),
+        negativeProbe: TerminalId('ac1-load-b'),
+      );
+      expect(acVoltage.isValid, isTrue);
+      expect(acVoltage.reading!.value, closeTo(230.0, 1e-8));
 
-    final MeasurementResult acCurrent =
-        snapshot.measureAcCurrent(branchId: 'component:load');
-    expect(acCurrent.isValid, isTrue);
-    expect(acCurrent.reading!.value, closeTo(5.0, 1e-9));
+      final MeasurementResult acCurrent = snapshot.measureAcCurrent(
+        branchId: 'component:load',
+      );
+      expect(acCurrent.isValid, isTrue);
+      expect(acCurrent.reading!.value, closeTo(5.0, 1e-9));
 
-    final MeasurementResult frequency = snapshot.measureFrequency();
-    expect(frequency.isValid, isTrue);
-    expect(frequency.reading!.value, closeTo(50.0, 1e-12));
-  });
+      final MeasurementResult frequency = snapshot.measureFrequency();
+      expect(frequency.isValid, isTrue);
+      expect(frequency.reading!.value, closeTo(50.0, 1e-12));
+    },
+  );
 
   test('F17-R9 runtime routes balanced AC3 to SolverAC3', () {
     final CircuitState circuit = _ac3Circuit();
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
 
     expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
     expect(snapshot.solved, isTrue);
@@ -172,22 +179,24 @@ void main() {
     expect(frequency.reading!.value, closeTo(50.0, 1e-12));
   });
 
-  test('F17-R10 routes even invalid PV circuits through SolverPV without throwing', () {
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('f17-r10-invalid-pv'),
-      revision: 0,
-      mode: ElectricalMode.pv,
-    );
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+  test(
+    'F17-R10 routes even invalid PV circuits through SolverPV without throwing',
+    () {
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('f17-r10-invalid-pv'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+      );
+      final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+          .evaluate(circuit);
 
-    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
-    expect(snapshot.pvResult, isNotNull);
-    expect(snapshot.solved, isFalse);
-    expect(snapshot.energyAvailable, isFalse);
-    expect(snapshot.diagnosticsAvailable, isFalse);
-  });
-
+      expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.pv);
+      expect(snapshot.pvResult, isNotNull);
+      expect(snapshot.solved, isFalse);
+      expect(snapshot.energyAvailable, isFalse);
+      expect(snapshot.diagnosticsAvailable, isFalse);
+    },
+  );
 }
 
 Terminal _acTerminal(
@@ -195,8 +204,7 @@ Terminal _acTerminal(
   String name, {
   PhaseTag phase = PhaseTag.none,
   TerminalRole role = TerminalRole.generic,
-}) =>
-    Terminal(id: TerminalId(id), name: name, phase: phase, role: role);
+}) => Terminal(id: TerminalId(id), name: name, phase: phase, role: role);
 
 CircuitState _ac1Circuit() {
   final Terminal sourceLine = _acTerminal(

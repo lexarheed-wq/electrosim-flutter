@@ -7,7 +7,11 @@ void main() {
   test('quick-add avoids occupied element rectangles', () {
     const Rect visible = Rect.fromLTWH(0, 0, 900, 600);
     const Size size = Size(104, 64);
-    final Rect occupied = Rect.fromCenter(center: const Offset(450, 400), width: 140, height: 100);
+    final Rect occupied = Rect.fromCenter(
+      center: const Offset(450, 400),
+      width: 140,
+      height: 100,
+    );
 
     final Offset? result = F9AutoPlacement.findPosition(
       visibleWorldRect: visible,
@@ -16,7 +20,11 @@ void main() {
       occupiedPolylines: const <List<Offset>>[],
     );
     expect(result, isNotNull);
-    final Rect placed = Rect.fromCenter(center: result!, width: size.width, height: size.height);
+    final Rect placed = Rect.fromCenter(
+      center: result!,
+      width: size.width,
+      height: size.height,
+    );
 
     expect(placed.inflate(18).overlaps(occupied.inflate(9)), isFalse);
   });
@@ -33,7 +41,11 @@ void main() {
       occupiedPolylines: const <List<Offset>>[wire],
     );
     expect(result, isNotNull);
-    final Rect placed = Rect.fromCenter(center: result!, width: size.width, height: size.height).inflate(18);
+    final Rect placed = Rect.fromCenter(
+      center: result!,
+      width: size.width,
+      height: size.height,
+    ).inflate(18);
 
     expect(placed.contains(const Offset(450, 400)), isFalse);
     expect(result.dy, isNot(closeTo(400, 50)));
@@ -49,7 +61,11 @@ void main() {
       occupiedPolylines: const <List<Offset>>[],
     );
     expect(first, isNotNull);
-    final Rect firstRect = Rect.fromCenter(center: first!, width: size.width, height: size.height);
+    final Rect firstRect = Rect.fromCenter(
+      center: first!,
+      width: size.width,
+      height: size.height,
+    );
     final Offset? second = F9AutoPlacement.findPosition(
       visibleWorldRect: visible,
       elementSize: size,
@@ -60,7 +76,11 @@ void main() {
     expect(second, isNotNull);
     expect(second, isNot(first));
     expect(
-      Rect.fromCenter(center: second!, width: size.width, height: size.height).inflate(18).overlaps(firstRect.inflate(9)),
+      Rect.fromCenter(
+        center: second!,
+        width: size.width,
+        height: size.height,
+      ).inflate(18).overlaps(firstRect.inflate(9)),
       isFalse,
     );
   });

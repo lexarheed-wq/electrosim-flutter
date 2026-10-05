@@ -9,7 +9,8 @@ abstract base class ValueId {
     if (raw.isEmpty || raw != raw.trim()) {
       throw DomainException(
         code: DomainErrorCode.invalidId,
-        message: 'Identifier must be non-empty and must not contain edge whitespace.',
+        message:
+            'Identifier must be non-empty and must not contain edge whitespace.',
         context: <String, Object?>{'value': raw},
       );
     }
@@ -26,7 +27,9 @@ abstract base class ValueId {
 
   @override
   bool operator ==(Object other) =>
-      other.runtimeType == runtimeType && other is ValueId && other.value == value;
+      other.runtimeType == runtimeType &&
+      other is ValueId &&
+      other.value == value;
 
   @override
   int get hashCode => Object.hash(runtimeType, value);

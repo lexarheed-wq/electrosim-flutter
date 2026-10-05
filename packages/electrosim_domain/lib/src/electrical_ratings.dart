@@ -7,13 +7,10 @@ import 'json_support.dart';
 /// nominal current describes the load itself; it must never be interpreted as
 /// a breaker/fuse calibre.
 final class ReceiverNominalRating {
-  ReceiverNominalRating({
-    double? voltageV,
-    double? currentA,
-    double? powerW,
-  }) : voltageV = _positiveFiniteOrNull(voltageV, voltageKey),
-       currentA = _positiveFiniteOrNull(currentA, currentKey),
-       powerW = _positiveFiniteOrNull(powerW, powerKey) {
+  ReceiverNominalRating({double? voltageV, double? currentA, double? powerW})
+    : voltageV = _positiveFiniteOrNull(voltageV, voltageKey),
+      currentA = _positiveFiniteOrNull(currentA, currentKey),
+      powerW = _positiveFiniteOrNull(powerW, powerKey) {
     if (this.voltageV == null && this.currentA == null && this.powerW == null) {
       throw DomainException(
         code: DomainErrorCode.invalidValue,
@@ -31,7 +28,8 @@ final class ReceiverNominalRating {
   final double? powerW;
 
   static ReceiverNominalRating? tryFromParameters(JsonMap parameters) {
-    final bool hasAny = parameters.containsKey(voltageKey) ||
+    final bool hasAny =
+        parameters.containsKey(voltageKey) ||
         parameters.containsKey(currentKey) ||
         parameters.containsKey(powerKey);
     if (!hasAny) {
@@ -69,10 +67,7 @@ final class ReceiverNominalRating {
 /// as the same physical quantity.
 final class ProtectionRating {
   ProtectionRating({required double ratedCurrentA})
-      : ratedCurrentA = _positiveFiniteRequired(
-          ratedCurrentA,
-          ratedCurrentKey,
-        );
+    : ratedCurrentA = _positiveFiniteRequired(ratedCurrentA, ratedCurrentKey);
 
   static const String ratedCurrentKey = 'protectionRatedCurrentA';
 
@@ -87,9 +82,7 @@ final class ProtectionRating {
     );
   }
 
-  JsonMap toParameters() => <String, Object?>{
-    ratedCurrentKey: ratedCurrentA,
-  };
+  JsonMap toParameters() => <String, Object?>{ratedCurrentKey: ratedCurrentA};
 
   @override
   bool operator ==(Object other) =>

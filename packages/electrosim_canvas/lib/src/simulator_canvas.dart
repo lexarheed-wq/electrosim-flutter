@@ -9,8 +9,10 @@ import 'hit_test_engine.dart';
 import 'viewport_controller.dart';
 import 'wire_preview_planner.dart';
 
-typedef ElementMovedCallback = void Function(String elementId, Offset worldPosition);
-typedef ConnectionRequestedCallback = void Function(TerminalId from, TerminalId to);
+typedef ElementMovedCallback =
+    void Function(String elementId, Offset worldPosition);
+typedef ConnectionRequestedCallback =
+    void Function(TerminalId from, TerminalId to);
 
 final class SimulatorCanvas extends StatefulWidget {
   const SimulatorCanvas({
@@ -68,9 +70,11 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   static const Duration _contextDoubleTapWindow = Duration(milliseconds: 400);
   static const double _contextDoubleTapDistance = 24;
 
-  String? get _selectedElementId => widget.selectedElementId ?? _localSelectedElementId;
+  String? get _selectedElementId =>
+      widget.selectedElementId ?? _localSelectedElementId;
 
-  Map<String, Offset> get _previewPositions => _draggingElementId != null && _dragPreviewPosition != null
+  Map<String, Offset> get _previewPositions =>
+      _draggingElementId != null && _dragPreviewPosition != null
       ? <String, Offset>{_draggingElementId!: _dragPreviewPosition!}
       : const <String, Offset>{};
 
@@ -208,14 +212,18 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     final CanvasHitResult? previousHit = _lastContextTapHit;
     final DateTime? previousTime = _lastContextTapTime;
     final Offset? previousPosition = _lastContextTapPosition;
-    final bool sameTarget = previousHit != null &&
+    final bool sameTarget =
+        previousHit != null &&
         previousHit.kind == hit.kind &&
         previousHit.elementId == hit.elementId &&
         previousHit.connectionId == hit.connectionId;
-    final bool withinTime = previousTime != null &&
+    final bool withinTime =
+        previousTime != null &&
         now.difference(previousTime) <= _contextDoubleTapWindow;
-    final bool withinDistance = previousPosition != null &&
-        (localPosition - previousPosition).distance <= _contextDoubleTapDistance;
+    final bool withinDistance =
+        previousPosition != null &&
+        (localPosition - previousPosition).distance <=
+            _contextDoubleTapDistance;
 
     if (sameTarget && withinTime && withinDistance) {
       widget.onContextAction?.call(hit);
@@ -239,7 +247,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
       return;
     }
     final CanvasHitResult hit = _hitAt(details.localPosition);
-    if (hit.kind != CanvasHitKind.component && hit.kind != CanvasHitKind.source) {
+    if (hit.kind != CanvasHitKind.component &&
+        hit.kind != CanvasHitKind.source) {
       return;
     }
     final String id = hit.elementId!;
@@ -287,7 +296,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     }
     _lastScaleFocal = details.localFocalPoint;
     _scaleStartValue = _viewport.scale;
-    _scaleStartedOnBackground = _hitAt(details.localFocalPoint).kind == CanvasHitKind.background;
+    _scaleStartedOnBackground =
+        _hitAt(details.localFocalPoint).kind == CanvasHitKind.background;
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -331,7 +341,6 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -341,11 +350,15 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
         onPointerSignal: _onPointerSignal,
         onPointerMove: _onPointerMove,
         child: MouseRegion(
-          cursor: _draggingElementId == null ? SystemMouseCursors.basic : SystemMouseCursors.grabbing,
+          cursor: _draggingElementId == null
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.grabbing,
           onHover: (PointerHoverEvent event) {
             if (_pendingTerminalId != null) {
               setState(() {
-                _pointerWorldPosition = _viewport.screenToWorld(event.localPosition);
+                _pointerWorldPosition = _viewport.screenToWorld(
+                  event.localPosition,
+                );
               });
             }
           },

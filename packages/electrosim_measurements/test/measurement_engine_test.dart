@@ -10,10 +10,8 @@ void main() {
   const MeasurementEngine measurementEngine = MeasurementEngine();
   const DeviceStateEngine deviceStateEngine = DeviceStateEngine();
 
-  DcSolveResult solve(CircuitState circuit) => solver.solve(
-    circuit,
-    topologyEngine.compile(circuit),
-  );
+  DcSolveResult solve(CircuitState circuit) =>
+      solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('MeasurementEngine', () {
     test('DC voltage is read from solved node potentials', () {
@@ -72,7 +70,10 @@ void main() {
         simulation: solver.solve(circuit, topology),
       );
       expect(result.status, MeasurementStatus.invalid);
-      expect(result.errorCode, MeasurementErrorCode.energizedResistanceMeasurement);
+      expect(
+        result.errorCode,
+        MeasurementErrorCode.energizedResistanceMeasurement,
+      );
     });
 
     test('unknown voltage probe and current branch are explicit failures', () {
@@ -98,33 +99,36 @@ void main() {
       expect(badCurrent.errorCode, MeasurementErrorCode.unknownBranch);
     });
 
-    test('missing solved node voltage is an explicit invalid voltage measurement', () {
-      final CircuitState circuit = _singleResistor();
-      final TopologyGraph topology = topologyEngine.compile(circuit);
-      final DcSolveResult fakeSolved = DcSolveResult(
-        circuitId: circuit.circuitId,
-        circuitRevision: circuit.revision,
-        engineVersion: SolverDC.engineVersion,
-        status: DcSolveStatus.solved,
-        referenceNodeId: null,
-        nodeVoltages: const <String, double>{},
-        branchResults: const <DcBranchResult>[],
-        diagnostics: const <DcSolverDiagnostic>[],
-        maxMatrixResidual: 0.0,
-        kclResiduals: const <String, double>{},
-        kvlResiduals: const <String, double>{},
-      );
-      final MeasurementResult result = measurementEngine.measure(
-        request: MeasurementRequest.voltage(
-          positiveProbe: TerminalId('r1a'),
-          negativeProbe: TerminalId('r1b'),
-        ),
-        circuit: circuit,
-        topology: topology,
-        simulation: fakeSolved,
-      );
-      expect(result.errorCode, MeasurementErrorCode.unknownTerminal);
-    });
+    test(
+      'missing solved node voltage is an explicit invalid voltage measurement',
+      () {
+        final CircuitState circuit = _singleResistor();
+        final TopologyGraph topology = topologyEngine.compile(circuit);
+        final DcSolveResult fakeSolved = DcSolveResult(
+          circuitId: circuit.circuitId,
+          circuitRevision: circuit.revision,
+          engineVersion: SolverDC.engineVersion,
+          status: DcSolveStatus.solved,
+          referenceNodeId: null,
+          nodeVoltages: const <String, double>{},
+          branchResults: const <DcBranchResult>[],
+          diagnostics: const <DcSolverDiagnostic>[],
+          maxMatrixResidual: 0.0,
+          kclResiduals: const <String, double>{},
+          kvlResiduals: const <String, double>{},
+        );
+        final MeasurementResult result = measurementEngine.measure(
+          request: MeasurementRequest.voltage(
+            positiveProbe: TerminalId('r1a'),
+            negativeProbe: TerminalId('r1b'),
+          ),
+          circuit: circuit,
+          topology: topology,
+          simulation: fakeSolved,
+        );
+        expect(result.errorCode, MeasurementErrorCode.unknownTerminal);
+      },
+    );
 
     test('indeterminate ideal-source branch current is not fabricated', () {
       final CircuitState circuit = _redundantZeroVoltSource();
@@ -143,8 +147,13 @@ void main() {
 
     test('unsolved result, wrong mode and revision mismatch are rejected', () {
       final CircuitState invalidCircuit = _shortedSource();
-      final TopologyGraph invalidTopology = topologyEngine.compile(invalidCircuit);
-      final DcSolveResult invalidSimulation = solver.solve(invalidCircuit, invalidTopology);
+      final TopologyGraph invalidTopology = topologyEngine.compile(
+        invalidCircuit,
+      );
+      final DcSolveResult invalidSimulation = solver.solve(
+        invalidCircuit,
+        invalidTopology,
+      );
       final MeasurementResult unsolved = measurementEngine.measure(
         request: MeasurementRequest.current(branchId: 'source:v1'),
         circuit: invalidCircuit,
@@ -185,14 +194,19 @@ void main() {
 
     test('unsupported and malformed resistance targets fail explicitly', () {
       final CircuitState switchCircuit = _isolatedSwitch(closed: false);
-      final TopologyGraph switchTopology = topologyEngine.compile(switchCircuit);
+      final TopologyGraph switchTopology = topologyEngine.compile(
+        switchCircuit,
+      );
       final MeasurementResult unsupported = measurementEngine.measure(
         request: MeasurementRequest.resistance(componentId: ComponentId('s1')),
         circuit: switchCircuit,
         topology: switchTopology,
         simulation: solver.solve(switchCircuit, switchTopology),
       );
-      expect(unsupported.errorCode, MeasurementErrorCode.unsupportedResistanceTarget);
+      expect(
+        unsupported.errorCode,
+        MeasurementErrorCode.unsupportedResistanceTarget,
+      );
 
       final CircuitState resistor = _isolatedResistor(resistance: -1.0);
       final TopologyGraph resistorTopology = topologyEngine.compile(resistor);
@@ -215,10 +229,15 @@ void main() {
         topology: resistorTopology,
         simulation: fakeSolved,
       );
-      expect(malformed.errorCode, MeasurementErrorCode.invalidResistanceParameter);
+      expect(
+        malformed.errorCode,
+        MeasurementErrorCode.invalidResistanceParameter,
+      );
 
       final MeasurementResult missing = measurementEngine.measure(
-        request: MeasurementRequest.resistance(componentId: ComponentId('missing')),
+        request: MeasurementRequest.resistance(
+          componentId: ComponentId('missing'),
+        ),
         circuit: _isolatedResistor(),
         topology: topologyEngine.compile(_isolatedResistor()),
         simulation: solve(_isolatedResistor()),
@@ -259,11 +278,14 @@ void main() {
       final Set<OperatingWarningCode> codes = state.warnings
           .map<OperatingWarningCode>((OperatingWarning warning) => warning.code)
           .toSet();
-      expect(codes, containsAll(<OperatingWarningCode>[
-        OperatingWarningCode.overVoltage,
-        OperatingWarningCode.overCurrent,
-        OperatingWarningCode.overPower,
-      ]));
+      expect(
+        codes,
+        containsAll(<OperatingWarningCode>[
+          OperatingWarningCode.overVoltage,
+          OperatingWarningCode.overCurrent,
+          OperatingWarningCode.overPower,
+        ]),
+      );
     });
 
     test('invalid nominal limit is a warning, not fabricated overload', () {
@@ -285,41 +307,56 @@ void main() {
       );
     });
 
-    test('switch state comes from controlState plus solved branch evidence', () {
-      for (final bool closed in <bool>[false, true]) {
-        final CircuitState circuit = _isolatedSwitch(closed: closed);
-        final ComponentInstance switchComponent = circuit.components.firstWhere(
-          (ComponentInstance component) => component.id == ComponentId('s1'),
-        );
-        final ComponentOperatingState state = deviceStateEngine.evaluate(
-          component: switchComponent,
-          circuit: circuit,
-          simulation: solve(circuit),
-        );
-        expect(
-          state.code,
-          closed ? ComponentOperatingCode.closed : ComponentOperatingCode.open,
-        );
-      }
-    });
+    test(
+      'switch state comes from controlState plus solved branch evidence',
+      () {
+        for (final bool closed in <bool>[false, true]) {
+          final CircuitState circuit = _isolatedSwitch(closed: closed);
+          final ComponentInstance switchComponent = circuit.components
+              .firstWhere(
+                (ComponentInstance component) =>
+                    component.id == ComponentId('s1'),
+              );
+          final ComponentOperatingState state = deviceStateEngine.evaluate(
+            component: switchComponent,
+            circuit: circuit,
+            simulation: solve(circuit),
+          );
+          expect(
+            state.code,
+            closed
+                ? ComponentOperatingCode.closed
+                : ComponentOperatingCode.open,
+          );
+        }
+      },
+    );
 
     test('disabled/faulted conditions and unsolved results stay explicit', () {
-      final CircuitState disabled = _isolatedResistor(condition: ComponentCondition.disabled);
-      final CircuitState open = _isolatedResistor(condition: ComponentCondition.openCircuit);
+      final CircuitState disabled = _isolatedResistor(
+        condition: ComponentCondition.disabled,
+      );
+      final CircuitState open = _isolatedResistor(
+        condition: ComponentCondition.openCircuit,
+      );
       expect(
-        deviceStateEngine.evaluate(
-          component: disabled.components.single,
-          circuit: disabled,
-          simulation: solve(disabled),
-        ).code,
+        deviceStateEngine
+            .evaluate(
+              component: disabled.components.single,
+              circuit: disabled,
+              simulation: solve(disabled),
+            )
+            .code,
         ComponentOperatingCode.disabled,
       );
       expect(
-        deviceStateEngine.evaluate(
-          component: open.components.single,
-          circuit: open,
-          simulation: solve(open),
-        ).code,
+        deviceStateEngine
+            .evaluate(
+              component: open.components.single,
+              circuit: open,
+              simulation: solve(open),
+            )
+            .code,
         ComponentOperatingCode.faulted,
       );
 
@@ -331,82 +368,92 @@ void main() {
         simulation: solve(invalid),
       );
       expect(unknown.code, ComponentOperatingCode.undetermined);
-      expect(unknown.warnings.single.code, OperatingWarningCode.simulationNotSolved);
-    });
-
-    test('de-energized, missing-branch and indeterminate-current states remain explicit', () {
-      final CircuitState circuit = _isolatedResistor();
-      final DcSolveResult solved = solve(circuit);
-      final ComponentOperatingState deenergized = deviceStateEngine.evaluate(
-        component: circuit.components.single,
-        circuit: circuit,
-        simulation: solved,
-      );
-      expect(deenergized.code, ComponentOperatingCode.deenergized);
-
-      final DcSolveResult missingBranch = DcSolveResult(
-        circuitId: circuit.circuitId,
-        circuitRevision: circuit.revision,
-        engineVersion: SolverDC.engineVersion,
-        status: DcSolveStatus.solved,
-        referenceNodeId: solved.referenceNodeId,
-        nodeVoltages: solved.nodeVoltages,
-        branchResults: const <DcBranchResult>[],
-        diagnostics: const <DcSolverDiagnostic>[],
-        maxMatrixResidual: 0.0,
-        kclResiduals: const <String, double>{},
-        kvlResiduals: const <String, double>{},
-      );
-      final ComponentOperatingState missing = deviceStateEngine.evaluate(
-        component: circuit.components.single,
-        circuit: circuit,
-        simulation: missingBranch,
-      );
-      expect(missing.code, ComponentOperatingCode.undetermined);
-      expect(missing.warnings.single.code, OperatingWarningCode.missingBranchResult);
-
-      final DcSolveResult indeterminate = DcSolveResult(
-        circuitId: circuit.circuitId,
-        circuitRevision: circuit.revision,
-        engineVersion: SolverDC.engineVersion,
-        status: DcSolveStatus.solved,
-        referenceNodeId: solved.referenceNodeId,
-        nodeVoltages: solved.nodeVoltages,
-        branchResults: <DcBranchResult>[
-          DcBranchResult(
-            id: 'component:r1',
-            modelType: 'resistor',
-            kind: DcBranchKind.resistor,
-            fromNodeId: 'n0',
-            toNodeId: 'n1',
-            voltageV: 0.0,
-            currentA: null,
-            powerW: null,
-          ),
-        ],
-        diagnostics: const <DcSolverDiagnostic>[],
-        maxMatrixResidual: 0.0,
-        kclResiduals: const <String, double>{},
-        kvlResiduals: const <String, double>{},
-      );
-      final ComponentOperatingState unknownCurrent = deviceStateEngine.evaluate(
-        component: circuit.components.single,
-        circuit: circuit,
-        simulation: indeterminate,
-      );
-      expect(unknownCurrent.code, ComponentOperatingCode.deenergized);
       expect(
-        unknownCurrent.warnings.map((OperatingWarning warning) => warning.code),
-        contains(OperatingWarningCode.currentIndeterminate),
+        unknown.warnings.single.code,
+        OperatingWarningCode.simulationNotSolved,
       );
     });
+
+    test(
+      'de-energized, missing-branch and indeterminate-current states remain explicit',
+      () {
+        final CircuitState circuit = _isolatedResistor();
+        final DcSolveResult solved = solve(circuit);
+        final ComponentOperatingState deenergized = deviceStateEngine.evaluate(
+          component: circuit.components.single,
+          circuit: circuit,
+          simulation: solved,
+        );
+        expect(deenergized.code, ComponentOperatingCode.deenergized);
+
+        final DcSolveResult missingBranch = DcSolveResult(
+          circuitId: circuit.circuitId,
+          circuitRevision: circuit.revision,
+          engineVersion: SolverDC.engineVersion,
+          status: DcSolveStatus.solved,
+          referenceNodeId: solved.referenceNodeId,
+          nodeVoltages: solved.nodeVoltages,
+          branchResults: const <DcBranchResult>[],
+          diagnostics: const <DcSolverDiagnostic>[],
+          maxMatrixResidual: 0.0,
+          kclResiduals: const <String, double>{},
+          kvlResiduals: const <String, double>{},
+        );
+        final ComponentOperatingState missing = deviceStateEngine.evaluate(
+          component: circuit.components.single,
+          circuit: circuit,
+          simulation: missingBranch,
+        );
+        expect(missing.code, ComponentOperatingCode.undetermined);
+        expect(
+          missing.warnings.single.code,
+          OperatingWarningCode.missingBranchResult,
+        );
+
+        final DcSolveResult indeterminate = DcSolveResult(
+          circuitId: circuit.circuitId,
+          circuitRevision: circuit.revision,
+          engineVersion: SolverDC.engineVersion,
+          status: DcSolveStatus.solved,
+          referenceNodeId: solved.referenceNodeId,
+          nodeVoltages: solved.nodeVoltages,
+          branchResults: <DcBranchResult>[
+            DcBranchResult(
+              id: 'component:r1',
+              modelType: 'resistor',
+              kind: DcBranchKind.resistor,
+              fromNodeId: 'n0',
+              toNodeId: 'n1',
+              voltageV: 0.0,
+              currentA: null,
+              powerW: null,
+            ),
+          ],
+          diagnostics: const <DcSolverDiagnostic>[],
+          maxMatrixResidual: 0.0,
+          kclResiduals: const <String, double>{},
+          kvlResiduals: const <String, double>{},
+        );
+        final ComponentOperatingState unknownCurrent = deviceStateEngine
+            .evaluate(
+              component: circuit.components.single,
+              circuit: circuit,
+              simulation: indeterminate,
+            );
+        expect(unknownCurrent.code, ComponentOperatingCode.deenergized);
+        expect(
+          unknownCurrent.warnings.map(
+            (OperatingWarning warning) => warning.code,
+          ),
+          contains(OperatingWarningCode.currentIndeterminate),
+        );
+      },
+    );
 
     test('evaluateAll and public collections are immutable', () {
       final CircuitState circuit = _singleResistor();
-      final List<ComponentOperatingState> states = deviceStateEngine.evaluateAll(
-        circuit: circuit,
-        simulation: solve(circuit),
-      );
+      final List<ComponentOperatingState> states = deviceStateEngine
+          .evaluateAll(circuit: circuit, simulation: solve(circuit));
       expect(states, hasLength(1));
       expect(() => states.add(states.single), throwsUnsupportedError);
       expect(() => states.single.evidenceIds.add('x'), throwsUnsupportedError);
@@ -425,30 +472,50 @@ SourceInstance _voltageSource(double voltage) => SourceInstance(
   id: SourceId('v1'),
   modelType: 'dc_voltage_source',
   terminals: <Terminal>[
-    _terminal('vp', '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
-    _terminal('vn', '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
+    _terminal(
+      'vp',
+      '+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    ),
+    _terminal(
+      'vn',
+      '-',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    ),
   ],
   parameters: <String, Object?>{'voltageV': voltage},
 );
 
-CircuitState _singleResistor({Map<String, Object?>? parameters}) => CircuitState(
-  circuitId: CircuitId('dc-f4'),
-  revision: 0,
-  mode: ElectricalMode.dc,
-  components: <ComponentInstance>[
-    ComponentInstance(
-      id: ComponentId('r1'),
-      modelType: 'resistor',
-      terminals: <Terminal>[_terminal('r1a', 'A'), _terminal('r1b', 'B')],
-      parameters: parameters ?? const <String, Object?>{'resistanceOhm': 12.0},
-    ),
-  ],
-  connections: <Connection>[
-    Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('vp'), toTerminalId: TerminalId('r1a')),
-    Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('vn')),
-  ],
-  sources: <SourceInstance>[_voltageSource(24.0)],
-);
+CircuitState _singleResistor({Map<String, Object?>? parameters}) =>
+    CircuitState(
+      circuitId: CircuitId('dc-f4'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('r1'),
+          modelType: 'resistor',
+          terminals: <Terminal>[_terminal('r1a', 'A'), _terminal('r1b', 'B')],
+          parameters:
+              parameters ?? const <String, Object?>{'resistanceOhm': 12.0},
+        ),
+      ],
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('w1'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('r1a'),
+        ),
+        Connection(
+          id: ConnectionId('w2'),
+          fromTerminalId: TerminalId('r1b'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+      sources: <SourceInstance>[_voltageSource(24.0)],
+    );
 
 CircuitState _isolatedResistor({
   double resistance = 12.0,
@@ -487,8 +554,16 @@ CircuitState _isolatedSwitch({required bool closed}) => CircuitState(
     ),
   ],
   connections: <Connection>[
-    Connection(id: ConnectionId('sw-a'), fromTerminalId: TerminalId('s1a'), toTerminalId: TerminalId('rla')),
-    Connection(id: ConnectionId('sw-b'), fromTerminalId: TerminalId('s1b'), toTerminalId: TerminalId('rlb')),
+    Connection(
+      id: ConnectionId('sw-a'),
+      fromTerminalId: TerminalId('s1a'),
+      toTerminalId: TerminalId('rla'),
+    ),
+    Connection(
+      id: ConnectionId('sw-b'),
+      fromTerminalId: TerminalId('s1b'),
+      toTerminalId: TerminalId('rlb'),
+    ),
   ],
 );
 
@@ -497,7 +572,11 @@ CircuitState _redundantZeroVoltSource() => CircuitState(
   revision: 0,
   mode: ElectricalMode.dc,
   connections: <Connection>[
-    Connection(id: ConnectionId('short'), fromTerminalId: TerminalId('z1'), toTerminalId: TerminalId('z2')),
+    Connection(
+      id: ConnectionId('short'),
+      fromTerminalId: TerminalId('z1'),
+      toTerminalId: TerminalId('z2'),
+    ),
   ],
   sources: <SourceInstance>[
     SourceInstance(
@@ -514,7 +593,11 @@ CircuitState _shortedSource() => CircuitState(
   revision: 0,
   mode: ElectricalMode.dc,
   connections: <Connection>[
-    Connection(id: ConnectionId('short'), fromTerminalId: TerminalId('vp'), toTerminalId: TerminalId('vn')),
+    Connection(
+      id: ConnectionId('short'),
+      fromTerminalId: TerminalId('vp'),
+      toTerminalId: TerminalId('vn'),
+    ),
   ],
   sources: <SourceInstance>[_voltageSource(24.0)],
 );

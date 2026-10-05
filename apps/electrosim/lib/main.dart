@@ -64,22 +64,11 @@ class F9HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return F18HomeSurface(
-      onCreateSession: () => _openSessionShell(
-        context,
-        persistenceController,
-      ),
-      onMaintenance: () => _openMaintenanceCenter(
-        context,
-        persistenceController,
-      ),
-      onDesign: () => _openDesignCenter(
-        context,
-        persistenceController,
-      ),
-      onJoinSession: () => _joinLanSession(
-        context,
-        persistenceController,
-      ),
+      onCreateSession: () => _openSessionShell(context, persistenceController),
+      onMaintenance: () =>
+          _openMaintenanceCenter(context, persistenceController),
+      onDesign: () => _openDesignCenter(context, persistenceController),
+      onJoinSession: () => _joinLanSession(context, persistenceController),
     );
   }
 
@@ -87,11 +76,9 @@ class F9HomePage extends StatelessWidget {
     BuildContext context,
     ElectroSimPersistenceController? persistenceController,
   ) async {
-    final _NetworkJoinRequest? request =
-        await showDialog<_NetworkJoinRequest>(
+    final _NetworkJoinRequest? request = await showDialog<_NetworkJoinRequest>(
       context: context,
-      builder: (BuildContext dialogContext) =>
-          const _NetworkJoinDialog(),
+      builder: (BuildContext dialogContext) => const _NetworkJoinDialog(),
     );
     if (request == null || !context.mounted) return;
 
@@ -129,11 +116,7 @@ class F9HomePage extends StatelessWidget {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            content: Text(
-              'Connexion à la session impossible : $error',
-            ),
-          ),
+          SnackBar(content: Text('Connexion à la session impossible : $error')),
         );
     }
   }
@@ -146,9 +129,9 @@ class F9HomePage extends StatelessWidget {
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: 'design-center'),
         builder: (BuildContext routeContext) => F18DesignCenterPage(
-          onHome: () => Navigator.of(routeContext).popUntil(
-            (Route<dynamic> route) => route.isFirst,
-          ),
+          onHome: () => Navigator.of(
+            routeContext,
+          ).popUntil((Route<dynamic> route) => route.isFirst),
           onWiring: () => _openWorkspace(
             routeContext,
             'Centre de conception',
@@ -180,13 +163,14 @@ class F9HomePage extends StatelessWidget {
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: 'maintenance-center'),
         builder: (BuildContext routeContext) => F18MaintenanceCenterPage(
-          onHome: () => Navigator.of(routeContext).popUntil(
-            (Route<dynamic> route) => route.isFirst,
-          ),
+          onHome: () => Navigator.of(
+            routeContext,
+          ).popUntil((Route<dynamic> route) => route.isFirst),
           onTroubleshooting: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
-              settings:
-                  const RouteSettings(name: 'maintenance-troubleshooting-setup'),
+              settings: const RouteSettings(
+                name: 'maintenance-troubleshooting-setup',
+              ),
               builder: (BuildContext setupContext) => F18ActivitySetupPage(
                 pageKey: const Key('maintenance-troubleshooting-setup-page'),
                 title: 'Préparer une recherche de dérangement',
@@ -217,21 +201,22 @@ class F9HomePage extends StatelessWidget {
           ),
           onStudentValidation: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
-              settings:
-                  const RouteSettings(name: 'student-situation-validation'),
+              settings: const RouteSettings(
+                name: 'student-situation-validation',
+              ),
               builder: (BuildContext validationContext) =>
                   F18StudentSituationValidationPage(
-                onBack: () => Navigator.of(validationContext).pop(),
-                onLaunch: (String referenceCircuit, String faultScenario) {
-                  _openWorkspace(
-                    validationContext,
-                    'Validation en situation élève',
-                    initialWorkspace: 'Recherche de dérangement',
-                    persistenceController: persistenceController,
-                    parentRouteName: 'maintenance-center',
-                  );
-                },
-              ),
+                    onBack: () => Navigator.of(validationContext).pop(),
+                    onLaunch: (String referenceCircuit, String faultScenario) {
+                      _openWorkspace(
+                        validationContext,
+                        'Validation en situation élève',
+                        initialWorkspace: 'Recherche de dérangement',
+                        persistenceController: persistenceController,
+                        parentRouteName: 'maintenance-center',
+                      );
+                    },
+                  ),
             ),
           ),
         ),
@@ -245,10 +230,10 @@ class F9HomePage extends StatelessWidget {
   ) async {
     final F18SessionCreationDraft? draft =
         await showDialog<F18SessionCreationDraft>(
-      context: context,
-      builder: (BuildContext dialogContext) =>
-          const F18CreateSessionDialog(),
-    );
+          context: context,
+          builder: (BuildContext dialogContext) =>
+              const F18CreateSessionDialog(),
+        );
     if (draft == null || !context.mounted) return;
 
     final String sessionCode = ElectroSimLanSyncHost.generateSessionCode();
@@ -257,25 +242,25 @@ class F9HomePage extends StatelessWidget {
         settings: const RouteSettings(name: 'teacher-session'),
         builder: (BuildContext routeContext) =>
             F18TeacherSessionCoordinatorPage(
-          sessionName: draft.name,
-          sessionCode: sessionCode,
-          workspaceBuilder: (
-            BuildContext workspaceContext,
-            ElectroSimTpSessionController controller,
-            String workspace,
-            VoidCallback onDashboard,
-            VoidCallback onManageSession,
-          ) =>
-              F18WorkspacePage(
-            entryLabel: 'Session active',
-            initialWorkspace: workspace,
-            sessionNavigation: true,
-            tpSessionController: controller,
-            persistenceController: persistenceController,
-            onSessionDashboard: onDashboard,
-            onSessionManage: onManageSession,
-          ),
-        ),
+              sessionName: draft.name,
+              sessionCode: sessionCode,
+              workspaceBuilder:
+                  (
+                    BuildContext workspaceContext,
+                    ElectroSimTpSessionController controller,
+                    String workspace,
+                    VoidCallback onDashboard,
+                    VoidCallback onManageSession,
+                  ) => F18WorkspacePage(
+                    entryLabel: 'Session active',
+                    initialWorkspace: workspace,
+                    sessionNavigation: true,
+                    tpSessionController: controller,
+                    persistenceController: persistenceController,
+                    onSessionDashboard: onDashboard,
+                    onSessionManage: onManageSession,
+                  ),
+            ),
       ),
     );
   }
@@ -303,9 +288,9 @@ class F9HomePage extends StatelessWidget {
           onExitWorkspace: parentRouteName == null
               ? null
               : () => Navigator.of(workspaceContext).popUntil(
-                    (Route<dynamic> route) =>
-                        route.settings.name == parentRouteName,
-                  ),
+                  (Route<dynamic> route) =>
+                      route.settings.name == parentRouteName,
+                ),
         ),
       ),
     );
@@ -365,10 +350,7 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: ElectroSimSpacing.sm),
-              Text(
-                _error!,
-                key: const Key('join-session-error'),
-              ),
+              Text(_error!, key: const Key('join-session-error')),
             ],
           ],
         ),
@@ -403,19 +385,15 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
       });
       return;
     }
-    if (rawCode.length != 6 ||
-        RegExp(r'[^A-Z2-9]').hasMatch(rawCode)) {
+    if (rawCode.length != 6 || RegExp(r'[^A-Z2-9]').hasMatch(rawCode)) {
       setState(() {
         _error = 'Le code de session doit contenir 6 caractères.';
       });
       return;
     }
-    Navigator.of(context).pop(
-      _NetworkJoinRequest(
-        endpoint: endpoint,
-        sessionCode: rawCode,
-      ),
-    );
+    Navigator.of(
+      context,
+    ).pop(_NetworkJoinRequest(endpoint: endpoint, sessionCode: rawCode));
   }
 
   @override
@@ -486,11 +464,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   );
   static const CircuitWireLayoutEngine _g2aWireLayoutEngine =
       CircuitWireLayoutEngine(router: _g2aRouter);
-  static const WirePreviewPlanner _g2aWirePreviewPlanner =
-      WirePreviewPlanner(
-        router: _g2aRouter,
-        terminalSnapRadius: 24,
-      );
+  static const WirePreviewPlanner _g2aWirePreviewPlanner = WirePreviewPlanner(
+    router: _g2aRouter,
+    terminalSnapRadius: 24,
+  );
   static const DcRectangularArrangePolicy _dcArrangePolicy =
       DcRectangularArrangePolicy(
         grid: 24,
@@ -501,8 +478,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
-  final ViewportController _viewport = ViewportController(scale: 1, translation: const Offset(40, 40));
-  final GlobalKey _canvasDropKey = GlobalKey(debugLabel: 'f18-canvas-drop-target');
+  final ViewportController _viewport = ViewportController(
+    scale: 1,
+    translation: const Offset(40, 40),
+  );
+  final GlobalKey _canvasDropKey = GlobalKey(
+    debugLabel: 'f18-canvas-drop-target',
+  );
   late String? _selected;
   String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
@@ -519,8 +501,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   bool _trackpadPanZoomActive = false;
   double _trackpadLastScale = 1;
 
-  static const Duration _directControlDoubleTapWindow =
-      Duration(milliseconds: 420);
+  static const Duration _directControlDoubleTapWindow = Duration(
+    milliseconds: 420,
+  );
   static const double _directControlDoubleTapDistance = 28;
   DateTime? _lastDirectControlTapTime;
   String? _lastDirectControlTapElementId;
@@ -566,8 +549,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     final ElectroSimRuntimeSnapshot runtimeSnapshot = _simulation.snapshot;
-    final F9ElementDetails? selectedDetails =
-        F9ElementEditor.describe(_circuit, _selected);
+    final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
+      _circuit,
+      _selected,
+    );
     final bool canDeleteSelection =
         selectedDetails != null && !_studentTpReadOnly;
     final bool canRotateSelection =
@@ -578,160 +563,207 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       body: SafeArea(
         child: CallbackShortcuts(
           bindings: <ShortcutActivator, VoidCallback>{
-            const SingleActivator(LogicalKeyboardKey.escape): _cancelCanvasInteraction,
-            const SingleActivator(LogicalKeyboardKey.delete): _deleteSelectedElement,
-            const SingleActivator(LogicalKeyboardKey.backspace): _deleteSelectedElement,
-            const SingleActivator(LogicalKeyboardKey.equal, shift: true): () => _viewport.zoomAt(const Offset(400, 300), 1.1),
-            const SingleActivator(LogicalKeyboardKey.minus): () => _viewport.zoomAt(const Offset(400, 300), 0.9),
+            const SingleActivator(LogicalKeyboardKey.escape):
+                _cancelCanvasInteraction,
+            const SingleActivator(LogicalKeyboardKey.delete):
+                _deleteSelectedElement,
+            const SingleActivator(LogicalKeyboardKey.backspace):
+                _deleteSelectedElement,
+            const SingleActivator(LogicalKeyboardKey.equal, shift: true): () =>
+                _viewport.zoomAt(const Offset(400, 300), 1.1),
+            const SingleActivator(LogicalKeyboardKey.minus): () =>
+                _viewport.zoomAt(const Offset(400, 300), 0.9),
           },
           child: Focus(
             autofocus: true,
             child: ElectroSimWorkspaceShell(
-          topBar: _WorkspaceTopBar(
-            entryLabel: widget.entryLabel,
-            workspace: _workspace,
-            sessionNavigation: widget.sessionNavigation,
-            onHome: () => Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst),
-            onDashboard: widget.sessionNavigation
-                ? (widget.onSessionDashboard ?? _showDashboard)
-                : null,
-            onManageSession: widget.sessionNavigation
-                ? (widget.onSessionManage ?? _showManageSession)
-                : null,
-            onExitWorkspace: widget.onExitWorkspace,
-            onSave: widget.persistenceController == null ? null : _saveWorkspace,
-            onOpen: widget.persistenceController == null ? null : _openLatestWorkspace,
-            onRotateSelected:
-                canRotateSelection ? _rotateSelectedElement : null,
-            onDeleteSelected:
-                canDeleteSelection ? _deleteSelectedElement : null,
-            onRecenter: _fitCircuitToViewport,
-            electricalMode: _circuit.mode,
-            onSelectElectricalMode: _requestElectricalModeChange,
-            simulationRunning: _simulation.running,
-            simulatedTime: _simulation.simulatedTime,
-            onToggleSimulation: _simulation.toggle,
-            onResetSimulation: _simulation.resetDynamics,
-          ),
-          palette: F9ComponentPalette(
-            mode: _circuit.mode,
-            onStatus: _setStatus,
-            onQuickAdd: _quickAddFromPalette,
-          ),
-          contextPanel: _workspace == 'Supervision' && widget.role == F9UserRole.teacher
-              ? F17TpSupervisionPanel(controller: _tpController)
-              : F9ContextPanels(
-            circuit: _circuit,
-            selectedId: _selected,
-            status: _status,
-            workspace: _workspace,
-            role: widget.role,
-            onTogglePrimaryState: selectedDetails == null ||
-                    _usesDirectCanvasControl(selectedDetails.modelType)
-                ? null
-                : _toggleSelectedPrimaryState,
-            onReplaceSelected: _selected == null ? null : _replaceSelectedElement,
-            onSelectElement: (String? id) {
-              setState(() {
-                _selected = id;
-                _status = id == null ? 'Sélection effacée' : 'Sélection clavier : $id';
-              });
-            },
-            runtimeSnapshot: runtimeSnapshot,
-            tpSessionController:
-                widget.sessionNavigation || widget.tpSessionController != null
-                    ? _tpController
+              topBar: _WorkspaceTopBar(
+                entryLabel: widget.entryLabel,
+                workspace: _workspace,
+                sessionNavigation: widget.sessionNavigation,
+                onHome: () => Navigator.of(
+                  context,
+                ).popUntil((Route<dynamic> route) => route.isFirst),
+                onDashboard: widget.sessionNavigation
+                    ? (widget.onSessionDashboard ?? _showDashboard)
                     : null,
-          ),
-          statusBar: _StatusBar(
-            circuit: _circuit,
-            status: _status,
-            simulationRunning: _simulation.running,
-            simulatedTime: _simulation.simulatedTime,
-          ),
-          canvas: KeyedSubtree(
-            key: const Key('f18-canvas-drop-region'),
-            child: DragTarget<F9PaletteDefinition>(
-              key: _canvasDropKey,
-              onWillAcceptWithDetails: (_) => true,
-              onAcceptWithDetails: _acceptPaletteDrop,
-              builder: (
-                BuildContext context,
-                List<F9PaletteDefinition?> candidateData,
-                List<dynamic> rejectedData,
-              ) {
-                return ClipRect(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: candidateData.isEmpty
+                onManageSession: widget.sessionNavigation
+                    ? (widget.onSessionManage ?? _showManageSession)
+                    : null,
+                onExitWorkspace: widget.onExitWorkspace,
+                onSave: widget.persistenceController == null
+                    ? null
+                    : _saveWorkspace,
+                onOpen: widget.persistenceController == null
+                    ? null
+                    : _openLatestWorkspace,
+                onRotateSelected: canRotateSelection
+                    ? _rotateSelectedElement
+                    : null,
+                onDeleteSelected: canDeleteSelection
+                    ? _deleteSelectedElement
+                    : null,
+                onRecenter: _fitCircuitToViewport,
+                electricalMode: _circuit.mode,
+                onSelectElectricalMode: _requestElectricalModeChange,
+                simulationRunning: _simulation.running,
+                simulatedTime: _simulation.simulatedTime,
+                onToggleSimulation: _simulation.toggle,
+                onResetSimulation: _simulation.resetDynamics,
+              ),
+              palette: F9ComponentPalette(
+                mode: _circuit.mode,
+                onStatus: _setStatus,
+                onQuickAdd: _quickAddFromPalette,
+              ),
+              contextPanel:
+                  _workspace == 'Supervision' &&
+                      widget.role == F9UserRole.teacher
+                  ? F17TpSupervisionPanel(controller: _tpController)
+                  : F9ContextPanels(
+                      circuit: _circuit,
+                      selectedId: _selected,
+                      status: _status,
+                      workspace: _workspace,
+                      role: widget.role,
+                      onTogglePrimaryState:
+                          selectedDetails == null ||
+                              _usesDirectCanvasControl(
+                                selectedDetails.modelType,
+                              )
                           ? null
-                          : Border.all(color: ElectroSimColors.primary, width: 2),
+                          : _toggleSelectedPrimaryState,
+                      onReplaceSelected: _selected == null
+                          ? null
+                          : _replaceSelectedElement,
+                      onSelectElement: (String? id) {
+                        setState(() {
+                          _selected = id;
+                          _status = id == null
+                              ? 'Sélection effacée'
+                              : 'Sélection clavier : $id';
+                        });
+                      },
+                      runtimeSnapshot: runtimeSnapshot,
+                      tpSessionController:
+                          widget.sessionNavigation ||
+                              widget.tpSessionController != null
+                          ? _tpController
+                          : null,
                     ),
-                    child: Listener(
-                      behavior: HitTestBehavior.opaque,
-                      onPointerDown: _onCanvasPointerDown,
-                      onPointerMove: _onCanvasPointerMove,
-                      onPointerUp: _onCanvasPointerUp,
-                      onPointerCancel: _onCanvasPointerCancel,
-                      onPointerHover: _onCanvasPointerHover,
-                      onPointerSignal: _onCanvasPointerSignal,
-                      onPointerPanZoomStart: _onCanvasPointerPanZoomStart,
-                      onPointerPanZoomUpdate: _onCanvasPointerPanZoomUpdate,
-                      onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
-                      child: Stack(
-                      clipBehavior: Clip.hardEdge,
-                      fit: StackFit.expand,
-                      children: <Widget>[
-                        SimulatorCanvas(
-                        key: ValueKey<int>(_canvasInteractionEpoch),
-                        circuit: _circuit,
-                        layout: _layout,
-                        viewportController: _viewport,
-                        selectedElementId: _selected,
-                        onSelectionChanged: (String? id) {
-                          setState(() {
-                            _selected = id;
-                            _status = id == null ? 'Sélection effacée' : 'Sélection : $id';
-                          });
-                        },
-                        onElementMoved: (String id, Offset position) {
-                          _commitElementMoveIfSafe(id, position);
-                        },
-                        onConnectionRequested: _handleConnectionRequested,
-                        onContextAction: (CanvasHitResult hit) {
-                          setState(() {
-                            _status = 'Action contextuelle : ${hit.kind.name}. Les mêmes actions sont disponibles dans Propriétés.';
-                          });
-                        },
-                        enableInteraction: false,
-                        paintElementChrome: false,
-                        wireLayoutEngine: _g2aWireLayoutEngine,
-                        wirePreviewPlanner: _g2aWirePreviewPlanner,
-                      ),
-                      AnimatedBuilder(
-                        animation: _viewport,
-                        builder: (BuildContext context, Widget? child) => F9CanvasVisualOverlay(
-                          circuit: _circuit,
-                          layout: _layout,
-                          viewport: _viewport,
-                          pendingTerminalId: _wiringPendingTerminal,
-                          hoverTerminalId: _wiringHoverTerminal,
-                          pointerWorldPosition: _lastCanvasPointerLocal == null
-                              ? null
-                              : _viewport.screenToWorld(_lastCanvasPointerLocal!),
-                          wirePreviewPlanner: _g2aWirePreviewPlanner,
-                          runtimeSnapshot: runtimeSnapshot,
-                          simulationRunning: _simulation.running,
-                        ),
-                      ),
-                      ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+              statusBar: _StatusBar(
+                circuit: _circuit,
+                status: _status,
+                simulationRunning: _simulation.running,
+                simulatedTime: _simulation.simulatedTime,
+              ),
+              canvas: KeyedSubtree(
+                key: const Key('f18-canvas-drop-region'),
+                child: DragTarget<F9PaletteDefinition>(
+                  key: _canvasDropKey,
+                  onWillAcceptWithDetails: (_) => true,
+                  onAcceptWithDetails: _acceptPaletteDrop,
+                  builder:
+                      (
+                        BuildContext context,
+                        List<F9PaletteDefinition?> candidateData,
+                        List<dynamic> rejectedData,
+                      ) {
+                        return ClipRect(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              border: candidateData.isEmpty
+                                  ? null
+                                  : Border.all(
+                                      color: ElectroSimColors.primary,
+                                      width: 2,
+                                    ),
+                            ),
+                            child: Listener(
+                              behavior: HitTestBehavior.opaque,
+                              onPointerDown: _onCanvasPointerDown,
+                              onPointerMove: _onCanvasPointerMove,
+                              onPointerUp: _onCanvasPointerUp,
+                              onPointerCancel: _onCanvasPointerCancel,
+                              onPointerHover: _onCanvasPointerHover,
+                              onPointerSignal: _onCanvasPointerSignal,
+                              onPointerPanZoomStart:
+                                  _onCanvasPointerPanZoomStart,
+                              onPointerPanZoomUpdate:
+                                  _onCanvasPointerPanZoomUpdate,
+                              onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
+                              child: Stack(
+                                clipBehavior: Clip.hardEdge,
+                                fit: StackFit.expand,
+                                children: <Widget>[
+                                  SimulatorCanvas(
+                                    key: ValueKey<int>(_canvasInteractionEpoch),
+                                    circuit: _circuit,
+                                    layout: _layout,
+                                    viewportController: _viewport,
+                                    selectedElementId: _selected,
+                                    onSelectionChanged: (String? id) {
+                                      setState(() {
+                                        _selected = id;
+                                        _status = id == null
+                                            ? 'Sélection effacée'
+                                            : 'Sélection : $id';
+                                      });
+                                    },
+                                    onElementMoved:
+                                        (String id, Offset position) {
+                                          _commitElementMoveIfSafe(
+                                            id,
+                                            position,
+                                          );
+                                        },
+                                    onConnectionRequested:
+                                        _handleConnectionRequested,
+                                    onContextAction: (CanvasHitResult hit) {
+                                      setState(() {
+                                        _status =
+                                            'Action contextuelle : ${hit.kind.name}. Les mêmes actions sont disponibles dans Propriétés.';
+                                      });
+                                    },
+                                    enableInteraction: false,
+                                    paintElementChrome: false,
+                                    wireLayoutEngine: _g2aWireLayoutEngine,
+                                    wirePreviewPlanner: _g2aWirePreviewPlanner,
+                                  ),
+                                  AnimatedBuilder(
+                                    animation: _viewport,
+                                    builder:
+                                        (
+                                          BuildContext context,
+                                          Widget? child,
+                                        ) => F9CanvasVisualOverlay(
+                                          circuit: _circuit,
+                                          layout: _layout,
+                                          viewport: _viewport,
+                                          pendingTerminalId:
+                                              _wiringPendingTerminal,
+                                          hoverTerminalId: _wiringHoverTerminal,
+                                          pointerWorldPosition:
+                                              _lastCanvasPointerLocal == null
+                                              ? null
+                                              : _viewport.screenToWorld(
+                                                  _lastCanvasPointerLocal!,
+                                                ),
+                                          wirePreviewPlanner:
+                                              _g2aWirePreviewPlanner,
+                                          runtimeSnapshot: runtimeSnapshot,
+                                          simulationRunning:
+                                              _simulation.running,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                ),
+              ),
             ),
           ),
         ),
@@ -761,15 +793,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 key: const Key('dashboard-troubleshooting'),
                 icon: Icons.troubleshoot_outlined,
                 title: 'Recherche de dérangement',
-                description: 'Préparer ou suivre un diagnostic sur scénario défectueux.',
-                onTap: () => Navigator.of(dialogContext).pop('Recherche de dérangement'),
+                description:
+                    'Préparer ou suivre un diagnostic sur scénario défectueux.',
+                onTap: () =>
+                    Navigator.of(dialogContext).pop('Recherche de dérangement'),
               ),
               const SizedBox(height: ElectroSimSpacing.xs),
               _DashboardDestination(
                 key: const Key('dashboard-supervision'),
                 icon: Icons.monitor_heart_outlined,
                 title: 'Supervision',
-                description: 'Consulter la progression et les résultats de la session.',
+                description:
+                    'Consulter la progression et les résultats de la session.',
                 onTap: () => Navigator.of(dialogContext).pop('Supervision'),
               ),
             ],
@@ -811,7 +846,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         widget.persistenceController;
     if (persistence == null) return;
     try {
-      final restored = await persistence.openLatest(tpController: _tpController);
+      final restored = await persistence.openLatest(
+        tpController: _tpController,
+      );
       if (!mounted) return;
       if (restored == null) {
         _setStatus('Aucune sauvegarde locale disponible.');
@@ -846,9 +883,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _lanHost = host;
       _lanHostInfo = info;
       if (mounted) {
-        _setStatus(
-          'Partage réseau actif — code ${info.sessionCode}',
-        );
+        _setStatus('Partage réseau actif — code ${info.sessionCode}');
       }
       return info;
     } on Object {
@@ -901,8 +936,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         controller: _tpController,
         role: widget.role,
         initialLanHostInfo: _lanHostInfo,
-        onEnableLanSharing:
-            widget.role == F9UserRole.teacher ? _enableLanSharing : null,
+        onEnableLanSharing: widget.role == F9UserRole.teacher
+            ? _enableLanSharing
+            : null,
         onStudentStarted: (TpSession session) {
           setState(() {
             _circuit = session.studentCircuit;
@@ -945,7 +981,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Future<void> _requestElectricalModeChange(ElectricalMode mode) async {
     if (mode == _circuit.mode || _studentTpReadOnly) return;
 
-    final bool hasContent = _circuit.components.isNotEmpty ||
+    final bool hasContent =
+        _circuit.components.isNotEmpty ||
         _circuit.sources.isNotEmpty ||
         _circuit.connections.isNotEmpty;
     if (hasContent) {
@@ -1009,42 +1046,57 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Map<String, Object?> _defaultSettingsForMode(ElectricalMode mode) =>
       switch (mode) {
         ElectricalMode.dc => const <String, Object?>{},
-        ElectricalMode.ac1 || ElectricalMode.ac3 =>
-          const <String, Object?>{'frequencyHz': 50.0},
+        ElectricalMode.ac1 ||
+        ElectricalMode.ac3 => const <String, Object?>{'frequencyHz': 50.0},
         ElectricalMode.pv => const <String, Object?>{
-            'irradianceWm2': 1000.0,
-            'cellTemperatureC': 25.0,
-            'shadingPct': 0.0,
-          },
+          'irradianceWm2': 1000.0,
+          'cellTemperatureC': 25.0,
+          'shadingPct': 0.0,
+        },
       };
 
   String _electricalModeLabel(ElectricalMode mode) => switch (mode) {
-        ElectricalMode.dc => 'CC',
-        ElectricalMode.ac1 => 'AC 1φ',
-        ElectricalMode.ac3 => 'AC 3φ',
-        ElectricalMode.pv => 'PV',
-      };
+    ElectricalMode.dc => 'CC',
+    ElectricalMode.ac1 => 'AC 1φ',
+    ElectricalMode.ac3 => 'AC 3φ',
+    ElectricalMode.pv => 'PV',
+  };
 
   void _quickAddFromPalette(F9PaletteDefinition definition) {
-    final RenderObject? renderObject = _canvasDropKey.currentContext?.findRenderObject();
-    final Size size = renderObject is RenderBox ? renderObject.size : const Size(800, 520);
+    final RenderObject? renderObject = _canvasDropKey.currentContext
+        ?.findRenderObject();
+    final Size size = renderObject is RenderBox
+        ? renderObject.size
+        : const Size(800, 520);
     final Offset topLeft = _viewport.screenToWorld(Offset.zero);
-    final Offset bottomRight = _viewport.screenToWorld(Offset(size.width, size.height));
+    final Offset bottomRight = _viewport.screenToWorld(
+      Offset(size.width, size.height),
+    );
     final Rect visibleWorldRect = Rect.fromPoints(topLeft, bottomRight);
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(_circuit, _layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      _circuit,
+      _layout,
+    );
     final List<List<Offset>> polylines = <List<Offset>>[];
     for (final Connection connection in _circuit.connections) {
-      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null) {
         continue;
       }
-      polylines.add(<Offset>[start, ..._layout.routeFor(connection.id.value), end]);
+      polylines.add(<Offset>[
+        start,
+        ..._layout.routeFor(connection.id.value),
+        end,
+      ]);
     }
     final Size elementSize =
         F18ReferenceComponentVisuals.supports(definition.renderedModelType)
-            ? F18ReferenceComponentMetrics.boardSizeFor(definition.renderedModelType)
-            : _layout.defaultElementSize;
+        ? F18ReferenceComponentMetrics.boardSizeFor(
+            definition.renderedModelType,
+          )
+        : _layout.defaultElementSize;
     Offset? position = F9AutoPlacement.findPosition(
       visibleWorldRect: visibleWorldRect,
       elementSize: elementSize,
@@ -1092,11 +1144,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return '$keyName-$serial';
   }
 
-  void _addPaletteDefinition(F9PaletteDefinition definition, Offset worldPosition) {
+  void _addPaletteDefinition(
+    F9PaletteDefinition definition,
+    Offset worldPosition,
+  ) {
     if (_blockStudentTpMutation()) return;
     if (definition.kind == F9PaletteElementKind.component) {
-      final ComponentModelContract? contract =
-          CoreComponentModelContracts.registry.resolve(definition.modelType);
+      final ComponentModelContract? contract = CoreComponentModelContracts
+          .registry
+          .resolve(definition.modelType);
       if (contract != null && !contract.supportsMode(_circuit.mode)) {
         _setStatus(
           '${definition.title} n’est pas compatible avec le mode '
@@ -1106,8 +1162,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
     }
     final String elementId = _allocateElementId(definition.keyName);
-    final List<Terminal> terminals = _buildPaletteTerminals(definition, elementId);
-    final List<ComponentInstance> components = <ComponentInstance>[..._circuit.components];
+    final List<Terminal> terminals = _buildPaletteTerminals(
+      definition,
+      elementId,
+    );
+    final List<ComponentInstance> components = <ComponentInstance>[
+      ..._circuit.components,
+    ];
     final List<SourceInstance> sources = <SourceInstance>[..._circuit.sources];
 
     if (definition.kind == F9PaletteElementKind.source) {
@@ -1140,9 +1201,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (definition.displayLabel != null)
           '_displayLabel': definition.displayLabel!,
       };
-      final bool contactorAux = definition.modelType == 'contactor_aux_no' ||
+      final bool contactorAux =
+          definition.modelType == 'contactor_aux_no' ||
           definition.modelType == 'contactor_aux_nc';
-      final bool relayAux = definition.modelType == 'relay_contact_no' ||
+      final bool relayAux =
+          definition.modelType == 'relay_contact_no' ||
           definition.modelType == 'relay_contact_nc';
       if (contactorAux || relayAux) {
         final List<ComponentInstance> coils = components
@@ -1150,7 +1213,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
               (ComponentInstance item) => relayAux
                   ? item.modelType == 'relay_coil'
                   : item.modelType == 'contactor_ac1' ||
-                      item.modelType == 'contactor_3p',
+                        item.modelType == 'contactor_3p',
             )
             .toList(growable: false);
         ComponentInstance? linked;
@@ -1166,8 +1229,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (linked != null) {
           parameters = <String, Object?>{
             ...parameters,
-            relayAux ? 'linkedRelayId' : 'linkedContactorId':
-                linked.id.value,
+            relayAux ? 'linkedRelayId' : 'linkedContactorId': linked.id.value,
           };
         }
       }
@@ -1197,14 +1259,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     setState(() {
       _circuit = nextCircuit;
-      final CircuitVisualLayout moved =
-          _layout.moveElement(elementId, worldPosition);
-      final Map<String, Size> sizes = <String, Size>{
-        ...moved.elementSizes,
-      };
+      final CircuitVisualLayout moved = _layout.moveElement(
+        elementId,
+        worldPosition,
+      );
+      final Map<String, Size> sizes = <String, Size>{...moved.elementSizes};
       if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
-        sizes[elementId] =
-            F18ReferenceComponentMetrics.boardSizeFor(definition.renderedModelType);
+        sizes[elementId] = F18ReferenceComponentMetrics.boardSizeFor(
+          definition.renderedModelType,
+        );
       }
       _layout = _routeWithG2A(
         _circuit,
@@ -1286,7 +1349,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return PhaseTag.none;
   }
 
-  TerminalRole _roleForTerminalLabel(String label, {required TerminalRole fallback}) {
+  TerminalRole _roleForTerminalLabel(
+    String label, {
+    required TerminalRole fallback,
+  }) {
     if (label == '+') {
       return TerminalRole.positive;
     }
@@ -1302,30 +1368,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return fallback;
   }
 
-  Map<String, Object?> _defaultParametersFor(String keyName) => switch (keyName) {
-    'lamp' => const <String, Object?>{'resistanceOhm': 24.0},
-    'resistor' => const <String, Object?>{'resistanceOhm': 100.0},
-    'buzzer' => const <String, Object?>{'resistanceOhm': 48.0},
-    'fan-dc' => const <String, Object?>{'resistanceOhm': 12.0},
-    'motor-dc' => const <String, Object?>{'resistanceOhm': 8.0},
-    'relay-coil' => const <String, Object?>{'resistanceOhm': 120.0},
-    'breaker' => const <String, Object?>{
-      ProtectionRating.ratedCurrentKey: 10.0,
-    },
-    'fuse' => const <String, Object?>{
-      ProtectionRating.ratedCurrentKey: 10.0,
-    },
-    _ => const <String, Object?>{},
-  };
+  Map<String, Object?> _defaultParametersFor(String keyName) =>
+      switch (keyName) {
+        'lamp' => const <String, Object?>{'resistanceOhm': 24.0},
+        'resistor' => const <String, Object?>{'resistanceOhm': 100.0},
+        'buzzer' => const <String, Object?>{'resistanceOhm': 48.0},
+        'fan-dc' => const <String, Object?>{'resistanceOhm': 12.0},
+        'motor-dc' => const <String, Object?>{'resistanceOhm': 8.0},
+        'relay-coil' => const <String, Object?>{'resistanceOhm': 120.0},
+        'breaker' => const <String, Object?>{
+          ProtectionRating.ratedCurrentKey: 10.0,
+        },
+        'fuse' => const <String, Object?>{
+          ProtectionRating.ratedCurrentKey: 10.0,
+        },
+        _ => const <String, Object?>{},
+      };
 
-  Map<String, Object?> _defaultControlStateFor(String keyName) => switch (keyName) {
-    'switch-no' => const <String, Object?>{'closed': false},
-    'push-button-no' => const <String, Object?>{'pressed': false},
-    'push-button-nc' => const <String, Object?>{'pressed': false},
-    'breaker' => const <String, Object?>{'closed': true, 'tripped': false},
-    'fuse' => const <String, Object?>{'closed': true, 'tripped': false},
-    _ => const <String, Object?>{},
-  };
+  Map<String, Object?> _defaultControlStateFor(String keyName) =>
+      switch (keyName) {
+        'switch-no' => const <String, Object?>{'closed': false},
+        'push-button-no' => const <String, Object?>{'pressed': false},
+        'push-button-nc' => const <String, Object?>{'pressed': false},
+        'breaker' => const <String, Object?>{'closed': true, 'tripped': false},
+        'fuse' => const <String, Object?>{'closed': true, 'tripped': false},
+        _ => const <String, Object?>{},
+      };
 
   CanvasHitResult _f9CanvasHit(Offset localPosition) => _hitTest.hitTest(
     worldPoint: _viewport.screenToWorld(localPosition),
@@ -1363,7 +1431,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (pending == null) {
           _wiringPendingTerminal = terminal;
           _wiringHoverTerminal = terminal;
-          _status = 'Câblage : borne ${terminal.value} sélectionnée. Choisissez une cible.';
+          _status =
+              'Câblage : borne ${terminal.value} sélectionnée. Choisissez une cible.';
         } else {
           _wiringPendingTerminal = null;
           _wiringHoverTerminal = null;
@@ -1373,7 +1442,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    if (hit.kind == CanvasHitKind.component || hit.kind == CanvasHitKind.source) {
+    if (hit.kind == CanvasHitKind.component ||
+        hit.kind == CanvasHitKind.source) {
       final String id = hit.elementId!;
       final Offset? current = _layout.positionOf(id);
       if (current == null) {
@@ -1428,16 +1498,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (draggingId != null && grabDelta != null) {
       final Offset world = _viewport.screenToWorld(event.localPosition);
       final Offset nextPosition = world + grabDelta;
-      _commitElementMoveIfSafe(
-        draggingId,
-        nextPosition,
-        moving: true,
-      );
+      _commitElementMoveIfSafe(draggingId, nextPosition, moving: true);
       return;
     }
 
     if (_backgroundPanActive && previous != null) {
-      final Offset proposed = _viewport.translation + (event.localPosition - previous);
+      final Offset proposed =
+          _viewport.translation + (event.localPosition - previous);
       _setBoundedViewportTranslation(proposed);
       return;
     }
@@ -1534,8 +1601,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
 
     if (modelType == 'push_button_nc') {
-      final Offset centerLocal =
-          Offset(baseSize.width * .5, baseSize.height * (88 / 180));
+      final Offset centerLocal = Offset(
+        baseSize.width * .5,
+        baseSize.height * (88 / 180),
+      );
       final double radius =
           math.min(baseSize.width, baseSize.height) * (39 / 180);
       if ((local - centerLocal).distance <= radius) {
@@ -1546,8 +1615,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _handleDirectControlTap(Offset screenPosition) {
-    final ({String id, String modelType})? target =
-        _directControlAt(screenPosition);
+    final ({String id, String modelType})? target = _directControlAt(
+      screenPosition,
+    );
     if (target == null) {
       _resetDirectControlTapTracking();
       return;
@@ -1555,10 +1625,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     final DateTime now = DateTime.now();
     final bool sameTarget = _lastDirectControlTapElementId == target.id;
-    final bool withinTime = _lastDirectControlTapTime != null &&
+    final bool withinTime =
+        _lastDirectControlTapTime != null &&
         now.difference(_lastDirectControlTapTime!) <=
             _directControlDoubleTapWindow;
-    final bool withinDistance = _lastDirectControlTapLocal != null &&
+    final bool withinDistance =
+        _lastDirectControlTapLocal != null &&
         (screenPosition - _lastDirectControlTapLocal!).distance <=
             _directControlDoubleTapDistance;
 
@@ -1617,26 +1689,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _syncStudentTpCircuit();
       }
 
-      _momentaryReleaseTimers[elementId] =
-          Timer(const Duration(milliseconds: 260), () {
-        if (!mounted) return;
-        final CircuitState released = F9ElementEditor.setPushButtonPressed(
-          _circuit,
-          elementId,
-          pressed: false,
-        );
-        if (identical(released, _circuit)) return;
-        setState(() {
-          _circuit = released;
-          _status = 'Commande directe : $elementId — relâché';
-        });
-        _simulation.updateCircuit(_circuit);
-        _syncStudentTpCircuit();
-      });
+      _momentaryReleaseTimers[elementId] = Timer(
+        const Duration(milliseconds: 260),
+        () {
+          if (!mounted) return;
+          final CircuitState released = F9ElementEditor.setPushButtonPressed(
+            _circuit,
+            elementId,
+            pressed: false,
+          );
+          if (identical(released, _circuit)) return;
+          setState(() {
+            _circuit = released;
+            _status = 'Commande directe : $elementId — relâché';
+          });
+          _simulation.updateCircuit(_circuit);
+          _syncStudentTpCircuit();
+        },
+      );
       return;
     }
 
-    final bool isProtectionReset = type == 'breaker_dc' ||
+    final bool isProtectionReset =
+        type == 'breaker_dc' ||
         type == 'breaker_ac1' ||
         type == 'breaker' ||
         type == 'breaker_3p' ||
@@ -1665,18 +1740,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitState next =
-        F9ElementEditor.togglePrimaryState(_circuit, elementId);
+    final CircuitState next = F9ElementEditor.togglePrimaryState(
+      _circuit,
+      elementId,
+    );
     if (identical(next, _circuit)) {
       _setStatus('Commande directe indisponible pour $elementId');
       return;
     }
-    final F9ElementDetails? details =
-        F9ElementEditor.describe(next, elementId);
+    final F9ElementDetails? details = F9ElementEditor.describe(next, elementId);
     setState(() {
       _circuit = next;
       _selected = elementId;
-      _status = 'Commande directe : $elementId — ${details?.stateLabel ?? 'mis à jour'}';
+      _status =
+          'Commande directe : $elementId — ${details?.stateLabel ?? 'mis à jour'}';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
@@ -1703,7 +1780,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
 
     if (event.localPanDelta != Offset.zero) {
-      _setBoundedViewportTranslation(_viewport.translation + event.localPanDelta);
+      _setBoundedViewportTranslation(
+        _viewport.translation + event.localPanDelta,
+      );
     }
 
     final double cumulativeScale = event.scale;
@@ -1723,7 +1802,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _clampCurrentViewport();
   }
 
-  void _onCanvasPointerHover(PointerHoverEvent event) => _updateWiringHover(event.localPosition);
+  void _onCanvasPointerHover(PointerHoverEvent event) =>
+      _updateWiringHover(event.localPosition);
 
   void _setBoundedViewportTranslation(Offset proposed) {
     final Size size = _canvasViewportSize();
@@ -1745,8 +1825,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (size.isEmpty) {
       return;
     }
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(_circuit, _layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      _circuit,
+      _layout,
+    );
     if (geometry.elementRects.isEmpty) {
       _viewport.reset(scale: 1, translation: const Offset(40, 40));
       return;
@@ -1768,10 +1850,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ..._layout.routeFor(connection.id.value),
         end,
       ]) {
-        bounds = bounds.expandToInclude(Rect.fromCircle(
-          center: point,
-          radius: 1,
-        ));
+        bounds = bounds.expandToInclude(
+          Rect.fromCircle(center: point, radius: 1),
+        );
       }
     }
 
@@ -1790,7 +1871,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   Size _canvasViewportSize() {
-    final RenderObject? renderObject = _canvasDropKey.currentContext?.findRenderObject();
+    final RenderObject? renderObject = _canvasDropKey.currentContext
+        ?.findRenderObject();
     return renderObject is RenderBox ? renderObject.size : const Size(800, 520);
   }
 
@@ -1799,7 +1881,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
     final CanvasHitResult hit = _f9CanvasHit(localPosition);
-    final TerminalId? next = hit.kind == CanvasHitKind.terminal ? hit.terminalId : null;
+    final TerminalId? next = hit.kind == CanvasHitKind.terminal
+        ? hit.terminalId
+        : null;
     if (next == _wiringHoverTerminal) {
       return;
     }
@@ -1810,8 +1894,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _handleConnectionRequested(TerminalId from, TerminalId to) {
     if (_blockStudentTpMutation()) return;
-    final F9WiringDecision decision =
-        F9WiringPolicy.evaluateAndBuild(_circuit, from, to);
+    final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
+      _circuit,
+      from,
+      to,
+    );
     final Connection? connection = decision.connection;
     if (!decision.accepted || connection == null) {
       setState(() {
@@ -1823,10 +1910,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitState nextCircuit =
-        F9WiringPolicy.append(_circuit, connection);
-    final CircuitVisualLayout nextLayout =
-        _routeWithG2A(nextCircuit, _layout);
+    final CircuitState nextCircuit = F9WiringPolicy.append(
+      _circuit,
+      connection,
+    );
+    final CircuitVisualLayout nextLayout = _routeWithG2A(nextCircuit, _layout);
     if (!F18WorkspaceWireSafety.isCrossingFree(
       circuit: nextCircuit,
       layout: nextLayout,
@@ -1898,7 +1986,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message), duration: const Duration(seconds: 2)));
+      ..showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
   }
 
   Future<void> _replaceSelectedElement() async {
@@ -1907,7 +1997,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (selected == null) {
       return;
     }
-    final F9ElementDetails? details = F9ElementEditor.describe(_circuit, selected);
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      _circuit,
+      selected,
+    );
     if (details == null || details.kind != F9ElementKind.component) {
       _setStatus('Remplacement indisponible pour cet élément.');
       return;
@@ -1923,33 +2016,45 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
               item.terminalCount == original.terminals.length,
         )
         .toList(growable: false);
-    final F9PaletteDefinition? replacement = await showDialog<F9PaletteDefinition>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Remplacer le composant'),
-        content: SizedBox(
-          width: 420,
-          height: 360,
-          child: ListView(
-            children: candidates.map((F9PaletteDefinition item) => ListTile(
-              key: Key('replace-${item.keyName}'),
-              leading: F18ComponentArchetypeGlyph(modelType: item.modelType),
-              title: Text(item.title),
-              subtitle: Text(item.subtitle ?? item.category),
-              onTap: () => Navigator.of(dialogContext).pop(item),
-            )).toList(growable: false),
+    final F9PaletteDefinition? replacement =
+        await showDialog<F9PaletteDefinition>(
+          context: context,
+          builder: (BuildContext dialogContext) => AlertDialog(
+            title: const Text('Remplacer le composant'),
+            content: SizedBox(
+              width: 420,
+              height: 360,
+              child: ListView(
+                children: candidates
+                    .map(
+                      (F9PaletteDefinition item) => ListTile(
+                        key: Key('replace-${item.keyName}'),
+                        leading: F18ComponentArchetypeGlyph(
+                          modelType: item.modelType,
+                        ),
+                        title: Text(item.title),
+                        subtitle: Text(item.subtitle ?? item.category),
+                        onTap: () => Navigator.of(dialogContext).pop(item),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Annuler'),
+              ),
+            ],
           ),
-        ),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Annuler')),
-        ],
-      ),
-    );
+        );
     if (!mounted || replacement == null) {
       return;
     }
-    final List<Terminal> generatedTerminals =
-        _buildPaletteTerminals(replacement, selected);
+    final List<Terminal> generatedTerminals = _buildPaletteTerminals(
+      replacement,
+      selected,
+    );
     final List<Terminal> replacementTerminals = <Terminal>[
       for (var index = 0; index < original.terminals.length; index++)
         Terminal(
@@ -1982,12 +2087,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     setState(() {
       _circuit = next;
-      final Map<String, Size> sizes = <String, Size>{
-        ..._layout.elementSizes,
-      };
+      final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes};
       if (F18ReferenceComponentVisuals.supports(replacement.modelType)) {
-        sizes[selected] =
-            F18ReferenceComponentMetrics.boardSizeFor(replacement.modelType);
+        sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
+          replacement.modelType,
+        );
       } else {
         sizes.remove(selected);
       }
@@ -2014,7 +2118,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (selected == null) {
       return;
     }
-    final CircuitState next = F9ElementEditor.togglePrimaryState(_circuit, selected);
+    final CircuitState next = F9ElementEditor.togglePrimaryState(
+      _circuit,
+      selected,
+    );
     if (identical(next, _circuit)) {
       _setStatus('Aucun état commutable pour $selected');
       return;
@@ -2022,7 +2129,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final F9ElementDetails? details = F9ElementEditor.describe(next, selected);
     setState(() {
       _circuit = next;
-      _status = 'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
+      _status =
+          'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
@@ -2072,15 +2180,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Suppression impossible : aucune sélection.');
       return;
     }
-    final F9ElementDetails? details = F9ElementEditor.describe(_circuit, selected);
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      _circuit,
+      selected,
+    );
     if (details == null) {
       _setStatus('Suppression impossible : sélection introuvable.');
       return;
     }
 
     if (details.kind == F9ElementKind.connection) {
-      final CircuitState next =
-          F9ElementEditor.deleteConnection(_circuit, selected);
+      final CircuitState next = F9ElementEditor.deleteConnection(
+        _circuit,
+        selected,
+      );
       if (identical(next, _circuit)) {
         _setStatus('Suppression impossible : fil introuvable.');
         return;
@@ -2111,12 +2224,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Set<TerminalId> removedTerminalIds = <TerminalId>{};
     for (final ComponentInstance component in _circuit.components) {
       if (component.id.value == selected) {
-        removedTerminalIds.addAll(component.terminals.map((Terminal item) => item.id));
+        removedTerminalIds.addAll(
+          component.terminals.map((Terminal item) => item.id),
+        );
       }
     }
     for (final SourceInstance source in _circuit.sources) {
       if (source.id.value == selected) {
-        removedTerminalIds.addAll(source.terminals.map((Terminal item) => item.id));
+        removedTerminalIds.addAll(
+          source.terminals.map((Terminal item) => item.id),
+        );
       }
     }
     final Set<String> removedConnectionIds = _circuit.connections
@@ -2128,17 +2245,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         .map((Connection connection) => connection.id.value)
         .toSet();
     final CircuitState next = F9ElementEditor.deleteElement(_circuit, selected);
-    final Map<String, Offset> positions = <String, Offset>{..._layout.elementPositions}..remove(selected);
+    final Map<String, Offset> positions = <String, Offset>{
+      ..._layout.elementPositions,
+    }..remove(selected);
     final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes}
       ..remove(selected);
     final Map<String, int> rotations = <String, int>{
       ..._layout.elementQuarterTurns,
     }..remove(selected);
-    final Map<String, List<Offset>> routes = <String, List<Offset>>{
-      ..._layout.wireRoutes,
-    }..removeWhere(
-        (String key, List<Offset> value) => removedConnectionIds.contains(key),
-      );
+    final Map<String, List<Offset>> routes =
+        <String, List<Offset>>{..._layout.wireRoutes}..removeWhere(
+          (String key, List<Offset> value) =>
+              removedConnectionIds.contains(key),
+        );
     setState(() {
       _circuit = next;
       _layout = _routeWithG2A(
@@ -2189,10 +2308,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final int column = index % 3;
       final int row = index ~/ 3;
       final (String id, String modelType) = elements[index];
-      positions[id] = Offset(
-        144 + (column * 240.0),
-        192 + (row * 192.0),
-      );
+      positions[id] = Offset(144 + (column * 240.0), 192 + (row * 192.0));
       if (F18ReferenceComponentVisuals.supports(modelType)) {
         sizes[id] = F18ReferenceComponentMetrics.boardSizeFor(modelType);
       }
@@ -2202,10 +2318,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       elementPositions: positions,
       elementSizes: sizes,
     );
-    final CircuitVisualLayout arranged = _arrangeSimpleDcCircuit(
-      circuit,
-      base,
-    );
+    final CircuitVisualLayout arranged = _arrangeSimpleDcCircuit(circuit, base);
     return _routeWithG2A(circuit, arranged);
   }
 
@@ -2331,8 +2444,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     // insert one Manhattan corner so the public wire contract stays strictly
     // orthogonal. The normal G2A route remains authoritative whenever it
     // produced an explicit route.
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, routed);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      routed,
+    );
     final Map<String, List<Offset>> routes = <String, List<Offset>>{
       ...routed.wireRoutes,
     };
@@ -2344,15 +2459,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
-      final Offset? end =
-          geometry.terminalPositions[connection.toTerminalId];
-      if (start == null || end == null || start.dx == end.dx || start.dy == end.dy) {
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
+      if (start == null ||
+          end == null ||
+          start.dx == end.dx ||
+          start.dy == end.dy) {
         continue;
       }
 
-      routes[connection.id.value] = <Offset>[
-        Offset(end.dx, start.dy),
-      ];
+      routes[connection.id.value] = <Offset>[Offset(end.dx, start.dy)];
       changed = true;
     }
 
@@ -2483,19 +2598,18 @@ class _WorkspaceTopBar extends StatelessWidget {
                           entryLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         if (!compact)
                           Text(
                             workspace,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: ElectroSimColors.textSecondary,
-                                    ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: ElectroSimColors.textSecondary,
+                                ),
                           ),
                       ],
                     ),
@@ -2507,23 +2621,23 @@ class _WorkspaceTopBar extends StatelessWidget {
                     onSelected: onSelectElectricalMode,
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<ElectricalMode>>[
-                      const PopupMenuItem<ElectricalMode>(
-                        value: ElectricalMode.dc,
-                        child: Text('CC — courant continu'),
-                      ),
-                      const PopupMenuItem<ElectricalMode>(
-                        value: ElectricalMode.ac1,
-                        child: Text('AC 1φ — monophasé'),
-                      ),
-                      const PopupMenuItem<ElectricalMode>(
-                        value: ElectricalMode.ac3,
-                        child: Text('AC 3φ — triphasé'),
-                      ),
-                      const PopupMenuItem<ElectricalMode>(
-                        value: ElectricalMode.pv,
-                        child: Text('PV — photovoltaïque'),
-                      ),
-                    ],
+                          const PopupMenuItem<ElectricalMode>(
+                            value: ElectricalMode.dc,
+                            child: Text('CC — courant continu'),
+                          ),
+                          const PopupMenuItem<ElectricalMode>(
+                            value: ElectricalMode.ac1,
+                            child: Text('AC 1φ — monophasé'),
+                          ),
+                          const PopupMenuItem<ElectricalMode>(
+                            value: ElectricalMode.ac3,
+                            child: Text('AC 3φ — triphasé'),
+                          ),
+                          const PopupMenuItem<ElectricalMode>(
+                            value: ElectricalMode.pv,
+                            child: Text('PV — photovoltaïque'),
+                          ),
+                        ],
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: ElectroSimSpacing.xs,
@@ -2535,15 +2649,12 @@ class _WorkspaceTopBar extends StatelessWidget {
                           const Icon(Icons.bolt_outlined, size: 18),
                           if (!compact) ...<Widget>[
                             const SizedBox(width: 4),
-                            Text(
-                              switch (electricalMode) {
-                                ElectricalMode.dc => 'CC',
-                                ElectricalMode.ac1 => 'AC 1φ',
-                                ElectricalMode.ac3 => 'AC 3φ',
-                                ElectricalMode.pv => 'PV',
-                              },
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
+                            Text(switch (electricalMode) {
+                              ElectricalMode.dc => 'CC',
+                              ElectricalMode.ac1 => 'AC 1φ',
+                              ElectricalMode.ac3 => 'AC 3φ',
+                              ElectricalMode.pv => 'PV',
+                            }, style: Theme.of(context).textTheme.labelMedium),
                           ],
                         ],
                       ),
@@ -2605,45 +2716,45 @@ class _WorkspaceTopBar extends StatelessWidget {
                     },
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<_WorkspaceSecondaryAction>>[
-                      if (onSave != null)
-                        const PopupMenuItem<_WorkspaceSecondaryAction>(
-                          key: Key('workspace-save-action'),
-                          value: _WorkspaceSecondaryAction.save,
-                          child: ListTile(
-                            leading: Icon(Icons.save_outlined),
-                            title: Text('Sauvegarder'),
-                            contentPadding: EdgeInsets.zero,
+                          if (onSave != null)
+                            const PopupMenuItem<_WorkspaceSecondaryAction>(
+                              key: Key('workspace-save-action'),
+                              value: _WorkspaceSecondaryAction.save,
+                              child: ListTile(
+                                leading: Icon(Icons.save_outlined),
+                                title: Text('Sauvegarder'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          if (onOpen != null)
+                            const PopupMenuItem<_WorkspaceSecondaryAction>(
+                              key: Key('workspace-open-action'),
+                              value: _WorkspaceSecondaryAction.open,
+                              child: ListTile(
+                                leading: Icon(Icons.restore_outlined),
+                                title: Text('Reprendre'),
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          const PopupMenuItem<_WorkspaceSecondaryAction>(
+                            key: Key('workspace-reset-simulation-action'),
+                            value: _WorkspaceSecondaryAction.resetSimulation,
+                            child: ListTile(
+                              leading: Icon(Icons.restart_alt),
+                              title: Text('Réinitialiser la simulation'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      if (onOpen != null)
-                        const PopupMenuItem<_WorkspaceSecondaryAction>(
-                          key: Key('workspace-open-action'),
-                          value: _WorkspaceSecondaryAction.open,
-                          child: ListTile(
-                            leading: Icon(Icons.restore_outlined),
-                            title: Text('Reprendre'),
-                            contentPadding: EdgeInsets.zero,
+                          const PopupMenuItem<_WorkspaceSecondaryAction>(
+                            key: Key('workspace-recenter-action'),
+                            value: _WorkspaceSecondaryAction.recenter,
+                            child: ListTile(
+                              leading: Icon(Icons.center_focus_strong),
+                              title: Text('Recentrer la platine'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                        ),
-                      const PopupMenuItem<_WorkspaceSecondaryAction>(
-                        key: Key('workspace-reset-simulation-action'),
-                        value: _WorkspaceSecondaryAction.resetSimulation,
-                        child: ListTile(
-                          leading: Icon(Icons.restart_alt),
-                          title: Text('Réinitialiser la simulation'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const PopupMenuItem<_WorkspaceSecondaryAction>(
-                        key: Key('workspace-recenter-action'),
-                        value: _WorkspaceSecondaryAction.recenter,
-                        child: ListTile(
-                          leading: Icon(Icons.center_focus_strong),
-                          title: Text('Recentrer la platine'),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
+                        ],
                   ),
                 ],
               ),
@@ -2707,17 +2818,21 @@ class _StatusBar extends StatelessWidget {
       color: ElectroSimColors.surfaceElevated,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-          final bool compact = constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
-          final int elementCount = circuit.components.length + circuit.sources.length;
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          final int elementCount =
+              circuit.components.length + circuit.sources.length;
           final String simulationLabel =
               '${simulationRunning ? '▶' : 'Ⅱ'} t=${(simulatedTime.inMilliseconds / 1000).toStringAsFixed(1)} s';
           final String countLabel = compact
               ? '$elementCount élém. · $simulationLabel'
               : '$elementCount élément${elementCount == 1 ? '' : 's'} · '
-                  '${circuit.sources.length} source${circuit.sources.length == 1 ? '' : 's'} · '
-                  '${circuit.mode.name.toUpperCase()} · $simulationLabel · Révision ${circuit.revision}';
+                    '${circuit.sources.length} source${circuit.sources.length == 1 ? '' : 's'} · '
+                    '${circuit.mode.name.toUpperCase()} · $simulationLabel · Révision ${circuit.revision}';
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.sm),
+            padding: const EdgeInsets.symmetric(
+              horizontal: ElectroSimSpacing.sm,
+            ),
             child: Row(
               children: <Widget>[
                 const Icon(Icons.info_outline, size: 18),

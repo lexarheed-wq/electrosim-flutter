@@ -79,7 +79,11 @@ final class MeasurementEngine {
             break;
           }
         }
-        return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
+        return _acCurrentResult(
+          request,
+          branch?.current?.magnitude,
+          branch != null,
+        );
       case MeasurementKind.frequency:
         return _frequencyResult(request, simulation.frequencyHz);
       case MeasurementKind.activePower:
@@ -134,7 +138,11 @@ final class MeasurementEngine {
             break;
           }
         }
-        return _acCurrentResult(request, branch?.current?.magnitude, branch != null);
+        return _acCurrentResult(
+          request,
+          branch?.current?.magnitude,
+          branch != null,
+        );
       case MeasurementKind.frequency:
         return _frequencyResult(request, simulation.frequencyHz);
       case MeasurementKind.activePower:
@@ -183,11 +191,9 @@ final class MeasurementEngine {
         evidenceIds: <String>['branch:' + branchId],
       );
     }
-    return _powerQuantityResult(
-      request.kind,
-      branch.complexPower!,
-      <String>['branch:' + branchId],
-    );
+    return _powerQuantityResult(request.kind, branch.complexPower!, <String>[
+      'branch:' + branchId,
+    ]);
   }
 
   MeasurementResult _ac3PowerResult(
@@ -218,8 +224,11 @@ final class MeasurementEngine {
       power = branch.complexPower!;
       evidence.add('branch:' + branchId);
     } else {
-      for (final PhaseTag phase
-          in <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3]) {
+      for (final PhaseTag phase in <PhaseTag>[
+        PhaseTag.l1,
+        PhaseTag.l2,
+        PhaseTag.l3,
+      ]) {
         final AcComplex? voltage = simulation.phaseVoltage(phase);
         final AcComplex current = simulation.lineCurrent(phase);
         if (voltage == null) continue;
@@ -298,7 +307,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.wrongElectricalMode,
-        message: 'AC measurement mode does not match CircuitState/TopologyGraph.',
+        message:
+            'AC measurement mode does not match CircuitState/TopologyGraph.',
       );
     }
     if (topology.circuitId != circuit.circuitId ||
@@ -308,14 +318,16 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.identityMismatch,
-        message: 'CircuitState, TopologyGraph and AC solve result must share identity and revision.',
+        message:
+            'CircuitState, TopologyGraph and AC solve result must share identity and revision.',
       );
     }
     if (!solved) {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.simulationNotSolved,
-        message: 'An AC measurement cannot be reported from an unsolved result.',
+        message:
+            'An AC measurement cannot be reported from an unsolved result.',
       );
     }
     return null;
@@ -334,7 +346,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.unknownTerminal,
-        message: 'At least one AC voltage probe terminal is absent from the topology.',
+        message:
+            'At least one AC voltage probe terminal is absent from the topology.',
       );
     }
     final AcComplex? positiveVoltage = nodeVoltages[positiveNode];
@@ -363,7 +376,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.unknownBranch,
-        message: 'AC current measurement branch does not exist in the solved result.',
+        message:
+            'AC current measurement branch does not exist in the solved result.',
       );
     }
     if (currentA == null) {
@@ -407,7 +421,8 @@ final class MeasurementEngine {
     required TopologyGraph topology,
     required DcSolveResult simulation,
   }) {
-    if (circuit.mode != ElectricalMode.dc || topology.mode != ElectricalMode.dc) {
+    if (circuit.mode != ElectricalMode.dc ||
+        topology.mode != ElectricalMode.dc) {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.wrongElectricalMode,
@@ -421,7 +436,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.identityMismatch,
-        message: 'CircuitState, TopologyGraph and DcSolveResult must share identity and revision.',
+        message:
+            'CircuitState, TopologyGraph and DcSolveResult must share identity and revision.',
       );
     }
     if (!simulation.isSolved) {
@@ -447,7 +463,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.unknownTerminal,
-        message: 'At least one voltage probe terminal is absent from the topology.',
+        message:
+            'At least one voltage probe terminal is absent from the topology.',
       );
     }
     final double? positiveVoltage = simulation.nodeVoltages[positiveNode];
@@ -483,7 +500,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.unknownBranch,
-        message: 'Current measurement branch does not exist in the solved result.',
+        message:
+            'Current measurement branch does not exist in the solved result.',
       );
     }
     if (branch.currentA == null) {
@@ -510,7 +528,8 @@ final class MeasurementEngine {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.energizedResistanceMeasurement,
-        message: 'Resistance measurement is permitted only on a de-energized circuit.',
+        message:
+            'Resistance measurement is permitted only on a de-energized circuit.',
       );
     }
     final ComponentId target = request.componentId!;
@@ -528,7 +547,8 @@ final class MeasurementEngine {
         message: 'Resistance target component does not exist.',
       );
     }
-    if (component.modelType != 'resistor' || component.condition != ComponentCondition.normal) {
+    if (component.modelType != 'resistor' ||
+        component.condition != ComponentCondition.normal) {
       return MeasurementResult.invalid(
         kind: request.kind,
         errorCode: MeasurementErrorCode.unsupportedResistanceTarget,
@@ -536,7 +556,9 @@ final class MeasurementEngine {
         evidenceIds: <String>['component:${target.value}'],
       );
     }
-    final double? resistance = _positiveFinite(component.parameters['resistanceOhm']);
+    final double? resistance = _positiveFinite(
+      component.parameters['resistanceOhm'],
+    );
     if (resistance == null) {
       return MeasurementResult.invalid(
         kind: request.kind,

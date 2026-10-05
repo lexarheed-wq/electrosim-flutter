@@ -78,15 +78,14 @@ class _LiveStudentPortalState extends State<_LiveStudentPortal> {
       });
       return;
     }
-    final ElectroSimTpSessionController tp =
-        ElectroSimTpSessionController();
+    final ElectroSimTpSessionController tp = ElectroSimTpSessionController();
     final ElectroSimBrowserSessionBridge bridge =
         ElectroSimBrowserSessionBridge(
-      controller: tp,
-      sessionCode: _sessionCode,
-      displayName: displayName,
-      endpoint: _webSocketEndpoint,
-    );
+          controller: tp,
+          sessionCode: _sessionCode,
+          displayName: displayName,
+          endpoint: _webSocketEndpoint,
+        );
     bridge.addListener(_onBridgeChanged);
     setState(() {
       _tpController = tp;
@@ -131,14 +130,12 @@ class _LiveStudentPortalState extends State<_LiveStudentPortal> {
       return _StudentMessagePage(
         icon: Icons.wifi_off_outlined,
         title: 'Session inaccessible',
-        message: bridge.lastError ??
+        message:
+            bridge.lastError ??
             'Vérifiez que vous êtes connecté au même réseau que le professeur.',
       );
     }
-    return _StudentHubPage(
-      bridge: bridge,
-      controller: tp,
-    );
+    return _StudentHubPage(bridge: bridge, controller: tp);
   }
 
   @override
@@ -244,10 +241,7 @@ class _StudentJoinPage extends StatelessWidget {
 }
 
 class _StudentHubPage extends StatelessWidget {
-  const _StudentHubPage({
-    required this.bridge,
-    required this.controller,
-  });
+  const _StudentHubPage({required this.bridge, required this.controller});
 
   final ElectroSimBrowserSessionBridge bridge;
   final ElectroSimTpSessionController controller;
@@ -258,11 +252,7 @@ class _StudentHubPage extends StatelessWidget {
       return Scaffold(
         key: const Key('student-web-waiting-page'),
         backgroundColor: ElectroSimColors.background,
-        body: const SafeArea(
-          child: Center(
-            child: _WaitingStudentCard(),
-          ),
-        ),
+        body: const SafeArea(child: Center(child: _WaitingStudentCard())),
       );
     }
     final TpLifecycle? tpLifecycle = controller.lifecycle;
@@ -388,10 +378,7 @@ class _StudentActionCard extends StatelessWidget {
             final Widget copy = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: ElectroSimSpacing.xs),
                 Text(description),
               ],
@@ -408,20 +395,13 @@ class _StudentActionCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Icon(
-                        icon,
-                        size: 42,
-                        color: ElectroSimColors.primary,
-                      ),
+                      Icon(icon, size: 42, color: ElectroSimColors.primary),
                       const SizedBox(width: ElectroSimSpacing.md),
                       Expanded(child: copy),
                     ],
                   ),
                   const SizedBox(height: ElectroSimSpacing.md),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: action,
-                  ),
+                  Align(alignment: Alignment.centerRight, child: action),
                 ],
               );
             }
@@ -443,10 +423,7 @@ class _StudentActionCard extends StatelessWidget {
 }
 
 class _StudentSessionGuard extends StatelessWidget {
-  const _StudentSessionGuard({
-    required this.bridge,
-    required this.child,
-  });
+  const _StudentSessionGuard({required this.bridge, required this.child});
 
   final ElectroSimBrowserSessionBridge bridge;
   final Widget child;

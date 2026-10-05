@@ -11,13 +11,12 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('M3B palette/engine parity', () {
-    for (final MapEntry<String, double> entry
-        in const <String, double>{
-          'buzzer': 48.0,
-          'fan_dc': 12.0,
-          'motor_dc': 8.0,
-          'relay_coil': 120.0,
-        }.entries) {
+    for (final MapEntry<String, double> entry in const <String, double>{
+      'buzzer': 48.0,
+      'fan_dc': 12.0,
+      'motor_dc': 8.0,
+      'relay_coil': 120.0,
+    }.entries) {
       test('${entry.key} is a canonical resistive DC branch', () {
         final CircuitState circuit = _componentCircuit(
           modelType: entry.key,
@@ -52,7 +51,10 @@ void main() {
       );
       expect(pressed.status, DcSolveStatus.solved);
       expect(pressed.branch('component:x1').kind, DcBranchKind.idealSwitch);
-      expect(pressed.branch('component:r1').currentA?.abs(), closeTo(2.0, 1e-9));
+      expect(
+        pressed.branch('component:r1').currentA?.abs(),
+        closeTo(2.0, 1e-9),
+      );
       _expectResiduals(pressed);
     });
 
@@ -62,8 +64,9 @@ void main() {
         resistanceOhm: 120.0,
       );
       final TopologyGraph topology = topologyEngine.compile(circuit);
-      final TopologyBranch branch =
-          topology.branchesForComponent(ComponentId('x1')).single;
+      final TopologyBranch branch = topology
+          .branchesForComponent(ComponentId('x1'))
+          .single;
       expect(branch.role, ElectricalBranchRole.controlCoil);
     });
 
@@ -93,9 +96,12 @@ CircuitState _componentCircuit({
   Map<String, Object?> parameters = const <String, Object?>{},
   Map<String, Object?> controlState = const <String, Object?>{},
 }) {
-  final bool switching = modelType == 'push_button_no' || modelType == 'push_button_nc';
+  final bool switching =
+      modelType == 'push_button_no' || modelType == 'push_button_nc';
   return CircuitState(
-    circuitId: CircuitId('m3b-$modelType-${controlState['pressed'] ?? controlState['closed'] ?? 'load'}'),
+    circuitId: CircuitId(
+      'm3b-$modelType-${controlState['pressed'] ?? controlState['closed'] ?? 'load'}',
+    ),
     revision: 0,
     mode: ElectricalMode.dc,
     components: <ComponentInstance>[
@@ -128,10 +134,7 @@ CircuitState _componentCircuit({
       ComponentInstance(
         id: ComponentId('r1'),
         modelType: 'resistor',
-        terminals: <Terminal>[
-          _terminal('r1a', 'A'),
-          _terminal('r1b', 'B'),
-        ],
+        terminals: <Terminal>[_terminal('r1a', 'A'), _terminal('r1b', 'B')],
         parameters: const <String, Object?>{'resistanceOhm': 12.0},
       ),
     ],

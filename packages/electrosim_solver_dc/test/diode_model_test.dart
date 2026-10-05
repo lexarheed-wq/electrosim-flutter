@@ -46,15 +46,16 @@ void main() {
     expect(diode.kind, DcBranchKind.diode);
     expect(diode.voltageV, closeTo(-5.1, 1e-9));
     expect(diode.currentA?.abs(), closeTo(0.0069, 1e-9));
-    expect(result.branch('component:r1').currentA?.abs(), closeTo(0.0069, 1e-9));
+    expect(
+      result.branch('component:r1').currentA?.abs(),
+      closeTo(0.0069, 1e-9),
+    );
   });
 
   test('diode parameters are validated', () {
     final CircuitState circuit = _seriesDiode(
       reverse: false,
-      diodeParameters: const <String, Object?>{
-        'forwardVoltageV': -1.0,
-      },
+      diodeParameters: const <String, Object?>{'forwardVoltageV': -1.0},
     );
     final DcSolveResult result = solve(circuit);
     expect(result.status, DcSolveStatus.invalid);
@@ -118,16 +119,12 @@ CircuitState _seriesDiode({
   );
 }
 
-Connection _w(String id, TerminalId from, TerminalId to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: from,
-      toTerminalId: to,
-    );
+Connection _w(String id, TerminalId from, TerminalId to) =>
+    Connection(id: ConnectionId(id), fromTerminalId: from, toTerminalId: to);
 
 Terminal _t(
   String id,
   String name, {
   TerminalRole role = TerminalRole.generic,
   PhaseTag phase = PhaseTag.none,
-}) =>
-    Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);

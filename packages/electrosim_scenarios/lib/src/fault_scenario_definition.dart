@@ -8,14 +8,16 @@ final class FaultScenarioId {
 
   static String _validate(String raw) {
     final String value = raw.trim();
-    if (value.isEmpty || !RegExp(r'^[A-Z0-9][A-Z0-9_-]{2,63}$').hasMatch(value)) {
+    if (value.isEmpty ||
+        !RegExp(r'^[A-Z0-9][A-Z0-9_-]{2,63}$').hasMatch(value)) {
       throw ArgumentError.value(raw, 'raw', 'Invalid FaultScenarioId.');
     }
     return value;
   }
 
   @override
-  bool operator ==(Object other) => other is FaultScenarioId && other.value == value;
+  bool operator ==(Object other) =>
+      other is FaultScenarioId && other.value == value;
 
   @override
   int get hashCode => value.hashCode;
@@ -29,7 +31,11 @@ enum FaultDifficulty { basic, intermediate, advanced }
 enum RootCauseKind { missingConnection, componentOpen }
 
 final class RootCause {
-  const RootCause({required this.kind, required this.targetId, required this.description});
+  const RootCause({
+    required this.kind,
+    required this.targetId,
+    required this.description,
+  });
 
   final RootCauseKind kind;
   final String targetId;
@@ -63,15 +69,19 @@ final class ExpectedBranchMeasurement {
 enum RepairActionKind { addConnection, normalizeComponent }
 
 final class RepairAction {
-  const RepairAction.addConnection({required this.id, required Connection connection})
-      : kind = RepairActionKind.addConnection,
-        connection = connection,
-        componentId = null;
+  const RepairAction.addConnection({
+    required this.id,
+    required Connection connection,
+  }) : kind = RepairActionKind.addConnection,
+       connection = connection,
+       componentId = null;
 
-  const RepairAction.normalizeComponent({required this.id, required ComponentId componentId})
-      : kind = RepairActionKind.normalizeComponent,
-        connection = null,
-        componentId = componentId;
+  const RepairAction.normalizeComponent({
+    required this.id,
+    required ComponentId componentId,
+  }) : kind = RepairActionKind.normalizeComponent,
+       connection = null,
+       componentId = componentId;
 
   final String id;
   final RepairActionKind kind;
@@ -83,25 +93,35 @@ final class RepairAction {
       case RepairActionKind.addConnection:
         final Connection value = connection!;
         if (circuit.connections.any((Connection item) => item.id == value.id)) {
-          throw StateError('Repair $id would duplicate connection ${value.id.value}.');
+          throw StateError(
+            'Repair $id would duplicate connection ${value.id.value}.',
+          );
         }
-        return _rebuild(circuit, connections: <Connection>[...circuit.connections, value]);
+        return _rebuild(
+          circuit,
+          connections: <Connection>[...circuit.connections, value],
+        );
       case RepairActionKind.normalizeComponent:
         final ComponentId target = componentId!;
         var found = false;
-        final List<ComponentInstance> components = circuit.components.map((ComponentInstance item) {
-          if (item.id != target) return item;
-          found = true;
-          return ComponentInstance(
-            id: item.id,
-            modelType: item.modelType,
-            terminals: item.terminals,
-            parameters: item.parameters,
-            condition: ComponentCondition.normal,
-            controlState: item.controlState,
+        final List<ComponentInstance> components = circuit.components
+            .map((ComponentInstance item) {
+              if (item.id != target) return item;
+              found = true;
+              return ComponentInstance(
+                id: item.id,
+                modelType: item.modelType,
+                terminals: item.terminals,
+                parameters: item.parameters,
+                condition: ComponentCondition.normal,
+                controlState: item.controlState,
+              );
+            })
+            .toList(growable: false);
+        if (!found)
+          throw StateError(
+            'Repair $id references unknown component ${target.value}.',
           );
-        }).toList(growable: false);
-        if (!found) throw StateError('Repair $id references unknown component ${target.value}.');
         return _rebuild(circuit, components: components);
     }
   }
@@ -117,17 +137,16 @@ final class RepairAction {
     CircuitState circuit, {
     List<ComponentInstance>? components,
     List<Connection>? connections,
-  }) =>
-      CircuitState(
-        circuitId: circuit.circuitId,
-        revision: circuit.revision + 1,
-        mode: circuit.mode,
-        components: components ?? circuit.components,
-        connections: connections ?? circuit.connections,
-        sources: circuit.sources,
-        settings: circuit.settings,
-        metadata: circuit.metadata,
-      );
+  }) => CircuitState(
+    circuitId: circuit.circuitId,
+    revision: circuit.revision + 1,
+    mode: circuit.mode,
+    components: components ?? circuit.components,
+    connections: connections ?? circuit.connections,
+    sources: circuit.sources,
+    settings: circuit.settings,
+    metadata: circuit.metadata,
+  );
 }
 
 final class TeacherTruth {
@@ -136,13 +155,20 @@ final class TeacherTruth {
     required List<String> expectedSymptoms,
     required List<ExpectedBranchMeasurement> expectedMeasurements,
     required List<RepairAction> acceptableRepairs,
-  })  : rootCauses = List<RootCause>.unmodifiable(rootCauses),
-        expectedSymptoms = List<String>.unmodifiable(expectedSymptoms),
-        expectedMeasurements = List<ExpectedBranchMeasurement>.unmodifiable(expectedMeasurements),
-        acceptableRepairs = List<RepairAction>.unmodifiable(acceptableRepairs) {
-    if (this.rootCauses.isEmpty) throw ArgumentError('teacherTruth requires at least one root cause.');
-    if (this.expectedSymptoms.isEmpty) throw ArgumentError('teacherTruth requires expected symptoms.');
-    if (this.acceptableRepairs.isEmpty) throw ArgumentError('teacherTruth requires at least one acceptable repair.');
+  }) : rootCauses = List<RootCause>.unmodifiable(rootCauses),
+       expectedSymptoms = List<String>.unmodifiable(expectedSymptoms),
+       expectedMeasurements = List<ExpectedBranchMeasurement>.unmodifiable(
+         expectedMeasurements,
+       ),
+       acceptableRepairs = List<RepairAction>.unmodifiable(acceptableRepairs) {
+    if (this.rootCauses.isEmpty)
+      throw ArgumentError('teacherTruth requires at least one root cause.');
+    if (this.expectedSymptoms.isEmpty)
+      throw ArgumentError('teacherTruth requires expected symptoms.');
+    if (this.acceptableRepairs.isEmpty)
+      throw ArgumentError(
+        'teacherTruth requires at least one acceptable repair.',
+      );
   }
 
   final List<RootCause> rootCauses;
@@ -151,12 +177,16 @@ final class TeacherTruth {
   final List<RepairAction> acceptableRepairs;
 
   Map<String, Object?> toPrivateJson() => <String, Object?>{
-    'rootCauses': rootCauses.map((RootCause item) => item.toPrivateJson()).toList(growable: false),
+    'rootCauses': rootCauses
+        .map((RootCause item) => item.toPrivateJson())
+        .toList(growable: false),
     'expectedSymptoms': expectedSymptoms,
     'expectedMeasurements': expectedMeasurements
         .map((ExpectedBranchMeasurement item) => item.toPrivateJson())
         .toList(growable: false),
-    'acceptableRepairs': acceptableRepairs.map((RepairAction item) => item.toPrivateJson()).toList(growable: false),
+    'acceptableRepairs': acceptableRepairs
+        .map((RepairAction item) => item.toPrivateJson())
+        .toList(growable: false),
   };
 }
 
@@ -183,11 +213,14 @@ final class FaultScenarioDefinition {
     required this.estimatedDurationMinutes,
     required String version,
     this.validationStamp,
-  })  : title = _clean(title, 'title'),
-        studentBrief = _clean(studentBrief, 'studentBrief'),
-        version = _clean(version, 'version') {
+  }) : title = _clean(title, 'title'),
+       studentBrief = _clean(studentBrief, 'studentBrief'),
+       version = _clean(version, 'version') {
     if (estimatedDurationMinutes <= 0) {
-      throw ArgumentError.value(estimatedDurationMinutes, 'estimatedDurationMinutes');
+      throw ArgumentError.value(
+        estimatedDurationMinutes,
+        'estimatedDurationMinutes',
+      );
     }
   }
 
@@ -201,37 +234,40 @@ final class FaultScenarioDefinition {
   final String version;
   final FaultScenarioValidationStamp? validationStamp;
 
-  FaultScenarioDefinition withValidationStamp(FaultScenarioValidationStamp stamp) => FaultScenarioDefinition(
-        id: id,
-        title: title,
-        studentBrief: studentBrief,
-        faultyCircuit: faultyCircuit,
-        teacherTruth: teacherTruth,
-        difficulty: difficulty,
-        estimatedDurationMinutes: estimatedDurationMinutes,
-        version: version,
-        validationStamp: stamp,
-      );
+  FaultScenarioDefinition withValidationStamp(
+    FaultScenarioValidationStamp stamp,
+  ) => FaultScenarioDefinition(
+    id: id,
+    title: title,
+    studentBrief: studentBrief,
+    faultyCircuit: faultyCircuit,
+    teacherTruth: teacherTruth,
+    difficulty: difficulty,
+    estimatedDurationMinutes: estimatedDurationMinutes,
+    version: version,
+    validationStamp: stamp,
+  );
 
   Map<String, Object?> studentPayload() => <String, Object?>{
-        'id': id.value,
-        'title': title,
-        'studentBrief': studentBrief,
-        'electricalMode': faultyCircuit.mode.name,
-        'faultyCircuitState': faultyCircuit.toJson(),
-        'difficulty': difficulty.name,
-        'estimatedDurationMinutes': estimatedDurationMinutes,
-        'version': version,
-      };
+    'id': id.value,
+    'title': title,
+    'studentBrief': studentBrief,
+    'electricalMode': faultyCircuit.mode.name,
+    'faultyCircuitState': faultyCircuit.toJson(),
+    'difficulty': difficulty.name,
+    'estimatedDurationMinutes': estimatedDurationMinutes,
+    'version': version,
+  };
 
   String canonicalPrivatePayload() => jsonEncode(<String, Object?>{
-        ...studentPayload(),
-        'teacherTruth': teacherTruth.toPrivateJson(),
-      });
+    ...studentPayload(),
+    'teacherTruth': teacherTruth.toPrivateJson(),
+  });
 
   static String _clean(String value, String field) {
     final String clean = value.trim();
-    if (clean.isEmpty) throw ArgumentError.value(value, field, '$field must not be empty.');
+    if (clean.isEmpty)
+      throw ArgumentError.value(value, field, '$field must not be empty.');
     return clean;
   }
 }

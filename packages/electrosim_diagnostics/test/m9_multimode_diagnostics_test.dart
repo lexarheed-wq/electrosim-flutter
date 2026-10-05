@@ -12,19 +12,18 @@ void main() {
   TopologyGraph topology({
     ElectricalMode mode = ElectricalMode.dc,
     Iterable<TopologyFinding> findings = const <TopologyFinding>[],
-  }) =>
-      TopologyGraph(
-        circuitId: circuitId,
-        circuitRevision: 1,
-        mode: mode,
-        nodes: const <TopologyNode>[],
-        terminalToNode: const <TerminalId, String>{},
-        enabledConnectionIds: const <ConnectionId>[],
-        disabledConnectionIds: const <ConnectionId>[],
-        componentNodeIds: const <ComponentId, List<String>>{},
-        sourceNodeIds: const <SourceId, List<String>>{},
-        findings: findings,
-      );
+  }) => TopologyGraph(
+    circuitId: circuitId,
+    circuitRevision: 1,
+    mode: mode,
+    nodes: const <TopologyNode>[],
+    terminalToNode: const <TerminalId, String>{},
+    enabledConnectionIds: const <ConnectionId>[],
+    disabledConnectionIds: const <ConnectionId>[],
+    componentNodeIds: const <ComponentId, List<String>>{},
+    sourceNodeIds: const <SourceId, List<String>>{},
+    findings: findings,
+  );
 
   test('M9 topology contract mismatch produces evidence-backed advice', () {
     final DiagnosticReport report = const DiagnosticEngine().analyze(
@@ -125,59 +124,57 @@ void main() {
 DcSolveResult _dc(
   CircuitId id, {
   Iterable<DcSolverDiagnostic> diagnostics = const <DcSolverDiagnostic>[],
-}) =>
-    DcSolveResult(
-      circuitId: id,
-      circuitRevision: 1,
-      engineVersion: 'test',
-      status: DcSolveStatus.solved,
-      referenceNodeId: 'n0',
-      nodeVoltages: const <String, double>{},
-      branchResults: const <DcBranchResult>[],
-      diagnostics: diagnostics,
-      maxMatrixResidual: 0.0,
-      kclResiduals: const <String, double>{},
-      kvlResiduals: const <String, double>{},
-    );
+}) => DcSolveResult(
+  circuitId: id,
+  circuitRevision: 1,
+  engineVersion: 'test',
+  status: DcSolveStatus.solved,
+  referenceNodeId: 'n0',
+  nodeVoltages: const <String, double>{},
+  branchResults: const <DcBranchResult>[],
+  diagnostics: diagnostics,
+  maxMatrixResidual: 0.0,
+  kclResiduals: const <String, double>{},
+  kvlResiduals: const <String, double>{},
+);
 
 Ac1SolveResult _ac1(CircuitId id) => Ac1SolveResult(
-      circuitId: id,
-      circuitRevision: 1,
-      engineVersion: 'test',
-      status: Ac1SolveStatus.solved,
-      frequencyHz: 50.0,
-      referenceNodeId: 'n0',
-      nodeVoltages: const <String, AcComplex>{},
-      branchResults: const <Ac1BranchResult>[],
-      diagnostics: const <Ac1SolverDiagnostic>[],
-      maxMatrixResidual: 0.0,
-      kclResiduals: const <String, double>{},
-    );
+  circuitId: id,
+  circuitRevision: 1,
+  engineVersion: 'test',
+  status: Ac1SolveStatus.solved,
+  frequencyHz: 50.0,
+  referenceNodeId: 'n0',
+  nodeVoltages: const <String, AcComplex>{},
+  branchResults: const <Ac1BranchResult>[],
+  diagnostics: const <Ac1SolverDiagnostic>[],
+  maxMatrixResidual: 0.0,
+  kclResiduals: const <String, double>{},
+);
 
 Ac3SolveResult _ac3(
   CircuitId id, {
   Iterable<Ac3SolverDiagnostic> diagnostics = const <Ac3SolverDiagnostic>[],
-}) =>
-    Ac3SolveResult(
-      circuitId: id,
-      circuitRevision: 1,
-      engineVersion: 'test',
-      status: Ac3SolveStatus.solved,
-      frequencyHz: 50.0,
-      referenceNodeId: 'n0',
-      nodeVoltages: const <String, AcComplex>{},
-      branchResults: const <Ac3BranchResult>[],
-      diagnostics: diagnostics,
-      maxMatrixResidual: 0.0,
-      kclResiduals: const <String, double>{},
-      phaseVoltages: const <PhaseTag, AcComplex>{},
-      lineCurrents: const <PhaseTag, AcComplex>{},
-      lineToLineVoltages: const <String, AcComplex>{},
-      neutralCurrent: AcComplex.zero,
-      missingPhases: const <PhaseTag>[],
-      sourceSequence: Ac3PhaseSequence.positive,
-      voltageBalanced: true,
-      currentBalanced: true,
-      neutralConnected: true,
-      phaseOrderObservations: const <Ac3PhaseOrderObservation>[],
-    );
+}) => Ac3SolveResult(
+  circuitId: id,
+  circuitRevision: 1,
+  engineVersion: 'test',
+  status: Ac3SolveStatus.solved,
+  frequencyHz: 50.0,
+  referenceNodeId: 'n0',
+  nodeVoltages: const <String, AcComplex>{},
+  branchResults: const <Ac3BranchResult>[],
+  diagnostics: diagnostics,
+  maxMatrixResidual: 0.0,
+  kclResiduals: const <String, double>{},
+  phaseVoltages: const <PhaseTag, AcComplex>{},
+  lineCurrents: const <PhaseTag, AcComplex>{},
+  lineToLineVoltages: const <String, AcComplex>{},
+  neutralCurrent: AcComplex.zero,
+  missingPhases: const <PhaseTag>[],
+  sourceSequence: Ac3PhaseSequence.positive,
+  voltageBalanced: true,
+  currentBalanced: true,
+  neutralConnected: true,
+  phaseOrderObservations: const <Ac3PhaseOrderObservation>[],
+);

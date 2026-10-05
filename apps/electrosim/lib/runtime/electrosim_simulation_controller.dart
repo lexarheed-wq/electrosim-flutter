@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:electrosim_controls/electrosim_controls.dart';
@@ -12,10 +11,10 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     required CircuitState circuit,
     ElectroSimRuntimeEngine runtimeEngine = const ElectroSimRuntimeEngine(),
     this.fixedStep = const Duration(milliseconds: 100),
-  })  : assert(!fixedStep.isNegative && fixedStep > Duration.zero),
-        _runtimeEngine = runtimeEngine,
-        _circuit = circuit,
-        _snapshot = runtimeEngine.evaluate(circuit);
+  }) : assert(!fixedStep.isNegative && fixedStep > Duration.zero),
+       _runtimeEngine = runtimeEngine,
+       _circuit = circuit,
+       _snapshot = runtimeEngine.evaluate(circuit);
 
   final ElectroSimRuntimeEngine _runtimeEngine;
   final Duration fixedStep;
@@ -123,17 +122,15 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  double? _currentPvBatterySoc() =>
-      _snapshot.pvResult?.batteryPresent == true
-          ? _snapshot.pvResult!.batterySoc
-          : null;
+  double? _currentPvBatterySoc() => _snapshot.pvResult?.batteryPresent == true
+      ? _snapshot.pvResult!.batterySoc
+      : null;
 
-  Map<ComponentId, bool> _currentContactorStates() =>
-      <ComponentId, bool>{
-        for (final MapEntry<ComponentId, ContactorActuationState> entry
-            in _snapshot.contactorStates.entries)
-          entry.key: entry.value.actuated,
-      };
+  Map<ComponentId, bool> _currentContactorStates() => <ComponentId, bool>{
+    for (final MapEntry<ComponentId, ContactorActuationState> entry
+        in _snapshot.contactorStates.entries)
+      entry.key: entry.value.actuated,
+  };
 
   @override
   void dispose() {

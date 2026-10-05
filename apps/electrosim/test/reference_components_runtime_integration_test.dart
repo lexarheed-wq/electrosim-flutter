@@ -23,11 +23,11 @@ void main() {
       test('${entry.key} receives real solved DC current', () {
         final ElectroSimRuntimeSnapshot snapshot =
             const ElectroSimRuntimeEngine().evaluate(
-          _singleLoadCircuit(
-            modelType: entry.key,
-            resistanceOhm: entry.value,
-          ),
-        );
+              _singleLoadCircuit(
+                modelType: entry.key,
+                resistanceOhm: entry.value,
+              ),
+            );
 
         expect(snapshot.dc.status, DcSolveStatus.solved);
         final double currentA =
@@ -37,20 +37,16 @@ void main() {
     }
 
     test('push_button_nc conducts released and opens while pressed', () {
-      final ElectroSimRuntimeSnapshot released =
-          const ElectroSimRuntimeEngine().evaluate(
-        _pushNcCircuit(pressed: false),
-      );
+      final ElectroSimRuntimeSnapshot released = const ElectroSimRuntimeEngine()
+          .evaluate(_pushNcCircuit(pressed: false));
       expect(released.dc.status, DcSolveStatus.solved);
       expect(
         (released.dc.branch('component:button').currentA ?? 0).abs(),
         greaterThan(1e-6),
       );
 
-      final ElectroSimRuntimeSnapshot pressed =
-          const ElectroSimRuntimeEngine().evaluate(
-        _pushNcCircuit(pressed: true),
-      );
+      final ElectroSimRuntimeSnapshot pressed = const ElectroSimRuntimeEngine()
+          .evaluate(_pushNcCircuit(pressed: true));
       expect(pressed.dc.status, DcSolveStatus.solved);
       expect(
         (pressed.dc.branch('component:button').currentA ?? 0).abs(),
@@ -58,36 +54,39 @@ void main() {
       );
     });
 
-    testWidgets('paused supply keeps voltage but reports zero dynamic current',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Center(
-            child: F18ComponentAssetVisual(
-              modelType: 'dc_voltage_source',
-              size: Size(240, 160),
-              active: true,
-              energized: false,
-              currentA: 1,
-              voltageV: 24,
-              currentLimitA: 2,
+    testWidgets(
+      'paused supply keeps voltage but reports zero dynamic current',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Center(
+              child: F18ComponentAssetVisual(
+                modelType: 'dc_voltage_source',
+                size: Size(240, 160),
+                active: true,
+                energized: false,
+                currentA: 1,
+                voltageV: 24,
+                currentLimitA: 2,
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pump();
+        );
+        await tester.pump();
 
-      final ReferenceComponentView view =
-          tester.widget<ReferenceComponentView>(
-        find.byType(ReferenceComponentView),
-      );
-      expect(view.state.voltageV, closeTo(24, 1e-9));
-      expect(view.state.currentA, 0);
-      expect(view.state.supplyMode, SupplyMode.constantVoltage);
-    });
+        final ReferenceComponentView view = tester
+            .widget<ReferenceComponentView>(
+              find.byType(ReferenceComponentView),
+            );
+        expect(view.state.voltageV, closeTo(24, 1e-9));
+        expect(view.state.currentA, 0);
+        expect(view.state.supplyMode, SupplyMode.constantVoltage);
+      },
+    );
 
-    testWidgets('motor runtime state maps to rotating production painter',
-        (WidgetTester tester) async {
+    testWidgets('motor runtime state maps to rotating production painter', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Center(
@@ -104,17 +103,18 @@ void main() {
       );
       await tester.pump();
 
-      final ExtendedReferenceComponentView view =
-          tester.widget<ExtendedReferenceComponentView>(
-        find.byType(ExtendedReferenceComponentView),
-      );
+      final ExtendedReferenceComponentView view = tester
+          .widget<ExtendedReferenceComponentView>(
+            find.byType(ExtendedReferenceComponentView),
+          );
       expect(view.device, ExtendedReferenceDevice.motor);
       expect(view.state.speedRpm, closeTo(3000, 1e-9));
       expect(view.state.animationValue, .25);
     });
 
-    testWidgets('fan receives live animation phase while energized',
-        (WidgetTester tester) async {
+    testWidgets('fan receives live animation phase while energized', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Center(
@@ -130,10 +130,10 @@ void main() {
         ),
       );
       await tester.pump();
-      final ExtendedReferenceComponentView view =
-          tester.widget<ExtendedReferenceComponentView>(
-        find.byType(ExtendedReferenceComponentView),
-      );
+      final ExtendedReferenceComponentView view = tester
+          .widget<ExtendedReferenceComponentView>(
+            find.byType(ExtendedReferenceComponentView),
+          );
       expect(view.device, ExtendedReferenceDevice.fan);
       expect(view.state.speedFraction, closeTo(1, 1e-9));
       expect(view.state.animationValue, .55);

@@ -2,22 +2,17 @@ import 'dart:ui';
 
 import 'wire_geometry.dart';
 
-enum WireRouteFailure {
-  noCrossingFreeRoute,
-}
+enum WireRouteFailure { noCrossingFreeRoute }
 
 final class WireRouteResult {
-  const WireRouteResult._({
-    required this.path,
-    required this.failure,
-  });
+  const WireRouteResult._({required this.path, required this.failure});
 
   factory WireRouteResult.resolved(OrthogonalWirePath path) {
     return WireRouteResult._(path: path, failure: null);
   }
 
   const WireRouteResult.unresolved(WireRouteFailure failure)
-      : this._(path: null, failure: failure);
+    : this._(path: null, failure: failure);
 
   final OrthogonalWirePath? path;
   final WireRouteFailure? failure;
@@ -156,28 +151,24 @@ final class OrthogonalWireRouter {
       if (y < envelope.top || y > envelope.bottom) {
         continue;
       }
-      candidatePoints.add(
-        <Offset>[
-          start,
-          Offset(start.dx, y),
-          Offset(end.dx, y),
-          end,
-        ],
-      );
+      candidatePoints.add(<Offset>[
+        start,
+        Offset(start.dx, y),
+        Offset(end.dx, y),
+        end,
+      ]);
     }
 
     for (final double x in _dedupeSorted(verticalChannels)) {
       if (x < envelope.left || x > envelope.right) {
         continue;
       }
-      candidatePoints.add(
-        <Offset>[
-          start,
-          Offset(x, start.dy),
-          Offset(x, end.dy),
-          end,
-        ],
-      );
+      candidatePoints.add(<Offset>[
+        start,
+        Offset(x, start.dy),
+        Offset(x, end.dy),
+        end,
+      ]);
     }
 
     OrthogonalWirePath? best;
@@ -296,17 +287,16 @@ final class OrthogonalWireRouter {
         break;
       }
 
-      final List<(int, int, WireAxis)> neighbors =
-          <(int, int, WireAxis)>[
-            if (current.xIndex > 0)
-              (current.xIndex - 1, current.yIndex, WireAxis.horizontal),
-            if (current.xIndex + 1 < xs.length)
-              (current.xIndex + 1, current.yIndex, WireAxis.horizontal),
-            if (current.yIndex > 0)
-              (current.xIndex, current.yIndex - 1, WireAxis.vertical),
-            if (current.yIndex + 1 < ys.length)
-              (current.xIndex, current.yIndex + 1, WireAxis.vertical),
-          ];
+      final List<(int, int, WireAxis)> neighbors = <(int, int, WireAxis)>[
+        if (current.xIndex > 0)
+          (current.xIndex - 1, current.yIndex, WireAxis.horizontal),
+        if (current.xIndex + 1 < xs.length)
+          (current.xIndex + 1, current.yIndex, WireAxis.horizontal),
+        if (current.yIndex > 0)
+          (current.xIndex, current.yIndex - 1, WireAxis.vertical),
+        if (current.yIndex + 1 < ys.length)
+          (current.xIndex, current.yIndex + 1, WireAxis.vertical),
+      ];
 
       for (final (int nextX, int nextY, WireAxis axis) in neighbors) {
         final Offset from = Offset(xs[current.xIndex], ys[current.yIndex]);
@@ -323,9 +313,9 @@ final class OrthogonalWireRouter {
           continue;
         }
 
-        final double stepCost = segment.length +
-            (current.previousAxis != null &&
-                    current.previousAxis != axis
+        final double stepCost =
+            segment.length +
+            (current.previousAxis != null && current.previousAxis != axis
                 ? bendPenalty
                 : 0);
         final double nextG = current.g + stepCost;
@@ -429,8 +419,9 @@ final class OrthogonalWireRouter {
     if (byX != 0) {
       return byX;
     }
-    return (first.previousAxis?.index ?? -1)
-        .compareTo(second.previousAxis?.index ?? -1);
+    return (first.previousAxis?.index ?? -1).compareTo(
+      second.previousAxis?.index ?? -1,
+    );
   }
 
   double _cost(OrthogonalWirePath path) {
@@ -441,10 +432,7 @@ final class OrthogonalWireRouter {
     return length + path.bends.length * bendPenalty;
   }
 
-  bool _hitsObstacle(
-    OrthogonalWirePath path,
-    List<RoutingObstacle> obstacles,
-  ) {
+  bool _hitsObstacle(OrthogonalWirePath path, List<RoutingObstacle> obstacles) {
     for (final OrthogonalSegment segment in path.segments) {
       for (final RoutingObstacle obstacle in obstacles) {
         if (_segmentHitsRect(segment, obstacle.bounds)) {
@@ -497,10 +485,8 @@ final class OrthogonalWireRouter {
       final Offset before = result[index - 1];
       final Offset current = result[index];
       final Offset after = result[index + 1];
-      final bool horizontal =
-          before.dy == current.dy && current.dy == after.dy;
-      final bool vertical =
-          before.dx == current.dx && current.dx == after.dx;
+      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
+      final bool vertical = before.dx == current.dx && current.dx == after.dx;
       if (horizontal || vertical) {
         result.removeAt(index);
       } else {
@@ -513,7 +499,6 @@ final class OrthogonalWireRouter {
   static double _min(double a, double b) => a < b ? a : b;
   static double _max(double a, double b) => a > b ? a : b;
 }
-
 
 final class _SearchNode {
   const _SearchNode({

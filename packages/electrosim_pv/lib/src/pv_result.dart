@@ -4,13 +4,7 @@ import 'pv_diagnostic.dart';
 
 enum PvSolveStatus { solved, invalid }
 
-enum PvInverterState {
-  running,
-  idle,
-  powerLimited,
-  inputOutOfRange,
-  faulted,
-}
+enum PvInverterState { running, idle, powerLimited, inputOutOfRange, faulted }
 
 final class PvLoadResult {
   const PvLoadResult({
@@ -85,9 +79,11 @@ final class PvSolveResult {
   final double controllerConversionLossW;
   final bool batteryPresent;
   final double batteryVoltageV;
+
   /// State of charge in [0, 1].
   final double batterySoc;
   final double batteryStoredEnergyWh;
+
   /// Positive while discharging to the DC bus, negative while charging.
   final double batteryPowerW;
   final double batteryConversionLossW;

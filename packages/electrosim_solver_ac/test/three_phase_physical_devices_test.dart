@@ -16,8 +16,9 @@ void main() {
     expect(result.status, Ac3SolveStatus.solved);
 
     for (final String winding in <String>['U', 'V', 'W']) {
-      final Ac3BranchResult branch =
-          result.branch('component:m1:winding:$winding');
+      final Ac3BranchResult branch = result.branch(
+        'component:m1:winding:$winding',
+      );
       expect(branch.kind, Ac3BranchKind.impedance);
       expect(branch.current?.magnitude, closeTo(10.0, 1e-7));
     }
@@ -34,8 +35,7 @@ void main() {
       'branch:L2-L3',
       'branch:L3-L1',
     ]) {
-      final Ac3BranchResult branch =
-          result.branch('component:load:$branchId');
+      final Ac3BranchResult branch = result.branch('component:load:$branchId');
       expect(branch.kind, Ac3BranchKind.impedance);
       expect(branch.current?.magnitude, closeTo(10.0, 1e-6));
     }
@@ -117,10 +117,10 @@ CircuitState _deltaLoadCircuit() {
 }
 
 List<SourceInstance> _sources() => <SourceInstance>[
-      _source('s1', PhaseTag.l1, 0.0),
-      _source('s2', PhaseTag.l2, -120.0),
-      _source('s3', PhaseTag.l3, 120.0),
-    ];
+  _source('s1', PhaseTag.l1, 0.0),
+  _source('s2', PhaseTag.l2, -120.0),
+  _source('s3', PhaseTag.l3, 120.0),
+];
 
 SourceInstance _source(String id, PhaseTag phase, double angle) =>
     SourceInstance(
@@ -130,10 +130,7 @@ SourceInstance _source(String id, PhaseTag phase, double angle) =>
         _t('$id-p', phase.name.toUpperCase(), phase),
         _t('$id-n', 'N', PhaseTag.neutral, role: TerminalRole.neutral),
       ],
-      parameters: <String, Object?>{
-        'voltageRmsV': 230.0,
-        'phaseDeg': angle,
-      },
+      parameters: <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': angle},
     );
 
 Terminal _t(
@@ -141,11 +138,10 @@ Terminal _t(
   String name,
   PhaseTag phase, {
   TerminalRole role = TerminalRole.generic,
-}) =>
-    Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
 
 Connection _w(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);

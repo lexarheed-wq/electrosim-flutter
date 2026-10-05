@@ -14,13 +14,20 @@ final class F9OrthogonalRouter {
   static const double _wireCrossPenalty = 240;
   static const double _obstaclePenalty = 100000;
 
-  static CircuitVisualLayout reroute(CircuitState circuit, CircuitVisualLayout layout) {
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
+  static CircuitVisualLayout reroute(
+    CircuitState circuit,
+    CircuitVisualLayout layout,
+  ) {
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
     final Map<String, List<Offset>> routes = <String, List<Offset>>{};
     final List<_F9Segment> occupied = <_F9Segment>[];
 
     for (final Connection connection in circuit.connections) {
-      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null) {
         continue;
@@ -53,7 +60,11 @@ final class F9OrthogonalRouter {
     List<_F9Segment> occupied,
   ) {
     final List<Rect> obstacles = elementRects
-        .where((Rect rect) => !rect.inflate(2).contains(start) && !rect.inflate(2).contains(end))
+        .where(
+          (Rect rect) =>
+              !rect.inflate(2).contains(start) &&
+              !rect.inflate(2).contains(end),
+        )
         .map((Rect rect) => rect.inflate(clearance))
         .toList(growable: false);
 
@@ -110,7 +121,11 @@ final class F9OrthogonalRouter {
       for (var i = 0; i < points.length - 1; i++) {
         final _F9Segment segment = _F9Segment(points[i], points[i + 1]);
         for (final Rect obstacle in obstacles) {
-          if (_orthogonalSegmentIntersectsRect(segment.a, segment.b, obstacle)) {
+          if (_orthogonalSegmentIntersectsRect(
+            segment.a,
+            segment.b,
+            obstacle,
+          )) {
             score += _obstaclePenalty;
             blocked = true;
           }
@@ -160,7 +175,10 @@ final class F9OrthogonalRouter {
     final double vBottom = math.max(vertical.a.dy, vertical.b.dy);
     final double hLeft = math.min(horizontal.a.dx, horizontal.b.dx);
     final double hRight = math.max(horizontal.a.dx, horizontal.b.dx);
-    return vx > hLeft + 0.5 && vx < hRight - 0.5 && hy > vTop + 0.5 && hy < vBottom - 0.5;
+    return vx > hLeft + 0.5 &&
+        vx < hRight - 0.5 &&
+        hy > vTop + 0.5 &&
+        hy < vBottom - 0.5;
   }
 
   static bool _orthogonalSegmentIntersectsRect(Offset a, Offset b, Rect rect) {
@@ -202,8 +220,10 @@ final class F9OrthogonalRouter {
         final Offset a = result[result.length - 3];
         final Offset b = result[result.length - 2];
         final Offset c = result[result.length - 1];
-        final bool sameX = (a.dx - b.dx).abs() < 0.5 && (b.dx - c.dx).abs() < 0.5;
-        final bool sameY = (a.dy - b.dy).abs() < 0.5 && (b.dy - c.dy).abs() < 0.5;
+        final bool sameX =
+            (a.dx - b.dx).abs() < 0.5 && (b.dx - c.dx).abs() < 0.5;
+        final bool sameY =
+            (a.dy - b.dy).abs() < 0.5 && (b.dy - c.dy).abs() < 0.5;
         if (!sameX && !sameY) {
           break;
         }
@@ -235,7 +255,10 @@ final class F9ViewportBounds {
     if (viewportSize.isEmpty) {
       return translation;
     }
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(circuit, layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
     if (geometry.elementRects.isEmpty) {
       return translation;
     }
@@ -246,9 +269,11 @@ final class F9ViewportBounds {
     worldBounds = worldBounds.inflate(24);
 
     final double minTx = minimumVisiblePixels - worldBounds.right * scale;
-    final double maxTx = viewportSize.width - minimumVisiblePixels - worldBounds.left * scale;
+    final double maxTx =
+        viewportSize.width - minimumVisiblePixels - worldBounds.left * scale;
     final double minTy = minimumVisiblePixels - worldBounds.bottom * scale;
-    final double maxTy = viewportSize.height - minimumVisiblePixels - worldBounds.top * scale;
+    final double maxTy =
+        viewportSize.height - minimumVisiblePixels - worldBounds.top * scale;
 
     return Offset(
       _clampAxis(translation.dx, minTx, maxTx),

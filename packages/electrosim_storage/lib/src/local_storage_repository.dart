@@ -3,7 +3,8 @@ import 'dart:io';
 import 'storage_models.dart';
 
 final class LocalStorageRepository {
-  LocalStorageRepository(Directory rootDirectory) : _rootDirectory = rootDirectory;
+  LocalStorageRepository(Directory rootDirectory)
+    : _rootDirectory = rootDirectory;
 
   final Directory _rootDirectory;
 
@@ -16,20 +17,26 @@ final class LocalStorageRepository {
   Future<List<SavedCircuitSummary>> listSaves() async {
     await initialize();
     final List<SavedCircuitSummary> result = <SavedCircuitSummary>[];
-    await for (final FileSystemEntity entity in _rootDirectory.list(followLinks: false)) {
+    await for (final FileSystemEntity entity in _rootDirectory.list(
+      followLinks: false,
+    )) {
       if (entity is! File || !entity.path.endsWith('.electrosim.json')) {
         continue;
       }
       final SavedCircuitDocument document = await _readDocument(entity);
-      result.add(SavedCircuitSummary(
-        saveId: document.saveId,
-        title: document.title,
-        updatedAtUtc: document.updatedAtUtc,
-        circuitRevision: document.circuit.revision,
-      ));
+      result.add(
+        SavedCircuitSummary(
+          saveId: document.saveId,
+          title: document.title,
+          updatedAtUtc: document.updatedAtUtc,
+          circuitRevision: document.circuit.revision,
+        ),
+      );
     }
-    result.sort((SavedCircuitSummary a, SavedCircuitSummary b) =>
-        b.updatedAtUtc.compareTo(a.updatedAtUtc));
+    result.sort(
+      (SavedCircuitSummary a, SavedCircuitSummary b) =>
+          b.updatedAtUtc.compareTo(a.updatedAtUtc),
+    );
     return List<SavedCircuitSummary>.unmodifiable(result);
   }
 
@@ -86,13 +93,19 @@ final class LocalStorageRepository {
     }
   }
 
-  Future<String> exportJson(String saveId) async => (await open(saveId)).toJsonString();
+  Future<String> exportJson(String saveId) async =>
+      (await open(saveId)).toJsonString();
 
   Future<void> importJson(String source, {bool overwrite = false}) async {
-    final SavedCircuitDocument document = SavedCircuitDocument.fromJsonString(source);
+    final SavedCircuitDocument document = SavedCircuitDocument.fromJsonString(
+      source,
+    );
     final File target = _fileFor(document.saveId);
     if (!overwrite && await target.exists()) {
-      throw FileSystemException('A save with this ID already exists.', target.path);
+      throw FileSystemException(
+        'A save with this ID already exists.',
+        target.path,
+      );
     }
     await save(document);
   }
@@ -118,11 +131,16 @@ final class LocalStorageRepository {
   }
 
   Future<void> _recoverBackups() async {
-    await for (final FileSystemEntity entity in _rootDirectory.list(followLinks: false)) {
+    await for (final FileSystemEntity entity in _rootDirectory.list(
+      followLinks: false,
+    )) {
       if (entity is! File || !entity.path.endsWith('.electrosim.json.bak')) {
         continue;
       }
-      final String targetPath = entity.path.substring(0, entity.path.length - 4);
+      final String targetPath = entity.path.substring(
+        0,
+        entity.path.length - 4,
+      );
       final File target = File(targetPath);
       if (!await target.exists()) {
         // Recovery is allowed only after the backup itself parses successfully.
@@ -135,7 +153,9 @@ final class LocalStorageRepository {
   }
 
   Future<void> _removeAbandonedTemps() async {
-    await for (final FileSystemEntity entity in _rootDirectory.list(followLinks: false)) {
+    await for (final FileSystemEntity entity in _rootDirectory.list(
+      followLinks: false,
+    )) {
       if (entity is File && entity.path.endsWith('.electrosim.json.tmp')) {
         await entity.delete();
       }

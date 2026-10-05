@@ -21,10 +21,7 @@ final class F17StudentSupervisionItem {
 }
 
 final class F17StudentGradeRequest {
-  const F17StudentGradeRequest({
-    required this.clientId,
-    required this.score,
-  });
+  const F17StudentGradeRequest({required this.clientId, required this.score});
 
   final String clientId;
   final int? score;
@@ -52,8 +49,9 @@ class F17TpSupervisionPanel extends StatelessWidget {
         animation: controller,
         builder: (BuildContext context, Widget? child) {
           final TpSession? session = controller.session;
-          final int connected =
-              students.where((F17StudentSupervisionItem s) => s.connected).length;
+          final int connected = students
+              .where((F17StudentSupervisionItem s) => s.connected)
+              .length;
           final int submitted = students.where((F17StudentSupervisionItem s) {
             final TpLifecycle? lifecycle = s.session?.lifecycle;
             return lifecycle == TpLifecycle.submitted ||
@@ -143,10 +141,7 @@ class F17TpSupervisionPanel extends StatelessWidget {
                 ],
               ],
               const Divider(height: ElectroSimSpacing.xl),
-              Text(
-                'Élèves',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text('Élèves', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: ElectroSimSpacing.sm),
               if (students.isEmpty)
                 const Text(
@@ -157,13 +152,13 @@ class F17TpSupervisionPanel extends StatelessWidget {
                 ...students.map(
                   (F17StudentSupervisionItem student) =>
                       _StudentSupervisionCard(
-                    key: ValueKey<String>(
-                      'supervision-student-${student.clientId}',
-                    ),
-                    student: student,
-                    onGradeStudent: onGradeStudent,
-                    onCloseStudent: onCloseStudent,
-                  ),
+                        key: ValueKey<String>(
+                          'supervision-student-${student.clientId}',
+                        ),
+                        student: student,
+                        onGradeStudent: onGradeStudent,
+                        onCloseStudent: onCloseStudent,
+                      ),
                 ),
             ],
           );
@@ -173,22 +168,22 @@ class F17TpSupervisionPanel extends StatelessWidget {
   }
 
   static String _lifecycleLabel(TpLifecycle lifecycle) => switch (lifecycle) {
-        TpLifecycle.draft => 'Brouillon',
-        TpLifecycle.published => 'Publié — en attente élève',
-        TpLifecycle.started => 'TP en cours',
-        TpLifecycle.submitted => 'TP remis — à noter',
-        TpLifecycle.evaluated => 'TP noté',
-        TpLifecycle.closed => 'TP clôturé',
-      };
+    TpLifecycle.draft => 'Brouillon',
+    TpLifecycle.published => 'Publié — en attente élève',
+    TpLifecycle.started => 'TP en cours',
+    TpLifecycle.submitted => 'TP remis — à noter',
+    TpLifecycle.evaluated => 'TP noté',
+    TpLifecycle.closed => 'TP clôturé',
+  };
 
   static IconData _statusIcon(TpLifecycle lifecycle) => switch (lifecycle) {
-        TpLifecycle.draft => Icons.edit_note_outlined,
-        TpLifecycle.published => Icons.publish_outlined,
-        TpLifecycle.started => Icons.play_circle_outline,
-        TpLifecycle.submitted => Icons.mark_email_read_outlined,
-        TpLifecycle.evaluated => Icons.grading_outlined,
-        TpLifecycle.closed => Icons.lock_outline,
-      };
+    TpLifecycle.draft => Icons.edit_note_outlined,
+    TpLifecycle.published => Icons.publish_outlined,
+    TpLifecycle.started => Icons.play_circle_outline,
+    TpLifecycle.submitted => Icons.mark_email_read_outlined,
+    TpLifecycle.evaluated => Icons.grading_outlined,
+    TpLifecycle.closed => Icons.lock_outline,
+  };
 }
 
 class _SummaryStrip extends StatelessWidget {
@@ -334,9 +329,7 @@ class _StudentSupervisionCardState extends State<_StudentSupervisionCard> {
               session == null
                   ? 'En attente d’un TP publié'
                   : _studentLifecycleLabel(lifecycle!),
-              key: Key(
-                'supervision-student-state-${widget.student.clientId}',
-              ),
+              key: Key('supervision-student-state-${widget.student.clientId}'),
             ),
             if (session?.evaluation != null) ...<Widget>[
               const SizedBox(height: ElectroSimSpacing.xs),
@@ -427,8 +420,7 @@ class _StudentSupervisionCardState extends State<_StudentSupervisionCard> {
       });
       return;
     }
-    if (score != null &&
-        (score < 0 || score > session.definition.maxScore)) {
+    if (score != null && (score < 0 || score > session.definition.maxScore)) {
       setState(() {
         _error = 'Note comprise entre 0 et ${session.definition.maxScore}.';
       });
@@ -438,10 +430,7 @@ class _StudentSupervisionCardState extends State<_StudentSupervisionCard> {
       _error = null;
     });
     widget.onGradeStudent!(
-      F17StudentGradeRequest(
-        clientId: widget.student.clientId,
-        score: score,
-      ),
+      F17StudentGradeRequest(clientId: widget.student.clientId, score: score),
     );
   }
 
@@ -482,14 +471,9 @@ class _SupervisionLine extends StatelessWidget {
         children: <Widget>[
           SizedBox(
             width: 112,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.labelMedium),
           ),
-          Expanded(
-            child: Text(value, key: valueKey),
-          ),
+          Expanded(child: Text(value, key: valueKey)),
         ],
       ),
     );

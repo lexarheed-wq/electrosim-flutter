@@ -16,8 +16,9 @@ class F18CreateSessionDialog extends StatefulWidget {
 }
 
 class _F18CreateSessionDialogState extends State<F18CreateSessionDialog> {
-  final TextEditingController _name =
-      TextEditingController(text: 'Nouvelle session');
+  final TextEditingController _name = TextEditingController(
+    text: 'Nouvelle session',
+  );
   String? _error;
 
   @override
@@ -141,8 +142,8 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
                       ? 'Préparation du serveur local ElectroSim…'
                       : 'Les élèves rejoignent directement avec leur navigateur. Aucune application n’est à installer et Internet n’est pas nécessaire.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: ElectroSimColors.textSecondary,
-                      ),
+                    color: ElectroSimColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
                 LayoutBuilder(
@@ -194,9 +195,7 @@ class F18SessionWaitingRoomPage extends StatelessWidget {
         child: DecoratedBox(
           decoration: const BoxDecoration(
             color: ElectroSimColors.surfaceElevated,
-            border: Border(
-              top: BorderSide(color: ElectroSimColors.outline),
-            ),
+            border: Border(top: BorderSide(color: ElectroSimColors.outline)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -317,10 +316,7 @@ class _StudentBrowserAccessCard extends StatelessWidget {
 }
 
 class _ConnectedStudentsCard extends StatelessWidget {
-  const _ConnectedStudentsCard({
-    required this.count,
-    required this.names,
-  });
+  const _ConnectedStudentsCard({required this.count, required this.names});
 
   final int count;
   final List<String> names;
@@ -341,7 +337,10 @@ class _ConnectedStudentsCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Icon(Icons.people_outline, color: ElectroSimColors.primary),
+                const Icon(
+                  Icons.people_outline,
+                  color: ElectroSimColors.primary,
+                ),
                 const SizedBox(width: ElectroSimSpacing.sm),
                 Expanded(
                   child: Text(
@@ -474,8 +473,8 @@ class F18ActivitySetupPage extends StatelessWidget {
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: ElectroSimColors.textSecondary,
-                      ),
+                    color: ElectroSimColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
                 DecoratedBox(
@@ -599,9 +598,9 @@ class _F18StudentSituationValidationPageState
                     key: const Key('student-validation-launch'),
                     onPressed: _canLaunch
                         ? () => widget.onLaunch(
-                              _reference.text.trim(),
-                              _fault.text.trim(),
-                            )
+                            _reference.text.trim(),
+                            _fault.text.trim(),
+                          )
                         : null,
                     icon: const Icon(Icons.play_arrow_outlined),
                     label: const Text('Lancer la situation'),

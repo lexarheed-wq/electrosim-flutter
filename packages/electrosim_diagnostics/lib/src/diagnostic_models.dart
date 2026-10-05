@@ -1,6 +1,7 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
 enum DiagnosticReportStatus { evidenceAvailable, insufficientEvidence }
+
 enum DiagnosticEvidenceSource { topology, solver, simulation }
 
 enum EieAdviceCode {
@@ -44,8 +45,8 @@ final class EieAdvice {
     required this.explanation,
     required Iterable<String> evidenceIds,
     Iterable<String> highlightTargetIds = const <String>[],
-  })  : evidenceIds = List<String>.unmodifiable(evidenceIds),
-        highlightTargetIds = List<String>.unmodifiable(highlightTargetIds) {
+  }) : evidenceIds = List<String>.unmodifiable(evidenceIds),
+       highlightTargetIds = List<String>.unmodifiable(highlightTargetIds) {
     if (this.evidenceIds.isEmpty) {
       throw ArgumentError('An EIE advice must cite at least one evidenceId.');
     }
@@ -65,19 +66,26 @@ final class DiagnosticReport {
     required this.status,
     required Iterable<DiagnosticEvidence> evidence,
     required Iterable<EieAdvice> advice,
-  })  : evidence = List<DiagnosticEvidence>.unmodifiable(evidence),
-        advice = List<EieAdvice>.unmodifiable(advice) {
-    final Set<String> ids = this.evidence.map((DiagnosticEvidence e) => e.id).toSet();
+  }) : evidence = List<DiagnosticEvidence>.unmodifiable(evidence),
+       advice = List<EieAdvice>.unmodifiable(advice) {
+    final Set<String> ids = this.evidence
+        .map((DiagnosticEvidence e) => e.id)
+        .toSet();
     if (ids.length != this.evidence.length) {
       throw StateError('Diagnostic evidence IDs must be unique.');
     }
     for (final EieAdvice item in this.advice) {
       if (!item.evidenceIds.every(ids.contains)) {
-        throw StateError('Every EIE advice must reference evidence present in the report.');
+        throw StateError(
+          'Every EIE advice must reference evidence present in the report.',
+        );
       }
     }
-    if (status == DiagnosticReportStatus.insufficientEvidence && this.advice.isNotEmpty) {
-      throw StateError('Insufficient evidence cannot produce diagnostic advice.');
+    if (status == DiagnosticReportStatus.insufficientEvidence &&
+        this.advice.isNotEmpty) {
+      throw StateError(
+        'Insufficient evidence cannot produce diagnostic advice.',
+      );
     }
   }
 

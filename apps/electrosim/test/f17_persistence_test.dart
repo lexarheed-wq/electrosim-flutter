@@ -12,8 +12,7 @@ import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 
 Future<void> _openTop(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).bottom <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
     await tester.tap(find.byKey(electroSimTopEdgeKey));
     await tester.pumpAndSettle();
   }
@@ -61,9 +60,7 @@ void main() {
 
       final ElectroSimTpSessionController restoredTp =
           ElectroSimTpSessionController();
-      final restored = await persistence.openLatest(
-        tpController: restoredTp,
-      );
+      final restored = await persistence.openLatest(tpController: restoredTp);
 
       expect(restored, isNotNull);
       expect(restored!.workspace, 'Supervision');
@@ -78,8 +75,7 @@ void main() {
     });
 
     test('explicit update preserves original creation time', () async {
-      final ElectroSimTpSessionController tp =
-          ElectroSimTpSessionController();
+      final ElectroSimTpSessionController tp = ElectroSimTpSessionController();
       tp.createDraft();
       final first = await persistence.saveWorkspace(
         circuit: tp.studentCircuit!,
@@ -98,28 +94,22 @@ void main() {
       expect((await persistence.listSaves()).length, 1);
     });
 
-    testWidgets('workspace exposes explicit save and resume actions',
-        (WidgetTester tester) async {
+    testWidgets('workspace exposes explicit save and resume actions', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: F9WorkspaceDemoPage(
-            persistenceController: persistence,
-          ),
+          home: F9WorkspaceDemoPage(persistenceController: persistence),
         ),
       );
 
-      expect(
-        find.byKey(const Key('workspace-more-actions')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('workspace-more-actions')), findsOneWidget);
       await _openTop(tester);
       await tester.tap(find.byKey(const Key('workspace-more-actions')));
       await tester.pumpAndSettle();
 
-      final Finder saveAction =
-          find.byKey(const Key('workspace-save-action'));
-      final Finder openAction =
-          find.byKey(const Key('workspace-open-action'));
+      final Finder saveAction = find.byKey(const Key('workspace-save-action'));
+      final Finder openAction = find.byKey(const Key('workspace-open-action'));
       expect(saveAction, findsOneWidget);
       expect(openAction, findsOneWidget);
       expect(find.text('Sauvegarder'), findsOneWidget);

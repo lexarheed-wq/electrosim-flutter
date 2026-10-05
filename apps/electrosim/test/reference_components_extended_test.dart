@@ -41,10 +41,7 @@ void main() {
   });
 
   test('fuse can blow from accumulated I2t', () {
-    final model = CartridgeFuseModel(
-      ratedCurrentA: 1,
-      blowI2tA2s: .02,
-    );
+    final model = CartridgeFuseModel(ratedCurrentA: 1, blowI2tA2s: .02);
     model.advance(2, const Duration(milliseconds: 10));
     expect(model.blown, isTrue);
   });

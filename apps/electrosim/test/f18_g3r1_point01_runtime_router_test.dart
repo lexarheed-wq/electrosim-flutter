@@ -11,8 +11,9 @@ void main() {
     expect(source, isNot(contains('F9OrthogonalRouter.reroute')));
   });
 
-  testWidgets('real design workspace exposes G2A-routed committed geometry',
-      (WidgetTester tester) async {
+  testWidgets('real design workspace exposes G2A-routed committed geometry', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -24,8 +25,9 @@ void main() {
     await tester.tap(find.byKey(const Key('design-wiring')));
     await tester.pumpAndSettle();
 
-    final SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
 
     const CircuitWireLayoutEngine engine = CircuitWireLayoutEngine(
       router: OrthogonalWireRouter(

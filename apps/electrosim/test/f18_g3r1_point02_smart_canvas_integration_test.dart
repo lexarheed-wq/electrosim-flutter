@@ -36,19 +36,22 @@ Future<SimulatorCanvas> _openDesignWorkspace(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('real F18 workspace injects G2A layout engine into SimulatorCanvas',
-      (WidgetTester tester) async {
-    final SimulatorCanvas canvas = await _openDesignWorkspace(tester);
+  testWidgets(
+    'real F18 workspace injects G2A layout engine into SimulatorCanvas',
+    (WidgetTester tester) async {
+      final SimulatorCanvas canvas = await _openDesignWorkspace(tester);
 
-    expect(canvas.wireLayoutEngine, isNotNull);
-    expect(canvas.wireLayoutEngine, isA<CircuitWireLayoutEngine>());
-    expect(canvas.wireLayoutEngine!.router.grid, 24);
-    expect(canvas.wireLayoutEngine!.router.obstacleClearance, 24);
-    expect(canvas.wireLayoutEngine!.router.envelopePadding, 120);
-  });
+      expect(canvas.wireLayoutEngine, isNotNull);
+      expect(canvas.wireLayoutEngine, isA<CircuitWireLayoutEngine>());
+      expect(canvas.wireLayoutEngine!.router.grid, 24);
+      expect(canvas.wireLayoutEngine!.router.obstacleClearance, 24);
+      expect(canvas.wireLayoutEngine!.router.envelopePadding, 120);
+    },
+  );
 
-  testWidgets('real F18 workspace injects smart G2A wire preview planner',
-      (WidgetTester tester) async {
+  testWidgets('real F18 workspace injects smart G2A wire preview planner', (
+    WidgetTester tester,
+  ) async {
     final SimulatorCanvas canvas = await _openDesignWorkspace(tester);
 
     expect(canvas.wirePreviewPlanner, isNotNull);
@@ -57,8 +60,9 @@ void main() {
     expect(canvas.wirePreviewPlanner!.router.grid, 24);
   });
 
-  testWidgets('session wiring uses the same smart canvas integration',
-      (WidgetTester tester) async {
+  testWidgets('session wiring uses the same smart canvas integration', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -77,8 +81,9 @@ void main() {
     await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
     await tester.pumpAndSettle();
 
-    final SimulatorCanvas canvas =
-        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
     expect(canvas.wireLayoutEngine, isNotNull);
     expect(canvas.wirePreviewPlanner, isNotNull);
   });

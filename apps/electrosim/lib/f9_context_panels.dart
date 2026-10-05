@@ -37,8 +37,7 @@ class F9ContextPanels extends StatefulWidget {
   final ElectroSimTpSessionController? tpSessionController;
 
   bool get showDiagnostic {
-    if (role != F9UserRole.student ||
-        workspace != 'Recherche de dérangement') {
+    if (role != F9UserRole.student || workspace != 'Recherche de dérangement') {
       return false;
     }
     final ElectroSimTpSessionController? controller = tpSessionController;
@@ -53,7 +52,8 @@ class F9ContextPanels extends StatefulWidget {
   State<F9ContextPanels> createState() => _F9ContextPanelsState();
 }
 
-class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderStateMixin {
+class _F9ContextPanelsState extends State<F9ContextPanels>
+    with TickerProviderStateMixin {
   late TabController _controller;
 
   int get _tabCount => widget.showDiagnostic ? 4 : 3;
@@ -68,9 +68,15 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
   void didUpdateWidget(covariant F9ContextPanels oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.showDiagnostic != widget.showDiagnostic) {
-      final int previousIndex = _controller.index.clamp(0, _tabCount - 1).toInt();
+      final int previousIndex = _controller.index
+          .clamp(0, _tabCount - 1)
+          .toInt();
       _controller.dispose();
-      _controller = TabController(length: _tabCount, vsync: this, initialIndex: previousIndex);
+      _controller = TabController(
+        length: _tabCount,
+        vsync: this,
+        initialIndex: previousIndex,
+      );
     }
   }
 
@@ -91,10 +97,20 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
               isScrollable: false,
               tabs: <Widget>[
                 const Tab(icon: Icon(Icons.tune_outlined), text: 'Propriétés'),
-                const Tab(icon: Icon(Icons.straighten_outlined), text: 'Mesures'),
-                const Tab(icon: Icon(Icons.psychology_alt_outlined), text: 'EIE'),
+                const Tab(
+                  icon: Icon(Icons.straighten_outlined),
+                  text: 'Mesures',
+                ),
+                const Tab(
+                  icon: Icon(Icons.psychology_alt_outlined),
+                  text: 'EIE',
+                ),
                 if (widget.showDiagnostic)
-                  const Tab(key: Key('diagnostic-tab'), icon: Icon(Icons.fact_check_outlined), text: 'Diagnostic'),
+                  const Tab(
+                    key: Key('diagnostic-tab'),
+                    icon: Icon(Icons.fact_check_outlined),
+                    text: 'Diagnostic',
+                  ),
               ],
             ),
           ),
@@ -118,7 +134,9 @@ class _F9ContextPanelsState extends State<F9ContextPanels> with TickerProviderSt
                 ),
                 _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
                 if (widget.showDiagnostic)
-                  _StudentDiagnosticPanel(controller: widget.tpSessionController),
+                  _StudentDiagnosticPanel(
+                    controller: widget.tpSessionController,
+                  ),
               ],
             ),
           ),
@@ -153,7 +171,10 @@ class _PropertiesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final F9ElementDetails? details = F9ElementEditor.describe(circuit, selectedId);
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      circuit,
+      selectedId,
+    );
     final bool? primaryToggleValue = details?.primaryToggleValue;
     final bool directCanvasControl = switch (details?.modelType.toLowerCase()) {
       'switch' ||
@@ -169,7 +190,10 @@ class _PropertiesPanel extends StatelessWidget {
       key: const Key('properties-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
       children: <Widget>[
-        const ElectroSimSectionTitle(title: 'Propriétés', subtitle: 'État UI séparé de l’état électrique'),
+        const ElectroSimSectionTitle(
+          title: 'Propriétés',
+          subtitle: 'État UI séparé de l’état électrique',
+        ),
         const SizedBox(height: ElectroSimSpacing.md),
         InputDecorator(
           decoration: const InputDecoration(labelText: 'Sélection clavier'),
@@ -181,10 +205,20 @@ class _PropertiesPanel extends StatelessWidget {
               hint: const Text('Choisir un élément'),
               items: <DropdownMenuItem<String>>[
                 ...circuit.sources.map(
-                  (SourceInstance source) => DropdownMenuItem<String>(value: source.id.value, child: Text('${f9ModelLabel(source.modelType)} · ${source.id.value}')),
+                  (SourceInstance source) => DropdownMenuItem<String>(
+                    value: source.id.value,
+                    child: Text(
+                      '${f9ModelLabel(source.modelType)} · ${source.id.value}',
+                    ),
+                  ),
                 ),
                 ...circuit.components.map(
-                  (ComponentInstance component) => DropdownMenuItem<String>(value: component.id.value, child: Text('${f9ModelLabel(component.modelType)} · ${component.id.value}')),
+                  (ComponentInstance component) => DropdownMenuItem<String>(
+                    value: component.id.value,
+                    child: Text(
+                      '${f9ModelLabel(component.modelType)} · ${component.id.value}',
+                    ),
+                  ),
                 ),
                 ...circuit.connections.map(
                   (Connection connection) => DropdownMenuItem<String>(
@@ -211,7 +245,13 @@ class _PropertiesPanel extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: ElectroSimSpacing.xxs),
-          Text(details.id, key: const Key('properties-element-id'), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ElectroSimColors.textSecondary)),
+          Text(
+            details.id,
+            key: const Key('properties-element-id'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ElectroSimColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: ElectroSimSpacing.md),
           _PropertyLine(
             label: 'Type',
@@ -222,13 +262,17 @@ class _PropertiesPanel extends StatelessWidget {
             },
           ),
           _PropertyLine(label: 'État', value: details.stateLabel),
-          _PropertyLine(label: 'Bornes', value: details.terminalLabels.join(' · ')),
+          _PropertyLine(
+            label: 'Bornes',
+            value: details.terminalLabels.join(' · '),
+          ),
           if (details.parameters.isNotEmpty) ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             Text('Paramètres', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: ElectroSimSpacing.xs),
             ...details.parameters.entries.map(
-              (MapEntry<String, Object?> entry) => _PropertyLine(label: entry.key, value: '${entry.value}'),
+              (MapEntry<String, Object?> entry) =>
+                  _PropertyLine(label: entry.key, value: '${entry.value}'),
             ),
           ],
           if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
@@ -239,7 +283,9 @@ class _PropertiesPanel extends StatelessWidget {
               title: Text(details.primaryToggleLabel ?? 'État'),
               subtitle: const Text('Commande explicite du CircuitState'),
               value: primaryToggleValue,
-              onChanged: onTogglePrimaryState == null ? null : (_) => onTogglePrimaryState!(),
+              onChanged: onTogglePrimaryState == null
+                  ? null
+                  : (_) => onTogglePrimaryState!(),
             ),
           ],
           if (primaryToggleValue != null && directCanvasControl) ...<Widget>[
@@ -274,7 +320,9 @@ class _PropertiesPanel extends StatelessWidget {
           child: Text(
             status,
             key: const Key('context-status-message'),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: ElectroSimColors.textSecondary),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: ElectroSimColors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -301,14 +349,18 @@ class _MeasurementsPanel extends StatelessWidget {
 
     final bool ac3 =
         runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
-    final MeasurementResult? phaseSequence =
-        ac3 ? runtimeSnapshot.measurePhaseSequence() : null;
-    final MeasurementResult? totalActive =
-        ac3 ? runtimeSnapshot.measureActivePower() : null;
-    final MeasurementResult? totalReactive =
-        ac3 ? runtimeSnapshot.measureReactivePower() : null;
-    final MeasurementResult? totalApparent =
-        ac3 ? runtimeSnapshot.measureApparentPower() : null;
+    final MeasurementResult? phaseSequence = ac3
+        ? runtimeSnapshot.measurePhaseSequence()
+        : null;
+    final MeasurementResult? totalActive = ac3
+        ? runtimeSnapshot.measureActivePower()
+        : null;
+    final MeasurementResult? totalReactive = ac3
+        ? runtimeSnapshot.measureReactivePower()
+        : null;
+    final MeasurementResult? totalApparent = ac3
+        ? runtimeSnapshot.measureApparentPower()
+        : null;
 
     final _MeasurementTarget? target = _target();
     if (target == null) {
@@ -373,8 +425,8 @@ class _MeasurementsPanel extends StatelessWidget {
       );
     }
 
-    final bool ac = runtimeSnapshot.solverKind ==
-            ElectroSimRuntimeSolverKind.ac1 ||
+    final bool ac =
+        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac1 ||
         runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
     final MeasurementResult voltage = ac
         ? runtimeSnapshot.measureAcVoltage(
@@ -388,24 +440,26 @@ class _MeasurementsPanel extends StatelessWidget {
     final MeasurementResult current = ac
         ? runtimeSnapshot.measureAcCurrent(branchId: target.branchId)
         : runtimeSnapshot.measureCurrent(branchId: target.branchId);
-    final MeasurementResult? frequency =
-        ac ? runtimeSnapshot.measureFrequency() : null;
+    final MeasurementResult? frequency = ac
+        ? runtimeSnapshot.measureFrequency()
+        : null;
     final MeasurementResult? activePower = ac
         ? (ac3
-            ? totalActive
-            : runtimeSnapshot.measureActivePower(branchId: target.branchId))
+              ? totalActive
+              : runtimeSnapshot.measureActivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? reactivePower = ac
         ? (ac3
-            ? totalReactive
-            : runtimeSnapshot.measureReactivePower(branchId: target.branchId))
+              ? totalReactive
+              : runtimeSnapshot.measureReactivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? apparentPower = ac
         ? (ac3
-            ? totalApparent
-            : runtimeSnapshot.measureApparentPower(branchId: target.branchId))
+              ? totalApparent
+              : runtimeSnapshot.measureApparentPower(branchId: target.branchId))
         : null;
-    final bool available = voltage.isValid &&
+    final bool available =
+        voltage.isValid &&
         current.isValid &&
         (frequency == null || frequency.isValid) &&
         (activePower == null || activePower.isValid) &&
@@ -423,8 +477,12 @@ class _MeasurementsPanel extends StatelessWidget {
         const SizedBox(height: ElectroSimSpacing.md),
         ElectroSimStatusChip(
           key: const Key('measurement-engine-status'),
-          label: available ? 'Mesures moteur disponibles' : 'Mesure indisponible',
-          icon: available ? Icons.verified_outlined : Icons.warning_amber_outlined,
+          label: available
+              ? 'Mesures moteur disponibles'
+              : 'Mesure indisponible',
+          icon: available
+              ? Icons.verified_outlined
+              : Icons.warning_amber_outlined,
           emphasized: available,
         ),
         const SizedBox(height: ElectroSimSpacing.md),
@@ -494,7 +552,9 @@ class _MeasurementsPanel extends StatelessWidget {
           const SizedBox(height: ElectroSimSpacing.sm),
           _InstrumentReading(
             icon: Icons.electric_meter_outlined,
-            title: ac3 ? 'Puissance apparente totale S' : 'Puissance apparente S',
+            title: ac3
+                ? 'Puissance apparente totale S'
+                : 'Puissance apparente S',
             reading: apparentPower!,
             readingKey: const Key('measurement-apparent-power-reading'),
           ),
@@ -502,7 +562,9 @@ class _MeasurementsPanel extends StatelessWidget {
         if (!available) ...<Widget>[
           const SizedBox(height: ElectroSimSpacing.md),
           Text(
-            voltage.message ?? current.message ?? 'Résultat électrique indisponible.',
+            voltage.message ??
+                current.message ??
+                'Résultat électrique indisponible.',
             key: const Key('measurement-error-message'),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: ElectroSimColors.textSecondary,
@@ -639,8 +701,8 @@ class _PvRuntimePanel extends StatelessWidget {
             pv.batteryPowerW > 1e-9
                 ? 'Batterie en décharge'
                 : pv.batteryPowerW < -1e-9
-                    ? 'Batterie en charge'
-                    : 'Batterie au repos',
+                ? 'Batterie en charge'
+                : 'Batterie au repos',
           ),
           const SizedBox(height: ElectroSimSpacing.sm),
         ],
@@ -703,7 +765,12 @@ class _InstrumentReading extends StatelessWidget {
         padding: const EdgeInsets.all(ElectroSimSpacing.md),
         child: Row(
           children: <Widget>[
-            Icon(icon, color: reading.isValid ? ElectroSimColors.primary : ElectroSimColors.textSecondary),
+            Icon(
+              icon,
+              color: reading.isValid
+                  ? ElectroSimColors.primary
+                  : ElectroSimColors.textSecondary,
+            ),
             const SizedBox(width: ElectroSimSpacing.sm),
             Expanded(
               child: Column(
@@ -711,7 +778,11 @@ class _InstrumentReading extends StatelessWidget {
                 children: <Widget>[
                   Text(title, style: Theme.of(context).textTheme.labelLarge),
                   const SizedBox(height: ElectroSimSpacing.xxs),
-                  Text(value, key: readingKey, style: Theme.of(context).textTheme.headlineSmall),
+                  Text(
+                    value,
+                    key: readingKey,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
                 ],
               ),
             ),
@@ -739,6 +810,7 @@ class _InstrumentReading extends StatelessWidget {
     return '${value.toStringAsFixed(3)} $unit';
   }
 }
+
 class _EiePanel extends StatelessWidget {
   const _EiePanel({required this.runtimeSnapshot});
 
@@ -763,13 +835,13 @@ class _EiePanel extends StatelessWidget {
           label: !available
               ? 'EIE non intégré pour ce mode'
               : hasAdvice
-                  ? 'Anomalie étayée détectée'
-                  : 'Aucune anomalie étayée',
+              ? 'Anomalie étayée détectée'
+              : 'Aucune anomalie étayée',
           icon: !available
               ? Icons.info_outline
               : hasAdvice
-                  ? Icons.warning_amber_outlined
-                  : Icons.verified_outlined,
+              ? Icons.warning_amber_outlined
+              : Icons.verified_outlined,
           emphasized: hasAdvice,
         ),
         const SizedBox(height: ElectroSimSpacing.sm),
@@ -815,9 +887,10 @@ class _EiePanel extends StatelessWidget {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 evidenceId,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: ElectroSimColors.textSecondary,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: ElectroSimColors.textSecondary,
+                                    ),
                               ),
                             ),
                         ],
@@ -832,6 +905,7 @@ class _EiePanel extends StatelessWidget {
     );
   }
 }
+
 class _StudentDiagnosticPanel extends StatefulWidget {
   const _StudentDiagnosticPanel({this.controller});
 
@@ -898,8 +972,8 @@ class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
           'Entrées enregistrées : $savedCount',
           key: const Key('diagnostic-saved-count'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ElectroSimColors.textSecondary,
-              ),
+            color: ElectroSimColors.textSecondary,
+          ),
         ),
         if (_status.isNotEmpty) ...<Widget>[
           const SizedBox(height: ElectroSimSpacing.xs),
@@ -920,10 +994,7 @@ class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
     }
     final List<DiagnosticEntry> entries = <DiagnosticEntry>[
       if (_symptom.text.trim().isNotEmpty)
-        DiagnosticEntry(
-          promptId: 'symptom',
-          answer: _symptom.text.trim(),
-        ),
+        DiagnosticEntry(promptId: 'symptom', answer: _symptom.text.trim()),
       if (_hypothesis.text.trim().isNotEmpty)
         DiagnosticEntry(
           promptId: 'hypothesis',
@@ -973,7 +1044,10 @@ class _PropertyLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SizedBox(width: 72, child: Text(label, style: Theme.of(context).textTheme.labelMedium)),
+          SizedBox(
+            width: 72,
+            child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+          ),
           Expanded(child: Text(value)),
         ],
       ),

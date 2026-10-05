@@ -138,9 +138,7 @@ class _Point5V1ParityProofPageState extends State<_Point5V1ParityProofPage> {
                           children: <Widget>[
                             Text(
                               'PREUVE EN SIMULATION RÉELLE',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
+                              style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             const Spacer(),
@@ -152,8 +150,9 @@ class _Point5V1ParityProofPageState extends State<_Point5V1ParityProofPage> {
                         const SizedBox(height: 8),
                         Expanded(
                           child: ClipRRect(
-                            borderRadius:
-                                BorderRadius.circular(ElectroSimRadii.card),
+                            borderRadius: BorderRadius.circular(
+                              ElectroSimRadii.card,
+                            ),
                             child: Stack(
                               fit: StackFit.expand,
                               children: <Widget>[
@@ -232,8 +231,7 @@ class _PilotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = definition.modelType.toLowerCase();
-    final bool source =
-        type == 'dc_voltage_source' || type == 'voltage_source';
+    final bool source = type == 'dc_voltage_source' || type == 'voltage_source';
     final bool lamp = type == 'lamp';
     final bool breaker = type.startsWith('breaker');
     final bool push = type == 'push_button_no';
@@ -254,10 +252,9 @@ class _PilotCard extends StatelessWidget {
               definition.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const Spacer(),
             F18ComponentAssetVisual(
@@ -272,8 +269,8 @@ class _PilotCard extends StatelessWidget {
             Text(
               'Proportion réelle · vectoriel de face',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: ElectroSimColors.textSecondary,
-                  ),
+                color: ElectroSimColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -288,8 +285,7 @@ CircuitState _buildPilotCircuit() {
     String name, {
     TerminalRole role = TerminalRole.generic,
     PhaseTag phase = PhaseTag.none,
-  }) =>
-      Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+  }) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
 
   final Terminal sourcePos = t(
     'p5-source-pos',
@@ -329,13 +325,8 @@ CircuitState _buildPilotCircuit() {
         id: ComponentId('breaker-1'),
         modelType: 'breaker_dc',
         terminals: <Terminal>[breakerA, breakerB],
-        parameters: const <String, Object?>{
-          'protectionRatedCurrentA': 10.0,
-        },
-        controlState: const <String, Object?>{
-          'closed': true,
-          'tripped': false,
-        },
+        parameters: const <String, Object?>{'protectionRatedCurrentA': 10.0},
+        controlState: const <String, Object?>{'closed': true, 'tripped': false},
       ),
       ComponentInstance(
         id: ComponentId('switch-1'),
@@ -408,8 +399,10 @@ CircuitVisualLayout _buildPilotLayout(CircuitState circuit) {
       'source-24v': F18PilotVisualMetrics.boardSizeFor('dc_voltage_source'),
     },
   );
-  final CircuitGeometryIndex geometry =
-      CircuitGeometryIndex.build(circuit, base);
+  final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+    circuit,
+    base,
+  );
   final Offset lampReturn =
       geometry.terminalPositions[TerminalId('p5-lamp-a')]!;
   final Offset sourceReturn =

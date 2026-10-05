@@ -11,33 +11,45 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('M5 AC3 convergence', () {
-    test('lamp is solved through its canonical M2 branch in a balanced star', () {
-      final Ac3SolveResult result = solve(_balancedStar());
-      expect(result.status, Ac3SolveStatus.solved);
-      expect(result.sourceSequence, Ac3PhaseSequence.positive);
-      expect(result.voltageBalanced, isTrue);
-      expect(result.currentBalanced, isTrue);
-      expect(result.branch('component:l1').current?.magnitude, closeTo(5.0, 1e-8));
-      expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(5.0, 1e-8));
-      expect(result.neutralCurrent.magnitude, lessThan(1e-8));
-      _expectResiduals(result);
-    });
+    test(
+      'lamp is solved through its canonical M2 branch in a balanced star',
+      () {
+        final Ac3SolveResult result = solve(_balancedStar());
+        expect(result.status, Ac3SolveStatus.solved);
+        expect(result.sourceSequence, Ac3PhaseSequence.positive);
+        expect(result.voltageBalanced, isTrue);
+        expect(result.currentBalanced, isTrue);
+        expect(
+          result.branch('component:l1').current?.magnitude,
+          closeTo(5.0, 1e-8),
+        );
+        expect(result.lineCurrent(PhaseTag.l1).magnitude, closeTo(5.0, 1e-8));
+        expect(result.neutralCurrent.magnitude, lessThan(1e-8));
+        _expectResiduals(result);
+      },
+    );
 
-    test('single-pole AC3 switch opens and closes one phase without changing source sequence', () {
-      final Ac3SolveResult open = solve(_switchedStar(closed: false));
-      expect(open.status, Ac3SolveStatus.solved);
-      expect(open.sourceSequence, Ac3PhaseSequence.positive);
-      expect(open.branch('component:s1').kind, Ac3BranchKind.openCircuit);
-      expect(open.branch('component:l1').current?.magnitude, lessThan(1e-10));
-      expect(open.currentBalanced, isFalse);
+    test(
+      'single-pole AC3 switch opens and closes one phase without changing source sequence',
+      () {
+        final Ac3SolveResult open = solve(_switchedStar(closed: false));
+        expect(open.status, Ac3SolveStatus.solved);
+        expect(open.sourceSequence, Ac3PhaseSequence.positive);
+        expect(open.branch('component:s1').kind, Ac3BranchKind.openCircuit);
+        expect(open.branch('component:l1').current?.magnitude, lessThan(1e-10));
+        expect(open.currentBalanced, isFalse);
 
-      final Ac3SolveResult closed = solve(_switchedStar(closed: true));
-      expect(closed.status, Ac3SolveStatus.solved);
-      expect(closed.branch('component:s1').kind, Ac3BranchKind.idealSwitch);
-      expect(closed.branch('component:l1').current?.magnitude, closeTo(5.0, 1e-8));
-      expect(closed.currentBalanced, isTrue);
-      _expectResiduals(closed);
-    });
+        final Ac3SolveResult closed = solve(_switchedStar(closed: true));
+        expect(closed.status, Ac3SolveStatus.solved);
+        expect(closed.branch('component:s1').kind, Ac3BranchKind.idealSwitch);
+        expect(
+          closed.branch('component:l1').current?.magnitude,
+          closeTo(5.0, 1e-8),
+        );
+        expect(closed.currentBalanced, isTrue);
+        _expectResiduals(closed);
+      },
+    );
   });
 }
 

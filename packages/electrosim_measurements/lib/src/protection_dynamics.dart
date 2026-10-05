@@ -3,8 +3,15 @@ import 'dart:math' as math;
 import 'package:electrosim_domain/electrosim_domain.dart';
 
 enum ProtectionCurveFamily { breaker, fuse, thermal, motor }
+
 enum ProtectionTripCurve { b, c, d, fuse, thermal, motor }
-enum ProtectionZone { normal, thermalTimed, magneticFast, magneticInstantaneous }
+
+enum ProtectionZone {
+  normal,
+  thermalTimed,
+  magneticFast,
+  magneticInstantaneous,
+}
 
 final class ProtectionProfile {
   const ProtectionProfile({
@@ -29,10 +36,10 @@ final class ProtectionExposureState {
   });
 
   const ProtectionExposureState.zero()
-      : exposure = 0.0,
-        ratio = 0.0,
-        tripTimeSeconds = double.infinity,
-        zone = ProtectionZone.normal;
+    : exposure = 0.0,
+      ratio = 0.0,
+      tripTimeSeconds = double.infinity,
+      zone = ProtectionZone.normal;
 
   final double exposure;
   final double ratio;
@@ -68,10 +75,8 @@ final class ProtectionDynamicsEngine {
       );
     }
     if (model.contains('motor_protection')) {
-      final double high = _positive(
-            component.parameters['magneticMultiple'],
-          ) ??
-          10.0;
+      final double high =
+          _positive(component.parameters['magneticMultiple']) ?? 10.0;
       return ProtectionProfile(
         family: ProtectionCurveFamily.motor,
         curve: ProtectionTripCurve.motor,
@@ -81,27 +86,27 @@ final class ProtectionDynamicsEngine {
     }
 
     final Object? rawTripCurve = component.parameters['tripCurve'];
-    final String rawCurve =
-        (rawTripCurve is String ? rawTripCurve : 'C').toUpperCase();
+    final String rawCurve = (rawTripCurve is String ? rawTripCurve : 'C')
+        .toUpperCase();
     return switch (rawCurve) {
       'B' => const ProtectionProfile(
-          family: ProtectionCurveFamily.breaker,
-          curve: ProtectionTripCurve.b,
-          magneticLowMultiple: 3.0,
-          magneticHighMultiple: 5.0,
-        ),
+        family: ProtectionCurveFamily.breaker,
+        curve: ProtectionTripCurve.b,
+        magneticLowMultiple: 3.0,
+        magneticHighMultiple: 5.0,
+      ),
       'D' => const ProtectionProfile(
-          family: ProtectionCurveFamily.breaker,
-          curve: ProtectionTripCurve.d,
-          magneticLowMultiple: 10.0,
-          magneticHighMultiple: 20.0,
-        ),
+        family: ProtectionCurveFamily.breaker,
+        curve: ProtectionTripCurve.d,
+        magneticLowMultiple: 10.0,
+        magneticHighMultiple: 20.0,
+      ),
       _ => const ProtectionProfile(
-          family: ProtectionCurveFamily.breaker,
-          curve: ProtectionTripCurve.c,
-          magneticLowMultiple: 5.0,
-          magneticHighMultiple: 10.0,
-        ),
+        family: ProtectionCurveFamily.breaker,
+        curve: ProtectionTripCurve.c,
+        magneticLowMultiple: 5.0,
+        magneticHighMultiple: 10.0,
+      ),
     };
   }
 
@@ -144,13 +149,7 @@ final class ProtectionDynamicsEngine {
     if (ratio < 1.45) return _logInterp(ratio, 1.13, 7200, 1.45, 3600);
     if (ratio < 2.55) return _logInterp(ratio, 1.45, 3600, 2.55, 60);
     if (ratio < profile.magneticLowMultiple) {
-      return _logInterp(
-        ratio,
-        2.55,
-        60,
-        profile.magneticLowMultiple,
-        2,
-      );
+      return _logInterp(ratio, 2.55, 60, profile.magneticLowMultiple, 2);
     }
     if (ratio < profile.magneticHighMultiple) return 0.10;
     return 0.02;
@@ -171,10 +170,7 @@ final class ProtectionDynamicsEngine {
     return ProtectionZone.thermalTimed;
   }
 
-  bool shouldOpenInstantaneously(
-    ComponentInstance component,
-    double currentA,
-  ) {
+  bool shouldOpenInstantaneously(ComponentInstance component, double currentA) {
     final double? rated = ratedCurrentA(component);
     if (rated == null || !currentA.isFinite) return false;
     final ProtectionProfile p = profile(component);
@@ -196,14 +192,16 @@ final class ProtectionDynamicsEngine {
     final ProtectionProfile p = profile(component);
     final double tripTime = tripTimeForRatio(p, ratio);
     final ProtectionZone z = zone(component, currentA);
-    final double seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    final double seconds =
+        elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     double exposure = previous.exposure;
 
     if (tripTime.isFinite && tripTime > 0) {
       exposure = math.min(1.0, exposure + seconds / tripTime);
     } else {
-      final double coolSeconds =
-          p.curve == ProtectionTripCurve.thermal ? 900.0 : 300.0;
+      final double coolSeconds = p.curve == ProtectionTripCurve.thermal
+          ? 900.0
+          : 300.0;
       exposure = math.max(0.0, exposure - seconds / coolSeconds);
     }
 
@@ -216,13 +214,7 @@ final class ProtectionDynamicsEngine {
   }
 }
 
-double _logInterp(
-  double x,
-  double x1,
-  double y1,
-  double x2,
-  double y2,
-) {
+double _logInterp(double x, double x1, double y1, double x2, double y2) {
   if (x <= x1) return y1;
   if (x >= x2) return y2;
   final double t = (x - x1) / (x2 - x1);

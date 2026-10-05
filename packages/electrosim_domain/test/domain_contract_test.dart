@@ -79,14 +79,22 @@ void main() {
     });
 
     test('reject empty, whitespace and unsupported characters', () {
-      for (final String value in <String>['', ' abc', 'abc ', 'a/b', 'électro']) {
+      for (final String value in <String>[
+        '',
+        ' abc',
+        'abc ',
+        'a/b',
+        'électro',
+      ]) {
         expect(
           () => CircuitId(value),
-          throwsA(isA<DomainException>().having(
-            (DomainException e) => e.code,
-            'code',
-            DomainErrorCode.invalidId,
-          )),
+          throwsA(
+            isA<DomainException>().having(
+              (DomainException e) => e.code,
+              'code',
+              DomainErrorCode.invalidId,
+            ),
+          ),
         );
       }
     });
@@ -100,7 +108,10 @@ void main() {
       );
       expect(quantity.unit.symbol, 'V');
       expect(ElectricalQuantity.fromJson(quantity.toJson()), quantity);
-      expect(quantity.hashCode, ElectricalQuantity(value: 24, unit: ElectricalUnit.volt).hashCode);
+      expect(
+        quantity.hashCode,
+        ElectricalQuantity(value: 24, unit: ElectricalUnit.volt).hashCode,
+      );
     });
 
     test('quantity rejects non-finite values', () {
@@ -116,11 +127,13 @@ void main() {
           'value': 1,
           'unit': 'banana',
         }),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidEnumValue,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidEnumValue,
+          ),
+        ),
       );
     });
   });
@@ -145,7 +158,10 @@ void main() {
         'resistanceOhm': 12,
         'nested': <String, Object?>{'b': 2, 'a': 1},
       };
-      final List<Terminal> terminals = <Terminal>[terminal('r-a', 'A'), terminal('r-b', 'B')];
+      final List<Terminal> terminals = <Terminal>[
+        terminal('r-a', 'A'),
+        terminal('r-b', 'B'),
+      ];
       final ComponentInstance component = ComponentInstance(
         id: ComponentId('r-1'),
         modelType: 'resistor',
@@ -159,8 +175,14 @@ void main() {
       expect(component.parameters['resistanceOhm'], 12);
       expect(component.terminals, hasLength(2));
       expect(ComponentInstance.fromJson(component.toJson()), component);
-      expect(() => component.parameters['x'] = 1, throwsA(isA<UnsupportedError>()));
-      expect(() => component.terminals.add(terminal('x', 'X')), throwsA(isA<UnsupportedError>()));
+      expect(
+        () => component.parameters['x'] = 1,
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => component.terminals.add(terminal('x', 'X')),
+        throwsA(isA<UnsupportedError>()),
+      );
     });
 
     test('component rejects duplicate terminal IDs and empty model type', () {
@@ -170,11 +192,13 @@ void main() {
           modelType: 'x',
           terminals: <Terminal>[terminal('same', 'A'), terminal('same', 'B')],
         ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.duplicateId,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.duplicateId,
+          ),
+        ),
       );
       expect(
         () => ComponentInstance(
@@ -195,7 +219,10 @@ void main() {
         enabled: false,
       );
       expect(SourceInstance.fromJson(source.toJson()), source);
-      expect(source.hashCode, SourceInstance.fromJson(source.toJson()).hashCode);
+      expect(
+        source.hashCode,
+        SourceInstance.fromJson(source.toJson()).hashCode,
+      );
       expect(
         () => SourceInstance(
           id: SourceId('s-2'),
@@ -228,18 +255,23 @@ void main() {
         metadata: <String, Object?>{'gaugeMm2': 2.5},
       );
       expect(Connection.fromJson(connection.toJson()), connection);
-      expect(connection.hashCode, Connection.fromJson(connection.toJson()).hashCode);
+      expect(
+        connection.hashCode,
+        Connection.fromJson(connection.toJson()).hashCode,
+      );
       expect(
         () => Connection(
           id: ConnectionId('bad'),
           fromTerminalId: TerminalId('a'),
           toTerminalId: TerminalId('a'),
         ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidTerminalReference,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidTerminalReference,
+          ),
+        ),
       );
     });
   });
@@ -253,7 +285,10 @@ void main() {
       expect(restored, original);
       expect(restored.hashCode, original.hashCode);
       expect(encoded2, encoded1);
-      expect((jsonDecode(encoded1) as Map<String, Object?>)['schemaVersion'], 1);
+      expect(
+        (jsonDecode(encoded1) as Map<String, Object?>)['schemaVersion'],
+        1,
+      );
     });
 
     test('root lists and maps are immutable snapshots', () {
@@ -277,7 +312,10 @@ void main() {
       expect(state.components, isEmpty);
       expect(state.metadata['name'], 'before');
       expect(() => state.metadata['x'] = 1, throwsA(isA<UnsupportedError>()));
-      expect(() => state.connections.add(sampleCircuit().connections.first), throwsA(isA<UnsupportedError>()));
+      expect(
+        () => state.connections.add(sampleCircuit().connections.first),
+        throwsA(isA<UnsupportedError>()),
+      );
     });
 
     test('negative revision is rejected', () {
@@ -287,108 +325,115 @@ void main() {
           revision: -1,
           mode: ElectricalMode.dc,
         ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidValue,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidValue,
+          ),
+        ),
       );
     });
 
-    test('duplicate component, source, terminal and connection IDs are rejected', () {
-      final ComponentInstance a = ComponentInstance(
-        id: ComponentId('same-component'),
-        modelType: 'lamp',
-        terminals: <Terminal>[terminal('a1', 'A')],
-      );
-      final ComponentInstance b = ComponentInstance(
-        id: ComponentId('same-component'),
-        modelType: 'switch',
-        terminals: <Terminal>[terminal('b1', 'B')],
-      );
-      expect(
-        () => CircuitState(
-          circuitId: CircuitId('dup-component'),
-          revision: 0,
-          mode: ElectricalMode.dc,
-          components: <ComponentInstance>[a, b],
-        ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.duplicateId,
-        )),
-      );
+    test(
+      'duplicate component, source, terminal and connection IDs are rejected',
+      () {
+        final ComponentInstance a = ComponentInstance(
+          id: ComponentId('same-component'),
+          modelType: 'lamp',
+          terminals: <Terminal>[terminal('a1', 'A')],
+        );
+        final ComponentInstance b = ComponentInstance(
+          id: ComponentId('same-component'),
+          modelType: 'switch',
+          terminals: <Terminal>[terminal('b1', 'B')],
+        );
+        expect(
+          () => CircuitState(
+            circuitId: CircuitId('dup-component'),
+            revision: 0,
+            mode: ElectricalMode.dc,
+            components: <ComponentInstance>[a, b],
+          ),
+          throwsA(
+            isA<DomainException>().having(
+              (DomainException e) => e.code,
+              'code',
+              DomainErrorCode.duplicateId,
+            ),
+          ),
+        );
 
-      final SourceInstance s1 = SourceInstance(
-        id: SourceId('same-source'),
-        modelType: 'dc',
-        terminals: <Terminal>[terminal('s1a', 'A')],
-      );
-      final SourceInstance s2 = SourceInstance(
-        id: SourceId('same-source'),
-        modelType: 'dc',
-        terminals: <Terminal>[terminal('s2a', 'A')],
-      );
-      expect(
-        () => CircuitState(
-          circuitId: CircuitId('dup-source'),
-          revision: 0,
-          mode: ElectricalMode.dc,
-          sources: <SourceInstance>[s1, s2],
-        ),
-        throwsA(isA<DomainException>()),
-      );
+        final SourceInstance s1 = SourceInstance(
+          id: SourceId('same-source'),
+          modelType: 'dc',
+          terminals: <Terminal>[terminal('s1a', 'A')],
+        );
+        final SourceInstance s2 = SourceInstance(
+          id: SourceId('same-source'),
+          modelType: 'dc',
+          terminals: <Terminal>[terminal('s2a', 'A')],
+        );
+        expect(
+          () => CircuitState(
+            circuitId: CircuitId('dup-source'),
+            revision: 0,
+            mode: ElectricalMode.dc,
+            sources: <SourceInstance>[s1, s2],
+          ),
+          throwsA(isA<DomainException>()),
+        );
 
-      final ComponentInstance c1 = ComponentInstance(
-        id: ComponentId('c1'),
-        modelType: 'a',
-        terminals: <Terminal>[terminal('global-terminal', 'A')],
-      );
-      final SourceInstance c2 = SourceInstance(
-        id: SourceId('s3'),
-        modelType: 'b',
-        terminals: <Terminal>[terminal('global-terminal', 'B')],
-      );
-      expect(
-        () => CircuitState(
-          circuitId: CircuitId('dup-terminal'),
-          revision: 0,
-          mode: ElectricalMode.dc,
-          components: <ComponentInstance>[c1],
-          sources: <SourceInstance>[c2],
-        ),
-        throwsA(isA<DomainException>()),
-      );
+        final ComponentInstance c1 = ComponentInstance(
+          id: ComponentId('c1'),
+          modelType: 'a',
+          terminals: <Terminal>[terminal('global-terminal', 'A')],
+        );
+        final SourceInstance c2 = SourceInstance(
+          id: SourceId('s3'),
+          modelType: 'b',
+          terminals: <Terminal>[terminal('global-terminal', 'B')],
+        );
+        expect(
+          () => CircuitState(
+            circuitId: CircuitId('dup-terminal'),
+            revision: 0,
+            mode: ElectricalMode.dc,
+            components: <ComponentInstance>[c1],
+            sources: <SourceInstance>[c2],
+          ),
+          throwsA(isA<DomainException>()),
+        );
 
-      final Terminal ta = terminal('ta', 'A');
-      final Terminal tb = terminal('tb', 'B');
-      final ComponentInstance owner = ComponentInstance(
-        id: ComponentId('owner'),
-        modelType: 'wireable',
-        terminals: <Terminal>[ta, tb],
-      );
-      final Connection w1 = Connection(
-        id: ConnectionId('same-wire'),
-        fromTerminalId: ta.id,
-        toTerminalId: tb.id,
-      );
-      final Connection w2 = Connection(
-        id: ConnectionId('same-wire'),
-        fromTerminalId: tb.id,
-        toTerminalId: ta.id,
-      );
-      expect(
-        () => CircuitState(
-          circuitId: CircuitId('dup-wire'),
-          revision: 0,
-          mode: ElectricalMode.dc,
-          components: <ComponentInstance>[owner],
-          connections: <Connection>[w1, w2],
-        ),
-        throwsA(isA<DomainException>()),
-      );
-    });
+        final Terminal ta = terminal('ta', 'A');
+        final Terminal tb = terminal('tb', 'B');
+        final ComponentInstance owner = ComponentInstance(
+          id: ComponentId('owner'),
+          modelType: 'wireable',
+          terminals: <Terminal>[ta, tb],
+        );
+        final Connection w1 = Connection(
+          id: ConnectionId('same-wire'),
+          fromTerminalId: ta.id,
+          toTerminalId: tb.id,
+        );
+        final Connection w2 = Connection(
+          id: ConnectionId('same-wire'),
+          fromTerminalId: tb.id,
+          toTerminalId: ta.id,
+        );
+        expect(
+          () => CircuitState(
+            circuitId: CircuitId('dup-wire'),
+            revision: 0,
+            mode: ElectricalMode.dc,
+            components: <ComponentInstance>[owner],
+            connections: <Connection>[w1, w2],
+          ),
+          throwsA(isA<DomainException>()),
+        );
+      },
+    );
 
     test('connection cannot reference unknown terminals', () {
       expect(
@@ -404,11 +449,13 @@ void main() {
             ),
           ],
         ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidTerminalReference,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidTerminalReference,
+          ),
+        ),
       );
     });
 
@@ -417,30 +464,36 @@ void main() {
       json['schemaVersion'] = 99;
       expect(
         () => CircuitState.fromJson(json),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidSchemaVersion,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidSchemaVersion,
+          ),
+        ),
       );
       expect(
         () => CircuitState.fromJsonString('[1,2,3]'),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidJsonValue,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidJsonValue,
+          ),
+        ),
       );
     });
 
     test('missing field and invalid JSON value are structured failures', () {
       expect(
         () => Terminal.fromJson(<String, Object?>{}),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.missingField,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.missingField,
+          ),
+        ),
       );
       expect(
         () => Terminal(
@@ -448,11 +501,13 @@ void main() {
           name: 'A',
           metadata: <String, Object?>{'nan': double.infinity},
         ),
-        throwsA(isA<DomainException>().having(
-          (DomainException e) => e.code,
-          'code',
-          DomainErrorCode.invalidJsonValue,
-        )),
+        throwsA(
+          isA<DomainException>().having(
+            (DomainException e) => e.code,
+            'code',
+            DomainErrorCode.invalidJsonValue,
+          ),
+        ),
       );
     });
   });

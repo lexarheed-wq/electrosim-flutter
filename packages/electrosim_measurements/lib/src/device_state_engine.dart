@@ -37,7 +37,8 @@ final class DeviceStateEngine {
         warnings: const <OperatingWarning>[
           OperatingWarning(
             code: OperatingWarningCode.simulationNotSolved,
-            message: 'Operating state requires a result for the current circuit revision.',
+            message:
+                'Operating state requires a result for the current circuit revision.',
           ),
         ],
         evidenceIds: const <String>[],
@@ -86,12 +87,15 @@ final class DeviceStateEngine {
       );
     }
 
-    if (component.modelType == 'switch' || component.modelType == 'switch_spst') {
+    if (component.modelType == 'switch' ||
+        component.modelType == 'switch_spst') {
       final Object? rawClosed = component.controlState['closed'];
       if (rawClosed is bool) {
         return ComponentOperatingState(
           componentId: component.id,
-          code: rawClosed ? ComponentOperatingCode.closed : ComponentOperatingCode.open,
+          code: rawClosed
+              ? ComponentOperatingCode.closed
+              : ComponentOperatingCode.open,
           voltageV: branch.voltageV,
           currentA: branch.currentA,
           powerW: branch.powerW,
@@ -99,7 +103,8 @@ final class DeviceStateEngine {
               ? const <OperatingWarning>[
                   OperatingWarning(
                     code: OperatingWarningCode.currentIndeterminate,
-                    message: 'Switch current is indeterminate for this solved constraint.',
+                    message:
+                        'Switch current is indeterminate for this solved constraint.',
                   ),
                 ]
               : const <OperatingWarning>[],
@@ -123,7 +128,8 @@ final class DeviceStateEngine {
           warning.code == OperatingWarningCode.overCurrent ||
           warning.code == OperatingWarningCode.overPower,
     );
-    final bool energized = branch.voltageV.abs() > zeroTolerance ||
+    final bool energized =
+        branch.voltageV.abs() > zeroTolerance ||
         (branch.currentA?.abs() ?? 0.0) > zeroTolerance ||
         (branch.powerW?.abs() ?? 0.0) > zeroTolerance;
 
@@ -212,7 +218,9 @@ final class DeviceStateEngine {
       return;
     }
     final Object? raw = parameters[key];
-    if (raw is! num || !raw.toDouble().isFinite || raw.toDouble() <= zeroTolerance) {
+    if (raw is! num ||
+        !raw.toDouble().isFinite ||
+        raw.toDouble() <= zeroTolerance) {
       warnings.add(
         OperatingWarning(
           code: OperatingWarningCode.invalidNominalLimit,

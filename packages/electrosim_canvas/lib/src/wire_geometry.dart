@@ -3,10 +3,7 @@ import 'dart:ui';
 enum WireAxis { horizontal, vertical }
 
 final class OrthogonalSegment {
-  const OrthogonalSegment({
-    required this.start,
-    required this.end,
-  });
+  const OrthogonalSegment({required this.start, required this.end});
 
   final Offset start;
   final Offset end;
@@ -43,10 +40,12 @@ final class OrthogonalSegment {
       return null;
     }
 
-    final OrthogonalSegment horizontal =
-        thisAxis == WireAxis.horizontal ? this : other;
-    final OrthogonalSegment vertical =
-        thisAxis == WireAxis.vertical ? this : other;
+    final OrthogonalSegment horizontal = thisAxis == WireAxis.horizontal
+        ? this
+        : other;
+    final OrthogonalSegment vertical = thisAxis == WireAxis.vertical
+        ? this
+        : other;
 
     final double x = vertical.start.dx;
     final double y = horizontal.start.dy;
@@ -61,9 +60,8 @@ final class OrthogonalSegment {
 }
 
 final class OrthogonalWirePath {
-  OrthogonalWirePath({
-    required List<Offset> points,
-  }) : points = List<Offset>.unmodifiable(points) {
+  OrthogonalWirePath({required List<Offset> points})
+    : points = List<Offset>.unmodifiable(points) {
     if (points.length < 2) {
       throw ArgumentError.value(
         points,
@@ -99,15 +97,17 @@ final class OrthogonalWirePath {
 }
 
 final class RoutingObstacle {
-  const RoutingObstacle({
-    required this.bounds,
-  });
+  const RoutingObstacle({required this.bounds});
 
   final Rect bounds;
 
   RoutingObstacle expanded(double margin) {
     if (margin < 0) {
-      throw ArgumentError.value(margin, 'margin', 'Margin must be non-negative.');
+      throw ArgumentError.value(
+        margin,
+        'margin',
+        'Margin must be non-negative.',
+      );
     }
     return RoutingObstacle(
       bounds: Rect.fromLTRB(

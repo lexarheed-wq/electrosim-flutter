@@ -43,101 +43,109 @@ Future<void> _pumpUntil(
 
 Future<void> _ensureTopOpen(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).bottom <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
     await tester.tap(find.byKey(electroSimTopEdgeKey));
     await tester.pumpAndSettle();
   }
 }
 
 void main() {
-  testWidgets('session management and supervision share one real TP controller',
-      (WidgetTester tester) async {
-    _desktop(tester);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'session management and supervision share one real TP controller',
+    (WidgetTester tester) async {
+      _desktop(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await _openSession(tester);
+      await _openSession(tester);
 
-    await tester.tap(find.byKey(const Key('session-manage-action')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tp-create-draft')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('tp-create-draft')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tp-session-title')), findsOneWidget);
+      expect(find.byKey(const Key('tp-create-draft')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tp-create-draft')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tp-session-title')), findsOneWidget);
 
-    await tester.tap(find.text('Fermer'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Fermer'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('dashboard-supervision')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('dashboard-supervision')));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('session-supervision-page')), findsOneWidget);
-    expect(find.byKey(const Key('tp-supervision-panel')), findsOneWidget);
-    expect(find.byKey(const Key('supervision-title')), findsOneWidget);
-    expect(find.byKey(const Key('supervision-lifecycle')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsNothing);
-  });
-
-  testWidgets('workspace reuses session controller and dashboard action returns to shell',
-      (WidgetTester tester) async {
-    _desktop(tester);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await _openSession(tester);
-    await tester.tap(find.byKey(const Key('session-manage-action')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('tp-create-draft')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Fermer'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('dashboard-wiring')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('session-cabling-setup-page')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsNothing);
-    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
-    await tester.pumpAndSettle();
-    expect(find.byType(SimulatorCanvas), findsOneWidget);
-
-    await _ensureTopOpen(tester);
-    await tester.tap(find.byKey(const Key('session-manage-action')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tp-session-title')), findsOneWidget);
-    await tester.tap(find.text('Fermer'));
-    await tester.pumpAndSettle();
-
-    await _ensureTopOpen(tester);
-    await tester.tap(find.byKey(const Key('session-dashboard-action')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
-    expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
-    expect(find.byType(SimulatorCanvas), findsNothing);
-  });
+      expect(find.byKey(const Key('session-supervision-page')), findsOneWidget);
+      expect(find.byKey(const Key('tp-supervision-panel')), findsOneWidget);
+      expect(find.byKey(const Key('supervision-title')), findsOneWidget);
+      expect(find.byKey(const Key('supervision-lifecycle')), findsOneWidget);
+      expect(find.byType(SimulatorCanvas), findsNothing);
+    },
+  );
 
   testWidgets(
-      'session management exposes the automatically active teacher LAN session',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1100, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'workspace reuses session controller and dashboard action returns to shell',
+    (WidgetTester tester) async {
+      _desktop(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await _openSession(tester);
-    await tester.tap(find.byKey(const Key('session-manage-action')));
-    await tester.pumpAndSettle();
+      await _openSession(tester);
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('tp-create-draft')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fermer'));
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tp-network-share')), findsNothing);
-    expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
-    expect(find.byKey(const Key('tp-network-endpoint')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.tap(find.byKey(const Key('dashboard-wiring')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('session-cabling-setup-page')),
+        findsOneWidget,
+      );
+      expect(find.byType(SimulatorCanvas), findsNothing);
+      await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SimulatorCanvas), findsOneWidget);
 
-  testWidgets('supervision does not route through simulator',
-      (WidgetTester tester) async {
+      await _ensureTopOpen(tester);
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tp-session-title')), findsOneWidget);
+      await tester.tap(find.text('Fermer'));
+      await tester.pumpAndSettle();
+
+      await _ensureTopOpen(tester);
+      await tester.tap(find.byKey(const Key('session-dashboard-action')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+      expect(find.byKey(const Key('dashboard-wiring')), findsOneWidget);
+      expect(find.byType(SimulatorCanvas), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'session management exposes the automatically active teacher LAN session',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1100, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _openSession(tester);
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('tp-network-share')), findsNothing);
+      expect(find.byKey(const Key('tp-network-code')), findsOneWidget);
+      expect(find.byKey(const Key('tp-network-endpoint')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('supervision does not route through simulator', (
+    WidgetTester tester,
+  ) async {
     _desktop(tester);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

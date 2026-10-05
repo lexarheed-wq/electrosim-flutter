@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-
 double _finitePositive(String name, double value) {
   if (!value.isFinite || value <= 0) {
     throw ArgumentError.value(value, name, 'Expected a finite positive value.');
@@ -16,7 +15,7 @@ double _elapsedSeconds(Duration elapsed) {
 /// Generic educational fixed resistor.
 final class FixedResistorModel {
   FixedResistorModel({double resistanceOhm = 100})
-      : resistanceOhm = _finitePositive('resistanceOhm', resistanceOhm);
+    : resistanceOhm = _finitePositive('resistanceOhm', resistanceOhm);
 
   final double resistanceOhm;
 
@@ -34,8 +33,10 @@ final class FixedResistorModel {
 /// Normally closed momentary push-button.
 final class NormallyClosedPushButtonModel {
   NormallyClosedPushButtonModel({double contactResistanceOhm = .02})
-      : contactResistanceOhm =
-            _finitePositive('contactResistanceOhm', contactResistanceOhm);
+    : contactResistanceOhm = _finitePositive(
+        'contactResistanceOhm',
+        contactResistanceOhm,
+      );
 
   final double contactResistanceOhm;
   bool pressed = false;
@@ -50,11 +51,9 @@ final class NormallyClosedPushButtonModel {
 
 /// Simple resistive 24 V buzzer model for pedagogical DC circuits.
 final class BuzzerModel {
-  BuzzerModel({
-    double ratedVoltageV = 24,
-    double ratedPowerW = 2,
-  })  : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
-        ratedPowerW = _finitePositive('ratedPowerW', ratedPowerW);
+  BuzzerModel({double ratedVoltageV = 24, double ratedPowerW = 2})
+    : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
+      ratedPowerW = _finitePositive('ratedPowerW', ratedPowerW);
 
   final double ratedVoltageV;
   final double ratedPowerW;
@@ -74,10 +73,12 @@ final class CartridgeFuseModel {
     double ratedCurrentA = 1,
     double coldResistanceOhm = .05,
     double blowI2tA2s = 2,
-  })  : ratedCurrentA = _finitePositive('ratedCurrentA', ratedCurrentA),
-        coldResistanceOhm =
-            _finitePositive('coldResistanceOhm', coldResistanceOhm),
-        blowI2tA2s = _finitePositive('blowI2tA2s', blowI2tA2s);
+  }) : ratedCurrentA = _finitePositive('ratedCurrentA', ratedCurrentA),
+       coldResistanceOhm = _finitePositive(
+         'coldResistanceOhm',
+         coldResistanceOhm,
+       ),
+       blowI2tA2s = _finitePositive('blowI2tA2s', blowI2tA2s);
 
   final double ratedCurrentA;
   final double coldResistanceOhm;
@@ -86,8 +87,7 @@ final class CartridgeFuseModel {
   bool blown = false;
   double accumulatedI2t = 0;
 
-  double get resistanceOhm =>
-      blown ? double.infinity : coldResistanceOhm;
+  double get resistanceOhm => blown ? double.infinity : coldResistanceOhm;
 
   void advance(double currentA, Duration elapsed) {
     if (!currentA.isFinite) throw ArgumentError('Invalid current.');
@@ -117,12 +117,9 @@ final class CartridgeFuseModel {
 
 /// Simplified silicon diode parameters for solver integration.
 final class SiliconDiodeModel {
-  SiliconDiodeModel({
-    double forwardVoltageV = .7,
-    double onResistanceOhm = .05,
-  })  : forwardVoltageV = _finitePositive('forwardVoltageV', forwardVoltageV),
-        onResistanceOhm =
-            _finitePositive('onResistanceOhm', onResistanceOhm);
+  SiliconDiodeModel({double forwardVoltageV = .7, double onResistanceOhm = .05})
+    : forwardVoltageV = _finitePositive('forwardVoltageV', forwardVoltageV),
+      onResistanceOhm = _finitePositive('onResistanceOhm', onResistanceOhm);
 
   final double forwardVoltageV;
   final double onResistanceOhm;
@@ -141,10 +138,12 @@ final class DcFanModel {
     double ratedVoltageV = 24,
     double ratedPowerW = 5,
     double timeConstantSeconds = .25,
-  })  : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
-        ratedPowerW = _finitePositive('ratedPowerW', ratedPowerW),
-        timeConstantSeconds =
-            _finitePositive('timeConstantSeconds', timeConstantSeconds);
+  }) : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
+       ratedPowerW = _finitePositive('ratedPowerW', ratedPowerW),
+       timeConstantSeconds = _finitePositive(
+         'timeConstantSeconds',
+         timeConstantSeconds,
+       );
 
   final double ratedVoltageV;
   final double ratedPowerW;
@@ -158,8 +157,7 @@ final class DcFanModel {
     if (!voltageV.isFinite) throw ArgumentError('Invalid voltage.');
     final seconds = _elapsedSeconds(elapsed);
     if (seconds == 0) return;
-    final target =
-        (voltageV.abs() / ratedVoltageV).clamp(0.0, 1.0).toDouble();
+    final target = (voltageV.abs() / ratedVoltageV).clamp(0.0, 1.0).toDouble();
     final decay = math.exp(-seconds / timeConstantSeconds);
     speedFraction = target + (speedFraction - target) * decay;
   }
@@ -175,15 +173,16 @@ final class DcMotorReferenceModel {
     double windingResistanceOhm = 6,
     double noLoadSpeedRpm = 3000,
     double mechanicalTimeConstantSeconds = .35,
-  })  : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
-        windingResistanceOhm =
-            _finitePositive('windingResistanceOhm', windingResistanceOhm),
-        noLoadSpeedRpm =
-            _finitePositive('noLoadSpeedRpm', noLoadSpeedRpm),
-        mechanicalTimeConstantSeconds = _finitePositive(
-          'mechanicalTimeConstantSeconds',
-          mechanicalTimeConstantSeconds,
-        );
+  }) : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
+       windingResistanceOhm = _finitePositive(
+         'windingResistanceOhm',
+         windingResistanceOhm,
+       ),
+       noLoadSpeedRpm = _finitePositive('noLoadSpeedRpm', noLoadSpeedRpm),
+       mechanicalTimeConstantSeconds = _finitePositive(
+         'mechanicalTimeConstantSeconds',
+         mechanicalTimeConstantSeconds,
+       );
 
   final double ratedVoltageV;
   final double windingResistanceOhm;
@@ -195,9 +194,8 @@ final class DcMotorReferenceModel {
     if (!voltageV.isFinite) throw ArgumentError('Invalid voltage.');
     final seconds = _elapsedSeconds(elapsed);
     if (seconds == 0) return;
-    final target = (voltageV / ratedVoltageV)
-        .clamp(-1.0, 1.0)
-        .toDouble() * noLoadSpeedRpm;
+    final target =
+        (voltageV / ratedVoltageV).clamp(-1.0, 1.0).toDouble() * noLoadSpeedRpm;
     final decay = math.exp(-seconds / mechanicalTimeConstantSeconds);
     speedRpm = target + (speedRpm - target) * decay;
   }
@@ -212,11 +210,13 @@ final class RelayCoilModel {
     double coilResistanceOhm = 720,
     double pickupRatio = .75,
     double releaseRatio = .30,
-  })  : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
-        coilResistanceOhm =
-            _finitePositive('coilResistanceOhm', coilResistanceOhm),
-        pickupRatio = _finitePositive('pickupRatio', pickupRatio),
-        releaseRatio = _finitePositive('releaseRatio', releaseRatio) {
+  }) : ratedVoltageV = _finitePositive('ratedVoltageV', ratedVoltageV),
+       coilResistanceOhm = _finitePositive(
+         'coilResistanceOhm',
+         coilResistanceOhm,
+       ),
+       pickupRatio = _finitePositive('pickupRatio', pickupRatio),
+       releaseRatio = _finitePositive('releaseRatio', releaseRatio) {
     if (pickupRatio <= releaseRatio || pickupRatio > 1 || releaseRatio >= 1) {
       throw ArgumentError('Invalid relay pickup/release ratios.');
     }

@@ -5,27 +5,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _openTop(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty ||
-      tester.getRect(region).bottom <= 0) {
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
     await tester.tap(find.byKey(electroSimTopEdgeKey));
     await tester.pumpAndSettle();
   }
 }
 
 void main() {
-  testWidgets('M12 compact workspace top bar fits a phone-width viewport',
-      (WidgetTester tester) async {
+  testWidgets('M12 compact workspace top bar fits a phone-width viewport', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(
-          sessionNavigation: true,
-        ),
-      ),
+      const MaterialApp(home: app.F9WorkspaceDemoPage(sessionNavigation: true)),
     );
     await tester.pumpAndSettle();
 
@@ -38,18 +34,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('M12 secondary workspace actions are grouped in one menu',
-      (WidgetTester tester) async {
+  testWidgets('M12 secondary workspace actions are grouped in one menu', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: app.F9WorkspaceDemoPage(),
-      ),
-    );
+    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('workspace-more-actions')), findsOneWidget);

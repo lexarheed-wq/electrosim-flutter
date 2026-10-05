@@ -10,14 +10,16 @@ final class CircuitTemplateId {
 
   static String _validate(String raw) {
     final String value = raw.trim();
-    if (value.isEmpty || !RegExp(r'^[A-Z0-9][A-Z0-9_-]{2,63}$').hasMatch(value)) {
+    if (value.isEmpty ||
+        !RegExp(r'^[A-Z0-9][A-Z0-9_-]{2,63}$').hasMatch(value)) {
       throw ArgumentError.value(raw, 'raw', 'Invalid CircuitTemplateId.');
     }
     return value;
   }
 
   @override
-  bool operator ==(Object other) => other is CircuitTemplateId && other.value == value;
+  bool operator ==(Object other) =>
+      other is CircuitTemplateId && other.value == value;
 
   @override
   int get hashCode => value.hashCode;
@@ -57,14 +59,15 @@ final class ExampleDefinition {
   final ExampleMetadata metadata;
   final ExampleValidationStamp? validationStamp;
 
-  ExampleDefinition withValidationStamp(ExampleValidationStamp stamp) => ExampleDefinition(
-    id: id,
-    title: title,
-    description: description,
-    circuit: circuit,
-    metadata: metadata,
-    validationStamp: stamp,
-  );
+  ExampleDefinition withValidationStamp(ExampleValidationStamp stamp) =>
+      ExampleDefinition(
+        id: id,
+        title: title,
+        description: description,
+        circuit: circuit,
+        metadata: metadata,
+        validationStamp: stamp,
+      );
 
   String canonicalPayload() {
     final Map<String, Object?> payload = <String, Object?>{

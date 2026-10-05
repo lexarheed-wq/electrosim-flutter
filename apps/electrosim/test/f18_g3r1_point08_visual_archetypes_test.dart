@@ -56,10 +56,12 @@ void main() {
   });
 
   test('palette and canvas no longer use legacy F9 glyph painter', () {
-    final String palette =
-        File('lib/f9_component_palette.dart').readAsStringSync();
-    final String visuals =
-        File('lib/f9_component_visuals.dart').readAsStringSync();
+    final String palette = File(
+      'lib/f9_component_palette.dart',
+    ).readAsStringSync();
+    final String visuals = File(
+      'lib/f9_component_visuals.dart',
+    ).readAsStringSync();
 
     expect(palette, contains('F18ComponentAssetVisual'));
     expect(visuals, contains('F18ComponentAssetVisual'));

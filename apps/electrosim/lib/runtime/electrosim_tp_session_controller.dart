@@ -9,8 +9,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     this.tpIdValue = 'TP-RD-F17',
     this.title = 'Recherche de dérangement — F17',
     String scenarioId = 'FAULT-DC-003',
-  })  : _catalog = catalog ?? buildF16QualifiedCatalog(),
-        _scenarioId = FaultScenarioId(scenarioId) {
+  }) : _catalog = catalog ?? buildF16QualifiedCatalog(),
+       _scenarioId = FaultScenarioId(scenarioId) {
     _engine = _buildEngine();
   }
 
@@ -21,10 +21,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   late TpEngine _engine;
 
   TpEngine _buildEngine() => TpEngine(
-        faultScenarios: FaultScenarioRepository(
-          scenarios: _catalog.faultScenarios,
-        ),
-      );
+    faultScenarios: FaultScenarioRepository(scenarios: _catalog.faultScenarios),
+  );
 
   TpId get tpId => TpId(tpIdValue);
 
@@ -38,8 +36,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   ElectroSimTpSessionController createStudentReplica({
     bool includeDraft = false,
   }) {
-    final ElectroSimTpSessionController replica =
-        ElectroSimTpSessionController(
+    final ElectroSimTpSessionController replica = ElectroSimTpSessionController(
       catalog: _catalog,
       tpIdValue: tpIdValue,
       title: title,
@@ -148,8 +145,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   CircuitState? get studentCircuit => _session?.studentCircuit;
   TpEvaluation? get evaluation => _session?.evaluation;
 
-  Map<String, Object?>? payloadFor(TpRole role) =>
-      _session?.payloadFor(role);
+  Map<String, Object?>? payloadFor(TpRole role) => _session?.payloadFor(role);
 
   /// JSON-compatible snapshot used by the application persistence layer.
   ///
@@ -170,8 +166,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       'diagnosticEntries': current.diagnosticSheet.entries
           .map((DiagnosticEntry entry) => entry.toJson())
           .toList(growable: false),
-      if (current.evaluation != null)
-        'teacherScore': current.evaluation!.score,
+      if (current.evaluation != null) 'teacherScore': current.evaluation!.score,
     };
   }
 
@@ -190,7 +185,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     if (json['tpId'] != tpIdValue ||
         json['title'] != title ||
         json['scenarioId'] != _scenarioId.value) {
-      throw const FormatException('Saved TP identity does not match this controller.');
+      throw const FormatException(
+        'Saved TP identity does not match this controller.',
+      );
     }
 
     final Object? lifecycleRaw = json['lifecycle'];
@@ -199,7 +196,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     }
     final TpLifecycle lifecycle = TpLifecycle.values.firstWhere(
       (TpLifecycle value) => value.name == lifecycleRaw,
-      orElse: () => throw FormatException('Unknown TP lifecycle: $lifecycleRaw'),
+      orElse: () =>
+          throw FormatException('Unknown TP lifecycle: $lifecycleRaw'),
     );
 
     createDraft();
@@ -230,7 +228,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       final Object? promptId = raw['promptId'];
       final Object? answer = raw['answer'];
       if (promptId is! String || answer is! String) {
-        throw const FormatException('Saved TP diagnostic entry fields are invalid.');
+        throw const FormatException(
+          'Saved TP diagnostic entry fields are invalid.',
+        );
       }
       addDiagnosticEntry(promptId: promptId, answer: answer);
     }

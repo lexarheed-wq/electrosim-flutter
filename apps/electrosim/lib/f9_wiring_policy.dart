@@ -8,7 +8,11 @@ final class F9WiringDecision {
   });
 
   factory F9WiringDecision.accepted(Connection connection, String message) =>
-      F9WiringDecision._(accepted: true, message: message, connection: connection);
+      F9WiringDecision._(
+        accepted: true,
+        message: message,
+        connection: connection,
+      );
 
   factory F9WiringDecision.rejected(String message) =>
       F9WiringDecision._(accepted: false, message: message);
@@ -25,26 +29,36 @@ abstract final class F9WiringPolicy {
     TerminalId to,
   ) {
     if (from == to) {
-      return F9WiringDecision.rejected('Connexion refusée : une borne ne peut pas être reliée à elle-même.');
+      return F9WiringDecision.rejected(
+        'Connexion refusée : une borne ne peut pas être reliée à elle-même.',
+      );
     }
 
     final Terminal? fromTerminal = _findTerminal(circuit, from);
     final Terminal? toTerminal = _findTerminal(circuit, to);
     if (fromTerminal == null || toTerminal == null) {
-      return F9WiringDecision.rejected('Connexion refusée : borne inconnue dans le CircuitState.');
+      return F9WiringDecision.rejected(
+        'Connexion refusée : borne inconnue dans le CircuitState.',
+      );
     }
 
     for (final Connection connection in circuit.connections) {
-      final bool sameDirection = connection.fromTerminalId == from && connection.toTerminalId == to;
-      final bool reverseDirection = connection.fromTerminalId == to && connection.toTerminalId == from;
+      final bool sameDirection =
+          connection.fromTerminalId == from && connection.toTerminalId == to;
+      final bool reverseDirection =
+          connection.fromTerminalId == to && connection.toTerminalId == from;
       if (sameDirection || reverseDirection) {
-        return F9WiringDecision.rejected('Connexion refusée : ces deux bornes sont déjà reliées.');
+        return F9WiringDecision.rejected(
+          'Connexion refusée : ces deux bornes sont déjà reliées.',
+        );
       }
     }
 
     final PhaseTag fromPhase = fromTerminal.phase;
     final PhaseTag toPhase = toTerminal.phase;
-    if (fromPhase != PhaseTag.none && toPhase != PhaseTag.none && fromPhase != toPhase) {
+    if (fromPhase != PhaseTag.none &&
+        toPhase != PhaseTag.none &&
+        fromPhase != toPhase) {
       return F9WiringDecision.rejected(
         'Connexion incompatible : ${fromTerminal.name} (${fromPhase.name}) ↔ '
         '${toTerminal.name} (${toPhase.name}).',
@@ -66,16 +80,17 @@ abstract final class F9WiringPolicy {
     );
   }
 
-  static CircuitState append(CircuitState circuit, Connection connection) => CircuitState(
-    circuitId: circuit.circuitId,
-    revision: circuit.revision + 1,
-    mode: circuit.mode,
-    components: circuit.components,
-    connections: <Connection>[...circuit.connections, connection],
-    sources: circuit.sources,
-    settings: circuit.settings,
-    metadata: circuit.metadata,
-  );
+  static CircuitState append(CircuitState circuit, Connection connection) =>
+      CircuitState(
+        circuitId: circuit.circuitId,
+        revision: circuit.revision + 1,
+        mode: circuit.mode,
+        components: circuit.components,
+        connections: <Connection>[...circuit.connections, connection],
+        sources: circuit.sources,
+        settings: circuit.settings,
+        metadata: circuit.metadata,
+      );
 
   static Terminal? _findTerminal(CircuitState circuit, TerminalId id) {
     for (final ComponentInstance component in circuit.components) {
@@ -96,7 +111,9 @@ abstract final class F9WiringPolicy {
   }
 
   static String _allocateConnectionId(CircuitState circuit) {
-    final Set<String> used = circuit.connections.map((Connection item) => item.id.value).toSet();
+    final Set<String> used = circuit.connections
+        .map((Connection item) => item.id.value)
+        .toSet();
     var serial = 1;
     while (used.contains('wire-$serial')) {
       serial += 1;

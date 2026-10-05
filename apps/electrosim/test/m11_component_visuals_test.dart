@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('M11 every production palette model paints without exception',
-      (WidgetTester tester) async {
+  testWidgets('M11 every production palette model paints without exception', (
+    WidgetTester tester,
+  ) async {
     for (final F9PaletteDefinition item in f9PaletteCatalog) {
       await tester.pumpWidget(
         MaterialApp(

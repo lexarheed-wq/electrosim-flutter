@@ -52,8 +52,9 @@ final class ElectroSimPersistenceController {
     final DateTime now = DateTime.now().toUtc();
     DateTime createdAt = now;
     final List<SavedCircuitSummary> existing = await _repository.listSaves();
-    final bool alreadyExists =
-        existing.any((SavedCircuitSummary item) => item.saveId == saveId);
+    final bool alreadyExists = existing.any(
+      (SavedCircuitSummary item) => item.saveId == saveId,
+    );
     if (alreadyExists) {
       // If the existing document is corrupt, propagate the read failure rather
       // than silently replacing data the user may still be able to recover.
@@ -84,8 +85,8 @@ final class ElectroSimPersistenceController {
     final Object? workspaceRaw = document.appState['workspace'];
     final String workspace =
         workspaceRaw is String && workspaceRaw.trim().isNotEmpty
-            ? workspaceRaw
-            : 'Câblage';
+        ? workspaceRaw
+        : 'Câblage';
 
     final Object? tpRaw = document.appState['tp'];
     if (tpRaw is Map<String, dynamic>) {
@@ -97,9 +98,9 @@ final class ElectroSimPersistenceController {
     } else if (tpRaw is Map<String, Object?>) {
       tpController.restoreFromPersistenceJson(tpRaw);
     } else {
-      tpController.restoreFromPersistenceJson(
-        const <String, Object?>{'hasSession': false},
-      );
+      tpController.restoreFromPersistenceJson(const <String, Object?>{
+        'hasSession': false,
+      });
     }
 
     return ElectroSimRestoredWorkspace(

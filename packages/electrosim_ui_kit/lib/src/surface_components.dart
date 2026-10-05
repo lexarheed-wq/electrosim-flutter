@@ -42,17 +42,26 @@ class ElectroSimStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color foreground = emphasized ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
-    final Color background = emphasized ? const Color(0xFFEFF4FF) : ElectroSimColors.surfaceMuted;
+    final Color foreground = emphasized
+        ? ElectroSimColors.primary
+        : ElectroSimColors.textSecondary;
+    final Color background = emphasized
+        ? const Color(0xFFEFF4FF)
+        : ElectroSimColors.surfaceMuted;
     return Semantics(
       label: label,
       child: Container(
         constraints: const BoxConstraints(minHeight: 32),
-        padding: const EdgeInsets.symmetric(horizontal: ElectroSimSpacing.sm, vertical: ElectroSimSpacing.xxs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: ElectroSimSpacing.sm,
+          vertical: ElectroSimSpacing.xxs,
+        ),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(999),
-          border: const Border.fromBorderSide(BorderSide(color: ElectroSimColors.outline)),
+          border: const Border.fromBorderSide(
+            BorderSide(color: ElectroSimColors.outline),
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -65,7 +74,9 @@ class ElectroSimStatusChip extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: foreground),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: foreground),
               ),
             ),
           ],
@@ -92,7 +103,9 @@ class ElectroSimSectionTitle extends StatelessWidget {
           const SizedBox(height: ElectroSimSpacing.xxs),
           Text(
             subtitle!,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ElectroSimColors.textSecondary),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ElectroSimColors.textSecondary,
+            ),
           ),
         ],
       ],

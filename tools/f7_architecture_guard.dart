@@ -32,14 +32,19 @@ Future<void> main() async {
       }
       scanned++;
       final String source = await entity.readAsString();
-      final RegExp directive = RegExp(r'''(?:import|export)\s+['"]([^'"]+)['"]''');
+      final RegExp directive = RegExp(
+        r'''(?:import|export)\s+['"]([^'"]+)['"]''',
+      );
       for (final RegExpMatch match in directive.allMatches(source)) {
         final String uri = match.group(1)!;
         if (uri.startsWith('package:flutter') || uri == 'dart:ui') {
           errors.add('ui-dependency:${entity.path}:$uri');
         }
         if (uri.startsWith('package:electrosim_')) {
-          final String dependency = uri.substring('package:'.length).split('/').first;
+          final String dependency = uri
+              .substring('package:'.length)
+              .split('/')
+              .first;
           if (!entry.value.contains(dependency)) {
             errors.add('forbidden-project-dependency:${entity.path}:$uri');
           }

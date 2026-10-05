@@ -22,15 +22,18 @@ final class AcComplex {
   double get angleDegrees => angleRadians * 180.0 / math.pi;
   AcComplex get conjugate => AcComplex(real, -imaginary);
 
-  AcComplex operator +(AcComplex other) => AcComplex(real + other.real, imaginary + other.imaginary);
-  AcComplex operator -(AcComplex other) => AcComplex(real - other.real, imaginary - other.imaginary);
+  AcComplex operator +(AcComplex other) =>
+      AcComplex(real + other.real, imaginary + other.imaginary);
+  AcComplex operator -(AcComplex other) =>
+      AcComplex(real - other.real, imaginary - other.imaginary);
   AcComplex operator -() => AcComplex(-real, -imaginary);
   AcComplex operator *(AcComplex other) => AcComplex(
     (real * other.real) - (imaginary * other.imaginary),
     (real * other.imaginary) + (imaginary * other.real),
   );
   AcComplex operator /(AcComplex other) {
-    final double denominator = (other.real * other.real) + (other.imaginary * other.imaginary);
+    final double denominator =
+        (other.real * other.real) + (other.imaginary * other.imaginary);
     if (denominator == 0.0) {
       throw StateError('Complex division by zero.');
     }
@@ -40,7 +43,8 @@ final class AcComplex {
     );
   }
 
-  AcComplex scale(double factor) => AcComplex(real * factor, imaginary * factor);
+  AcComplex scale(double factor) =>
+      AcComplex(real * factor, imaginary * factor);
 
   @override
   bool operator ==(Object other) =>

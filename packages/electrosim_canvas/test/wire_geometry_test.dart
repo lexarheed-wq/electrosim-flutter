@@ -74,9 +74,6 @@ void main() {
       bounds: Rect.fromLTWH(100, 100, 80, 60),
     );
 
-    expect(
-      obstacle.expanded(24).bounds,
-      const Rect.fromLTWH(76, 76, 128, 108),
-    );
+    expect(obstacle.expanded(24).bounds, const Rect.fromLTWH(76, 76, 128, 108));
   });
 }

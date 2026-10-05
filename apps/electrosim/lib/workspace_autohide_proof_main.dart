@@ -6,9 +6,7 @@ void main() {
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: F9WorkspaceDemoPage(
-        initialSelectedElementId: 'switch-1',
-      ),
+      home: F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
     ),
   );
 }

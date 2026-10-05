@@ -141,8 +141,8 @@ class F18SessionShellPage extends StatelessWidget {
                       ElectroSimBreakpoints.classify(constraints.maxWidth);
                   final double horizontalPadding =
                       windowClass == ElectroSimWindowClass.compact
-                          ? ElectroSimSpacing.md
-                          : ElectroSimSpacing.xl;
+                      ? ElectroSimSpacing.md
+                      : ElectroSimSpacing.xl;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
@@ -168,9 +168,7 @@ class F18SessionShellPage extends StatelessWidget {
                               Text(
                                 sessionName!,
                                 key: const Key('session-dashboard-name'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge
+                                style: Theme.of(context).textTheme.labelLarge
                                     ?.copyWith(
                                       color: ElectroSimColors.textSecondary,
                                     ),
@@ -252,10 +250,7 @@ class F18PlaceholderPage extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 680),
           child: Padding(
             padding: const EdgeInsets.all(ElectroSimSpacing.xl),
-            child: _F18EmptySurface(
-              title: title,
-              description: description,
-            ),
+            child: _F18EmptySurface(title: title, description: description),
           ),
         ),
       ),
@@ -295,8 +290,8 @@ class _F18CenterScaffold extends StatelessWidget {
                       ElectroSimBreakpoints.classify(constraints.maxWidth);
                   final double horizontalPadding =
                       windowClass == ElectroSimWindowClass.compact
-                          ? ElectroSimSpacing.md
-                          : ElectroSimSpacing.xl;
+                      ? ElectroSimSpacing.md
+                      : ElectroSimSpacing.xl;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                       horizontalPadding,
@@ -411,9 +406,7 @@ class _F18SessionTopBar extends StatelessWidget {
               children: <Widget>[
                 const Flexible(child: _F18Wordmark()),
                 SizedBox(
-                  width: dense
-                      ? ElectroSimSpacing.xs
-                      : ElectroSimSpacing.lg,
+                  width: dense ? ElectroSimSpacing.xs : ElectroSimSpacing.lg,
                 ),
                 if (dense) ...<Widget>[
                   _F18CompactTopAction(
@@ -461,8 +454,9 @@ class _F18SessionTopBar extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: ElectroSimColors.surfaceMuted,
-                      borderRadius:
-                          BorderRadius.circular(ElectroSimRadii.compact),
+                      borderRadius: BorderRadius.circular(
+                        ElectroSimRadii.compact,
+                      ),
                     ),
                     child: const Text(
                       'SESSION · PRÊTE',
@@ -589,8 +583,11 @@ class _F18ReadyBadge extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(Icons.check_circle_outline,
-              size: 16, color: ElectroSimColors.success),
+          Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: ElectroSimColors.success,
+          ),
           SizedBox(width: ElectroSimSpacing.xxs),
           Text(
             'Système prêt',
@@ -627,9 +624,9 @@ class _F18SectionIntro extends StatelessWidget {
           Text(
             eyebrow,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: ElectroSimColors.info,
-                  letterSpacing: 1.5,
-                ),
+              color: ElectroSimColors.info,
+              letterSpacing: 1.5,
+            ),
           ),
           const SizedBox(height: ElectroSimSpacing.xs),
           Text(title, style: Theme.of(context).textTheme.headlineLarge),
@@ -637,8 +634,8 @@ class _F18SectionIntro extends StatelessWidget {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: ElectroSimColors.textSecondary,
-                ),
+              color: ElectroSimColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -718,8 +715,9 @@ class _F18ActionCard extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 220),
           padding: const EdgeInsets.all(ElectroSimSpacing.lg),
           decoration: BoxDecoration(
-            border:
-                Border.all(color: ElectroSimColors.outline.withValues(alpha: .55)),
+            border: Border.all(
+              color: ElectroSimColors.outline.withValues(alpha: .55),
+            ),
             borderRadius: BorderRadius.circular(ElectroSimRadii.card),
           ),
           child: Column(
@@ -730,20 +728,18 @@ class _F18ActionCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF4FB),
-                  borderRadius:
-                      BorderRadius.circular(ElectroSimRadii.panel),
+                  borderRadius: BorderRadius.circular(ElectroSimRadii.panel),
                 ),
                 child: Icon(action.icon, color: ElectroSimColors.primary),
               ),
               const SizedBox(height: ElectroSimSpacing.lg),
-              Text(action.title,
-                  style: Theme.of(context).textTheme.titleLarge),
+              Text(action.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: ElectroSimSpacing.xs),
               Text(
                 action.description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ElectroSimColors.textSecondary,
-                    ),
+                  color: ElectroSimColors.textSecondary,
+                ),
               ),
               const SizedBox(height: ElectroSimSpacing.lg),
               Row(
@@ -752,12 +748,15 @@ class _F18ActionCard extends StatelessWidget {
                   Text(
                     action.actionLabel,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: ElectroSimColors.primary,
-                        ),
+                      color: ElectroSimColors.primary,
+                    ),
                   ),
                   const SizedBox(width: ElectroSimSpacing.xs),
-                  const Icon(Icons.arrow_forward,
-                      size: 18, color: ElectroSimColors.primary),
+                  const Icon(
+                    Icons.arrow_forward,
+                    size: 18,
+                    color: ElectroSimColors.primary,
+                  ),
                 ],
               ),
             ],
@@ -769,10 +768,7 @@ class _F18ActionCard extends StatelessWidget {
 }
 
 class _F18EmptySurface extends StatelessWidget {
-  const _F18EmptySurface({
-    required this.title,
-    required this.description,
-  });
+  const _F18EmptySurface({required this.title, required this.description});
 
   final String title;
   final String description;
@@ -789,8 +785,11 @@ class _F18EmptySurface extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.construction_outlined,
-              size: 42, color: ElectroSimColors.primary),
+          const Icon(
+            Icons.construction_outlined,
+            size: 42,
+            color: ElectroSimColors.primary,
+          ),
           const SizedBox(height: ElectroSimSpacing.md),
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: ElectroSimSpacing.xs),
@@ -798,8 +797,8 @@ class _F18EmptySurface extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: ElectroSimColors.textSecondary,
-                ),
+              color: ElectroSimColors.textSecondary,
+            ),
           ),
         ],
       ),

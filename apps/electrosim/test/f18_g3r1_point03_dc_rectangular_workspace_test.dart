@@ -18,8 +18,9 @@ Future<SimulatorCanvas> _openDcWorkspace(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('default DC workspace uses visible rectangular arrangement',
-      (WidgetTester tester) async {
+  testWidgets('default DC workspace uses visible rectangular arrangement', (
+    WidgetTester tester,
+  ) async {
     final SimulatorCanvas canvas = await _openDcWorkspace(tester);
     final CircuitVisualLayout layout = canvas.layout;
 
@@ -35,8 +36,9 @@ void main() {
     expect((series.dx - branchMidpointX).abs(), lessThanOrEqualTo(0.01));
   });
 
-  testWidgets('DC series component stays far from both rectangular corners',
-      (WidgetTester tester) async {
+  testWidgets('DC series component stays far from both rectangular corners', (
+    WidgetTester tester,
+  ) async {
     final SimulatorCanvas canvas = await _openDcWorkspace(tester);
     final CircuitVisualLayout layout = canvas.layout;
 
@@ -47,38 +49,42 @@ void main() {
 
     const double bendKeepOut = 48;
     const double minimumTerminalStub = 24;
-    final double required = bendKeepOut + minimumTerminalStub + seriesSize.width / 2;
+    final double required =
+        bendKeepOut + minimumTerminalStub + seriesSize.width / 2;
 
     expect(series.dx - source.dx, greaterThanOrEqualTo(required));
     expect(load.dx - series.dx, greaterThanOrEqualTo(required));
   });
 
-  testWidgets('committed DC routes remain orthogonal after rectangular arrange',
-      (WidgetTester tester) async {
-    final SimulatorCanvas canvas = await _openDcWorkspace(tester);
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(canvas.circuit, canvas.layout);
+  testWidgets(
+    'committed DC routes remain orthogonal after rectangular arrange',
+    (WidgetTester tester) async {
+      final SimulatorCanvas canvas = await _openDcWorkspace(tester);
+      final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+        canvas.circuit,
+        canvas.layout,
+      );
 
-    for (final connection in canvas.circuit.connections) {
-      final Offset start =
-          geometry.terminalPositions[connection.fromTerminalId]!;
-      final Offset end =
-          geometry.terminalPositions[connection.toTerminalId]!;
-      final List<Offset> points = <Offset>[
-        start,
-        ...canvas.layout.routeFor(connection.id.value),
-        end,
-      ];
+      for (final connection in canvas.circuit.connections) {
+        final Offset start =
+            geometry.terminalPositions[connection.fromTerminalId]!;
+        final Offset end = geometry.terminalPositions[connection.toTerminalId]!;
+        final List<Offset> points = <Offset>[
+          start,
+          ...canvas.layout.routeFor(connection.id.value),
+          end,
+        ];
 
-      for (var index = 0; index + 1 < points.length; index++) {
-        final Offset a = points[index];
-        final Offset b = points[index + 1];
-        expect(
-          a.dx == b.dx || a.dy == b.dy,
-          isTrue,
-          reason: '${connection.id.value} contains a diagonal segment',
-        );
+        for (var index = 0; index + 1 < points.length; index++) {
+          final Offset a = points[index];
+          final Offset b = points[index + 1];
+          expect(
+            a.dx == b.dx || a.dy == b.dy,
+            isTrue,
+            reason: '${connection.id.value} contains a diagonal segment',
+          );
+        }
       }
-    }
-  });
+    },
+  );
 }

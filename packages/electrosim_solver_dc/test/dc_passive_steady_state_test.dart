@@ -63,45 +63,43 @@ void main() {
 CircuitState _series({
   required String modelType,
   required Map<String, Object?> parameters,
-}) =>
-    CircuitState(
-      circuitId: CircuitId('dc-$modelType'),
-      revision: 0,
-      mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        SourceInstance(
-          id: SourceId('v'),
-          modelType: 'dc_voltage_source',
-          terminals: <Terminal>[_t('vp', '+'), _t('vn', '−')],
-          parameters: const <String, Object?>{'voltageV': 24.0},
-        ),
-      ],
-      components: <ComponentInstance>[
-        ComponentInstance(
-          id: ComponentId('x'),
-          modelType: modelType,
-          terminals: <Terminal>[_t('x1', '1'), _t('x2', '2')],
-          parameters: parameters,
-        ),
-        ComponentInstance(
-          id: ComponentId('r'),
-          modelType: 'resistor',
-          terminals: <Terminal>[_t('r1', '1'), _t('r2', '2')],
-          parameters: const <String, Object?>{'resistanceOhm': 100.0},
-        ),
-      ],
-      connections: <Connection>[
-        _w('w1', 'vp', 'x1'),
-        _w('w2', 'x2', 'r1'),
-        _w('w3', 'r2', 'vn'),
-      ],
-    );
+}) => CircuitState(
+  circuitId: CircuitId('dc-$modelType'),
+  revision: 0,
+  mode: ElectricalMode.dc,
+  sources: <SourceInstance>[
+    SourceInstance(
+      id: SourceId('v'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[_t('vp', '+'), _t('vn', '−')],
+      parameters: const <String, Object?>{'voltageV': 24.0},
+    ),
+  ],
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('x'),
+      modelType: modelType,
+      terminals: <Terminal>[_t('x1', '1'), _t('x2', '2')],
+      parameters: parameters,
+    ),
+    ComponentInstance(
+      id: ComponentId('r'),
+      modelType: 'resistor',
+      terminals: <Terminal>[_t('r1', '1'), _t('r2', '2')],
+      parameters: const <String, Object?>{'resistanceOhm': 100.0},
+    ),
+  ],
+  connections: <Connection>[
+    _w('w1', 'vp', 'x1'),
+    _w('w2', 'x2', 'r1'),
+    _w('w3', 'r2', 'vn'),
+  ],
+);
 
-Terminal _t(String id, String name) =>
-    Terminal(id: TerminalId(id), name: name);
+Terminal _t(String id, String name) => Terminal(id: TerminalId(id), name: name);
 
 Connection _w(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);

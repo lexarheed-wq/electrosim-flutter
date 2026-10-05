@@ -8,15 +8,16 @@ abstract final class F18WorkspaceWireSafety {
     required CircuitState circuit,
     required CircuitVisualLayout layout,
   }) {
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
     final List<OrthogonalWirePath> accepted = <OrthogonalWirePath>[];
 
     for (final Connection connection in circuit.connections) {
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
-      final Offset? end =
-          geometry.terminalPositions[connection.toTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null || start == end) {
         return false;
       }
@@ -24,11 +25,7 @@ abstract final class F18WorkspaceWireSafety {
       OrthogonalWirePath path;
       try {
         path = OrthogonalWirePath(
-          points: <Offset>[
-            start,
-            ...layout.routeFor(connection.id.value),
-            end,
-          ],
+          points: <Offset>[start, ...layout.routeFor(connection.id.value), end],
         );
       } on ArgumentError {
         return false;

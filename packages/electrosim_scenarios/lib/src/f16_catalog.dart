@@ -13,16 +13,22 @@ final class QualifiedCatalog {
     required this.catalogVersion,
     required List<ExampleDefinition> examples,
     required List<FaultScenarioDefinition> faultScenarios,
-  })  : examples = List<ExampleDefinition>.unmodifiable(examples),
-        faultScenarios = List<FaultScenarioDefinition>.unmodifiable(faultScenarios);
+  }) : examples = List<ExampleDefinition>.unmodifiable(examples),
+       faultScenarios = List<FaultScenarioDefinition>.unmodifiable(
+         faultScenarios,
+       );
 
   final String catalogVersion;
   final List<ExampleDefinition> examples;
   final List<FaultScenarioDefinition> faultScenarios;
 
   bool get allItemsSigned =>
-      examples.every((ExampleDefinition item) => item.validationStamp != null) &&
-      faultScenarios.every((FaultScenarioDefinition item) => item.validationStamp != null);
+      examples.every(
+        (ExampleDefinition item) => item.validationStamp != null,
+      ) &&
+      faultScenarios.every(
+        (FaultScenarioDefinition item) => item.validationStamp != null,
+      );
 }
 
 QualifiedCatalog buildF16QualifiedCatalog() {
@@ -39,15 +45,16 @@ QualifiedCatalog buildF16QualifiedCatalog() {
   ).all;
 
   final List<FaultScenarioDefinition> batchFaults = FaultScenarioRepository(
-    scenarios: <FaultScenarioDefinition>[
-      _missingSeriesLinkScenario(),
-    ],
+    scenarios: <FaultScenarioDefinition>[_missingSeriesLinkScenario()],
   ).all;
 
   return QualifiedCatalog(
     catalogVersion: '16.1.0',
     examples: <ExampleDefinition>[...baselineExamples, ...batchExamples],
-    faultScenarios: <FaultScenarioDefinition>[...baselineFaults, ...batchFaults],
+    faultScenarios: <FaultScenarioDefinition>[
+      ...baselineFaults,
+      ...batchFaults,
+    ],
   );
 }
 
@@ -56,34 +63,29 @@ Terminal _terminal(
   String name, {
   TerminalRole role = TerminalRole.generic,
   PhaseTag phase = PhaseTag.none,
-}) =>
-    Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
 
 SourceInstance _voltageSource(String prefix, double voltageV) => SourceInstance(
-      id: SourceId('$prefix-source'),
-      modelType: 'dc_voltage_source',
-      terminals: <Terminal>[
-        _terminal(
-          '$prefix-vp',
-          '+',
-          role: TerminalRole.positive,
-          phase: PhaseTag.dcPositive,
-        ),
-        _terminal(
-          '$prefix-vn',
-          '-',
-          role: TerminalRole.negative,
-          phase: PhaseTag.dcNegative,
-        ),
-      ],
-      parameters: <String, Object?>{'voltageV': voltageV},
-    );
+  id: SourceId('$prefix-source'),
+  modelType: 'dc_voltage_source',
+  terminals: <Terminal>[
+    _terminal(
+      '$prefix-vp',
+      '+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    ),
+    _terminal(
+      '$prefix-vn',
+      '-',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    ),
+  ],
+  parameters: <String, Object?>{'voltageV': voltageV},
+);
 
-ComponentInstance _resistor(
-  String prefix,
-  String name,
-  double resistanceOhm,
-) =>
+ComponentInstance _resistor(String prefix, String name, double resistanceOhm) =>
     ComponentInstance(
       id: ComponentId('$prefix-' + name),
       modelType: 'resistor',

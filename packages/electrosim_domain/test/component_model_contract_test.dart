@@ -56,54 +56,73 @@ void main() {
       );
 
       expect(
-        () => ComponentModelRegistry(<ComponentModelContract>[contract(), contract()]),
+        () => ComponentModelRegistry(<ComponentModelContract>[
+          contract(),
+          contract(),
+        ]),
         throwsA(isA<DomainException>()),
       );
     });
   });
 
   group('CoreComponentModelContracts', () {
-    test('three-phase contactor has three power poles plus one A1/A2 coil branch', () {
-      final ComponentModelContract? contract =
-          CoreComponentModelContracts.registry.resolve('contactor_3p');
+    test(
+      'three-phase contactor has three power poles plus one A1/A2 coil branch',
+      () {
+        final ComponentModelContract? contract = CoreComponentModelContracts
+            .registry
+            .resolve('contactor_3p');
 
-      expect(contract, isNotNull);
-      expect(contract!.family, ComponentFamily.electromechanicalControl);
-      expect(contract.terminalCount, 8);
-      expect(contract.supportedModes, <ElectricalMode>{ElectricalMode.ac3});
-      expect(contract.branches, hasLength(4));
-      expect(
-        contract.branches.where((ComponentBranchDefinition b) => b.role == ElectricalBranchRole.powerPole),
-        hasLength(3),
-      );
-      expect(
-        contract.branches.singleWhere(
-          (ComponentBranchDefinition b) => b.role == ElectricalBranchRole.controlCoil,
-        ).id,
-        'control:coil',
-      );
-    });
+        expect(contract, isNotNull);
+        expect(contract!.family, ComponentFamily.electromechanicalControl);
+        expect(contract.terminalCount, 8);
+        expect(contract.supportedModes, <ElectricalMode>{ElectricalMode.ac3});
+        expect(contract.branches, hasLength(4));
+        expect(
+          contract.branches.where(
+            (ComponentBranchDefinition b) =>
+                b.role == ElectricalBranchRole.powerPole,
+          ),
+          hasLength(3),
+        );
+        expect(
+          contract.branches
+              .singleWhere(
+                (ComponentBranchDefinition b) =>
+                    b.role == ElectricalBranchRole.controlCoil,
+              )
+              .id,
+          'control:coil',
+        );
+      },
+    );
 
     test('canonical registry does not add legacy V1 aliases', () {
       expect(CoreComponentModelContracts.registry.resolve('breakerDC'), isNull);
       expect(CoreComponentModelContracts.registry.resolve('breaker3p'), isNull);
-      expect(CoreComponentModelContracts.registry.resolve('contactor3p'), isNull);
+      expect(
+        CoreComponentModelContracts.registry.resolve('contactor3p'),
+        isNull,
+      );
       expect(CoreComponentModelContracts.registry.resolve('thermal3p'), isNull);
     });
   });
 
   group('TerminalRole convergence vocabulary', () {
     test('contains explicit power and coil terminal semantics', () {
-      expect(TerminalRole.values, containsAll(<TerminalRole>[
-        TerminalRole.lineL1,
-        TerminalRole.lineL2,
-        TerminalRole.lineL3,
-        TerminalRole.loadT1,
-        TerminalRole.loadT2,
-        TerminalRole.loadT3,
-        TerminalRole.coilA1,
-        TerminalRole.coilA2,
-      ]));
+      expect(
+        TerminalRole.values,
+        containsAll(<TerminalRole>[
+          TerminalRole.lineL1,
+          TerminalRole.lineL2,
+          TerminalRole.lineL3,
+          TerminalRole.loadT1,
+          TerminalRole.loadT2,
+          TerminalRole.loadT3,
+          TerminalRole.coilA1,
+          TerminalRole.coilA2,
+        ]),
+      );
     });
   });
 }

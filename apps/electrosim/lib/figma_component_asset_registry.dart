@@ -6,20 +6,15 @@ final class FigmaComponentTerminalAnchor {
     required this.label,
     required this.x,
     required this.y,
-  })  : assert(x >= 0 && x <= 1),
-        assert(y >= 0 && y <= 1);
+  }) : assert(x >= 0 && x <= 1),
+       assert(y >= 0 && y <= 1);
 
   final String label;
   final double x;
   final double y;
 }
 
-enum FigmaComponentVisualState {
-  normal,
-  active,
-  selected,
-  fault,
-}
+enum FigmaComponentVisualState { normal, active, selected, fault }
 
 @immutable
 final class FigmaComponentAssetSpec {
@@ -77,60 +72,60 @@ abstract final class ElectroSimFigmaComponentRegistry {
   /// unknown until the real Figma file can be read again.
   static const Map<String, FigmaComponentAssetSpec> byModel =
       <String, FigmaComponentAssetSpec>{
-    'dc_voltage_source': FigmaComponentAssetSpec(
-      modelType: 'dc_voltage_source',
-      displayName: 'Source CC 24 V',
-      assetBaseName: 'source_dc_24v',
-    ),
-    'switch': FigmaComponentAssetSpec(
-      modelType: 'switch',
-      displayName: 'Interrupteur NO',
-      assetBaseName: 'switch_no',
-    ),
-    'push_button_no': FigmaComponentAssetSpec(
-      modelType: 'push_button_no',
-      displayName: 'Bouton-poussoir NO',
-      assetBaseName: 'push_button_no',
-    ),
-    'lamp': FigmaComponentAssetSpec(
-      modelType: 'lamp',
-      displayName: 'Lampe',
-      assetBaseName: 'lamp',
-    ),
-    'resistor': FigmaComponentAssetSpec(
-      modelType: 'resistor',
-      displayName: 'Résistance',
-      assetBaseName: 'resistor',
-    ),
-    'breaker_dc': FigmaComponentAssetSpec(
-      modelType: 'breaker_dc',
-      displayName: 'Disjoncteur',
-      assetBaseName: 'breaker_dc',
-    ),
-    'fuse_dc': FigmaComponentAssetSpec(
-      modelType: 'fuse_dc',
-      displayName: 'Fusible',
-      assetBaseName: 'fuse_dc',
-    ),
-    'motor_dc': FigmaComponentAssetSpec(
-      modelType: 'motor_dc',
-      displayName: 'Moteur CC',
-      assetBaseName: 'motor_dc',
-    ),
-    'fan_dc': FigmaComponentAssetSpec(
-      modelType: 'fan_dc',
-      displayName: 'Ventilateur CC',
-      assetBaseName: 'fan_dc',
-    ),
-    'relay_coil': FigmaComponentAssetSpec(
-      modelType: 'relay_coil',
-      displayName: 'Bobine relais',
-      assetBaseName: 'relay_coil',
-    ),
-    'buzzer': FigmaComponentAssetSpec(
-      modelType: 'buzzer',
-      displayName: 'Buzzer',
-      assetBaseName: 'buzzer',
-    ),
-  };
+        'dc_voltage_source': FigmaComponentAssetSpec(
+          modelType: 'dc_voltage_source',
+          displayName: 'Source CC 24 V',
+          assetBaseName: 'source_dc_24v',
+        ),
+        'switch': FigmaComponentAssetSpec(
+          modelType: 'switch',
+          displayName: 'Interrupteur NO',
+          assetBaseName: 'switch_no',
+        ),
+        'push_button_no': FigmaComponentAssetSpec(
+          modelType: 'push_button_no',
+          displayName: 'Bouton-poussoir NO',
+          assetBaseName: 'push_button_no',
+        ),
+        'lamp': FigmaComponentAssetSpec(
+          modelType: 'lamp',
+          displayName: 'Lampe',
+          assetBaseName: 'lamp',
+        ),
+        'resistor': FigmaComponentAssetSpec(
+          modelType: 'resistor',
+          displayName: 'Résistance',
+          assetBaseName: 'resistor',
+        ),
+        'breaker_dc': FigmaComponentAssetSpec(
+          modelType: 'breaker_dc',
+          displayName: 'Disjoncteur',
+          assetBaseName: 'breaker_dc',
+        ),
+        'fuse_dc': FigmaComponentAssetSpec(
+          modelType: 'fuse_dc',
+          displayName: 'Fusible',
+          assetBaseName: 'fuse_dc',
+        ),
+        'motor_dc': FigmaComponentAssetSpec(
+          modelType: 'motor_dc',
+          displayName: 'Moteur CC',
+          assetBaseName: 'motor_dc',
+        ),
+        'fan_dc': FigmaComponentAssetSpec(
+          modelType: 'fan_dc',
+          displayName: 'Ventilateur CC',
+          assetBaseName: 'fan_dc',
+        ),
+        'relay_coil': FigmaComponentAssetSpec(
+          modelType: 'relay_coil',
+          displayName: 'Bobine relais',
+          assetBaseName: 'relay_coil',
+        ),
+        'buzzer': FigmaComponentAssetSpec(
+          modelType: 'buzzer',
+          displayName: 'Buzzer',
+          assetBaseName: 'buzzer',
+        ),
+      };
 }

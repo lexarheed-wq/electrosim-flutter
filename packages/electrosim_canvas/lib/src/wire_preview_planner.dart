@@ -68,8 +68,9 @@ final class WirePreviewPlanner {
     }
 
     final String? fromOwner = geometry.terminalOwners[startTerminalId];
-    final String? targetOwner =
-        targetId == null ? null : geometry.terminalOwners[targetId];
+    final String? targetOwner = targetId == null
+        ? null
+        : geometry.terminalOwners[targetId];
 
     final List<RoutingObstacle> obstacles = geometry.elementRects.entries
         .where(

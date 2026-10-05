@@ -91,7 +91,8 @@ final class CircuitScenePainter extends CustomPainter {
 
   void _paintWires(Canvas canvas, CircuitGeometryIndex geometry) {
     for (final Connection connection in circuit.connections) {
-      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null) {
         continue;
@@ -101,10 +102,11 @@ final class CircuitScenePainter extends CustomPainter {
         ...layout.routeFor(connection.id.value),
         end,
       ];
-      final Path path = Path()..moveTo(
-        viewport.worldToScreen(worldPoints.first).dx,
-        viewport.worldToScreen(worldPoints.first).dy,
-      );
+      final Path path = Path()
+        ..moveTo(
+          viewport.worldToScreen(worldPoints.first).dx,
+          viewport.worldToScreen(worldPoints.first).dy,
+        );
       for (final Offset worldPoint in worldPoints.skip(1)) {
         final Offset point = viewport.worldToScreen(worldPoint);
         path.lineTo(point.dx, point.dy);
@@ -135,7 +137,13 @@ final class CircuitScenePainter extends CustomPainter {
     for (final ComponentInstance component in circuit.components) {
       final Rect? rect = geometry.elementRects[component.id.value];
       if (rect != null) {
-        _paintElement(canvas, rect, component.id.value, component.modelType, false);
+        _paintElement(
+          canvas,
+          rect,
+          component.id.value,
+          component.modelType,
+          false,
+        );
       }
     }
   }
@@ -153,7 +161,10 @@ final class CircuitScenePainter extends CustomPainter {
       height: worldRect.height * viewport.scale,
     );
     final bool selected = selectedElementId == elementId;
-    final RRect rrect = RRect.fromRectAndRadius(rect, const Radius.circular(10));
+    final RRect rrect = RRect.fromRectAndRadius(
+      rect,
+      const Radius.circular(10),
+    );
     canvas.drawRRect(rrect, Paint()..color = source ? sourceFill : elementFill);
     canvas.drawRRect(
       rrect,
@@ -167,8 +178,9 @@ final class CircuitScenePainter extends CustomPainter {
     // symbol. The canvas base layer intentionally does not paint raw model
     // identifiers such as "motor_dc" behind that symbol.
     if (selected) {
-      final double markerRadius =
-          (3.5 * viewport.scale).clamp(2.5, 5.0).toDouble();
+      final double markerRadius = (3.5 * viewport.scale)
+          .clamp(2.5, 5.0)
+          .toDouble();
       canvas.drawCircle(
         Offset(rect.right - markerRadius * 2, rect.top + markerRadius * 2),
         markerRadius,
@@ -177,10 +189,7 @@ final class CircuitScenePainter extends CustomPainter {
     }
   }
 
-  void _paintNonJunctionCrossingGaps(
-    Canvas canvas,
-    WireSemantics semantics,
-  ) {
+  void _paintNonJunctionCrossingGaps(Canvas canvas, WireSemantics semantics) {
     final double radius = (5 * viewport.scale).clamp(3, 7).toDouble();
     for (final NonJunctionWireCrossing crossing
         in semantics.nonJunctionCrossings) {
@@ -197,7 +206,8 @@ final class CircuitScenePainter extends CustomPainter {
     CircuitGeometryIndex geometry,
     WireSemantics? semantics,
   ) {
-    for (final MapEntry<TerminalId, Offset> entry in geometry.terminalPositions.entries) {
+    for (final MapEntry<TerminalId, Offset> entry
+        in geometry.terminalPositions.entries) {
       final Offset screen = viewport.worldToScreen(entry.value);
       final bool pending = entry.key == pendingTerminalId;
       final bool junction =
@@ -210,8 +220,8 @@ final class CircuitScenePainter extends CustomPainter {
           ..color = pending
               ? pendingColor
               : junction
-                  ? terminalStroke
-                  : terminalFill,
+              ? terminalStroke
+              : terminalFill,
       );
       canvas.drawCircle(
         screen,
@@ -286,5 +296,6 @@ final class CircuitScenePainter extends CustomPainter {
   };
 
   @override
-  bool shouldRepaint(CircuitScenePainter oldDelegate) => !identical(oldDelegate, this);
+  bool shouldRepaint(CircuitScenePainter oldDelegate) =>
+      !identical(oldDelegate, this);
 }

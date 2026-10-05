@@ -17,7 +17,8 @@ final class SolverAC1 {
 
   Ac1SolveResult solve(CircuitState circuit, TopologyGraph topology) {
     final List<Ac1SolverDiagnostic> diagnostics = <Ac1SolverDiagnostic>[];
-    if (circuit.mode != ElectricalMode.ac1 || topology.mode != ElectricalMode.ac1) {
+    if (circuit.mode != ElectricalMode.ac1 ||
+        topology.mode != ElectricalMode.ac1) {
       diagnostics.add(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.wrongElectricalMode,
@@ -27,12 +28,14 @@ final class SolverAC1 {
       );
       return _failure(circuit, Ac1SolveStatus.invalid, diagnostics);
     }
-    if (circuit.circuitId != topology.circuitId || circuit.revision != topology.circuitRevision) {
+    if (circuit.circuitId != topology.circuitId ||
+        circuit.revision != topology.circuitRevision) {
       diagnostics.add(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.topologyIdentityMismatch,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'TopologyGraph does not match the CircuitState identity/revision.',
+          message:
+              'TopologyGraph does not match the CircuitState identity/revision.',
         ),
       );
       return _failure(circuit, Ac1SolveStatus.invalid, diagnostics);
@@ -65,18 +68,33 @@ final class SolverAC1 {
 
     final double? frequencyHz = _frequency(circuit, diagnostics);
     if (frequencyHz == null || diagnostics.any(_isError)) {
-      return _failure(circuit, Ac1SolveStatus.invalid, diagnostics, frequencyHz: frequencyHz);
+      return _failure(
+        circuit,
+        Ac1SolveStatus.invalid,
+        diagnostics,
+        frequencyHz: frequencyHz,
+      );
     }
 
-    final _CompiledAc1Model compiled = _compileModel(circuit, topology, frequencyHz, diagnostics);
+    final _CompiledAc1Model compiled = _compileModel(
+      circuit,
+      topology,
+      frequencyHz,
+      diagnostics,
+    );
     if (compiled.hasErrors || diagnostics.any(_isError)) {
-      return _failure(circuit, Ac1SolveStatus.invalid, diagnostics, frequencyHz: frequencyHz);
+      return _failure(
+        circuit,
+        Ac1SolveStatus.invalid,
+        diagnostics,
+        frequencyHz: frequencyHz,
+      );
     }
 
     final String referenceNodeId = _selectReferenceNode(circuit, topology);
-    final Set<String> participatingNodes =
-        _participatingAc1Nodes(compiled.activeElements)
-          ..add(referenceNodeId);
+    final Set<String> participatingNodes = _participatingAc1Nodes(
+      compiled.activeElements,
+    )..add(referenceNodeId);
     final List<String> floatingNodes = _findFloatingNodes(
       participatingNodes,
       referenceNodeId,
@@ -100,19 +118,25 @@ final class SolverAC1 {
       );
     }
 
-    final List<String> unknownNodes = participatingNodes
-        .where((String nodeId) => nodeId != referenceNodeId)
-        .toList(growable: false)
-      ..sort();
+    final List<String> unknownNodes =
+        participatingNodes
+            .where((String nodeId) => nodeId != referenceNodeId)
+            .toList(growable: false)
+          ..sort();
     final Map<String, int> nodeIndex = <String, int>{
       for (var i = 0; i < unknownNodes.length; i++) unknownNodes[i]: i,
     };
-    final List<_Ac1Element> idealConstraints = compiled.activeElements
-        .where((_Ac1Element element) => element.kind == _Ac1ElementKind.idealVoltage)
-        .toList(growable: false)
-      ..sort((_Ac1Element a, _Ac1Element b) => a.id.compareTo(b.id));
+    final List<_Ac1Element> idealConstraints =
+        compiled.activeElements
+            .where(
+              (_Ac1Element element) =>
+                  element.kind == _Ac1ElementKind.idealVoltage,
+            )
+            .toList(growable: false)
+          ..sort((_Ac1Element a, _Ac1Element b) => a.id.compareTo(b.id));
     final Map<String, int> idealIndex = <String, int>{
-      for (var i = 0; i < idealConstraints.length; i++) idealConstraints[i].id: i,
+      for (var i = 0; i < idealConstraints.length; i++)
+        idealConstraints[i].id: i,
     };
 
     final int nodeCount = unknownNodes.length;
@@ -169,7 +193,8 @@ final class SolverAC1 {
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.singularMatrix,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'Complex MNA matrix is singular or numerically rank-deficient.',
+          message:
+              'Complex MNA matrix is singular or numerically rank-deficient.',
         ),
       );
       return _failure(
@@ -188,7 +213,8 @@ final class SolverAC1 {
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.numericalResidualExceeded,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'Complex MNA numerical residual exceeds configured tolerance.',
+          message:
+              'Complex MNA numerical residual exceeds configured tolerance.',
         ),
       );
       return _failure(
@@ -213,7 +239,8 @@ final class SolverAC1 {
       for (final TopologyNode node in topology.nodes) node.id: AcComplex.zero,
     };
     for (final _Ac1Element element in compiled.allElements) {
-      final AcComplex voltage = nodeVoltages[element.fromNodeId]! - nodeVoltages[element.toNodeId]!;
+      final AcComplex voltage =
+          nodeVoltages[element.fromNodeId]! - nodeVoltages[element.toNodeId]!;
       AcComplex? current;
       switch (element.kind) {
         case _Ac1ElementKind.impedance:
@@ -222,11 +249,15 @@ final class SolverAC1 {
           current = element.value;
         case _Ac1ElementKind.idealVoltage:
           final int? constraintIndex = idealIndex[element.id];
-          current = constraintIndex == null ? null : solution[nodeCount + constraintIndex];
+          current = constraintIndex == null
+              ? null
+              : solution[nodeCount + constraintIndex];
       }
       if (current != null) {
-        nodeCurrentBalance[element.fromNodeId] = nodeCurrentBalance[element.fromNodeId]! + current;
-        nodeCurrentBalance[element.toNodeId] = nodeCurrentBalance[element.toNodeId]! - current;
+        nodeCurrentBalance[element.fromNodeId] =
+            nodeCurrentBalance[element.fromNodeId]! + current;
+        nodeCurrentBalance[element.toNodeId] =
+            nodeCurrentBalance[element.toNodeId]! - current;
       }
       branches.add(
         Ac1BranchResult(
@@ -240,10 +271,13 @@ final class SolverAC1 {
         ),
       );
     }
-    branches.sort((Ac1BranchResult a, Ac1BranchResult b) => a.id.compareTo(b.id));
+    branches.sort(
+      (Ac1BranchResult a, Ac1BranchResult b) => a.id.compareTo(b.id),
+    );
 
     final Map<String, double> kclResiduals = <String, double>{
-      for (final MapEntry<String, AcComplex> entry in nodeCurrentBalance.entries)
+      for (final MapEntry<String, AcComplex> entry
+          in nodeCurrentBalance.entries)
         entry.key: entry.value.magnitude,
     };
     var worstKcl = 0.0;
@@ -285,7 +319,10 @@ final class SolverAC1 {
   }
 }
 
-double? _frequency(CircuitState circuit, List<Ac1SolverDiagnostic> diagnostics) {
+double? _frequency(
+  CircuitState circuit,
+  List<Ac1SolverDiagnostic> diagnostics,
+) {
   final Object? raw = circuit.settings['frequencyHz'];
   if (raw == null) {
     diagnostics.add(
@@ -328,8 +365,11 @@ _CompiledAc1Model _compileModel(
   List<Ac1SolverDiagnostic> diagnostics,
 ) {
   final List<_Ac1Element> elements = <_Ac1Element>[];
-  final List<ComponentInstance> components = circuit.components.toList(growable: false)
-    ..sort((ComponentInstance a, ComponentInstance b) => a.id.value.compareTo(b.id.value));
+  final List<ComponentInstance> components =
+      circuit.components.toList(growable: false)..sort(
+        (ComponentInstance a, ComponentInstance b) =>
+            a.id.value.compareTo(b.id.value),
+      );
   for (final ComponentInstance component in components) {
     if (!_supportedAc1ComponentModels.contains(component.modelType)) {
       diagnostics.add(
@@ -343,7 +383,9 @@ _CompiledAc1Model _compileModel(
       continue;
     }
 
-    final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    final List<TopologyBranch> topologyBranches = topology.branchesForComponent(
+      component.id,
+    );
     if (_compileElectromechanicalAc1(
       component: component,
       branches: topologyBranches,
@@ -359,8 +401,7 @@ _CompiledAc1Model _compileModel(
           Ac1SolverDiagnostic(
             code: Ac1DiagnosticCode.invalidTerminalCount,
             severity: Ac1DiagnosticSeverity.error,
-            message:
-                'terminal_block_5 must expose five feed-through branches.',
+            message: 'terminal_block_5 must expose five feed-through branches.',
             componentId: component.id,
           ),
         );
@@ -371,14 +412,14 @@ _CompiledAc1Model _compileModel(
         for (final TopologyBranch branch in topologyBranches) {
           elements.add(
             _Ac1Element(
-              id:
-                  'component:${component.id.value}:${branch.branchId}',
+              id: 'component:${component.id.value}:${branch.branchId}',
               modelType: component.modelType,
               kind: open
                   ? _Ac1ElementKind.impedance
                   : _Ac1ElementKind.idealVoltage,
-              branchKind:
-                  open ? Ac1BranchKind.openCircuit : Ac1BranchKind.idealShort,
+              branchKind: open
+                  ? Ac1BranchKind.openCircuit
+                  : Ac1BranchKind.idealShort,
               fromNodeId: branch.fromNodeId,
               toNodeId: branch.toNodeId,
               value: open ? const AcComplex(1e300, 0.0) : AcComplex.zero,
@@ -394,7 +435,8 @@ _CompiledAc1Model _compileModel(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.invalidTerminalCount,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'Canonical AC1 component ${component.id.value} must expose exactly one topology branch.',
+          message:
+              'Canonical AC1 component ${component.id.value} must expose exactly one topology branch.',
           componentId: component.id,
         ),
       );
@@ -487,8 +529,7 @@ _CompiledAc1Model _compileModel(
             Ac1SolverDiagnostic(
               code: Ac1DiagnosticCode.invalidParameter,
               severity: Ac1DiagnosticSeverity.error,
-              message:
-                  'AC1 push-button requires boolean controlState.pressed.',
+              message: 'AC1 push-button requires boolean controlState.pressed.',
               componentId: component.id,
             ),
           );
@@ -515,14 +556,17 @@ _CompiledAc1Model _compileModel(
         continue;
       case 'breaker_ac1':
       case 'fuse_ac1':
-        final double? ratedCurrent =
-            _positiveParameter(component.parameters, ProtectionRating.ratedCurrentKey);
+        final double? ratedCurrent = _positiveParameter(
+          component.parameters,
+          ProtectionRating.ratedCurrentKey,
+        );
         if (ratedCurrent == null) {
           diagnostics.add(
             Ac1SolverDiagnostic(
               code: Ac1DiagnosticCode.invalidParameter,
               severity: Ac1DiagnosticSeverity.error,
-              message: 'AC1 protection requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
+              message:
+                  'AC1 protection requires finite ${ProtectionRating.ratedCurrentKey} > 0.',
               componentId: component.id,
             ),
           );
@@ -536,7 +580,8 @@ _CompiledAc1Model _compileModel(
             Ac1SolverDiagnostic(
               code: Ac1DiagnosticCode.invalidParameter,
               severity: Ac1DiagnosticSeverity.error,
-              message: 'AC1 protection controlState.closed/tripped must be boolean when provided.',
+              message:
+                  'AC1 protection controlState.closed/tripped must be boolean when provided.',
               componentId: component.id,
             ),
           );
@@ -561,8 +606,11 @@ _CompiledAc1Model _compileModel(
         }
         continue;
       default:
-        final AcComplex? impedance =
-            _componentImpedance(component, frequencyHz, diagnostics);
+        final AcComplex? impedance = _componentImpedance(
+          component,
+          frequencyHz,
+          diagnostics,
+        );
         if (impedance == null) {
           continue;
         }
@@ -603,7 +651,8 @@ _CompiledAc1Model _compileModel(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.invalidTerminalCount,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'AC1 source ${source.id.value} must expose exactly two terminals.',
+          message:
+              'AC1 source ${source.id.value} must expose exactly two terminals.',
           sourceId: source.id,
         ),
       );
@@ -669,7 +718,6 @@ _CompiledAc1Model _compileModel(
     diagnostics.any(_isError),
   );
 }
-
 
 bool _compileElectromechanicalAc1({
   required ComponentInstance component,
@@ -737,9 +785,7 @@ bool _compileElectromechanicalAc1({
       _Ac1Element(
         id: _componentBranchElementId(component, branch, branches.length),
         modelType: component.modelType,
-        kind: closed
-            ? _Ac1ElementKind.idealVoltage
-            : _Ac1ElementKind.impedance,
+        kind: closed ? _Ac1ElementKind.idealVoltage : _Ac1ElementKind.impedance,
         branchKind: Ac1BranchKind.contactorContact,
         fromNodeId: branch.fromNodeId,
         toNodeId: branch.toNodeId,
@@ -755,8 +801,10 @@ bool _compileElectromechanicalAc1({
     ElectricalBranchRole.controlCoil,
   );
   final List<TopologyBranch> powerPoles = branches
-      .where((TopologyBranch branch) =>
-          branch.role == ElectricalBranchRole.powerPole)
+      .where(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.powerPole,
+      )
       .toList(growable: false);
   if (coil == null || powerPoles.length != 1 || branches.length != 2) {
     diagnostics.add(
@@ -771,14 +819,16 @@ bool _compileElectromechanicalAc1({
     return true;
   }
 
-  final double? coilResistance =
-      _positiveParameter(component.parameters, 'coilResistanceOhm');
+  final double? coilResistance = _positiveParameter(
+    component.parameters,
+    'coilResistanceOhm',
+  );
   final Object? inductanceRaw = component.parameters['coilInductanceH'];
   final double coilInductance = inductanceRaw == null
       ? 0.0
       : inductanceRaw is num
-          ? inductanceRaw.toDouble()
-          : double.nan;
+      ? inductanceRaw.toDouble()
+      : double.nan;
   if (coilResistance == null ||
       !coilInductance.isFinite ||
       coilInductance < 0.0) {
@@ -846,10 +896,9 @@ String _componentBranchElementId(
   ComponentInstance component,
   TopologyBranch branch,
   int branchCount,
-) =>
-    branchCount == 1
-        ? 'component:${component.id.value}'
-        : 'component:${component.id.value}:${branch.branchId}';
+) => branchCount == 1
+    ? 'component:${component.id.value}'
+    : 'component:${component.id.value}:${branch.branchId}';
 
 AcComplex? _componentImpedance(
   ComponentInstance component,
@@ -860,17 +909,26 @@ AcComplex? _componentImpedance(
   switch (component.modelType) {
     case 'resistor':
     case 'lamp':
-      final double? resistance = _positiveParameter(component.parameters, 'resistanceOhm');
+      final double? resistance = _positiveParameter(
+        component.parameters,
+        'resistanceOhm',
+      );
       if (resistance != null) {
         return AcComplex.real(resistance);
       }
     case 'inductor':
-      final double? inductance = _positiveParameter(component.parameters, 'inductanceH');
+      final double? inductance = _positiveParameter(
+        component.parameters,
+        'inductanceH',
+      );
       if (inductance != null) {
         return AcComplex(0.0, omega * inductance);
       }
     case 'capacitor':
-      final double? capacitance = _positiveParameter(component.parameters, 'capacitanceF');
+      final double? capacitance = _positiveParameter(
+        component.parameters,
+        'capacitanceF',
+      );
       if (capacitance != null) {
         return AcComplex(0.0, -1.0 / (omega * capacitance));
       }
@@ -880,7 +938,10 @@ AcComplex? _componentImpedance(
       if (rRaw is num && xRaw is num) {
         final double resistance = rRaw.toDouble();
         final double reactance = xRaw.toDouble();
-        if (resistance.isFinite && reactance.isFinite && resistance >= 0.0 && (resistance != 0.0 || reactance != 0.0)) {
+        if (resistance.isFinite &&
+            reactance.isFinite &&
+            resistance >= 0.0 &&
+            (resistance != 0.0 || reactance != 0.0)) {
           return AcComplex(resistance, reactance);
         }
       }
@@ -941,7 +1002,8 @@ AcComplex? _phasorParameter(
       Ac1SolverDiagnostic(
         code: Ac1DiagnosticCode.invalidParameter,
         severity: Ac1DiagnosticSeverity.error,
-        message: 'AC1 phasor magnitude/phase must be finite and magnitude non-negative.',
+        message:
+            'AC1 phasor magnitude/phase must be finite and magnitude non-negative.',
         sourceId: sourceId,
       ),
     );
@@ -973,13 +1035,13 @@ String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
       }
     }
   }
-  final List<String> ids = topology.nodes.map((TopologyNode node) => node.id).toList(growable: false)..sort();
+  final List<String> ids =
+      topology.nodes.map((TopologyNode node) => node.id).toList(growable: false)
+        ..sort();
   return ids.first;
 }
 
-Set<String> _participatingAc1Nodes(
-  Iterable<_Ac1Element> elements,
-) {
+Set<String> _participatingAc1Nodes(Iterable<_Ac1Element> elements) {
   final Set<String> nodes = <String>{};
   for (final _Ac1Element element in elements) {
     nodes
@@ -1014,7 +1076,11 @@ List<String> _findFloatingNodes(
       }
     }
   }
-  final List<String> result = adjacency.keys.where((String node) => !reached.contains(node)).toList(growable: false)..sort();
+  final List<String> result =
+      adjacency.keys
+          .where((String node) => !reached.contains(node))
+          .toList(growable: false)
+        ..sort();
   return result;
 }
 
@@ -1128,7 +1194,9 @@ _Ac1LinearSolveOutcome _solveLinearSystem(
       }
     }
   }
-  return _Ac1LinearSolveOutcome(<AcComplex>[for (var r = 0; r < n; r++) a[r][n]]);
+  return _Ac1LinearSolveOutcome(<AcComplex>[
+    for (var r = 0; r < n; r++) a[r][n],
+  ]);
 }
 
 double _maxMatrixResidual(
@@ -1146,7 +1214,6 @@ double _maxMatrixResidual(
   }
   return maximum;
 }
-
 
 List<_Ac1Element> _suppressRedundantAc1ControlConstraints(
   List<_Ac1Element> elements,
@@ -1203,7 +1270,8 @@ const Set<String> _supportedAc1ComponentModels = <String>{
   'terminal_block_5',
 };
 
-bool _isError(Ac1SolverDiagnostic diagnostic) => diagnostic.severity == Ac1DiagnosticSeverity.error;
+bool _isError(Ac1SolverDiagnostic diagnostic) =>
+    diagnostic.severity == Ac1DiagnosticSeverity.error;
 
 Ac1SolveResult _failure(
   CircuitState circuit,
@@ -1250,21 +1318,17 @@ final class _Ac1Element {
   final bool isOpen;
   final bool excludeFromMna;
 
-  _Ac1Element copyWith({
-    bool? isOpen,
-    bool? excludeFromMna,
-  }) =>
-      _Ac1Element(
-        id: id,
-        modelType: modelType,
-        kind: kind,
-        branchKind: branchKind,
-        fromNodeId: fromNodeId,
-        toNodeId: toNodeId,
-        value: value,
-        isOpen: isOpen ?? this.isOpen,
-        excludeFromMna: excludeFromMna ?? this.excludeFromMna,
-      );
+  _Ac1Element copyWith({bool? isOpen, bool? excludeFromMna}) => _Ac1Element(
+    id: id,
+    modelType: modelType,
+    kind: kind,
+    branchKind: branchKind,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: value,
+    isOpen: isOpen ?? this.isOpen,
+    excludeFromMna: excludeFromMna ?? this.excludeFromMna,
+  );
 }
 
 final class _CompiledAc1Model {
@@ -1274,9 +1338,8 @@ final class _CompiledAc1Model {
   final bool hasErrors;
 
   Iterable<_Ac1Element> get activeElements => allElements.where(
-        (_Ac1Element element) =>
-            !element.isOpen && !element.excludeFromMna,
-      );
+    (_Ac1Element element) => !element.isOpen && !element.excludeFromMna,
+  );
 }
 
 final class _Ac1LinearSolveOutcome {

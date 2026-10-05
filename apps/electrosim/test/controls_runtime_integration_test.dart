@@ -1,4 +1,3 @@
-
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,12 +15,7 @@ void main() {
           terminals: <Terminal>[
             _t('k1-in', '1', phase: PhaseTag.l1),
             _t('k1-out', '2', phase: PhaseTag.l1),
-            _t(
-              'k1-a1',
-              'A1',
-              role: TerminalRole.coilA1,
-              phase: PhaseTag.l1,
-            ),
+            _t('k1-a1', 'A1', role: TerminalRole.coilA1, phase: PhaseTag.l1),
             _t(
               'k1-a2',
               'A2',
@@ -67,8 +61,8 @@ void main() {
       settings: const <String, Object?>{'frequencyHz': 50.0},
     );
 
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
 
     expect(snapshot.solved, isTrue);
     expect(snapshot.contactorActuated(ComponentId('k1')), isTrue);
@@ -85,15 +79,14 @@ void main() {
 }
 
 Connection _wire(String id, String from, String to) => Connection(
-      id: ConnectionId(id),
-      fromTerminalId: TerminalId(from),
-      toTerminalId: TerminalId(to),
-    );
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(from),
+  toTerminalId: TerminalId(to),
+);
 
 Terminal _t(
   String id,
   String name, {
   TerminalRole role = TerminalRole.generic,
   PhaseTag phase = PhaseTag.none,
-}) =>
-    Terminal(id: TerminalId(id), name: name, role: role, phase: phase);
+}) => Terminal(id: TerminalId(id), name: name, role: role, phase: phase);

@@ -35,8 +35,9 @@ class F18LiveSupervisionPanel extends StatefulWidget {
 class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
   _LiveSupervisionFilter _filter = _LiveSupervisionFilter.all;
   String? _selectedClientId;
-  final GlobalKey _detailAnchorKey =
-      GlobalKey(debugLabel: 'supervision-live-detail-anchor');
+  final GlobalKey _detailAnchorKey = GlobalKey(
+    debugLabel: 'supervision-live-detail-anchor',
+  );
 
   @override
   void initState() {
@@ -85,8 +86,9 @@ class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
                 lifecycle == TpLifecycle.closed;
           }).length;
           final int attention = all.where(_needsAttention).length;
-          final List<F17StudentSupervisionItem> visible =
-              all.where(_matchesFilter).toList(growable: false);
+          final List<F17StudentSupervisionItem> visible = all
+              .where(_matchesFilter)
+              .toList(growable: false);
           final F17StudentSupervisionItem? selected = _selectedStudent(all);
 
           return ListView(
@@ -168,8 +170,7 @@ class _F18LiveSupervisionPanelState extends State<F18LiveSupervisionPanel> {
                       key: const Key('supervision-lifecycle'),
                       label: _lifecycleLabel(teacherSession.lifecycle),
                       icon: _statusIcon(teacherSession.lifecycle),
-                      emphasized:
-                          teacherSession.lifecycle != TpLifecycle.draft,
+                      emphasized: teacherSession.lifecycle != TpLifecycle.draft,
                     ),
                   ],
                 ),
@@ -372,10 +373,7 @@ class _MetricCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: ElectroSimSpacing.xs),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text(value, style: Theme.of(context).textTheme.headlineSmall),
             ],
           ),
         ),
@@ -546,9 +544,7 @@ class _StudentTableRow extends StatelessWidget {
                 width: 190,
                 child: Text(
                   _activityLabel(session),
-                  key: Key(
-                    'supervision-student-state-' + student.clientId,
-                  ),
+                  key: Key('supervision-student-state-' + student.clientId),
                 ),
               ),
               SizedBox(
@@ -557,17 +553,12 @@ class _StudentTableRow extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: LinearProgressIndicator(
-                        key: Key(
-                          'supervision-progress-' + student.clientId,
-                        ),
+                        key: Key('supervision-progress-' + student.clientId),
                         value: progress / 100,
                       ),
                     ),
                     const SizedBox(width: ElectroSimSpacing.xs),
-                    SizedBox(
-                      width: 40,
-                      child: Text(progress.toString() + '%'),
-                    ),
+                    SizedBox(width: 40, child: Text(progress.toString() + '%')),
                   ],
                 ),
               ),
@@ -579,9 +570,7 @@ class _StudentTableRow extends StatelessWidget {
                 width: 110,
                 child: Text(
                   _attentionLabel(student),
-                  key: Key(
-                    'supervision-attention-' + student.clientId,
-                  ),
+                  key: Key('supervision-attention-' + student.clientId),
                 ),
               ),
             ],
@@ -712,9 +701,7 @@ class _StudentDetailPanelState extends State<_StudentDetailPanel> {
                   onGrade: _submitGrade,
                   onClose: widget.onCloseStudent == null
                       ? null
-                      : () => widget.onCloseStudent!(
-                            widget.student.clientId,
-                          ),
+                      : () => widget.onCloseStudent!(widget.student.clientId),
                 );
                 if (constraints.maxWidth < 800) {
                   return Column(
@@ -755,8 +742,7 @@ class _StudentDetailPanelState extends State<_StudentDetailPanel> {
       });
       return;
     }
-    if (score != null &&
-        (score < 0 || score > session.definition.maxScore)) {
+    if (score != null && (score < 0 || score > session.definition.maxScore)) {
       setState(() {
         _error =
             'Note comprise entre 0 et ' +
@@ -769,10 +755,7 @@ class _StudentDetailPanelState extends State<_StudentDetailPanel> {
       _error = null;
     });
     callback(
-      F17StudentGradeRequest(
-        clientId: widget.student.clientId,
-        score: score,
-      ),
+      F17StudentGradeRequest(clientId: widget.student.clientId, score: score),
     );
   }
 
@@ -794,10 +777,7 @@ class _LiveCircuitSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
-          'Montage actuel',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Montage actuel', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: ElectroSimSpacing.xs),
         Text(
           'Dernière activité reçue : ' +
@@ -813,16 +793,11 @@ class _LiveCircuitSection extends StatelessWidget {
               border: Border.all(color: ElectroSimColors.outline),
             ),
             child: session == null
-                ? const Center(
-                    child: Text('Aucun montage élève disponible.'),
-                  )
+                ? const Center(child: Text('Aucun montage élève disponible.'))
                 : ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(ElectroSimRadii.card),
+                    borderRadius: BorderRadius.circular(ElectroSimRadii.card),
                     child: _LiveCircuitPreview(
-                      key: Key(
-                        'supervision-live-circuit-' + student.clientId,
-                      ),
+                      key: Key('supervision-live-circuit-' + student.clientId),
                       circuit: session.studentCircuit,
                     ),
                   ),
@@ -834,10 +809,7 @@ class _LiveCircuitSection extends StatelessWidget {
 }
 
 class _LiveCircuitPreview extends StatefulWidget {
-  const _LiveCircuitPreview({
-    super.key,
-    required this.circuit,
-  });
+  const _LiveCircuitPreview({super.key, required this.circuit});
 
   final CircuitState circuit;
 
@@ -846,8 +818,10 @@ class _LiveCircuitPreview extends StatefulWidget {
 }
 
 class _LiveCircuitPreviewState extends State<_LiveCircuitPreview> {
-  late final ViewportController _viewport =
-      ViewportController(scale: .62, translation: const Offset(18, 18));
+  late final ViewportController _viewport = ViewportController(
+    scale: .62,
+    translation: const Offset(18, 18),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -910,9 +884,10 @@ class _StudentWorkDetails extends StatelessWidget {
         ),
         _DetailLine(
           label: 'Éléments',
-          value: (session.studentCircuit.sources.length +
-                  session.studentCircuit.components.length)
-              .toString(),
+          value:
+              (session.studentCircuit.sources.length +
+                      session.studentCircuit.components.length)
+                  .toString(),
         ),
         _DetailLine(
           label: 'Liaisons',
@@ -931,14 +906,11 @@ class _StudentWorkDetails extends StatelessWidget {
           const SizedBox(height: ElectroSimSpacing.xs),
           ...entries.map(
             (DiagnosticEntry entry) => Padding(
-              padding: const EdgeInsets.only(
-                bottom: ElectroSimSpacing.xs,
-              ),
+              padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: ElectroSimColors.surfaceElevated,
-                  borderRadius:
-                      BorderRadius.circular(ElectroSimRadii.compact),
+                  borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
                   border: Border.all(color: ElectroSimColors.outline),
                 ),
                 child: Padding(
@@ -998,8 +970,7 @@ class _StudentWorkDetails extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText:
-                  'Note professeur / ' +
-                  session.definition.maxScore.toString(),
+                  'Note professeur / ' + session.definition.maxScore.toString(),
               errorText: scoreError,
             ),
           ),
@@ -1026,10 +997,7 @@ class _StudentWorkDetails extends StatelessWidget {
 }
 
 class _DetailLine extends StatelessWidget {
-  const _DetailLine({
-    required this.label,
-    required this.value,
-  });
+  const _DetailLine({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1043,10 +1011,7 @@ class _DetailLine extends StatelessWidget {
         children: <Widget>[
           SizedBox(
             width: 92,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.labelMedium),
           ),
           Expanded(child: Text(value)),
         ],
@@ -1064,10 +1029,7 @@ CircuitVisualLayout _previewLayout(CircuitState circuit) {
   for (var index = 0; index < ids.length; index++) {
     final int column = index % 3;
     final int row = index ~/ 3;
-    positions[ids[index]] = Offset(
-      90 + (column * 190.0),
-      80 + (row * 130.0),
-    );
+    positions[ids[index]] = Offset(90 + (column * 190.0), 80 + (row * 130.0));
   }
   return CircuitVisualLayout(elementPositions: positions);
 }
@@ -1088,11 +1050,12 @@ int _progressPercent(TpSession? session) {
   return switch (session.lifecycle) {
     TpLifecycle.draft => 0,
     TpLifecycle.published => 10,
-    TpLifecycle.started => session.definition.mode == TpMode.troubleshooting
-        ? (35 + (session.diagnosticSheet.entries.length * 12))
-            .clamp(35, 75)
-            .toInt()
-        : 55,
+    TpLifecycle.started =>
+      session.definition.mode == TpMode.troubleshooting
+          ? (35 + (session.diagnosticSheet.entries.length * 12))
+                .clamp(35, 75)
+                .toInt()
+          : 55,
     TpLifecycle.submitted => 85,
     TpLifecycle.evaluated => 95,
     TpLifecycle.closed => 100,

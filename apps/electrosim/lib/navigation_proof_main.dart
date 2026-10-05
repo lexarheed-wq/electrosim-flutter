@@ -108,10 +108,7 @@ class _ProofScreenState extends State<_ProofScreen> {
               onDesign: () {},
               onJoinSession: () {},
             ),
-            const ModalBarrier(
-              dismissible: false,
-              color: Color(0x73000000),
-            ),
+            const ModalBarrier(dismissible: false, color: Color(0x73000000)),
             const Center(child: F18CreateSessionDialog()),
           ],
         );

@@ -13,22 +13,31 @@ void main() {
       solver.solve(circuit, topologyEngine.compile(circuit));
 
   group('M4 AC1 convergence', () {
-    test('lamp uses canonical topology branch and solves as a resistive receiver', () {
-      final Ac1SolveResult result = solve(
-        _seriesCircuit(
-          ComponentInstance(
-            id: ComponentId('x1'),
-            modelType: 'lamp',
-            terminals: <Terminal>[_t('x1a', 'A'), _t('x1b', 'B')],
-            parameters: const <String, Object?>{'resistanceOhm': 46.0},
+    test(
+      'lamp uses canonical topology branch and solves as a resistive receiver',
+      () {
+        final Ac1SolveResult result = solve(
+          _seriesCircuit(
+            ComponentInstance(
+              id: ComponentId('x1'),
+              modelType: 'lamp',
+              terminals: <Terminal>[_t('x1a', 'A'), _t('x1b', 'B')],
+              parameters: const <String, Object?>{'resistanceOhm': 46.0},
+            ),
           ),
-        ),
-      );
-      expect(result.status, Ac1SolveStatus.solved);
-      expect(result.branch('component:x1').current?.magnitude, closeTo(5.0, 1e-9));
-      expect(result.branch('component:x1').activePowerW, closeTo(1150.0, 1e-6));
-      _expectResiduals(result);
-    });
+        );
+        expect(result.status, Ac1SolveStatus.solved);
+        expect(
+          result.branch('component:x1').current?.magnitude,
+          closeTo(5.0, 1e-9),
+        );
+        expect(
+          result.branch('component:x1').activePowerW,
+          closeTo(1150.0, 1e-6),
+        );
+        _expectResiduals(result);
+      },
+    );
 
     test('inductor uses complex impedance at configured frequency', () {
       final Ac1SolveResult result = solve(
@@ -43,7 +52,10 @@ void main() {
       );
       final double expected = 230.0 / (2.0 * math.pi * 50.0 * 0.1);
       expect(result.status, Ac1SolveStatus.solved);
-      expect(result.branch('component:x1').current?.magnitude, closeTo(expected, 1e-9));
+      expect(
+        result.branch('component:x1').current?.magnitude,
+        closeTo(expected, 1e-9),
+      );
       expect(result.branch('component:x1').reactivePowerVar, greaterThan(0.0));
       _expectResiduals(result);
     });
@@ -52,12 +64,18 @@ void main() {
       final Ac1SolveResult open = solve(_switchCircuit(closed: false));
       expect(open.status, Ac1SolveStatus.solved);
       expect(open.branch('component:s1').kind, Ac1BranchKind.openCircuit);
-      expect(open.branch('component:s1').current?.magnitude, closeTo(0.0, 1e-12));
+      expect(
+        open.branch('component:s1').current?.magnitude,
+        closeTo(0.0, 1e-12),
+      );
 
       final Ac1SolveResult closed = solve(_switchCircuit(closed: true));
       expect(closed.status, Ac1SolveStatus.solved);
       expect(closed.branch('component:s1').kind, Ac1BranchKind.idealSwitch);
-      expect(closed.branch('component:r1').current?.magnitude, closeTo(5.0, 1e-9));
+      expect(
+        closed.branch('component:r1').current?.magnitude,
+        closeTo(5.0, 1e-9),
+      );
       _expectResiduals(closed);
     });
 
@@ -65,18 +83,33 @@ void main() {
       final Ac1SolveResult result = solve(_breakerCircuit(tripped: true));
       expect(result.status, Ac1SolveStatus.solved);
       expect(result.branch('component:q1').kind, Ac1BranchKind.openCircuit);
-      expect(result.branch('component:q1').current?.magnitude, closeTo(0.0, 1e-12));
-      expect(result.branch('component:r1').current?.magnitude, closeTo(0.0, 1e-12));
+      expect(
+        result.branch('component:q1').current?.magnitude,
+        closeTo(0.0, 1e-12),
+      );
+      expect(
+        result.branch('component:r1').current?.magnitude,
+        closeTo(0.0, 1e-12),
+      );
       _expectResiduals(result);
     });
 
-    test('closed AC1 breaker remains distinct from receiver nominal current', () {
-      final Ac1SolveResult result = solve(_breakerCircuit(tripped: false));
-      expect(result.status, Ac1SolveStatus.solved);
-      expect(result.branch('component:q1').kind, Ac1BranchKind.idealProtection);
-      expect(result.branch('component:r1').current?.magnitude, closeTo(5.0, 1e-9));
-      _expectResiduals(result);
-    });
+    test(
+      'closed AC1 breaker remains distinct from receiver nominal current',
+      () {
+        final Ac1SolveResult result = solve(_breakerCircuit(tripped: false));
+        expect(result.status, Ac1SolveStatus.solved);
+        expect(
+          result.branch('component:q1').kind,
+          Ac1BranchKind.idealProtection,
+        );
+        expect(
+          result.branch('component:r1').current?.magnitude,
+          closeTo(5.0, 1e-9),
+        );
+        _expectResiduals(result);
+      },
+    );
   });
 }
 
@@ -115,9 +148,21 @@ CircuitState _switchCircuit({required bool closed}) => CircuitState(
     _resistor(),
   ],
   connections: <Connection>[
-    Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('l'), toTerminalId: TerminalId('s1a')),
-    Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('s1b'), toTerminalId: TerminalId('r1a')),
-    Connection(id: ConnectionId('w3'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('n')),
+    Connection(
+      id: ConnectionId('w1'),
+      fromTerminalId: TerminalId('l'),
+      toTerminalId: TerminalId('s1a'),
+    ),
+    Connection(
+      id: ConnectionId('w2'),
+      fromTerminalId: TerminalId('s1b'),
+      toTerminalId: TerminalId('r1a'),
+    ),
+    Connection(
+      id: ConnectionId('w3'),
+      fromTerminalId: TerminalId('r1b'),
+      toTerminalId: TerminalId('n'),
+    ),
   ],
   sources: <SourceInstance>[_source()],
   settings: const <String, Object?>{'frequencyHz': 50.0},
@@ -138,9 +183,21 @@ CircuitState _breakerCircuit({required bool tripped}) => CircuitState(
     _resistor(),
   ],
   connections: <Connection>[
-    Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('l'), toTerminalId: TerminalId('q1a')),
-    Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('q1b'), toTerminalId: TerminalId('r1a')),
-    Connection(id: ConnectionId('w3'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('n')),
+    Connection(
+      id: ConnectionId('w1'),
+      fromTerminalId: TerminalId('l'),
+      toTerminalId: TerminalId('q1a'),
+    ),
+    Connection(
+      id: ConnectionId('w2'),
+      fromTerminalId: TerminalId('q1b'),
+      toTerminalId: TerminalId('r1a'),
+    ),
+    Connection(
+      id: ConnectionId('w3'),
+      fromTerminalId: TerminalId('r1b'),
+      toTerminalId: TerminalId('n'),
+    ),
   ],
   sources: <SourceInstance>[_source()],
   settings: const <String, Object?>{'frequencyHz': 50.0},
@@ -163,8 +220,11 @@ SourceInstance _source() => SourceInstance(
   parameters: const <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': 0.0},
 );
 
-Terminal _t(String id, String name, {TerminalRole role = TerminalRole.generic}) =>
-    Terminal(id: TerminalId(id), name: name, role: role);
+Terminal _t(
+  String id,
+  String name, {
+  TerminalRole role = TerminalRole.generic,
+}) => Terminal(id: TerminalId(id), name: name, role: role);
 
 void _expectResiduals(Ac1SolveResult result) {
   expect(result.maxMatrixResidual, isNotNull);

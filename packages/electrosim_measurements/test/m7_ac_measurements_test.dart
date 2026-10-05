@@ -47,41 +47,47 @@ void main() {
       expect(frequency.reading!.value, closeTo(50.0, 1e-12));
     });
 
-    test('AC3 phase-to-neutral RMS and branch current are read from phasors', () {
-      final CircuitState circuit = _ac3Circuit();
-      final TopologyGraph topology = topologyEngine.compile(circuit);
-      final Ac3SolveResult result = const SolverAC3().solve(circuit, topology);
-      expect(result.isSolved, isTrue);
+    test(
+      'AC3 phase-to-neutral RMS and branch current are read from phasors',
+      () {
+        final CircuitState circuit = _ac3Circuit();
+        final TopologyGraph topology = topologyEngine.compile(circuit);
+        final Ac3SolveResult result = const SolverAC3().solve(
+          circuit,
+          topology,
+        );
+        expect(result.isSolved, isTrue);
 
-      final MeasurementResult voltage = measurements.measureAc3(
-        request: MeasurementRequest.voltageAcRms(
-          positiveProbe: TerminalId('r1p'),
-          negativeProbe: TerminalId('r1n'),
-        ),
-        circuit: circuit,
-        topology: topology,
-        simulation: result,
-      );
-      expect(voltage.isValid, isTrue);
-      expect(voltage.reading!.value, closeTo(230.0, 1e-8));
+        final MeasurementResult voltage = measurements.measureAc3(
+          request: MeasurementRequest.voltageAcRms(
+            positiveProbe: TerminalId('r1p'),
+            negativeProbe: TerminalId('r1n'),
+          ),
+          circuit: circuit,
+          topology: topology,
+          simulation: result,
+        );
+        expect(voltage.isValid, isTrue);
+        expect(voltage.reading!.value, closeTo(230.0, 1e-8));
 
-      final MeasurementResult current = measurements.measureAc3(
-        request: MeasurementRequest.currentAcRms(branchId: 'component:r1'),
-        circuit: circuit,
-        topology: topology,
-        simulation: result,
-      );
-      expect(current.isValid, isTrue);
-      expect(current.reading!.value, closeTo(5.0, 1e-8));
+        final MeasurementResult current = measurements.measureAc3(
+          request: MeasurementRequest.currentAcRms(branchId: 'component:r1'),
+          circuit: circuit,
+          topology: topology,
+          simulation: result,
+        );
+        expect(current.isValid, isTrue);
+        expect(current.reading!.value, closeTo(5.0, 1e-8));
 
-      final MeasurementResult frequency = measurements.measureAc3(
-        request: MeasurementRequest.frequency(),
-        circuit: circuit,
-        topology: topology,
-        simulation: result,
-      );
-      expect(frequency.reading!.value, closeTo(50.0, 1e-12));
-    });
+        final MeasurementResult frequency = measurements.measureAc3(
+          request: MeasurementRequest.frequency(),
+          circuit: circuit,
+          topology: topology,
+          simulation: result,
+        );
+        expect(frequency.reading!.value, closeTo(50.0, 1e-12));
+      },
+    );
 
     test('AC3 total P Q S and phase sequence come from solved phasors', () {
       final CircuitState circuit = _ac3Circuit();
@@ -152,8 +158,16 @@ CircuitState _ac1Circuit() => CircuitState(
     ),
   ],
   connections: <Connection>[
-    Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('l'), toTerminalId: TerminalId('r1a')),
-    Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('r1b'), toTerminalId: TerminalId('n')),
+    Connection(
+      id: ConnectionId('w1'),
+      fromTerminalId: TerminalId('l'),
+      toTerminalId: TerminalId('r1a'),
+    ),
+    Connection(
+      id: ConnectionId('w2'),
+      fromTerminalId: TerminalId('r1b'),
+      toTerminalId: TerminalId('n'),
+    ),
   ],
   sources: <SourceInstance>[
     SourceInstance(
@@ -179,14 +193,46 @@ CircuitState _ac3Circuit() => CircuitState(
     _phaseLoad('r3', PhaseTag.l3),
   ],
   connections: <Connection>[
-    Connection(id: ConnectionId('p1'), fromTerminalId: TerminalId('v1p'), toTerminalId: TerminalId('r1p')),
-    Connection(id: ConnectionId('p2'), fromTerminalId: TerminalId('v2p'), toTerminalId: TerminalId('r2p')),
-    Connection(id: ConnectionId('p3'), fromTerminalId: TerminalId('v3p'), toTerminalId: TerminalId('r3p')),
-    Connection(id: ConnectionId('n1'), fromTerminalId: TerminalId('r1n'), toTerminalId: TerminalId('v1n')),
-    Connection(id: ConnectionId('n2'), fromTerminalId: TerminalId('r2n'), toTerminalId: TerminalId('v1n')),
-    Connection(id: ConnectionId('n3'), fromTerminalId: TerminalId('r3n'), toTerminalId: TerminalId('v1n')),
-    Connection(id: ConnectionId('ns2'), fromTerminalId: TerminalId('v2n'), toTerminalId: TerminalId('v1n')),
-    Connection(id: ConnectionId('ns3'), fromTerminalId: TerminalId('v3n'), toTerminalId: TerminalId('v1n')),
+    Connection(
+      id: ConnectionId('p1'),
+      fromTerminalId: TerminalId('v1p'),
+      toTerminalId: TerminalId('r1p'),
+    ),
+    Connection(
+      id: ConnectionId('p2'),
+      fromTerminalId: TerminalId('v2p'),
+      toTerminalId: TerminalId('r2p'),
+    ),
+    Connection(
+      id: ConnectionId('p3'),
+      fromTerminalId: TerminalId('v3p'),
+      toTerminalId: TerminalId('r3p'),
+    ),
+    Connection(
+      id: ConnectionId('n1'),
+      fromTerminalId: TerminalId('r1n'),
+      toTerminalId: TerminalId('v1n'),
+    ),
+    Connection(
+      id: ConnectionId('n2'),
+      fromTerminalId: TerminalId('r2n'),
+      toTerminalId: TerminalId('v1n'),
+    ),
+    Connection(
+      id: ConnectionId('n3'),
+      fromTerminalId: TerminalId('r3n'),
+      toTerminalId: TerminalId('v1n'),
+    ),
+    Connection(
+      id: ConnectionId('ns2'),
+      fromTerminalId: TerminalId('v2n'),
+      toTerminalId: TerminalId('v1n'),
+    ),
+    Connection(
+      id: ConnectionId('ns3'),
+      fromTerminalId: TerminalId('v3n'),
+      toTerminalId: TerminalId('v1n'),
+    ),
   ],
   sources: <SourceInstance>[
     _phaseSource('v1', PhaseTag.l1),

@@ -14,14 +14,8 @@ void main() {
   test('router is deterministic across 100 seeded obstacle fixtures', () {
     for (var seed = 0; seed < 100; seed++) {
       final Random random = Random(seed);
-      final Offset start = Offset(
-        24,
-        48 + 24.0 * random.nextInt(8),
-      );
-      final Offset end = Offset(
-        480,
-        48 + 24.0 * random.nextInt(8),
-      );
+      final Offset start = Offset(24, 48 + 24.0 * random.nextInt(8));
+      final Offset end = Offset(480, 48 + 24.0 * random.nextInt(8));
 
       final List<RoutingObstacle> obstacles = <RoutingObstacle>[];
       for (var index = 0; index < 4; index++) {
@@ -29,9 +23,7 @@ void main() {
         final double top = 24.0 * random.nextInt(9);
         final double height = 48 + 24.0 * random.nextInt(4);
         obstacles.add(
-          RoutingObstacle(
-            bounds: Rect.fromLTWH(left, top, 24, height),
-          ),
+          RoutingObstacle(bounds: Rect.fromLTWH(left, top, 24, height)),
         );
       }
 
@@ -86,10 +78,7 @@ void main() {
       final double gapHeight = 48;
 
       final OrthogonalWirePath upperBarrier = OrthogonalWirePath(
-        points: <Offset>[
-          Offset(barrierX, -240),
-          Offset(barrierX, gapTop),
-        ],
+        points: <Offset>[Offset(barrierX, -240), Offset(barrierX, gapTop)],
       );
       final OrthogonalWirePath lowerBarrier = OrthogonalWirePath(
         points: <Offset>[
@@ -124,27 +113,30 @@ void main() {
     }
   });
 
-  test('resolved route rerouting is stable when reused as a visual constraint', () {
-    final WireRouteResult first = router.route(
-      start: const Offset(24, 120),
-      end: const Offset(480, 120),
-      obstacles: const <RoutingObstacle>[
-        RoutingObstacle(bounds: Rect.fromLTWH(144, 72, 48, 96)),
-        RoutingObstacle(bounds: Rect.fromLTWH(264, 120, 48, 96)),
-      ],
-    );
+  test(
+    'resolved route rerouting is stable when reused as a visual constraint',
+    () {
+      final WireRouteResult first = router.route(
+        start: const Offset(24, 120),
+        end: const Offset(480, 120),
+        obstacles: const <RoutingObstacle>[
+          RoutingObstacle(bounds: Rect.fromLTWH(144, 72, 48, 96)),
+          RoutingObstacle(bounds: Rect.fromLTWH(264, 120, 48, 96)),
+        ],
+      );
 
-    expect(first.isResolved, isTrue);
+      expect(first.isResolved, isTrue);
 
-    final WireRouteResult second = router.route(
-      start: const Offset(24, 120),
-      end: const Offset(480, 120),
-      obstacles: const <RoutingObstacle>[
-        RoutingObstacle(bounds: Rect.fromLTWH(144, 72, 48, 96)),
-        RoutingObstacle(bounds: Rect.fromLTWH(264, 120, 48, 96)),
-      ],
-    );
+      final WireRouteResult second = router.route(
+        start: const Offset(24, 120),
+        end: const Offset(480, 120),
+        obstacles: const <RoutingObstacle>[
+          RoutingObstacle(bounds: Rect.fromLTWH(144, 72, 48, 96)),
+          RoutingObstacle(bounds: Rect.fromLTWH(264, 120, 48, 96)),
+        ],
+      );
 
-    expect(second.path!.points, first.path!.points);
-  });
+      expect(second.path!.points, first.path!.points);
+    },
+  );
 }

@@ -18,7 +18,10 @@ final class ExportService {
       <Object?>['sources', document.circuit.sources.length],
       <Object?>['connections', document.circuit.connections.length],
     ];
-    return rows.map((List<Object?> row) => row.map(_csvCell).join(',')).join('\n') + '\n';
+    return rows
+            .map((List<Object?> row) => row.map(_csvCell).join(','))
+            .join('\n') +
+        '\n';
   }
 
   Uint8List toPdf(SavedCircuitDocument document) {
@@ -68,7 +71,9 @@ final class ExportService {
     for (final int offset in offsets.skip(1)) {
       pdf.write('${offset.toString().padLeft(10, '0')} 00000 n \n');
     }
-    pdf.write('trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n$xrefOffset\n%%EOF\n');
+    pdf.write(
+      'trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n$xrefOffset\n%%EOF\n',
+    );
     return Uint8List.fromList(utf8.encode(pdf.toString()));
   }
 }

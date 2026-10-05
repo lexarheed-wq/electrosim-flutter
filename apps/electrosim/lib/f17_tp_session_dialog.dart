@@ -331,9 +331,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
 
   List<Widget> _studentActions(TpSession? session) {
     if (session == null) {
-      return const <Widget>[
-        Text('Aucun TP publié par le professeur.'),
-      ];
+      return const <Widget>[Text('Aucun TP publié par le professeur.')];
     }
     switch (session.lifecycle) {
       case TpLifecycle.published:

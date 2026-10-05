@@ -11,8 +11,9 @@ final class ElectroSimStudentWebBundleLocator {
       if (_valid(directory)) return directory;
     }
 
-    final Directory executableDirectory =
-        File(Platform.resolvedExecutable).parent;
+    final Directory executableDirectory = File(
+      Platform.resolvedExecutable,
+    ).parent;
     final List<Directory> candidates = <Directory>[
       Directory('${Directory.current.path}/build/student_web'),
       Directory(

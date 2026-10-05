@@ -5,8 +5,8 @@ final class FaultScenarioRepository {
   FaultScenarioRepository({
     required List<FaultScenarioDefinition> scenarios,
     FaultScenarioValidator validator = const FaultScenarioValidator(),
-  })  : _validator = validator,
-        _scenarios = _prepare(scenarios, validator);
+  }) : _validator = validator,
+       _scenarios = _prepare(scenarios, validator);
 
   final FaultScenarioValidator _validator;
   final List<FaultScenarioDefinition> _scenarios;
@@ -20,8 +20,9 @@ final class FaultScenarioRepository {
     return null;
   }
 
-  List<FaultScenarioValidationResult> validateAll() =>
-      _scenarios.map<FaultScenarioValidationResult>(_validator.validate).toList(growable: false);
+  List<FaultScenarioValidationResult> validateAll() => _scenarios
+      .map<FaultScenarioValidationResult>(_validator.validate)
+      .toList(growable: false);
 
   static List<FaultScenarioDefinition> _prepare(
     List<FaultScenarioDefinition> scenarios,
@@ -31,12 +32,18 @@ final class FaultScenarioRepository {
     final List<FaultScenarioDefinition> validated = <FaultScenarioDefinition>[];
     for (final FaultScenarioDefinition scenario in scenarios) {
       if (!ids.add(scenario.id)) {
-        throw ArgumentError('Duplicate fault scenario ID: ${scenario.id.value}.');
+        throw ArgumentError(
+          'Duplicate fault scenario ID: ${scenario.id.value}.',
+        );
       }
       final FaultScenarioValidationResult result = validator.validate(scenario);
       if (!result.isValid) {
-        final String details = result.issues.map((FaultScenarioValidationIssue issue) => issue.code).join(', ');
-        throw ArgumentError('Invalid fault scenario ${scenario.id.value}: $details');
+        final String details = result.issues
+            .map((FaultScenarioValidationIssue issue) => issue.code)
+            .join(', ');
+        throw ArgumentError(
+          'Invalid fault scenario ${scenario.id.value}: $details',
+        );
       }
       validated.add(scenario.withValidationStamp(result.stamp));
     }

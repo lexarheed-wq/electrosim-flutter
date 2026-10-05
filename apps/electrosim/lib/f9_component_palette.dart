@@ -67,16 +67,18 @@ class F9PaletteDefinition {
     if (supportedModes.isNotEmpty) return supportedModes.contains(mode);
     if (kind == F9PaletteElementKind.source) {
       return switch (modelType) {
-        'dc_voltage_source' || 'voltage_source' || 'dc_current_source' =>
-          mode == ElectricalMode.dc,
+        'dc_voltage_source' ||
+        'voltage_source' ||
+        'dc_current_source' => mode == ElectricalMode.dc,
         'ac_voltage_source' || 'ac_current_source' =>
           mode == ElectricalMode.ac1 || mode == ElectricalMode.ac3,
         'pv_array' => mode == ElectricalMode.pv,
         _ => false,
       };
     }
-    final ComponentModelContract? contract =
-        CoreComponentModelContracts.registry.resolve(modelType);
+    final ComponentModelContract? contract = CoreComponentModelContracts
+        .registry
+        .resolve(modelType);
     if (contract != null) return contract.supportsMode(mode);
     // Temporary explicit compatibility for the diode visual until the
     // nonlinear C15 semiconductor model is registered in the domain core.
@@ -86,43 +88,43 @@ class F9PaletteDefinition {
 
 const List<F9PaletteTerminalSpec> f9Motor3p6tTerminals =
     <F9PaletteTerminalSpec>[
-  F9PaletteTerminalSpec(
-    'U1',
-    role: TerminalRole.lineL1,
-    phase: PhaseTag.l1,
-    idSuffix: 'u1',
-  ),
-  F9PaletteTerminalSpec(
-    'V1',
-    role: TerminalRole.lineL2,
-    phase: PhaseTag.l2,
-    idSuffix: 'v1',
-  ),
-  F9PaletteTerminalSpec(
-    'W1',
-    role: TerminalRole.lineL3,
-    phase: PhaseTag.l3,
-    idSuffix: 'w1',
-  ),
-  F9PaletteTerminalSpec(
-    'U2',
-    role: TerminalRole.loadT1,
-    phase: PhaseTag.none,
-    idSuffix: 'u2',
-  ),
-  F9PaletteTerminalSpec(
-    'V2',
-    role: TerminalRole.loadT2,
-    phase: PhaseTag.none,
-    idSuffix: 'v2',
-  ),
-  F9PaletteTerminalSpec(
-    'W2',
-    role: TerminalRole.loadT3,
-    phase: PhaseTag.none,
-    idSuffix: 'w2',
-  ),
-];
+      F9PaletteTerminalSpec(
+        'U1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: 'u1',
+      ),
+      F9PaletteTerminalSpec(
+        'V1',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: 'v1',
+      ),
+      F9PaletteTerminalSpec(
+        'W1',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: 'w1',
+      ),
+      F9PaletteTerminalSpec(
+        'U2',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.none,
+        idSuffix: 'u2',
+      ),
+      F9PaletteTerminalSpec(
+        'V2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.none,
+        idSuffix: 'v2',
+      ),
+      F9PaletteTerminalSpec(
+        'W2',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.none,
+        idSuffix: 'w2',
+      ),
+    ];
 
 const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   F9PaletteDefinition(
@@ -781,10 +783,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: 'n',
       ),
     ],
-    defaultParameters: <String, Object?>{
-      'voltageRmsV': 230.0,
-      'phaseDeg': 0.0,
-    },
+    defaultParameters: <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': 0.0},
     visualVariant: 'ac-1p',
     displayLabel: 'Source 230 V~',
     subtitle: '230 V RMS · 50 Hz',
@@ -812,10 +811,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: 'n',
       ),
     ],
-    defaultParameters: <String, Object?>{
-      'currentRmsA': 1.0,
-      'phaseDeg': 0.0,
-    },
+    defaultParameters: <String, Object?>{'currentRmsA': 1.0, 'phaseDeg': 0.0},
     visualVariant: 'ac-current',
     displayLabel: 'Source I~',
     subtitle: '1 A RMS · 50 Hz',
@@ -843,10 +839,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: 'n',
       ),
     ],
-    defaultParameters: <String, Object?>{
-      'voltageRmsV': 230.0,
-      'phaseDeg': 0.0,
-    },
+    defaultParameters: <String, Object?>{'voltageRmsV': 230.0, 'phaseDeg': 0.0},
     visualVariant: 'ac-l1',
     displayLabel: 'Réseau L1',
     subtitle: 'L1-N · 230 V · 0°',
@@ -1602,14 +1595,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'breaker_3p',
     icon: Icons.electrical_services,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>[
-      '1L1',
-      '3L2',
-      '5L3',
-      '2T1',
-      '4T2',
-      '6T3',
-    ],
+    terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '1L1',
@@ -1659,14 +1645,44 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'isolator_3p',
     icon: Icons.toggle_off_outlined,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>['1L1','3L2','5L3','2T1','4T2','6T3'],
+    terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('1L1', role: TerminalRole.lineL1, phase: PhaseTag.l1, idSuffix: '1l1'),
-      F9PaletteTerminalSpec('3L2', role: TerminalRole.lineL2, phase: PhaseTag.l2, idSuffix: '3l2'),
-      F9PaletteTerminalSpec('5L3', role: TerminalRole.lineL3, phase: PhaseTag.l3, idSuffix: '5l3'),
-      F9PaletteTerminalSpec('2T1', role: TerminalRole.loadT1, phase: PhaseTag.l1, idSuffix: '2t1'),
-      F9PaletteTerminalSpec('4T2', role: TerminalRole.loadT2, phase: PhaseTag.l2, idSuffix: '4t2'),
-      F9PaletteTerminalSpec('6T3', role: TerminalRole.loadT3, phase: PhaseTag.l3, idSuffix: '6t3'),
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
     ],
     defaultControlState: <String, Object?>{'closed': true},
     subtitle: 'Coupure générale triphasée',
@@ -1678,16 +1694,65 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'isolator_4p',
     icon: Icons.toggle_off,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>['1L1','3L2','5L3','N IN','2T1','4T2','6T3','N OUT'],
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      'N IN',
+      '2T1',
+      '4T2',
+      '6T3',
+      'N OUT',
+    ],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('1L1', role: TerminalRole.lineL1, phase: PhaseTag.l1, idSuffix: '1l1'),
-      F9PaletteTerminalSpec('3L2', role: TerminalRole.lineL2, phase: PhaseTag.l2, idSuffix: '3l2'),
-      F9PaletteTerminalSpec('5L3', role: TerminalRole.lineL3, phase: PhaseTag.l3, idSuffix: '5l3'),
-      F9PaletteTerminalSpec('N IN', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-in'),
-      F9PaletteTerminalSpec('2T1', role: TerminalRole.loadT1, phase: PhaseTag.l1, idSuffix: '2t1'),
-      F9PaletteTerminalSpec('4T2', role: TerminalRole.loadT2, phase: PhaseTag.l2, idSuffix: '4t2'),
-      F9PaletteTerminalSpec('6T3', role: TerminalRole.loadT3, phase: PhaseTag.l3, idSuffix: '6t3'),
-      F9PaletteTerminalSpec('N OUT', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-out'),
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        'N IN',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-in',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
+      F9PaletteTerminalSpec(
+        'N OUT',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-out',
+      ),
     ],
     defaultControlState: <String, Object?>{'closed': true},
     subtitle: 'L1/L2/L3/N',
@@ -1699,16 +1764,65 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'breaker_4p',
     icon: Icons.electrical_services,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>['1L1','3L2','5L3','N IN','2T1','4T2','6T3','N OUT'],
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      'N IN',
+      '2T1',
+      '4T2',
+      '6T3',
+      'N OUT',
+    ],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('1L1', role: TerminalRole.lineL1, phase: PhaseTag.l1, idSuffix: '1l1'),
-      F9PaletteTerminalSpec('3L2', role: TerminalRole.lineL2, phase: PhaseTag.l2, idSuffix: '3l2'),
-      F9PaletteTerminalSpec('5L3', role: TerminalRole.lineL3, phase: PhaseTag.l3, idSuffix: '5l3'),
-      F9PaletteTerminalSpec('N IN', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-in'),
-      F9PaletteTerminalSpec('2T1', role: TerminalRole.loadT1, phase: PhaseTag.l1, idSuffix: '2t1'),
-      F9PaletteTerminalSpec('4T2', role: TerminalRole.loadT2, phase: PhaseTag.l2, idSuffix: '4t2'),
-      F9PaletteTerminalSpec('6T3', role: TerminalRole.loadT3, phase: PhaseTag.l3, idSuffix: '6t3'),
-      F9PaletteTerminalSpec('N OUT', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-out'),
+      F9PaletteTerminalSpec(
+        '1L1',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1,
+        idSuffix: '1l1',
+      ),
+      F9PaletteTerminalSpec(
+        '3L2',
+        role: TerminalRole.lineL2,
+        phase: PhaseTag.l2,
+        idSuffix: '3l2',
+      ),
+      F9PaletteTerminalSpec(
+        '5L3',
+        role: TerminalRole.lineL3,
+        phase: PhaseTag.l3,
+        idSuffix: '5l3',
+      ),
+      F9PaletteTerminalSpec(
+        'N IN',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-in',
+      ),
+      F9PaletteTerminalSpec(
+        '2T1',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1,
+        idSuffix: '2t1',
+      ),
+      F9PaletteTerminalSpec(
+        '4T2',
+        role: TerminalRole.loadT2,
+        phase: PhaseTag.l2,
+        idSuffix: '4t2',
+      ),
+      F9PaletteTerminalSpec(
+        '6T3',
+        role: TerminalRole.loadT3,
+        phase: PhaseTag.l3,
+        idSuffix: '6t3',
+      ),
+      F9PaletteTerminalSpec(
+        'N OUT',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-out',
+      ),
     ],
     defaultParameters: <String, Object?>{'ratedCurrentA': 16.0},
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
@@ -1721,18 +1835,47 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'terminal_block_5',
     icon: Icons.view_week_outlined,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>['L1 IN','L2 IN','L3 IN','N IN','PE IN','L1 OUT','L2 OUT','L3 OUT','N OUT','PE OUT'],
+    terminalLabels: <String>[
+      'L1 IN',
+      'L2 IN',
+      'L3 IN',
+      'N IN',
+      'PE IN',
+      'L1 OUT',
+      'L2 OUT',
+      'L3 OUT',
+      'N OUT',
+      'PE OUT',
+    ],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec('L1 IN', phase: PhaseTag.l1, idSuffix: 'l1-in'),
       F9PaletteTerminalSpec('L2 IN', phase: PhaseTag.l2, idSuffix: 'l2-in'),
       F9PaletteTerminalSpec('L3 IN', phase: PhaseTag.l3, idSuffix: 'l3-in'),
-      F9PaletteTerminalSpec('N IN', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-in'),
-      F9PaletteTerminalSpec('PE IN', phase: PhaseTag.protectiveEarth, idSuffix: 'pe-in'),
+      F9PaletteTerminalSpec(
+        'N IN',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-in',
+      ),
+      F9PaletteTerminalSpec(
+        'PE IN',
+        phase: PhaseTag.protectiveEarth,
+        idSuffix: 'pe-in',
+      ),
       F9PaletteTerminalSpec('L1 OUT', phase: PhaseTag.l1, idSuffix: 'l1-out'),
       F9PaletteTerminalSpec('L2 OUT', phase: PhaseTag.l2, idSuffix: 'l2-out'),
       F9PaletteTerminalSpec('L3 OUT', phase: PhaseTag.l3, idSuffix: 'l3-out'),
-      F9PaletteTerminalSpec('N OUT', role: TerminalRole.neutral, phase: PhaseTag.neutral, idSuffix: 'n-out'),
-      F9PaletteTerminalSpec('PE OUT', phase: PhaseTag.protectiveEarth, idSuffix: 'pe-out'),
+      F9PaletteTerminalSpec(
+        'N OUT',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: 'n-out',
+      ),
+      F9PaletteTerminalSpec(
+        'PE OUT',
+        phase: PhaseTag.protectiveEarth,
+        idSuffix: 'pe-out',
+      ),
     ],
     subtitle: 'Bornier de distribution 5 conducteurs',
   ),
@@ -1743,14 +1886,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'thermal_overload_3p',
     icon: Icons.device_thermostat_outlined,
     kind: F9PaletteElementKind.component,
-    terminalLabels: <String>[
-      '1L1',
-      '3L2',
-      '5L3',
-      '2T1',
-      '4T2',
-      '6T3',
-    ],
+    terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '1L1',
@@ -1826,15 +1962,19 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
 
   List<F9PaletteDefinition> get _filtered {
     final String q = _query.trim().toLowerCase();
-    return f9PaletteCatalog.where((F9PaletteDefinition item) {
-      if (!item.supportsMode(widget.mode)) return false;
-      final bool categoryMatches = _category == 'Tous' || item.category == _category;
-      final bool queryMatches = q.isEmpty ||
-          item.title.toLowerCase().contains(q) ||
-          item.category.toLowerCase().contains(q) ||
-          item.modelType.toLowerCase().contains(q);
-      return categoryMatches && queryMatches;
-    }).toList(growable: false);
+    return f9PaletteCatalog
+        .where((F9PaletteDefinition item) {
+          if (!item.supportsMode(widget.mode)) return false;
+          final bool categoryMatches =
+              _category == 'Tous' || item.category == _category;
+          final bool queryMatches =
+              q.isEmpty ||
+              item.title.toLowerCase().contains(q) ||
+              item.category.toLowerCase().contains(q) ||
+              item.modelType.toLowerCase().contains(q);
+          return categoryMatches && queryMatches;
+        })
+        .toList(growable: false);
   }
 
   @override
@@ -1920,12 +2060,16 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
                   : ListView.builder(
                       key: const Key('palette-results-list'),
                       clipBehavior: Clip.hardEdge,
-                      padding: const EdgeInsets.only(bottom: ElectroSimSpacing.md),
+                      padding: const EdgeInsets.only(
+                        bottom: ElectroSimSpacing.md,
+                      ),
                       itemCount: visible.length,
                       itemBuilder: (BuildContext context, int index) {
                         final F9PaletteDefinition item = visible[index];
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: ElectroSimSpacing.sm),
+                          padding: const EdgeInsets.only(
+                            bottom: ElectroSimSpacing.sm,
+                          ),
                           child: _PaletteDraggableTile(
                             definition: item,
                             onStatus: widget.onStatus,
@@ -1965,7 +2109,6 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     _searchController.dispose();
     super.dispose();
   }
-
 }
 
 class _PaletteDraggableTile extends StatelessWidget {
@@ -2037,25 +2180,32 @@ class _PaletteDraggableTile extends StatelessWidget {
       label: '${definition.title}, ${definition.category}',
       hint: 'Glisser sur la platine ou utiliser le bouton ajouter',
       child: Draggable<F9PaletteDefinition>(
-      data: definition,
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: Material(
-        color: Colors.transparent,
-        child: Opacity(
-          opacity: 0.94,
-          child: F18ComponentAssetVisual(
-            modelType: definition.renderedModelType,
-            variantKey: definition.visualVariant,
-            size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
-                ? F18ReferenceComponentMetrics.dragSizeFor(definition.renderedModelType)
-                : F18ComponentIdentityMetrics.dragSize,
+        data: definition,
+        dragAnchorStrategy: pointerDragAnchorStrategy,
+        feedback: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.94,
+            child: F18ComponentAssetVisual(
+              modelType: definition.renderedModelType,
+              variantKey: definition.visualVariant,
+              size:
+                  F18ReferenceComponentVisuals.supports(
+                    definition.renderedModelType,
+                  )
+                  ? F18ReferenceComponentMetrics.dragSizeFor(
+                      definition.renderedModelType,
+                    )
+                  : F18ComponentIdentityMetrics.dragSize,
+            ),
           ),
         ),
-      ),
-      childWhenDragging: Opacity(opacity: 0.35, child: tile),
-      onDragStarted: () => onStatus('Déplacement depuis la palette : ${definition.title}'),
-      onDraggableCanceled: (_, __) => onStatus('Ajout annulé : ${definition.title}'),
-      child: tile,
+        childWhenDragging: Opacity(opacity: 0.35, child: tile),
+        onDragStarted: () =>
+            onStatus('Déplacement depuis la palette : ${definition.title}'),
+        onDraggableCanceled: (_, __) =>
+            onStatus('Ajout annulé : ${definition.title}'),
+        child: tile,
       ),
     );
   }
@@ -2079,11 +2229,15 @@ class F9ComponentPreview extends StatelessWidget {
       variantKey: definition.visualVariant,
       size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
           ? (compact
-              ? F18ReferenceComponentMetrics.paletteSizeFor(definition.renderedModelType)
-              : F18ReferenceComponentMetrics.dragSizeFor(definition.renderedModelType))
+                ? F18ReferenceComponentMetrics.paletteSizeFor(
+                    definition.renderedModelType,
+                  )
+                : F18ReferenceComponentMetrics.dragSizeFor(
+                    definition.renderedModelType,
+                  ))
           : (compact
-              ? F18ComponentIdentityMetrics.paletteSize
-              : F18ComponentIdentityMetrics.dragSize),
+                ? F18ComponentIdentityMetrics.paletteSize
+                : F18ComponentIdentityMetrics.dragSize),
     );
   }
 }

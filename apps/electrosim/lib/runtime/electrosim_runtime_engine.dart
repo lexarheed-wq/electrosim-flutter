@@ -60,11 +60,11 @@ final class ElectroSimRuntimeSnapshot {
       protectionState?.isTripped(componentId) ?? false;
 
   bool get solved => switch (solverKind) {
-        ElectroSimRuntimeSolverKind.dc => dcResult?.isSolved ?? false,
-        ElectroSimRuntimeSolverKind.ac1 => ac1Result?.isSolved ?? false,
-        ElectroSimRuntimeSolverKind.ac3 => ac3Result?.isSolved ?? false,
-        ElectroSimRuntimeSolverKind.pv => pvResult?.isSolved ?? false,
-      };
+    ElectroSimRuntimeSolverKind.dc => dcResult?.isSolved ?? false,
+    ElectroSimRuntimeSolverKind.ac1 => ac1Result?.isSolved ?? false,
+    ElectroSimRuntimeSolverKind.ac3 => ac3Result?.isSolved ?? false,
+    ElectroSimRuntimeSolverKind.pv => pvResult?.isSolved ?? false,
+  };
 
   bool get diagnosticsAvailable =>
       solverKind == ElectroSimRuntimeSolverKind.dc ||
@@ -172,8 +172,9 @@ final class ElectroSimRuntimeSnapshot {
   }
 
   MeasurementResult measureAcCurrent({required String branchId}) {
-    final MeasurementRequest request =
-        MeasurementRequest.currentAcRms(branchId: branchId);
+    final MeasurementRequest request = MeasurementRequest.currentAcRms(
+      branchId: branchId,
+    );
     final Ac1SolveResult? ac1ResultLocal = ac1Result;
     if (ac1ResultLocal != null) {
       return measurementEngine.measureAc1(
@@ -227,7 +228,6 @@ final class ElectroSimRuntimeSnapshot {
           'La mesure de fréquence n’est pas disponible en mode ${circuit.mode.name.toUpperCase()}.',
     );
   }
-
 
   MeasurementResult measureActivePower({String? branchId}) =>
       _measureAcPower(MeasurementRequest.activePower(branchId: branchId));
@@ -301,7 +301,8 @@ final class ElectroSimRuntimeSnapshot {
   }) {
     final PvSolveResult result = pv;
     final EnergyPowerSample sample = EnergyPowerSample.fromPvResult(result);
-    final EnergySnapshot baseline = previous ??
+    final EnergySnapshot baseline =
+        previous ??
         EnergySnapshot.zero(
           circuitId: result.circuitId,
           circuitRevision: result.circuitRevision,
@@ -383,16 +384,16 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac1:
-        final ProtectionAc1Outcome coordinated =
-            protectionCoordinator.advanceAc1(
-          circuit: circuit,
-          topology: topology,
-          elapsed: elapsed,
-          previous: previousProtectionState,
-          solver: solverAC1,
-          controlsEngine: electromechanicalControlEngine,
-          previousContactorStates: previousContactorStates,
-        );
+        final ProtectionAc1Outcome coordinated = protectionCoordinator
+            .advanceAc1(
+              circuit: circuit,
+              topology: topology,
+              elapsed: elapsed,
+              previous: previousProtectionState,
+              solver: solverAC1,
+              controlsEngine: electromechanicalControlEngine,
+              previousContactorStates: previousContactorStates,
+            );
         final Ac1SolveResult ac1 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(
           topology: topology,
@@ -412,15 +413,15 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac3:
-        final ProtectionAc3Outcome coordinated =
-            protectionCoordinator.advanceAc3(
-          circuit: circuit,
-          topology: topology,
-          elapsed: elapsed,
-          previous: previousProtectionState,
-          solver: solverAC3,
-          controlsEngine: electromechanicalControlEngine,
-        );
+        final ProtectionAc3Outcome coordinated = protectionCoordinator
+            .advanceAc3(
+              circuit: circuit,
+              topology: topology,
+              elapsed: elapsed,
+              previous: previousProtectionState,
+              solver: solverAC3,
+              controlsEngine: electromechanicalControlEngine,
+            );
         final Ac3SolveResult ac3 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(
           topology: topology,
@@ -459,10 +460,10 @@ final class ElectroSimRuntimeEngine {
   }
 
   DiagnosticReport _noDcDiagnostics(CircuitState circuit) => DiagnosticReport(
-        circuitId: circuit.circuitId,
-        circuitRevision: circuit.revision,
-        status: DiagnosticReportStatus.insufficientEvidence,
-        evidence: const <DiagnosticEvidence>[],
-        advice: const <EieAdvice>[],
-      );
+    circuitId: circuit.circuitId,
+    circuitRevision: circuit.revision,
+    status: DiagnosticReportStatus.insufficientEvidence,
+    evidence: const <DiagnosticEvidence>[],
+    advice: const <EieAdvice>[],
+  );
 }

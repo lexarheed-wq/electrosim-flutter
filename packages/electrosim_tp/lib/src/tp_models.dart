@@ -2,7 +2,9 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 
 enum TpMode { wiring, troubleshooting }
+
 enum TpLifecycle { draft, published, started, submitted, evaluated, closed }
+
 enum TpRole { teacher, student }
 
 final class TpId {
@@ -15,6 +17,7 @@ final class TpId {
     }
     return value;
   }
+
   @override
   bool operator ==(Object other) => other is TpId && other.value == value;
   @override
@@ -25,15 +28,18 @@ final class DiagnosticEntry {
   const DiagnosticEntry({required this.promptId, required this.answer});
   final String promptId;
   final String answer;
-  Map<String,Object?> toJson() => {'promptId':promptId,'answer':answer};
+  Map<String, Object?> toJson() => {'promptId': promptId, 'answer': answer};
 }
 
 final class DiagnosticSheet {
   DiagnosticSheet({List<DiagnosticEntry> entries = const []})
-      : entries = List.unmodifiable(entries);
+    : entries = List.unmodifiable(entries);
   final List<DiagnosticEntry> entries;
-  DiagnosticSheet add(DiagnosticEntry entry) => DiagnosticSheet(entries:[...entries,entry]);
-  Map<String,Object?> toJson() => {'entries':entries.map((e)=>e.toJson()).toList(growable:false)};
+  DiagnosticSheet add(DiagnosticEntry entry) =>
+      DiagnosticSheet(entries: [...entries, entry]);
+  Map<String, Object?> toJson() => {
+    'entries': entries.map((e) => e.toJson()).toList(growable: false),
+  };
 }
 
 final class TpDefinition {
@@ -42,17 +48,17 @@ final class TpDefinition {
     required this.title,
     required this.referenceCircuit,
     this.maxScore = 100,
-  })  : mode = TpMode.wiring,
-        faultScenarioId = null;
+  }) : mode = TpMode.wiring,
+       faultScenarioId = null;
 
   TpDefinition.troubleshooting({
     required this.id,
     required this.title,
     required FaultScenarioId scenarioId,
     this.maxScore = 100,
-  })  : mode = TpMode.troubleshooting,
-        faultScenarioId = scenarioId,
-        referenceCircuit = null;
+  }) : mode = TpMode.troubleshooting,
+       faultScenarioId = scenarioId,
+       referenceCircuit = null;
 
   final TpId id;
   final String title;
@@ -91,14 +97,18 @@ final class TpSession {
   final DiagnosticSheet diagnosticSheet;
   final TpEvaluation? evaluation;
 
-  bool get readOnly => lifecycle == TpLifecycle.submitted ||
-      lifecycle == TpLifecycle.evaluated || lifecycle == TpLifecycle.closed;
+  bool get readOnly =>
+      lifecycle == TpLifecycle.submitted ||
+      lifecycle == TpLifecycle.evaluated ||
+      lifecycle == TpLifecycle.closed;
 
   bool diagnosticSheetVisibleFor(TpRole role) =>
-      role == TpRole.student && definition.mode == TpMode.troubleshooting && lifecycle == TpLifecycle.started;
+      role == TpRole.student &&
+      definition.mode == TpMode.troubleshooting &&
+      lifecycle == TpLifecycle.started;
 
-  Map<String,Object?> payloadFor(TpRole role) {
-    final payload = <String,Object?>{
+  Map<String, Object?> payloadFor(TpRole role) {
+    final payload = <String, Object?>{
       'tpId': definition.id.value,
       'title': definition.title,
       'mode': definition.mode.name,

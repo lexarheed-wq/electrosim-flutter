@@ -118,11 +118,7 @@ abstract final class F18ComponentIdentityMetrics {
       height = bounds.height;
       width = height * aspectRatio;
     }
-    return Rect.fromCenter(
-      center: bounds.center,
-      width: width,
-      height: height,
-    );
+    return Rect.fromCenter(center: bounds.center, width: width, height: height);
   }
 }
 
@@ -140,16 +136,14 @@ class F18ComponentIdentityVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color =
-        active ? ElectroSimColors.primary : ElectroSimColors.textSecondary;
+    final Color color = active
+        ? ElectroSimColors.primary
+        : ElectroSimColors.textSecondary;
     return SizedBox(
       width: size.width,
       height: size.height,
       child: CustomPaint(
-        painter: _F18IdentityPainter(
-          modelType: modelType,
-          foreground: color,
-        ),
+        painter: _F18IdentityPainter(modelType: modelType, foreground: color),
       ),
     );
   }
@@ -224,18 +218,8 @@ void paintF18ElectricalArchetype(
   Color foreground,
 ) {
   final String normalizedType = modelType.toLowerCase();
-  if (paintF18IndustrialComponentV2(
-        canvas,
-        rect,
-        normalizedType,
-        foreground,
-      ) ||
-      _paintIndustrialModel(
-        canvas,
-        rect,
-        normalizedType,
-        foreground,
-      )) {
+  if (paintF18IndustrialComponentV2(canvas, rect, normalizedType, foreground) ||
+      _paintIndustrialModel(canvas, rect, normalizedType, foreground)) {
     return;
   }
 
@@ -273,14 +257,7 @@ void paintF18ElectricalArchetype(
     width: body.width * .62,
     height: body.height * .58,
   );
-  _paintArchetypeMark(
-    canvas,
-    mark,
-    modelType,
-    archetype,
-    accent,
-    foreground,
-  );
+  _paintArchetypeMark(canvas, mark, modelType, archetype, accent, foreground);
 
   final Paint terminalPaint = Paint()
     ..color = Colors.white
@@ -298,7 +275,6 @@ void paintF18ElectricalArchetype(
     canvas.drawCircle(p, terminalRadius, terminalBorder);
   }
 }
-
 
 bool _paintIndustrialModel(
   Canvas canvas,
@@ -403,9 +379,7 @@ bool _paintIndustrialModel(
     return true;
   }
 
-  if (type == 'switch' ||
-      type == 'switch_spst' ||
-      type == 'push_button_no') {
+  if (type == 'switch' || type == 'switch_spst' || type == 'push_button_no') {
     final Rect body = Rect.fromCenter(
       center: c,
       width: w * .54,
@@ -466,11 +440,7 @@ bool _paintIndustrialModel(
   if (type == 'lamp') {
     final double bulbR = h * .29;
     final Offset bulb = Offset(c.dx, c.dy - h * .06);
-    canvas.drawCircle(
-      bulb,
-      bulbR,
-      Paint()..color = const Color(0xFFFFF2A8),
-    );
+    canvas.drawCircle(bulb, bulbR, Paint()..color = const Color(0xFFFFF2A8));
     canvas.drawCircle(bulb, bulbR, outline);
     canvas.drawLine(
       bulb + Offset(-bulbR * .55, -bulbR * .55),
@@ -509,9 +479,7 @@ bool _paintIndustrialModel(
     return true;
   }
 
-  if (type == 'breaker_dc' ||
-      type == 'breaker_ac1' ||
-      type == 'breaker') {
+  if (type == 'breaker_dc' || type == 'breaker_ac1' || type == 'breaker') {
     final Rect body = Rect.fromCenter(
       center: c,
       width: w * .56,
@@ -538,11 +506,7 @@ bool _paintIndustrialModel(
       RRect.fromRectAndRadius(toggle, Radius.circular(h * .035)),
       outline,
     );
-    canvas.drawCircle(
-      Offset(c.dx, body.bottom - h * .10),
-      h * .042,
-      indicator,
-    );
+    canvas.drawCircle(Offset(c.dx, body.bottom - h * .10), h * .042, indicator);
     _paintLetter(
       canvas,
       Offset(c.dx, body.top + h * .10),
@@ -721,13 +685,7 @@ void _paintArchetypeMark(
   final double w = rect.width;
   final double h = rect.height;
 
-  if (_paintSpecificElectricalModel(
-    canvas,
-    rect,
-    type,
-    stroke,
-    color,
-  )) {
+  if (_paintSpecificElectricalModel(canvas, rect, type, stroke, color)) {
     return;
   }
 
@@ -797,13 +755,7 @@ void _paintArchetypeMark(
       break;
     case F18ElectricalArchetype.measurement:
       canvas.drawCircle(c, rect.shortestSide * .34, stroke);
-      _paintLetter(
-        canvas,
-        c,
-        type.contains('amp') ? 'A' : 'V',
-        color,
-        h * .42,
-      );
+      _paintLetter(canvas, c, type.contains('amp') ? 'A' : 'V', color, h * .42);
       break;
     case F18ElectricalArchetype.conversion:
       canvas.drawRect(
@@ -900,10 +852,7 @@ bool _paintSpecificElectricalModel(
     const int peaks = 6;
     for (var i = 0; i < peaks; i++) {
       final double x = rect.left + w * (.15 + i * .12);
-      path.lineTo(
-        x,
-        c.dy + (i.isEven ? -h * .24 : h * .24),
-      );
+      path.lineTo(x, c.dy + (i.isEven ? -h * .24 : h * .24));
     }
     path.lineTo(rect.right - w * .02, c.dy);
     canvas.drawPath(path, stroke);
@@ -926,9 +875,7 @@ bool _paintSpecificElectricalModel(
     return true;
   }
 
-  if (type == 'switch' ||
-      type == 'switch_spst' ||
-      type == 'push_button_no') {
+  if (type == 'switch' || type == 'switch_spst' || type == 'push_button_no') {
     final Offset left = Offset(rect.left + w * .14, c.dy);
     final Offset right = Offset(rect.right - w * .14, c.dy);
     canvas.drawCircle(left, w * .045, fill);
@@ -953,9 +900,7 @@ bool _paintSpecificElectricalModel(
     return true;
   }
 
-  if (type == 'breaker_dc' ||
-      type == 'breaker_ac1' ||
-      type == 'breaker') {
+  if (type == 'breaker_dc' || type == 'breaker_ac1' || type == 'breaker') {
     final Rect housing = Rect.fromCenter(
       center: c,
       width: w * .58,

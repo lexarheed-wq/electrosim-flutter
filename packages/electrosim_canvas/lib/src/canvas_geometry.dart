@@ -27,165 +27,155 @@ abstract final class TerminalVisualProfile {
       // Uploaded V2 geometry:
       // supply 140x160 -> (42,127) / (94,127)
       'dc_voltage_source' || 'voltage_source' => <Offset>[
-          Offset(w * -0.20, h * 0.29375),
-          Offset(w * 0.1714285714, h * 0.29375),
-        ],
+        Offset(w * -0.20, h * 0.29375),
+        Offset(w * 0.1714285714, h * 0.29375),
+      ],
       // breaker 72x160 -> (36,23) / (36,137)
-      'breaker_dc' || 'breaker_ac1' || 'breaker' => <Offset>[
-          Offset(0, h * -0.35625),
-          Offset(0, h * 0.35625),
-        ],
+      'breaker_dc' ||
+      'breaker_ac1' ||
+      'breaker' => <Offset>[Offset(0, h * -0.35625), Offset(0, h * 0.35625)],
       // toggle 90x140 -> (45,20) / (45,120)
       'switch' || 'switch_spst' => <Offset>[
-          Offset(0, h * -0.3571428571),
-          Offset(0, h * 0.3571428571),
-        ],
+        Offset(0, h * -0.3571428571),
+        Offset(0, h * 0.3571428571),
+      ],
       // button 90x140 -> (31,119) / (59,119)
       'push_button_no' => <Offset>[
-          Offset(w * -0.1555555556, h * 0.35),
-          Offset(w * 0.1555555556, h * 0.35),
-        ],
+        Offset(w * -0.1555555556, h * 0.35),
+        Offset(w * 0.1555555556, h * 0.35),
+      ],
       // lamp 130x160 -> (40,139) / (90,139)
       'lamp' => <Offset>[
-          Offset(w * -0.1923076923, h * 0.36875),
-          Offset(w * 0.1923076923, h * 0.36875),
-        ],
+        Offset(w * -0.1923076923, h * 0.36875),
+        Offset(w * 0.1923076923, h * 0.36875),
+      ],
 
       // Eight additional V2 front-view components. Physical terminals stay
       // close to the actual housing instead of floating at the layout edge.
       'resistor' => <Offset>[
-          Offset(w * -0.2785714286, 0),
-          Offset(w * 0.2785714286, 0),
-        ],
+        Offset(w * -0.2785714286, 0),
+        Offset(w * 0.2785714286, 0),
+      ],
       'push_button_nc' => <Offset>[
-          Offset(w * -0.1111111111, h * 0.35),
-          Offset(w * 0.1111111111, h * 0.35),
-        ],
+        Offset(w * -0.1111111111, h * 0.35),
+        Offset(w * 0.1111111111, h * 0.35),
+      ],
       'buzzer' => <Offset>[
-          Offset(w * -0.1315789474, h * 0.3421052632),
-          Offset(w * 0.1315789474, h * 0.3421052632),
-        ],
-      'fuse_dc' || 'fuse_ac1' || 'fuse' => <Offset>[
-          Offset(w * -0.34, 0),
-          Offset(w * 0.34, 0),
-        ],
+        Offset(w * -0.1315789474, h * 0.3421052632),
+        Offset(w * 0.1315789474, h * 0.3421052632),
+      ],
+      'fuse_dc' ||
+      'fuse_ac1' ||
+      'fuse' => <Offset>[Offset(w * -0.34, 0), Offset(w * 0.34, 0)],
       'diode' => <Offset>[
-          Offset(w * -0.2777777778, 0),
-          Offset(w * 0.2777777778, 0),
-        ],
+        Offset(w * -0.2777777778, 0),
+        Offset(w * 0.2777777778, 0),
+      ],
       'fan_dc' => <Offset>[
-          Offset(w * -0.1095238095, h * 0.3904761905),
-          Offset(w * 0.1095238095, h * 0.3904761905),
-        ],
+        Offset(w * -0.1095238095, h * 0.3904761905),
+        Offset(w * 0.1095238095, h * 0.3904761905),
+      ],
       'motor_dc' => <Offset>[
-          Offset(w * -0.1086956522, h * 0.3473684211),
-          Offset(w * 0.1086956522, h * 0.3473684211),
-        ],
+        Offset(w * -0.1086956522, h * 0.3473684211),
+        Offset(w * 0.1086956522, h * 0.3473684211),
+      ],
       'relay_coil' => <Offset>[
-          Offset(w * -0.1578947368, h * 0.3782608696),
-          Offset(w * 0.1578947368, h * 0.3782608696),
-        ],
+        Offset(w * -0.1578947368, h * 0.3782608696),
+        Offset(w * 0.1578947368, h * 0.3782608696),
+      ],
 
       // C14 library wave 1. Multi-pole devices use the exact terminal order
       // from their ComponentModelContract / palette definition.
-      'capacitor' || 'inductor' || 'impedance' => <Offset>[
-          Offset(w * -0.28, 0),
-          Offset(w * 0.28, 0),
-        ],
+      'capacitor' ||
+      'inductor' ||
+      'impedance' => <Offset>[Offset(w * -0.28, 0), Offset(w * 0.28, 0)],
       'contactor_aux_no' ||
       'contactor_aux_nc' ||
       'relay_contact_no' ||
-      'relay_contact_nc' => <Offset>[
-          Offset(0, h * -0.38),
-          Offset(0, h * 0.38),
-        ],
+      'relay_contact_nc' => <Offset>[Offset(0, h * -0.38), Offset(0, h * 0.38)],
       'contactor_ac1' => <Offset>[
-          Offset(w * -0.1224, h * -0.42),
-          Offset(w * -0.1224, h * 0.42),
-          Offset(w * -0.42, h * 0.08),
-          Offset(w * 0.42, h * 0.08),
-        ],
+        Offset(w * -0.1224, h * -0.42),
+        Offset(w * -0.1224, h * 0.42),
+        Offset(w * -0.42, h * 0.08),
+        Offset(w * 0.42, h * 0.08),
+      ],
       'contactor_3p' => <Offset>[
-          Offset(w * -0.2016, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.2016, h * -0.42),
-          Offset(w * -0.2016, h * 0.42),
-          Offset(0, h * 0.42),
-          Offset(w * 0.2016, h * 0.42),
-          Offset(w * -0.42, h * 0.08),
-          Offset(w * 0.42, h * 0.08),
-        ],
+        Offset(w * -0.2016, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.2016, h * -0.42),
+        Offset(w * -0.2016, h * 0.42),
+        Offset(0, h * 0.42),
+        Offset(w * 0.2016, h * 0.42),
+        Offset(w * -0.42, h * 0.08),
+        Offset(w * 0.42, h * 0.08),
+      ],
       'breaker_3p' => <Offset>[
-          Offset(w * -0.2016, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.2016, h * -0.42),
-          Offset(w * -0.2016, h * 0.42),
-          Offset(0, h * 0.42),
-          Offset(w * 0.2016, h * 0.42),
-        ],
+        Offset(w * -0.2016, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.2016, h * -0.42),
+        Offset(w * -0.2016, h * 0.42),
+        Offset(0, h * 0.42),
+        Offset(w * 0.2016, h * 0.42),
+      ],
       'thermal_overload_3p' => <Offset>[
-          Offset(w * -0.2072, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.2072, h * -0.42),
-          Offset(w * -0.2072, h * 0.42),
-          Offset(0, h * 0.42),
-          Offset(w * 0.2072, h * 0.42),
-        ],
-      'dc_current_source' ||
-      'ac_voltage_source' ||
-      'ac_current_source' => <Offset>[
-          Offset(w * -0.18, h * 0.40),
-          Offset(w * 0.18, h * 0.40),
-        ],
+        Offset(w * -0.2072, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.2072, h * -0.42),
+        Offset(w * -0.2072, h * 0.42),
+        Offset(0, h * 0.42),
+        Offset(w * 0.2072, h * 0.42),
+      ],
+      'dc_current_source' || 'ac_voltage_source' || 'ac_current_source' =>
+        <Offset>[Offset(w * -0.18, h * 0.40), Offset(w * 0.18, h * 0.40)],
       'ac3_voltage_source' => <Offset>[
-          Offset(w * -0.27, h * 0.42),
-          Offset(w * -0.09, h * 0.42),
-          Offset(w * 0.09, h * 0.42),
-          Offset(w * 0.27, h * 0.42),
-        ],
+        Offset(w * -0.27, h * 0.42),
+        Offset(w * -0.09, h * 0.42),
+        Offset(w * 0.09, h * 0.42),
+        Offset(w * 0.27, h * 0.42),
+      ],
       'pv_array' => <Offset>[
-          Offset(w * -0.14, h * 0.42),
-          Offset(w * 0.14, h * 0.42),
-        ],
+        Offset(w * -0.14, h * 0.42),
+        Offset(w * 0.14, h * 0.42),
+      ],
       'pv_controller' => <Offset>[
-          Offset(w * -0.19, h * -0.42),
-          Offset(w * 0.19, h * -0.42),
-          Offset(w * -0.19, h * 0.42),
-          Offset(w * 0.19, h * 0.42),
-        ],
+        Offset(w * -0.19, h * -0.42),
+        Offset(w * 0.19, h * -0.42),
+        Offset(w * -0.19, h * 0.42),
+        Offset(w * 0.19, h * 0.42),
+      ],
       'pv_battery' => <Offset>[
-          Offset(w * -0.17, h * 0.42),
-          Offset(w * 0.17, h * 0.42),
-        ],
+        Offset(w * -0.17, h * 0.42),
+        Offset(w * 0.17, h * 0.42),
+      ],
       'pv_inverter' => <Offset>[
-          Offset(w * -0.19, h * -0.42),
-          Offset(w * 0.19, h * -0.42),
-          Offset(w * -0.19, h * 0.42),
-          Offset(w * 0.19, h * 0.42),
-        ],
+        Offset(w * -0.19, h * -0.42),
+        Offset(w * 0.19, h * -0.42),
+        Offset(w * -0.19, h * 0.42),
+        Offset(w * 0.19, h * 0.42),
+      ],
       'pv_resistive_load' => <Offset>[
-          Offset(w * -0.16, h * 0.41),
-          Offset(w * 0.16, h * 0.41),
-        ],
+        Offset(w * -0.16, h * 0.41),
+        Offset(w * 0.16, h * 0.41),
+      ],
       'motor_3p_6t' => <Offset>[
-          Offset(w * -0.20, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.20, h * -0.42),
-          Offset(w * -0.20, h * 0.42),
-          Offset(0, h * 0.42),
-          Offset(w * 0.20, h * 0.42),
-        ],
+        Offset(w * -0.20, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.20, h * -0.42),
+        Offset(w * -0.20, h * 0.42),
+        Offset(0, h * 0.42),
+        Offset(w * 0.20, h * 0.42),
+      ],
       'load_wye_3p' => <Offset>[
-          Offset(w * -0.20, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.20, h * -0.42),
-          Offset(0, h * 0.42),
-        ],
+        Offset(w * -0.20, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.20, h * -0.42),
+        Offset(0, h * 0.42),
+      ],
       'load_delta_3p' => <Offset>[
-          Offset(w * -0.20, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.20, h * -0.42),
-        ],
+        Offset(w * -0.20, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.20, h * -0.42),
+      ],
       'catalog_battery' ||
       'catalog_generator' ||
       'catalog_appliance_2t' ||
@@ -194,47 +184,47 @@ abstract final class TerminalVisualProfile {
       'catalog_actuator_2t' ||
       'catalog_sensor_2t' ||
       'catalog_indicator_2t' => <Offset>[
-          Offset(w * -0.17, h * 0.42),
-          Offset(w * 0.17, h * 0.42),
-        ],
+        Offset(w * -0.17, h * 0.42),
+        Offset(w * 0.17, h * 0.42),
+      ],
       'catalog_motor_driven_6t' => <Offset>[
-          Offset(w * -0.20, h * -0.42),
-          Offset(0, h * -0.42),
-          Offset(w * 0.20, h * -0.42),
-          Offset(w * -0.20, h * 0.42),
-          Offset(0, h * 0.42),
-          Offset(w * 0.20, h * 0.42),
-        ],
+        Offset(w * -0.20, h * -0.42),
+        Offset(0, h * -0.42),
+        Offset(w * 0.20, h * -0.42),
+        Offset(w * -0.20, h * 0.42),
+        Offset(0, h * 0.42),
+        Offset(w * 0.20, h * 0.42),
+      ],
       'isolator_3p' => <Offset>[
-          Offset(w * -0.2466666667, h * -0.425),
-          Offset(0, h * -0.425),
-          Offset(w * 0.2466666667, h * -0.425),
-          Offset(w * -0.2466666667, h * 0.425),
-          Offset(0, h * 0.425),
-          Offset(w * 0.2466666667, h * 0.425),
-        ],
+        Offset(w * -0.2466666667, h * -0.425),
+        Offset(0, h * -0.425),
+        Offset(w * 0.2466666667, h * -0.425),
+        Offset(w * -0.2466666667, h * 0.425),
+        Offset(0, h * 0.425),
+        Offset(w * 0.2466666667, h * 0.425),
+      ],
       'isolator_4p' || 'breaker_4p' => <Offset>[
-          Offset(w * -0.2775, h * -0.425),
-          Offset(w * -0.0925, h * -0.425),
-          Offset(w * 0.0925, h * -0.425),
-          Offset(w * 0.2775, h * -0.425),
-          Offset(w * -0.2775, h * 0.425),
-          Offset(w * -0.0925, h * 0.425),
-          Offset(w * 0.0925, h * 0.425),
-          Offset(w * 0.2775, h * 0.425),
-        ],
+        Offset(w * -0.2775, h * -0.425),
+        Offset(w * -0.0925, h * -0.425),
+        Offset(w * 0.0925, h * -0.425),
+        Offset(w * 0.2775, h * -0.425),
+        Offset(w * -0.2775, h * 0.425),
+        Offset(w * -0.0925, h * 0.425),
+        Offset(w * 0.0925, h * 0.425),
+        Offset(w * 0.2775, h * 0.425),
+      ],
       'terminal_block_5' => <Offset>[
-          Offset(w * -0.328, h * -0.425),
-          Offset(w * -0.164, h * -0.425),
-          Offset(0, h * -0.425),
-          Offset(w * 0.164, h * -0.425),
-          Offset(w * 0.328, h * -0.425),
-          Offset(w * -0.328, h * 0.425),
-          Offset(w * -0.164, h * 0.425),
-          Offset(0, h * 0.425),
-          Offset(w * 0.164, h * 0.425),
-          Offset(w * 0.328, h * 0.425),
-        ],
+        Offset(w * -0.328, h * -0.425),
+        Offset(w * -0.164, h * -0.425),
+        Offset(0, h * -0.425),
+        Offset(w * 0.164, h * -0.425),
+        Offset(w * 0.328, h * -0.425),
+        Offset(w * -0.328, h * 0.425),
+        Offset(w * -0.164, h * 0.425),
+        Offset(0, h * 0.425),
+        Offset(w * 0.164, h * 0.425),
+        Offset(w * 0.328, h * 0.425),
+      ],
       _ => null,
     };
   }
@@ -265,8 +255,9 @@ abstract final class TerminalVisualProfile {
     required int count,
   }) {
     final List<Offset>? candidate = _physicalOffsets(modelType, size: size);
-    final List<Offset>? offsets =
-        candidate != null && candidate.length == count ? candidate : null;
+    final List<Offset>? offsets = candidate != null && candidate.length == count
+        ? candidate
+        : null;
     if (offsets != null && index >= 0 && index < offsets.length) {
       return offsets[index];
     }
@@ -283,8 +274,10 @@ abstract final class TerminalVisualProfile {
     required int count,
   }) {
     if (modelType != null) {
-      final List<Offset>? candidate =
-          _physicalOffsets(modelType.toLowerCase(), size: size);
+      final List<Offset>? candidate = _physicalOffsets(
+        modelType.toLowerCase(),
+        size: size,
+      );
       if (candidate != null &&
           candidate.length == count &&
           index >= 0 &&
@@ -305,8 +298,10 @@ abstract final class TerminalVisualProfile {
     final double right = (rect.right - point.dx).abs();
     final double top = (point.dy - rect.top).abs();
     final double bottom = (rect.bottom - point.dy).abs();
-    final double minimum =
-        math.min(math.min(left, right), math.min(top, bottom));
+    final double minimum = math.min(
+      math.min(left, right),
+      math.min(top, bottom),
+    );
     if (minimum == left) return Offset(rect.left, point.dy);
     if (minimum == right) return Offset(rect.right, point.dy);
     if (minimum == top) return Offset(point.dx, rect.top);
@@ -339,21 +334,21 @@ abstract final class TerminalVisualProfile {
     final double inset = 10.0 + ring * 8.0;
     return switch (side) {
       0 => Offset(
-          rect.left,
-          (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
-        ),
+        rect.left,
+        (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
+      ),
       1 => Offset(
-          rect.right,
-          (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
-        ),
+        rect.right,
+        (rect.top + inset).clamp(rect.top, rect.bottom).toDouble(),
+      ),
       2 => Offset(
-          (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
-          rect.top,
-        ),
+        (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
+        rect.top,
+      ),
       _ => Offset(
-          (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
-          rect.bottom,
-        ),
+        (rect.left + inset).clamp(rect.left, rect.right).toDouble(),
+        rect.bottom,
+      ),
     };
   }
 }
@@ -378,11 +373,7 @@ final class CircuitGeometryIndex {
     final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
     final Set<String> seenElementIds = <String>{};
 
-    void indexElement(
-      String id,
-      String modelType,
-      List<Terminal> terminals,
-    ) {
+    void indexElement(String id, String modelType, List<Terminal> terminals) {
       if (!seenElementIds.add(id)) {
         throw StateError(
           'Canvas requires globally unique source/component visual IDs; duplicate: $id',
@@ -450,14 +441,18 @@ final class CircuitGeometryIndex {
 
     return CircuitGeometryIndex._(
       elementRects: Map<String, Rect>.unmodifiable(elementRects),
-      terminalPositions: Map<TerminalId, Offset>.unmodifiable(terminalPositions),
-      terminalRoutingPositions:
-          Map<TerminalId, Offset>.unmodifiable(terminalRoutingPositions),
+      terminalPositions: Map<TerminalId, Offset>.unmodifiable(
+        terminalPositions,
+      ),
+      terminalRoutingPositions: Map<TerminalId, Offset>.unmodifiable(
+        terminalRoutingPositions,
+      ),
       terminalOwners: Map<TerminalId, String>.unmodifiable(terminalOwners),
     );
   }
 
   final Map<String, Rect> elementRects;
+
   /// Physical terminal positions used for painting, hit testing and the
   /// visible endpoints of wires.
   final Map<TerminalId, Offset> terminalPositions;
@@ -478,5 +473,4 @@ final class CircuitGeometryIndex {
       _ => Offset(offset.dy, -offset.dx),
     };
   }
-
 }

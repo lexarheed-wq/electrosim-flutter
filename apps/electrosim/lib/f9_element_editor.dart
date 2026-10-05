@@ -52,10 +52,10 @@ abstract final class F9ElementEditor {
         stateLabel: component.condition != ComponentCondition.normal
             ? component.condition.name
             : isPushButton && pressed is bool
-                ? (pressed ? 'appuyé' : 'relâché')
-                : closed is bool
-                    ? (closed ? 'fermé' : 'ouvert')
-                    : component.condition.name,
+            ? (pressed ? 'appuyé' : 'relâché')
+            : closed is bool
+            ? (closed ? 'fermé' : 'ouvert')
+            : component.condition.name,
         primaryToggleLabel: isPushButton
             ? (pressed is bool ? 'Appuyé' : null)
             : (closed is bool ? 'Fermé' : null),
@@ -70,7 +70,9 @@ abstract final class F9ElementEditor {
         kind: F9ElementKind.source,
         id: source.id.value,
         modelType: source.modelType,
-        terminalLabels: source.terminals.map((Terminal item) => item.name).toList(growable: false),
+        terminalLabels: source.terminals
+            .map((Terminal item) => item.name)
+            .toList(growable: false),
         parameters: source.parameters,
         stateLabel: source.enabled ? 'active' : 'inactive',
         primaryToggleLabel: 'Activée',
@@ -105,31 +107,31 @@ abstract final class F9ElementEditor {
     required bool pressed,
   }) {
     var changed = false;
-    final List<ComponentInstance> components = circuit.components.map(
-      (ComponentInstance component) {
-        if (component.id.value != elementId ||
-            (component.modelType != 'push_button_no' &&
-                component.modelType != 'push_button_nc')) {
-          return component;
-        }
-        final Object? current = component.controlState['pressed'];
-        if (current == pressed) {
-          return component;
-        }
-        changed = true;
-        return ComponentInstance(
-          id: component.id,
-          modelType: component.modelType,
-          terminals: component.terminals,
-          parameters: component.parameters,
-          condition: component.condition,
-          controlState: <String, Object?>{
-            ...component.controlState,
-            'pressed': pressed,
-          },
-        );
-      },
-    ).toList(growable: false);
+    final List<ComponentInstance> components = circuit.components
+        .map((ComponentInstance component) {
+          if (component.id.value != elementId ||
+              (component.modelType != 'push_button_no' &&
+                  component.modelType != 'push_button_nc')) {
+            return component;
+          }
+          final Object? current = component.controlState['pressed'];
+          if (current == pressed) {
+            return component;
+          }
+          changed = true;
+          return ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...component.controlState,
+              'pressed': pressed,
+            },
+          );
+        })
+        .toList(growable: false);
     if (!changed) return circuit;
     return _rebuild(circuit, components: components);
   }
@@ -140,98 +142,104 @@ abstract final class F9ElementEditor {
     required bool closed,
   }) {
     var changed = false;
-    final List<ComponentInstance> components = circuit.components.map(
-      (ComponentInstance component) {
-        if (component.id.value != elementId) {
-          return component;
-        }
-        final Object? current = component.controlState['closed'];
-        if (current is! bool || current == closed) {
-          return component;
-        }
-        changed = true;
-        return ComponentInstance(
-          id: component.id,
-          modelType: component.modelType,
-          terminals: component.terminals,
-          parameters: component.parameters,
-          condition: component.condition,
-          controlState: <String, Object?>{
-            ...component.controlState,
-            'closed': closed,
-          },
-        );
-      },
-    ).toList(growable: false);
+    final List<ComponentInstance> components = circuit.components
+        .map((ComponentInstance component) {
+          if (component.id.value != elementId) {
+            return component;
+          }
+          final Object? current = component.controlState['closed'];
+          if (current is! bool || current == closed) {
+            return component;
+          }
+          changed = true;
+          return ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...component.controlState,
+              'closed': closed,
+            },
+          );
+        })
+        .toList(growable: false);
     if (!changed) return circuit;
     return _rebuild(circuit, components: components);
   }
 
-  static CircuitState togglePrimaryState(CircuitState circuit, String elementId) {
+  static CircuitState togglePrimaryState(
+    CircuitState circuit,
+    String elementId,
+  ) {
     var changed = false;
-    final List<ComponentInstance> components = circuit.components.map((ComponentInstance component) {
-      if (component.id.value != elementId) {
-        return component;
-      }
-      final bool isPushButton =
-          component.modelType == 'push_button_no' ||
-          component.modelType == 'push_button_nc';
-      if (isPushButton) {
-        final Object? pressed = component.controlState['pressed'];
-        if (pressed is! bool) {
-          return component;
-        }
-        changed = true;
-        return ComponentInstance(
-          id: component.id,
-          modelType: component.modelType,
-          terminals: component.terminals,
-          parameters: component.parameters,
-          condition: component.condition,
-          controlState: <String, Object?>{
-            ...component.controlState,
-            'pressed': !pressed,
-          },
-        );
-      }
-      final Object? closed = component.controlState['closed'];
-      if (closed is! bool) {
-        return component;
-      }
-      changed = true;
-      return ComponentInstance(
-        id: component.id,
-        modelType: component.modelType,
-        terminals: component.terminals,
-        parameters: component.parameters,
-        condition: component.condition,
-        controlState: <String, Object?>{
-          ...component.controlState,
-          'closed': !closed,
-        },
-      );
-    }).toList(growable: false);
+    final List<ComponentInstance> components = circuit.components
+        .map((ComponentInstance component) {
+          if (component.id.value != elementId) {
+            return component;
+          }
+          final bool isPushButton =
+              component.modelType == 'push_button_no' ||
+              component.modelType == 'push_button_nc';
+          if (isPushButton) {
+            final Object? pressed = component.controlState['pressed'];
+            if (pressed is! bool) {
+              return component;
+            }
+            changed = true;
+            return ComponentInstance(
+              id: component.id,
+              modelType: component.modelType,
+              terminals: component.terminals,
+              parameters: component.parameters,
+              condition: component.condition,
+              controlState: <String, Object?>{
+                ...component.controlState,
+                'pressed': !pressed,
+              },
+            );
+          }
+          final Object? closed = component.controlState['closed'];
+          if (closed is! bool) {
+            return component;
+          }
+          changed = true;
+          return ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...component.controlState,
+              'closed': !closed,
+            },
+          );
+        })
+        .toList(growable: false);
 
-    final List<SourceInstance> sources = circuit.sources.map((SourceInstance source) {
-      if (source.id.value != elementId) {
-        return source;
-      }
-      changed = true;
-      return SourceInstance(
-        id: source.id,
-        modelType: source.modelType,
-        terminals: source.terminals,
-        parameters: source.parameters,
-        enabled: !source.enabled,
-      );
-    }).toList(growable: false);
+    final List<SourceInstance> sources = circuit.sources
+        .map((SourceInstance source) {
+          if (source.id.value != elementId) {
+            return source;
+          }
+          changed = true;
+          return SourceInstance(
+            id: source.id,
+            modelType: source.modelType,
+            terminals: source.terminals,
+            parameters: source.parameters,
+            enabled: !source.enabled,
+          );
+        })
+        .toList(growable: false);
 
     if (!changed) {
       return circuit;
     }
     return _rebuild(circuit, components: components, sources: sources);
   }
-
 
   static CircuitState replaceComponent(
     CircuitState circuit,
@@ -242,20 +250,22 @@ abstract final class F9ElementEditor {
     List<Terminal>? replacementTerminals,
   }) {
     var changed = false;
-    final List<ComponentInstance> components = circuit.components.map((ComponentInstance component) {
-      if (component.id.value != elementId) {
-        return component;
-      }
-      changed = true;
-      return ComponentInstance(
-        id: component.id,
-        modelType: modelType,
-        terminals: replacementTerminals ?? component.terminals,
-        parameters: parameters,
-        condition: ComponentCondition.normal,
-        controlState: controlState,
-      );
-    }).toList(growable: false);
+    final List<ComponentInstance> components = circuit.components
+        .map((ComponentInstance component) {
+          if (component.id.value != elementId) {
+            return component;
+          }
+          changed = true;
+          return ComponentInstance(
+            id: component.id,
+            modelType: modelType,
+            terminals: replacementTerminals ?? component.terminals,
+            parameters: parameters,
+            condition: ComponentCondition.normal,
+            controlState: controlState,
+          );
+        })
+        .toList(growable: false);
     if (!changed) {
       return circuit;
     }
@@ -270,7 +280,9 @@ abstract final class F9ElementEditor {
     for (final ComponentInstance component in circuit.components) {
       if (component.id.value == elementId) {
         found = true;
-        removedTerminals.addAll(component.terminals.map((Terminal item) => item.id));
+        removedTerminals.addAll(
+          component.terminals.map((Terminal item) => item.id),
+        );
       } else {
         components.add(component);
       }
@@ -280,7 +292,9 @@ abstract final class F9ElementEditor {
     for (final SourceInstance source in circuit.sources) {
       if (source.id.value == elementId) {
         found = true;
-        removedTerminals.addAll(source.terminals.map((Terminal item) => item.id));
+        removedTerminals.addAll(
+          source.terminals.map((Terminal item) => item.id),
+        );
       } else {
         sources.add(source);
       }

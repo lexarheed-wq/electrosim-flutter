@@ -75,13 +75,13 @@ class _Point4ProofScreenState extends State<_Point4ProofScreen> {
           ..publish()
           ..startTeacher();
 
-        final ElectroSimTpSessionController awa =
-            teacher.createStudentReplica();
+        final ElectroSimTpSessionController awa = teacher
+            .createStudentReplica();
         _controllers.add(awa);
         awa.submitStudent();
 
-        final ElectroSimTpSessionController moussa =
-            teacher.createStudentReplica();
+        final ElectroSimTpSessionController moussa = teacher
+            .createStudentReplica();
         _controllers.add(moussa);
         moussa.addDiagnosticEntry(
           promptId: 'symptome',
@@ -92,14 +92,14 @@ class _Point4ProofScreenState extends State<_Point4ProofScreen> {
           answer: 'Défaut possible sur la chaîne de commande.',
         );
 
-        final ElectroSimTpSessionController fatimata =
-            teacher.createStudentReplica();
+        final ElectroSimTpSessionController fatimata = teacher
+            .createStudentReplica();
         _controllers.add(fatimata);
         fatimata.submitStudent();
         fatimata.evaluateTeacher(score: 92);
 
-        final ElectroSimTpSessionController ibrahim =
-            teacher.createStudentReplica();
+        final ElectroSimTpSessionController ibrahim = teacher
+            .createStudentReplica();
         _controllers.add(ibrahim);
         ibrahim.submitStudent();
         ibrahim.evaluateTeacher(score: 84);

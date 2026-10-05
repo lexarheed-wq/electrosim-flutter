@@ -13,14 +13,23 @@ void main() {
       expect(graph.circuitId, circuit.circuitId);
       expect(graph.circuitRevision, circuit.revision);
       expect(graph.nodes, hasLength(2));
-      expect(graph.enabledConnectionIds.map((ConnectionId id) => id.value), <String>['c1', 'c2']);
+      expect(
+        graph.enabledConnectionIds.map((ConnectionId id) => id.value),
+        <String>['c1', 'c2'],
+      );
       expect(graph.disabledConnectionIds, isEmpty);
       expect(
-        graph.nodeForTerminal(TerminalId('src_p')).terminalIds.map((TerminalId id) => id.value),
+        graph
+            .nodeForTerminal(TerminalId('src_p'))
+            .terminalIds
+            .map((TerminalId id) => id.value),
         <String>['r_a', 'src_p'],
       );
       expect(
-        graph.nodeForTerminal(TerminalId('src_n')).terminalIds.map((TerminalId id) => id.value),
+        graph
+            .nodeForTerminal(TerminalId('src_n'))
+            .terminalIds
+            .map((TerminalId id) => id.value),
         <String>['r_b', 'src_n'],
       );
       expect(graph.findings, isEmpty);
@@ -42,8 +51,6 @@ void main() {
 
       expect(_graphSignature(a), _graphSignature(b));
     });
-
-
 
     test('property-style conductor chains always collapse to one node', () {
       for (var length = 2; length <= 40; length++) {
@@ -114,46 +121,62 @@ void main() {
       final TopologyGraph graph = engine.compile(circuit);
 
       expect(graph.nodes, hasLength(3));
-      expect(graph.disabledConnectionIds.map((ConnectionId id) => id.value), <String>['c2']);
       expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.disabledConnection),
+        graph.disabledConnectionIds.map((ConnectionId id) => id.value),
+        <String>['c2'],
+      );
+      expect(
+        graph.findings.where(
+          (TopologyFinding f) =>
+              f.code == TopologyFindingCode.disabledConnection,
+        ),
         hasLength(1),
       );
       expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.floatingNode),
+        graph.findings.where(
+          (TopologyFinding f) => f.code == TopologyFindingCode.floatingNode,
+        ),
         hasLength(2),
       );
     });
 
-    test('fully unwired component is isolated and its terminal nodes float', () {
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('isolated'),
-        revision: 0,
-        mode: ElectricalMode.dc,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: ComponentId('lamp'),
-            modelType: 'lamp',
-            terminals: <Terminal>[
-              Terminal(id: TerminalId('lamp_a'), name: 'A'),
-              Terminal(id: TerminalId('lamp_b'), name: 'B'),
-            ],
+    test(
+      'fully unwired component is isolated and its terminal nodes float',
+      () {
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('isolated'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: ComponentId('lamp'),
+              modelType: 'lamp',
+              terminals: <Terminal>[
+                Terminal(id: TerminalId('lamp_a'), name: 'A'),
+                Terminal(id: TerminalId('lamp_b'), name: 'B'),
+              ],
+            ),
+          ],
+        );
+
+        final TopologyGraph graph = engine.compile(circuit);
+
+        expect(graph.nodes, hasLength(2));
+        expect(
+          graph.findings.where(
+            (TopologyFinding f) =>
+                f.code == TopologyFindingCode.isolatedComponent,
           ),
-        ],
-      );
-
-      final TopologyGraph graph = engine.compile(circuit);
-
-      expect(graph.nodes, hasLength(2));
-      expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.isolatedComponent),
-        hasLength(1),
-      );
-      expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.floatingNode),
-        hasLength(2),
-      );
-    });
+          hasLength(1),
+        );
+        expect(
+          graph.findings.where(
+            (TopologyFinding f) => f.code == TopologyFindingCode.floatingNode,
+          ),
+          hasLength(2),
+        );
+      },
+    );
 
     test('merging incompatible phase tags is a blocking topology finding', () {
       final CircuitState circuit = CircuitState(
@@ -204,7 +227,10 @@ void main() {
       );
 
       expect(finding.severity, TopologyFindingSeverity.error);
-      expect(finding.terminalIds.map((TerminalId id) => id.value), <String>['load_l2', 'src_l1']);
+      expect(finding.terminalIds.map((TerminalId id) => id.value), <String>[
+        'load_l2',
+        'src_l1',
+      ]);
     });
 
     test('unwired source is isolated and explicit', () {
@@ -217,8 +243,16 @@ void main() {
             id: SourceId('battery'),
             modelType: 'dc_source',
             terminals: <Terminal>[
-              Terminal(id: TerminalId('p'), name: '+', phase: PhaseTag.dcPositive),
-              Terminal(id: TerminalId('n'), name: '-', phase: PhaseTag.dcNegative),
+              Terminal(
+                id: TerminalId('p'),
+                name: '+',
+                phase: PhaseTag.dcPositive,
+              ),
+              Terminal(
+                id: TerminalId('n'),
+                name: '-',
+                phase: PhaseTag.dcNegative,
+              ),
             ],
           ),
         ],
@@ -226,58 +260,111 @@ void main() {
 
       final TopologyGraph graph = engine.compile(circuit);
       expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.isolatedSource),
+        graph.findings.where(
+          (TopologyFinding f) => f.code == TopologyFindingCode.isolatedSource,
+        ),
         hasLength(1),
       );
     });
   });
 
   group('TopologyEngine component branch projection', () {
-    test('three-phase contactor projects three power poles and one coil without merging nodes', () {
-      final ComponentInstance contactor = ComponentInstance(
-        id: ComponentId('km1'),
-        modelType: 'contactor_3p',
-        terminals: <Terminal>[
-          Terminal(id: TerminalId('km_l1'), name: 'L1', role: TerminalRole.lineL1, phase: PhaseTag.l1),
-          Terminal(id: TerminalId('km_l2'), name: 'L2', role: TerminalRole.lineL2, phase: PhaseTag.l2),
-          Terminal(id: TerminalId('km_l3'), name: 'L3', role: TerminalRole.lineL3, phase: PhaseTag.l3),
-          Terminal(id: TerminalId('km_t1'), name: 'T1', role: TerminalRole.loadT1, phase: PhaseTag.l1),
-          Terminal(id: TerminalId('km_t2'), name: 'T2', role: TerminalRole.loadT2, phase: PhaseTag.l2),
-          Terminal(id: TerminalId('km_t3'), name: 'T3', role: TerminalRole.loadT3, phase: PhaseTag.l3),
-          Terminal(id: TerminalId('km_a1'), name: 'A1', role: TerminalRole.coilA1),
-          Terminal(id: TerminalId('km_a2'), name: 'A2', role: TerminalRole.coilA2),
-        ],
-      );
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('contactor-topology'),
-        revision: 0,
-        mode: ElectricalMode.ac3,
-        components: <ComponentInstance>[contactor],
-      );
+    test(
+      'three-phase contactor projects three power poles and one coil without merging nodes',
+      () {
+        final ComponentInstance contactor = ComponentInstance(
+          id: ComponentId('km1'),
+          modelType: 'contactor_3p',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('km_l1'),
+              name: 'L1',
+              role: TerminalRole.lineL1,
+              phase: PhaseTag.l1,
+            ),
+            Terminal(
+              id: TerminalId('km_l2'),
+              name: 'L2',
+              role: TerminalRole.lineL2,
+              phase: PhaseTag.l2,
+            ),
+            Terminal(
+              id: TerminalId('km_l3'),
+              name: 'L3',
+              role: TerminalRole.lineL3,
+              phase: PhaseTag.l3,
+            ),
+            Terminal(
+              id: TerminalId('km_t1'),
+              name: 'T1',
+              role: TerminalRole.loadT1,
+              phase: PhaseTag.l1,
+            ),
+            Terminal(
+              id: TerminalId('km_t2'),
+              name: 'T2',
+              role: TerminalRole.loadT2,
+              phase: PhaseTag.l2,
+            ),
+            Terminal(
+              id: TerminalId('km_t3'),
+              name: 'T3',
+              role: TerminalRole.loadT3,
+              phase: PhaseTag.l3,
+            ),
+            Terminal(
+              id: TerminalId('km_a1'),
+              name: 'A1',
+              role: TerminalRole.coilA1,
+            ),
+            Terminal(
+              id: TerminalId('km_a2'),
+              name: 'A2',
+              role: TerminalRole.coilA2,
+            ),
+          ],
+        );
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('contactor-topology'),
+          revision: 0,
+          mode: ElectricalMode.ac3,
+          components: <ComponentInstance>[contactor],
+        );
 
-      final TopologyGraph graph = engine.compile(circuit);
-      final List<TopologyBranch> branches = graph.branchesForComponent(ComponentId('km1'));
+        final TopologyGraph graph = engine.compile(circuit);
+        final List<TopologyBranch> branches = graph.branchesForComponent(
+          ComponentId('km1'),
+        );
 
-      expect(branches, hasLength(4));
-      expect(
-        branches.where((TopologyBranch branch) => branch.role == ElectricalBranchRole.powerPole),
-        hasLength(3),
-      );
-      expect(
-        branches.where((TopologyBranch branch) => branch.role == ElectricalBranchRole.controlCoil),
-        hasLength(1),
-      );
-      expect(
-        graph.nodeForTerminal(TerminalId('km_l1')).id,
-        isNot(graph.nodeForTerminal(TerminalId('km_t1')).id),
-        reason: 'A structural component branch must not be collapsed into a conductor node.',
-      );
-      final TopologyBranch coil = branches.singleWhere(
-        (TopologyBranch branch) => branch.role == ElectricalBranchRole.controlCoil,
-      );
-      expect(coil.fromTerminalId, TerminalId('km_a1'));
-      expect(coil.toTerminalId, TerminalId('km_a2'));
-    });
+        expect(branches, hasLength(4));
+        expect(
+          branches.where(
+            (TopologyBranch branch) =>
+                branch.role == ElectricalBranchRole.powerPole,
+          ),
+          hasLength(3),
+        );
+        expect(
+          branches.where(
+            (TopologyBranch branch) =>
+                branch.role == ElectricalBranchRole.controlCoil,
+          ),
+          hasLength(1),
+        );
+        expect(
+          graph.nodeForTerminal(TerminalId('km_l1')).id,
+          isNot(graph.nodeForTerminal(TerminalId('km_t1')).id),
+          reason:
+              'A structural component branch must not be collapsed into a conductor node.',
+        );
+        final TopologyBranch coil = branches.singleWhere(
+          (TopologyBranch branch) =>
+              branch.role == ElectricalBranchRole.controlCoil,
+        );
+        expect(coil.fromTerminalId, TerminalId('km_a1'));
+        expect(coil.toTerminalId, TerminalId('km_a2'));
+      },
+    );
 
     test('three-pole breaker preserves independent phase paths', () {
       final CircuitState circuit = CircuitState(
@@ -300,152 +387,187 @@ void main() {
         ],
       );
 
-      final List<TopologyBranch> branches = engine.compile(circuit).branchesForComponent(ComponentId('q1'));
+      final List<TopologyBranch> branches = engine
+          .compile(circuit)
+          .branchesForComponent(ComponentId('q1'));
       expect(branches, hasLength(3));
-      expect(branches.map((TopologyBranch b) => b.poleIndex).toSet(), <int?>{0, 1, 2});
+      expect(branches.map((TopologyBranch b) => b.poleIndex).toSet(), <int?>{
+        0,
+        1,
+        2,
+      });
       expect(
-        branches.map((TopologyBranch b) => '${b.fromTerminalId.value}>${b.toTerminalId.value}').toSet(),
+        branches
+            .map(
+              (TopologyBranch b) =>
+                  '${b.fromTerminalId.value}>${b.toTerminalId.value}',
+            )
+            .toSet(),
         <String>{'q_l1>q_t1', 'q_l2>q_t2', 'q_l3>q_t3'},
       );
     });
 
-    test('contract mismatch is an explicit blocking finding instead of an index failure', () {
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('bad-contactor-shape'),
-        revision: 0,
-        mode: ElectricalMode.ac3,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: ComponentId('km-bad'),
-            modelType: 'contactor_3p',
-            terminals: <Terminal>[
-              Terminal(id: TerminalId('only-a'), name: 'A'),
-              Terminal(id: TerminalId('only-b'), name: 'B'),
-            ],
-          ),
-        ],
-      );
-
-      final TopologyGraph graph = engine.compile(circuit);
-      final TopologyFinding finding = graph.findings.singleWhere(
-        (TopologyFinding f) => f.code == TopologyFindingCode.componentContractMismatch,
-      );
-      expect(finding.severity, TopologyFindingSeverity.error);
-      expect(graph.branchesForComponent(ComponentId('km-bad')), isEmpty);
-    });
-
-    test('canonical model used in the wrong electrical mode is reported explicitly', () {
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('wrong-mode'),
-        revision: 0,
-        mode: ElectricalMode.dc,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: ComponentId('q3'),
-            modelType: 'breaker_3p',
-            terminals: <Terminal>[
-              for (var i = 0; i < 6; i++) Terminal(id: TerminalId('q3_$i'), name: 'T$i'),
-            ],
-          ),
-        ],
-      );
-
-      final TopologyGraph graph = engine.compile(circuit);
-      expect(
-        graph.findings.where((TopologyFinding f) => f.code == TopologyFindingCode.componentModeMismatch),
-        hasLength(1),
-      );
-      expect(graph.branchesForComponent(ComponentId('q3')), hasLength(3));
-    });
-
-    test('custom registry can project a model without changing the topology engine', () {
-      final ComponentModelRegistry registry = ComponentModelRegistry(<ComponentModelContract>[
-        ComponentModelContract(
-          modelType: 'custom_two_terminal',
-          family: ComponentFamily.other,
-          terminalCount: 2,
-          supportedModes: <ElectricalMode>{ElectricalMode.dc},
-          branches: <ComponentBranchDefinition>[
-            ComponentBranchDefinition(
-              id: 'custom',
-              fromTerminalIndex: 0,
-              toTerminalIndex: 1,
-              role: ElectricalBranchRole.main,
+    test(
+      'contract mismatch is an explicit blocking finding instead of an index failure',
+      () {
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('bad-contactor-shape'),
+          revision: 0,
+          mode: ElectricalMode.ac3,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: ComponentId('km-bad'),
+              modelType: 'contactor_3p',
+              terminals: <Terminal>[
+                Terminal(id: TerminalId('only-a'), name: 'A'),
+                Terminal(id: TerminalId('only-b'), name: 'B'),
+              ],
             ),
           ],
-        ),
-      ]);
-      final TopologyEngine customEngine = TopologyEngine(modelRegistry: registry);
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('custom-contract'),
-        revision: 0,
-        mode: ElectricalMode.dc,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: ComponentId('x1'),
-            modelType: 'custom_two_terminal',
-            terminals: <Terminal>[
-              Terminal(id: TerminalId('x_a'), name: 'A'),
-              Terminal(id: TerminalId('x_b'), name: 'B'),
-            ],
-          ),
-        ],
-      );
+        );
 
-      expect(customEngine.compile(circuit).branchesForComponent(ComponentId('x1')), hasLength(1));
-    });
+        final TopologyGraph graph = engine.compile(circuit);
+        final TopologyFinding finding = graph.findings.singleWhere(
+          (TopologyFinding f) =>
+              f.code == TopologyFindingCode.componentContractMismatch,
+        );
+        expect(finding.severity, TopologyFindingSeverity.error);
+        expect(graph.branchesForComponent(ComponentId('km-bad')), isEmpty);
+      },
+    );
+
+    test(
+      'canonical model used in the wrong electrical mode is reported explicitly',
+      () {
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('wrong-mode'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: ComponentId('q3'),
+              modelType: 'breaker_3p',
+              terminals: <Terminal>[
+                for (var i = 0; i < 6; i++)
+                  Terminal(id: TerminalId('q3_$i'), name: 'T$i'),
+              ],
+            ),
+          ],
+        );
+
+        final TopologyGraph graph = engine.compile(circuit);
+        expect(
+          graph.findings.where(
+            (TopologyFinding f) =>
+                f.code == TopologyFindingCode.componentModeMismatch,
+          ),
+          hasLength(1),
+        );
+        expect(graph.branchesForComponent(ComponentId('q3')), hasLength(3));
+      },
+    );
+
+    test(
+      'custom registry can project a model without changing the topology engine',
+      () {
+        final ComponentModelRegistry registry = ComponentModelRegistry(
+          <ComponentModelContract>[
+            ComponentModelContract(
+              modelType: 'custom_two_terminal',
+              family: ComponentFamily.other,
+              terminalCount: 2,
+              supportedModes: <ElectricalMode>{ElectricalMode.dc},
+              branches: <ComponentBranchDefinition>[
+                ComponentBranchDefinition(
+                  id: 'custom',
+                  fromTerminalIndex: 0,
+                  toTerminalIndex: 1,
+                  role: ElectricalBranchRole.main,
+                ),
+              ],
+            ),
+          ],
+        );
+        final TopologyEngine customEngine = TopologyEngine(
+          modelRegistry: registry,
+        );
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('custom-contract'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: ComponentId('x1'),
+              modelType: 'custom_two_terminal',
+              terminals: <Terminal>[
+                Terminal(id: TerminalId('x_a'), name: 'A'),
+                Terminal(id: TerminalId('x_b'), name: 'B'),
+              ],
+            ),
+          ],
+        );
+
+        expect(
+          customEngine.compile(circuit).branchesForComponent(ComponentId('x1')),
+          hasLength(1),
+        );
+      },
+    );
   });
 
-  test('current-limited DC source direct short is warning not topology error', () {
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('limited-direct-short-topology'),
-      revision: 0,
-      mode: ElectricalMode.dc,
-      connections: <Connection>[
-        Connection(
-          id: ConnectionId('short'),
-          fromTerminalId: TerminalId('vp'),
-          toTerminalId: TerminalId('vn'),
-        ),
-      ],
-      sources: <SourceInstance>[
-        SourceInstance(
-          id: SourceId('v1'),
-          modelType: 'dc_voltage_source',
-          terminals: <Terminal>[
-            Terminal(
-              id: TerminalId('vp'),
-              name: '+',
-              phase: PhaseTag.dcPositive,
-            ),
-            Terminal(
-              id: TerminalId('vn'),
-              name: '-',
-              phase: PhaseTag.dcNegative,
-            ),
-          ],
-          parameters: const <String, Object?>{
-            'voltageV': 24.0,
-            'currentLimitA': 5.0,
-          },
-        ),
-      ],
-    );
+  test(
+    'current-limited DC source direct short is warning not topology error',
+    () {
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('limited-direct-short-topology'),
+        revision: 0,
+        mode: ElectricalMode.dc,
+        connections: <Connection>[
+          Connection(
+            id: ConnectionId('short'),
+            fromTerminalId: TerminalId('vp'),
+            toTerminalId: TerminalId('vn'),
+          ),
+        ],
+        sources: <SourceInstance>[
+          SourceInstance(
+            id: SourceId('v1'),
+            modelType: 'dc_voltage_source',
+            terminals: <Terminal>[
+              Terminal(
+                id: TerminalId('vp'),
+                name: '+',
+                phase: PhaseTag.dcPositive,
+              ),
+              Terminal(
+                id: TerminalId('vn'),
+                name: '-',
+                phase: PhaseTag.dcNegative,
+              ),
+            ],
+            parameters: const <String, Object?>{
+              'voltageV': 24.0,
+              'currentLimitA': 5.0,
+            },
+          ),
+        ],
+      );
 
-    final TopologyGraph graph = const TopologyEngine().compile(circuit);
-    final Iterable<TopologyFinding> conflicts = graph.findings.where(
-      (TopologyFinding finding) =>
-          finding.code == TopologyFindingCode.conflictingPhases,
-    );
-    expect(conflicts, isNotEmpty);
-    expect(
-      conflicts.every(
+      final TopologyGraph graph = const TopologyEngine().compile(circuit);
+      final Iterable<TopologyFinding> conflicts = graph.findings.where(
         (TopologyFinding finding) =>
-            finding.severity == TopologyFindingSeverity.warning,
-      ),
-      isTrue,
-    );
-  });
+            finding.code == TopologyFindingCode.conflictingPhases,
+      );
+      expect(conflicts, isNotEmpty);
+      expect(
+        conflicts.every(
+          (TopologyFinding finding) =>
+              finding.severity == TopologyFindingSeverity.warning,
+        ),
+        isTrue,
+      );
+    },
+  );
 
   test('ideal DC source direct short remains a topology error', () {
     final CircuitState circuit = CircuitState(
@@ -567,11 +689,14 @@ String _graphSignature(TopologyGraph graph) {
             '${node.id}=[${node.terminalIds.map((TerminalId id) => id.value).join(',')}]',
       )
       .join('|');
-  final String enabled = graph.enabledConnectionIds.map((ConnectionId id) => id.value).join(',');
+  final String enabled = graph.enabledConnectionIds
+      .map((ConnectionId id) => id.value)
+      .join(',');
   final String findings = graph.findings
-      .map((TopologyFinding f) => '${f.code.name}:${f.nodeId ?? ''}:${f.connectionId?.value ?? ''}')
+      .map(
+        (TopologyFinding f) =>
+            '${f.code.name}:${f.nodeId ?? ''}:${f.connectionId?.value ?? ''}',
+      )
       .join('|');
   return '$nodes#$enabled#$findings';
-
-
 }

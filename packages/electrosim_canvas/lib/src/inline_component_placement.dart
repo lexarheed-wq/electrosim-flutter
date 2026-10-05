@@ -2,15 +2,10 @@ import 'dart:ui';
 
 import 'wire_geometry.dart';
 
-enum InlinePlacementFailure {
-  insufficientStraightLength,
-}
+enum InlinePlacementFailure { insufficientStraightLength }
 
 final class InlinePlacementResult {
-  const InlinePlacementResult._({
-    required this.centers,
-    required this.reason,
-  });
+  const InlinePlacementResult._({required this.centers, required this.reason});
 
   factory InlinePlacementResult.resolved(List<Offset> centers) {
     return InlinePlacementResult._(
@@ -20,10 +15,7 @@ final class InlinePlacementResult {
   }
 
   const InlinePlacementResult.unresolved(InlinePlacementFailure failure)
-      : this._(
-          centers: const <Offset>[],
-          reason: failure,
-        );
+    : this._(centers: const <Offset>[], reason: failure);
 
   final List<Offset> centers;
   final InlinePlacementFailure? reason;
@@ -61,10 +53,10 @@ final class InlinePlacementPolicy {
       );
     }
 
-    final double hostStart =
-        axis == WireAxis.horizontal ? host.minX : host.minY;
-    final double hostEnd =
-        axis == WireAxis.horizontal ? host.maxX : host.maxY;
+    final double hostStart = axis == WireAxis.horizontal
+        ? host.minX
+        : host.minY;
+    final double hostEnd = axis == WireAxis.horizontal ? host.maxX : host.maxY;
     final double edgeClearance = bendKeepOut + minimumTerminalStub;
     final double usableStart = hostStart + edgeClearance;
     final double usableEnd = hostEnd - edgeClearance;
@@ -73,8 +65,7 @@ final class InlinePlacementPolicy {
       0,
       (double sum, double value) => sum + value,
     );
-    final double gaps =
-        minimumComponentGap * (componentExtents.length - 1);
+    final double gaps = minimumComponentGap * (componentExtents.length - 1);
     final double totalSpan = bodies + gaps;
 
     if (usableEnd - usableStart < totalSpan) {
@@ -132,8 +123,9 @@ final class InlinePlacementPolicy {
     required WireAxis axis,
   }) {
     for (var index = 0; index < centers.length; index++) {
-      final double center =
-          axis == WireAxis.horizontal ? centers[index].dx : centers[index].dy;
+      final double center = axis == WireAxis.horizontal
+          ? centers[index].dx
+          : centers[index].dy;
       final double half = extents[index] / 2;
       if (center - half < usableStart || center + half > usableEnd) {
         return false;

@@ -1,4 +1,3 @@
-
 import 'package:electrosim_controls/electrosim_controls.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
@@ -13,10 +12,7 @@ enum ProtectionTripCause {
   timeCurrent,
 }
 
-enum ProtectionCoordinationIssueCode {
-  solveFailed,
-  missingBranchCurrent,
-}
+enum ProtectionCoordinationIssueCode { solveFailed, missingBranchCurrent }
 
 final class ProtectionCoordinationIssue {
   const ProtectionCoordinationIssue({
@@ -46,12 +42,12 @@ final class ProtectionDeviceState {
   final double lastObservedCurrentA;
 
   ProtectionDeviceState reset() => ProtectionDeviceState(
-        componentId: componentId,
-        exposure: const ProtectionExposureState.zero(),
-        tripped: false,
-        tripCause: ProtectionTripCause.none,
-        lastObservedCurrentA: 0.0,
-      );
+    componentId: componentId,
+    exposure: const ProtectionExposureState.zero(),
+    tripped: false,
+    tripCause: ProtectionTripCause.none,
+    lastObservedCurrentA: 0.0,
+  );
 }
 
 final class ProtectionRuntimeState {
@@ -88,11 +84,11 @@ final class ProtectionDcOutcome {
     required Map<ComponentId, ContactorActuationState> relays,
     required Iterable<ElectromechanicalControlIssue> controlIssues,
     required Iterable<ProtectionCoordinationIssue> issues,
-  })  : relays =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
-        controlIssues =
-            List<ElectromechanicalControlIssue>.unmodifiable(controlIssues),
-        issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
+  }) : relays = Map<ComponentId, ContactorActuationState>.unmodifiable(relays),
+       controlIssues = List<ElectromechanicalControlIssue>.unmodifiable(
+         controlIssues,
+       ),
+       issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
 
   final DcSolveResult result;
   final CircuitState effectiveCircuit;
@@ -110,11 +106,13 @@ final class ProtectionAc1Outcome {
     required Map<ComponentId, ContactorActuationState> contactors,
     required Iterable<ElectromechanicalControlIssue> controlIssues,
     required Iterable<ProtectionCoordinationIssue> issues,
-  })  : contactors =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(contactors),
-        controlIssues =
-            List<ElectromechanicalControlIssue>.unmodifiable(controlIssues),
-        issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
+  }) : contactors = Map<ComponentId, ContactorActuationState>.unmodifiable(
+         contactors,
+       ),
+       controlIssues = List<ElectromechanicalControlIssue>.unmodifiable(
+         controlIssues,
+       ),
+       issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
 
   final Ac1SolveResult result;
   final CircuitState effectiveCircuit;
@@ -132,11 +130,13 @@ final class ProtectionAc3Outcome {
     required Map<ComponentId, ContactorActuationState> contactors,
     required Iterable<ElectromechanicalControlIssue> controlIssues,
     required Iterable<ProtectionCoordinationIssue> issues,
-  })  : contactors =
-            Map<ComponentId, ContactorActuationState>.unmodifiable(contactors),
-        controlIssues =
-            List<ElectromechanicalControlIssue>.unmodifiable(controlIssues),
-        issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
+  }) : contactors = Map<ComponentId, ContactorActuationState>.unmodifiable(
+         contactors,
+       ),
+       controlIssues = List<ElectromechanicalControlIssue>.unmodifiable(
+         controlIssues,
+       ),
+       issues = List<ProtectionCoordinationIssue>.unmodifiable(issues);
 
   final Ac3SolveResult result;
   final CircuitState effectiveCircuit;
@@ -162,14 +162,15 @@ final class ProtectionCoordinator {
     ProtectionRuntimeState? previous,
     SolverDC solver = const SolverDC(),
     ElectromechanicalControlEngine? controlsEngine,
-    Map<ComponentId, bool> previousRelayStates =
-        const <ComponentId, bool>{},
+    Map<ComponentId, bool> previousRelayStates = const <ComponentId, bool>{},
   }) {
     _validateElapsed(elapsed);
     final ElectromechanicalControlEngine controlEngine =
         controlsEngine ?? controls;
-    final ProtectionRuntimeState baseline =
-        _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
+    final ProtectionRuntimeState baseline = _seedState(
+      circuit,
+      previous ?? ProtectionRuntimeState.empty(),
+    );
     CircuitState effective = _applyTrips(circuit, baseline);
     ElectromechanicalDcOutcome control = controlEngine.solveDc(
       circuit: effective,
@@ -224,8 +225,7 @@ final class ProtectionCoordinator {
         issues.add(
           const ProtectionCoordinationIssue(
             code: ProtectionCoordinationIssueCode.solveFailed,
-            message:
-                'DC solve failed after applying protection trip state.',
+            message: 'DC solve failed after applying protection trip state.',
           ),
         );
       }
@@ -254,8 +254,10 @@ final class ProtectionCoordinator {
     _validateElapsed(elapsed);
     final ElectromechanicalControlEngine controlEngine =
         controlsEngine ?? controls;
-    final ProtectionRuntimeState baseline =
-        _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
+    final ProtectionRuntimeState baseline = _seedState(
+      circuit,
+      previous ?? ProtectionRuntimeState.empty(),
+    );
     CircuitState effective = _applyTrips(circuit, baseline);
     ElectromechanicalAc1Outcome control = controlEngine.solveAc1(
       circuit: effective,
@@ -338,8 +340,10 @@ final class ProtectionCoordinator {
     _validateElapsed(elapsed);
     final ElectromechanicalControlEngine controlEngine =
         controlsEngine ?? controls;
-    final ProtectionRuntimeState baseline =
-        _seedState(circuit, previous ?? ProtectionRuntimeState.empty());
+    final ProtectionRuntimeState baseline = _seedState(
+      circuit,
+      previous ?? ProtectionRuntimeState.empty(),
+    );
     CircuitState effective = _applyTrips(circuit, baseline);
     ElectromechanicalAc3Outcome control = controlEngine.solveAc3(
       circuit: effective,
@@ -420,7 +424,8 @@ final class ProtectionCoordinator {
 
     for (final ComponentInstance component in circuit.components) {
       if (!_isProtection(component.modelType)) continue;
-      final ProtectionDeviceState prior = previous[component.id] ??
+      final ProtectionDeviceState prior =
+          previous[component.id] ??
           ProtectionDeviceState(
             componentId: component.id,
             exposure: const ProtectionExposureState.zero(),
@@ -446,8 +451,10 @@ final class ProtectionCoordinator {
         elapsed: elapsed,
         previous: prior.exposure,
       );
-      final bool instantaneous =
-          dynamics.shouldOpenInstantaneously(component, currentA);
+      final bool instantaneous = dynamics.shouldOpenInstantaneously(
+        component,
+        currentA,
+      );
       if (instantaneous && exposure.exposure < 1.0) {
         exposure = ProtectionExposureState(
           exposure: 1.0,
@@ -464,8 +471,8 @@ final class ProtectionCoordinator {
         tripCause: instantaneous
             ? ProtectionTripCause.magneticInstantaneous
             : tripped
-                ? ProtectionTripCause.timeCurrent
-                : ProtectionTripCause.none,
+            ? ProtectionTripCause.timeCurrent
+            : ProtectionTripCause.none,
         lastObservedCurrentA: currentA.abs(),
       );
     }
@@ -509,27 +516,25 @@ final class ProtectionCoordinator {
     return ProtectionRuntimeState(devices: seeded);
   }
 
-  CircuitState _applyTrips(
-    CircuitState circuit,
-    ProtectionRuntimeState state,
-  ) {
+  CircuitState _applyTrips(CircuitState circuit, ProtectionRuntimeState state) {
     final List<ComponentInstance> components = circuit.components
         .map((ComponentInstance component) {
-      if (!_isProtection(component.modelType)) return component;
-      final ProtectionDeviceState? device = state[component.id];
-      if (device == null) return component;
-      return ComponentInstance(
-        id: component.id,
-        modelType: component.modelType,
-        terminals: component.terminals,
-        parameters: component.parameters,
-        condition: component.condition,
-        controlState: <String, Object?>{
-          ...component.controlState,
-          'tripped': device.tripped,
-        },
-      );
-    }).toList(growable: false);
+          if (!_isProtection(component.modelType)) return component;
+          final ProtectionDeviceState? device = state[component.id];
+          if (device == null) return component;
+          return ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...component.controlState,
+              'tripped': device.tripped,
+            },
+          );
+        })
+        .toList(growable: false);
 
     return CircuitState(
       circuitId: circuit.circuitId,
@@ -605,8 +610,7 @@ final class ProtectionCoordinator {
         ? <String>['L1', 'L2', 'L3', 'N']
         : <String>['L1', 'L2', 'L3'];
     for (final String phase in poles) {
-      final String id =
-          'component:' + component.id.value + ':power:' + phase;
+      final String id = 'component:' + component.id.value + ':power:' + phase;
       for (final Ac3BranchResult candidate in result.branchResults) {
         if (candidate.id != id) continue;
         final double? current = candidate.current?.magnitude;
@@ -624,13 +628,13 @@ final class ProtectionCoordinator {
     return maximum;
   }
 
-  ProtectionCoordinationIssue _missingCurrent(
-    ComponentInstance component,
-  ) =>
+  ProtectionCoordinationIssue _missingCurrent(ComponentInstance component) =>
       ProtectionCoordinationIssue(
         code: ProtectionCoordinationIssueCode.missingBranchCurrent,
         message:
-            'Protection ' + component.id.value + ' has no resolved branch current.',
+            'Protection ' +
+            component.id.value +
+            ' has no resolved branch current.',
         componentId: component.id,
       );
 
@@ -649,16 +653,15 @@ final class ProtectionCoordinator {
   }
 
   bool _isProtection(String modelType) => switch (modelType) {
-        'breaker_dc' ||
-        'fuse_dc' ||
-        'breaker_ac1' ||
-        'fuse_ac1' ||
-        'breaker_3p' ||
-        'breaker_4p' ||
-        'thermal_overload_3p' =>
-          true,
-        _ => false,
-      };
+    'breaker_dc' ||
+    'fuse_dc' ||
+    'breaker_ac1' ||
+    'fuse_ac1' ||
+    'breaker_3p' ||
+    'breaker_4p' ||
+    'thermal_overload_3p' => true,
+    _ => false,
+  };
 
   void _validateElapsed(Duration elapsed) {
     if (elapsed.isNegative) {

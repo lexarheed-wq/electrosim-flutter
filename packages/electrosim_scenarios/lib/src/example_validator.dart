@@ -42,44 +42,71 @@ final class ExampleValidator {
     final CircuitState circuit = example.circuit;
 
     if (circuit.components.isEmpty && circuit.sources.isEmpty) {
-      issues.add(const ExampleValidationIssue('empty-circuit', 'Example circuit must not be empty.'));
+      issues.add(
+        const ExampleValidationIssue(
+          'empty-circuit',
+          'Example circuit must not be empty.',
+        ),
+      );
     }
     if (circuit.revision != 0) {
-      issues.add(const ExampleValidationIssue('revision-not-zero', 'Published examples must start at revision 0.'));
+      issues.add(
+        const ExampleValidationIssue(
+          'revision-not-zero',
+          'Published examples must start at revision 0.',
+        ),
+      );
     }
-    if (_containsFaultSemantics(example.metadata) || _containsFaultSemantics(circuit.metadata)) {
-      issues.add(const ExampleValidationIssue('fault-semantics', 'Healthy examples must not contain fault semantics.'));
+    if (_containsFaultSemantics(example.metadata) ||
+        _containsFaultSemantics(circuit.metadata)) {
+      issues.add(
+        const ExampleValidationIssue(
+          'fault-semantics',
+          'Healthy examples must not contain fault semantics.',
+        ),
+      );
     }
     for (final ComponentInstance component in circuit.components) {
       if (component.condition != ComponentCondition.normal) {
-        issues.add(ExampleValidationIssue(
-          'non-normal-component',
-          'Component ${component.id.value} must be normal in a healthy example.',
-        ));
+        issues.add(
+          ExampleValidationIssue(
+            'non-normal-component',
+            'Component ${component.id.value} must be normal in a healthy example.',
+          ),
+        );
       }
     }
     for (final SourceInstance source in circuit.sources) {
       if (!source.enabled) {
-        issues.add(ExampleValidationIssue(
-          'disabled-source',
-          'Source ${source.id.value} must be enabled in a healthy example.',
-        ));
+        issues.add(
+          ExampleValidationIssue(
+            'disabled-source',
+            'Source ${source.id.value} must be enabled in a healthy example.',
+          ),
+        );
       }
     }
 
     if (circuit.mode == ElectricalMode.dc) {
-      final DcSolveResult result = _solverDC.solve(circuit, _topologyEngine.compile(circuit));
+      final DcSolveResult result = _solverDC.solve(
+        circuit,
+        _topologyEngine.compile(circuit),
+      );
       if (result.status != DcSolveStatus.solved) {
-        issues.add(ExampleValidationIssue(
-          'dc-not-solvable',
-          'DC example did not solve: ${result.status.name}.',
-        ));
+        issues.add(
+          ExampleValidationIssue(
+            'dc-not-solvable',
+            'DC example did not solve: ${result.status.name}.',
+          ),
+        );
       }
     } else {
-      issues.add(ExampleValidationIssue(
-        'unsupported-f10-mode',
-        'F10-R1 intentionally publishes only simple DC examples.',
-      ));
+      issues.add(
+        ExampleValidationIssue(
+          'unsupported-f10-mode',
+          'F10-R1 intentionally publishes only simple DC examples.',
+        ),
+      );
     }
 
     return ExampleValidationResult(
@@ -95,7 +122,11 @@ final class ExampleValidator {
 
   static bool _containsFaultSemantics(Map<String, Object?> metadata) {
     const Set<String> forbidden = <String>{
-      'fault', 'faultId', 'faultScenario', 'faultScenarioId', 'teacherTruth',
+      'fault',
+      'faultId',
+      'faultScenario',
+      'faultScenarioId',
+      'teacherTruth',
     };
     return metadata.keys.any(forbidden.contains);
   }

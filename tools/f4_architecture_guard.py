@@ -16,6 +16,7 @@ for p in sorted((PKG/'lib').rglob('*.dart')):
             uri.startswith('package:electrosim_domain') or
             uri.startswith('package:electrosim_topology') or
             uri.startswith('package:electrosim_solver_dc') or
+            uri.startswith('package:electrosim_solver_ac') or
             uri.startswith('package:electrosim_measurements')
         ):
             errors.append(f'forbidden-project-dependency:{p.relative_to(ROOT)}:{uri}')
@@ -25,7 +26,7 @@ for p in sorted((PKG/'lib').rglob('*.dart')):
             errors.append(f'forbidden-cross-layer-token:{p.relative_to(ROOT)}:{token}')
 pub=(PKG/'pubspec.yaml').read_text(encoding='utf-8')
 if re.search(r'^\s*flutter\s*:',pub,re.M): errors.append('flutter-dependency-in-measurement-pubspec')
-for dep in ('electrosim_domain:','electrosim_topology:','electrosim_solver_dc:'):
+for dep in ('electrosim_domain:','electrosim_topology:','electrosim_solver_dc:','electrosim_solver_ac:'):
     if dep not in pub: errors.append(f'missing-dependency:{dep}')
 result={'phase':'F4','status':'PASS' if not errors else 'FAIL','filesScanned':files,'errors':errors}
 print(json.dumps(result,indent=2,ensure_ascii=False)); sys.exit(0 if not errors else 1)

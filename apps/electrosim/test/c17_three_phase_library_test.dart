@@ -8,20 +8,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('C17 palette contracts match physical terminal counts', () {
-    const Map<String, int> expected = <String, int>{
-      'motor_3p_6t': 6,
-      'load_wye_3p': 4,
-      'load_delta_3p': 3,
+    const Map<String, (String, int)> expected = <String, (String, int)>{
+      'motor-3p-6t': ('motor_3p_6t', 6),
+      'load-wye-3p': ('load_wye_3p', 4),
+      'load-delta-3p': ('load_delta_3p', 3),
     };
-    for (final MapEntry<String, int> entry in expected.entries) {
+    for (final MapEntry<String, (String, int)> entry in expected.entries) {
       final F9PaletteDefinition item = f9PaletteCatalog.singleWhere(
-        (F9PaletteDefinition value) => value.modelType == entry.key,
+        (F9PaletteDefinition value) => value.keyName == entry.key,
       );
+      final (String modelType, int terminalCount) = entry.value;
+      expect(item.modelType, modelType);
       expect(item.supportsMode(ElectricalMode.ac3), isTrue);
-      expect(item.terminalCount, entry.value);
+      expect(item.terminalCount, terminalCount);
       expect(
-        CoreComponentModelContracts.registry.resolve(entry.key)?.terminalCount,
-        entry.value,
+        CoreComponentModelContracts.registry.resolve(modelType)?.terminalCount,
+        terminalCount,
       );
     }
   });

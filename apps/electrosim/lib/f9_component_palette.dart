@@ -107,19 +107,19 @@ const List<F9PaletteTerminalSpec> f9Motor3p6tTerminals =
   F9PaletteTerminalSpec(
     'U2',
     role: TerminalRole.loadT1,
-    phase: PhaseTag.l1,
+    phase: PhaseTag.none,
     idSuffix: 'u2',
   ),
   F9PaletteTerminalSpec(
     'V2',
     role: TerminalRole.loadT2,
-    phase: PhaseTag.l2,
+    phase: PhaseTag.none,
     idSuffix: 'v2',
   ),
   F9PaletteTerminalSpec(
     'W2',
     role: TerminalRole.loadT3,
-    phase: PhaseTag.l3,
+    phase: PhaseTag.none,
     idSuffix: 'w2',
   ),
 ];

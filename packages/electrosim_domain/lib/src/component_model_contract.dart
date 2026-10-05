@@ -542,14 +542,14 @@ final class CoreComponentModelContracts {
       ),
       ComponentModelContract(
         modelType: 'isolator_3p',
-        family: ComponentFamily.control,
+        family: ComponentFamily.switching,
         terminalCount: 6,
         supportedModes: <ElectricalMode>{ElectricalMode.ac3},
         branches: _threePowerPoles,
       ),
       ComponentModelContract(
         modelType: 'isolator_4p',
-        family: ComponentFamily.control,
+        family: ComponentFamily.switching,
         terminalCount: 8,
         supportedModes: <ElectricalMode>{ElectricalMode.ac3},
         branches: _fourPowerPoles,

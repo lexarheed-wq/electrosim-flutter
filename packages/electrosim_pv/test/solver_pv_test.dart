@@ -216,6 +216,73 @@ void main() {
       );
     });
 
+    test('PV cardinality failures are explicit and deterministic', () {
+      final CircuitState missingArray = CircuitState(
+        circuitId: CircuitId('pv-missing-array'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+        components: <ComponentInstance>[_detachedInverter('inv')],
+      );
+      final PvSolveResult missingArrayResult = solve(missingArray);
+      expect(missingArrayResult.status, PvSolveStatus.invalid);
+      expect(
+        missingArrayResult.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.missingPvArray),
+      );
+
+      final CircuitState multipleArrays = CircuitState(
+        circuitId: CircuitId('pv-multiple-arrays'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+        sources: <SourceInstance>[
+          _detachedPvArray('pv-a'),
+          _detachedPvArray('pv-b'),
+        ],
+      );
+      final PvSolveResult multipleArraysResult = solve(multipleArrays);
+      expect(multipleArraysResult.status, PvSolveStatus.invalid);
+      expect(
+        multipleArraysResult.diagnostics.map(
+          (PvSolverDiagnostic item) => item.code,
+        ),
+        contains(PvDiagnosticCode.multiplePvArrays),
+      );
+
+      final CircuitState missingInverter = CircuitState(
+        circuitId: CircuitId('pv-missing-inverter'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+        sources: <SourceInstance>[_detachedPvArray('pv')],
+      );
+      final PvSolveResult missingInverterResult = solve(missingInverter);
+      expect(missingInverterResult.status, PvSolveStatus.invalid);
+      expect(
+        missingInverterResult.diagnostics.map(
+          (PvSolverDiagnostic item) => item.code,
+        ),
+        contains(PvDiagnosticCode.missingInverter),
+      );
+
+      final CircuitState multipleInverters = CircuitState(
+        circuitId: CircuitId('pv-multiple-inverters'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+        components: <ComponentInstance>[
+          _detachedInverter('inv-a'),
+          _detachedInverter('inv-b'),
+        ],
+        sources: <SourceInstance>[_detachedPvArray('pv')],
+      );
+      final PvSolveResult multipleInvertersResult = solve(multipleInverters);
+      expect(multipleInvertersResult.status, PvSolveStatus.invalid);
+      expect(
+        multipleInvertersResult.diagnostics.map(
+          (PvSolverDiagnostic item) => item.code,
+        ),
+        contains(PvDiagnosticCode.multipleInverters),
+      );
+    });
+
     test(
       'invalid PV/inverter/load parameters do not fall back to magic values',
       () {
@@ -830,6 +897,69 @@ CircuitState _pvStorageCircuit({
     },
   );
 }
+
+SourceInstance _detachedPvArray(String id) => SourceInstance(
+  id: SourceId(id),
+  modelType: 'pv_array',
+  terminals: <Terminal>[
+    Terminal(
+      id: TerminalId('${id}-pos'),
+      name: '+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    ),
+    Terminal(
+      id: TerminalId('${id}-neg'),
+      name: '-',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    ),
+  ],
+  parameters: const <String, Object?>{
+    'mppVoltageV': 400.0,
+    'mppCurrentA': 10.0,
+    'powerTemperatureCoefficientPerC': 0.0,
+    'voltageTemperatureCoefficientPerC': 0.0,
+  },
+);
+
+ComponentInstance _detachedInverter(String id) => ComponentInstance(
+  id: ComponentId(id),
+  modelType: 'pv_inverter',
+  terminals: <Terminal>[
+    Terminal(
+      id: TerminalId('${id}-dc-pos'),
+      name: 'DC+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    ),
+    Terminal(
+      id: TerminalId('${id}-dc-neg'),
+      name: 'DC-',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    ),
+    Terminal(
+      id: TerminalId('${id}-l'),
+      name: 'L',
+      role: TerminalRole.line,
+      phase: PhaseTag.l1,
+    ),
+    Terminal(
+      id: TerminalId('${id}-n'),
+      name: 'N',
+      role: TerminalRole.neutral,
+      phase: PhaseTag.neutral,
+    ),
+  ],
+  parameters: const <String, Object?>{
+    'minDcVoltageV': 300.0,
+    'maxDcVoltageV': 500.0,
+    'nominalAcVoltageV': 230.0,
+    'ratedAcPowerW': 3500.0,
+    'efficiency': 0.95,
+  },
+);
 
 Connection _wire(String id, String from, String to, PhaseTag phase) =>
     Connection(

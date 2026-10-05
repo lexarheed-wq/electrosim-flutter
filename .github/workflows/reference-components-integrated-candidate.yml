@@ -11,6 +11,8 @@ on:
       - "apps/electrosim/lib/f14_library_components.dart"
       - "apps/electrosim/lib/f15_source_pv_components.dart"
       - "apps/electrosim/lib/f17_three_phase_components.dart"
+      - "apps/electrosim/lib/f20_catalog_components.dart"
+      - "apps/electrosim/lib/f9_context_panels.dart"
       - "apps/electrosim/lib/f18_component_asset_visual.dart"
       - "apps/electrosim/lib/f9_component_visuals.dart"
       - "apps/electrosim/lib/f9_component_palette.dart"
@@ -102,13 +104,13 @@ jobs:
         working-directory: packages/electrosim_solver_dc
         run: |
           dart pub get
-          dart test test/diode_model_test.dart
+          dart test test/diode_model_test.dart test/dc_passive_steady_state_test.dart
 
       - name: Qualify physical AC3 motor and loads
         working-directory: packages/electrosim_solver_ac
         run: |
           dart pub get
-          dart test test/three_phase_physical_devices_test.dart
+          dart test test/three_phase_physical_devices_test.dart test/ac3_four_wire_source_test.dart
 
       - name: Qualify DC relay control
         working-directory: packages/electrosim_controls

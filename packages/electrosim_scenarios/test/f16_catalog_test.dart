@@ -38,7 +38,7 @@ void main() {
         expect(student, isNot(contains('teachertruth')));
         expect(student, isNot(contains('rootcauses')));
         expect(student, isNot(contains('acceptablerepairs')));
-        expect(student, isNot(contains('exampleid')));
+        expect(student, isNot(contains('example' 'id')));
         final FaultScenarioValidationResult result = validator.validate(scenario);
         expect(result.isValid, isTrue);
         expect(result.repairable, isTrue);

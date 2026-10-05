@@ -132,6 +132,69 @@ void main() {
     expect(find.byKey(const Key('palette-item-source-dc-24v')), findsNothing);
   });
 
+  testWidgets(
+    'PV mode is selectable and palette categories stay synchronized with the mode',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+      );
+      await tester.pumpAndSettle();
+      await _openTop(tester);
+
+      await tester.tap(find.byKey(const Key('workspace-electrical-mode')));
+      await tester.pumpAndSettle();
+      final PopupMenuItem<ElectricalMode> pvEntry =
+          tester.widget<PopupMenuItem<ElectricalMode>>(
+            find.byKey(const Key('workspace-mode-pv')),
+          );
+      expect(pvEntry.enabled, isTrue);
+
+      await tester.tap(find.byKey(const Key('workspace-mode-pv')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mode-change-confirm')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('mode-change-confirm')));
+      await tester.pumpAndSettle();
+
+      SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      expect(canvas.circuit.mode, ElectricalMode.pv);
+      expect(canvas.circuit.settings['irradianceWm2'], 1000.0);
+      expect(canvas.circuit.settings['cellTemperatureC'], 25.0);
+
+      await _openPalette(tester);
+      await tester.tap(find.byKey(const Key('palette-category-selector')));
+      await tester.pumpAndSettle();
+      expect(find.text('Photovoltaïque'), findsOneWidget);
+      expect(find.text('Sources 3φ'), findsNothing);
+      expect(find.text('Moteurs 3φ'), findsNothing);
+
+      await tester.tap(find.text('Photovoltaïque'));
+      await tester.pumpAndSettle();
+
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-electrical-mode')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-mode-dc')));
+      await tester.pumpAndSettle();
+
+      canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+      expect(canvas.circuit.mode, ElectricalMode.dc);
+
+      await _openPalette(tester);
+      await tester.tap(find.byKey(const Key('palette-category-selector')));
+      await tester.pumpAndSettle();
+      expect(find.text('Photovoltaïque'), findsNothing);
+      expect(find.text('Sources 3φ'), findsNothing);
+      expect(find.text('Tous'), findsWidgets);
+    },
+  );
+
   testWidgets('C15 source and PV visuals use native production painters', (
     WidgetTester tester,
   ) async {

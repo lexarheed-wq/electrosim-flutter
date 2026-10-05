@@ -112,6 +112,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     void addVisual({
       required String elementId,
       required String modelType,
+      String? visualVariant,
       required bool enabled,
       required bool energized,
       required bool closed,
@@ -150,6 +151,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               child: F18ComponentAssetVisual(
               key: ValueKey<String>('board-v1-visual-$elementId'),
               modelType: modelType,
+              variantKey: visualVariant,
               size: baseVisualSize,
               active: enabled,
               energized: energized,
@@ -178,6 +180,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
+        visualVariant: source.parameters['_visualVariant'] as String?,
         enabled: source.enabled,
         energized:
             widget.simulationRunning && (runtime?.solved ?? false) && source.enabled,
@@ -220,6 +223,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: component.id.value,
         modelType: component.modelType,
+        visualVariant: component.parameters['_visualVariant'] as String?,
         enabled: component.condition != ComponentCondition.disabled,
         energized: energized,
         closed: closed,
@@ -429,6 +433,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         source.modelType,
         source.enabled,
         layout.quarterTurnsOf(source.id.value),
+        displayLabel: source.parameters['_displayLabel'] as String?,
       );
     }
     for (final ComponentInstance component in circuit.components) {
@@ -443,6 +448,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
         component.modelType,
         active,
         layout.quarterTurnsOf(component.id.value),
+        displayLabel: component.parameters['_displayLabel'] as String?,
       );
     }
 
@@ -742,8 +748,9 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     Rect worldRect,
     String modelType,
     bool active,
-    int quarterTurns,
-  ) {
+    int quarterTurns, {
+    String? displayLabel,
+  }) {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final Size visualSize = _f9VisualSize(worldRect, viewport);
     final Color color =
@@ -769,7 +776,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     if (viewport.scale >= 0.72) {
       final TextPainter painter = TextPainter(
         text: TextSpan(
-          text: _boardLabel(modelType),
+          text: displayLabel ?? _boardLabel(modelType),
           style: TextStyle(
             color: ElectroSimColors.textPrimary,
             fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),

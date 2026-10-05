@@ -200,6 +200,66 @@ void main() {
     });
   });
 
+  group('Contactor AC3 auxiliary contacts', () {
+    test('NO and NC auxiliary contacts follow actuated state in AC3', () {
+      final CircuitState noReleased = _ac3AuxCircuit(
+        modelType: 'contactor_aux_no',
+        actuated: false,
+      );
+      final Ac3SolveResult noReleasedResult = const SolverAC3().solve(
+        noReleased,
+        topologyEngine.compile(noReleased),
+      );
+      expect(noReleasedResult.isSolved, isTrue);
+      expect(
+        noReleasedResult.branch('component:aux1').current!.magnitude,
+        closeTo(0.0, 1e-12),
+      );
+
+      final CircuitState noActuated = _ac3AuxCircuit(
+        modelType: 'contactor_aux_no',
+        actuated: true,
+      );
+      final Ac3SolveResult noActuatedResult = const SolverAC3().solve(
+        noActuated,
+        topologyEngine.compile(noActuated),
+      );
+      expect(noActuatedResult.isSolved, isTrue);
+      expect(
+        noActuatedResult.branch('component:r1').current!.magnitude,
+        closeTo(5.0, 1e-8),
+      );
+
+      final CircuitState ncReleased = _ac3AuxCircuit(
+        modelType: 'contactor_aux_nc',
+        actuated: false,
+      );
+      final Ac3SolveResult ncReleasedResult = const SolverAC3().solve(
+        ncReleased,
+        topologyEngine.compile(ncReleased),
+      );
+      expect(ncReleasedResult.isSolved, isTrue);
+      expect(
+        ncReleasedResult.branch('component:r1').current!.magnitude,
+        closeTo(5.0, 1e-8),
+      );
+
+      final CircuitState ncActuated = _ac3AuxCircuit(
+        modelType: 'contactor_aux_nc',
+        actuated: true,
+      );
+      final Ac3SolveResult ncActuatedResult = const SolverAC3().solve(
+        ncActuated,
+        topologyEngine.compile(ncActuated),
+      );
+      expect(ncActuatedResult.isSolved, isTrue);
+      expect(
+        ncActuatedResult.branch('component:aux1').current!.magnitude,
+        closeTo(0.0, 1e-12),
+      );
+    });
+  });
+
   group('Contactor AC3 branch behavior', () {
     test(
       'three power poles follow actuated state while coil remains modeled',
@@ -317,6 +377,40 @@ CircuitState _ac1AuxCircuit({
     _wire('w3', 'r1-n', 'v-n'),
   ],
   sources: <SourceInstance>[_singlePhaseSource('v')],
+  settings: const <String, Object?>{'frequencyHz': 50.0},
+);
+
+CircuitState _ac3AuxCircuit({
+  required String modelType,
+  required bool actuated,
+}) => CircuitState(
+  circuitId: CircuitId('ac3-$modelType-$actuated'),
+  revision: 0,
+  mode: ElectricalMode.ac3,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('aux1'),
+      modelType: modelType,
+      terminals: <Terminal>[
+        _t('aux-in', '13', phase: PhaseTag.l1),
+        _t('aux-out', '14', phase: PhaseTag.l1),
+      ],
+      controlState: <String, Object?>{'actuated': actuated},
+    ),
+    _resistor('r1', PhaseTag.l1),
+  ],
+  connections: <Connection>[
+    _wire('w1', 'v1-p', 'aux-in'),
+    _wire('w2', 'aux-out', 'r1-p'),
+    _wire('w3', 'r1-n', 'v1-n'),
+    _wire('ns2', 'v2-n', 'v1-n'),
+    _wire('ns3', 'v3-n', 'v1-n'),
+  ],
+  sources: <SourceInstance>[
+    _phaseSource('v1', PhaseTag.l1),
+    _phaseSource('v2', PhaseTag.l2),
+    _phaseSource('v3', PhaseTag.l3),
+  ],
   settings: const <String, Object?>{'frequencyHz': 50.0},
 );
 

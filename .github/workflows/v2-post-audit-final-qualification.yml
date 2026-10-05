@@ -1,5 +1,5 @@
 name: V2 post-audit final qualification
-# final qualification trigger 2026-10-05
+# final qualification trigger 2026-10-05-r2
 
 on:
   workflow_dispatch:
@@ -51,6 +51,7 @@ jobs:
             apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
             apps/electrosim/test/f20_catalog_visual_identity_test.dart \
             apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+            apps/electrosim/test/f9_goldens_test.dart \
             apps/electrosim/test/reference_components_extended_test.dart \
             packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
             packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
@@ -73,6 +74,7 @@ jobs:
               apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
               apps/electrosim/test/f20_catalog_visual_identity_test.dart \
               apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+              apps/electrosim/test/f9_goldens_test.dart \
               apps/electrosim/test/reference_components_extended_test.dart \
               packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
               packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
@@ -133,6 +135,8 @@ jobs:
             apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
             apps/electrosim/test/f20_catalog_visual_identity_test.dart \
             apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
+            apps/electrosim/test/f9_goldens_test.dart \
+            apps/electrosim/test/reference_components_extended_test.dart \
             packages/electrosim_canvas/lib/src/orthogonal_wire_router.dart \
             packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart \
             packages/electrosim_canvas/test/orthogonal_wire_router_test.dart

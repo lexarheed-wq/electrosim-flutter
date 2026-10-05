@@ -14,7 +14,12 @@ final class SolverPV {
 
   final PvSolverOptions options;
 
-  PvSolveResult solve(CircuitState circuit, TopologyGraph topology) {
+  PvSolveResult solve(
+    CircuitState circuit,
+    TopologyGraph topology, {
+    double? previousBatterySoc,
+    Duration elapsed = Duration.zero,
+  }) {
     final List<PvSolverDiagnostic> diagnostics = <PvSolverDiagnostic>[];
     if (circuit.mode != ElectricalMode.pv || topology.mode != ElectricalMode.pv) {
       diagnostics.add(
@@ -104,16 +109,63 @@ final class SolverPV {
 
     final SourceInstance array = arrays.single;
     final ComponentInstance inverter = inverters.single;
-    final _PvArrayParameters? arrayParameters = _arrayParameters(array, diagnostics);
+    final List<ComponentInstance> controllers = circuit.components
+        .where((ComponentInstance component) =>
+            component.modelType == 'pv_controller')
+        .toList(growable: false);
+    final List<ComponentInstance> batteries = circuit.components
+        .where((ComponentInstance component) =>
+            component.modelType == 'pv_battery')
+        .toList(growable: false);
+    if (controllers.length > 1 || batteries.length > 1) {
+      diagnostics.add(
+        const PvSolverDiagnostic(
+          code: PvDiagnosticCode.storageTopologyInvalid,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'PV storage supports at most one controller and one battery.',
+        ),
+      );
+      return _failure(circuit, diagnostics);
+    }
+    if (controllers.isEmpty != batteries.isEmpty) {
+      diagnostics.add(
+        const PvSolverDiagnostic(
+          code: PvDiagnosticCode.storageTopologyInvalid,
+          severity: PvDiagnosticSeverity.error,
+          message:
+              'A PV controller and battery must be used together in the storage chain.',
+        ),
+      );
+      return _failure(circuit, diagnostics);
+    }
+
+    final ComponentInstance? controller =
+        controllers.isEmpty ? null : controllers.single;
+    final ComponentInstance? battery =
+        batteries.isEmpty ? null : batteries.single;
+
+    final _PvArrayParameters? arrayParameters =
+        _arrayParameters(array, diagnostics);
     final _InverterParameters? inverterParameters = _inverterParameters(
       inverter,
       diagnostics,
     );
-    if (arrayParameters == null || inverterParameters == null) {
+    final _ControllerParameters? controllerParameters = controller == null
+        ? null
+        : _controllerParameters(controller, diagnostics);
+    final _BatteryParameters? batteryParameters = battery == null
+        ? null
+        : _batteryParameters(battery, diagnostics);
+    if (arrayParameters == null ||
+        inverterParameters == null ||
+        (controller != null && controllerParameters == null) ||
+        (battery != null && batteryParameters == null)) {
       return _failure(circuit, diagnostics);
     }
 
-    final _PvTerminalContract? arrayTerminals = _pvArrayTerminals(array, diagnostics);
+    final _PvTerminalContract? arrayTerminals =
+        _pvArrayTerminals(array, diagnostics);
     final _InverterTerminalContract? inverterTerminals = _inverterTerminals(
       inverter,
       diagnostics,
@@ -122,30 +174,68 @@ final class SolverPV {
       return _failure(circuit, diagnostics);
     }
 
-    final String arrayPositiveNode = topology
-        .nodeForTerminal(arrayTerminals.positive.id)
-        .id;
-    final String arrayNegativeNode = topology
-        .nodeForTerminal(arrayTerminals.negative.id)
-        .id;
-    final String inverterPositiveNode = topology
-        .nodeForTerminal(inverterTerminals.dcPositive.id)
-        .id;
-    final String inverterNegativeNode = topology
-        .nodeForTerminal(inverterTerminals.dcNegative.id)
-        .id;
-    if (arrayPositiveNode != inverterPositiveNode ||
-        arrayNegativeNode != inverterNegativeNode) {
-      diagnostics.add(
-        PvSolverDiagnostic(
-          code: PvDiagnosticCode.dcInputDisconnected,
-          severity: PvDiagnosticSeverity.error,
-          message: 'pv_array DC terminals are not connected to the matching inverter DC input.',
-          componentId: inverter.id,
-          sourceId: array.id,
-        ),
-      );
-      return _failure(circuit, diagnostics);
+    final String arrayPositiveNode =
+        topology.nodeForTerminal(arrayTerminals.positive.id).id;
+    final String arrayNegativeNode =
+        topology.nodeForTerminal(arrayTerminals.negative.id).id;
+    final String inverterPositiveNode =
+        topology.nodeForTerminal(inverterTerminals.dcPositive.id).id;
+    final String inverterNegativeNode =
+        topology.nodeForTerminal(inverterTerminals.dcNegative.id).id;
+
+    if (controller == null) {
+      if (arrayPositiveNode != inverterPositiveNode ||
+          arrayNegativeNode != inverterNegativeNode) {
+        diagnostics.add(
+          PvSolverDiagnostic(
+            code: PvDiagnosticCode.dcInputDisconnected,
+            severity: PvDiagnosticSeverity.error,
+            message:
+                'pv_array DC terminals are not connected to the matching inverter DC input.',
+            componentId: inverter.id,
+            sourceId: array.id,
+          ),
+        );
+        return _failure(circuit, diagnostics);
+      }
+    } else {
+      final _ControllerTerminalContract? controllerTerminals =
+          _controllerTerminals(controller, diagnostics);
+      final _BatteryTerminalContract? batteryTerminals =
+          _batteryTerminals(battery!, diagnostics);
+      if (controllerTerminals == null || batteryTerminals == null) {
+        return _failure(circuit, diagnostics);
+      }
+      final String controllerPvPositiveNode =
+          topology.nodeForTerminal(controllerTerminals.pvPositive.id).id;
+      final String controllerPvNegativeNode =
+          topology.nodeForTerminal(controllerTerminals.pvNegative.id).id;
+      final String controllerBusPositiveNode =
+          topology.nodeForTerminal(controllerTerminals.busPositive.id).id;
+      final String controllerBusNegativeNode =
+          topology.nodeForTerminal(controllerTerminals.busNegative.id).id;
+      final String batteryPositiveNode =
+          topology.nodeForTerminal(batteryTerminals.positive.id).id;
+      final String batteryNegativeNode =
+          topology.nodeForTerminal(batteryTerminals.negative.id).id;
+      if (arrayPositiveNode != controllerPvPositiveNode ||
+          arrayNegativeNode != controllerPvNegativeNode ||
+          controllerBusPositiveNode != inverterPositiveNode ||
+          controllerBusNegativeNode != inverterNegativeNode ||
+          batteryPositiveNode != inverterPositiveNode ||
+          batteryNegativeNode != inverterNegativeNode) {
+        diagnostics.add(
+          PvSolverDiagnostic(
+            code: PvDiagnosticCode.storageTopologyInvalid,
+            severity: PvDiagnosticSeverity.error,
+            message:
+                'PV storage requires array → controller → DC bus with battery and inverter on the same output bus.',
+            componentId: controller.id,
+            sourceId: array.id,
+          ),
+        );
+        return _failure(circuit, diagnostics);
+      }
     }
 
     final List<ComponentInstance> loads = circuit.components

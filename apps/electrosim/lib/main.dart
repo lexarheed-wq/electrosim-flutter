@@ -1111,20 +1111,33 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final List<SourceInstance> sources = <SourceInstance>[..._circuit.sources];
 
     if (definition.kind == F9PaletteElementKind.source) {
+      final Map<String, Object?> parameters = <String, Object?>{
+        ...(definition.defaultParameters.isNotEmpty
+            ? definition.defaultParameters
+            : const <String, Object?>{'voltageV': 24.0}),
+        if (definition.visualVariant != null)
+          '_visualVariant': definition.visualVariant!,
+        if (definition.displayLabel != null)
+          '_displayLabel': definition.displayLabel!,
+      };
       sources.add(
         SourceInstance(
           id: SourceId(elementId),
           modelType: definition.modelType,
           terminals: terminals,
-          parameters: definition.defaultParameters.isNotEmpty
-              ? definition.defaultParameters
-              : const <String, Object?>{'voltageV': 24.0},
+          parameters: parameters,
         ),
       );
     } else {
-      Map<String, Object?> parameters = definition.defaultParameters.isNotEmpty
-          ? <String, Object?>{...definition.defaultParameters}
-          : <String, Object?>{..._defaultParametersFor(definition.keyName)};
+      Map<String, Object?> parameters = <String, Object?>{
+        ...(definition.defaultParameters.isNotEmpty
+            ? definition.defaultParameters
+            : _defaultParametersFor(definition.keyName)),
+        if (definition.visualVariant != null)
+          '_visualVariant': definition.visualVariant!,
+        if (definition.displayLabel != null)
+          '_displayLabel': definition.displayLabel!,
+      };
       if (definition.modelType == 'contactor_aux_no' ||
           definition.modelType == 'contactor_aux_nc') {
         final List<ComponentInstance> contactors = components

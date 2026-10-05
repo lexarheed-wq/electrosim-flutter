@@ -323,14 +323,26 @@ class _MeasurementsPanel extends StatelessWidget {
       );
     }
 
-    final MeasurementResult voltage = runtimeSnapshot.measureVoltage(
-      positiveProbe: target.terminals[0].id,
-      negativeProbe: target.terminals[1].id,
-    );
-    final MeasurementResult current = runtimeSnapshot.measureCurrent(
-      branchId: target.branchId,
-    );
-    final bool available = voltage.isValid && current.isValid;
+    final bool ac = runtimeSnapshot.solverKind ==
+            ElectroSimRuntimeSolverKind.ac1 ||
+        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+    final MeasurementResult voltage = ac
+        ? runtimeSnapshot.measureAcVoltage(
+            positiveProbe: target.terminals[0].id,
+            negativeProbe: target.terminals[1].id,
+          )
+        : runtimeSnapshot.measureVoltage(
+            positiveProbe: target.terminals[0].id,
+            negativeProbe: target.terminals[1].id,
+          );
+    final MeasurementResult current = ac
+        ? runtimeSnapshot.measureAcCurrent(branchId: target.branchId)
+        : runtimeSnapshot.measureCurrent(branchId: target.branchId);
+    final MeasurementResult? frequency =
+        ac ? runtimeSnapshot.measureFrequency() : null;
+    final bool available = voltage.isValid &&
+        current.isValid &&
+        (frequency == null || frequency.isValid);
 
     return ListView(
       key: const Key('measurements-panel'),
@@ -364,7 +376,7 @@ class _MeasurementsPanel extends StatelessWidget {
         _InstrumentReading(
           key: const Key('measurement-voltmeter'),
           icon: Icons.speed_outlined,
-          title: 'Voltmètre CC',
+          title: ac ? 'Voltmètre AC RMS' : 'Voltmètre CC',
           reading: voltage,
           readingKey: const Key('measurement-voltage-reading'),
         ),
@@ -372,10 +384,20 @@ class _MeasurementsPanel extends StatelessWidget {
         _InstrumentReading(
           key: const Key('measurement-ammeter'),
           icon: Icons.electric_meter_outlined,
-          title: 'Ampèremètre CC',
+          title: ac ? 'Ampèremètre AC RMS' : 'Ampèremètre CC',
           reading: current,
           readingKey: const Key('measurement-current-reading'),
         ),
+        if (frequency != null) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.sm),
+          _InstrumentReading(
+            key: const Key('measurement-frequency-meter'),
+            icon: Icons.graphic_eq_outlined,
+            title: 'Fréquencemètre',
+            reading: frequency,
+            readingKey: const Key('measurement-frequency-reading'),
+          ),
+        ],
         if (!available) ...<Widget>[
           const SizedBox(height: ElectroSimSpacing.md),
           Text(

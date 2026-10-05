@@ -42,6 +42,16 @@ void main() {
       _expectPhysicalResiduals(result);
     });
 
+    test('DC-002B: two DC voltage sources in series add their voltages', () {
+      final DcSolveResult result = solve(_twoSeriesSourcesCircuit());
+      expect(result.status, DcSolveStatus.solved);
+      expect(result.branch('component:r1').currentA, closeTo(3.0, 1e-10));
+      expect(result.branch('component:r1').voltageV.abs(), closeTo(36.0, 1e-10));
+      expect(result.branch('source:v1').currentA?.abs(), closeTo(3.0, 1e-10));
+      expect(result.branch('source:v2').currentA?.abs(), closeTo(3.0, 1e-10));
+      _expectPhysicalResiduals(result);
+    });
+
     test('DC-003: 10 ohm parallel 10 ohm under 10 V gives 2 A total', () {
       final DcSolveResult result = solve(_parallelCircuit());
       expect(result.status, DcSolveStatus.solved);
@@ -554,6 +564,57 @@ CircuitState _seriesCircuit() => CircuitState(
     ),
   ],
   sources: <SourceInstance>[_voltageSource(30)],
+);
+
+CircuitState _twoSeriesSourcesCircuit() => CircuitState(
+  circuitId: CircuitId('dc002b'),
+  revision: 0,
+  mode: ElectricalMode.dc,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('r1'),
+      modelType: 'resistor',
+      terminals: <Terminal>[_terminal('r1a', 'A'), _terminal('r1b', 'B')],
+      parameters: const <String, Object?>{'resistanceOhm': 12.0},
+    ),
+  ],
+  connections: <Connection>[
+    Connection(
+      id: ConnectionId('w1'),
+      fromTerminalId: TerminalId('v1p'),
+      toTerminalId: TerminalId('r1a'),
+    ),
+    Connection(
+      id: ConnectionId('w2'),
+      fromTerminalId: TerminalId('r1b'),
+      toTerminalId: TerminalId('v2n'),
+    ),
+    Connection(
+      id: ConnectionId('series-link'),
+      fromTerminalId: TerminalId('v2p'),
+      toTerminalId: TerminalId('v1n'),
+    ),
+  ],
+  sources: <SourceInstance>[
+    SourceInstance(
+      id: SourceId('v1'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        _terminal('v1p', '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
+        _terminal('v1n', '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
+      ],
+      parameters: const <String, Object?>{'voltageV': 24.0},
+    ),
+    SourceInstance(
+      id: SourceId('v2'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        _terminal('v2p', '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
+        _terminal('v2n', '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
+      ],
+      parameters: const <String, Object?>{'voltageV': 12.0},
+    ),
+  ],
 );
 
 CircuitState _parallelCircuit() => CircuitState(

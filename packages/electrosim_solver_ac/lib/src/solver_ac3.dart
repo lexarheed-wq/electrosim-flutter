@@ -492,6 +492,15 @@ _CompiledAc3Model _compileModel(
     }
 
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(component.id);
+    if (_compileThreePhaseImpedanceDeviceAc3(
+      component: component,
+      branches: topologyBranches,
+      frequencyHz: frequencyHz,
+      elements: elements,
+      diagnostics: diagnostics,
+    )) {
+      continue;
+    }
     if (_compileThreePoleProtectionAc3(
       component: component,
       branches: topologyBranches,
@@ -792,6 +801,126 @@ _CompiledAc3Model _compileModel(
 }
 
 
+
+bool _compileThreePhaseImpedanceDeviceAc3({
+  required ComponentInstance component,
+  required List<TopologyBranch> branches,
+  required double frequencyHz,
+  required List<_Ac3Element> elements,
+  required List<Ac3SolverDiagnostic> diagnostics,
+}) {
+  final bool supported = component.modelType == 'motor_3p_6t' ||
+      component.modelType == 'load_wye_3p' ||
+      component.modelType == 'load_delta_3p';
+  if (!supported) return false;
+
+  if (branches.length != 3) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidTerminalCount,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} must expose exactly three electrical branches.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  if (component.condition != ComponentCondition.normal &&
+      component.condition != ComponentCondition.openCircuit &&
+      component.condition != ComponentCondition.shortCircuit &&
+      component.condition != ComponentCondition.disabled) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.unsupportedComponentCondition,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            'Unsupported AC3 three-phase device condition ${component.condition.name}.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final double? resistance =
+      _positiveParameter(component.parameters, 'resistanceOhm');
+  final Object? rawInductance = component.parameters['inductanceH'];
+  final double inductance = rawInductance == null
+      ? 0.0
+      : rawInductance is num
+          ? rawInductance.toDouble()
+          : double.nan;
+  if (resistance == null || !inductance.isFinite || inductance < 0.0) {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidParameter,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            '${component.modelType} requires resistanceOhm > 0 and optional inductanceH >= 0.',
+        componentId: component.id,
+      ),
+    );
+    return true;
+  }
+
+  final bool open = component.condition == ComponentCondition.openCircuit ||
+      component.condition == ComponentCondition.disabled;
+  final bool shorted = component.condition == ComponentCondition.shortCircuit;
+  final AcComplex impedance = AcComplex(
+    resistance,
+    2.0 * math.pi * frequencyHz * inductance,
+  );
+
+  for (final TopologyBranch branch in branches) {
+    final String id =
+        _componentBranchElementIdAc3(component, branch, branches.length);
+    if (open) {
+      elements.add(
+        _Ac3Element(
+          id: id,
+          modelType: component.modelType,
+          kind: _Ac3ElementKind.impedance,
+          branchKind: Ac3BranchKind.openCircuit,
+          fromNodeId: branch.fromNodeId,
+          toNodeId: branch.toNodeId,
+          value: const AcComplex(1e300, 0.0),
+          isOpen: true,
+          phase: _phaseForBranch(component, branch),
+        ),
+      );
+      continue;
+    }
+    if (shorted) {
+      elements.add(
+        _Ac3Element(
+          id: id,
+          modelType: component.modelType,
+          kind: _Ac3ElementKind.idealVoltage,
+          branchKind: Ac3BranchKind.idealShort,
+          fromNodeId: branch.fromNodeId,
+          toNodeId: branch.toNodeId,
+          value: AcComplex.zero,
+          phase: _phaseForBranch(component, branch),
+        ),
+      );
+      continue;
+    }
+    elements.add(
+      _Ac3Element(
+        id: id,
+        modelType: component.modelType,
+        kind: _Ac3ElementKind.impedance,
+        branchKind: Ac3BranchKind.impedance,
+        fromNodeId: branch.fromNodeId,
+        toNodeId: branch.toNodeId,
+        value: impedance,
+        phase: _phaseForBranch(component, branch),
+      ),
+    );
+  }
+  return true;
+}
 
 bool _compileThreePoleProtectionAc3({
   required ComponentInstance component,
@@ -1525,6 +1654,9 @@ const Set<String> _supportedAc3ComponentModels = <String>{
   'contactor_aux_nc',
   'breaker_3p',
   'thermal_overload_3p',
+  'motor_3p_6t',
+  'load_wye_3p',
+  'load_delta_3p',
 };
 
 bool _isError(Ac3SolverDiagnostic diagnostic) =>

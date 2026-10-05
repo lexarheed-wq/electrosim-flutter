@@ -119,6 +119,25 @@ void main() {
     );
   });
 
+  test('C15 visual variants keep distinct hardware identities', () {
+    expect(
+      F15SourcePvVisualIdentity.ac3SourceSilhouette('ac3-grid'),
+      F15Ac3SourceSilhouette.grid,
+    );
+    expect(
+      F15SourcePvVisualIdentity.ac3SourceSilhouette('ac3-generator'),
+      F15Ac3SourceSilhouette.alternator,
+    );
+    expect(
+      F15SourcePvVisualIdentity.pvControllerSilhouette('pv-mppt'),
+      F15PvControllerSilhouette.mppt,
+    );
+    expect(
+      F15SourcePvVisualIdentity.pvControllerSilhouette('pv-pwm'),
+      F15PvControllerSilhouette.pwm,
+    );
+  });
+
   test('C15 PV physical terminals are deterministic', () {
     const Size inverter = Size(190, 230);
     final List<Offset> points = <Offset>[

@@ -1,5 +1,5 @@
 name: V2 post-audit final qualification
-# final qualification trigger 2026-10-05-r2
+# final qualification trigger 2026-10-05-r3
 
 on:
   workflow_dispatch:
@@ -44,11 +44,15 @@ jobs:
             apps/electrosim/lib/f14_library_components.dart \
             apps/electrosim/lib/f15_source_pv_components.dart \
             apps/electrosim/lib/f18_component_asset_visual.dart \
+            apps/electrosim/lib/f18_drag_preview.dart \
+            apps/electrosim/lib/f23_distribution_components.dart \
             apps/electrosim/lib/f20_catalog_components.dart \
             apps/electrosim/lib/reference_components/reference_widgets_extended.dart \
             apps/electrosim/test/c15_mode_wave2_test.dart \
             apps/electrosim/test/f14_visual_identity_test.dart \
             apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
+            apps/electrosim/test/f18_drag_architecture_test.dart \
+            apps/electrosim/test/f18_drag_preview_test.dart \
             apps/electrosim/test/f20_catalog_visual_identity_test.dart \
             apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
             apps/electrosim/test/f9_goldens_test.dart \
@@ -67,11 +71,15 @@ jobs:
               apps/electrosim/lib/f14_library_components.dart \
               apps/electrosim/lib/f15_source_pv_components.dart \
               apps/electrosim/lib/f18_component_asset_visual.dart \
+              apps/electrosim/lib/f18_drag_preview.dart \
+              apps/electrosim/lib/f23_distribution_components.dart \
               apps/electrosim/lib/f20_catalog_components.dart \
               apps/electrosim/lib/reference_components/reference_widgets_extended.dart \
               apps/electrosim/test/c15_mode_wave2_test.dart \
               apps/electrosim/test/f14_visual_identity_test.dart \
               apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart \
+              apps/electrosim/test/f18_drag_architecture_test.dart \
+              apps/electrosim/test/f18_drag_preview_test.dart \
               apps/electrosim/test/f20_catalog_visual_identity_test.dart \
               apps/electrosim/test/f9_catalog_visual_uniqueness_test.dart \
               apps/electrosim/test/f9_goldens_test.dart \

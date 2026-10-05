@@ -31,6 +31,33 @@ void main() {
     );
   });
 
+  test('diode packages keep distinct physical identities', () {
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('rectifier'),
+      ExtendedDiodeVisualPackage.rectifier,
+    );
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('schottky'),
+      ExtendedDiodeVisualPackage.schottky,
+    );
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('led-red'),
+      ExtendedDiodeVisualPackage.led,
+    );
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('led-green'),
+      ExtendedDiodeVisualPackage.led,
+    );
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('zener'),
+      ExtendedDiodeVisualPackage.zenerGlass,
+    );
+    expect(
+      ExtendedReferenceVisualIdentity.diodePackage('tvs'),
+      ExtendedDiodeVisualPackage.tvs,
+    );
+  });
+
   test('normally closed push button opens while pressed', () {
     final model = NormallyClosedPushButtonModel();
     expect(model.conducting, isTrue);

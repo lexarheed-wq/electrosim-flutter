@@ -213,9 +213,11 @@ void main() {
   });
 }
 
-String _diagnosticReason(Ac3SolveResult result) => result.diagnostics
-    .map((Ac3SolverDiagnostic item) => '${item.code.name}: ${item.message}')
-    .join(' | ');
+String _diagnosticReason(Ac3SolveResult result) =>
+    'status=${result.status.name}; ' +
+    result.diagnostics
+        .map((Ac3SolverDiagnostic item) => '${item.code.name}: ${item.message}')
+        .join(' | ');
 
 CircuitState _replaceFirst(CircuitState base, ComponentInstance replacement) =>
     CircuitState(

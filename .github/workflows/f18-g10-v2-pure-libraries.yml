@@ -1,0 +1,70 @@
+name: F18-G10 V2 pure libraries
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g10-v2-pure-libraries-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'packages/electrosim_scenarios/**'
+      - 'tools/f18_g10_contract.py'
+      - '.github/workflows/f18-g10-v2-pure-libraries.yml'
+      - 'docs/f18/g10/**'
+
+permissions:
+  contents: read
+
+jobs:
+  g10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        run: |
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Static G10 purity contract
+        run: python3 tools/f18_g10_contract.py
+
+      - name: Resolve scenario dependencies
+        working-directory: packages/electrosim_scenarios
+        run: dart pub get
+
+      - name: Verify G10 Dart formatting
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            packages/electrosim_scenarios/lib/electrosim_scenarios.dart \
+            packages/electrosim_scenarios/lib/src/v2_product_examples.dart \
+            packages/electrosim_scenarios/lib/src/v2_product_faults.dart \
+            packages/electrosim_scenarios/lib/src/v2_product_catalog.dart \
+            packages/electrosim_scenarios/test/f18_g10_v2_product_libraries_test.dart
+
+      - name: Analyze scenario package
+        working-directory: packages/electrosim_scenarios
+        run: dart analyze
+
+      - name: Pure V2 product library tests
+        working-directory: packages/electrosim_scenarios
+        run: |
+          dart test test/f18_g10_v2_product_libraries_test.dart
+          dart test
+
+      - name: G9 non-regression
+        working-directory: packages/electrosim_diagnostics
+        run: |
+          dart pub get
+          dart test test/f18_g9_internal_eie_test.dart
+
+      - name: Gate marker
+        run: echo F18_G10_V2_PURE_LIBRARIES_GATE_PASS

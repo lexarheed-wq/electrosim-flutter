@@ -276,6 +276,41 @@ class _PropertiesPanel extends StatelessWidget {
             label: 'Bornes',
             value: details.terminalLabels.join(' · '),
           ),
+          if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            SwitchListTile.adaptive(
+              key: const Key('properties-primary-toggle'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(details.primaryToggleLabel ?? 'État'),
+              subtitle: const Text('Commande explicite du CircuitState'),
+              value: primaryToggleValue,
+              onChanged: onTogglePrimaryState == null
+                  ? null
+                  : (_) => onTogglePrimaryState!(),
+            ),
+          ],
+          if (primaryToggleValue != null && directCanvasControl) ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            const ElectroSimStatusChip(
+              key: Key('properties-direct-control-hint'),
+              label: 'Commande directe sur la platine',
+              icon: Icons.ads_click_outlined,
+              emphasized: true,
+            ),
+            const SizedBox(height: ElectroSimSpacing.xs),
+            const Text(
+              'Double-cliquez sur la zone de commande du composant '
+              '(manette, bascule ou bouton-poussoir).',
+            ),
+          ],
+          const SizedBox(height: ElectroSimSpacing.sm),
+          if (details.kind == F9ElementKind.component)
+            OutlinedButton.icon(
+              key: const Key('properties-replace-element'),
+              onPressed: onReplaceSelected,
+              icon: const Icon(Icons.swap_horiz),
+              label: const Text('Remplacer…'),
+            ),
           if (propertySnapshot != null) ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             Text(
@@ -334,41 +369,6 @@ class _PropertiesPanel extends StatelessWidget {
                   _PropertyLine(label: row.label, value: row.value),
             ),
           ],
-          if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
-            const SizedBox(height: ElectroSimSpacing.sm),
-            SwitchListTile.adaptive(
-              key: const Key('properties-primary-toggle'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(details.primaryToggleLabel ?? 'État'),
-              subtitle: const Text('Commande explicite du CircuitState'),
-              value: primaryToggleValue,
-              onChanged: onTogglePrimaryState == null
-                  ? null
-                  : (_) => onTogglePrimaryState!(),
-            ),
-          ],
-          if (primaryToggleValue != null && directCanvasControl) ...<Widget>[
-            const SizedBox(height: ElectroSimSpacing.sm),
-            const ElectroSimStatusChip(
-              key: Key('properties-direct-control-hint'),
-              label: 'Commande directe sur la platine',
-              icon: Icons.ads_click_outlined,
-              emphasized: true,
-            ),
-            const SizedBox(height: ElectroSimSpacing.xs),
-            const Text(
-              'Double-cliquez sur la zone de commande du composant '
-              '(manette, bascule ou bouton-poussoir).',
-            ),
-          ],
-          const SizedBox(height: ElectroSimSpacing.sm),
-          if (details.kind == F9ElementKind.component)
-            OutlinedButton.icon(
-              key: const Key('properties-replace-element'),
-              onPressed: onReplaceSelected,
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('Remplacer…'),
-            ),
         ],
         const SizedBox(height: ElectroSimSpacing.lg),
         Text('Activité', style: Theme.of(context).textTheme.labelLarge),

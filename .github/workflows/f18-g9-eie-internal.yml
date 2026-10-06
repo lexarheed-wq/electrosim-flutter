@@ -1,0 +1,83 @@
+name: F18-G9 EIE internal intelligence
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g9-eie-internal-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_diagnostics/**'
+      - 'packages/electrosim_pv/**'
+      - 'packages/electrosim_solver_dc/**'
+      - 'packages/electrosim_solver_ac/**'
+      - 'packages/electrosim_topology/**'
+      - 'tools/f18_g9_contract.py'
+      - '.github/workflows/f18-g9-eie-internal.yml'
+      - 'docs/f18/g9/**'
+
+permissions:
+  contents: read
+
+jobs:
+  g9:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        run: |
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Static G9 architecture contract
+        run: python3 tools/f18_g9_contract.py
+
+      - name: Resolve application dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Verify G9 Dart formatting
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            apps/electrosim/lib/f9_context_panels.dart \
+            apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \
+            apps/electrosim/test/f18_g9_internal_eie_test.dart \
+            packages/electrosim_diagnostics/lib/src/diagnostic_engine.dart \
+            packages/electrosim_diagnostics/lib/src/diagnostic_models.dart \
+            packages/electrosim_diagnostics/test/f18_g9_internal_eie_test.dart
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: G9 runtime and teacher UI tests
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f18_g9_internal_eie_test.dart
+          flutter test test/f17_eie_ui_test.dart
+
+      - name: Diagnostic engine package
+        working-directory: packages/electrosim_diagnostics
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: G8 and G7 non-regression
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f18_g8_tp_teacher_student_test.dart
+          flutter test test/f18_g7_instruments_properties_test.dart
+
+      - name: Gate marker
+        run: echo F18_G9_EIE_INTERNAL_GATE_PASS

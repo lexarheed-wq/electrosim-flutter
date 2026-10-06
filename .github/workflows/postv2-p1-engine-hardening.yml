@@ -6,11 +6,18 @@ on:
     branches:
       - postv2-p1-engine-hardening-20261006
     paths:
-      - 'apps/electrosim/lib/f9_wiring_policy.dart'
-      - 'apps/electrosim/test/postv2_p1_wiring_policy_test.dart'
+      - 'apps/electrosim/lib/**'
+      - 'apps/electrosim/test/postv2_p1_*.dart'
       - 'packages/electrosim_canvas/**'
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'
+      - 'packages/electrosim_solver_ac/**'
+      - 'packages/electrosim_controls/**'
+      - 'packages/electrosim_protection/**'
+      - 'packages/electrosim_measurements/**'
+      - 'packages/electrosim_pv/**'
+      - 'packages/electrosim_energy/**'
+      - 'packages/electrosim_diagnostics/**'
       - 'tools/postv2_p1_contract.py'
       - '.github/workflows/postv2-p1-engine-hardening.yml'
 
@@ -18,7 +25,8 @@ permissions:
   contents: read
 
 jobs:
-  p1:
+  p1-core:
+    name: P1 architecture and physical contracts
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -47,34 +55,115 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test test/postv2_p1_wiring_policy_test.dart
-          flutter test test/f9_wiring_policy_test.dart
 
-      - name: P1.3 DC source associations
+      - name: P1.3 source associations and P1.4 receivers
         working-directory: packages/electrosim_solver_dc
         run: |
           set -euo pipefail
           dart pub get
           dart analyze
           dart test test/postv2_p1_source_associations_test.dart
-          dart test test/solver_dc_test.dart
-          dart test test/m3a_convergence_test.dart
+          dart test test/postv2_p1_receiver_polarity_test.dart
+          dart test test/postv2_p1_invariants_test.dart
 
-      - name: P1 topology non-regression
-        working-directory: packages/electrosim_topology
+      - name: P1.4 PV polarity
+        working-directory: packages/electrosim_pv
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_polarity_test.dart
+
+      - name: P1.5 EIE authority
+        working-directory: packages/electrosim_diagnostics
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_eie_authority_test.dart
+
+      - name: P1.4 motor animation follows runtime sign
+        working-directory: apps/electrosim
+        run: flutter test test/postv2_p1_motor_visual_direction_test.dart
+
+      - name: P1 topology and canvas separation
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_topology
+          dart pub get
+          dart analyze
+          dart test
+          cd ../electrosim_canvas
+          flutter pub get
+          flutter analyze
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+
+  p1-package-regression:
+    name: P1 package regression — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - electrosim_domain
+          - electrosim_topology
+          - electrosim_solver_dc
+          - electrosim_solver_ac
+          - electrosim_controls
+          - electrosim_protection
+          - electrosim_measurements
+          - electrosim_pv
+          - electrosim_energy
+          - electrosim_diagnostics
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Full package analyze and tests
+        working-directory: packages/${{ matrix.package }}
         run: |
           set -euo pipefail
           dart pub get
           dart analyze
           dart test
 
-      - name: P1 canvas separation non-regression
-        working-directory: packages/electrosim_canvas
+  p1-app-regression:
+    name: P1 complete Flutter application regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Full application qualification
+        working-directory: apps/electrosim
         run: |
           set -euo pipefail
           flutter pub get
+          git diff --exit-code -- pubspec.lock
           flutter analyze
-          flutter test test/wire_routing_robustness_test.dart
-          flutter test test/circuit_wire_layout_engine_test.dart
+          flutter test
 
-      - name: Gate marker
-        run: echo POSTV2_P1_1_3_GATE_PASS
+  p1-gate:
+    name: Post-V2 P1 automated gate
+    needs:
+      - p1-core
+      - p1-package-regression
+      - p1-app-regression
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo POSTV2_P1_AUTOMATED_PASS
+          echo POSTV2_P1_PHYSICAL_MAC_PASS=PENDING_USER_VALIDATION

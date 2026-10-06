@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - f18-g12-final-qualification-20261006
+      - f18-g12r2-g10b-mac-20261006
       - v2-post-mac-audit-fixes-20261005
     paths:
       - '.github/workflows/f18-g12-final-qualification.yml'
@@ -50,6 +51,7 @@ jobs:
           python3 tools/f18_g8_contract.py
           python3 tools/f18_g9_contract.py
           python3 tools/f18_g10_contract.py
+          python3 tools/f18_g10b_contract.py
 
       - name: Complete application qualification
         working-directory: apps/electrosim
@@ -67,6 +69,7 @@ jobs:
           flutter test test/f17_lan_sync_test.dart
           flutter test test/f18_g8_tp_teacher_student_test.dart
           flutter test test/f18_g9_internal_eie_test.dart
+          flutter test test/f18_g10b_library_ui_test.dart
 
       - name: Critical canvas and V2 library checks
         run: |
@@ -168,6 +171,9 @@ jobs:
           11. Full teacher/student troubleshooting TP lifecycle through read-only close.
           12. LAN browser/QR student synchronization.
           13. Teacher-only EIE; no student coach; healthy circuit remains silent.
+          14. Design > Bibliothèque de schémas shows the two V2 schemas and opens each in the simulator.
+          15. Maintenance > Bibliothèque de pannes shows the two autonomous faults and launches each faulty circuit.
+          16. Library search/filter work and no teacher-only root cause text is exposed.
           
           If every item passes, report exactly:
           F18_PHYSICAL_MAC_PASS

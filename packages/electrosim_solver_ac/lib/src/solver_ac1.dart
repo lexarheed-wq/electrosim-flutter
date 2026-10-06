@@ -948,31 +948,43 @@ AcComplex? _componentImpedance(
   List<Ac1SolverDiagnostic> diagnostics,
 ) {
   final double omega = 2.0 * math.pi * frequencyHz;
+
+  AcComplex? invalid() {
+    diagnostics.add(
+      Ac1SolverDiagnostic(
+        code: Ac1DiagnosticCode.invalidParameter,
+        severity: Ac1DiagnosticSeverity.error,
+        message:
+            'Invalid canonical parameters for AC1 component ${component.id.value}.',
+        componentId: component.id,
+      ),
+    );
+    return null;
+  }
+
   switch (physics.electricalLaw) {
     case ComponentElectricalLaw.resistive:
       final double? resistance = _positiveParameter(
         component.parameters,
         ComponentParameterKeys.resistanceOhm,
       );
-      if (resistance != null) {
-        return AcComplex.real(resistance);
-      }
+      return resistance == null ? invalid() : AcComplex.real(resistance);
     case ComponentElectricalLaw.inductor:
       final double? inductance = _positiveParameter(
         component.parameters,
         ComponentParameterKeys.inductanceH,
       );
-      if (inductance != null) {
-        return AcComplex(0.0, omega * inductance);
-      }
+      return inductance == null
+          ? invalid()
+          : AcComplex(0.0, omega * inductance);
     case ComponentElectricalLaw.capacitor:
       final double? capacitance = _positiveParameter(
         component.parameters,
         ComponentParameterKeys.capacitanceF,
       );
-      if (capacitance != null) {
-        return AcComplex(0.0, -1.0 / (omega * capacitance));
-      }
+      return capacitance == null
+          ? invalid()
+          : AcComplex(0.0, -1.0 / (omega * capacitance));
     case ComponentElectricalLaw.acImpedance:
       final Object? rRaw =
           component.parameters[ComponentParameterKeys.resistanceOhm];
@@ -988,12 +1000,7 @@ AcComplex? _componentImpedance(
           return AcComplex(resistance, reactance);
         }
       }
-    case ComponentElectricalLaw.capacitor:
-    case ComponentElectricalLaw.inductor:
-    case ComponentElectricalLaw.resistive:
-    case ComponentElectricalLaw.acImpedance:
-      // Parameter validation falls through to the canonical invalid-parameter
-      // diagnostic below.
+      return invalid();
     case ComponentElectricalLaw.binarySwitch:
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
@@ -1015,15 +1022,6 @@ AcComplex? _componentImpedance(
       );
       return null;
   }
-  diagnostics.add(
-    Ac1SolverDiagnostic(
-      code: Ac1DiagnosticCode.invalidParameter,
-      severity: Ac1DiagnosticSeverity.error,
-      message: 'Invalid canonical parameters for AC1 component ${component.id.value}.',
-      componentId: component.id,
-    ),
-  );
-  return null;
 }
 
 double? _positiveParameter(Map<String, Object?> parameters, String key) {
@@ -1080,7 +1078,16 @@ Ac1BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.capacitor:
       return Ac1BranchKind.capacitor;
     case ComponentElectricalLaw.acImpedance:
-    default:
+    case ComponentElectricalLaw.binarySwitch:
+    case ComponentElectricalLaw.protectionSwitch:
+    case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.loadWyeThreePhase:
+    case ComponentElectricalLaw.loadDeltaThreePhase:
+    case ComponentElectricalLaw.converter:
+    case ComponentElectricalLaw.storage:
+    case ComponentElectricalLaw.unsupported:
       return Ac1BranchKind.impedance;
   }
 }

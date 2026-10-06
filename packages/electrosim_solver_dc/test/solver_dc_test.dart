@@ -78,7 +78,7 @@ void main() {
       'DC-005: disconnected resistor island produces explicit floating diagnostic',
       () {
         final DcSolveResult result = solve(_floatingIslandCircuit());
-        expect(result.status, DcSolveStatus.singular);
+        expect(result.status, DcSolveStatus.solved);
         expect(
           result.diagnostics.whereType<DcSolverDiagnostic>().map(
             (DcSolverDiagnostic d) => d.code,

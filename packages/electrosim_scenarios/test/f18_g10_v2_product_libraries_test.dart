@@ -82,9 +82,11 @@ void main() {
         expect(result.isValid, isTrue);
         expect(result.repairable, isTrue);
 
-        final String student = jsonEncode(scenario.studentPayload())
-            .toLowerCase();
-        final String privatePayload = scenario.canonicalPrivatePayload()
+        final String student = jsonEncode(
+          scenario.studentPayload(),
+        ).toLowerCase();
+        final String privatePayload = scenario
+            .canonicalPrivatePayload()
             .toLowerCase();
 
         expect(student, isNot(contains('teachertruth')));

@@ -87,7 +87,8 @@ final class SolverPV {
 
     final List<ComponentInstance> inverters = circuit.components
         .where(
-          (ComponentInstance component) => component.modelType == 'pv_inverter',
+          (ComponentInstance component) =>
+              _hasFunctionalRole(component, ComponentFunctionalRole.pvInverter),
         )
         .toList(growable: false);
     if (inverters.isEmpty) {
@@ -116,12 +117,13 @@ final class SolverPV {
     final List<ComponentInstance> controllers = circuit.components
         .where(
           (ComponentInstance component) =>
-              component.modelType == 'pv_controller',
+              _hasFunctionalRole(component, ComponentFunctionalRole.pvController),
         )
         .toList(growable: false);
     final List<ComponentInstance> batteries = circuit.components
         .where(
-          (ComponentInstance component) => component.modelType == 'pv_battery',
+          (ComponentInstance component) =>
+              _hasFunctionalRole(component, ComponentFunctionalRole.pvBattery),
         )
         .toList(growable: false);
     if (controllers.length > 1 || batteries.length > 1) {
@@ -267,7 +269,7 @@ final class SolverPV {
         circuit.components
             .where(
               (ComponentInstance component) =>
-                  component.modelType == 'pv_resistive_load',
+                  _hasFunctionalRole(component, ComponentFunctionalRole.pvLoad),
             )
             .toList(growable: false)
           ..sort(
@@ -1557,3 +1559,11 @@ final class _InverterAvailability {
   final PvInverterState state;
   final double deratingFactor;
 }
+
+
+bool _hasFunctionalRole(
+  ComponentInstance component,
+  ComponentFunctionalRole role,
+) =>
+    CoreComponentPhysicsContracts.resolveComponent(component).functionalRole ==
+    role;

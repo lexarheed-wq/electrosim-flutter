@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-G11_MERGED_SHA = "2b481cba17d27644c5671ef99dad9d1e7786ebd9"
+PRODUCT_BASE_SHA = "236f2e011d286d819c22960a27b076c9b6b7e5cb"
 errors: list[str] = []
 checks: dict[str, bool] = {}
 
@@ -36,6 +36,7 @@ for path in (
     "docs/f18/g10/F18_G10_REPORT.md",
     "docs/f18/g11/F18_G11_REPORT.md",
     "docs/f18/g12/F18_G12_REPORT.md",
+    ".github/workflows/f18-g10b-library-ui.yml",
     ".github/workflows/f18-g11-tests-audits.yml",
     ".github/workflows/f18-g12-final-qualification.yml",
 ):
@@ -72,9 +73,9 @@ check(
     ),
 )
 
-# G12 must not change the product after the fully-qualified G11 integration SHA.
+# G12R2 must not change the product after the G10B + G11 qualified product SHA.
 changed = subprocess.check_output(
-    ["git", "diff", "--name-only", f"{G11_MERGED_SHA}..HEAD"],
+    ["git", "diff", "--name-only", f"{PRODUCT_BASE_SHA}..HEAD"],
     cwd=ROOT,
     text=True,
 ).splitlines()
@@ -91,7 +92,7 @@ unexpected = [
         for prefix in allowed_prefixes
     )
 ]
-check("g12-no-product-code-drift-after-g11", not unexpected)
+check("g12r2-no-product-code-drift-after-g10b-g11", not unexpected)
 
 workflow = read(".github/workflows/f18-g12-final-qualification.yml")
 check("g12-read-only-repository", "contents: read" in workflow)
@@ -105,8 +106,8 @@ check("g12-physical-marker-pending", "F18_PHYSICAL_MAC_PASS=PENDING_USER_VALIDAT
 payload = {
     "phase": "F18-G12",
     "status": "PASS" if not errors else "FAIL",
-    "g11MergedSha": G11_MERGED_SHA,
-    "changedSinceG11": changed,
+    "productBaseSha": PRODUCT_BASE_SHA,
+    "changedSinceProductBase": changed,
     "unexpectedProductChanges": unexpected,
     "checks": checks,
     "errors": errors,

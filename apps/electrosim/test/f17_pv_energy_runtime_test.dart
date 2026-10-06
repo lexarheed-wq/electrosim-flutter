@@ -33,6 +33,21 @@ void main() {
       expect(snapshot.dcResult, isNull);
       expect(snapshot.ac1Result, isNull);
       expect(snapshot.ac3Result, isNull);
+
+      final operating = snapshot.componentOperatingState(ComponentId('inv'))!;
+      expect(operating.code.name, 'energized');
+      expect(
+        operating.voltageV,
+        closeTo(snapshot.pv.inverterOutputVoltageRmsV, 1e-9),
+      );
+      expect(
+        operating.currentA,
+        closeTo(snapshot.pv.inverterOutputCurrentRmsA, 1e-9),
+      );
+      expect(
+        operating.powerW,
+        closeTo(snapshot.pv.inverterOutputPowerW, 1e-9),
+      );
     });
 
     test('converts the solved PV result into a balanced energy sample', () {

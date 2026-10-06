@@ -892,7 +892,8 @@ class _EiePanel extends StatelessWidget {
       children: <Widget>[
         const ElectroSimSectionTitle(
           title: 'EIE',
-          subtitle: 'Intelligence interne fondée uniquement sur les preuves moteur',
+          subtitle:
+              'Intelligence interne fondée uniquement sur les preuves moteur',
         ),
         const SizedBox(height: ElectroSimSpacing.md),
         ElectroSimStatusChip(

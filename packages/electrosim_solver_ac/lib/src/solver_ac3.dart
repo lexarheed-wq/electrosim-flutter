@@ -516,12 +516,20 @@ _CompiledAc3Model _compileModel(
       continue;
     }
 
-    if (!_supportedAc3ComponentModels.contains(component.modelType)) {
+    final ComponentPhysicsContract? physics =
+        CoreComponentPhysicsContracts.resolve(component.modelType);
+    final ComponentModelContract? structural =
+        CoreComponentModelContracts.registry.resolve(component.modelType);
+    if (physics == null ||
+        structural == null ||
+        !structural.supportsMode(ElectricalMode.ac3) ||
+        physics.electricalLaw == ComponentElectricalLaw.unsupported) {
       diagnostics.add(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.unsupportedComponentModel,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'Unsupported M5 AC3 component model ${component.modelType}.',
+          message:
+              'Unsupported canonical AC3 component model ${component.modelType}.',
           componentId: component.id,
         ),
       );
@@ -638,20 +646,23 @@ _CompiledAc3Model _compileModel(
       continue;
     }
 
-    switch (component.modelType) {
-      case 'switch':
-      case 'switch_spst':
-        final Object? rawClosed = component.controlState['closed'];
-        if (rawClosed is! bool) {
+    switch (physics.electricalLaw) {
+      case ComponentElectricalLaw.binarySwitch:
+        final bool? closed = _closedFromControlLawAc3(
+          component,
+          physics.controlLaw,
+        );
+        if (closed == null) {
           diagnostics.add(
             Ac3SolverDiagnostic(
               code: Ac3DiagnosticCode.invalidParameter,
               severity: Ac3DiagnosticSeverity.error,
-              message: 'AC3 switch requires boolean controlState.closed.',
+              message:
+                  'AC3 switching component ${component.id.value} has invalid canonical control state.',
               componentId: component.id,
             ),
           );
-        } else if (rawClosed) {
+        } else if (closed) {
           elements.add(
             _Ac3Element(
               id: 'component:${component.id.value}',
@@ -667,31 +678,36 @@ _CompiledAc3Model _compileModel(
         } else {
           addOpen();
         }
-        continue;
-      case 'push_button_no':
-      case 'push_button_nc':
-        final Object? rawPressed = component.controlState['pressed'];
-        if (rawPressed is! bool) {
+      case ComponentElectricalLaw.protectionSwitch:
+        final Object? rawRating =
+            component.parameters[ProtectionRating.ratedCurrentKey];
+        final Object? rawClosed = component.controlState['closed'];
+        final Object? rawTripped = component.controlState['tripped'];
+        if (rawRating is! num ||
+            !rawRating.toDouble().isFinite ||
+            rawRating.toDouble() <= 0.0 ||
+            (rawClosed != null && rawClosed is! bool) ||
+            (rawTripped != null && rawTripped is! bool)) {
           diagnostics.add(
             Ac3SolverDiagnostic(
               code: Ac3DiagnosticCode.invalidParameter,
               severity: Ac3DiagnosticSeverity.error,
-              message: 'AC3 push-button requires boolean controlState.pressed.',
+              message:
+                  'AC3 protection requires a valid canonical calibre and boolean control state.',
               componentId: component.id,
             ),
           );
           continue;
         }
-        final bool closed = component.modelType == 'push_button_no'
-            ? rawPressed
-            : !rawPressed;
-        if (closed) {
+        final bool closed = (rawClosed as bool?) ?? true;
+        final bool tripped = (rawTripped as bool?) ?? false;
+        if (closed && !tripped) {
           elements.add(
             _Ac3Element(
               id: 'component:${component.id.value}',
               modelType: component.modelType,
               kind: _Ac3ElementKind.idealVoltage,
-              branchKind: Ac3BranchKind.idealSwitch,
+              branchKind: Ac3BranchKind.idealProtection,
               fromNodeId: fromNode,
               toNodeId: toNode,
               value: AcComplex.zero,
@@ -701,10 +717,13 @@ _CompiledAc3Model _compileModel(
         } else {
           addOpen();
         }
-        continue;
-      default:
+      case ComponentElectricalLaw.resistive:
+      case ComponentElectricalLaw.capacitor:
+      case ComponentElectricalLaw.inductor:
+      case ComponentElectricalLaw.acImpedance:
         final AcComplex? impedance = _componentImpedance(
           component,
+          physics,
           frequencyHz,
           diagnostics,
         );
@@ -731,11 +750,37 @@ _CompiledAc3Model _compileModel(
             id: 'component:${component.id.value}',
             modelType: component.modelType,
             kind: _Ac3ElementKind.impedance,
-            branchKind: _branchKindForModel(component.modelType),
+            branchKind: _branchKindForPhysics(physics),
             fromNodeId: fromNode,
             toNodeId: toNode,
             value: impedance,
             phase: phase,
+          ),
+        );
+      case ComponentElectricalLaw.feedThrough:
+      case ComponentElectricalLaw.motorThreePhase:
+      case ComponentElectricalLaw.loadWyeThreePhase:
+      case ComponentElectricalLaw.loadDeltaThreePhase:
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.unsupportedComponentModel,
+            severity: Ac3DiagnosticSeverity.error,
+            message:
+                'Canonical AC3 multi-branch law ${physics.electricalLaw.name} was not compiled by its topology handler.',
+            componentId: component.id,
+          ),
+        );
+      case ComponentElectricalLaw.diode:
+      case ComponentElectricalLaw.converter:
+      case ComponentElectricalLaw.storage:
+      case ComponentElectricalLaw.unsupported:
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.unsupportedComponentModel,
+            severity: Ac3DiagnosticSeverity.error,
+            message:
+                'Electrical law ${physics.electricalLaw.name} is not supported by SolverAC3.',
+            componentId: component.id,
           ),
         );
     }

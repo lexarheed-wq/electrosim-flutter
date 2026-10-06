@@ -1771,6 +1771,30 @@ Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
   }
 }
 
+PhaseTag? _singlePhase(Iterable<Terminal> terminals) {
+  final Set<PhaseTag> phases = terminals
+      .map((Terminal terminal) => terminal.phase)
+      .where(_isLinePhase)
+      .toSet();
+  return phases.length == 1 ? phases.single : null;
+}
+
+bool _isLinePhase(PhaseTag phase) =>
+    phase == PhaseTag.l1 || phase == PhaseTag.l2 || phase == PhaseTag.l3;
+
+double _defaultPhaseDegrees(PhaseTag phase) {
+  switch (phase) {
+    case PhaseTag.l1:
+      return 0.0;
+    case PhaseTag.l2:
+      return -120.0;
+    case PhaseTag.l3:
+      return 120.0;
+    default:
+      return 0.0;
+  }
+}
+
 String _selectReferenceNode(CircuitState circuit, TopologyGraph topology) {
   for (final SourceInstance source in circuit.sources) {
     for (final Terminal terminal in source.terminals) {

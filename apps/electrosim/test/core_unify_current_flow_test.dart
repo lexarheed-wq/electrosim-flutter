@@ -1,7 +1,7 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/runtime/electrosim_runtime_engine.dart';
+import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 
 void main() {
   test('DC wire flow follows solved current, not stored drawing direction', () {

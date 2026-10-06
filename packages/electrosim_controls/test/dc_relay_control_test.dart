@@ -46,6 +46,24 @@ void main() {
     expect(outcome.result.branch('component:contact').kind.name, 'openCircuit');
     expect(outcome.result.branch('component:contact').currentA, 0.0);
   });
+  test('DC self-interrupting NC relay is reported as chatter', () {
+    final CircuitState circuit = _selfInterruptingRelayCircuit();
+    final ElectromechanicalDcOutcome outcome = controls.solveDc(
+      circuit: circuit,
+      topology: topologyEngine.compile(circuit),
+    );
+
+    expect(outcome.result.isSolved, isTrue);
+    expect(outcome.converged, isFalse);
+    expect(
+      outcome.issues.any(
+        (ElectromechanicalControlIssue issue) =>
+            issue.code ==
+            ElectromechanicalControlIssueCode.oscillatingControlState,
+      ),
+      isTrue,
+    );
+  });
 }
 
 CircuitState _relayCircuit(double voltageV) {
@@ -118,3 +136,53 @@ Connection _w(String id, String from, String to) => Connection(
   fromTerminalId: TerminalId(from),
   toTerminalId: TerminalId(to),
 );
+
+CircuitState _selfInterruptingRelayCircuit() {
+  return CircuitState(
+    circuitId: CircuitId('dc-relay-chatter'),
+    revision: 0,
+    mode: ElectricalMode.dc,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('v1'),
+        modelType: 'dc_voltage_source',
+        terminals: <Terminal>[
+          _t('svp', '+', phase: PhaseTag.dcPositive),
+          _t('svn', '−', phase: PhaseTag.dcNegative),
+        ],
+        parameters: const <String, Object?>{'voltageV': 24.0},
+      ),
+    ],
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId('sk1'),
+        modelType: 'relay_coil',
+        terminals: <Terminal>[
+          _t('sa1', 'A1', role: TerminalRole.coilA1),
+          _t('sa2', 'A2', role: TerminalRole.coilA2),
+        ],
+        parameters: const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 120.0,
+          ComponentParameterKeys.coilPickupVoltageV: 18.0,
+          ComponentParameterKeys.coilDropoutVoltageV: 6.0,
+        },
+        controlState: const <String, Object?>{'actuated': false},
+      ),
+      ComponentInstance(
+        id: ComponentId('snc'),
+        modelType: 'relay_contact_nc',
+        terminals: <Terminal>[
+          _t('s11', '11', role: TerminalRole.auxiliaryNormallyClosed),
+          _t('s12', '12', role: TerminalRole.auxiliaryNormallyClosed),
+        ],
+        parameters: const <String, Object?>{'linkedRelayId': 'sk1'},
+        controlState: const <String, Object?>{'actuated': false},
+      ),
+    ],
+    connections: <Connection>[
+      _w('supply-coil', 'svp', 'sa1'),
+      _w('coil-nc', 'sa2', 's11'),
+      _w('nc-return', 's12', 'svn'),
+    ],
+  );
+}

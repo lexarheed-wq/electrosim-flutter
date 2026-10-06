@@ -46,6 +46,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: Duration.zero,
       previousProtectionState: _snapshot.protectionState,
       previousContactorStates: _currentContactorStates(),
+      previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
     );
     notifyListeners();
@@ -91,6 +92,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: elapsed,
       previousProtectionState: _snapshot.protectionState,
       previousContactorStates: _currentContactorStates(),
+      previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
     );
     _simulatedTime += elapsed;
@@ -117,6 +119,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: Duration.zero,
       previousProtectionState: previous.reset(componentId),
       previousContactorStates: _currentContactorStates(),
+      previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
     );
     notifyListeners();

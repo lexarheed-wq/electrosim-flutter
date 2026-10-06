@@ -310,6 +310,9 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       );
 
   ComponentOperatingCode? _directControlState(ComponentInstance component) {
+    final ComponentPhysicsContract physics =
+        CoreComponentPhysicsContracts.resolveComponent(component);
+    if (!physics.isSwitching) return null;
     final Object? rawClosed = component.controlState['closed'];
     if (rawClosed is bool) {
       return rawClosed
@@ -341,56 +344,55 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
     required double? currentA,
     required double? powerW,
   }) {
+    final ComponentOperatingEnvelope envelope =
+        ComponentOperatingEnvelope.fromComponent(component);
     final List<OperatingWarning> warnings = <OperatingWarning>[];
-    _checkLimit(
-      component.parameters,
-      'maxVoltageV',
-      voltageV,
-      OperatingWarningCode.overVoltage,
-      warnings,
+    _checkLimitValue(
+      limit: envelope.effectiveMaxVoltageV,
+      measured: voltageV,
+      overCode: OperatingWarningCode.overVoltage,
+      label: 'tension',
+      warnings: warnings,
     );
-    _checkLimit(
-      component.parameters,
-      'maxCurrentA',
-      currentA,
-      OperatingWarningCode.overCurrent,
-      warnings,
+    _checkLimitValue(
+      limit: envelope.effectiveMaxCurrentA,
+      measured: currentA,
+      overCode: OperatingWarningCode.overCurrent,
+      label: 'courant',
+      warnings: warnings,
     );
-    _checkLimit(
-      component.parameters,
-      'maxPowerW',
-      powerW,
-      OperatingWarningCode.overPower,
-      warnings,
+    _checkLimitValue(
+      limit: envelope.effectiveMaxPowerW,
+      measured: powerW,
+      overCode: OperatingWarningCode.overPower,
+      label: 'puissance',
+      warnings: warnings,
     );
     return warnings;
   }
 
-  void _checkLimit(
-    Map<String, Object?> parameters,
-    String key,
-    double? measured,
-    OperatingWarningCode overCode,
-    List<OperatingWarning> warnings,
-  ) {
-    if (measured == null || !parameters.containsKey(key)) return;
-    final Object? raw = parameters[key];
-    if (raw is! num ||
-        !raw.toDouble().isFinite ||
-        raw.toDouble() <= zeroTolerance) {
+  void _checkLimitValue({
+    required double? limit,
+    required double? measured,
+    required OperatingWarningCode overCode,
+    required String label,
+    required List<OperatingWarning> warnings,
+  }) {
+    if (limit == null || measured == null) return;
+    if (!limit.isFinite || limit <= zeroTolerance) {
       warnings.add(
         OperatingWarning(
           code: OperatingWarningCode.invalidNominalLimit,
-          message: '$key must be finite and greater than zero.',
+          message: 'La limite de $label doit être finie et strictement positive.',
         ),
       );
       return;
     }
-    if (measured > raw.toDouble() + zeroTolerance) {
+    if (measured > limit + zeroTolerance) {
       warnings.add(
         OperatingWarning(
           code: overCode,
-          message: '$key is exceeded by solved electrical evidence.',
+          message: 'La $label calculée dépasse l’enveloppe physique admissible.',
         ),
       );
     }

@@ -233,9 +233,14 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               (runtime?.pvResult?.isSolved ?? false)
           ? runtime!.pvResult!.batterySoc
           : 0;
+      final componentState = runtime?.componentOperatingState(component.id);
+      final bool stateAllowsEnergy =
+          componentState?.code == ComponentOperatingCode.energized ||
+          componentState?.code == ComponentOperatingCode.overloaded;
       final bool energized =
           widget.simulationRunning &&
           (runtime?.solved ?? false) &&
+          stateAllowsEnergy &&
           currentA.abs() > 1e-6;
       final String type = component.modelType.toLowerCase();
       final bool pressed = component.controlState['pressed'] == true;
@@ -274,7 +279,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         voltageV: voltageV,
         batterySoc: batterySoc,
         ratedCurrentA:
-            (component.parameters['ratedCurrentA'] as num?)?.toDouble() ?? 1,
+            (component.parameters[ProtectionRating.ratedCurrentKey] as num?)
+                    ?.toDouble() ??
+                0,
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
@@ -646,7 +653,9 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
         continue;
       }
-      final double currentA = _connectionCurrentA(runtime, connection);
+      final ConnectionCurrentEvidence flow =
+          runtime.connectionCurrentEvidence(connection);
+      final double currentA = flow.magnitudeA;
       if (currentA <= 1e-6) continue;
 
       final Offset? start =
@@ -680,69 +689,18 @@ class _F9CanvasOverlayPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round,
       );
 
-      final double speed =
+      final double baseSpeed =
           22 + math.min(78, math.sqrt(math.max(0, currentA)) * 28);
+      final double direction = flow.directionKnown && !flow.alternating
+          ? (flow.signedCurrentA >= 0 ? 1.0 : -1.0)
+          : 0.0;
       _paintMovingDashes(
         canvas,
         path,
-        speed: speed,
+        speed: baseSpeed * direction,
         animationValue: animationValue,
       );
     }
-  }
-
-  double _connectionCurrentA(
-    ElectroSimRuntimeSnapshot runtime,
-    Connection connection,
-  ) {
-    final String? nodeId =
-        runtime.topology.terminalToNode[connection.fromTerminalId];
-    if (nodeId == null) return 0;
-
-    double current = 0;
-    final dc = runtime.dcResult;
-    if (dc != null && dc.isSolved) {
-      for (final branch in dc.branchResults) {
-        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
-        final double? branchCurrent = branch.currentA;
-        if (branchCurrent == null || !branchCurrent.isFinite) continue;
-        current = math.max(current, branchCurrent.abs());
-      }
-      return current;
-    }
-    final ac1 = runtime.ac1Result;
-    if (ac1 != null && ac1.isSolved) {
-      for (final branch in ac1.branchResults) {
-        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
-        final double? branchCurrent = branch.current?.magnitude;
-        if (branchCurrent == null || !branchCurrent.isFinite) continue;
-        current = math.max(current, branchCurrent);
-      }
-      return current;
-    }
-    final ac3 = runtime.ac3Result;
-    if (ac3 != null && ac3.isSolved) {
-      for (final branch in ac3.branchResults) {
-        if (branch.fromNodeId != nodeId && branch.toNodeId != nodeId) continue;
-        final double? branchCurrent = branch.current?.magnitude;
-        if (branchCurrent == null || !branchCurrent.isFinite) continue;
-        current = math.max(current, branchCurrent);
-      }
-      return current;
-    }
-
-    final pv = runtime.pvResult;
-    if (pv != null && pv.isSolved) {
-      return switch (connection.phase) {
-        PhaseTag.dcPositive || PhaseTag.dcNegative => pv.pvDrawnCurrentA.abs(),
-        PhaseTag.l1 || PhaseTag.neutral => pv.inverterOutputCurrentRmsA.abs(),
-        _ => math.max(
-          pv.pvDrawnCurrentA.abs(),
-          pv.inverterOutputCurrentRmsA.abs(),
-        ),
-      };
-    }
-    return current;
   }
 
   void _paintMovingDashes(

@@ -1401,12 +1401,40 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Map<String, Object?> _defaultParametersFor(String keyName) =>
       switch (keyName) {
-        'lamp' => const <String, Object?>{'resistanceOhm': 24.0},
-        'resistor' => const <String, Object?>{'resistanceOhm': 100.0},
-        'buzzer' => const <String, Object?>{'resistanceOhm': 48.0},
-        'fan-dc' => const <String, Object?>{'resistanceOhm': 12.0},
-        'motor-dc' => const <String, Object?>{'resistanceOhm': 8.0},
-        'relay-coil' => const <String, Object?>{'resistanceOhm': 120.0},
+        'lamp' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 24.0,
+          ReceiverNominalRating.voltageKey: 24.0,
+          ReceiverNominalRating.currentKey: 1.0,
+          ReceiverNominalRating.powerKey: 24.0,
+          ComponentParameterKeys.thermalWithstandSeconds: 0.5,
+        },
+        'resistor' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 100.0,
+        },
+        'buzzer' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 48.0,
+          ReceiverNominalRating.voltageKey: 24.0,
+          ReceiverNominalRating.currentKey: 0.5,
+          ReceiverNominalRating.powerKey: 12.0,
+        },
+        'fan-dc' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 12.0,
+          ReceiverNominalRating.voltageKey: 24.0,
+          ReceiverNominalRating.currentKey: 2.0,
+          ReceiverNominalRating.powerKey: 48.0,
+        },
+        'motor-dc' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 8.0,
+          ReceiverNominalRating.voltageKey: 24.0,
+          ReceiverNominalRating.currentKey: 3.0,
+          ReceiverNominalRating.powerKey: 72.0,
+        },
+        'relay-coil' => const <String, Object?>{
+          ComponentParameterKeys.resistanceOhm: 120.0,
+          ReceiverNominalRating.voltageKey: 24.0,
+          ReceiverNominalRating.currentKey: 0.2,
+          ReceiverNominalRating.powerKey: 4.8,
+        },
         'breaker' => const <String, Object?>{
           ProtectionRating.ratedCurrentKey: 10.0,
         },

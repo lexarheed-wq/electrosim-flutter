@@ -54,19 +54,19 @@ abstract final class F18G7PropertyPresenter {
         runtimeStateLabel = _operatingStateLabel(state.code);
         _addRuntimeQuantity(
           runtimeValues,
-          'Tension moteur',
+          'Tension',
           state.voltageV,
           'V',
         );
         _addRuntimeQuantity(
           runtimeValues,
-          'Courant moteur',
+          'Courant',
           state.currentA,
           'A',
         );
         _addRuntimeQuantity(
           runtimeValues,
-          'Puissance moteur',
+          'Puissance',
           state.powerW,
           'W',
         );
@@ -74,7 +74,7 @@ abstract final class F18G7PropertyPresenter {
         for (final OperatingWarning warning in state.warnings) {
           runtimeValues.add(
             F18G7PropertyRow(
-              label: 'Alerte moteur',
+              label: 'Alerte',
               value: _warningLabel(warning.code),
             ),
           );
@@ -92,19 +92,19 @@ abstract final class F18G7PropertyPresenter {
         final pv = runtimeSnapshot.pv;
         _addRuntimeQuantity(
           runtimeValues,
-          'Tension PV moteur',
+          'Tension PV',
           pv.pvOperatingVoltageV,
           'V',
         );
         _addRuntimeQuantity(
           runtimeValues,
-          'Courant PV moteur',
+          'Courant PV',
           pv.pvDrawnCurrentA,
           'A',
         );
         _addRuntimeQuantity(
           runtimeValues,
-          'Puissance PV moteur',
+          'Puissance PV',
           pv.pvDrawnPowerW,
           'W',
         );
@@ -225,7 +225,10 @@ abstract final class F18G7PropertyPresenter {
     'resistanceOhm': 'Résistance',
     'coilResistanceOhm': 'Résistance bobine',
     'impedanceOhm': 'Impédance',
-    'ratedCurrentA': 'Calibre',
+    ProtectionRating.ratedCurrentKey: 'Calibre',
+    ReceiverNominalRating.voltageKey: 'Tension nominale',
+    ReceiverNominalRating.currentKey: 'Courant nominal',
+    ReceiverNominalRating.powerKey: 'Puissance nominale',
     'nominalCurrentA': 'Courant nominal',
     'maxVoltageV': 'Tension maximale',
     'maxCurrentA': 'Courant maximal',
@@ -266,6 +269,7 @@ abstract final class F18G7PropertyPresenter {
       'voltageV' ||
       'voltageRmsV' ||
       'phaseVoltageRmsV' ||
+      ReceiverNominalRating.voltageKey ||
       'maxVoltageV' ||
       'forwardVoltageV' ||
       'reverseBreakdownVoltageV' ||
@@ -273,11 +277,12 @@ abstract final class F18G7PropertyPresenter {
       'coilDropoutVoltageV' => ' V',
       'currentA' ||
       'currentRmsA' ||
-      'ratedCurrentA' ||
+      ProtectionRating.ratedCurrentKey ||
+      ReceiverNominalRating.currentKey ||
       'nominalCurrentA' ||
       'maxCurrentA' => ' A',
       'resistanceOhm' || 'coilResistanceOhm' || 'impedanceOhm' => ' Ω',
-      'maxPowerW' || 'powerW' => ' W',
+      ReceiverNominalRating.powerKey || 'maxPowerW' || 'powerW' => ' W',
       'frequencyHz' => ' Hz',
       'phaseDeg' => ' °',
       'capacitanceF' => ' F',

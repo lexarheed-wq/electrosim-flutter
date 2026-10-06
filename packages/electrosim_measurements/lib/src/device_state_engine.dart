@@ -87,8 +87,9 @@ final class DeviceStateEngine {
       );
     }
 
-    if (component.modelType == 'switch' ||
-        component.modelType == 'switch_spst') {
+    final ComponentPhysicsContract physics =
+        CoreComponentPhysicsContracts.resolveComponent(component);
+    if (physics.isSwitching) {
       final Object? rawClosed = component.controlState['closed'];
       if (rawClosed is bool) {
         return ComponentOperatingState(
@@ -174,63 +175,58 @@ final class DeviceStateEngine {
     ComponentInstance component,
     DcBranchResult branch,
   ) {
+    final ComponentOperatingEnvelope envelope =
+        ComponentOperatingEnvelope.fromComponent(component);
     final List<OperatingWarning> warnings = <OperatingWarning>[];
-    _checkLimit(
-      component.parameters,
-      'maxVoltageV',
-      branch.voltageV.abs(),
-      OperatingWarningCode.overVoltage,
-      'Voltage exceeds maxVoltageV.',
-      warnings,
+    _checkLimitValue(
+      limit: envelope.effectiveMaxVoltageV,
+      measured: branch.voltageV.abs(),
+      overCode: OperatingWarningCode.overVoltage,
+      label: 'tension',
+      warnings: warnings,
     );
-    if (branch.currentA != null) {
-      _checkLimit(
-        component.parameters,
-        'maxCurrentA',
-        branch.currentA!.abs(),
-        OperatingWarningCode.overCurrent,
-        'Current exceeds maxCurrentA.',
-        warnings,
-      );
-    }
-    if (branch.powerW != null) {
-      _checkLimit(
-        component.parameters,
-        'maxPowerW',
-        branch.powerW!.abs(),
-        OperatingWarningCode.overPower,
-        'Power exceeds maxPowerW.',
-        warnings,
-      );
-    }
+    _checkLimitValue(
+      limit: envelope.effectiveMaxCurrentA,
+      measured: branch.currentA?.abs(),
+      overCode: OperatingWarningCode.overCurrent,
+      label: 'courant',
+      warnings: warnings,
+    );
+    _checkLimitValue(
+      limit: envelope.effectiveMaxPowerW,
+      measured: branch.powerW?.abs(),
+      overCode: OperatingWarningCode.overPower,
+      label: 'puissance',
+      warnings: warnings,
+    );
     return warnings;
   }
 
-  void _checkLimit(
-    Map<String, Object?> parameters,
-    String key,
-    double measured,
-    OperatingWarningCode overCode,
-    String overMessage,
-    List<OperatingWarning> warnings,
-  ) {
-    if (!parameters.containsKey(key)) {
-      return;
-    }
-    final Object? raw = parameters[key];
-    if (raw is! num ||
-        !raw.toDouble().isFinite ||
-        raw.toDouble() <= zeroTolerance) {
+  void _checkLimitValue({
+    required double? limit,
+    required double? measured,
+    required OperatingWarningCode overCode,
+    required String label,
+    required List<OperatingWarning> warnings,
+  }) {
+    if (limit == null || measured == null) return;
+    if (!limit.isFinite || limit <= zeroTolerance) {
       warnings.add(
         OperatingWarning(
           code: OperatingWarningCode.invalidNominalLimit,
-          message: '$key must be finite and greater than zero.',
+          message: 'La limite de $label doit être finie et strictement positive.',
         ),
       );
       return;
     }
-    if (measured > raw.toDouble() + zeroTolerance) {
-      warnings.add(OperatingWarning(code: overCode, message: overMessage));
+    if (measured > limit + zeroTolerance) {
+      warnings.add(
+        OperatingWarning(
+          code: overCode,
+          message: 'La $label calculée dépasse l’enveloppe physique admissible.',
+        ),
+      );
     }
   }
+
 }

@@ -321,7 +321,7 @@ class _PropertiesPanel extends StatelessWidget {
           if (propertySnapshot != null) ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             Text(
-              'État moteur',
+              'État physique',
               key: const Key('properties-runtime-heading'),
               style: Theme.of(context).textTheme.labelLarge,
             ),
@@ -348,7 +348,7 @@ class _PropertiesPanel extends StatelessWidget {
                 key: const Key('properties-runtime-evidence'),
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
-                title: const Text('Preuves moteur'),
+                title: const Text('Preuves de calcul'),
                 children: propertySnapshot.evidenceIds
                     .map(
                       (String evidence) => Align(

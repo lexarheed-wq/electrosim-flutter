@@ -1,5 +1,6 @@
 library electrosim_measurements;
 
+export 'src/component_health_engine.dart';
 export 'src/device_state_engine.dart';
 export 'src/device_state_domain_extensions.dart';
 export 'src/measurement_engine.dart';

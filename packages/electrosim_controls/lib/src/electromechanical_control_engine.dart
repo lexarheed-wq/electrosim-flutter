@@ -9,6 +9,7 @@ enum ElectromechanicalControlIssueCode {
   missingCoilBranch,
   missingLinkedContactor,
   solveFailed,
+  oscillatingControlState,
   iterationLimitExceeded,
 }
 
@@ -132,12 +133,12 @@ final class ElectromechanicalControlEngine {
         <ElectromechanicalControlIssue>[];
     Map<ComponentId, bool> states = _initialStates(
       circuit,
-      'relay_coil',
       issues,
       previousStates,
     );
     CircuitState effective = _applyStates(circuit, states, issues);
     DcSolveResult result = solver.solve(effective, topology);
+    final Set<String> seenStates = <String>{_stateSignature(states)};
 
     for (var iteration = 1; iteration <= maxIterations; iteration++) {
       if (!result.isSolved) {
@@ -172,6 +173,24 @@ final class ElectromechanicalControlEngine {
           issues: issues,
           iterations: iteration,
           converged: true,
+        );
+      }
+
+      final String nextSignature = _stateSignature(next);
+      if (!seenStates.add(nextSignature)) {
+        issues.add(
+          const ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.oscillatingControlState,
+            message: 'DC relay control entered a repeating state cycle (chatter).',
+          ),
+        );
+        return ElectromechanicalDcOutcome(
+          result: result,
+          effectiveCircuit: effective,
+          relays: _statesFromDc(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: false,
         );
       }
 
@@ -216,12 +235,12 @@ final class ElectromechanicalControlEngine {
         <ElectromechanicalControlIssue>[];
     Map<ComponentId, bool> states = _initialStates(
       circuit,
-      'contactor_ac1',
       issues,
       previousStates,
     );
     CircuitState effective = _applyStates(circuit, states, issues);
     Ac1SolveResult result = solver.solve(effective, topology);
+    final Set<String> seenStates = <String>{_stateSignature(states)};
 
     for (var iteration = 1; iteration <= maxIterations; iteration++) {
       if (!result.isSolved) {
@@ -257,6 +276,24 @@ final class ElectromechanicalControlEngine {
           issues: issues,
           iterations: iteration,
           converged: true,
+        );
+      }
+
+      final String nextSignature = _stateSignature(next);
+      if (!seenStates.add(nextSignature)) {
+        issues.add(
+          const ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.oscillatingControlState,
+            message: 'AC1 electromechanical control entered a repeating state cycle (chatter).',
+          ),
+        );
+        return ElectromechanicalAc1Outcome(
+          result: result,
+          effectiveCircuit: effective,
+          contactors: _statesFromAc1(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: false,
         );
       }
 
@@ -301,12 +338,12 @@ final class ElectromechanicalControlEngine {
         <ElectromechanicalControlIssue>[];
     Map<ComponentId, bool> states = _initialStates(
       circuit,
-      'contactor_3p',
       issues,
       previousStates,
     );
     CircuitState effective = _applyStates(circuit, states, issues);
     Ac3SolveResult result = solver.solve(effective, topology);
+    final Set<String> seenStates = <String>{_stateSignature(states)};
 
     for (var iteration = 1; iteration <= maxIterations; iteration++) {
       if (!result.isSolved) {
@@ -345,6 +382,24 @@ final class ElectromechanicalControlEngine {
         );
       }
 
+      final String nextSignature = _stateSignature(next);
+      if (!seenStates.add(nextSignature)) {
+        issues.add(
+          const ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.oscillatingControlState,
+            message: 'AC3 electromechanical control entered a repeating state cycle (chatter).',
+          ),
+        );
+        return ElectromechanicalAc3Outcome(
+          result: result,
+          effectiveCircuit: effective,
+          contactors: _statesFromAc3(circuit, states, result, issues),
+          issues: issues,
+          iterations: iteration,
+          converged: false,
+        );
+      }
+
       if (iteration == maxIterations) {
         issues.add(
           const ElectromechanicalControlIssue(
@@ -374,13 +429,12 @@ final class ElectromechanicalControlEngine {
 
 Map<ComponentId, bool> _initialStates(
   CircuitState circuit,
-  String contactorModel,
   List<ElectromechanicalControlIssue> issues,
   Map<ComponentId, bool> previousStates,
 ) {
   final Map<ComponentId, bool> states = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != contactorModel) continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final Object? raw = component.controlState['actuated'];
     if (raw != null && raw is! bool) {
       issues.add(
@@ -415,15 +469,10 @@ CircuitState _applyStates(
     bool? actuated;
     if (states.containsKey(component.id)) {
       actuated = states[component.id]!;
-    } else if (component.modelType == 'contactor_aux_no' ||
-        component.modelType == 'contactor_aux_nc' ||
-        component.modelType == 'relay_contact_no' ||
-        component.modelType == 'relay_contact_nc') {
-      final bool relayContact =
-          component.modelType == 'relay_contact_no' ||
-          component.modelType == 'relay_contact_nc';
-      final Object? linked = component
-          .parameters[relayContact ? 'linkedRelayId' : 'linkedContactorId'];
+    } else if (_isLinkedElectromechanicalContact(component)) {
+      final Object? linked =
+          component.parameters['linkedRelayId'] ??
+          component.parameters['linkedContactorId'];
       if (linked is String && known.contains(linked)) {
         actuated = states[ComponentId(linked)];
       } else {
@@ -480,7 +529,7 @@ Map<ComponentId, bool> _deriveDcStates(
 ) {
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'relay_coil') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final DcBranchResult? coil = _findDcBranch(
       result,
@@ -519,7 +568,7 @@ Map<ComponentId, ContactorActuationState> _statesFromDc(
   final Map<ComponentId, ContactorActuationState> output =
       <ComponentId, ContactorActuationState>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'relay_coil') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     if (thresholds == null) continue;
     final DcBranchResult? coil = _findDcBranch(
@@ -545,7 +594,7 @@ Map<ComponentId, bool> _deriveAc1States(
 ) {
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'contactor_ac1') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final Ac1BranchResult? coil = _findAc1Branch(
       result,
@@ -583,7 +632,7 @@ Map<ComponentId, bool> _deriveAc3States(
 ) {
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'contactor_3p') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final Ac3BranchResult? coil = _findAc3Branch(
       result,
@@ -622,7 +671,7 @@ Map<ComponentId, ContactorActuationState> _statesFromAc1(
   final Map<ComponentId, ContactorActuationState> output =
       <ComponentId, ContactorActuationState>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'contactor_ac1') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     if (thresholds == null) continue;
     final Ac1BranchResult? coil = _findAc1Branch(
@@ -649,7 +698,7 @@ Map<ComponentId, ContactorActuationState> _statesFromAc3(
   final Map<ComponentId, ContactorActuationState> output =
       <ComponentId, ContactorActuationState>{};
   for (final ComponentInstance component in circuit.components) {
-    if (component.modelType != 'contactor_3p') continue;
+    if (!_isElectromagneticActuator(component)) continue;
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     if (thresholds == null) continue;
     final Ac3BranchResult? coil = _findAc3Branch(
@@ -667,12 +716,23 @@ Map<ComponentId, ContactorActuationState> _statesFromAc3(
   return output;
 }
 
+bool _isElectromagneticActuator(ComponentInstance component) =>
+    CoreComponentPhysicsContracts.resolveComponent(component).controlLaw ==
+    ComponentControlLaw.electromagneticCoil;
+
+bool _isLinkedElectromechanicalContact(ComponentInstance component) {
+  final ComponentControlLaw controlLaw =
+      CoreComponentPhysicsContracts.resolveComponent(component).controlLaw;
+  return controlLaw == ComponentControlLaw.relayNormallyOpen ||
+      controlLaw == ComponentControlLaw.relayNormallyClosed;
+}
+
 _CoilThresholds? _thresholds(
   ComponentInstance component,
   List<ElectromechanicalControlIssue> issues,
 ) {
-  final Object? pickupRaw = component.parameters['coilPickupVoltageV'];
-  final Object? dropoutRaw = component.parameters['coilDropoutVoltageV'];
+  final Object? pickupRaw = component.parameters[ComponentParameterKeys.coilPickupVoltageV];
+  final Object? dropoutRaw = component.parameters[ComponentParameterKeys.coilDropoutVoltageV];
   if (pickupRaw is! num || dropoutRaw is! num) {
     issues.add(
       ElectromechanicalControlIssue(
@@ -709,6 +769,18 @@ bool _nextActuation({
   required double voltageV,
   required _CoilThresholds thresholds,
 }) => previous ? voltageV > thresholds.dropout : voltageV >= thresholds.pickup;
+
+String _stateSignature(Map<ComponentId, bool> states) {
+  final List<MapEntry<ComponentId, bool>> entries = states.entries.toList()
+    ..sort(
+      (MapEntry<ComponentId, bool> a, MapEntry<ComponentId, bool> b) =>
+          a.key.value.compareTo(b.key.value),
+    );
+  return entries
+      .map((MapEntry<ComponentId, bool> entry) =>
+          '${entry.key.value}:${entry.value ? 1 : 0}')
+      .join('|');
+}
 
 bool _sameStates(Map<ComponentId, bool> left, Map<ComponentId, bool> right) {
   if (left.length != right.length) return false;

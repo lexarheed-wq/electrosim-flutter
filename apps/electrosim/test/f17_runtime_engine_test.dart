@@ -211,7 +211,14 @@ void main() {
       expect(snapshot.pvResult, isNotNull);
       expect(snapshot.solved, isFalse);
       expect(snapshot.energyAvailable, isFalse);
-      expect(snapshot.diagnosticsAvailable, isFalse);
+      expect(snapshot.diagnosticsAvailable, isTrue);
+      expect(snapshot.diagnostics.advice, isNotEmpty);
+      expect(
+        snapshot.diagnostics.advice.every(
+          (item) => item.evidenceIds.isNotEmpty,
+        ),
+        isTrue,
+      );
     },
   );
 }

@@ -1,0 +1,80 @@
+name: Post-V2 P1 engine hardening
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - postv2-p1-engine-hardening-20261006
+    paths:
+      - 'apps/electrosim/lib/f9_wiring_policy.dart'
+      - 'apps/electrosim/test/postv2_p1_wiring_policy_test.dart'
+      - 'packages/electrosim_canvas/**'
+      - 'packages/electrosim_topology/**'
+      - 'packages/electrosim_solver_dc/**'
+      - 'tools/postv2_p1_contract.py'
+      - '.github/workflows/postv2-p1-engine-hardening.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  p1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain and P1 architecture contract
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/postv2_p1_contract.py
+
+      - name: P1.2 UI wiring policy
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/postv2_p1_wiring_policy_test.dart
+          flutter test test/f9_wiring_policy_test.dart
+
+      - name: P1.3 DC source associations
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_source_associations_test.dart
+          dart test test/solver_dc_test.dart
+          dart test test/m3a_convergence_test.dart
+
+      - name: P1 topology non-regression
+        working-directory: packages/electrosim_topology
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: P1 canvas separation non-regression
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+
+      - name: Gate marker
+        run: echo POSTV2_P1_1_3_GATE_PASS

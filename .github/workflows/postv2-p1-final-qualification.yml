@@ -1,0 +1,214 @@
+name: Post-V2 P1 final qualification and Mac Intel candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - postv2-p1-final-qualification-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - '.github/workflows/postv2-p1-final-qualification.yml'
+      - 'tools/postv2_p1_final_contract.py'
+      - 'docs/postv2/p1/POSTV2_P1_FINAL_QUALIFICATION.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postv2-p1-final-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  final-core:
+    name: P1 final core qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify exact product base and contracts
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/postv2_p1_final_contract.py
+          python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py
+
+      - name: Re-run P1 DC source, receiver and invariant contracts
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_source_associations_test.dart
+          dart test test/postv2_p1_receiver_polarity_test.dart
+          dart test test/postv2_p1_invariants_test.dart
+          dart test test/solver_dc_test.dart
+
+      - name: Re-run P1 PV and EIE authority contracts
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_pv
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_polarity_test.dart
+          cd ../electrosim_diagnostics
+          dart pub get
+          dart analyze
+          dart test test/postv2_p1_eie_authority_test.dart
+
+      - name: Re-run P1 UI and complete application
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test test/postv2_p1_wiring_policy_test.dart
+          flutter test test/postv2_p1_motor_visual_direction_test.dart
+          flutter test
+
+  macos-intel:
+    name: P1 macOS Intel release candidate
+    runs-on: macos-15-intel
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify Mac toolchain and P1 final contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          python3 tools/postv2_p1_final_contract.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+
+      - name: Prepare native runner with LAN configuration
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) tmp="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          echo "path=$tmp" >> "$GITHUB_OUTPUT"
+
+      - name: Analyze and smoke-test P1 native candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter test test/postv2_p1_wiring_policy_test.dart
+          flutter test test/postv2_p1_motor_visual_direction_test.dart
+
+      - name: Build and prove Intel release
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/postv2-p1/macos"
+          mkdir -p "$out"
+          base_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+
+          cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
+          POST-V2 P1 physical validation required on target Mac Intel / Ventura 13.7
+
+          1. Application launches without crash and existing F18 navigation remains intact.
+          2. Two 12 V DC sources in series: external measurement is 24 V.
+          3. 24 V + 12 V in series: external measurement is 36 V.
+          4. Three 12 V sources in series: external measurement is 36 V.
+          5. Opposed 24 V and 12 V sources: algebraic resultant is 12 V.
+          6. Series midpoint can be used as 0 V with +12 V and -12 V sides.
+          7. Two compatible 12 V ideal sources in parallel simulate without singular-matrix failure.
+          8. Incompatible 12 V / 24 V ideal sources may be wired; simulation/EIE reports a source conflict instead of blocking the Canvas or crashing.
+          9. Reversing a resistor or filament lamp does not create an artificial polarity fault.
+          10. Diode/LED conducts forward and blocks in reverse.
+          11. Reversing a DC motor reverses its visual rotation direction while preserving coherent electrical magnitude.
+          12. A simple DC relay coil remains functional when its polarity is reversed.
+          13. PV inverter/controller/battery correct wiring works; reversed polarity is explicitly diagnosed.
+          14. EIE reports electrical inconsistencies without silently changing the circuit.
+          15. No NaN/infinite measurement, crash, freeze or unexplained singular result appears during these checks.
+
+          If every item passes, report exactly:
+          POSTV2_P1_PHYSICAL_MAC_PASS
+          EOF
+
+          ditto -c -k --sequesterRsrc --keepParent "$app_path"             "$out/ElectroSim_POSTV2_P1_${base_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - name: Package exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/postv2-p1/source"
+          mkdir -p "$out"
+          base_sha="$(git rev-parse HEAD)"
+          git archive --format=zip             --output="$out/ElectroSim_POSTV2_P1_SOURCE_${base_sha:0:12}.zip"             HEAD
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-POSTV2-P1-macOS-Intel
+          path: audit/postv2-p1/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-POSTV2-P1-source
+          path: audit/postv2-p1/source
+          if-no-files-found: error
+          retention-days: 14
+
+  automated-gate:
+    name: Post-V2 P1 automated final gate
+    needs:
+      - final-core
+      - macos-intel
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo POSTV2_P1_AUTOMATED_FINAL_PASS
+          echo POSTV2_P1_PHYSICAL_MAC_PASS=PENDING_USER_VALIDATION

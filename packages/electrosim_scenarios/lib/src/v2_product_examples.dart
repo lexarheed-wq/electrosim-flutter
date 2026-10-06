@@ -4,10 +4,7 @@ import 'example_definition.dart';
 import 'example_repository.dart';
 
 ExampleRepository buildV2ProductExampleRepository() => ExampleRepository(
-  examples: <ExampleDefinition>[
-    _lampIndicatorSchema(),
-    _dcMotorSchema(),
-  ],
+  examples: <ExampleDefinition>[_lampIndicatorSchema(), _dcMotorSchema()],
 );
 
 ExampleDefinition _lampIndicatorSchema() {
@@ -21,9 +18,7 @@ ExampleDefinition _lampIndicatorSchema() {
       circuitId: CircuitId('v2-schema-dc-lamp-01'),
       revision: 0,
       mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        _source(prefix: prefix, voltageV: 24),
-      ],
+      sources: <SourceInstance>[_source(prefix: prefix, voltageV: 24)],
       components: <ComponentInstance>[
         ComponentInstance(
           id: ComponentId('$prefix-lamp'),
@@ -73,9 +68,7 @@ ExampleDefinition _dcMotorSchema() {
       circuitId: CircuitId('v2-schema-dc-motor-01'),
       revision: 0,
       mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        _source(prefix: prefix, voltageV: 48),
-      ],
+      sources: <SourceInstance>[_source(prefix: prefix, voltageV: 48)],
       components: <ComponentInstance>[
         ComponentInstance(
           id: ComponentId('$prefix-motor'),
@@ -117,25 +110,23 @@ ExampleDefinition _dcMotorSchema() {
 Terminal _terminal(String id, String name) =>
     Terminal(id: TerminalId(id), name: name);
 
-SourceInstance _source({
-  required String prefix,
-  required double voltageV,
-}) => SourceInstance(
-  id: SourceId('$prefix-source'),
-  modelType: 'dc_voltage_source',
-  terminals: <Terminal>[
-    Terminal(
-      id: TerminalId('$prefix-source-plus'),
-      name: '+',
-      role: TerminalRole.positive,
-      phase: PhaseTag.dcPositive,
-    ),
-    Terminal(
-      id: TerminalId('$prefix-source-minus'),
-      name: '-',
-      role: TerminalRole.negative,
-      phase: PhaseTag.dcNegative,
-    ),
-  ],
-  parameters: <String, Object?>{'voltageV': voltageV},
-);
+SourceInstance _source({required String prefix, required double voltageV}) =>
+    SourceInstance(
+      id: SourceId('$prefix-source'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        Terminal(
+          id: TerminalId('$prefix-source-plus'),
+          name: '+',
+          role: TerminalRole.positive,
+          phase: PhaseTag.dcPositive,
+        ),
+        Terminal(
+          id: TerminalId('$prefix-source-minus'),
+          name: '-',
+          role: TerminalRole.negative,
+          phase: PhaseTag.dcNegative,
+        ),
+      ],
+      parameters: <String, Object?>{'voltageV': voltageV},
+    );

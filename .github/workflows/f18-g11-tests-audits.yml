@@ -40,7 +40,9 @@ jobs:
       - name: F18 gate contracts
         run: |
           set -euo pipefail
-          python3 -m unittest tools/test_f18_g0_tooling.py
+          # G0 is a frozen historical baseline. Only its capture/authority tests
+          # are current; parity extractors intentionally describe the old catalog.
+          python3 -m unittest tools.test_f18_g0_tooling.F18G0BaselineTests
           python3 -m unittest tools/test_f18_g1_design_system.py
           python3 tools/f18_g2a_wire_contract.py
           python3 tools/f18_g7_contract.py

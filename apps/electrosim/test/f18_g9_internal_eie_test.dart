@@ -25,8 +25,8 @@ void main() {
       mode: ElectricalMode.pv,
     );
 
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
 
     expect(snapshot.diagnosticsAvailable, isTrue);
     expect(
@@ -80,9 +80,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialCircuit: circuit),
-        ),
+        MaterialApp(home: app.F9WorkspaceDemoPage(initialCircuit: circuit)),
       );
       await tester.pumpAndSettle();
       await _openContext(tester);

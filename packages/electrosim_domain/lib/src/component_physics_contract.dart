@@ -43,6 +43,14 @@ enum ComponentDynamicBehavior {
   protectiveTrip,
 }
 
+enum ComponentFunctionalRole {
+  generic,
+  pvController,
+  pvInverter,
+  pvBattery,
+  pvLoad,
+}
+
 /// One source of truth for physical parameter names shared by UI, runtime and
 /// solvers. New physical keys must be added here before use elsewhere.
 abstract final class ComponentParameterKeys {
@@ -69,12 +77,14 @@ final class ComponentPhysicsContract {
     required this.modelType,
     required this.electricalLaw,
     this.controlLaw = ComponentControlLaw.none,
+    this.functionalRole = ComponentFunctionalRole.generic,
     this.dynamicBehaviors = const <ComponentDynamicBehavior>{},
   });
 
   final String modelType;
   final ComponentElectricalLaw electricalLaw;
   final ComponentControlLaw controlLaw;
+  final ComponentFunctionalRole functionalRole;
   final Set<ComponentDynamicBehavior> dynamicBehaviors;
 
   bool get isSwitching =>
@@ -309,18 +319,22 @@ abstract final class CoreComponentPhysicsContracts {
           ),
           'pv_controller': const ComponentPhysicsContract(
             modelType: 'pv_controller',
+            functionalRole: ComponentFunctionalRole.pvController,
             electricalLaw: ComponentElectricalLaw.converter,
           ),
           'pv_inverter': const ComponentPhysicsContract(
             modelType: 'pv_inverter',
+            functionalRole: ComponentFunctionalRole.pvInverter,
             electricalLaw: ComponentElectricalLaw.converter,
           ),
           'pv_battery': const ComponentPhysicsContract(
             modelType: 'pv_battery',
+            functionalRole: ComponentFunctionalRole.pvBattery,
             electricalLaw: ComponentElectricalLaw.storage,
           ),
           'pv_resistive_load': const ComponentPhysicsContract(
             modelType: 'pv_resistive_load',
+            functionalRole: ComponentFunctionalRole.pvLoad,
             electricalLaw: ComponentElectricalLaw.resistive,
             dynamicBehaviors: <ComponentDynamicBehavior>{
               ComponentDynamicBehavior.thermalStress,

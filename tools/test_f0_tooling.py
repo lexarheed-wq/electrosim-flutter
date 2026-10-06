@@ -84,12 +84,28 @@ class F0ToolingTests(unittest.TestCase):
         self.assertNotIn('dart format --output=none --set-exit-if-changed .',s)
 
     def test_fault_scenarios_have_no_legacy_example_linkage(self):
-        scenario_root=ROOT/"packages/electrosim_scenarios"
+        scenario_root=ROOT/"packages/electrosim_scenarios"/"lib"
         forbidden=("example"+"id","example"+"_id")
         for p in scenario_root.rglob("*.dart"):
             lowered=p.read_text(encoding="utf-8").lower()
             for token in forbidden:
                 self.assertNotIn(token,lowered,p.relative_to(ROOT).as_posix())
+
+    def test_negative_legacy_key_assertions_in_tests_do_not_trip_guard(self):
+        test_file=ROOT/"packages"/"electrosim_scenarios"/"test"/"guard_negative_assertion_probe.dart"
+        test_file.write_text(
+            "void main() { const forbidden = 'exampleId example_id'; }\n",
+            encoding="utf-8",
+        )
+        try:
+            p=subprocess.run(
+                ["python3",str(ROOT/"tools/f0_guard.py")],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(p.returncode,0,p.stdout+p.stderr)
+        finally:
+            test_file.unlink(missing_ok=True)
 
     def test_f1_domain_source_is_canonical_dart_only(self):
         domain=ROOT/"packages/electrosim_domain"

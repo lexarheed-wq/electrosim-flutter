@@ -426,34 +426,37 @@ void main() {
       expect(open.branch('component:k1').currentA, 0.0);
     });
 
-    test('component condition shortCircuit is an ideal 0 V constraint', () {
-      final CircuitState base = _singleResistor(voltage: 24, resistance: 12);
-      final ComponentInstance resistor = base.components.single;
-      final CircuitState circuit = CircuitState(
-        circuitId: CircuitId('short-condition'),
-        revision: 0,
-        mode: ElectricalMode.dc,
-        components: <ComponentInstance>[
-          ComponentInstance(
-            id: resistor.id,
-            modelType: resistor.modelType,
-            terminals: resistor.terminals,
-            parameters: resistor.parameters,
-            condition: ComponentCondition.shortCircuit,
+    test(
+      'component shortCircuit contradicting an ideal source is explicit',
+      () {
+        final CircuitState base = _singleResistor(voltage: 24, resistance: 12);
+        final ComponentInstance resistor = base.components.single;
+        final CircuitState circuit = CircuitState(
+          circuitId: CircuitId('short-condition'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[
+            ComponentInstance(
+              id: resistor.id,
+              modelType: resistor.modelType,
+              terminals: resistor.terminals,
+              parameters: resistor.parameters,
+              condition: ComponentCondition.shortCircuit,
+            ),
+          ],
+          connections: base.connections,
+          sources: base.sources,
+        );
+        final DcSolveResult result = solve(circuit);
+        expect(result.status, DcSolveStatus.invalid);
+        expect(
+          result.diagnostics.whereType<DcSolverDiagnostic>().map(
+            (DcSolverDiagnostic d) => d.code,
           ),
-        ],
-        connections: base.connections,
-        sources: base.sources,
-      );
-      final DcSolveResult result = solve(circuit);
-      expect(result.status, DcSolveStatus.singular);
-      expect(
-        result.diagnostics.whereType<DcSolverDiagnostic>().map(
-          (DcSolverDiagnostic d) => d.code,
-        ),
-        contains(DcDiagnosticCode.singularMatrix),
-      );
-    });
+          contains(DcDiagnosticCode.contradictoryIdealSource),
+        );
+      },
+    );
   });
 }
 

@@ -361,8 +361,7 @@ _MappedEvidence? _fromAc3Solver(Ac3SolverDiagnostic diagnostic) {
 
 _MappedEvidence? _fromPvSolver(PvSolverDiagnostic diagnostic) {
   final EieAdviceCode code = switch (diagnostic.code) {
-    PvDiagnosticCode.wrongElectricalMode =>
-      EieAdviceCode.pvWrongElectricalMode,
+    PvDiagnosticCode.wrongElectricalMode => EieAdviceCode.pvWrongElectricalMode,
     PvDiagnosticCode.topologyIdentityMismatch =>
       EieAdviceCode.pvTopologyIdentityMismatch,
     PvDiagnosticCode.topologyError => EieAdviceCode.pvTopologyError,
@@ -378,8 +377,7 @@ _MappedEvidence? _fromPvSolver(PvSolverDiagnostic diagnostic) {
       EieAdviceCode.pvInvalidLoadParameter,
     PvDiagnosticCode.invalidTerminalContract =>
       EieAdviceCode.pvInvalidTerminalContract,
-    PvDiagnosticCode.dcInputDisconnected =>
-      EieAdviceCode.pvDcInputDisconnected,
+    PvDiagnosticCode.dcInputDisconnected => EieAdviceCode.pvDcInputDisconnected,
     PvDiagnosticCode.acOutputDisconnected =>
       EieAdviceCode.pvAcOutputDisconnected,
     PvDiagnosticCode.inputVoltageOutOfRange =>

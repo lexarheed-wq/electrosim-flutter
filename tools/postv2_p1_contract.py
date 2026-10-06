@@ -85,9 +85,11 @@ for marker in (
 ):
     require(marker in source_tests, f"Missing P1.3 source association case: {marker}")
 
+require(
+    "<String>['resistor', 'lamp']" in receiver_tests,
+    "Missing P1.4 unpolarized resistor/lamp matrix.",
+)
 for marker in (
-    "P1-RX-RESISTOR",
-    "P1-RX-LAMP",
     "P1-RX-MOTOR-DC",
     "P1-RX-COIL-SIMPLE",
     "P1-RX-LED",

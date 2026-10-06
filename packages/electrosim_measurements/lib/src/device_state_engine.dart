@@ -180,6 +180,7 @@ final class DeviceStateEngine {
     final List<OperatingWarning> warnings = <OperatingWarning>[];
     _checkLimitValue(
       limit: envelope.effectiveMaxVoltageV,
+      invalid: envelope.invalidMaxVoltage,
       measured: branch.voltageV.abs(),
       overCode: OperatingWarningCode.overVoltage,
       label: 'tension',
@@ -187,6 +188,7 @@ final class DeviceStateEngine {
     );
     _checkLimitValue(
       limit: envelope.effectiveMaxCurrentA,
+      invalid: envelope.invalidMaxCurrent,
       measured: branch.currentA?.abs(),
       overCode: OperatingWarningCode.overCurrent,
       label: 'courant',
@@ -194,6 +196,7 @@ final class DeviceStateEngine {
     );
     _checkLimitValue(
       limit: envelope.effectiveMaxPowerW,
+      invalid: envelope.invalidMaxPower,
       measured: branch.powerW?.abs(),
       overCode: OperatingWarningCode.overPower,
       label: 'puissance',
@@ -204,11 +207,21 @@ final class DeviceStateEngine {
 
   void _checkLimitValue({
     required double? limit,
+    required bool invalid,
     required double? measured,
     required OperatingWarningCode overCode,
     required String label,
     required List<OperatingWarning> warnings,
   }) {
+    if (invalid) {
+      warnings.add(
+        OperatingWarning(
+          code: OperatingWarningCode.invalidNominalLimit,
+          message: 'La limite de $label doit être finie et strictement positive.',
+        ),
+      );
+      return;
+    }
     if (limit == null || measured == null) return;
     if (!limit.isFinite || limit <= zeroTolerance) {
       warnings.add(

@@ -19,8 +19,8 @@ void main() {
         ),
       ),
     );
-    final ExtendedReferenceComponentView view =
-        tester.widget<ExtendedReferenceComponentView>(
+    final ExtendedReferenceComponentView view = tester
+        .widget<ExtendedReferenceComponentView>(
           find.byType(ExtendedReferenceComponentView),
         );
     expect(view.device, ExtendedReferenceDevice.motor);

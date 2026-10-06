@@ -59,6 +59,21 @@ require(
 source_tests = (
     ROOT / "packages/electrosim_solver_dc/test/postv2_p1_source_associations_test.dart"
 ).read_text(encoding="utf-8")
+receiver_tests = (
+    ROOT / "packages/electrosim_solver_dc/test/postv2_p1_receiver_polarity_test.dart"
+).read_text(encoding="utf-8")
+invariant_tests = (
+    ROOT / "packages/electrosim_solver_dc/test/postv2_p1_invariants_test.dart"
+).read_text(encoding="utf-8")
+pv_tests = (
+    ROOT / "packages/electrosim_pv/test/postv2_p1_polarity_test.dart"
+).read_text(encoding="utf-8")
+eie_tests = (
+    ROOT / "packages/electrosim_diagnostics/test/postv2_p1_eie_authority_test.dart"
+).read_text(encoding="utf-8")
+motor_visual_tests = (
+    ROOT / "apps/electrosim/test/postv2_p1_motor_visual_direction_test.dart"
+).read_text(encoding="utf-8")
 for marker in (
     "P1-DC-SERIES-01",
     "P1-DC-SERIES-02",
@@ -69,6 +84,47 @@ for marker in (
     "P1-DC-PARALLEL-02",
 ):
     require(marker in source_tests, f"Missing P1.3 source association case: {marker}")
+
+for marker in (
+    "P1-RX-RESISTOR",
+    "P1-RX-LAMP",
+    "P1-RX-MOTOR-DC",
+    "P1-RX-COIL-SIMPLE",
+    "P1-RX-LED",
+    "P1-RX-COIL-POLARIZED",
+):
+    require(marker in receiver_tests, f"Missing P1.4 receiver case: {marker}")
+
+for marker in (
+    "P1-PV-INVERTER",
+    "P1-PV-STORAGE",
+    "P1-PV-CONTROLLER",
+    "P1-PV-BATTERY",
+):
+    require(marker in pv_tests, f"Missing P1.4 PV polarity case: {marker}")
+
+require("P1-INV-DC" in invariant_tests, "Missing P1.5 physical invariant test")
+require("P1-INV-REPRO" in invariant_tests, "Missing P1.5 reproducibility test")
+require(
+    "without mutating electrical state" in eie_tests,
+    "Missing P1.5 EIE observational-authority test",
+)
+require(
+    "follows signed solver current" in motor_visual_tests,
+    "Motor animation must follow signed solver evidence.",
+)
+
+solver_dc = (ROOT / "packages/electrosim_solver_dc/lib/src/solver_dc.dart").read_text(
+    encoding="utf-8"
+)
+require(
+    "_normalizeIdealVoltageConstraints" in solver_dc,
+    "SolverDC must normalize redundant/contradictory ideal voltage constraints.",
+)
+require(
+    "DcDiagnosticCode.contradictoryIdealSource" in solver_dc,
+    "Incompatible ideal source constraints must be diagnosed by SolverDC.",
+)
 
 if errors:
     print("POSTV2_P1_CONTRACT_FAIL")

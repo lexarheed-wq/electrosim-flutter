@@ -56,7 +56,7 @@ void main() {
   test('F18-G7 missing evidence never manufactures operating quantities', () {
     final ComponentInstance isolated = ComponentInstance(
       id: ComponentId('isolated'),
-      modelType: 'resistor',
+      modelType: 'unsupported_f18_g7',
       terminals: <Terminal>[
         Terminal(id: TerminalId('ia'), name: 'A'),
         Terminal(id: TerminalId('ib'), name: 'B'),
@@ -74,13 +74,14 @@ void main() {
     final ComponentOperatingState state =
         snapshot.componentOperatingState(isolated.id)!;
 
+    expect(snapshot.solved, isFalse);
     expect(state.code, ComponentOperatingCode.undetermined);
     expect(state.voltageV, isNull);
     expect(state.currentA, isNull);
     expect(state.powerW, isNull);
     expect(
       state.warnings.map((OperatingWarning warning) => warning.code),
-      contains(OperatingWarningCode.missingBranchResult),
+      contains(OperatingWarningCode.simulationNotSolved),
     );
   });
 }

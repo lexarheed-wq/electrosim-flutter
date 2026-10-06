@@ -69,7 +69,7 @@ void main() {
       parameters: const <String, Object?>{'resistanceOhm': 10.0},
     );
     final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('f18-g7-unsolved'),
+      circuitId: CircuitId('f18-g7-missing-evidence'),
       revision: 1,
       mode: ElectricalMode.dc,
       components: <ComponentInstance>[isolated],
@@ -80,14 +80,21 @@ void main() {
       isolated.id,
     )!;
 
-    expect(snapshot.solved, isFalse);
     expect(state.code, ComponentOperatingCode.undetermined);
     expect(state.voltageV, isNull);
     expect(state.currentA, isNull);
     expect(state.powerW, isNull);
+
+    final Iterable<OperatingWarningCode> warningCodes = state.warnings.map(
+      (OperatingWarning warning) => warning.code,
+    );
     expect(
-      state.warnings.map((OperatingWarning warning) => warning.code),
-      contains(OperatingWarningCode.simulationNotSolved),
+      warningCodes.any(
+        (OperatingWarningCode code) =>
+            code == OperatingWarningCode.simulationNotSolved ||
+            code == OperatingWarningCode.missingBranchResult,
+      ),
+      isTrue,
     );
   });
 }

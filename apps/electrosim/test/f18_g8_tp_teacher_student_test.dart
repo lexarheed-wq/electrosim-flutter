@@ -32,7 +32,7 @@ void main() {
       final FaultScenarioDefinition scenario = catalog.faultScenarios
           .firstWhere(
             (FaultScenarioDefinition item) =>
-                item.id == const FaultScenarioId('FAULT-DC-003'),
+                item.id == FaultScenarioId('FAULT-DC-003'),
           );
       final repaired = scenario.teacherTruth.acceptableRepairs.first.apply(
         teacher.session!.studentCircuit,

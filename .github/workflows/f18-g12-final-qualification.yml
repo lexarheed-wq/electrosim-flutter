@@ -154,24 +154,24 @@ jobs:
           dart --version 2> "$out/DART_VERSION.txt"
 
           cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
-F18 physical validation required on target Mac Intel / Ventura 13.7
-1. Application launches without crash.
-2. Home, Session, Maintenance and Design navigation.
-3. Session creation and dashboard return.
-4. Canvas drag, pan, trackpad zoom and clipping.
-5. DC wiring including two DC supplies in series.
-6. Dedicated DC terminal block; no AC3 terminal block in DC.
-7. Modifier-only multiselect, deselect, topbar Delete.
-8. Wire deletion from the single topbar Delete action.
-9. Double-click switch, push button and breaker physical control zones.
-10. Real voltage/current measurements on a valid energized circuit.
-11. Full teacher/student troubleshooting TP lifecycle through read-only close.
-12. LAN browser/QR student synchronization.
-13. Teacher-only EIE; no student coach; healthy circuit remains silent.
-
-If every item passes, report exactly:
-F18_PHYSICAL_MAC_PASS
-EOF
+          F18 physical validation required on target Mac Intel / Ventura 13.7
+          1. Application launches without crash.
+          2. Home, Session, Maintenance and Design navigation.
+          3. Session creation and dashboard return.
+          4. Canvas drag, pan, trackpad zoom and clipping.
+          5. DC wiring including two DC supplies in series.
+          6. Dedicated DC terminal block; no AC3 terminal block in DC.
+          7. Modifier-only multiselect, deselect, topbar Delete.
+          8. Wire deletion from the single topbar Delete action.
+          9. Double-click switch, push button and breaker physical control zones.
+          10. Real voltage/current measurements on a valid energized circuit.
+          11. Full teacher/student troubleshooting TP lifecycle through read-only close.
+          12. LAN browser/QR student synchronization.
+          13. Teacher-only EIE; no student coach; healthy circuit remains silent.
+          
+          If every item passes, report exactly:
+          F18_PHYSICAL_MAC_PASS
+          EOF
 
           ditto -c -k --sequesterRsrc --keepParent "$app_path" \
             "$out/ElectroSim_F18_G12_${base_sha:0:12}_macOS_Intel.zip"

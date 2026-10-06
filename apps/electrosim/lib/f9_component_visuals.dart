@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 

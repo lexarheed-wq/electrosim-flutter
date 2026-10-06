@@ -37,8 +37,7 @@ class _F18SchemaLibraryPageState extends State<F18SchemaLibraryPage> {
     return _LibraryScaffold(
       key: const Key('schema-library-page'),
       title: 'Bibliothèque de schémas',
-      subtitle:
-          'Schémas sains V2 validés — version ${widget.library.version}',
+      subtitle: 'Schémas sains V2 validés — version ${widget.library.version}',
       searchKey: const Key('schema-library-search'),
       searchController: _search,
       searchHint: 'Rechercher un schéma',

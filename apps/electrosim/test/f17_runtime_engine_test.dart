@@ -155,8 +155,8 @@ void main() {
       expect(frequency.isValid, isTrue);
       expect(frequency.reading!.value, closeTo(50.0, 1e-12));
 
-      final ComponentOperatingState operating =
-          snapshot.componentOperatingState(ComponentId('load'))!;
+      final ComponentOperatingState operating = snapshot
+          .componentOperatingState(ComponentId('load'))!;
       expect(operating.code, ComponentOperatingCode.energized);
       expect(operating.voltageV, closeTo(230.0, 1e-8));
       expect(operating.currentA, closeTo(5.0, 1e-9));
@@ -186,8 +186,9 @@ void main() {
     expect(frequency.isValid, isTrue);
     expect(frequency.reading!.value, closeTo(50.0, 1e-12));
 
-    final ComponentOperatingState operating =
-        snapshot.componentOperatingState(ComponentId('r1'))!;
+    final ComponentOperatingState operating = snapshot.componentOperatingState(
+      ComponentId('r1'),
+    )!;
     expect(operating.code, ComponentOperatingCode.energized);
     expect(operating.voltageV, closeTo(230.0, 1e-7));
     expect(operating.currentA, closeTo(10.0, 1e-7));

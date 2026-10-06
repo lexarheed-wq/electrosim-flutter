@@ -79,7 +79,6 @@ final class ElectroSimRuntimeSnapshot {
       solverKind == ElectroSimRuntimeSolverKind.pv &&
       (pvResult?.isSolved ?? false);
 
-
   ComponentOperatingState? componentOperatingState(ComponentId componentId) {
     ComponentInstance? component;
     for (final ComponentInstance candidate in circuit.components) {

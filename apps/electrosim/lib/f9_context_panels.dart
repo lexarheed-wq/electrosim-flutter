@@ -348,9 +348,8 @@ class _PropertiesPanel extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           evidence,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: ElectroSimColors.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: ElectroSimColors.textSecondary),
                         ),
                       ),
                     )

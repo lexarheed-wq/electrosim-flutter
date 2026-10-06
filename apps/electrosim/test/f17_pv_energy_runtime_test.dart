@@ -44,10 +44,7 @@ void main() {
         operating.currentA,
         closeTo(snapshot.pv.inverterOutputCurrentRmsA, 1e-9),
       );
-      expect(
-        operating.powerW,
-        closeTo(snapshot.pv.inverterOutputPowerW, 1e-9),
-      );
+      expect(operating.powerW, closeTo(snapshot.pv.inverterOutputPowerW, 1e-9));
     });
 
     test('converts the solved PV result into a balanced energy sample', () {

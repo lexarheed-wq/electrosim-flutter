@@ -32,9 +32,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       voltages: branches.map((Ac1BranchResult item) => item.voltage.magnitude),
       currents: branches.map((Ac1BranchResult item) => item.current?.magnitude),
       powers: branches.map((Ac1BranchResult item) => item.activePowerW),
-      evidenceIds: branches.map(
-        (Ac1BranchResult item) => 'branch:${item.id}',
-      ),
+      evidenceIds: branches.map((Ac1BranchResult item) => 'branch:${item.id}'),
     );
   }
 
@@ -60,9 +58,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       voltages: branches.map((Ac3BranchResult item) => item.voltage.magnitude),
       currents: branches.map((Ac3BranchResult item) => item.current?.magnitude),
       powers: branches.map((Ac3BranchResult item) => item.activePowerW),
-      evidenceIds: branches.map(
-        (Ac3BranchResult item) => 'branch:${item.id}',
-      ),
+      evidenceIds: branches.map((Ac3BranchResult item) => 'branch:${item.id}'),
     );
   }
 
@@ -108,11 +104,11 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
         );
       case 'pv_inverter':
         final ComponentOperatingCode code = switch (simulation.inverterState) {
-          PvInverterState.faulted || PvInverterState.inputOutOfRange =>
-            ComponentOperatingCode.faulted,
+          PvInverterState.faulted ||
+          PvInverterState.inputOutOfRange => ComponentOperatingCode.faulted,
           PvInverterState.idle => ComponentOperatingCode.deenergized,
-          PvInverterState.running || PvInverterState.powerLimited =>
-            ComponentOperatingCode.energized,
+          PvInverterState.running ||
+          PvInverterState.powerLimited => ComponentOperatingCode.energized,
         };
         return ComponentOperatingState(
           componentId: component.id,
@@ -121,9 +117,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           currentA: simulation.inverterOutputCurrentRmsA,
           powerW: simulation.inverterOutputPowerW,
           warnings: const <OperatingWarning>[],
-          evidenceIds: <String>[
-            'pv:inverter:${simulation.inverterState.name}',
-          ],
+          evidenceIds: <String>['pv:inverter:${simulation.inverterState.name}'],
         );
       case 'pv_resistive_load':
         final PvLoadResult? load = _pvLoad(simulation, component.id);
@@ -145,7 +139,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           warnings: const <OperatingWarning>[
             OperatingWarning(
               code: OperatingWarningCode.missingBranchResult,
-              message: 'No PV operating-state adapter exists for this component.',
+              message:
+                  'No PV operating-state adapter exists for this component.',
             ),
           ],
           evidenceIds: <String>['component:${component.id.value}'],
@@ -190,7 +185,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           (powerW?.abs() ?? 0.0) > zeroTolerance;
       return ComponentOperatingState(
         componentId: component.id,
-        code: directState ??
+        code:
+            directState ??
             _stateFromEvidence(energized: energized, warnings: warnings),
         voltageV: voltageV,
         currentA: currentA,
@@ -205,12 +201,11 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
         currentList.any(
           (double? value) => (value?.abs() ?? 0.0) > zeroTolerance,
         ) ||
-        powerList.any(
-          (double? value) => (value?.abs() ?? 0.0) > zeroTolerance,
-        );
+        powerList.any((double? value) => (value?.abs() ?? 0.0) > zeroTolerance);
     return ComponentOperatingState(
       componentId: component.id,
-      code: directState ??
+      code:
+          directState ??
           (energized
               ? ComponentOperatingCode.energized
               : ComponentOperatingCode.deenergized),

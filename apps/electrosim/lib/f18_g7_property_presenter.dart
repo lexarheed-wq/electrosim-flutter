@@ -48,8 +48,8 @@ abstract final class F18G7PropertyPresenter {
     String? runtimeStateLabel;
 
     if (details.kind == F9ElementKind.component) {
-      final ComponentOperatingState? state =
-          runtimeSnapshot.componentOperatingState(ComponentId(details.id));
+      final ComponentOperatingState? state = runtimeSnapshot
+          .componentOperatingState(ComponentId(details.id));
       if (state != null) {
         runtimeStateLabel = _operatingStateLabel(state.code);
         _addRuntimeQuantity(
@@ -115,11 +115,11 @@ abstract final class F18G7PropertyPresenter {
             positiveProbe: source.terminals[0].id,
             negativeProbe: source.terminals[1].id,
           ),
-          ElectroSimRuntimeSolverKind.ac1 || ElectroSimRuntimeSolverKind.ac3 =>
-            runtimeSnapshot.measureAcVoltage(
-              positiveProbe: source.terminals[0].id,
-              negativeProbe: source.terminals[1].id,
-            ),
+          ElectroSimRuntimeSolverKind.ac1 ||
+          ElectroSimRuntimeSolverKind.ac3 => runtimeSnapshot.measureAcVoltage(
+            positiveProbe: source.terminals[0].id,
+            negativeProbe: source.terminals[1].id,
+          ),
           ElectroSimRuntimeSolverKind.pv => MeasurementResult.invalid(
             kind: MeasurementKind.voltageDc,
             errorCode: MeasurementErrorCode.wrongElectricalMode,
@@ -175,8 +175,7 @@ abstract final class F18G7PropertyPresenter {
     rows.add(
       F18G7PropertyRow(
         label: label,
-        value:
-            '${reading.value.toStringAsFixed(3)} ${reading.unit.symbol}',
+        value: '${reading.value.toStringAsFixed(3)} ${reading.unit.symbol}',
       ),
     );
   }
@@ -290,14 +289,15 @@ abstract final class F18G7PropertyPresenter {
       'efficiency' => ' %',
       _ => '',
     };
-    final double displayed =
-        key == 'efficiency' && number.abs() <= 1.0 ? number * 100.0 : number;
+    final double displayed = key == 'efficiency' && number.abs() <= 1.0
+        ? number * 100.0
+        : number;
     final String text = displayed == displayed.roundToDouble()
         ? displayed.toStringAsFixed(0)
         : displayed
-            .toStringAsFixed(3)
-            .replaceFirst(RegExp(r'0+$'), '')
-            .replaceFirst(RegExp(r'\.$'), '');
+              .toStringAsFixed(3)
+              .replaceFirst(RegExp(r'0+$'), '')
+              .replaceFirst(RegExp(r'\.$'), '');
     return '$text$unit';
   }
 }

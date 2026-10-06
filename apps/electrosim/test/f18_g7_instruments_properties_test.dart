@@ -74,10 +74,11 @@ void main() {
       mode: ElectricalMode.dc,
       components: <ComponentInstance>[isolated],
     );
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
-    final ComponentOperatingState state =
-        snapshot.componentOperatingState(isolated.id)!;
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
+    final ComponentOperatingState state = snapshot.componentOperatingState(
+      isolated.id,
+    )!;
 
     expect(snapshot.solved, isFalse);
     expect(state.code, ComponentOperatingCode.undetermined);

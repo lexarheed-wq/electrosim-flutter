@@ -95,9 +95,11 @@ PvSolveResult _pv(
   circuitId: circuitId,
   circuitRevision: 9,
   engineVersion: 'test',
-  status: diagnostics.any(
-    (PvSolverDiagnostic item) => item.severity == PvDiagnosticSeverity.error,
-  )
+  status:
+      diagnostics.any(
+        (PvSolverDiagnostic item) =>
+            item.severity == PvDiagnosticSeverity.error,
+      )
       ? PvSolveStatus.invalid
       : PvSolveStatus.solved,
   irradianceWm2: 1000,

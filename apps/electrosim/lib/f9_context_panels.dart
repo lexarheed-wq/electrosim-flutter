@@ -4,6 +4,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/material.dart';
 
+import 'f18_g7_property_presenter.dart';
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
@@ -126,6 +127,7 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   onTogglePrimaryState: widget.onTogglePrimaryState,
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
+                  runtimeSnapshot: widget.runtimeSnapshot,
                 ),
                 _MeasurementsPanel(
                   circuit: widget.circuit,
@@ -160,6 +162,7 @@ class _PropertiesPanel extends StatelessWidget {
     required this.onTogglePrimaryState,
     required this.onReplaceSelected,
     required this.onSelectElement,
+    required this.runtimeSnapshot,
   });
 
   final CircuitState circuit;
@@ -168,6 +171,7 @@ class _PropertiesPanel extends StatelessWidget {
   final VoidCallback? onTogglePrimaryState;
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
+  final ElectroSimRuntimeSnapshot runtimeSnapshot;
 
   @override
   Widget build(BuildContext context) {
@@ -186,13 +190,19 @@ class _PropertiesPanel extends StatelessWidget {
       'breaker' => true,
       _ => false,
     };
+    final F18G7PropertySnapshot? propertySnapshot = details == null
+        ? null
+        : F18G7PropertyPresenter.describe(
+            details: details,
+            runtimeSnapshot: runtimeSnapshot,
+          );
     return ListView(
       key: const Key('properties-panel'),
       padding: const EdgeInsets.all(ElectroSimSpacing.md),
       children: <Widget>[
         const ElectroSimSectionTitle(
           title: 'Propriétés',
-          subtitle: 'État UI séparé de l’état électrique',
+          subtitle: 'Paramètres canoniques + état runtime issu du moteur',
         ),
         const SizedBox(height: ElectroSimSpacing.md),
         InputDecorator(
@@ -261,18 +271,67 @@ class _PropertiesPanel extends StatelessWidget {
               F9ElementKind.connection => 'Fil',
             },
           ),
-          _PropertyLine(label: 'État', value: details.stateLabel),
+          _PropertyLine(label: 'État déclaré', value: details.stateLabel),
           _PropertyLine(
             label: 'Bornes',
             value: details.terminalLabels.join(' · '),
           ),
-          if (details.parameters.isNotEmpty) ...<Widget>[
+          if (propertySnapshot != null) ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
-            Text('Paramètres', style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              'État moteur',
+              key: const Key('properties-runtime-heading'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: ElectroSimSpacing.xs),
-            ...details.parameters.entries.map(
-              (MapEntry<String, Object?> entry) =>
-                  _PropertyLine(label: entry.key, value: '${entry.value}'),
+            _PropertyLine(
+              label: 'Domaine',
+              value: propertySnapshot.domainLabel,
+            ),
+            _PropertyLine(
+              label: 'Solveur',
+              value: propertySnapshot.solverLabel,
+            ),
+            if (propertySnapshot.runtimeStateLabel != null)
+              _PropertyLine(
+                label: 'État calculé',
+                value: propertySnapshot.runtimeStateLabel!,
+              ),
+            ...propertySnapshot.runtimeValues.map(
+              (F18G7PropertyRow row) =>
+                  _PropertyLine(label: row.label, value: row.value),
+            ),
+            if (propertySnapshot.evidenceIds.isNotEmpty)
+              ExpansionTile(
+                key: const Key('properties-runtime-evidence'),
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                title: const Text('Preuves moteur'),
+                children: propertySnapshot.evidenceIds
+                    .map(
+                      (String evidence) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          evidence,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: ElectroSimColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+          ],
+          if (propertySnapshot?.parameters.isNotEmpty == true) ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            Text(
+              'Paramètres électriques',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: ElectroSimSpacing.xs),
+            ...propertySnapshot!.parameters.map(
+              (F18G7PropertyRow row) =>
+                  _PropertyLine(label: row.label, value: row.value),
             ),
           ],
           if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[

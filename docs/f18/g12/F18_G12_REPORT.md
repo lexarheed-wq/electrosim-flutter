@@ -2,10 +2,11 @@
 
 ## Objectif
 
-G12 qualifie le candidat final F18 sans modifier le code produit déjà validé par G11.
-La base produit de référence est le SHA d'intégration G11 :
+G12R2 qualifie le candidat F18 après connexion réelle des bibliothèques produit G10B,
+sans modifier le code produit validé par G10B et G11.
+La base produit de référence est :
 
-`2b481cba17d27644c5671ef99dad9d1e7786ebd9`
+`236f2e011d286d819c22960a27b076c9b6b7e5cb`
 
 Toute modification après cette base est limitée au contrat, au rapport et au workflow G12.
 
@@ -18,6 +19,7 @@ Le workflow G12 doit produire sur un SHA unique :
 - `flutter analyze` de l'application;
 - suite Flutter complète de l'application;
 - tests explicites LAN professeur/élève et TP;
+- test end-to-end G10B des bibliothèques schémas/pannes;
 - tests canvas critiques et bibliothèque V2;
 - build macOS **release** sur runner Intel;
 - preuve binaire `x86_64`;
@@ -46,7 +48,10 @@ Le candidat doit être vérifié sur le Mac Intel cible, avec au minimum :
 11. TP professeur → publication → démarrage → élève → diagnostic → réparation →
     soumission → note → clôture → lecture seule;
 12. synchronisation LAN et accès élève navigateur/QR;
-13. EIE visible professeur, absent comme coach élève, silencieux sans anomalie.
+13. EIE visible professeur, absent comme coach élève, silencieux sans anomalie;
+14. Bibliothèque de schémas : 2 cartes V2 visibles et ouverture réelle dans le simulateur;
+15. Bibliothèque de pannes : 2 pannes autonomes visibles et lancement réel du circuit fautif;
+16. recherche/filtres des bibliothèques et absence de fuite de la vérité professeur.
 
 Après réussite réelle de cette checklist, le marqueur de clôture est :
 

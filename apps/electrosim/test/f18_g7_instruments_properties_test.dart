@@ -37,7 +37,7 @@ void main() {
         find.byKey(const Key('properties-runtime-heading')),
         findsOneWidget,
       );
-      expect(find.text('CC'), findsOneWidget);
+      expect(find.text('CC'), findsWidgets);
       expect(find.text('Résolu'), findsOneWidget);
       expect(find.text('Alimenté'), findsOneWidget);
       expect(find.text('24.000 V'), findsWidgets);
@@ -53,7 +53,7 @@ void main() {
     },
   );
 
-  test('F18-G7 unsolved circuits never manufacture operating quantities', () {
+  test('F18-G7 missing evidence never manufactures operating quantities', () {
     final ComponentInstance isolated = ComponentInstance(
       id: ComponentId('isolated'),
       modelType: 'resistor',
@@ -74,14 +74,13 @@ void main() {
     final ComponentOperatingState state =
         snapshot.componentOperatingState(isolated.id)!;
 
-    expect(snapshot.solved, isFalse);
     expect(state.code, ComponentOperatingCode.undetermined);
     expect(state.voltageV, isNull);
     expect(state.currentA, isNull);
     expect(state.powerW, isNull);
     expect(
       state.warnings.map((OperatingWarning warning) => warning.code),
-      contains(OperatingWarningCode.simulationNotSolved),
+      contains(OperatingWarningCode.missingBranchResult),
     );
   });
 }

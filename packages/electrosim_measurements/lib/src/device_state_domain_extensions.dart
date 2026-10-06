@@ -76,8 +76,10 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
     );
     if (invalid != null) return invalid;
 
-    switch (component.modelType) {
-      case 'pv_controller':
+    final ComponentPhysicsContract physics =
+        CoreComponentPhysicsContracts.resolveComponent(component);
+    switch (physics.functionalRole) {
+      case ComponentFunctionalRole.pvController:
         if (!simulation.controllerPresent) return _missingBranch(component);
         final bool energized =
             simulation.pvDrawnPowerW.abs() > zeroTolerance ||
@@ -93,7 +95,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           warnings: const <OperatingWarning>[],
           evidenceIds: const <String>['pv:controller'],
         );
-      case 'pv_battery':
+      case ComponentFunctionalRole.pvBattery:
         if (!simulation.batteryPresent) return _missingBranch(component);
         return _fromExactValues(
           component: component,
@@ -102,7 +104,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           powerW: simulation.batteryPowerW,
           evidenceId: 'pv:battery',
         );
-      case 'pv_inverter':
+      case ComponentFunctionalRole.pvInverter:
         final ComponentOperatingCode code = switch (simulation.inverterState) {
           PvInverterState.faulted ||
           PvInverterState.inputOutOfRange => ComponentOperatingCode.faulted,
@@ -119,7 +121,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           warnings: const <OperatingWarning>[],
           evidenceIds: <String>['pv:inverter:${simulation.inverterState.name}'],
         );
-      case 'pv_resistive_load':
+      case ComponentFunctionalRole.pvLoad:
         final PvLoadResult? load = _pvLoad(simulation, component.id);
         if (load == null) return _missingBranch(component);
         return _fromExactValues(
@@ -129,7 +131,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           powerW: load.activePowerW,
           evidenceId: 'pv:load:${component.id.value}',
         );
-      default:
+      case ComponentFunctionalRole.generic:
         return ComponentOperatingState(
           componentId: component.id,
           code: ComponentOperatingCode.undetermined,
@@ -140,7 +142,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
             OperatingWarning(
               code: OperatingWarningCode.missingBranchResult,
               message:
-                  'No PV operating-state adapter exists for this component.',
+                  'No PV operating-state adapter exists for this canonical component role.',
             ),
           ],
           evidenceIds: <String>['component:${component.id.value}'],

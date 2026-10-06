@@ -70,6 +70,11 @@ final class SolverDC {
       topology,
       diagnostics,
     );
+    final List<_Element> normalizedElements = _normalizeIdealVoltageConstraints(
+      compiled.activeElements,
+      diagnostics,
+      options.residualTolerance,
+    );
     if (compiled.hasErrors || diagnostics.any(_isError)) {
       return _failure(circuit, DcSolveStatus.invalid, diagnostics);
     }
@@ -78,7 +83,7 @@ final class SolverDC {
     final List<String> floatingNodes = _findFloatingNodes(
       topology.nodes.map((TopologyNode node) => node.id),
       referenceNodeId,
-      compiled.activeElements,
+      normalizedElements,
     );
     if (floatingNodes.isNotEmpty) {
       diagnostics.add(
@@ -98,7 +103,7 @@ final class SolverDC {
     }
 
     var activeElements = _preLimitShortedVoltageSources(
-      compiled.activeElements,
+      normalizedElements,
       diagnostics,
       options.residualTolerance,
     );
@@ -1064,6 +1069,127 @@ final class SolverDC {
     return floating;
   }
 
+  List<_Element> _normalizeIdealVoltageConstraints(
+    List<_Element> elements,
+    List<DcSolverDiagnostic> diagnostics,
+    double tolerance,
+  ) {
+    final List<_Element> ordered = List<_Element>.from(elements);
+    final List<_Element> ideals = ordered
+        .where(
+          (_Element element) =>
+              element.kind == _ElementKind.idealVoltage &&
+              !element.redundant &&
+              element.currentLimitA == null,
+        )
+        .toList(growable: false)
+      ..sort((_Element a, _Element b) => a.id.compareTo(b.id));
+
+    final Map<String, List<_VoltageConstraintEdge>> graph =
+        <String, List<_VoltageConstraintEdge>>{};
+    final Map<String, _Element> replacement = <String, _Element>{};
+
+    for (final _Element element in ideals) {
+      final double? implied = _impliedVoltageDifference(
+        graph,
+        element.fromNodeId,
+        element.toNodeId,
+      );
+      if (implied == null) {
+        _addVoltageConstraint(
+          graph,
+          element.fromNodeId,
+          element.toNodeId,
+          element.value,
+        );
+        continue;
+      }
+
+      if ((implied - element.value).abs() <= tolerance) {
+        replacement[element.id] = element.withRedundant(true);
+        diagnostics.add(
+          DcSolverDiagnostic(
+            code: DcDiagnosticCode.redundantIdealConstraint,
+            severity: DcDiagnosticSeverity.warning,
+            message:
+                'Ideal voltage constraint is electrically redundant; branch current is indeterminate.',
+            sourceId: element.sourceId,
+            nodeIds: <String>[element.fromNodeId, element.toNodeId],
+          ),
+        );
+        continue;
+      }
+
+      diagnostics.add(
+        DcSolverDiagnostic(
+          code: DcDiagnosticCode.contradictoryIdealSource,
+          severity: DcDiagnosticSeverity.error,
+          message:
+              'Ideal voltage constraints conflict on the same electrical nodes: '
+              'expected ${element.value} V but existing constraints imply $implied V.',
+          sourceId: element.sourceId,
+          nodeIds: <String>[element.fromNodeId, element.toNodeId],
+        ),
+      );
+    }
+
+    return <_Element>[
+      for (final _Element element in ordered)
+        replacement[element.id] ?? element,
+    ];
+  }
+
+  void _addVoltageConstraint(
+    Map<String, List<_VoltageConstraintEdge>> graph,
+    String from,
+    String to,
+    double voltage,
+  ) {
+    graph.putIfAbsent(from, () => <_VoltageConstraintEdge>[]).add(
+      _VoltageConstraintEdge(to, -voltage),
+    );
+    graph.putIfAbsent(to, () => <_VoltageConstraintEdge>[]).add(
+      _VoltageConstraintEdge(from, voltage),
+    );
+  }
+
+  double? _impliedVoltageDifference(
+    Map<String, List<_VoltageConstraintEdge>> graph,
+    String from,
+    String to,
+  ) {
+    if (from == to) {
+      return 0.0;
+    }
+    if (!graph.containsKey(from) || !graph.containsKey(to)) {
+      return null;
+    }
+
+    final Map<String, double> potential = <String, double>{from: 0.0};
+    final List<String> queue = <String>[from];
+    for (var index = 0; index < queue.length; index++) {
+      final String node = queue[index];
+      final List<_VoltageConstraintEdge> edges =
+          List<_VoltageConstraintEdge>.from(
+            graph[node] ?? const <_VoltageConstraintEdge>[],
+          )..sort(
+            (_VoltageConstraintEdge a, _VoltageConstraintEdge b) =>
+                a.to.compareTo(b.to),
+          );
+      for (final _VoltageConstraintEdge edge in edges) {
+        if (potential.containsKey(edge.to)) {
+          continue;
+        }
+        potential[edge.to] = potential[node]! + edge.deltaV;
+        if (edge.to == to) {
+          return -potential[edge.to]!;
+        }
+        queue.add(edge.to);
+      }
+    }
+    return null;
+  }
+
   _MnaSolveOutcome? _solveActiveElements(
     Iterable<String> allNodeIds,
     String referenceNodeId,
@@ -1655,6 +1781,23 @@ final class _Element {
     );
   }
 
+  _Element withRedundant(bool value) => _Element._(
+    id: id,
+    modelType: modelType,
+    kind: kind,
+    publicKind: publicKind,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: this.value,
+    redundant: value,
+    currentLimitA: currentLimitA,
+    sourceId: sourceId,
+    diodeForwardVoltageV: diodeForwardVoltageV,
+    diodeOffResistanceOhm: diodeOffResistanceOhm,
+    diodeReverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
+    diodeMode: diodeMode,
+  );
+
   _Element asCurrentLimited(double currentA) {
     if (kind != _ElementKind.idealVoltage || currentLimitA == null) {
       throw StateError(
@@ -1671,6 +1814,13 @@ final class _Element {
       sourceId: sourceId,
     );
   }
+}
+
+final class _VoltageConstraintEdge {
+  const _VoltageConstraintEdge(this.to, this.deltaV);
+
+  final String to;
+  final double deltaV;
 }
 
 final class _InactiveElement {

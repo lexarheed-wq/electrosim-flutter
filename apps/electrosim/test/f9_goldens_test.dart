@@ -107,8 +107,10 @@ void main() {
       workspace: 'Recherche de dérangement',
     );
     await openContext(tester);
-    await tester.tap(find.byKey(const Key('diagnostic-tab')));
+    final TabBar tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    tabBar.controller!.animateTo(2);
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('student-diagnostic-panel')), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
       matchesGoldenFile('goldens/f9_compact_student_diagnostic.png'),

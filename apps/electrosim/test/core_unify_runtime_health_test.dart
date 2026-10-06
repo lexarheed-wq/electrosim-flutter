@@ -2,7 +2,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/runtime/electrosim_runtime_engine.dart';
+import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 
 void main() {
   test('severe receiver stress becomes an electrical open in the same tick', () {

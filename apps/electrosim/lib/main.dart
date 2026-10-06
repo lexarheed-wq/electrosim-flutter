@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/gestures.dart';
@@ -15,6 +16,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_home.dart';
+import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
 import 'f18_selection_state.dart';
 import 'f18_shell_navigation.dart';
@@ -144,11 +146,16 @@ class F9HomePage extends StatelessWidget {
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'design-schema-library'),
-              builder: (BuildContext context) => const F18PlaceholderPage(
-                pageKey: Key('design-schema-library-page'),
-                title: 'Bibliothèque de schémas',
-                description:
-                    'Les schémas sains seront gérés dans la bibliothèque de conception F18.',
+              builder: (BuildContext libraryContext) => F18SchemaLibraryPage(
+                library: buildV2ProductLibrary(),
+                onOpen: (ExampleDefinition schema) => _openWorkspace(
+                  libraryContext,
+                  'Bibliothèque de schémas',
+                  initialWorkspace: 'Câblage',
+                  initialCircuit: schema.circuit,
+                  persistenceController: persistenceController,
+                  parentRouteName: 'design-schema-library',
+                ),
               ),
             ),
           ),
@@ -193,11 +200,16 @@ class F9HomePage extends StatelessWidget {
           onFaultLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'maintenance-fault-library'),
-              builder: (BuildContext context) => const F18PlaceholderPage(
-                pageKey: Key('maintenance-fault-library-page'),
-                title: 'Bibliothèque de pannes',
-                description:
-                    'Les circuits défectueux autonomes seront gérés dans la bibliothèque de maintenance F18.',
+              builder: (BuildContext libraryContext) => F18FaultLibraryPage(
+                library: buildV2ProductLibrary(),
+                onLaunch: (FaultScenarioDefinition scenario) => _openWorkspace(
+                  libraryContext,
+                  'Bibliothèque de pannes',
+                  initialWorkspace: 'Recherche de dérangement',
+                  initialCircuit: scenario.faultyCircuit,
+                  persistenceController: persistenceController,
+                  parentRouteName: 'maintenance-fault-library',
+                ),
               ),
             ),
           ),
@@ -271,6 +283,7 @@ class F9HomePage extends StatelessWidget {
     BuildContext context,
     String entryLabel, {
     required String initialWorkspace,
+    CircuitState? initialCircuit,
     bool sessionNavigation = false,
     ElectroSimPersistenceController? persistenceController,
     String? parentRouteName,
@@ -285,6 +298,7 @@ class F9HomePage extends StatelessWidget {
         builder: (BuildContext workspaceContext) => F18WorkspacePage(
           entryLabel: entryLabel,
           initialWorkspace: initialWorkspace,
+          initialCircuit: initialCircuit,
           sessionNavigation: sessionNavigation,
           persistenceController: persistenceController,
           onExitWorkspace: parentRouteName == null

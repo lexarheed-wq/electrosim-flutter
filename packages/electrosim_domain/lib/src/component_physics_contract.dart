@@ -359,6 +359,9 @@ final class ComponentOperatingEnvelope {
     this.maxCurrentA,
     this.maxPowerW,
     this.thermalWithstandSeconds,
+    this.invalidMaxVoltage = false,
+    this.invalidMaxCurrent = false,
+    this.invalidMaxPower = false,
   });
 
   final double? nominalVoltageV;
@@ -368,6 +371,12 @@ final class ComponentOperatingEnvelope {
   final double? maxCurrentA;
   final double? maxPowerW;
   final double? thermalWithstandSeconds;
+
+  /// True only when an explicit canonical maximum was supplied but invalid.
+  /// Absence is not invalid: it means the nominal-derived envelope may apply.
+  final bool invalidMaxVoltage;
+  final bool invalidMaxCurrent;
+  final bool invalidMaxPower;
 
   factory ComponentOperatingEnvelope.fromComponent(ComponentInstance component) {
     final ReceiverNominalRating? nominal =
@@ -382,18 +391,34 @@ final class ComponentOperatingEnvelope {
       thermalWithstandSeconds: _positive(
         component.parameters[ComponentParameterKeys.thermalWithstandSeconds],
       ),
+      invalidMaxVoltage: _hasInvalidPositive(
+        component.parameters,
+        ComponentParameterKeys.maxVoltageV,
+      ),
+      invalidMaxCurrent: _hasInvalidPositive(
+        component.parameters,
+        ComponentParameterKeys.maxCurrentA,
+      ),
+      invalidMaxPower: _hasInvalidPositive(
+        component.parameters,
+        ComponentParameterKeys.maxPowerW,
+      ),
     );
   }
 
   double? get effectiveMaxVoltageV =>
-      maxVoltageV ?? _scaled(nominalVoltageV, 1.10);
+      invalidMaxVoltage ? null : maxVoltageV ?? _scaled(nominalVoltageV, 1.10);
   double? get effectiveMaxCurrentA =>
-      maxCurrentA ?? _scaled(nominalCurrentA, 1.25);
-  double? get effectiveMaxPowerW => maxPowerW ?? _scaled(nominalPowerW, 1.25);
+      invalidMaxCurrent ? null : maxCurrentA ?? _scaled(nominalCurrentA, 1.25);
+  double? get effectiveMaxPowerW =>
+      invalidMaxPower ? null : maxPowerW ?? _scaled(nominalPowerW, 1.25);
 
   static double? _scaled(double? value, double factor) =>
       value == null ? null : value * factor;
 }
+
+bool _hasInvalidPositive(Map<String, Object?> parameters, String key) =>
+    parameters.containsKey(key) && _positive(parameters[key]) == null;
 
 double? _positive(Object? raw) {
   if (raw is! num) return null;

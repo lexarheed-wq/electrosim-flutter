@@ -1592,41 +1592,82 @@ String _componentBranchElementIdAc3(
     ? 'component:${component.id.value}'
     : 'component:${component.id.value}:${branch.branchId}';
 
+bool? _closedFromControlLawAc3(
+  ComponentInstance component,
+  ComponentControlLaw controlLaw,
+) {
+  switch (controlLaw) {
+    case ComponentControlLaw.maintainedSwitch:
+      final Object? rawClosed = component.controlState['closed'];
+      return rawClosed is bool ? rawClosed : null;
+    case ComponentControlLaw.momentaryNormallyOpen:
+      final Object? rawPressed = component.controlState['pressed'];
+      return rawPressed is bool ? rawPressed : null;
+    case ComponentControlLaw.momentaryNormallyClosed:
+      final Object? rawPressed = component.controlState['pressed'];
+      return rawPressed is bool ? !rawPressed : null;
+    case ComponentControlLaw.relayNormallyOpen:
+      final Object? rawActuated = component.controlState['actuated'];
+      return rawActuated is bool ? rawActuated : null;
+    case ComponentControlLaw.relayNormallyClosed:
+      final Object? rawActuated = component.controlState['actuated'];
+      return rawActuated is bool ? !rawActuated : null;
+    case ComponentControlLaw.none:
+    case ComponentControlLaw.electromagneticCoil:
+    case ComponentControlLaw.protection:
+      return null;
+  }
+}
+
 AcComplex? _componentImpedance(
   ComponentInstance component,
+  ComponentPhysicsContract physics,
   double frequencyHz,
   List<Ac3SolverDiagnostic> diagnostics,
 ) {
   final double omega = 2.0 * math.pi * frequencyHz;
-  switch (component.modelType) {
-    case 'resistor':
-    case 'lamp':
+
+  AcComplex? invalid() {
+    diagnostics.add(
+      Ac3SolverDiagnostic(
+        code: Ac3DiagnosticCode.invalidParameter,
+        severity: Ac3DiagnosticSeverity.error,
+        message:
+            'Invalid canonical parameters for AC3 component ${component.id.value}.',
+        componentId: component.id,
+      ),
+    );
+    return null;
+  }
+
+  switch (physics.electricalLaw) {
+    case ComponentElectricalLaw.resistive:
       final double? resistance = _positiveParameter(
         component.parameters,
-        'resistanceOhm',
+        ComponentParameterKeys.resistanceOhm,
       );
-      if (resistance != null) {
-        return AcComplex.real(resistance);
-      }
-    case 'inductor':
+      return resistance == null ? invalid() : AcComplex.real(resistance);
+    case ComponentElectricalLaw.inductor:
       final double? inductance = _positiveParameter(
         component.parameters,
-        'inductanceH',
+        ComponentParameterKeys.inductanceH,
       );
-      if (inductance != null) {
-        return AcComplex(0.0, omega * inductance);
-      }
-    case 'capacitor':
+      return inductance == null
+          ? invalid()
+          : AcComplex(0.0, omega * inductance);
+    case ComponentElectricalLaw.capacitor:
       final double? capacitance = _positiveParameter(
         component.parameters,
-        'capacitanceF',
+        ComponentParameterKeys.capacitanceF,
       );
-      if (capacitance != null) {
-        return AcComplex(0.0, -1.0 / (omega * capacitance));
-      }
-    case 'impedance':
-      final Object? rRaw = component.parameters['resistanceOhm'];
-      final Object? xRaw = component.parameters['reactanceOhm'];
+      return capacitance == null
+          ? invalid()
+          : AcComplex(0.0, -1.0 / (omega * capacitance));
+    case ComponentElectricalLaw.acImpedance:
+      final Object? rRaw =
+          component.parameters[ComponentParameterKeys.resistanceOhm];
+      final Object? xRaw =
+          component.parameters[ComponentParameterKeys.reactanceOhm];
       if (rRaw is num && xRaw is num) {
         final double resistance = rRaw.toDouble();
         final double reactance = xRaw.toDouble();
@@ -1637,26 +1678,28 @@ AcComplex? _componentImpedance(
           return AcComplex(resistance, reactance);
         }
       }
-    default:
+      return invalid();
+    case ComponentElectricalLaw.binarySwitch:
+    case ComponentElectricalLaw.protectionSwitch:
+    case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.loadWyeThreePhase:
+    case ComponentElectricalLaw.loadDeltaThreePhase:
+    case ComponentElectricalLaw.converter:
+    case ComponentElectricalLaw.storage:
+    case ComponentElectricalLaw.unsupported:
       diagnostics.add(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.unsupportedComponentModel,
           severity: Ac3DiagnosticSeverity.error,
-          message: 'Unsupported AC3 component model ${component.modelType}.',
+          message:
+              'Electrical law ${physics.electricalLaw.name} has no AC3 single-branch impedance representation.',
           componentId: component.id,
         ),
       );
       return null;
   }
-  diagnostics.add(
-    Ac3SolverDiagnostic(
-      code: Ac3DiagnosticCode.invalidParameter,
-      severity: Ac3DiagnosticSeverity.error,
-      message: 'Invalid parameters for AC3 component ${component.id.value}.',
-      componentId: component.id,
-    ),
-  );
-  return null;
 }
 
 double? _positiveParameter(Map<String, Object?> parameters, String key) {
@@ -1705,40 +1748,26 @@ AcComplex? _phasorParameter(
   return AcComplex.polar(magnitude, phaseDeg * math.pi / 180.0);
 }
 
-Ac3BranchKind _branchKindForModel(String modelType) {
-  switch (modelType) {
-    case 'resistor':
+Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
+  switch (physics.electricalLaw) {
+    case ComponentElectricalLaw.resistive:
       return Ac3BranchKind.resistor;
-    case 'inductor':
+    case ComponentElectricalLaw.inductor:
       return Ac3BranchKind.inductor;
-    case 'capacitor':
+    case ComponentElectricalLaw.capacitor:
       return Ac3BranchKind.capacitor;
-    default:
+    case ComponentElectricalLaw.acImpedance:
+    case ComponentElectricalLaw.binarySwitch:
+    case ComponentElectricalLaw.protectionSwitch:
+    case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.loadWyeThreePhase:
+    case ComponentElectricalLaw.loadDeltaThreePhase:
+    case ComponentElectricalLaw.converter:
+    case ComponentElectricalLaw.storage:
+    case ComponentElectricalLaw.unsupported:
       return Ac3BranchKind.impedance;
-  }
-}
-
-PhaseTag? _singlePhase(Iterable<Terminal> terminals) {
-  final Set<PhaseTag> phases = terminals
-      .map((Terminal terminal) => terminal.phase)
-      .where(_isLinePhase)
-      .toSet();
-  return phases.length == 1 ? phases.single : null;
-}
-
-bool _isLinePhase(PhaseTag phase) =>
-    phase == PhaseTag.l1 || phase == PhaseTag.l2 || phase == PhaseTag.l3;
-
-double _defaultPhaseDegrees(PhaseTag phase) {
-  switch (phase) {
-    case PhaseTag.l1:
-      return 0.0;
-    case PhaseTag.l2:
-      return -120.0;
-    case PhaseTag.l3:
-      return 120.0;
-    default:
-      return 0.0;
   }
 }
 
@@ -2015,30 +2044,6 @@ bool _balancedMagnitudes(List<AcComplex?> values, double relativeTolerance) {
   }
   return (maximum - minimum) / maximum <= relativeTolerance;
 }
-
-const Set<String> _supportedAc3ComponentModels = <String>{
-  'resistor',
-  'lamp',
-  'inductor',
-  'capacitor',
-  'impedance',
-  'switch',
-  'switch_spst',
-  'push_button_no',
-  'push_button_nc',
-  'contactor_3p',
-  'contactor_aux_no',
-  'contactor_aux_nc',
-  'breaker_3p',
-  'breaker_4p',
-  'thermal_overload_3p',
-  'isolator_3p',
-  'isolator_4p',
-  'terminal_block_5',
-  'motor_3p_6t',
-  'load_wye_3p',
-  'load_delta_3p',
-};
 
 bool _isError(Ac3SolverDiagnostic diagnostic) =>
     diagnostic.severity == Ac3DiagnosticSeverity.error;

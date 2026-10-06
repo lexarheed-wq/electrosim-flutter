@@ -1,0 +1,77 @@
+name: F18-G10B Product library UI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g10b-library-ui-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'apps/electrosim/lib/main.dart'
+      - 'apps/electrosim/lib/f18_product_library_pages.dart'
+      - 'apps/electrosim/test/f18_g10b_library_ui_test.dart'
+      - 'tools/f18_g10b_contract.py'
+      - '.github/workflows/f18-g10b-library-ui.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  g10b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        run: |
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Static G10B UI contract
+        run: python3 tools/f18_g10b_contract.py
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Verify Dart formatting
+        run: |
+          dart format --output=none --set-exit-if-changed \
+            apps/electrosim/lib/main.dart \
+            apps/electrosim/lib/f18_product_library_pages.dart \
+            apps/electrosim/test/f18_g10b_library_ui_test.dart
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: G10B end-to-end library UI
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g10b_library_ui_test.dart
+
+      - name: G10 product library non-regression
+        working-directory: packages/electrosim_scenarios
+        run: |
+          dart pub get
+          dart analyze
+          dart test test/f18_g10_v2_product_libraries_test.dart
+
+      - name: Navigation and G11-sensitive regressions
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f18_g2_navigation_test.dart
+          flutter test test/f18_g7_instruments_properties_test.dart
+          flutter test test/f18_g8_tp_teacher_student_test.dart
+          flutter test test/f18_g9_internal_eie_test.dart
+
+      - name: Gate marker
+        run: echo F18_G10B_LIBRARY_UI_GATE_PASS

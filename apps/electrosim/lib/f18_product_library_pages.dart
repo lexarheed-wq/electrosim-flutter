@@ -273,7 +273,11 @@ class _LibraryScaffold extends StatelessWidget {
                         crossAxisCount: columns,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: columns == 1 ? 1.22 : 1.08,
+                        mainAxisExtent: columns == 1
+                            ? 410
+                            : columns == 2
+                            ? 400
+                            : 390,
                       ),
                     ),
                   ),

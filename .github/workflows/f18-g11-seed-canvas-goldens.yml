@@ -1,0 +1,47 @@
+name: F18-G11 seed canvas goldens
+
+on:
+  push:
+    branches:
+      - f18-g11-tests-audits-20261006
+    paths:
+      - '.github/workflows/f18-g11-seed-canvas-goldens.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f18-g11-tests-audits-20261006
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Generate deterministic canvas goldens
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --update-goldens test/simulator_canvas_golden_test.dart
+          test -s test/goldens/canvas_compact.png
+          test -s test/goldens/canvas_medium.png
+          test -s test/goldens/canvas_expanded.png
+
+      - name: Commit generated references
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add packages/electrosim_canvas/test/goldens/*.png
+          git diff --cached --quiet && exit 0
+          git commit -m "F18 G11: seed deterministic canvas golden references"
+          git push origin HEAD:f18-g11-tests-audits-20261006

@@ -1,0 +1,216 @@
+name: F18-G12 Final qualification and Mac Intel candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g12-final-qualification-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - '.github/workflows/f18-g12-final-qualification.yml'
+      - 'tools/f18_g12_contract.py'
+      - 'docs/f18/g12/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f18-g12-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  final-core:
+    name: Final core qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify exact toolchain and repository hygiene
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/f18_g12_contract.py
+          python3 tools/f18_g11_audit.py
+
+      - name: Re-run current gate contracts
+        run: |
+          set -euo pipefail
+          python3 tools/f18_g7_contract.py
+          python3 tools/f18_g8_contract.py
+          python3 tools/f18_g9_contract.py
+          python3 tools/f18_g10_contract.py
+
+      - name: Complete application qualification
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test
+
+      - name: Explicit LAN and TP final checks
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter test test/f17_lan_sync_test.dart
+          flutter test test/f18_g8_tp_teacher_student_test.dart
+          flutter test test/f18_g9_internal_eie_test.dart
+
+      - name: Critical canvas and V2 library checks
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_canvas
+          flutter pub get
+          flutter analyze
+          flutter test test/canvas_performance_test.dart
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/simulator_canvas_golden_test.dart
+          cd ../electrosim_scenarios
+          dart pub get
+          dart analyze
+          dart test test/f18_g10_v2_product_libraries_test.dart
+
+  macos-intel:
+    name: macOS Intel release candidate
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify Mac toolchain and G12 contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          python3 tools/f18_g12_contract.py
+          git diff --check
+
+      - name: Prepare native runner with LAN configuration
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) tmp="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          echo "path=$tmp" >> "$GITHUB_OUTPUT"
+
+      - name: Analyze and smoke-test native candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter test test/f17_lan_sync_test.dart
+
+      - name: Build and prove Intel release
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/f18-g12/macos"
+          mkdir -p "$out"
+          base_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+
+          cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
+F18 physical validation required on target Mac Intel / Ventura 13.7
+1. Application launches without crash.
+2. Home, Session, Maintenance and Design navigation.
+3. Session creation and dashboard return.
+4. Canvas drag, pan, trackpad zoom and clipping.
+5. DC wiring including two DC supplies in series.
+6. Dedicated DC terminal block; no AC3 terminal block in DC.
+7. Modifier-only multiselect, deselect, topbar Delete.
+8. Wire deletion from the single topbar Delete action.
+9. Double-click switch, push button and breaker physical control zones.
+10. Real voltage/current measurements on a valid energized circuit.
+11. Full teacher/student troubleshooting TP lifecycle through read-only close.
+12. LAN browser/QR student synchronization.
+13. Teacher-only EIE; no student coach; healthy circuit remains silent.
+
+If every item passes, report exactly:
+F18_PHYSICAL_MAC_PASS
+EOF
+
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" \
+            "$out/ElectroSim_F18_G12_${base_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - name: Package exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/f18-g12/source"
+          mkdir -p "$out"
+          base_sha="$(git rev-parse HEAD)"
+          git archive --format=zip \
+            --output="$out/ElectroSim_F18_G12_SOURCE_${base_sha:0:12}.zip" \
+            HEAD
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-F18-G12-macOS-Intel
+          path: audit/f18-g12/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-F18-G12-source
+          path: audit/f18-g12/source
+          if-no-files-found: error
+          retention-days: 14
+
+  automated-gate:
+    name: F18-G12 automated gate
+    needs:
+      - final-core
+      - macos-intel
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo F18_G12_AUTOMATED_QUALIFICATION_PASS
+          echo F18_PHYSICAL_MAC_PASS=PENDING_USER_VALIDATION

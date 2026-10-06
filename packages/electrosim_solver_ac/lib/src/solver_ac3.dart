@@ -1000,13 +1000,21 @@ bool _compileFeedThroughAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
-  if (component.modelType != 'terminal_block_5') return false;
-  if (branches.length != 5) {
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
+  if (physics.electricalLaw != ComponentElectricalLaw.feedThrough) {
+    return false;
+  }
+  final ComponentModelContract? structural =
+      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final int expectedBranches = structural?.branches.length ?? branches.length;
+  if (branches.length != expectedBranches) {
     diagnostics.add(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
-        message: 'terminal_block_5 must expose five feed-through branches.',
+        message:
+            '${component.modelType} must expose exactly $expectedBranches canonical feed-through branches.',
         componentId: component.id,
       ),
     );
@@ -1039,13 +1047,24 @@ bool _compileMultipoleSwitchAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
-  final bool supported =
-      component.modelType == 'isolator_3p' ||
-      component.modelType == 'isolator_4p';
-  if (!supported) return false;
-
-  final int expected = component.modelType == 'isolator_4p' ? 4 : 3;
-  if (branches.length != expected ||
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
+  if (physics.electricalLaw != ComponentElectricalLaw.binarySwitch ||
+      physics.controlLaw != ComponentControlLaw.maintainedSwitch) {
+    return false;
+  }
+  final ComponentModelContract? structural =
+      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final int expectedPoles =
+      structural?.branches
+          .where(
+            (ComponentBranchDefinition branch) =>
+                branch.role == ElectricalBranchRole.powerPole,
+          )
+          .length ??
+      0;
+  if (expectedPoles <= 1) return false;
+  if (branches.length != expectedPoles ||
       branches.any(
         (TopologyBranch branch) =>
             branch.role != ElectricalBranchRole.powerPole,
@@ -1055,7 +1074,7 @@ bool _compileMultipoleSwitchAc3({
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            '${component.modelType} must expose exactly $expected power poles.',
+            '${component.modelType} must expose exactly $expectedPoles canonical power poles.',
         componentId: component.id,
       ),
     );
@@ -1068,7 +1087,8 @@ bool _compileMultipoleSwitchAc3({
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidParameter,
         severity: Ac3DiagnosticSeverity.error,
-        message: '${component.modelType} controlState.closed must be boolean.',
+        message:
+            'Canonical multipole switch controlState.closed must be boolean.',
         componentId: component.id,
       ),
     );
@@ -1109,19 +1129,24 @@ bool _compileThreePhaseImpedanceDeviceAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
   final bool supported =
-      component.modelType == 'motor_3p_6t' ||
-      component.modelType == 'load_wye_3p' ||
-      component.modelType == 'load_delta_3p';
+      physics.electricalLaw == ComponentElectricalLaw.motorThreePhase ||
+      physics.electricalLaw == ComponentElectricalLaw.loadWyeThreePhase ||
+      physics.electricalLaw == ComponentElectricalLaw.loadDeltaThreePhase;
   if (!supported) return false;
 
-  if (branches.length != 3) {
+  final ComponentModelContract? structural =
+      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final int expectedBranches = structural?.branches.length ?? 3;
+  if (branches.length != expectedBranches) {
     diagnostics.add(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            '${component.modelType} must expose exactly three electrical branches.',
+            '${component.modelType} must expose exactly $expectedBranches canonical electrical branches.',
         componentId: component.id,
       ),
     );
@@ -1146,9 +1171,10 @@ bool _compileThreePhaseImpedanceDeviceAc3({
 
   final double? resistance = _positiveParameter(
     component.parameters,
-    'resistanceOhm',
+    ComponentParameterKeys.resistanceOhm,
   );
-  final Object? rawInductance = component.parameters['inductanceH'];
+  final Object? rawInductance =
+      component.parameters[ComponentParameterKeys.inductanceH];
   final double inductance = rawInductance == null
       ? 0.0
       : rawInductance is num
@@ -1160,7 +1186,7 @@ bool _compileThreePhaseImpedanceDeviceAc3({
         code: Ac3DiagnosticCode.invalidParameter,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            '${component.modelType} requires resistanceOhm > 0 and optional inductanceH >= 0.',
+            '${component.modelType} requires canonical resistance > 0 and optional inductance >= 0.',
         componentId: component.id,
       ),
     );
@@ -1235,13 +1261,23 @@ bool _compileThreePoleProtectionAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
-  final bool supported =
-      component.modelType == 'breaker_3p' ||
-      component.modelType == 'breaker_4p' ||
-      component.modelType == 'thermal_overload_3p';
-  if (!supported) return false;
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
+  if (physics.electricalLaw != ComponentElectricalLaw.protectionSwitch) {
+    return false;
+  }
 
-  final int expectedPoles = component.modelType == 'breaker_4p' ? 4 : 3;
+  final ComponentModelContract? structural =
+      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final int expectedPoles =
+      structural?.branches
+          .where(
+            (ComponentBranchDefinition branch) =>
+                branch.role == ElectricalBranchRole.powerPole,
+          )
+          .length ??
+      0;
+  if (expectedPoles <= 1) return false;
   if (branches.length != expectedPoles ||
       branches.any(
         (TopologyBranch branch) =>
@@ -1252,7 +1288,7 @@ bool _compileThreePoleProtectionAc3({
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            '${component.modelType} must expose exactly $expectedPoles power poles.',
+            '${component.modelType} must expose exactly $expectedPoles canonical power poles.',
         componentId: component.id,
       ),
     );
@@ -1341,10 +1377,23 @@ bool _compileElectromechanicalAc3({
   required List<_Ac3Element> elements,
   required List<Ac3SolverDiagnostic> diagnostics,
 }) {
-  final bool isContactor = component.modelType == 'contactor_3p';
-  final bool isAuxNo = component.modelType == 'contactor_aux_no';
-  final bool isAuxNc = component.modelType == 'contactor_aux_nc';
-  if (!isContactor && !isAuxNo && !isAuxNc) {
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
+  final bool isPowerContactor =
+      physics.controlLaw == ComponentControlLaw.electromagneticCoil &&
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.controlCoil,
+      ) &&
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.powerPole,
+      );
+  final bool isAuxNo =
+      physics.controlLaw == ComponentControlLaw.relayNormallyOpen;
+  final bool isAuxNc =
+      physics.controlLaw == ComponentControlLaw.relayNormallyClosed;
+  if (!isPowerContactor && !isAuxNo && !isAuxNc) {
     return false;
   }
 
@@ -1422,13 +1471,25 @@ bool _compileElectromechanicalAc3({
             branch.role == ElectricalBranchRole.powerPole,
       )
       .toList(growable: false);
-  if (coil == null || powerPoles.length != 3 || branches.length != 4) {
+  final ComponentModelContract? structural =
+      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final int expectedPowerPoles =
+      structural?.branches
+          .where(
+            (ComponentBranchDefinition branch) =>
+                branch.role == ElectricalBranchRole.powerPole,
+          )
+          .length ??
+      powerPoles.length;
+  if (coil == null ||
+      powerPoles.length != expectedPowerPoles ||
+      branches.length != expectedPowerPoles + 1) {
     diagnostics.add(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidTerminalCount,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            'contactor_3p must expose three power poles and one control coil.',
+            'Electromagnetic AC3 component must expose its canonical power poles and one control coil.',
         componentId: component.id,
       ),
     );
@@ -1437,9 +1498,10 @@ bool _compileElectromechanicalAc3({
 
   final double? coilResistance = _positiveParameter(
     component.parameters,
-    'coilResistanceOhm',
+    ComponentParameterKeys.coilResistanceOhm,
   );
-  final Object? inductanceRaw = component.parameters['coilInductanceH'];
+  final Object? inductanceRaw =
+      component.parameters[ComponentParameterKeys.coilInductanceH];
   final double coilInductance = inductanceRaw == null
       ? 0.0
       : inductanceRaw is num
@@ -1453,7 +1515,7 @@ bool _compileElectromechanicalAc3({
         code: Ac3DiagnosticCode.invalidParameter,
         severity: Ac3DiagnosticSeverity.error,
         message:
-            'contactor_3p requires coilResistanceOhm > 0 and optional coilInductanceH >= 0.',
+            'Electromagnetic AC3 component requires canonical coil resistance > 0 and optional coil inductance >= 0.',
         componentId: component.id,
       ),
     );

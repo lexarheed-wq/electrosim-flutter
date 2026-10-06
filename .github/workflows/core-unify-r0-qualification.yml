@@ -1,0 +1,89 @@
+name: CORE-UNIFY R0 qualification
+
+on:
+  push:
+    branches:
+      - core-unify-20261006
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tools/**'
+      - '.github/workflows/core-unify-r0-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-unify-r0-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Toolchain and repository hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+
+      - name: Domain contracts
+        working-directory: packages/electrosim_domain
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Electromechanical controls
+        working-directory: packages/electrosim_controls
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: DC solver
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Measurements and device state
+        working-directory: packages/electrosim_measurements
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Application analysis and regression suite
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test
+
+      - name: Cross-project regression contracts
+        run: |
+          set -euo pipefail
+          python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py

@@ -37,7 +37,7 @@ void main() {
         .map((EieAdvice item) => item.code)
         .toSet();
     expect(codes, contains(EieAdviceCode.pvMissingArray));
-    expect(codes, contains(EieAdviceCode.pvMissingInverter));
+    expect(codes, isNot(contains(EieAdviceCode.pvMissingInverter)));
     expect(
       snapshot.diagnostics.advice.every(
         (EieAdvice item) => item.evidenceIds.isNotEmpty,

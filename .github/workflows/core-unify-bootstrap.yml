@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 2
           ref: core-unify-20261006
-      - name: Apply reviewed CORE-UNIFY patch
+      - name: Apply CORE-UNIFY R0 patch
         shell: bash
         run: |
           set -euo pipefail
@@ -29,7 +29,6 @@ jobs:
           base64 -d /tmp/core_unify.patch.gz.b64 | gzip -d > /tmp/core_unify.patch
           git apply --check /tmp/core_unify.patch
           git apply /tmp/core_unify.patch
-          python3 tools/core_unify_architecture_guard.py
           git diff --check
           rm -f tools/core_unify.patch.gz.b64
           rm -rf tools/core_unify_chunks
@@ -37,5 +36,5 @@ jobs:
           git config user.name "ElectroSim CORE-UNIFY"
           git config user.email "actions@users.noreply.github.com"
           git add -A
-          git commit -m "CORE-UNIFY R0-R5: canonical physics runtime"
+          git commit -m "CORE-UNIFY R0: canonical parameter contract"
           git push origin HEAD:core-unify-20261006

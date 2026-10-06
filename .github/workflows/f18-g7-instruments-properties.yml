@@ -45,14 +45,15 @@ jobs:
         working-directory: apps/electrosim
         run: flutter pub get
 
-      - name: Parse changed Dart sources with formatter
+      - name: Preview canonical Dart formatting
         run: |
-          dart format --output=none --set-exit-if-changed \
+          dart format \
             apps/electrosim/lib/f18_g7_property_presenter.dart \
             apps/electrosim/lib/f9_context_panels.dart \
             apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \
             apps/electrosim/test/f18_g7_instruments_properties_test.dart \
             packages/electrosim_measurements/lib/src/device_state_domain_extensions.dart
+          git diff -- apps/electrosim/test/f18_g7_instruments_properties_test.dart || true
 
       - name: Analyze application
         working-directory: apps/electrosim

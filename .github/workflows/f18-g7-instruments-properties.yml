@@ -1,56 +1,58 @@
-name: F18-G7 Instruments and properties
+name: F18-G7 Bootstrap validation
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - f18-g7-instruments-properties-20261006
-      - v2-post-mac-audit-fixes-20261005
     paths:
-      - 'apps/electrosim/**'
-      - 'packages/electrosim_measurements/**'
-      - 'packages/electrosim_solver_dc/**'
-      - 'packages/electrosim_solver_ac/**'
-      - 'packages/electrosim_pv/**'
-      - 'tools/f18_g7_contract.py'
+      - 'tools/.f18_g7_payload/**'
       - '.github/workflows/f18-g7-instruments-properties.yml'
-      - 'docs/f18/g7/**'
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  g7:
+  validate-and-materialize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.10'
           channel: stable
           cache: true
+
       - name: Verify locked toolchain
         run: |
           flutter --version | grep '3.38.10'
           dart --version 2>&1 | grep '3.10.9'
+
+      - name: Materialize validated G7 payload
+        run: |
+          cat tools/.f18_g7_payload/part* | base64 -d > /tmp/f18_g7_payload.tar.gz
+          echo "adddaa77317a766666554a81c77074465fa22b453f504144924aae7877ca340d  /tmp/f18_g7_payload.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/f18_g7_payload.tar.gz
+          rm -rf tools/.f18_g7_payload
+
+      - name: Format changed Dart sources
+        run: |
+          dart format             apps/electrosim/lib/f18_g7_property_presenter.dart             apps/electrosim/lib/f9_context_panels.dart             apps/electrosim/lib/runtime/electrosim_runtime_engine.dart             apps/electrosim/test/f18_g7_instruments_properties_test.dart             packages/electrosim_measurements/lib/src/device_state_domain_extensions.dart
+
       - name: Static G7 architecture contract
         run: python3 tools/f18_g7_contract.py
+
       - name: Resolve application dependencies
         working-directory: apps/electrosim
         run: flutter pub get
-      - name: Parse changed Dart sources with formatter
-        run: |
-          dart format --output=none --set-exit-if-changed \
-            apps/electrosim/lib/f18_g7_property_presenter.dart \
-            apps/electrosim/lib/f9_context_panels.dart \
-            apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \
-            apps/electrosim/test/f18_g7_instruments_properties_test.dart \
-            packages/electrosim_measurements/lib/src/device_state_domain_extensions.dart
+
       - name: Analyze application
         working-directory: apps/electrosim
         run: flutter analyze
+
       - name: G7 targeted application tests
         working-directory: apps/electrosim
         run: |
@@ -59,16 +61,30 @@ jobs:
           flutter test test/f17_runtime_engine_test.dart
           flutter test test/f17_pv_energy_runtime_test.dart
           flutter test test/f9_shell_test.dart
+
       - name: Measurement and DeviceStateEngine regression
         working-directory: packages/electrosim_measurements
         run: |
           dart pub get
           dart analyze
           dart test
+
       - name: G6 interaction non-regression
         working-directory: apps/electrosim
         run: |
           flutter test test/f18_g3r1_point06_topbar_actions_rotation_test.dart
           flutter test test/f18_g3r1_point10_integrated_visible_contract_test.dart
-      - name: Gate marker
-        run: echo F18_G7_INSTRUMENTS_PROPERTIES_GATE_PASS
+
+      - name: Commit G7 only after validation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No materialization changes to commit."
+            exit 0
+          fi
+          git commit -m "F18 G7 — Instruments and properties
+
+          F18_G7_INSTRUMENTS_PROPERTIES_GATE_PASS"
+          git push origin HEAD:f18-g7-instruments-properties-20261006

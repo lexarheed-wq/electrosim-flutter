@@ -1,5 +1,6 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
+import 'package:electrosim_pv/electrosim_pv.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
@@ -93,6 +94,26 @@ final class DiagnosticEngine {
       }
     }
     builder.addReceiverStates(receiverLoadStates);
+    return builder.build();
+  }
+
+  DiagnosticReport analyzePv({
+    required TopologyGraph topology,
+    required PvSolveResult simulation,
+  }) {
+    _requireIdentity(
+      topology,
+      simulation.circuitId,
+      simulation.circuitRevision,
+    );
+    final _ReportBuilder builder = _ReportBuilder(
+      circuitId: simulation.circuitId,
+      circuitRevision: simulation.circuitRevision,
+    );
+    builder.addTopology(topology);
+    for (final PvSolverDiagnostic diagnostic in simulation.diagnostics) {
+      builder.addMapped(_fromPvSolver(diagnostic));
+    }
     return builder.build();
   }
 }
@@ -338,6 +359,54 @@ _MappedEvidence? _fromAc3Solver(Ac3SolverDiagnostic diagnostic) {
   );
 }
 
+_MappedEvidence? _fromPvSolver(PvSolverDiagnostic diagnostic) {
+  final EieAdviceCode code = switch (diagnostic.code) {
+    PvDiagnosticCode.wrongElectricalMode =>
+      EieAdviceCode.pvWrongElectricalMode,
+    PvDiagnosticCode.topologyIdentityMismatch =>
+      EieAdviceCode.pvTopologyIdentityMismatch,
+    PvDiagnosticCode.topologyError => EieAdviceCode.pvTopologyError,
+    PvDiagnosticCode.missingPvArray => EieAdviceCode.pvMissingArray,
+    PvDiagnosticCode.multiplePvArrays => EieAdviceCode.pvMultipleArrays,
+    PvDiagnosticCode.missingInverter => EieAdviceCode.pvMissingInverter,
+    PvDiagnosticCode.multipleInverters => EieAdviceCode.pvMultipleInverters,
+    PvDiagnosticCode.invalidPvParameter =>
+      EieAdviceCode.pvInvalidArrayParameter,
+    PvDiagnosticCode.invalidInverterParameter =>
+      EieAdviceCode.pvInvalidInverterParameter,
+    PvDiagnosticCode.invalidLoadParameter =>
+      EieAdviceCode.pvInvalidLoadParameter,
+    PvDiagnosticCode.invalidTerminalContract =>
+      EieAdviceCode.pvInvalidTerminalContract,
+    PvDiagnosticCode.dcInputDisconnected =>
+      EieAdviceCode.pvDcInputDisconnected,
+    PvDiagnosticCode.acOutputDisconnected =>
+      EieAdviceCode.pvAcOutputDisconnected,
+    PvDiagnosticCode.inputVoltageOutOfRange =>
+      EieAdviceCode.pvInputVoltageOutOfRange,
+    PvDiagnosticCode.inverterFaulted => EieAdviceCode.pvInverterFaulted,
+    PvDiagnosticCode.inverterDerated => EieAdviceCode.pvInverterDerated,
+    PvDiagnosticCode.powerLimited => EieAdviceCode.pvPowerLimited,
+    PvDiagnosticCode.invalidControllerParameter =>
+      EieAdviceCode.pvInvalidControllerParameter,
+    PvDiagnosticCode.invalidBatteryParameter =>
+      EieAdviceCode.pvInvalidBatteryParameter,
+    PvDiagnosticCode.storageTopologyInvalid =>
+      EieAdviceCode.pvStorageTopologyInvalid,
+    PvDiagnosticCode.controllerFaulted => EieAdviceCode.pvControllerFaulted,
+    PvDiagnosticCode.batteryEmpty => EieAdviceCode.pvBatteryEmpty,
+    PvDiagnosticCode.batteryFull => EieAdviceCode.pvBatteryFull,
+  };
+  return _solverEvidence(
+    code: code,
+    diagnosticCode: diagnostic.code.name,
+    message: diagnostic.message,
+    componentId: diagnostic.componentId?.value,
+    sourceId: diagnostic.sourceId?.value,
+    nodeIds: const <String>[],
+  );
+}
+
 _MappedEvidence? _solverEvidence({
   required EieAdviceCode? code,
   required String diagnosticCode,
@@ -393,4 +462,29 @@ String _title(EieAdviceCode code) => switch (code) {
   EieAdviceCode.severeReceiverOverload => 'Surcharge sévère du récepteur',
   EieAdviceCode.phaseLoss => 'Perte de phase détectée',
   EieAdviceCode.invalidFrequency => 'Fréquence AC invalide',
+  EieAdviceCode.pvWrongElectricalMode => 'Mode électrique PV incohérent',
+  EieAdviceCode.pvTopologyIdentityMismatch => 'Résultat PV hors révision',
+  EieAdviceCode.pvTopologyError => 'Topologie PV invalide',
+  EieAdviceCode.pvMissingArray => 'Champ photovoltaïque absent',
+  EieAdviceCode.pvMultipleArrays => 'Plusieurs champs PV non pris en charge',
+  EieAdviceCode.pvMissingInverter => 'Onduleur absent',
+  EieAdviceCode.pvMultipleInverters => 'Plusieurs onduleurs non pris en charge',
+  EieAdviceCode.pvInvalidArrayParameter => 'Paramètre du champ PV invalide',
+  EieAdviceCode.pvInvalidInverterParameter => 'Paramètre onduleur invalide',
+  EieAdviceCode.pvInvalidLoadParameter => 'Paramètre de charge PV invalide',
+  EieAdviceCode.pvInvalidTerminalContract => 'Contrat de bornes PV invalide',
+  EieAdviceCode.pvDcInputDisconnected => 'Entrée CC onduleur déconnectée',
+  EieAdviceCode.pvAcOutputDisconnected => 'Sortie AC onduleur déconnectée',
+  EieAdviceCode.pvInputVoltageOutOfRange =>
+    'Tension d’entrée onduleur hors plage',
+  EieAdviceCode.pvInverterFaulted => 'Onduleur PV en défaut',
+  EieAdviceCode.pvInverterDerated => 'Onduleur PV déclassé',
+  EieAdviceCode.pvPowerLimited => 'Puissance PV limitée',
+  EieAdviceCode.pvInvalidControllerParameter =>
+    'Paramètre régulateur PV invalide',
+  EieAdviceCode.pvInvalidBatteryParameter => 'Paramètre batterie PV invalide',
+  EieAdviceCode.pvStorageTopologyInvalid => 'Topologie de stockage PV invalide',
+  EieAdviceCode.pvControllerFaulted => 'Régulateur PV en défaut',
+  EieAdviceCode.pvBatteryEmpty => 'Batterie PV vide',
+  EieAdviceCode.pvBatteryFull => 'Batterie PV pleine',
 };

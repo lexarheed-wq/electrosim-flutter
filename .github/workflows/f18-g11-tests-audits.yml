@@ -1,0 +1,196 @@
+name: F18-G11 Tests and automatic audits
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - f18-g11-tests-audits-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tools/**'
+      - 'docs/f18/**'
+      - 'ci/TOOLCHAIN_LOCK.json'
+      - '.github/workflows/f18-g*.yml'
+      - '.github/workflows/f18-g11-tests-audits.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f18-g11-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-audit:
+    name: Static contracts and audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Repository hygiene
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/f18_g11_audit.py audit/f18-g11/static-audit.json
+
+      - name: F18 gate contracts
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools/test_f18_g0_tooling.py
+          python3 -m unittest tools/test_f18_g1_design_system.py
+          python3 tools/f18_g2a_wire_contract.py
+          python3 tools/f18_g7_contract.py
+          python3 tools/f18_g8_contract.py
+          python3 tools/f18_g9_contract.py
+          python3 tools/f18_g10_contract.py
+
+      - name: Convergence contracts
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools/test_convergence_*.py
+          python3 tools/f8_deep_static_audit.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: F18-G11-static-audit
+          path: audit/f18-g11/static-audit.json
+          if-no-files-found: error
+
+  application:
+    name: Complete Flutter application regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        run: |
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Resolve application
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Dependency lock is stable
+        run: git diff --exit-code -- apps/electrosim/pubspec.lock
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Complete application test suite
+        working-directory: apps/electrosim
+        run: flutter test
+
+  dart-packages:
+    name: Dart package — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - electrosim_controls
+          - electrosim_diagnostics
+          - electrosim_domain
+          - electrosim_energy
+          - electrosim_measurements
+          - electrosim_protection
+          - electrosim_pv
+          - electrosim_scenarios
+          - electrosim_solver_ac
+          - electrosim_solver_dc
+          - electrosim_storage
+          - electrosim_topology
+          - electrosim_tp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Analyze and test
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+  flutter-packages:
+    name: Flutter package — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - electrosim_canvas
+          - electrosim_ui_kit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Analyze and test
+        working-directory: packages/${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test
+
+  performance:
+    name: Canvas performance and G6 interaction audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Canvas performance
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test/canvas_performance_test.dart
+          flutter test test/wire_routing_robustness_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+
+      - name: Interaction hot paths
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test/f18_g6_multiselect_test.dart
+          flutter test test/f18_drag_preview_test.dart
+          flutter test test/f9_canvas_interaction_test.dart
+
+  gate:
+    name: F18-G11 gate
+    needs:
+      - static-audit
+      - application
+      - dart-packages
+      - flutter-packages
+      - performance
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo F18_G11_TESTS_AUDITS_GATE_PASS

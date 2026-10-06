@@ -40,6 +40,7 @@ jobs:
           flutter --version | grep '3.38.10'
           dart --version 2>&1 | grep '3.10.9'
           git diff --check
+          python3 tools/core_unify_architecture_guard.py
 
       - name: Domain contracts
         working-directory: packages/electrosim_domain

@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - f18-g7-instruments-properties-20261006
+      - v2-post-mac-audit-fixes-20261005
     paths:
       - 'apps/electrosim/**'
       - 'packages/electrosim_measurements/**'
@@ -13,6 +14,7 @@ on:
       - 'packages/electrosim_pv/**'
       - 'tools/f18_g7_contract.py'
       - '.github/workflows/f18-g7-instruments-properties.yml'
+      - 'docs/f18/g7/**'
 
 permissions:
   contents: read
@@ -40,7 +42,7 @@ jobs:
         run: flutter pub get
       - name: Parse changed Dart sources with formatter
         run: |
-          dart format --output=none \
+          dart format --output=none --set-exit-if-changed \
             apps/electrosim/lib/f18_g7_property_presenter.dart \
             apps/electrosim/lib/f9_context_panels.dart \
             apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \

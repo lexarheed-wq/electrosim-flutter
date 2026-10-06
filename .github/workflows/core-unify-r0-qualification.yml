@@ -66,6 +66,30 @@ jobs:
           dart analyze
           dart test
 
+      - name: Topology compiler
+        working-directory: packages/electrosim_topology
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: AC1 and AC3 solvers
+        working-directory: packages/electrosim_solver_ac
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: PV solver
+        working-directory: packages/electrosim_pv
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
       - name: Measurements and device state
         working-directory: packages/electrosim_measurements
         run: |

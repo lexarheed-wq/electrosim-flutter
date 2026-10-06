@@ -9,20 +9,24 @@ void _desktop(WidgetTester tester) {
   tester.view.devicePixelRatio = 1;
 }
 
+Future<void> _tapVisible(WidgetTester tester, Key key) async {
+  final Finder finder = find.byKey(key);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openSchemaLibrary(WidgetTester tester) async {
   await tester.pumpWidget(const app.ElectroSimApp());
-  await tester.tap(find.byKey(const Key('home-design')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('design-schema-library')));
-  await tester.pumpAndSettle();
+  await _tapVisible(tester, const Key('home-design'));
+  await _tapVisible(tester, const Key('design-schema-library'));
 }
 
 Future<void> _openFaultLibrary(WidgetTester tester) async {
   await tester.pumpWidget(const app.ElectroSimApp());
-  await tester.tap(find.byKey(const Key('home-maintenance')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('maintenance-fault-library')));
-  await tester.pumpAndSettle();
+  await _tapVisible(tester, const Key('home-maintenance'));
+  await _tapVisible(tester, const Key('maintenance-fault-library'));
 }
 
 void main() {
@@ -62,9 +66,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await _openSchemaLibrary(tester);
-    await tester.tap(
-      find.byKey(const Key('schema-open-V2-SCHEMA-DC-LAMP-01')),
-    );
+    await tester.tap(find.byKey(const Key('schema-open-V2-SCHEMA-DC-LAMP-01')));
     await tester.pumpAndSettle();
 
     final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
@@ -79,50 +81,51 @@ void main() {
     expect(canvas.circuit.metadata['healthy'], isTrue);
   });
 
-  testWidgets('G10B fault library keeps teacher truth private and launches fault', (
-    WidgetTester tester,
-  ) async {
-    _desktop(tester);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'G10B fault library keeps teacher truth private and launches fault',
+    (WidgetTester tester) async {
+      _desktop(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await _openFaultLibrary(tester);
+      await _openFaultLibrary(tester);
 
-    expect(find.byKey(const Key('fault-library-page')), findsOneWidget);
-    expect(
-      find.byKey(const Key('fault-card-V2-FAULT-DC-LAMP-OPEN-01')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('fault-card-V2-FAULT-DC-MOTOR-RETURN-01')),
-      findsOneWidget,
-    );
-    expect(
-      find.text('Le voyant présente une coupure interne.'),
-      findsNothing,
-    );
-    expect(
-      find.text('Le conducteur de retour du moteur est absent.'),
-      findsNothing,
-    );
+      expect(find.byKey(const Key('fault-library-page')), findsOneWidget);
+      expect(
+        find.byKey(const Key('fault-card-V2-FAULT-DC-LAMP-OPEN-01')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('fault-card-V2-FAULT-DC-MOTOR-RETURN-01')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Le voyant présente une coupure interne.'),
+        findsNothing,
+      );
+      expect(
+        find.text('Le conducteur de retour du moteur est absent.'),
+        findsNothing,
+      );
 
-    await tester.tap(
-      find.byKey(const Key('fault-launch-V2-FAULT-DC-LAMP-OPEN-01')),
-    );
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('fault-launch-V2-FAULT-DC-LAMP-OPEN-01')),
+      );
+      await tester.pumpAndSettle();
 
-    final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
-      find.byType(SimulatorCanvas),
-    );
-    expect(canvas.circuit.circuitId.value, 'v2-fault-dc-lamp-open-01');
-    expect(canvas.circuit.mode, ElectricalMode.dc);
-    expect(canvas.circuit.metadata['origin'], 'v2-native');
-    expect(canvas.circuit.metadata['autonomousFaultScenario'], isTrue);
-    expect(
-      canvas.circuit.components.single.condition,
-      ComponentCondition.openCircuit,
-    );
-  });
+      final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+        find.byType(SimulatorCanvas),
+      );
+      expect(canvas.circuit.circuitId.value, 'v2-fault-dc-lamp-open-01');
+      expect(canvas.circuit.mode, ElectricalMode.dc);
+      expect(canvas.circuit.metadata['origin'], 'v2-native');
+      expect(canvas.circuit.metadata['autonomousFaultScenario'], isTrue);
+      expect(
+        canvas.circuit.components.single.condition,
+        ComponentCondition.openCircuit,
+      );
+    },
+  );
 
   testWidgets('G10B search and mode filters operate on product content', (
     WidgetTester tester,
@@ -150,13 +153,13 @@ void main() {
 
     await tester.tap(find.byKey(const Key('library-filter-ac1')));
     await tester.pumpAndSettle();
-    expect(find.text('Aucun schéma ne correspond aux filtres.'), findsOneWidget);
+    expect(
+      find.text('Aucun schéma ne correspond aux filtres.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('library-filter-all')));
-    await tester.enterText(
-      find.byKey(const Key('schema-library-search')),
-      '',
-    );
+    await tester.enterText(find.byKey(const Key('schema-library-search')), '');
     await tester.pumpAndSettle();
     expect(
       find.byKey(const Key('schema-card-V2-SCHEMA-DC-LAMP-01')),

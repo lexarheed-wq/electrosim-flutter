@@ -726,10 +726,23 @@ bool _compileElectromechanicalAc1({
   required List<_Ac1Element> elements,
   required List<Ac1SolverDiagnostic> diagnostics,
 }) {
-  final bool isContactor = component.modelType == 'contactor_ac1';
-  final bool isAuxNo = component.modelType == 'contactor_aux_no';
-  final bool isAuxNc = component.modelType == 'contactor_aux_nc';
-  if (!isContactor && !isAuxNo && !isAuxNc) {
+  final ComponentPhysicsContract physics =
+      CoreComponentPhysicsContracts.resolveComponent(component);
+  final bool isPowerContactor =
+      physics.controlLaw == ComponentControlLaw.electromagneticCoil &&
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.controlCoil,
+      ) &&
+      branches.any(
+        (TopologyBranch branch) =>
+            branch.role == ElectricalBranchRole.powerPole,
+      );
+  final bool isAuxNo =
+      physics.controlLaw == ComponentControlLaw.relayNormallyOpen;
+  final bool isAuxNc =
+      physics.controlLaw == ComponentControlLaw.relayNormallyClosed;
+  if (!isPowerContactor && !isAuxNo && !isAuxNc) {
     return false;
   }
 
@@ -812,7 +825,7 @@ bool _compileElectromechanicalAc1({
         code: Ac1DiagnosticCode.invalidTerminalCount,
         severity: Ac1DiagnosticSeverity.error,
         message:
-            'contactor_ac1 must expose one power pole and one control coil.',
+            'Electromagnetic AC1 component must expose one power pole and one control coil.',
         componentId: component.id,
       ),
     );
@@ -821,9 +834,10 @@ bool _compileElectromechanicalAc1({
 
   final double? coilResistance = _positiveParameter(
     component.parameters,
-    'coilResistanceOhm',
+    ComponentParameterKeys.coilResistanceOhm,
   );
-  final Object? inductanceRaw = component.parameters['coilInductanceH'];
+  final Object? inductanceRaw =
+      component.parameters[ComponentParameterKeys.coilInductanceH];
   final double coilInductance = inductanceRaw == null
       ? 0.0
       : inductanceRaw is num
@@ -837,7 +851,7 @@ bool _compileElectromechanicalAc1({
         code: Ac1DiagnosticCode.invalidParameter,
         severity: Ac1DiagnosticSeverity.error,
         message:
-            'contactor_ac1 requires coilResistanceOhm > 0 and optional coilInductanceH >= 0.',
+            'Electromagnetic AC1 component requires finite ${ComponentParameterKeys.coilResistanceOhm} > 0 and optional ${ComponentParameterKeys.coilInductanceH} >= 0.',
         componentId: component.id,
       ),
     );
@@ -900,41 +914,70 @@ String _componentBranchElementId(
     ? 'component:${component.id.value}'
     : 'component:${component.id.value}:${branch.branchId}';
 
+bool? _closedFromControlLawAc1(
+  ComponentInstance component,
+  ComponentControlLaw controlLaw,
+) {
+  switch (controlLaw) {
+    case ComponentControlLaw.maintainedSwitch:
+      final Object? rawClosed = component.controlState['closed'];
+      return rawClosed is bool ? rawClosed : null;
+    case ComponentControlLaw.momentaryNormallyOpen:
+      final Object? rawPressed = component.controlState['pressed'];
+      return rawPressed is bool ? rawPressed : null;
+    case ComponentControlLaw.momentaryNormallyClosed:
+      final Object? rawPressed = component.controlState['pressed'];
+      return rawPressed is bool ? !rawPressed : null;
+    case ComponentControlLaw.relayNormallyOpen:
+      final Object? rawActuated = component.controlState['actuated'];
+      return rawActuated is bool ? rawActuated : null;
+    case ComponentControlLaw.relayNormallyClosed:
+      final Object? rawActuated = component.controlState['actuated'];
+      return rawActuated is bool ? !rawActuated : null;
+    case ComponentControlLaw.none:
+    case ComponentControlLaw.electromagneticCoil:
+    case ComponentControlLaw.protection:
+      return null;
+  }
+}
+
 AcComplex? _componentImpedance(
   ComponentInstance component,
+  ComponentPhysicsContract physics,
   double frequencyHz,
   List<Ac1SolverDiagnostic> diagnostics,
 ) {
   final double omega = 2.0 * math.pi * frequencyHz;
-  switch (component.modelType) {
-    case 'resistor':
-    case 'lamp':
+  switch (physics.electricalLaw) {
+    case ComponentElectricalLaw.resistive:
       final double? resistance = _positiveParameter(
         component.parameters,
-        'resistanceOhm',
+        ComponentParameterKeys.resistanceOhm,
       );
       if (resistance != null) {
         return AcComplex.real(resistance);
       }
-    case 'inductor':
+    case ComponentElectricalLaw.inductor:
       final double? inductance = _positiveParameter(
         component.parameters,
-        'inductanceH',
+        ComponentParameterKeys.inductanceH,
       );
       if (inductance != null) {
         return AcComplex(0.0, omega * inductance);
       }
-    case 'capacitor':
+    case ComponentElectricalLaw.capacitor:
       final double? capacitance = _positiveParameter(
         component.parameters,
-        'capacitanceF',
+        ComponentParameterKeys.capacitanceF,
       );
       if (capacitance != null) {
         return AcComplex(0.0, -1.0 / (omega * capacitance));
       }
-    case 'impedance':
-      final Object? rRaw = component.parameters['resistanceOhm'];
-      final Object? xRaw = component.parameters['reactanceOhm'];
+    case ComponentElectricalLaw.acImpedance:
+      final Object? rRaw =
+          component.parameters[ComponentParameterKeys.resistanceOhm];
+      final Object? xRaw =
+          component.parameters[ComponentParameterKeys.reactanceOhm];
       if (rRaw is num && xRaw is num) {
         final double resistance = rRaw.toDouble();
         final double reactance = xRaw.toDouble();
@@ -945,12 +988,28 @@ AcComplex? _componentImpedance(
           return AcComplex(resistance, reactance);
         }
       }
-    default:
+    case ComponentElectricalLaw.capacitor:
+    case ComponentElectricalLaw.inductor:
+    case ComponentElectricalLaw.resistive:
+    case ComponentElectricalLaw.acImpedance:
+      // Parameter validation falls through to the canonical invalid-parameter
+      // diagnostic below.
+    case ComponentElectricalLaw.binarySwitch:
+    case ComponentElectricalLaw.protectionSwitch:
+    case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.loadWyeThreePhase:
+    case ComponentElectricalLaw.loadDeltaThreePhase:
+    case ComponentElectricalLaw.converter:
+    case ComponentElectricalLaw.storage:
+    case ComponentElectricalLaw.unsupported:
       diagnostics.add(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.unsupportedComponentModel,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'Unsupported AC1 component model ${component.modelType}.',
+          message:
+              'Electrical law ${physics.electricalLaw.name} has no AC1 impedance representation.',
           componentId: component.id,
         ),
       );
@@ -960,7 +1019,7 @@ AcComplex? _componentImpedance(
     Ac1SolverDiagnostic(
       code: Ac1DiagnosticCode.invalidParameter,
       severity: Ac1DiagnosticSeverity.error,
-      message: 'Invalid parameters for AC1 component ${component.id.value}.',
+      message: 'Invalid canonical parameters for AC1 component ${component.id.value}.',
       componentId: component.id,
     ),
   );
@@ -1012,14 +1071,15 @@ AcComplex? _phasorParameter(
   return AcComplex.polar(magnitude, phaseDeg * math.pi / 180.0);
 }
 
-Ac1BranchKind _branchKindForModel(String modelType) {
-  switch (modelType) {
-    case 'resistor':
+Ac1BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
+  switch (physics.electricalLaw) {
+    case ComponentElectricalLaw.resistive:
       return Ac1BranchKind.resistor;
-    case 'inductor':
+    case ComponentElectricalLaw.inductor:
       return Ac1BranchKind.inductor;
-    case 'capacitor':
+    case ComponentElectricalLaw.capacitor:
       return Ac1BranchKind.capacitor;
+    case ComponentElectricalLaw.acImpedance:
     default:
       return Ac1BranchKind.impedance;
   }
@@ -1251,24 +1311,6 @@ List<_Ac1Element> _suppressRedundantAc1ControlConstraints(
   }
   return result;
 }
-
-const Set<String> _supportedAc1ComponentModels = <String>{
-  'resistor',
-  'lamp',
-  'inductor',
-  'capacitor',
-  'impedance',
-  'switch',
-  'switch_spst',
-  'push_button_no',
-  'push_button_nc',
-  'breaker_ac1',
-  'fuse_ac1',
-  'contactor_ac1',
-  'contactor_aux_no',
-  'contactor_aux_nc',
-  'terminal_block_5',
-};
 
 bool _isError(Ac1SolverDiagnostic diagnostic) =>
     diagnostic.severity == Ac1DiagnosticSeverity.error;

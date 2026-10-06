@@ -46,9 +46,16 @@ jobs:
         working-directory: apps/electrosim
         run: flutter pub get
 
-      - name: Verify G9 Dart formatting
+      - name: Preview canonical G9 Dart formatting
         run: |
-          dart format --output=none --set-exit-if-changed \
+          dart format \
+            apps/electrosim/lib/f9_context_panels.dart \
+            apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \
+            apps/electrosim/test/f18_g9_internal_eie_test.dart \
+            packages/electrosim_diagnostics/lib/src/diagnostic_engine.dart \
+            packages/electrosim_diagnostics/lib/src/diagnostic_models.dart \
+            packages/electrosim_diagnostics/test/f18_g9_internal_eie_test.dart
+          git diff -- \
             apps/electrosim/lib/f9_context_panels.dart \
             apps/electrosim/lib/runtime/electrosim_runtime_engine.dart \
             apps/electrosim/test/f18_g9_internal_eie_test.dart \

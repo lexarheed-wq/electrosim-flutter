@@ -23,8 +23,9 @@ void main() {
         continue;
       }
 
-      final ComponentModelContract? contract =
-          CoreComponentModelContracts.registry.resolve(item.modelType);
+      final ComponentModelContract? contract = CoreComponentModelContracts
+          .registry
+          .resolve(item.modelType);
       expect(contract, isNotNull, reason: item.keyName);
       expect(
         item.modelType.startsWith('catalog_'),
@@ -35,27 +36,32 @@ void main() {
     }
   });
 
-  test('palette mode restrictions may narrow but never broaden core contracts', () {
-    for (final F9PaletteDefinition item in f9PaletteCatalog) {
-      final List<ElectricalMode> visibleModes = ElectricalMode.values
-          .where(item.supportsMode)
-          .toList(growable: false);
-      expect(visibleModes, isNotEmpty, reason: item.keyName);
+  test(
+    'palette mode restrictions may narrow but never broaden core contracts',
+    () {
+      for (final F9PaletteDefinition item in f9PaletteCatalog) {
+        final List<ElectricalMode> visibleModes = ElectricalMode.values
+            .where(item.supportsMode)
+            .toList(growable: false);
+        expect(visibleModes, isNotEmpty, reason: item.keyName);
 
-      if (item.kind == F9PaletteElementKind.source) {
-        continue;
+        if (item.kind == F9PaletteElementKind.source) {
+          continue;
+        }
+        final ComponentModelContract contract = CoreComponentModelContracts
+            .registry
+            .resolve(item.modelType)!;
+        for (final ElectricalMode mode in visibleModes) {
+          expect(
+            contract.supportsMode(mode),
+            isTrue,
+            reason:
+                '${item.keyName} illegally broadens ${item.modelType} to ${mode.name}',
+          );
+        }
       }
-      final ComponentModelContract contract =
-          CoreComponentModelContracts.registry.resolve(item.modelType)!;
-      for (final ElectricalMode mode in visibleModes) {
-        expect(
-          contract.supportsMode(mode),
-          isTrue,
-          reason: '${item.keyName} illegally broadens ${item.modelType} to ${mode.name}',
-        );
-      }
-    }
-  });
+    },
+  );
 
   test('visual identity is separated from the canonical electrical model', () {
     final List<F9PaletteDefinition> decorated = f9PaletteCatalog
@@ -80,22 +86,25 @@ void main() {
     }
   });
 
-  test('G5 mode-specific distribution identities remain physically coherent', () {
-    final F9PaletteDefinition dcTerminal = f9PaletteCatalog.singleWhere(
-      (F9PaletteDefinition item) => item.keyName == 'terminal-block-dc-5',
-    );
-    final F9PaletteDefinition ac3Terminal = f9PaletteCatalog.singleWhere(
-      (F9PaletteDefinition item) => item.keyName == 'terminal-block-5',
-    );
+  test(
+    'G5 mode-specific distribution identities remain physically coherent',
+    () {
+      final F9PaletteDefinition dcTerminal = f9PaletteCatalog.singleWhere(
+        (F9PaletteDefinition item) => item.keyName == 'terminal-block-dc-5',
+      );
+      final F9PaletteDefinition ac3Terminal = f9PaletteCatalog.singleWhere(
+        (F9PaletteDefinition item) => item.keyName == 'terminal-block-5',
+      );
 
-    expect(dcTerminal.modelType, ac3Terminal.modelType);
-    expect(dcTerminal.visualVariant, 'dc');
-    expect(ac3Terminal.visualVariant, 'ac3');
-    expect(dcTerminal.supportsMode(ElectricalMode.dc), isTrue);
-    expect(dcTerminal.supportsMode(ElectricalMode.ac3), isFalse);
-    expect(ac3Terminal.supportsMode(ElectricalMode.ac3), isTrue);
-    expect(ac3Terminal.supportsMode(ElectricalMode.dc), isFalse);
-  });
+      expect(dcTerminal.modelType, ac3Terminal.modelType);
+      expect(dcTerminal.visualVariant, 'dc');
+      expect(ac3Terminal.visualVariant, 'ac3');
+      expect(dcTerminal.supportsMode(ElectricalMode.dc), isTrue);
+      expect(dcTerminal.supportsMode(ElectricalMode.ac3), isFalse);
+      expect(ac3Terminal.supportsMode(ElectricalMode.ac3), isTrue);
+      expect(ac3Terminal.supportsMode(ElectricalMode.dc), isFalse);
+    },
+  );
 
   test('G5 catalog is substantial and searchable by qualified category', () {
     expect(f9PaletteCatalog.length, greaterThanOrEqualTo(60));

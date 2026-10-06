@@ -1,0 +1,48 @@
+name: ElectroSim passation source package
+
+on:
+  push:
+    branches:
+      - passation-20261006-package
+    paths:
+      - '.github/workflows/passation-source-package.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: passation-source-package
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 28fd6c3a710c7d1020a1d4ed2ba4e21623a9ab32
+          fetch-depth: 0
+
+      - name: Verify product SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "28fd6c3a710c7d1020a1d4ed2ba4e21623a9ab32"
+          git diff --check
+
+      - name: Package exact source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p passation
+          git archive --format=zip --output=passation/ElectroSim_F18_G6_SOURCE_28fd6c3a.zip HEAD
+          sha256sum passation/ElectroSim_F18_G6_SOURCE_28fd6c3a.zip > passation/ElectroSim_F18_G6_SOURCE_28fd6c3a.zip.sha256
+          printf '%s
+' "PRODUCT_SHA=28fd6c3a710c7d1020a1d4ed2ba4e21623a9ab32" > passation/PRODUCT_SHA.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-F18-G6-passation-source
+          path: passation/*
+          retention-days: 30

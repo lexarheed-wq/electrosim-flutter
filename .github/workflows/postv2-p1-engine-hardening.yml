@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - postv2-p1-engine-hardening-20261006
+      - v2-post-mac-audit-fixes-20261005
     paths:
       - 'apps/electrosim/lib/**'
       - 'apps/electrosim/test/postv2_p1_*.dart'

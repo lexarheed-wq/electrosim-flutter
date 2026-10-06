@@ -29,37 +29,37 @@ void main() {
     expect(decision.connection!.phase, PhaseTag.none);
   });
 
-  test('P1.2 UI rejects only structural invalidity, not electrical polarity', () {
-    final CircuitState circuit = _twoSourceCircuit();
+  test(
+    'P1.2 UI rejects only structural invalidity, not electrical polarity',
+    () {
+      final CircuitState circuit = _twoSourceCircuit();
 
-    expect(
-      F9WiringPolicy.evaluateAndBuild(
-        circuit,
-        TerminalId('v1p'),
-        TerminalId('v1p'),
-      ).accepted,
-      isFalse,
-    );
+      expect(
+        F9WiringPolicy.evaluateAndBuild(
+          circuit,
+          TerminalId('v1p'),
+          TerminalId('v1p'),
+        ).accepted,
+        isFalse,
+      );
 
-    expect(
-      F9WiringPolicy.evaluateAndBuild(
-        circuit,
-        TerminalId('missing'),
-        TerminalId('v1p'),
-      ).accepted,
-      isFalse,
-    );
-  });
+      expect(
+        F9WiringPolicy.evaluateAndBuild(
+          circuit,
+          TerminalId('missing'),
+          TerminalId('v1p'),
+        ).accepted,
+        isFalse,
+      );
+    },
+  );
 }
 
 CircuitState _twoSourceCircuit() => CircuitState(
   circuitId: CircuitId('p1-wiring-policy'),
   revision: 0,
   mode: ElectricalMode.dc,
-  sources: <SourceInstance>[
-    _source('v1'),
-    _source('v2'),
-  ],
+  sources: <SourceInstance>[_source('v1'), _source('v2')],
 );
 
 SourceInstance _source(String id) => SourceInstance(

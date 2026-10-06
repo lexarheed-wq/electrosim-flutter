@@ -60,11 +60,15 @@ if convergence_mode:
         'example_id',
     )
     fixture_names = {'f10_examples.dart', 'f11_fault_scenarios.dart', 'f16_catalog.dart'}
+    product_root = scen / 'lib'
     for p in scen.rglob('*'):
         if not p.is_file():
             continue
         rel = p.relative_to(ROOT).as_posix()
-        if p.suffix == '.dart':
+        # Dependency policy applies to shipped scenario code. Tests may
+        # deliberately mention forbidden legacy keys to assert their absence
+        # from serialized product payloads and must not be false positives.
+        if p.suffix == '.dart' and product_root in p.parents:
             text = p.read_text(encoding='utf-8').lower()
             for token in forbidden_tokens:
                 if token in text:

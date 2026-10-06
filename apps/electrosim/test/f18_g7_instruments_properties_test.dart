@@ -45,6 +45,11 @@ void main() {
       expect(find.text('24.000 W'), findsOneWidget);
       expect(find.text('Résistance'), findsOneWidget);
       expect(find.text('resistanceOhm'), findsNothing);
+      await tester.drag(
+        find.byKey(const Key('properties-panel')),
+        const Offset(0, -360),
+      );
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('properties-runtime-evidence')),
         findsOneWidget,

@@ -41,17 +41,13 @@ jobs:
         working-directory: packages/electrosim_scenarios
         run: dart pub get
 
-      - name: Preview canonical G10 Dart formatting
+      - name: Verify G10 Dart formatting
         run: |
-          dart format \
+          dart format --output=none --set-exit-if-changed \
             packages/electrosim_scenarios/lib/electrosim_scenarios.dart \
             packages/electrosim_scenarios/lib/src/v2_product_examples.dart \
             packages/electrosim_scenarios/lib/src/v2_product_faults.dart \
             packages/electrosim_scenarios/lib/src/v2_product_catalog.dart \
-            packages/electrosim_scenarios/test/f18_g10_v2_product_libraries_test.dart
-          git diff -- \
-            packages/electrosim_scenarios/lib/src/v2_product_examples.dart \
-            packages/electrosim_scenarios/lib/src/v2_product_faults.dart \
             packages/electrosim_scenarios/test/f18_g10_v2_product_libraries_test.dart
 
       - name: Analyze scenario package

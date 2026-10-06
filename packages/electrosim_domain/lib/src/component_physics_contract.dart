@@ -59,6 +59,8 @@ abstract final class ComponentParameterKeys {
   static const String thermalWithstandSeconds = 'thermalWithstandSeconds';
   static const String coilPickupVoltageV = 'coilPickupVoltageV';
   static const String coilDropoutVoltageV = 'coilDropoutVoltageV';
+  static const String coilResistanceOhm = 'coilResistanceOhm';
+  static const String coilInductanceH = 'coilInductanceH';
 }
 
 /// Canonical physics semantics for one component model.

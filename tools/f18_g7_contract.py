@@ -79,7 +79,7 @@ require(
 )
 require(
     'apps/electrosim/test/f18_g7_instruments_properties_test.dart',
-    'unsolved circuits never manufacture operating quantities',
+    'missing evidence never manufactures operating quantities',
     'G7 adds unsolved/no-fabrication state regression',
 )
 

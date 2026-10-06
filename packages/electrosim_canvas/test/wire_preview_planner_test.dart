@@ -82,7 +82,7 @@ void main() {
   });
 
   test(
-    'preview becomes unresolved instead of crossing an impenetrable wall',
+    'preview detours around a long finite wall instead of crossing it',
     () {
       final CircuitState base = buildTestCircuit();
       final CircuitState circuit = CircuitState(
@@ -118,8 +118,8 @@ void main() {
         pointerWorldPosition: const Offset(68, 408),
       );
 
-      expect(plan.route.isResolved, isFalse);
-      expect(plan.route.failure, WireRouteFailure.noCrossingFreeRoute);
+      expect(plan.route.isResolved, isTrue);
+      expect(plan.route.path!.bends, isNotEmpty);
     },
   );
 }

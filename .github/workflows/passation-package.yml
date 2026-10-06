@@ -1,0 +1,38 @@
+name: Passation package 2026-10-06
+
+on:
+  push:
+    branches:
+      - passation-20261006
+    paths:
+      - '.github/workflows/passation-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 747d427d7e08357567d531a87736801ffb64afcb
+          fetch-depth: 0
+
+      - name: Package exact integrated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          test "$SHA" = "747d427d7e08357567d531a87736801ffb64afcb"
+          mkdir -p /tmp/passation
+          git archive --format=zip --output=/tmp/passation/ElectroSim_V2_F18_G6_integrated_747d427d.zip "$SHA"
+          sha256sum /tmp/passation/ElectroSim_V2_F18_G6_integrated_747d427d.zip > /tmp/passation/SHA256_SOURCE.txt
+          printf '%s\n' "$SHA" > /tmp/passation/QUALIFIED_SOURCE_SHA.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-passation-source-747d427d
+          path: /tmp/passation/*
+          retention-days: 30

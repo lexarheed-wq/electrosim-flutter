@@ -16,6 +16,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_home.dart';
 import 'f18_session_coordinator.dart';
+import 'f18_selection_state.dart';
 import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -486,7 +487,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   final GlobalKey _canvasDropKey = GlobalKey(
     debugLabel: 'f18-canvas-drop-target',
   );
-  late String? _selected;
+  late F18SelectionState _selection;
+  String? get _selected => _selection.primaryId;
+  Set<String> get _selectedIds => _selection.selectedIds;
+
+  set _selected(String? id) {
+    _selection = id == null
+        ? F18SelectionState.empty()
+        : F18SelectionState.single(id);
+  }
+
   String _status = 'ElectroSim F18 — espace de travail prêt';
   late String _workspace;
   int _canvasInteractionEpoch = 0;
@@ -500,6 +510,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Offset? _lastCanvasPointerLocal;
   bool _backgroundPanActive = false;
   bool _directPointerMoved = false;
+  bool _selectionModifierAtPointerDown = false;
   bool _trackpadPanZoomActive = false;
   double _trackpadLastScale = 1;
 
@@ -556,8 +567,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected,
     );
     final bool canDeleteSelection =
-        selectedDetails != null && !_studentTpReadOnly;
+        _selectedIds.isNotEmpty && !_studentTpReadOnly;
     final bool canRotateSelection =
+        _selectedIds.length == 1 &&
         selectedDetails != null &&
         selectedDetails.kind != F9ElementKind.connection &&
         !_studentTpReadOnly;
@@ -635,9 +647,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               )
                           ? null
                           : _toggleSelectedPrimaryState,
-                      onReplaceSelected: _selected == null
-                          ? null
-                          : _replaceSelectedElement,
+                      onReplaceSelected: _selectedIds.length == 1
+                          ? _replaceSelectedElement
+                          : null,
                       onSelectElement: (String? id) {
                         setState(() {
                           _selected = id;
@@ -742,6 +754,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                           circuit: _circuit,
                                           layout: _layout,
                                           viewport: _viewport,
+                                          selectedElementIds: _selectedIds,
                                           pendingTerminalId:
                                               _wiringPendingTerminal,
                                           hoverTerminalId: _wiringHoverTerminal,
@@ -1399,6 +1412,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _ => const <String, Object?>{},
       };
 
+  bool get _multiSelectionModifierPressed {
+    final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+    return keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isShiftPressed;
+  }
+
+  String _selectionStatus(String prefix) {
+    final int count = _selectedIds.length;
+    if (count == 0) return 'Sélection effacée';
+    if (count == 1) return '$prefix : ${_selection.primaryId}';
+    return '$prefix multiple : $count éléments';
+  }
+
   CanvasHitResult _f9CanvasHit(Offset localPosition) => _hitTest.hitTest(
     worldPoint: _viewport.screenToWorld(localPosition),
     circuit: _circuit,
@@ -1414,6 +1441,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _activeCanvasPointer = event.pointer;
     _lastCanvasPointerLocal = event.localPosition;
     _directPointerMoved = false;
+    _selectionModifierAtPointerDown = _multiSelectionModifierPressed;
     _backgroundPanActive = false;
     _directDragElementId = null;
     _directDragGrabDelta = null;
@@ -1455,24 +1483,30 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         return;
       }
       final Offset world = _viewport.screenToWorld(event.localPosition);
+      final bool additive = _selectionModifierAtPointerDown;
       setState(() {
-        _selected = id;
-        if (!_studentTpReadOnly) {
+        _selection = _selection.select(id, additive: additive);
+        if (!additive && !_studentTpReadOnly) {
           _directDragElementId = id;
           _directDragGrabDelta = current - world;
           _directDragBaseLayout = _layout;
         }
         _status = _studentTpReadOnly
-            ? 'Sélection : $id — TP en lecture seule'
-            : 'Sélection : $id';
+            ? '${_selectionStatus('Sélection')} — TP en lecture seule'
+            : _selectionStatus('Sélection');
       });
       return;
     }
 
     if (hit.kind == CanvasHitKind.wire) {
+      final String? id = hit.connectionId?.value;
+      if (id == null) return;
       setState(() {
-        _selected = hit.connectionId?.value;
-        _status = 'Sélection : ${hit.connectionId?.value ?? 'fil'}';
+        _selection = _selection.select(
+          id,
+          additive: _selectionModifierAtPointerDown,
+        );
+        _status = _selectionStatus('Sélection');
       });
       return;
     }
@@ -1529,13 +1563,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _resetDirectControlTapTracking();
     } else if (_backgroundPanActive &&
         !_directPointerMoved &&
-        _wiringPendingTerminal == null) {
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown) {
       setState(() {
         _selected = null;
         _status = 'Sélection effacée';
       });
       _resetDirectControlTapTracking();
-    } else if (!_directPointerMoved && _wiringPendingTerminal == null) {
+    } else if (!_directPointerMoved &&
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown) {
       _handleDirectControlTap(event.localPosition);
     }
     _clearDirectPointerState();
@@ -1559,6 +1596,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _lastCanvasPointerLocal = null;
     _backgroundPanActive = false;
     _directPointerMoved = false;
+    _selectionModifierAtPointerDown = false;
   }
 
   ({String id, String modelType})? _directControlAt(Offset screenPosition) {
@@ -2227,6 +2265,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _deleteSelectedElement() {
     if (_blockStudentTpMutation()) return;
+    if (_selectedIds.length > 1) {
+      _deleteMultipleSelection();
+      return;
+    }
     final String? selected = _selected;
     if (selected == null) {
       _setStatus('Suppression impossible : aucune sélection.');
@@ -2327,6 +2369,82 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
+  }
+
+  void _deleteMultipleSelection() {
+    final Set<String> selectedIds = <String>{..._selectedIds};
+    if (selectedIds.isEmpty) {
+      _setStatus('Suppression impossible : aucune sélection.');
+      return;
+    }
+
+    CircuitState next = _circuit;
+    var removedCount = 0;
+    for (final String id in selectedIds) {
+      final F9ElementDetails? details =
+          F9ElementEditor.describe(next, id) ??
+          F9ElementEditor.describe(_circuit, id);
+      if (details == null) continue;
+      final CircuitState candidate = details.kind == F9ElementKind.connection
+          ? F9ElementEditor.deleteConnection(next, id)
+          : F9ElementEditor.deleteElement(next, id);
+      if (!identical(candidate, next)) {
+        next = candidate;
+        removedCount += 1;
+      }
+    }
+
+    if (removedCount == 0) {
+      _setStatus('Suppression impossible : sélection introuvable.');
+      return;
+    }
+
+    final Set<String> remainingElements = <String>{
+      ...next.sources.map((SourceInstance item) => item.id.value),
+      ...next.components.map((ComponentInstance item) => item.id.value),
+    };
+    final Set<String> remainingConnections = next.connections
+        .map((Connection item) => item.id.value)
+        .toSet();
+
+    final Map<String, Offset> positions = <String, Offset>{
+      for (final MapEntry<String, Offset> entry
+          in _layout.elementPositions.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, Size> sizes = <String, Size>{
+      for (final MapEntry<String, Size> entry in _layout.elementSizes.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, int> rotations = <String, int>{
+      for (final MapEntry<String, int> entry
+          in _layout.elementQuarterTurns.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      for (final MapEntry<String, List<Offset>> entry
+          in _layout.wireRoutes.entries)
+        if (remainingConnections.contains(entry.key)) entry.key: entry.value,
+    };
+
+    setState(() {
+      _circuit = next;
+      _layout = _routeWithG2A(
+        _circuit,
+        CircuitVisualLayout(
+          elementPositions: positions,
+          elementSizes: sizes,
+          wireRoutes: routes,
+          elementQuarterTurns: rotations,
+          defaultElementSize: _layout.defaultElementSize,
+        ),
+      );
+      _selected = null;
+      _status = 'Suppression multiple : $removedCount éléments sélectionnés';
+    });
+    _simulation.updateCircuit(_circuit);
+    _syncStudentTpCircuit();
+    _announce(_status);
   }
 
   bool _blockStudentTpMutation() {

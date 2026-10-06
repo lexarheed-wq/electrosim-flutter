@@ -16,6 +16,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     required this.circuit,
     required this.layout,
     required this.viewport,
+    this.selectedElementIds = const <String>{},
     this.pendingTerminalId,
     this.hoverTerminalId,
     this.pointerWorldPosition,
@@ -27,6 +28,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final CircuitState circuit;
   final CircuitVisualLayout layout;
   final ViewportController viewport;
+  final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
@@ -89,6 +91,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                       circuit: widget.circuit,
                       layout: widget.layout,
                       viewport: widget.viewport,
+                      selectedElementIds: widget.selectedElementIds,
                       pendingTerminalId: widget.pendingTerminalId,
                       hoverTerminalId: widget.hoverTerminalId,
                       pointerWorldPosition: widget.pointerWorldPosition,
@@ -507,6 +510,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
     required this.circuit,
     required this.layout,
     required this.viewport,
+    required this.selectedElementIds,
     required this.pendingTerminalId,
     required this.hoverTerminalId,
     required this.pointerWorldPosition,
@@ -519,6 +523,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   final CircuitState circuit;
   final CircuitVisualLayout layout;
   final ViewportController viewport;
+  final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
@@ -565,8 +570,70 @@ class _F9CanvasOverlayPainter extends CustomPainter {
       );
     }
 
+    _paintSelection(canvas, geometry);
     _paintTerminals(canvas, geometry);
     _paintWiringTargets(canvas, geometry);
+  }
+
+  void _paintSelection(Canvas canvas, CircuitGeometryIndex geometry) {
+    if (selectedElementIds.isEmpty) return;
+
+    final Paint outline = Paint()
+      ..color = ElectroSimColors.primary
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    for (final String id in selectedElementIds) {
+      final Rect? worldRect = geometry.elementRects[id];
+      if (worldRect != null) {
+        final Offset center = viewport.worldToScreen(worldRect.center);
+        final Rect screenRect = Rect.fromCenter(
+          center: center,
+          width: worldRect.width * viewport.scale + 12,
+          height: worldRect.height * viewport.scale + 12,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(screenRect, const Radius.circular(12)),
+          outline,
+        );
+        continue;
+      }
+
+      Connection? selectedConnection;
+      for (final Connection connection in circuit.connections) {
+        if (connection.id.value == id) {
+          selectedConnection = connection;
+          break;
+        }
+      }
+      if (selectedConnection == null) continue;
+      final Offset? start =
+          geometry.terminalPositions[selectedConnection.fromTerminalId];
+      final Offset? end =
+          geometry.terminalPositions[selectedConnection.toTerminalId];
+      if (start == null || end == null) continue;
+      final List<Offset> points = <Offset>[
+        start,
+        ...layout.routeFor(selectedConnection.id.value),
+        end,
+      ];
+      final Path path = Path();
+      final Offset first = viewport.worldToScreen(points.first);
+      path.moveTo(first.dx, first.dy);
+      for (final Offset point in points.skip(1)) {
+        final Offset screen = viewport.worldToScreen(point);
+        path.lineTo(screen.dx, screen.dy);
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = ElectroSimColors.primary
+          ..strokeWidth = 6
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
   }
 
   void _paintLiveWires(Canvas canvas, CircuitGeometryIndex geometry) {

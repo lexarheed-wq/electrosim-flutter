@@ -26,6 +26,7 @@ final class ElectroSimRuntimeSnapshot {
     this.protectionState,
     this.protectionIssues = const <ProtectionCoordinationIssue>[],
     this.measurementEngine = const MeasurementEngine(),
+    this.deviceStateEngine = const DeviceStateEngine(),
     this.energyEngine = const EnergyEngine(),
   });
 
@@ -42,6 +43,7 @@ final class ElectroSimRuntimeSnapshot {
   final ProtectionRuntimeState? protectionState;
   final List<ProtectionCoordinationIssue> protectionIssues;
   final MeasurementEngine measurementEngine;
+  final DeviceStateEngine deviceStateEngine;
   final EnergyEngine energyEngine;
 
   DcSolveResult get dc =>
@@ -76,6 +78,53 @@ final class ElectroSimRuntimeSnapshot {
   bool get energyAvailable =>
       solverKind == ElectroSimRuntimeSolverKind.pv &&
       (pvResult?.isSolved ?? false);
+
+
+  ComponentOperatingState? componentOperatingState(ComponentId componentId) {
+    ComponentInstance? component;
+    for (final ComponentInstance candidate in circuit.components) {
+      if (candidate.id == componentId) {
+        component = candidate;
+        break;
+      }
+    }
+    if (component == null) return null;
+
+    switch (solverKind) {
+      case ElectroSimRuntimeSolverKind.dc:
+        final DcSolveResult? result = dcResult;
+        if (result == null) return null;
+        return deviceStateEngine.evaluate(
+          component: component,
+          circuit: circuit,
+          simulation: result,
+        );
+      case ElectroSimRuntimeSolverKind.ac1:
+        final Ac1SolveResult? result = ac1Result;
+        if (result == null) return null;
+        return deviceStateEngine.evaluateAc1(
+          component: component,
+          circuit: circuit,
+          simulation: result,
+        );
+      case ElectroSimRuntimeSolverKind.ac3:
+        final Ac3SolveResult? result = ac3Result;
+        if (result == null) return null;
+        return deviceStateEngine.evaluateAc3(
+          component: component,
+          circuit: circuit,
+          simulation: result,
+        );
+      case ElectroSimRuntimeSolverKind.pv:
+        final PvSolveResult? result = pvResult;
+        if (result == null) return null;
+        return deviceStateEngine.evaluatePv(
+          component: component,
+          circuit: circuit,
+          simulation: result,
+        );
+    }
+  }
 
   MeasurementResult measureVoltage({
     required TerminalId positiveProbe,
@@ -325,6 +374,7 @@ final class ElectroSimRuntimeEngine {
     this.solverPV = const SolverPV(),
     this.diagnosticEngine = const DiagnosticEngine(),
     this.measurementEngine = const MeasurementEngine(),
+    this.deviceStateEngine = const DeviceStateEngine(),
     this.energyEngine = const EnergyEngine(),
     this.electromechanicalControlEngine =
         const ElectromechanicalControlEngine(),
@@ -338,6 +388,7 @@ final class ElectroSimRuntimeEngine {
   final SolverPV solverPV;
   final DiagnosticEngine diagnosticEngine;
   final MeasurementEngine measurementEngine;
+  final DeviceStateEngine deviceStateEngine;
   final EnergyEngine energyEngine;
   final ElectromechanicalControlEngine electromechanicalControlEngine;
   final ProtectionCoordinator protectionCoordinator;
@@ -381,6 +432,7 @@ final class ElectroSimRuntimeEngine {
           protectionState: coordinated.state,
           protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
+          deviceStateEngine: deviceStateEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac1:
@@ -410,6 +462,7 @@ final class ElectroSimRuntimeEngine {
           protectionState: coordinated.state,
           protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
+          deviceStateEngine: deviceStateEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac3:
@@ -438,6 +491,7 @@ final class ElectroSimRuntimeEngine {
           protectionState: coordinated.state,
           protectionIssues: coordinated.issues,
           measurementEngine: measurementEngine,
+          deviceStateEngine: deviceStateEngine,
           energyEngine: energyEngine,
         );
       case ElectricalMode.pv:
@@ -454,6 +508,7 @@ final class ElectroSimRuntimeEngine {
           solverKind: ElectroSimRuntimeSolverKind.pv,
           pvResult: pv,
           measurementEngine: measurementEngine,
+          deviceStateEngine: deviceStateEngine,
           energyEngine: energyEngine,
         );
     }

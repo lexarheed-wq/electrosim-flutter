@@ -68,10 +68,7 @@ final class ElectroSimRuntimeSnapshot {
     ElectroSimRuntimeSolverKind.pv => pvResult?.isSolved ?? false,
   };
 
-  bool get diagnosticsAvailable =>
-      solverKind == ElectroSimRuntimeSolverKind.dc ||
-      solverKind == ElectroSimRuntimeSolverKind.ac1 ||
-      solverKind == ElectroSimRuntimeSolverKind.ac3;
+  bool get diagnosticsAvailable => true;
   bool get dcMeasurementsAvailable =>
       solverKind == ElectroSimRuntimeSolverKind.dc &&
       (dcResult?.isSolved ?? false);
@@ -500,10 +497,14 @@ final class ElectroSimRuntimeEngine {
           previousBatterySoc: previousPvBatterySoc,
           elapsed: elapsed,
         );
+        final DiagnosticReport diagnostics = diagnosticEngine.analyzePv(
+          topology: topology,
+          simulation: pv,
+        );
         return ElectroSimRuntimeSnapshot(
           circuit: circuit,
           topology: topology,
-          diagnostics: _noDcDiagnostics(circuit),
+          diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.pv,
           pvResult: pv,
           measurementEngine: measurementEngine,
@@ -512,12 +513,4 @@ final class ElectroSimRuntimeEngine {
         );
     }
   }
-
-  DiagnosticReport _noDcDiagnostics(CircuitState circuit) => DiagnosticReport(
-    circuitId: circuit.circuitId,
-    circuitRevision: circuit.revision,
-    status: DiagnosticReportStatus.insufficientEvidence,
-    evidence: const <DiagnosticEvidence>[],
-    advice: const <EieAdvice>[],
-  );
 }

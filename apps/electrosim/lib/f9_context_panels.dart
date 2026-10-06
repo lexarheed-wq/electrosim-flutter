@@ -37,6 +37,8 @@ class F9ContextPanels extends StatefulWidget {
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
   final ElectroSimTpSessionController? tpSessionController;
 
+  bool get showEie => role == F9UserRole.teacher;
+
   bool get showDiagnostic {
     if (role != F9UserRole.student || workspace != 'Recherche de dérangement') {
       return false;
@@ -57,7 +59,8 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
     with TickerProviderStateMixin {
   late TabController _controller;
 
-  int get _tabCount => widget.showDiagnostic ? 4 : 3;
+  int get _tabCount =>
+      2 + (widget.showEie ? 1 : 0) + (widget.showDiagnostic ? 1 : 0);
 
   @override
   void initState() {
@@ -68,7 +71,8 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
   @override
   void didUpdateWidget(covariant F9ContextPanels oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.showDiagnostic != widget.showDiagnostic) {
+    if (oldWidget.showEie != widget.showEie ||
+        oldWidget.showDiagnostic != widget.showDiagnostic) {
       final int previousIndex = _controller.index
           .clamp(0, _tabCount - 1)
           .toInt();
@@ -102,10 +106,12 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   icon: Icon(Icons.straighten_outlined),
                   text: 'Mesures',
                 ),
-                const Tab(
-                  icon: Icon(Icons.psychology_alt_outlined),
-                  text: 'EIE',
-                ),
+                if (widget.showEie)
+                  const Tab(
+                    key: Key('eie-tab'),
+                    icon: Icon(Icons.psychology_alt_outlined),
+                    text: 'EIE',
+                  ),
                 if (widget.showDiagnostic)
                   const Tab(
                     key: Key('diagnostic-tab'),
@@ -134,7 +140,8 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   selectedId: widget.selectedId,
                   runtimeSnapshot: widget.runtimeSnapshot,
                 ),
-                _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
+                if (widget.showEie)
+                  _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
                 if (widget.showDiagnostic)
                   _StudentDiagnosticPanel(
                     controller: widget.tpSessionController,
@@ -885,7 +892,8 @@ class _EiePanel extends StatelessWidget {
       children: <Widget>[
         const ElectroSimSectionTitle(
           title: 'EIE',
-          subtitle: 'Diagnostic fondé uniquement sur les preuves moteur',
+          subtitle:
+              'Intelligence interne fondée uniquement sur les preuves moteur',
         ),
         const SizedBox(height: ElectroSimSpacing.md),
         ElectroSimStatusChip(
@@ -936,20 +944,36 @@ class _EiePanel extends StatelessWidget {
                       const SizedBox(height: ElectroSimSpacing.xs),
                       ExpansionTile(
                         key: Key('eie-evidence-${item.code.name}'),
+                        initiallyExpanded: false,
                         tilePadding: EdgeInsets.zero,
                         childrenPadding: EdgeInsets.zero,
-                        title: const Text('Preuves'),
+                        title: const Text('Détails techniques'),
                         children: <Widget>[
                           for (final String evidenceId in item.evidenceIds)
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                evidenceId,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: ElectroSimColors.textSecondary,
+                            Builder(
+                              builder: (BuildContext context) {
+                                final evidence = report.evidence.firstWhere(
+                                  (candidate) => candidate.id == evidenceId,
+                                );
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: ElectroSimSpacing.xs,
                                     ),
-                              ),
+                                    child: Text(
+                                      '$evidenceId\n${evidence.summary}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                ElectroSimColors.textSecondary,
+                                          ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                         ],
                       ),

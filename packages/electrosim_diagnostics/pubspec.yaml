@@ -13,6 +13,8 @@ dependencies:
     path: ../electrosim_solver_dc
   electrosim_solver_ac:
     path: ../electrosim_solver_ac
+  electrosim_pv:
+    path: ../electrosim_pv
   electrosim_measurements:
     path: ../electrosim_measurements
 dev_dependencies:

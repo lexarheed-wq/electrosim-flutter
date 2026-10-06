@@ -22,9 +22,7 @@ FaultScenarioDefinition _openLampScenario() {
       circuitId: CircuitId('v2-fault-dc-lamp-open-01'),
       revision: 0,
       mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        _source(prefix: prefix, voltageV: 24),
-      ],
+      sources: <SourceInstance>[_source(prefix: prefix, voltageV: 24)],
       components: <ComponentInstance>[
         ComponentInstance(
           id: ComponentId('$prefix-lamp'),
@@ -103,9 +101,7 @@ FaultScenarioDefinition _missingMotorReturnScenario() {
       circuitId: CircuitId('v2-fault-dc-motor-return-01'),
       revision: 0,
       mode: ElectricalMode.dc,
-      sources: <SourceInstance>[
-        _source(prefix: prefix, voltageV: 48),
-      ],
+      sources: <SourceInstance>[_source(prefix: prefix, voltageV: 48)],
       components: <ComponentInstance>[
         ComponentInstance(
           id: ComponentId('$prefix-motor'),
@@ -164,25 +160,23 @@ FaultScenarioDefinition _missingMotorReturnScenario() {
 Terminal _terminal(String id, String name) =>
     Terminal(id: TerminalId(id), name: name);
 
-SourceInstance _source({
-  required String prefix,
-  required double voltageV,
-}) => SourceInstance(
-  id: SourceId('$prefix-source'),
-  modelType: 'dc_voltage_source',
-  terminals: <Terminal>[
-    Terminal(
-      id: TerminalId('$prefix-source-plus'),
-      name: '+',
-      role: TerminalRole.positive,
-      phase: PhaseTag.dcPositive,
-    ),
-    Terminal(
-      id: TerminalId('$prefix-source-minus'),
-      name: '-',
-      role: TerminalRole.negative,
-      phase: PhaseTag.dcNegative,
-    ),
-  ],
-  parameters: <String, Object?>{'voltageV': voltageV},
-);
+SourceInstance _source({required String prefix, required double voltageV}) =>
+    SourceInstance(
+      id: SourceId('$prefix-source'),
+      modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        Terminal(
+          id: TerminalId('$prefix-source-plus'),
+          name: '+',
+          role: TerminalRole.positive,
+          phase: PhaseTag.dcPositive,
+        ),
+        Terminal(
+          id: TerminalId('$prefix-source-minus'),
+          name: '-',
+          role: TerminalRole.negative,
+          phase: PhaseTag.dcNegative,
+        ),
+      ],
+      parameters: <String, Object?>{'voltageV': voltageV},
+    );

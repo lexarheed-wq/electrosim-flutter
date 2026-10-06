@@ -1,0 +1,83 @@
+name: F18-G8 TP teacher student
+
+on:
+  push:
+    branches:
+      - f18-g8-tp-teacher-student-20261006
+      - v2-post-mac-audit-fixes-20261005
+    paths:
+      - 'apps/electrosim/**'
+      - 'packages/electrosim_tp/**'
+      - 'packages/electrosim_scenarios/**'
+      - 'tools/f18_g8_contract.py'
+      - '.github/workflows/f18-g8-tp-teacher-student.yml'
+      - 'docs/f18/g8/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify locked toolchain
+        run: |
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+
+      - name: Static G8 architecture contract
+        run: python3 tools/f18_g8_contract.py
+
+      - name: Resolve application dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+
+      - name: Verify G8 Dart formatting
+        run: dart format --set-exit-if-changed apps/electrosim/test/f18_g8_tp_teacher_student_test.dart
+
+      - name: Analyze application
+        working-directory: apps/electrosim
+        run: flutter analyze
+
+      - name: Full G8 troubleshooting lifecycle
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g8_tp_teacher_student_test.dart
+
+      - name: TP controller and UI regression
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f17_tp_session_controller_test.dart
+          flutter test test/f17_tp_session_ui_test.dart
+          flutter test test/f17_diagnostic_supervision_test.dart
+
+      - name: LAN and teacher supervision regression
+        working-directory: apps/electrosim
+        run: |
+          flutter test test/f17_lan_sync_test.dart
+          flutter test test/f18_point4_teacher_tp_supervision_test.dart
+          flutter test test/f18_g3_session_dashboard_test.dart
+
+      - name: TP engine package
+        working-directory: packages/electrosim_tp
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: G7 non-regression
+        working-directory: apps/electrosim
+        run: flutter test test/f18_g7_instruments_properties_test.dart
+
+      - name: Gate marker
+        run: echo F18_G8_TP_TEACHER_STUDENT_GATE_PASS

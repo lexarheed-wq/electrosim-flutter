@@ -371,12 +371,20 @@ _CompiledAc1Model _compileModel(
             a.id.value.compareTo(b.id.value),
       );
   for (final ComponentInstance component in components) {
-    if (!_supportedAc1ComponentModels.contains(component.modelType)) {
+    final ComponentPhysicsContract? physics =
+        CoreComponentPhysicsContracts.resolve(component.modelType);
+    final ComponentModelContract? structural =
+        CoreComponentModelContracts.registry.resolve(component.modelType);
+    if (physics == null ||
+        structural == null ||
+        !structural.supportsMode(ElectricalMode.ac1) ||
+        physics.electricalLaw == ComponentElectricalLaw.unsupported) {
       diagnostics.add(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.unsupportedComponentModel,
           severity: Ac1DiagnosticSeverity.error,
-          message: 'Unsupported M4 AC1 component model ${component.modelType}.',
+          message:
+              'Unsupported canonical AC1 component model ${component.modelType}.',
           componentId: component.id,
         ),
       );
@@ -395,13 +403,14 @@ _CompiledAc1Model _compileModel(
     )) {
       continue;
     }
-    if (component.modelType == 'terminal_block_5') {
-      if (topologyBranches.length != 5) {
+    if (physics.electricalLaw == ComponentElectricalLaw.feedThrough) {
+      if (topologyBranches.length != structural.branches.length) {
         diagnostics.add(
           Ac1SolverDiagnostic(
             code: Ac1DiagnosticCode.invalidTerminalCount,
             severity: Ac1DiagnosticSeverity.error,
-            message: 'terminal_block_5 must expose five feed-through branches.',
+            message:
+                '${component.modelType} must expose ${structural.branches.length} canonical feed-through branches.',
             componentId: component.id,
           ),
         );
@@ -492,20 +501,23 @@ _CompiledAc1Model _compileModel(
       continue;
     }
 
-    switch (component.modelType) {
-      case 'switch':
-      case 'switch_spst':
-        final Object? rawClosed = component.controlState['closed'];
-        if (rawClosed is! bool) {
+    switch (physics.electricalLaw) {
+      case ComponentElectricalLaw.binarySwitch:
+        final bool? closed = _closedFromControlLawAc1(
+          component,
+          physics.controlLaw,
+        );
+        if (closed == null) {
           diagnostics.add(
             Ac1SolverDiagnostic(
               code: Ac1DiagnosticCode.invalidParameter,
               severity: Ac1DiagnosticSeverity.error,
-              message: 'AC1 switch requires boolean controlState.closed.',
+              message:
+                  'AC1 switching component ${component.id.value} has invalid canonical control state.',
               componentId: component.id,
             ),
           );
-        } else if (rawClosed) {
+        } else if (closed) {
           elements.add(
             _Ac1Element(
               id: 'component:${component.id.value}',
@@ -520,42 +532,7 @@ _CompiledAc1Model _compileModel(
         } else {
           addOpen();
         }
-        continue;
-      case 'push_button_no':
-      case 'push_button_nc':
-        final Object? rawPressed = component.controlState['pressed'];
-        if (rawPressed is! bool) {
-          diagnostics.add(
-            Ac1SolverDiagnostic(
-              code: Ac1DiagnosticCode.invalidParameter,
-              severity: Ac1DiagnosticSeverity.error,
-              message: 'AC1 push-button requires boolean controlState.pressed.',
-              componentId: component.id,
-            ),
-          );
-          continue;
-        }
-        final bool closed = component.modelType == 'push_button_no'
-            ? rawPressed
-            : !rawPressed;
-        if (closed) {
-          elements.add(
-            _Ac1Element(
-              id: 'component:${component.id.value}',
-              modelType: component.modelType,
-              kind: _Ac1ElementKind.idealVoltage,
-              branchKind: Ac1BranchKind.idealSwitch,
-              fromNodeId: fromNode,
-              toNodeId: toNode,
-              value: AcComplex.zero,
-            ),
-          );
-        } else {
-          addOpen();
-        }
-        continue;
-      case 'breaker_ac1':
-      case 'fuse_ac1':
+      case ComponentElectricalLaw.protectionSwitch:
         final double? ratedCurrent = _positiveParameter(
           component.parameters,
           ProtectionRating.ratedCurrentKey,
@@ -604,10 +581,13 @@ _CompiledAc1Model _compileModel(
         } else {
           addOpen();
         }
-        continue;
-      default:
+      case ComponentElectricalLaw.resistive:
+      case ComponentElectricalLaw.capacitor:
+      case ComponentElectricalLaw.inductor:
+      case ComponentElectricalLaw.acImpedance:
         final AcComplex? impedance = _componentImpedance(
           component,
+          physics,
           frequencyHz,
           diagnostics,
         );
@@ -633,10 +613,30 @@ _CompiledAc1Model _compileModel(
             id: 'component:${component.id.value}',
             modelType: component.modelType,
             kind: _Ac1ElementKind.impedance,
-            branchKind: _branchKindForModel(component.modelType),
+            branchKind: _branchKindForPhysics(physics),
             fromNodeId: fromNode,
             toNodeId: toNode,
             value: impedance,
+          ),
+        );
+      case ComponentElectricalLaw.feedThrough:
+        throw StateError(
+          'Feed-through components are handled before single-branch AC1 compilation.',
+        );
+      case ComponentElectricalLaw.diode:
+      case ComponentElectricalLaw.motorThreePhase:
+      case ComponentElectricalLaw.loadWyeThreePhase:
+      case ComponentElectricalLaw.loadDeltaThreePhase:
+      case ComponentElectricalLaw.converter:
+      case ComponentElectricalLaw.storage:
+      case ComponentElectricalLaw.unsupported:
+        diagnostics.add(
+          Ac1SolverDiagnostic(
+            code: Ac1DiagnosticCode.unsupportedComponentModel,
+            severity: Ac1DiagnosticSeverity.error,
+            message:
+                'Electrical law ${physics.electricalLaw.name} is not supported by SolverAC1.',
+            componentId: component.id,
           ),
         );
     }

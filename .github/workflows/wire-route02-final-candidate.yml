@@ -1,0 +1,252 @@
+name: WIRE-ROUTE02 CANVAS-PERF01 final Mac candidate
+
+on:
+  push:
+    branches:
+      - wire-route02-canvas-perf01-20261007
+    paths:
+      - '.github/workflows/wire-route02-final-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wire-route02-final-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  final-core:
+    name: WIRE-ROUTE02 final automated qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain and architecture guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py
+
+      - name: Canonical physics and solvers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in             electrosim_domain             electrosim_topology             electrosim_solver_dc             electrosim_solver_ac             electrosim_pv             electrosim_controls             electrosim_measurements; do
+            (
+              cd "packages/$pkg"
+              dart pub get
+              dart analyze
+              dart test
+            )
+          done
+
+      - name: Rebuilt Canvas routing and performance
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test
+
+      - name: Empty product libraries
+        working-directory: packages/electrosim_scenarios
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Complete application regression suite
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test
+
+  macos-intel:
+    name: WIRE-ROUTE02 macOS Intel release candidate
+    runs-on: macos-15-intel
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+
+      - name: Canvas and routing smoke tests on Intel runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_canvas
+          flutter pub get
+          flutter analyze
+          flutter test test/orthogonal_wire_router_test.dart
+          flutter test test/circuit_wire_layout_engine_test.dart
+          flutter test test/wire_semantics_test.dart
+          flutter test test/canvas_performance_test.dart
+
+      - name: Prepare native runner with LAN configuration
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) tmp="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          echo "path=$tmp" >> "$GITHUB_OUTPUT"
+
+      - name: Application smoke and regression tests on Intel
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter test test/blank_product_workspace_test.dart
+          flutter test test/core_unify_runtime_health_test.dart
+          flutter test test/core_unify_current_flow_test.dart
+          flutter test test/f18_drag_architecture_test.dart
+          flutter test test/f18_drag_preview_test.dart
+          flutter test test/f18_g10b_library_ui_test.dart
+          flutter test test/f9_wiring_policy_test.dart
+          flutter test test/postv2_p1_wiring_policy_test.dart
+          flutter test test/postv2_p1_motor_visual_direction_test.dart
+
+      - name: Build and prove Intel candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/wire-route02/macos"
+          mkdir -p "$out"
+          base_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+
+          cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
+          ELECTROSIM WIRE-ROUTE02 / CANVAS-PERF01 — validation physique Mac Intel
+
+          A — Démarrage et données
+          1. Ouvrir Centre de conception > Câblage : la platine doit être entièrement vierge.
+          2. Aucun ancien schéma témoin ne doit apparaître automatiquement.
+          3. Les anciennes bibliothèques provisoires de schémas et pannes CORE-UNIFY doivent être vides.
+
+          B — Fluidité Canvas
+          4. Ajouter progressivement 25 composants puis déplacer plusieurs composants : déplacement fluide.
+          5. Monter à environ 50 composants : le drag doit rester immédiat, sans gel du pointeur.
+          6. Si possible monter à 100 composants : vérifier drag, pan et zoom.
+          7. Pendant un drag, seuls le déplacement visuel et les liaisons concernées doivent évoluer; aucune pause longue de reroutage avant le relâchement.
+          8. Au relâchement, le routage final doit rester orthogonal et propre.
+
+          C — Animation du courant
+          9. Sur un circuit alimenté stable, les particules de courant doivent circuler continûment sans blocage/reprise périodique.
+          10. Un courant nul ne doit produire aucune fausse circulation.
+          11. En DC, le sens animé doit suivre le courant signé calculé.
+          12. En AC/PV, aucun faux sens unidirectionnel permanent ne doit être inventé.
+
+          D — Routage des fils
+          13. Réaliser plusieurs connexions dans une zone encombrée : une connexion électriquement valide ne doit plus être refusée uniquement faute de chemin graphique.
+          14. Le routeur doit d'abord contourner composants et autres réseaux lorsqu'un passage propre existe.
+          15. Si un croisement de deux réseaux différents est réellement nécessaire, il doit être affiché comme croisement sans jonction (gap/pont) et ne pas créer de nœud électrique.
+          16. Deux fils d'un même net peuvent utiliser une géométrie cohérente sans être traités comme des obstacles étrangers.
+          17. Aucun fil ne doit traverser le corps d'un composant.
+          18. Les fils restent horizontaux/verticaux avec angles à 90°.
+
+          E — Non-régression CORE-UNIFY
+          19. Refaire le test lampe 24 V nominale puis surtension : états et destruction doivent rester cohérents.
+          20. Vérifier disjoncteur 10 A, moteur à 0 A, inversion moteur, relais, bornier multipolaire et sources DC en série.
+          21. Propriétés, Mesures et EIE doivent rester cohérents avec le RuntimeSnapshot.
+          22. Aucun crash, NaN, infini, gel durable ou état visuel contradictoire.
+
+          Si les 22 contrôles passent, signaler exactement :
+          WIRE_ROUTE02_CANVAS_PERF01_PHYSICAL_MAC_PASS
+          EOF
+
+          ditto -c -k --sequesterRsrc --keepParent "$app_path"             "$out/ElectroSim_WIRE_ROUTE02_CANVAS_PERF01_${base_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - name: Package exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/wire-route02/source"
+          mkdir -p "$out"
+          base_sha="$(git rev-parse HEAD)"
+          git archive --format=zip             --output="$out/ElectroSim_WIRE_ROUTE02_CANVAS_PERF01_SOURCE_${base_sha:0:12}.zip"             HEAD
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-WIRE-ROUTE02-CANVAS-PERF01-macOS-Intel
+          path: audit/wire-route02/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-WIRE-ROUTE02-CANVAS-PERF01-source
+          path: audit/wire-route02/source
+          if-no-files-found: error
+          retention-days: 14
+
+  automated-gate:
+    name: WIRE-ROUTE02 CANVAS-PERF01 automated final gate
+    needs:
+      - final-core
+      - macos-intel
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo WIRE_ROUTE02_CANVAS_PERF01_AUTOMATED_FINAL_PASS
+          echo WIRE_ROUTE02_CANVAS_PERF01_PHYSICAL_MAC_PASS=PENDING_USER_VALIDATION

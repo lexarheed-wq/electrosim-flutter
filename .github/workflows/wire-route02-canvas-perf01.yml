@@ -1,0 +1,54 @@
+name: WIRE-ROUTE02 CANVAS-PERF01 qualification
+
+on:
+  push:
+    branches:
+      - wire-route02-canvas-perf01-20261007
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tools/**'
+      - '.github/workflows/wire-route02-canvas-perf01.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wire-route02-canvas-perf01-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Canvas package
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Scenario package
+        working-directory: packages/electrosim_scenarios
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+      - name: Application
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test

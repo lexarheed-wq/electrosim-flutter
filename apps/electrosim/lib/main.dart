@@ -567,8 +567,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _workspace = 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
-    _simulation = ElectroSimSimulationController(circuit: _circuit)
-      ..addListener(_onSimulationChanged);
+    _simulation = ElectroSimSimulationController(circuit: _circuit);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fitCircuitToViewport();
@@ -578,7 +577,6 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ElectroSimRuntimeSnapshot runtimeSnapshot = _simulation.snapshot;
     final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
       _circuit,
       _selected,
@@ -608,7 +606,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           child: Focus(
             autofocus: true,
             child: ElectroSimWorkspaceShell(
-              topBar: _WorkspaceTopBar(
+              topBar: AnimatedBuilder(
+                animation: _simulation,
+                builder: (BuildContext context, Widget? child) => _WorkspaceTopBar(
                 entryLabel: widget.entryLabel,
                 workspace: _workspace,
                 sessionNavigation: widget.sessionNavigation,
@@ -642,6 +642,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 onToggleSimulation: _simulation.toggle,
                 onResetSimulation: _simulation.resetDynamics,
               ),
+              ),
               palette: F9ComponentPalette(
                 mode: _circuit.mode,
                 onStatus: _setStatus,
@@ -651,7 +652,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                   _workspace == 'Supervision' &&
                       widget.role == F9UserRole.teacher
                   ? F17TpSupervisionPanel(controller: _tpController)
-                  : F9ContextPanels(
+                  : AnimatedBuilder(
+                      animation: _simulation,
+                      builder: (BuildContext context, Widget? child) => F9ContextPanels(
                       circuit: _circuit,
                       selectedId: _selected,
                       status: _status,
@@ -675,18 +678,22 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               : 'Sélection clavier : $id';
                         });
                       },
-                      runtimeSnapshot: runtimeSnapshot,
+                      runtimeSnapshot: _simulation.snapshot,
                       tpSessionController:
                           widget.sessionNavigation ||
                               widget.tpSessionController != null
                           ? _tpController
                           : null,
                     ),
-              statusBar: _StatusBar(
+                    ),
+              statusBar: AnimatedBuilder(
+                animation: _simulation,
+                builder: (BuildContext context, Widget? child) => _StatusBar(
                 circuit: _circuit,
                 status: _status,
                 simulationRunning: _simulation.running,
                 simulatedTime: _simulation.simulatedTime,
+              ),
               ),
               canvas: KeyedSubtree(
                 key: const Key('f18-canvas-drop-region'),
@@ -779,7 +786,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
                                           ),
-                                          F9CanvasVisualOverlay(
+                                          AnimatedBuilder(
+                                            animation: _simulation,
+                                            builder:
+                                                (
+                                                  BuildContext context,
+                                                  Widget? child,
+                                                ) => F9CanvasVisualOverlay(
                                             circuit: _circuit,
                                             layout: canvasLayout,
                                             viewport: _viewport,
@@ -796,9 +809,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                   ),
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
-                                            runtimeSnapshot: runtimeSnapshot,
+                                            runtimeSnapshot: _simulation.snapshot,
                                             simulationRunning:
                                                 _simulation.running,
+                                          ),
                                           ),
                                         ],
                                       );
@@ -2706,19 +2720,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
   }
 
-  void _onSimulationChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   @override
   void dispose() {
     for (final Timer timer in _momentaryReleaseTimers.values) {
       timer.cancel();
     }
     _momentaryReleaseTimers.clear();
-    _simulation.removeListener(_onSimulationChanged);
     _simulation.dispose();
     widget.syncClient?.removeListener(_onLanSyncChanged);
     final ElectroSimLanSyncHost? host = _lanHost;

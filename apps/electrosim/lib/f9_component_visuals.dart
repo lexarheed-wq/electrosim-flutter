@@ -5,6 +5,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
@@ -43,14 +44,18 @@ class F9CanvasVisualOverlay extends StatefulWidget {
 
 class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _motion = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1000),
-  );
+  final ValueNotifier<double> _motionSeconds = ValueNotifier<double>(0);
+  late final Ticker _ticker;
+  double _motionBaseSeconds = 0;
 
   @override
   void initState() {
     super.initState();
+    _ticker = createTicker((Duration elapsed) {
+      _motionSeconds.value =
+          _motionBaseSeconds +
+          elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    });
     _syncMotion();
   }
 
@@ -63,10 +68,12 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   void _syncMotion() {
     final bool shouldRun =
         widget.simulationRunning && (widget.runtimeSnapshot?.solved ?? false);
-    if (shouldRun && !_motion.isAnimating) {
-      _motion.repeat();
-    } else if (!shouldRun && _motion.isAnimating) {
-      _motion.stop();
+    if (shouldRun && !_ticker.isActive) {
+      _motionBaseSeconds = _motionSeconds.value;
+      _ticker.start();
+    } else if (!shouldRun && _ticker.isActive) {
+      _motionBaseSeconds = _motionSeconds.value;
+      _ticker.stop();
     }
   }
 
@@ -74,38 +81,50 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: AnimatedBuilder(
-        animation: _motion,
+        animation: widget.viewport,
         builder: (BuildContext context, Widget? child) {
-          return AnimatedBuilder(
-            animation: widget.viewport,
-            builder: (BuildContext context, Widget? child) {
-              final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-                widget.circuit,
-                widget.layout,
-              );
-              return Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  ..._buildReferenceVisuals(geometry),
-                  CustomPaint(
-                    painter: _F9CanvasOverlayPainter(
-                      circuit: widget.circuit,
-                      layout: widget.layout,
-                      viewport: widget.viewport,
-                      selectedElementIds: widget.selectedElementIds,
-                      pendingTerminalId: widget.pendingTerminalId,
-                      hoverTerminalId: widget.hoverTerminalId,
-                      pointerWorldPosition: widget.pointerWorldPosition,
-                      wirePreviewPlanner: widget.wirePreviewPlanner,
-                      runtimeSnapshot: widget.runtimeSnapshot,
-                      simulationRunning: widget.simulationRunning,
-                      animationValue: _motion.value,
-                    ),
-                    size: Size.infinite,
+          final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+            widget.circuit,
+            widget.layout,
+          );
+          final WireSemantics semantics = const WireSemanticsAnalyzer().analyze(
+            circuit: widget.circuit,
+            layout: widget.layout,
+          );
+          return Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: _F9CurrentFlowPainter(
+                    circuit: widget.circuit,
+                    layout: widget.layout,
+                    viewport: widget.viewport,
+                    geometry: geometry,
+                    semantics: semantics,
+                    runtimeSnapshot: widget.runtimeSnapshot,
+                    simulationRunning: widget.simulationRunning,
+                    motionSeconds: _motionSeconds,
                   ),
-                ],
-              );
-            },
+                  size: Size.infinite,
+                ),
+              ),
+              ..._buildReferenceVisuals(geometry),
+              CustomPaint(
+                painter: _F9StaticOverlayPainter(
+                  circuit: widget.circuit,
+                  layout: widget.layout,
+                  viewport: widget.viewport,
+                  geometry: geometry,
+                  selectedElementIds: widget.selectedElementIds,
+                  pendingTerminalId: widget.pendingTerminalId,
+                  hoverTerminalId: widget.hoverTerminalId,
+                  pointerWorldPosition: widget.pointerWorldPosition,
+                  wirePreviewPlanner: widget.wirePreviewPlanner,
+                ),
+                size: Size.infinite,
+              ),
+            ],
           );
         },
       ),
@@ -157,7 +176,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           child: Center(
             child: Transform.rotate(
               angle: math.pi / 2 * quarterTurns,
-              child: F18ComponentAssetVisual(
+              child: _F9ReferenceAsset(
                 key: ValueKey<String>('board-v1-visual-$elementId'),
                 modelType: renderedModelType,
                 variantKey: visualVariant,
@@ -168,7 +187,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                 tripped: tripped,
                 pressed: pressed,
                 actuated: actuated,
-                animationValue: _motion.value,
+                motionSeconds: _motionSeconds,
+                animate: energized,
                 showTerminals: true,
                 currentA: currentA,
                 voltageV: voltageV,
@@ -508,45 +528,244 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
   @override
   void dispose() {
-    _motion.dispose();
+    _ticker.dispose();
+    _motionSeconds.dispose();
     super.dispose();
   }
 }
 
-class _F9CanvasOverlayPainter extends CustomPainter {
-  const _F9CanvasOverlayPainter({
+class _F9ReferenceAsset extends StatelessWidget {
+  const _F9ReferenceAsset({
+    super.key,
+    required this.modelType,
+    required this.size,
+    required this.motionSeconds,
+    required this.animate,
+    this.variantKey,
+    this.active = true,
+    this.energized = false,
+    this.closed,
+    this.tripped = false,
+    this.pressed = false,
+    this.actuated = false,
+    this.batterySoc = 0,
+    this.showTerminals = true,
+    this.currentA = 0,
+    this.voltageV = 0,
+    this.ratedCurrentA = 1,
+    this.currentLimitA = 2,
+    this.resistanceOhm = 0,
+  });
+
+  final String modelType;
+  final Size size;
+  final ValueListenable<double> motionSeconds;
+  final bool animate;
+  final String? variantKey;
+  final bool active;
+  final bool energized;
+  final bool? closed;
+  final bool tripped;
+  final bool pressed;
+  final bool actuated;
+  final double batterySoc;
+  final bool showTerminals;
+  final double currentA;
+  final double voltageV;
+  final double ratedCurrentA;
+  final double currentLimitA;
+  final double resistanceOhm;
+
+  Widget _visual(double phase) => F18ComponentAssetVisual(
+    modelType: modelType,
+    variantKey: variantKey,
+    size: size,
+    active: active,
+    energized: energized,
+    closed: closed,
+    tripped: tripped,
+    pressed: pressed,
+    actuated: actuated,
+    animationValue: phase,
+    batterySoc: batterySoc,
+    showTerminals: showTerminals,
+    currentA: currentA,
+    voltageV: voltageV,
+    ratedCurrentA: ratedCurrentA,
+    currentLimitA: currentLimitA,
+    resistanceOhm: resistanceOhm,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    if (!animate) return _visual(0);
+    return AnimatedBuilder(
+      animation: motionSeconds,
+      builder: (BuildContext context, Widget? child) =>
+          _visual(motionSeconds.value % 1.0),
+    );
+  }
+}
+
+class _F9CurrentFlowPainter extends CustomPainter {
+  _F9CurrentFlowPainter({
     required this.circuit,
     required this.layout,
     required this.viewport,
+    required this.geometry,
+    required this.semantics,
+    required this.runtimeSnapshot,
+    required this.simulationRunning,
+    required this.motionSeconds,
+  }) : super(repaint: motionSeconds);
+
+  final CircuitState circuit;
+  final CircuitVisualLayout layout;
+  final ViewportController viewport;
+  final CircuitGeometryIndex geometry;
+  final WireSemantics semantics;
+  final ElectroSimRuntimeSnapshot? runtimeSnapshot;
+  final bool simulationRunning;
+  final ValueListenable<double> motionSeconds;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ElectroSimRuntimeSnapshot? runtime = runtimeSnapshot;
+    if (!simulationRunning || runtime == null || !runtime.solved) return;
+
+    for (final Connection connection in circuit.connections) {
+      if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
+        continue;
+      }
+      final ConnectionCurrentEvidence flow =
+          runtime.connectionCurrentEvidence(connection);
+      final double currentA = flow.magnitudeA;
+      if (currentA <= 1e-6) continue;
+
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
+      if (start == null || end == null) continue;
+
+      final List<Offset> points = <Offset>[
+        start,
+        ...layout.routeFor(connection.id.value),
+        end,
+      ];
+      if (points.length < 2) continue;
+
+      final Path path = Path();
+      final Offset first = viewport.worldToScreen(points.first);
+      path.moveTo(first.dx, first.dy);
+      for (final Offset worldPoint in points.skip(1)) {
+        final Offset p = viewport.worldToScreen(worldPoint);
+        path.lineTo(p.dx, p.dy);
+      }
+
+      final Color phase = _phaseColor(connection.phase);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = phase.withValues(alpha: 48 / 255)
+          ..strokeWidth = 7
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+
+      final double baseSpeed =
+          22 + math.min(78, math.sqrt(math.max(0, currentA)) * 28);
+      final double direction = flow.directionKnown && !flow.alternating
+          ? (flow.signedCurrentA >= 0 ? 1.0 : -1.0)
+          : 0.0;
+      _paintMovingDashes(
+        canvas,
+        path,
+        speed: baseSpeed * direction,
+        elapsedSeconds: motionSeconds.value,
+      );
+    }
+
+    final double gapRadius = (5 * viewport.scale).clamp(3, 7).toDouble();
+    for (final NonJunctionWireCrossing crossing
+        in semantics.nonJunctionCrossings) {
+      canvas.drawCircle(
+        viewport.worldToScreen(crossing.point),
+        gapRadius,
+        Paint()..color = CircuitScenePainter.boardColor,
+      );
+    }
+  }
+
+  void _paintMovingDashes(
+    Canvas canvas,
+    Path path, {
+    required double speed,
+    required double elapsedSeconds,
+  }) {
+    const double dash = 2;
+    const double gap = 12;
+    const double cycle = dash + gap;
+    final double offset = (elapsedSeconds * speed) % cycle;
+    final Paint paint = Paint()
+      ..color = const Color(0xEBFFFFFF)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (final metric in path.computeMetrics()) {
+      double cursor = -offset;
+      while (cursor < metric.length) {
+        final double start = math.max(0, cursor);
+        final double end = math.min(metric.length, cursor + dash);
+        if (end > start) {
+          canvas.drawPath(metric.extractPath(start, end), paint);
+        }
+        cursor += cycle;
+      }
+    }
+  }
+
+  static Color _phaseColor(PhaseTag phase) => switch (phase) {
+    PhaseTag.dcPositive => const Color(0xFFDC2626),
+    PhaseTag.dcNegative => const Color(0xFF111827),
+    PhaseTag.l1 => const Color(0xFF92400E),
+    PhaseTag.l2 => const Color(0xFF111827),
+    PhaseTag.l3 => const Color(0xFF6B7280),
+    PhaseTag.neutral => const Color(0xFF2563EB),
+    PhaseTag.protectiveEarth => const Color(0xFF15803D),
+    PhaseTag.none => const Color(0xFF475569),
+  };
+
+  @override
+  bool shouldRepaint(_F9CurrentFlowPainter oldDelegate) => true;
+}
+
+class _F9StaticOverlayPainter extends CustomPainter {
+  const _F9StaticOverlayPainter({
+    required this.circuit,
+    required this.layout,
+    required this.viewport,
+    required this.geometry,
     required this.selectedElementIds,
     required this.pendingTerminalId,
     required this.hoverTerminalId,
     required this.pointerWorldPosition,
     required this.wirePreviewPlanner,
-    required this.runtimeSnapshot,
-    required this.simulationRunning,
-    required this.animationValue,
   });
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
   final ViewportController viewport;
+  final CircuitGeometryIndex geometry;
   final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
-  final ElectroSimRuntimeSnapshot? runtimeSnapshot;
-  final bool simulationRunning;
-  final double animationValue;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-      circuit,
-      layout,
-    );
-    _paintLiveWires(canvas, geometry);
     _paintSmartWirePreview(canvas);
 
     for (final SourceInstance source in circuit.sources) {
@@ -641,95 +860,6 @@ class _F9CanvasOverlayPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
-    }
-  }
-
-  void _paintLiveWires(Canvas canvas, CircuitGeometryIndex geometry) {
-    final ElectroSimRuntimeSnapshot? runtime = runtimeSnapshot;
-    if (!simulationRunning || runtime == null || !runtime.solved) {
-      return;
-    }
-
-    for (final Connection connection in circuit.connections) {
-      if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
-        continue;
-      }
-      final ConnectionCurrentEvidence flow =
-          runtime.connectionCurrentEvidence(connection);
-      final double currentA = flow.magnitudeA;
-      if (currentA <= 1e-6) continue;
-
-      final Offset? start =
-          geometry.terminalPositions[connection.fromTerminalId];
-      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
-      if (start == null || end == null) continue;
-
-      final List<Offset> points = <Offset>[
-        start,
-        ...layout.routeFor(connection.id.value),
-        end,
-      ];
-      if (points.length < 2) continue;
-
-      final Path path = Path();
-      final Offset first = viewport.worldToScreen(points.first);
-      path.moveTo(first.dx, first.dy);
-      for (final Offset worldPoint in points.skip(1)) {
-        final Offset p = viewport.worldToScreen(worldPoint);
-        path.lineTo(p.dx, p.dy);
-      }
-
-      final Color phase = _phaseColor(connection.phase);
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = phase.withValues(alpha: 48 / 255)
-          ..strokeWidth = 7
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-      );
-
-      final double baseSpeed =
-          22 + math.min(78, math.sqrt(math.max(0, currentA)) * 28);
-      final double direction = flow.directionKnown && !flow.alternating
-          ? (flow.signedCurrentA >= 0 ? 1.0 : -1.0)
-          : 0.0;
-      _paintMovingDashes(
-        canvas,
-        path,
-        speed: baseSpeed * direction,
-        animationValue: animationValue,
-      );
-    }
-  }
-
-  void _paintMovingDashes(
-    Canvas canvas,
-    Path path, {
-    required double speed,
-    required double animationValue,
-  }) {
-    const double dash = 2;
-    const double gap = 12;
-    const double cycle = dash + gap;
-    final double offset = (animationValue * speed) % cycle;
-    final Paint paint = Paint()
-      ..color = const Color(0xEBFFFFFF)
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    for (final metric in path.computeMetrics()) {
-      double cursor = -offset;
-      while (cursor < metric.length) {
-        final double start = math.max(0, cursor);
-        final double end = math.min(metric.length, cursor + dash);
-        if (end > start) {
-          canvas.drawPath(metric.extractPath(start, end), paint);
-        }
-        cursor += cycle;
-      }
     }
   }
 
@@ -1002,7 +1132,7 @@ class _F9CanvasOverlayPainter extends CustomPainter {
   };
 
   @override
-  bool shouldRepaint(_F9CanvasOverlayPainter oldDelegate) => true;
+  bool shouldRepaint(_F9StaticOverlayPainter oldDelegate) => true;
 }
 
 Size _f9VisualSize(Rect worldRect, ViewportController viewport) {

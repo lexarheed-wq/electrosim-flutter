@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_topology/electrosim_topology.dart';
 
 import 'canvas_geometry.dart';
 import 'circuit_visual_layout.dart';
@@ -8,9 +9,13 @@ import 'orthogonal_wire_router.dart';
 import 'wire_geometry.dart';
 
 final class CircuitWireLayoutEngine {
-  const CircuitWireLayoutEngine({required this.router});
+  const CircuitWireLayoutEngine({
+    required this.router,
+    this.topologyEngine = const TopologyEngine(),
+  });
 
   final OrthogonalWireRouter router;
+  final TopologyEngine topologyEngine;
 
   CircuitVisualLayout routeAll({
     required CircuitState circuit,
@@ -20,29 +25,13 @@ final class CircuitWireLayoutEngine {
       circuit,
       layout,
     );
+    final TopologyGraph topology = topologyEngine.compile(circuit);
     final List<Connection> original = List<Connection>.unmodifiable(
       circuit.connections,
     );
 
-    final _RoutePass primary = _routePass(
-      circuit: circuit,
-      layout: layout,
-      geometry: geometry,
-      orderedConnections: original,
-      preferPerimeterAligned: false,
-    );
-    if (primary.complete) {
-      return primary.layout;
-    }
-
-    // A strict no-crossing router is order-sensitive: an early path can
-    // consume the only channel needed by a later connection. Keep the normal
-    // circuit order as the authoritative fast path, but if it is incomplete,
-    // retry deterministic alternatives and accept a retry only when it
-    // resolves more connections. This is especially important for V2 devices
-    // whose physical terminals can leave through top/bottom instead of only
-    // left/right.
-    final List<List<Connection>> retries = <List<Connection>>[
+    final List<List<Connection>> orders = <List<Connection>>[
+      original,
       original.reversed.toList(growable: false),
       <Connection>[...original]..sort((Connection a, Connection b) {
         final double aDistance = _routingDistance(a, geometry);
@@ -53,38 +42,40 @@ final class CircuitWireLayoutEngine {
       }),
     ];
 
-    _RoutePass best = primary;
-    for (final List<Connection> order in retries) {
+    _RoutePass? best;
+    for (final List<Connection> order in orders) {
       final _RoutePass candidate = _routePass(
         circuit: circuit,
         layout: layout,
         geometry: geometry,
+        topology: topology,
         orderedConnections: order,
-        preferPerimeterAligned: true,
       );
-      if (candidate.resolvedCount > best.resolvedCount) {
+      if (best == null || candidate.resolvedCount > best.resolvedCount) {
         best = candidate;
       }
-      if (candidate.complete) {
-        return candidate.layout;
-      }
+      if (candidate.complete) return candidate.layout;
     }
-    return best.layout;
+    return best?.layout ?? layout;
   }
 
   _RoutePass _routePass({
     required CircuitState circuit,
     required CircuitVisualLayout layout,
     required CircuitGeometryIndex geometry,
+    required TopologyGraph topology,
     required List<Connection> orderedConnections,
-    required bool preferPerimeterAligned,
   }) {
     final Map<String, List<Offset>> nextRoutes = <String, List<Offset>>{
       ...layout.wireRoutes,
     };
-    final List<OrthogonalWirePath> occupied = <OrthogonalWirePath>[];
+    final List<_OccupiedRoute> occupied = <_OccupiedRoute>[];
     var eligibleCount = 0;
     var resolvedCount = 0;
+
+    final List<RoutingObstacle> obstacles = geometry.elementRects.values
+        .map((Rect rect) => RoutingObstacle(bounds: rect))
+        .toList(growable: false);
 
     for (final Connection connection in orderedConnections) {
       final Offset? start =
@@ -103,6 +94,12 @@ final class CircuitWireLayoutEngine {
       }
       eligibleCount++;
 
+      final String netId = _connectionNetId(connection, topology);
+      final List<OrthogonalWirePath> differentNetPaths = occupied
+          .where((_OccupiedRoute item) => item.netId != netId)
+          .map((_OccupiedRoute item) => item.path)
+          .toList(growable: false);
+
       final String? fromOwner =
           geometry.terminalOwners[connection.fromTerminalId];
       final String? toOwner = geometry.terminalOwners[connection.toTerminalId];
@@ -112,7 +109,6 @@ final class CircuitWireLayoutEngine {
       final Rect? toRect = toOwner == null
           ? null
           : geometry.elementRects[toOwner];
-
       final Offset startStub = fromRect == null
           ? startRouting
           : _terminalStubPoint(startRouting, fromRect);
@@ -120,62 +116,28 @@ final class CircuitWireLayoutEngine {
           ? endRouting
           : _terminalStubPoint(endRouting, toRect);
 
-      final List<RoutingObstacle> obstacles = geometry.elementRects.entries
-          .map(
-            (MapEntry<String, Rect> entry) =>
-                RoutingObstacle(bounds: entry.value),
-          )
-          .toList(growable: false);
-
-      final List<OrthogonalWirePath> crossingObstacles = occupied
-          .where(
-            (OrthogonalWirePath path) =>
-                !_sharesEndpoint(path, start) && !_sharesEndpoint(path, end),
-          )
-          .toList(growable: false);
-
-      if (preferPerimeterAligned) {
-        final OrthogonalWirePath? preferredPerimeter = _perimeterEscapePath(
-          start: startStub,
-          end: endStub,
-          geometry: geometry,
-        );
-        if (preferredPerimeter != null) {
-          final OrthogonalWirePath? path = _composeStubbedPath(
-            start: start,
-            startRouting: startRouting,
-            startStub: startStub,
-            routed: preferredPerimeter,
-            endStub: endStub,
-            endRouting: endRouting,
-            end: end,
-          );
-          if (path != null &&
-              !WireRouteSafety.hasDifferentNetCrossing(
-                candidate: path,
-                occupiedDifferentNetPaths: crossingObstacles,
-              )) {
-            nextRoutes[connection.id.value] = path.points.length <= 2
-                ? const <Offset>[]
-                : List<Offset>.unmodifiable(
-                    path.points.sublist(1, path.points.length - 1),
-                  );
-            occupied.add(path);
-            resolvedCount++;
-            continue;
-          }
-        }
-      }
-
-      final WireRouteResult result = router.route(
+      WireRouteResult result = router.route(
         start: startStub,
         end: endStub,
         obstacles: obstacles,
-        occupiedDifferentNetPaths: crossingObstacles,
+        occupiedDifferentNetPaths: differentNetPaths,
       );
 
+      // Conductors must never make a valid electrical connection impossible.
+      // If congestion defeats the preferred search, retry without conductor
+      // occupancy. Components remain hard obstacles; wire crossings become a
+      // renderer concern rather than an electrical refusal.
+      if (!result.isResolved) {
+        result = router.route(
+          start: startStub,
+          end: endStub,
+          obstacles: obstacles,
+        );
+      }
+
+      OrthogonalWirePath? path;
       if (result.isResolved) {
-        final OrthogonalWirePath? path = _composeStubbedPath(
+        path = _composeStubbedPath(
           start: start,
           startRouting: startRouting,
           startStub: startStub,
@@ -184,68 +146,27 @@ final class CircuitWireLayoutEngine {
           endRouting: endRouting,
           end: end,
         );
-        if (path != null &&
-            !WireRouteSafety.hasDifferentNetCrossing(
-              candidate: path,
-              occupiedDifferentNetPaths: crossingObstacles,
-            )) {
-          nextRoutes[connection.id.value] = path.points.length <= 2
-              ? const <Offset>[]
-              : List<Offset>.unmodifiable(
-                  path.points.sublist(1, path.points.length - 1),
-                );
-          occupied.add(path);
-          resolvedCount++;
-          continue;
-        }
       }
 
-      final OrthogonalWirePath? perimeter = _perimeterEscapePath(
-        start: startStub,
-        end: endStub,
-        geometry: geometry,
-      );
-      if (perimeter != null) {
-        final OrthogonalWirePath? path = _composeStubbedPath(
-          start: start,
-          startRouting: startRouting,
-          startStub: startStub,
-          routed: perimeter,
-          endStub: endStub,
-          endRouting: endRouting,
-          end: end,
-        );
-        if (path != null &&
-            !WireRouteSafety.hasDifferentNetCrossing(
-              candidate: path,
-              occupiedDifferentNetPaths: crossingObstacles,
-            )) {
-          nextRoutes[connection.id.value] = path.points.length <= 2
-              ? const <Offset>[]
-              : List<Offset>.unmodifiable(
-                  path.points.sublist(1, path.points.length - 1),
-                );
-          occupied.add(path);
-          resolvedCount++;
-          continue;
-        }
-      }
-
-      final OrthogonalWirePath? existing = _existingOrthogonalPath(
+      path ??= _existingOrthogonalPath(
         start: start,
         startRouting: startRouting,
         endRouting: endRouting,
         end: end,
         intermediate: layout.routeFor(connection.id.value),
       );
-      if (existing != null &&
-          !WireRouteSafety.hasDifferentNetCrossing(
-            candidate: existing,
-            occupiedDifferentNetPaths: crossingObstacles,
-          )) {
-        occupied.add(existing);
-        resolvedCount++;
-      }
+
+      // Absolute visual fallback. It preserves orthogonality and connectivity;
+      // normal routing should make this branch exceptional.
+      path ??= _emergencyOrthogonalPath(start, end);
+
+      nextRoutes[connection.id.value] = path.points.length <= 2
+          ? const <Offset>[]
+          : List<Offset>.unmodifiable(
+              path.points.sublist(1, path.points.length - 1),
+            );
+      occupied.add(_OccupiedRoute(netId: netId, path: path));
+      resolvedCount++;
     }
 
     return _RoutePass(
@@ -261,6 +182,16 @@ final class CircuitWireLayoutEngine {
     );
   }
 
+  static String _connectionNetId(
+    Connection connection,
+    TopologyGraph topology,
+  ) {
+    final String? from = topology.terminalToNode[connection.fromTerminalId];
+    final String? to = topology.terminalToNode[connection.toTerminalId];
+    if (connection.enabled && from != null && from == to) return from;
+    return 'connection:' + connection.id.value;
+  }
+
   static double _routingDistance(
     Connection connection,
     CircuitGeometryIndex geometry,
@@ -271,67 +202,6 @@ final class CircuitWireLayoutEngine {
         geometry.terminalRoutingPositions[connection.toTerminalId];
     if (start == null || end == null) return 0;
     return (start.dx - end.dx).abs() + (start.dy - end.dy).abs();
-  }
-
-  OrthogonalWirePath? _perimeterEscapePath({
-    required Offset start,
-    required Offset end,
-    required CircuitGeometryIndex geometry,
-  }) {
-    if (geometry.elementRects.isEmpty) return null;
-
-    Rect bounds = geometry.elementRects.values.first;
-    for (final Rect rect in geometry.elementRects.values.skip(1)) {
-      bounds = bounds.expandToInclude(rect);
-    }
-    final double escape = router.obstacleClearance + router.grid * 2;
-
-    List<Offset>? raw;
-    if ((start.dy - end.dy).abs() <= 0.001) {
-      if (start.dy >= bounds.bottom && end.dy >= bounds.bottom) {
-        final double y = bounds.bottom + escape;
-        raw = <Offset>[start, Offset(start.dx, y), Offset(end.dx, y), end];
-      } else if (start.dy <= bounds.top && end.dy <= bounds.top) {
-        final double y = bounds.top - escape;
-        raw = <Offset>[start, Offset(start.dx, y), Offset(end.dx, y), end];
-      }
-    } else if ((start.dx - end.dx).abs() <= 0.001) {
-      if (start.dx >= bounds.right && end.dx >= bounds.right) {
-        final double x = bounds.right + escape;
-        raw = <Offset>[start, Offset(x, start.dy), Offset(x, end.dy), end];
-      } else if (start.dx <= bounds.left && end.dx <= bounds.left) {
-        final double x = bounds.left - escape;
-        raw = <Offset>[start, Offset(x, start.dy), Offset(x, end.dy), end];
-      }
-    }
-    if (raw == null) return null;
-
-    final List<Offset> normalized = <Offset>[];
-    for (final Offset point in raw) {
-      if (normalized.isEmpty || normalized.last != point) {
-        normalized.add(point);
-      }
-    }
-    var index = 1;
-    while (index < normalized.length - 1) {
-      final Offset before = normalized[index - 1];
-      final Offset current = normalized[index];
-      final Offset after = normalized[index + 1];
-      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
-      final bool vertical = before.dx == current.dx && current.dx == after.dx;
-      if (horizontal || vertical) {
-        normalized.removeAt(index);
-      } else {
-        index++;
-      }
-    }
-
-    if (normalized.length < 2) return null;
-    try {
-      return OrthogonalWirePath(points: normalized);
-    } on ArgumentError {
-      return null;
-    }
   }
 
   Offset _terminalStubPoint(Offset terminal, Rect ownerRect) {
@@ -389,39 +259,7 @@ final class CircuitWireLayoutEngine {
       if (endRouting != end) endRouting,
       end,
     ];
-    final List<Offset> normalized = <Offset>[];
-    for (final Offset point in raw) {
-      if (normalized.isEmpty || normalized.last != point) {
-        normalized.add(point);
-      }
-    }
-
-    var index = 1;
-    while (index < normalized.length - 1) {
-      final Offset before = normalized[index - 1];
-      final Offset current = normalized[index];
-      final Offset after = normalized[index + 1];
-      final bool horizontal = before.dy == current.dy && current.dy == after.dy;
-      final bool vertical = before.dx == current.dx && current.dx == after.dx;
-      if (horizontal || vertical) {
-        normalized.removeAt(index);
-      } else {
-        index++;
-      }
-    }
-
-    if (normalized.length < 2) {
-      return null;
-    }
-    try {
-      return OrthogonalWirePath(points: normalized);
-    } on ArgumentError {
-      return null;
-    }
-  }
-
-  static bool _sharesEndpoint(OrthogonalWirePath path, Offset point) {
-    return path.points.first == point || path.points.last == point;
+    return _orthogonalPathOrNull(raw);
   }
 
   static OrthogonalWirePath? _existingOrthogonalPath({
@@ -430,19 +268,30 @@ final class CircuitWireLayoutEngine {
     required Offset endRouting,
     required Offset end,
     required List<Offset> intermediate,
-  }) {
-    final List<Offset> raw = <Offset>[
-      start,
-      if (startRouting != start) startRouting,
-      ...intermediate,
-      if (endRouting != end) endRouting,
-      end,
-    ];
+  }) => _orthogonalPathOrNull(<Offset>[
+    start,
+    if (startRouting != start) startRouting,
+    ...intermediate,
+    if (endRouting != end) endRouting,
+    end,
+  ]);
+
+  static OrthogonalWirePath _emergencyOrthogonalPath(
+    Offset start,
+    Offset end,
+  ) {
+    if (start.dx == end.dx || start.dy == end.dy) {
+      return OrthogonalWirePath(points: <Offset>[start, end]);
+    }
+    return OrthogonalWirePath(
+      points: <Offset>[start, Offset(end.dx, start.dy), end],
+    );
+  }
+
+  static OrthogonalWirePath? _orthogonalPathOrNull(List<Offset> raw) {
     final List<Offset> points = <Offset>[];
     for (final Offset point in raw) {
-      if (points.isEmpty || points.last != point) {
-        points.add(point);
-      }
+      if (points.isEmpty || points.last != point) points.add(point);
     }
     var index = 1;
     while (index < points.length - 1) {
@@ -457,12 +306,20 @@ final class CircuitWireLayoutEngine {
         index++;
       }
     }
+    if (points.length < 2) return null;
     try {
       return OrthogonalWirePath(points: points);
     } on ArgumentError {
       return null;
     }
   }
+}
+
+final class _OccupiedRoute {
+  const _OccupiedRoute({required this.netId, required this.path});
+
+  final String netId;
+  final OrthogonalWirePath path;
 }
 
 final class _RoutePass {

@@ -6,6 +6,8 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/regression_fixture.dart';
+
 Future<void> _openContext(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimContextRegionKey);
   final double width =
@@ -26,8 +28,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'lamp-1'),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+          initialSelectedElementId: 'lamp-1',
+        ),
         ),
       );
       await tester.pumpAndSettle();

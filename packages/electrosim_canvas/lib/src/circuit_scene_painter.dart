@@ -61,6 +61,7 @@ final class CircuitScenePainter extends CustomPainter {
     _paintWires(canvas, geometry);
     if (semantics != null) {
       _paintNonJunctionCrossingGaps(canvas, semantics);
+      _paintInteriorJunctions(canvas, semantics);
     }
     if (paintElementChrome) {
       _paintSources(canvas, geometry);
@@ -197,6 +198,17 @@ final class CircuitScenePainter extends CustomPainter {
         viewport.worldToScreen(crossing.point),
         radius,
         Paint()..color = boardColor,
+      );
+    }
+  }
+
+  void _paintInteriorJunctions(Canvas canvas, WireSemantics semantics) {
+    final double radius = (4 * viewport.scale).clamp(2.5, 6).toDouble();
+    for (final Offset worldPoint in semantics.interiorJunctionPoints) {
+      canvas.drawCircle(
+        viewport.worldToScreen(worldPoint),
+        radius,
+        Paint()..color = terminalStroke,
       );
     }
   }

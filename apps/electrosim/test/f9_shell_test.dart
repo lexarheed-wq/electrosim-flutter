@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/regression_fixture.dart';
+
 Future<void> _openPalette(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimPaletteRegionKey);
   if (region.evaluate().isEmpty || tester.getRect(region).right <= 0) {
@@ -187,7 +189,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     expect(find.text('Câblage'), findsWidgets);
     expect(find.text('Composants'), findsOneWidget);
     expect(find.text('Propriétés'), findsWidgets);
@@ -202,7 +206,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     await tester.pumpAndSettle();
     expect(find.byType(SimulatorCanvas), findsOneWidget);
     expect(find.byKey(electroSimPaletteEdgeKey), findsOneWidget);
@@ -220,7 +226,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     await _openPalette(tester);
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
     expect(
@@ -267,7 +275,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )),
       );
       await _openPalette(tester);
       expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
@@ -304,7 +314,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     await _openPalette(tester);
     await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
     await tester.pumpAndSettle();
@@ -329,7 +341,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     await _openPalette(tester);
     final Finder item = find.byKey(const Key('palette-item-resistor'));
     final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
@@ -366,8 +380,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+          initialSelectedElementId: 'switch-1',
+        ),
         ),
       );
       await tester.pumpAndSettle();
@@ -549,8 +566,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'wire-2'),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+          initialSelectedElementId: 'wire-2',
+        ),
         ),
       );
       await tester.pumpAndSettle();
@@ -594,8 +614,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'wire-1'),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+          initialSelectedElementId: 'wire-1',
+        ),
         ),
       );
       await tester.pumpAndSettle();
@@ -639,8 +662,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
           initialWorkspace: 'Recherche de dérangement',
           role: F9UserRole.teacher,
         ),
@@ -650,8 +674,9 @@ void main() {
     expect(find.byKey(const Key('diagnostic-tab')), findsNothing);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
           initialWorkspace: 'Recherche de dérangement',
           role: F9UserRole.student,
         ),
@@ -675,7 +700,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )),
       );
       await tester.pumpAndSettle();
       await _openContext(tester);
@@ -700,7 +727,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )),
       );
       await tester.pumpAndSettle();
       final String before = (tester.widget<Text>(
@@ -727,7 +756,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )));
     await tester.pumpAndSettle();
     final String before = (tester.widget<Text>(
       find.byKey(const Key('status-circuit-count')),
@@ -754,8 +785,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: app.F9WorkspaceDemoPage(initialSelectedElementId: 'switch-1'),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+          initialSelectedElementId: 'switch-1',
+        ),
         ),
       );
       await tester.pumpAndSettle();
@@ -784,7 +818,9 @@ void main() {
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(textScaler: TextScaler.linear(1.35)),
-          child: const MaterialApp(home: app.F9WorkspaceDemoPage()),
+          child: MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )),
         ),
       );
       await tester.pumpAndSettle();
@@ -802,7 +838,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        MaterialApp(home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        )),
       );
       await tester.pumpAndSettle();
 

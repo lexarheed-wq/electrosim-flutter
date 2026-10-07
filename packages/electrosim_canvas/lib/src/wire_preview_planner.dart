@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_topology/electrosim_topology.dart';
 
 import 'canvas_geometry.dart';
 import 'circuit_visual_layout.dart';
@@ -23,10 +24,12 @@ final class WirePreviewPlanner {
   const WirePreviewPlanner({
     required this.router,
     required this.terminalSnapRadius,
+    this.topologyEngine = const TopologyEngine(),
   }) : assert(terminalSnapRadius > 0);
 
   final OrthogonalWireRouter router;
   final double terminalSnapRadius;
+  final TopologyEngine topologyEngine;
 
   WirePreviewPlan plan({
     required CircuitState circuit,
@@ -56,7 +59,6 @@ final class WirePreviewPlanner {
     );
     final TerminalId? targetId = target?.key;
     final Offset end = target?.value ?? pointerWorldPosition;
-
     if (start == end) {
       return WirePreviewPlan(
         route: const WireRouteResult.unresolved(
@@ -71,7 +73,6 @@ final class WirePreviewPlanner {
     final String? targetOwner = targetId == null
         ? null
         : geometry.terminalOwners[targetId];
-
     final List<RoutingObstacle> obstacles = geometry.elementRects.entries
         .where(
           (MapEntry<String, Rect> entry) =>
@@ -83,30 +84,39 @@ final class WirePreviewPlanner {
         )
         .toList(growable: false);
 
-    final List<OrthogonalWirePath> occupied = <OrthogonalWirePath>[];
+    final TopologyGraph topology = topologyEngine.compile(circuit);
+    final Set<String> joiningNetIds = <String>{
+      if (topology.terminalToNode[startTerminalId] case final String id) id,
+      if (targetId != null &&
+          topology.terminalToNode[targetId] case final String id)
+        id,
+    };
+
+    final List<OrthogonalWirePath> occupiedDifferentNetPaths =
+        <OrthogonalWirePath>[];
     for (final Connection connection in circuit.connections) {
+      final String connectionNet = _connectionNetId(connection, topology);
+      if (joiningNetIds.contains(connectionNet)) continue;
+
       final Offset? connectionStart =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? connectionEnd =
           geometry.terminalPositions[connection.toTerminalId];
-      if (connectionStart == null || connectionEnd == null) {
-        continue;
-      }
-      final List<Offset> points = <Offset>[
-        connectionStart,
-        ...layout.routeFor(connection.id.value),
-        connectionEnd,
-      ];
-      OrthogonalWirePath path;
+      if (connectionStart == null || connectionEnd == null) continue;
+
       try {
-        path = OrthogonalWirePath(points: points);
+        occupiedDifferentNetPaths.add(
+          OrthogonalWirePath(
+            points: <Offset>[
+              connectionStart,
+              ...layout.routeFor(connection.id.value),
+              connectionEnd,
+            ],
+          ),
+        );
       } on ArgumentError {
-        continue;
+        // Legacy diagonal routes are ignored by the new orthogonal preview.
       }
-      if (_sharesEndpoint(path, start) || _sharesEndpoint(path, end)) {
-        continue;
-      }
-      occupied.add(path);
     }
 
     return WirePreviewPlan(
@@ -114,11 +124,21 @@ final class WirePreviewPlanner {
         start: start,
         end: end,
         obstacles: obstacles,
-        occupiedDifferentNetPaths: occupied,
+        occupiedDifferentNetPaths: occupiedDifferentNetPaths,
       ),
       snappedTargetTerminalId: targetId,
       endPoint: end,
     );
+  }
+
+  static String _connectionNetId(
+    Connection connection,
+    TopologyGraph topology,
+  ) {
+    final String? from = topology.terminalToNode[connection.fromTerminalId];
+    final String? to = topology.terminalToNode[connection.toTerminalId];
+    if (connection.enabled && from != null && from == to) return from;
+    return 'connection:' + connection.id.value;
   }
 
   MapEntry<TerminalId, Offset>? _nearestTerminal({
@@ -130,13 +150,9 @@ final class WirePreviewPlanner {
     double? bestDistance;
     for (final MapEntry<TerminalId, Offset> entry
         in geometry.terminalPositions.entries) {
-      if (entry.key == startTerminalId) {
-        continue;
-      }
+      if (entry.key == startTerminalId) continue;
       final double distance = (entry.value - pointer).distance;
-      if (distance > terminalSnapRadius) {
-        continue;
-      }
+      if (distance > terminalSnapRadius) continue;
       final bool betterDistance =
           bestDistance == null || distance < bestDistance - 0.0001;
       final bool deterministicTie =
@@ -149,9 +165,5 @@ final class WirePreviewPlanner {
       }
     }
     return best;
-  }
-
-  static bool _sharesEndpoint(OrthogonalWirePath path, Offset point) {
-    return path.points.first == point || path.points.last == point;
   }
 }

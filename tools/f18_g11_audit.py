@@ -74,7 +74,8 @@ check("test-inventory-at-least-100", len(all_tests) >= 100)
 panels = read("apps/electrosim/lib/f9_context_panels.dart")
 main = read("apps/electrosim/lib/main.dart")
 g10_catalog = read("packages/electrosim_scenarios/lib/src/v2_product_catalog.dart")
-g10_faults = read("packages/electrosim_scenarios/lib/src/v2_product_faults.dart")
+g10_examples_path = ROOT / "packages/electrosim_scenarios/lib/src/v2_product_examples.dart"
+g10_faults_path = ROOT / "packages/electrosim_scenarios/lib/src/v2_product_faults.dart"
 
 check(
     "eie-teacher-only",
@@ -84,11 +85,13 @@ check("student-coach-not-reintroduced", "coach" not in panels.lower())
 check("single-delete-policy-no-properties-delete", "properties-delete-element" not in panels)
 check("single-delete-policy-topbar-delete", "onDeleteSelected:" in main)
 check("g10-does-not-import-bootstrap-catalog", "f16_catalog" not in g10_catalog.lower())
-check("g10-faults-do-not-import-healthy-library", "v2_product_examples" not in g10_faults)
 check(
-    "g10-faults-no-example-linkage",
-    not any(x in g10_faults.lower() for x in ("exampleid", "example_id", "examplecircuit")),
+    "g10-product-library-restarts-empty",
+    "schemas: const <ExampleDefinition>[]" in g10_catalog
+    and "faultScenarios: const <FaultScenarioDefinition>[]" in g10_catalog,
 )
+check("g10-obsolete-product-examples-removed", not g10_examples_path.exists())
+check("g10-obsolete-product-faults-removed", not g10_faults_path.exists())
 
 # Temporary payload/bootstrap files were useful during construction but must never
 # survive in the integration candidate.

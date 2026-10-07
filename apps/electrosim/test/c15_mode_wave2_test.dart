@@ -9,6 +9,8 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/regression_fixture.dart';
+
 Future<void> _openTop(WidgetTester tester) async {
   final Finder region = find.byKey(electroSimTopRegionKey);
   if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
@@ -148,7 +150,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Center(
           child: F18ComponentAssetVisual(
             modelType: 'terminal_block_5',
@@ -234,7 +236,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+      initialCircuit: buildRegressionFixtureCircuit(),
+    )));
     await tester.pumpAndSettle();
     await _openTop(tester);
 
@@ -277,7 +281,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: app.F9WorkspaceDemoPage()),
+        MaterialApp(home: app.F9WorkspaceDemoPage(
+      initialCircuit: buildRegressionFixtureCircuit(),
+    )),
       );
       await tester.pumpAndSettle();
       await _openTop(tester);
@@ -339,7 +345,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
+      initialCircuit: buildRegressionFixtureCircuit(),
+    )));
     await tester.pumpAndSettle();
     await _openPalette(tester);
 

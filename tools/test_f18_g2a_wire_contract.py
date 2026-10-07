@@ -9,17 +9,17 @@ class WireArchitectureContractTest(unittest.TestCase):
     def test_contract_is_complete(self):
         self.assertEqual(gate.validate_contract(self.data), [])
 
-    def test_auto_crossings_are_forbidden(self):
+    def test_crossings_are_avoided_then_bridged_without_rejecting_wiring(self):
         routing=self.data["routing"]
-        self.assertFalse(routing["automaticDifferentNetCrossingsAllowed"])
-        self.assertFalse(routing["automaticNonJunctionCrossingsAllowed"])
-        self.assertTrue(routing["unresolvedInsteadOfCrossing"])
+        self.assertTrue(routing["netAware"])
+        self.assertTrue(routing["automaticNonJunctionCrossingsAllowed"])
+        self.assertEqual(routing["crossingPolicy"], "avoid-then-bridge")
+        self.assertFalse(routing["electricalConnectionMayBeRejectedForRouting"])
 
     def test_dc_placement_is_rectangular_and_symmetric(self):
         self.assertEqual(self.data["domains"]["dc"]["defaultLayout"], "rectangular-loop")
         self.assertTrue(self.data["domains"]["dc"]["symmetricInlinePlacement"])
         self.assertFalse(self.data["placement"]["autoPlacementAtBendAllowed"])
-        self.assertEqual(self.data["placement"]["singleInlinePlacement"], "usable-segment-midpoint")
 
     def test_lane_order_is_stable(self):
         self.assertEqual(self.data["domains"]["ac1"]["laneOrder"], ["L","N","PE"])

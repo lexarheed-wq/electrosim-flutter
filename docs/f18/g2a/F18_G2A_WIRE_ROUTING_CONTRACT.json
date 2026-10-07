@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gate": "F18-G2A",
-  "baseHead": "41911a87c6d8915b89134bc050b9844c906f652d",
+  "baseHead": "09f8a126cf2405f6c1b9c00e3177a04199e79d7d",
   "geometry": {
     "allowedOrientations": [
       "horizontal",
@@ -19,17 +19,21 @@
     "maximumCenteringSnapError": 12
   },
   "routing": {
-    "automaticDifferentNetCrossingsAllowed": false,
-    "automaticNonJunctionCrossingsAllowed": false,
+    "netAware": true,
+    "automaticDifferentNetCrossingsAllowed": true,
+    "automaticNonJunctionCrossingsAllowed": true,
+    "crossingPolicy": "avoid-then-bridge",
+    "electricalConnectionMayBeRejectedForRouting": false,
     "componentPenetrationAllowed": false,
     "deterministic": true,
     "rerouteMovesComponents": false,
-    "unresolvedInsteadOfCrossing": true,
+    "unresolvedInsteadOfCrossing": false,
     "candidateOrder": [
       "straight",
       "one-bend",
       "two-bend",
       "manhattan-a-star",
+      "bridge-fallback",
       "unresolved"
     ],
     "costs": {
@@ -37,7 +41,7 @@
       "bend": 30,
       "conductorProximity": 8,
       "laneChange": 12,
-      "crossing": "forbidden",
+      "crossing": 600,
       "componentPenetration": "forbidden"
     }
   },
@@ -96,12 +100,16 @@
   },
   "junctions": {
     "topologyJunction": "filled-marker",
+    "sameNetInteriorIntersection": "filled-marker",
     "manualNonJunctionCrossing": "bridge-or-gap",
-    "automaticNonJunctionCrossing": "forbidden"
+    "automaticNonJunctionCrossing": "bridge-or-gap"
   },
   "invariants": [
     "axis-aligned-auto-segments",
-    "zero-auto-different-net-crossings",
+    "different-net-crossings-avoided-before-bridge-fallback",
+    "valid-electrical-connection-never-refused-by-routing",
+    "different-net-crossing-is-non-junction",
+    "same-net-intersection-may-junction",
     "zero-auto-components-in-bend-keepout",
     "dc-centered-symmetric-inline-placement",
     "stable-ac1-lane-order",
@@ -120,8 +128,9 @@
     "ac3-motor-protection",
     "pv-generation-to-ac-load",
     "obstacle-detour-zero-crossing",
-    "unresolved-no-crossing-route",
-    "manual-non-junction-crossing",
-    "explicit-junction"
+    "different-net-bridge-fallback",
+    "same-net-shared-corridor",
+    "explicit-junction",
+    "congested-valid-connection"
   ]
 }

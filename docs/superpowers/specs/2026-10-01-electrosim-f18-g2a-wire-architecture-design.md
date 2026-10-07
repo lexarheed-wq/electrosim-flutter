@@ -127,18 +127,11 @@ The inverter is a visual boundary between DC and AC routing zones. The router mu
 
 ### Hard invariant
 
-**Automatic routing of different nets must produce zero geometric crossings.**
+**A valid electrical connection must never be rejected because the visual router is congested.**
 
-Crossing a different net is not a high-cost fallback; it is forbidden.
+Routing is net-aware. The router first seeks a crossing-free orthogonal path. If no clean path exists, it may cross a different electrical net as a last resort, but the crossing is rendered explicitly as a bridge/gap and MUST NOT create a topology junction.
 
-If a crossing-free route cannot be found:
-1. expand the candidate routing envelope;
-2. try an outer routing channel;
-3. if still impossible, return an unresolved-route result and leave the existing geometry unchanged.
-
-The router must never silently draw a crossing to declare success.
-
-A user-created manual crossing may exist only with explicit non-junction rendering. A true junction requires an explicit topology node and a visible junction marker.
+Same-net conductors may share corridors or intersect as one electrical node. Component-body penetration remains forbidden.
 
 ## 8. Router strategy
 
@@ -147,14 +140,15 @@ Candidate order:
 2. one-bend L path;
 3. two-bend Z/U path;
 4. deterministic Manhattan A* on the routing grid;
-5. unresolved route.
+5. high-penalty bridge/gap fallback for different nets;
+6. unresolved only when orthogonal/component-safe rendering itself is impossible.
 
 Forbidden cells/edges:
 - component body + keep-out;
 - incompatible terminal keep-out;
-- different-net segment;
-- different-net intersection point;
-- reserved no-route UI regions.
+- component body and reserved no-route UI regions.
+
+Different-net perpendicular intersections are high-cost fallback edges, not forbidden edges. Different-net collinear overlap remains forbidden.
 
 Cost terms for legal candidates:
 - path length;
@@ -168,7 +162,7 @@ Default relative weights:
 - bend: +30;
 - conductor proximity: +8 per affected grid step;
 - lane change: +12;
-- crossing another net: forbidden;
+- crossing another net: +600 and explicit bridge/gap;
 - component-body penetration: forbidden.
 
 Tie-breaking must be deterministic: same input state and same viewport-independent routing contract produce the same path.
@@ -206,14 +200,15 @@ During component insertion on an existing segment:
 
 - topology junction: visible filled junction marker;
 - visual crossing without topology connection: no dot and explicit bridge/gap style;
-- automatic router never creates the latter;
+- automatic router may create the latter only as a last-resort bridge/gap fallback;
+- same-net intersections may render a filled junction marker;
 - overlapping collinear segments of the same net are normalized into one visual route where possible.
 
 ## 12. Required invariants
 
 G2A qualification requires:
 - every automatic segment is axis-aligned;
-- zero different-net crossings in every auto-routed test case;
+- different-net crossings are avoided before bridge fallback and remain non-junctions;
 - zero automatic components on or inside bend keep-out zones;
 - DC inline groups centered/symmetric within grid tolerance;
 - AC1/AC3/PV lane order preserved;
@@ -231,9 +226,10 @@ The visual prototype and later automated fixtures must cover:
 5. AC3 L1/L2/L3/N/PE motor/protection path;
 6. PV panel → protection → regulator/storage → inverter → AC load;
 7. obstacle detour without crossing;
-8. impossible crossing-free route returning unresolved;
-9. manual explicit non-junction crossing;
-10. explicit junction on same/net branch.
+8. impossible crossing-free route resolved with explicit non-junction bridge/gap;
+9. same-net shared corridor/intersection;
+10. explicit junction on same/net branch;
+11. congested valid electrical connection that must still commit.
 
 ## Gate marker
 

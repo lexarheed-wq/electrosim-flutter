@@ -29,6 +29,7 @@ final class SimulatorCanvas extends StatefulWidget {
     this.enableInteraction = true,
     this.wireLayoutEngine,
     this.wirePreviewPlanner,
+    this.smartWireSemantics = false,
     this.paintElementChrome = true,
   });
 
@@ -44,6 +45,7 @@ final class SimulatorCanvas extends StatefulWidget {
   final bool enableInteraction;
   final CircuitWireLayoutEngine? wireLayoutEngine;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final bool smartWireSemantics;
   final bool paintElementChrome;
 
   @override
@@ -380,7 +382,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                 pointerWorldPosition: _pointerWorldPosition,
                 previewPositions: _previewPositions,
                 wirePreviewPlanner: widget.wirePreviewPlanner,
-                smartWireSemantics: widget.wireLayoutEngine != null,
+                smartWireSemantics:
+                    widget.smartWireSemantics || widget.wireLayoutEngine != null,
                 paintElementChrome: widget.paintElementChrome,
               ),
               size: Size.infinite,

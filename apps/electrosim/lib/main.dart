@@ -2004,31 +2004,23 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       connection,
     );
     final CircuitVisualLayout nextLayout = _routeWithG2A(nextCircuit, _layout);
-    if (!F18WorkspaceWireSafety.isCrossingFree(
+    final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
       circuit: nextCircuit,
       layout: nextLayout,
-    )) {
-      const String message =
-          'Connexion refusée : aucun routage automatique sans croisement de nets différents.';
-      setState(() {
-        _wiringPendingTerminal = null;
-        _wiringHoverTerminal = null;
-        _status = message;
-      });
-      _announce(message);
-      return;
-    }
+    );
 
     setState(() {
       _circuit = nextCircuit;
       _layout = nextLayout;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
-      _status = decision.message;
+      _status = routeRenderable
+          ? decision.message
+          : decision.message + ' Routage graphique provisoire.';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
-    _announce(decision.message);
+    _announce(_status);
   }
 
   void _commitElementMoveIfSafe(
@@ -2054,44 +2046,30 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _circuit,
       _layout.moveElement(elementId, position),
     );
-    if (!F18WorkspaceWireSafety.isCrossingFree(
-      circuit: _circuit,
-      layout: candidate,
-    )) {
-      setState(() {
-        _status =
-            'Déplacement refusé : ce placement créerait un croisement automatique entre nets.';
-      });
-      return;
-    }
     setState(() {
       _layout = candidate;
-      _status = 'Position graphique mise à jour : $elementId';
+      _status = F18WorkspaceWireSafety.isRenderable(
+        circuit: _circuit,
+        layout: candidate,
+      )
+          ? 'Position graphique mise à jour : $elementId'
+          : 'Position mise à jour : routage graphique provisoire.';
     });
   }
 
   void _finalizeDirectDrag(String elementId) {
     final CircuitVisualLayout? base = _directDragBaseLayout;
-    if (base == null) {
-      return;
-    }
+    if (base == null) return;
 
     final CircuitVisualLayout candidate = _routeWithG2A(_circuit, _layout);
-    if (!F18WorkspaceWireSafety.isCrossingFree(
-      circuit: _circuit,
-      layout: candidate,
-    )) {
-      setState(() {
-        _layout = base;
-        _status =
-            'Déplacement refusé : aucun routage final sans croisement de nets.';
-      });
-      return;
-    }
-
     setState(() {
       _layout = candidate;
-      _status = 'Position graphique mise à jour : $elementId';
+      _status = F18WorkspaceWireSafety.isRenderable(
+        circuit: _circuit,
+        layout: candidate,
+      )
+          ? 'Position graphique mise à jour : $elementId'
+          : 'Position mise à jour : routage graphique provisoire.';
     });
   }
 
@@ -2287,7 +2265,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         defaultElementSize: rotated.defaultElementSize,
       ),
     );
-    if (!F18WorkspaceWireSafety.isCrossingFree(
+    if (!F18WorkspaceWireSafety.isRenderable(
       circuit: _circuit,
       layout: candidate,
     )) {

@@ -290,11 +290,13 @@ void main() {
         'lib/f9_component_visuals.dart',
       ).readAsStringSync();
       expect(board, contains('F18ReferenceComponentVisuals.supports'));
-      expect(board, contains('_paintLiveWires'));
+      expect(board, contains('_F9CurrentFlowPainter'));
+      expect(board, contains('super(repaint: motionSeconds)'));
       expect(board, contains('_paintMovingDashes'));
+      expect(board, contains('elapsedSeconds: motionSeconds.value'));
       expect(board, contains('runtimeSnapshot'));
       expect(board, contains('simulationRunning'));
-      expect(board, contains('animationValue: _motion.value'));
+      expect(board, contains('motionSeconds: _motionSeconds'));
       expect(board, contains('currentA: currentA'));
       expect(board, contains('voltageV: voltageV'));
     });

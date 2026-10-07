@@ -37,13 +37,11 @@ final class WirePreviewSession {
     required this.startNetId,
     required this.baseObstacles,
     required List<_NetWirePath> occupiedExcludingStartNet,
-    required Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> terminalBuckets,
+    required Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>>
+        terminalBuckets,
     required this.bucketSize,
   }) : _occupiedExcludingStartNet = occupiedExcludingStartNet,
        _terminalBuckets = terminalBuckets;
-
-  /*
-  */
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;

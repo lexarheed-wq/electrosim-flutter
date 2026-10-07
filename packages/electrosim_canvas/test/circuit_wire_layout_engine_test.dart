@@ -150,6 +150,112 @@ void main() {
     },
   );
 
+
+  test('routeAll prefers a clean pass over an earlier bridged pass', () {
+    final Terminal sourcePositive = Terminal(
+      id: TerminalId('q-source-pos'),
+      name: '+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    );
+    final Terminal sourceNegative = Terminal(
+      id: TerminalId('q-source-neg'),
+      name: '−',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    );
+    final Terminal switchIn = Terminal(
+      id: TerminalId('q-switch-in'),
+      name: '1',
+      role: TerminalRole.input,
+    );
+    final Terminal switchOut = Terminal(
+      id: TerminalId('q-switch-out'),
+      name: '2',
+      role: TerminalRole.output,
+    );
+    final Terminal lampIn = Terminal(
+      id: TerminalId('q-lamp-in'),
+      name: 'A',
+      role: TerminalRole.input,
+    );
+    final Terminal lampOut = Terminal(
+      id: TerminalId('q-lamp-out'),
+      name: 'B',
+      role: TerminalRole.output,
+    );
+
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('route-quality'),
+      revision: 1,
+      mode: ElectricalMode.dc,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('q-source'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[sourcePositive, sourceNegative],
+        ),
+      ],
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('q-switch'),
+          modelType: 'switch',
+          terminals: <Terminal>[switchIn, switchOut],
+        ),
+        ComponentInstance(
+          id: ComponentId('q-lamp'),
+          modelType: 'lamp',
+          terminals: <Terminal>[lampIn, lampOut],
+        ),
+      ],
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('q-wire-1'),
+          fromTerminalId: sourcePositive.id,
+          toTerminalId: switchIn.id,
+        ),
+        Connection(
+          id: ConnectionId('q-wire-2'),
+          fromTerminalId: switchOut.id,
+          toTerminalId: lampIn.id,
+        ),
+        Connection(
+          id: ConnectionId('q-wire-3'),
+          fromTerminalId: lampOut.id,
+          toTerminalId: sourceNegative.id,
+        ),
+      ],
+    );
+    final CircuitVisualLayout layout = CircuitVisualLayout(
+      elementPositions: const <String, Offset>{
+        'q-source': Offset(250, 560),
+        'q-switch': Offset(720, 280),
+        'q-lamp': Offset(1140, 560),
+      },
+      elementSizes: const <String, Size>{
+        'q-source': Size(190, 210),
+        'q-switch': Size(150, 190),
+        'q-lamp': Size(140, 180),
+      },
+    );
+
+    final CircuitVisualLayout routed = engine.routeAll(
+      circuit: circuit,
+      layout: layout,
+    );
+    final WireSemantics semantics = const WireSemanticsAnalyzer().analyze(
+      circuit: circuit,
+      layout: routed,
+    );
+
+    expect(
+      semantics.nonJunctionCrossings,
+      isEmpty,
+      reason:
+          'If one routing order is crossing-free, the engine must prefer it over an earlier bridged pass.',
+    );
+  });
+
   test(
     'rotated terminal exits owner body through an outward orthogonal stub',
     () {

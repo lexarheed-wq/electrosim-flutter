@@ -275,6 +275,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.currentA = 0,
     this.voltageV = 0,
     this.ratedCurrentA = 1,
+    this.ratedVoltageV = 24,
+    this.ratedPowerW = 10,
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
   });
@@ -294,6 +296,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final double currentA;
   final double voltageV;
   final double ratedCurrentA;
+  final double ratedVoltageV;
+  final double ratedPowerW;
   final double currentLimitA;
   final double resistanceOhm;
 
@@ -333,6 +337,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
               : (active ? currentA.abs() : 0),
           supplyMode: supplyMode,
           ratedCurrentA: ratedCurrentA,
+          ratedVoltageV: ratedVoltageV,
+          ratedPowerW: ratedPowerW,
+          protectionDomainLabel: type == 'breaker_ac1' ? 'AC' : 'CC',
         ),
       );
     }

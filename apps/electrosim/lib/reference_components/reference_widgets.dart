@@ -68,9 +68,14 @@ final class ReferenceVisualState {
     this.currentA = 0,
     this.supplyMode = SupplyMode.off,
     this.ratedCurrentA = 1,
+    this.ratedVoltageV = 24,
+    this.ratedPowerW = 10,
+    this.protectionDomainLabel = 'CC',
   });
   final bool closed, pressed, tripped;
   final double brightness, temperatureK, voltageV, currentA, ratedCurrentA;
+  final double ratedVoltageV, ratedPowerW;
+  final String protectionDomainLabel;
   final SupplyMode supplyMode;
 }
 
@@ -424,7 +429,7 @@ class _DevicePainter extends CustomPainter {
         Color(0xFF2C3538),
       ], radius: 2);
     }
-    _text(c, 'CC', const Offset(28, 38), size: 8);
+    _text(c, state.protectionDomainLabel, const Offset(28, 38), size: 8);
     _text(
       c,
       '${state.ratedCurrentA.toStringAsFixed(2)} A',
@@ -640,7 +645,8 @@ class _DevicePainter extends CustomPainter {
     );
     _text(
       c,
-      '24 V • 10 W',
+      '${state.ratedVoltageV.toStringAsFixed(0)} V • '
+          '${state.ratedPowerW.toStringAsFixed(0)} W',
       const Offset(95, 123),
       size: 7,
       color: Colors.white,

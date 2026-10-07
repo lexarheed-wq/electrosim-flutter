@@ -240,6 +240,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double voltageV,
       required double batterySoc,
       required double ratedCurrentA,
+      required double ratedVoltageV,
+      required double ratedPowerW,
       required double currentLimitA,
       required double resistanceOhm,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
@@ -289,6 +291,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   voltageV: voltageV,
                   batterySoc: batterySoc,
                   ratedCurrentA: ratedCurrentA,
+                  ratedVoltageV: ratedVoltageV,
+                  ratedPowerW: ratedPowerW,
                   currentLimitA: currentLimitA,
                   resistanceOhm: resistanceOhm,
                 ),
@@ -329,6 +333,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         voltageV: voltageV,
         batterySoc: 0,
         ratedCurrentA: 1,
+        ratedVoltageV: 0,
+        ratedPowerW: 0,
         currentLimitA:
             (source.parameters['currentLimitA'] as num?)?.toDouble() ?? 2,
         resistanceOhm: 0,
@@ -397,6 +403,14 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         batterySoc: batterySoc,
         ratedCurrentA:
             (component.parameters[ProtectionRating.ratedCurrentKey] as num?)
+                    ?.toDouble() ??
+                0,
+        ratedVoltageV:
+            (component.parameters[ReceiverNominalRating.voltageKey] as num?)
+                    ?.toDouble() ??
+                0,
+        ratedPowerW:
+            (component.parameters[ReceiverNominalRating.powerKey] as num?)
                     ?.toDouble() ??
                 0,
         currentLimitA: 2,
@@ -672,6 +686,8 @@ class _F9ReferenceAsset extends StatelessWidget {
   final double currentA;
   final double voltageV;
   final double ratedCurrentA;
+  final double ratedVoltageV;
+  final double ratedPowerW;
   final double currentLimitA;
   final double resistanceOhm;
 
@@ -691,6 +707,8 @@ class _F9ReferenceAsset extends StatelessWidget {
     currentA: currentA,
     voltageV: voltageV,
     ratedCurrentA: ratedCurrentA,
+    ratedVoltageV: ratedVoltageV,
+    ratedPowerW: ratedPowerW,
     currentLimitA: currentLimitA,
     resistanceOhm: resistanceOhm,
   );

@@ -146,13 +146,41 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'lamp',
-    title: 'Lampe',
+    title: 'Lampe 24 V CC',
     category: 'Récepteurs',
     modelType: 'lamp',
     icon: Icons.lightbulb_outline,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['A', 'B'],
-    subtitle: 'Charge résistive',
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 24.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 1.0,
+      ReceiverNominalRating.powerKey: 24.0,
+      ComponentParameterKeys.thermalWithstandSeconds: 0.5,
+    },
+    displayLabel: 'Lampe 24 V',
+    subtitle: '24 V CC · 24 W',
+  ),
+  F9PaletteDefinition(
+    keyName: 'lamp-ac1-230v',
+    title: 'Lampe 230 V AC',
+    category: 'Récepteurs',
+    modelType: 'lamp',
+    icon: Icons.lightbulb_outline,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['A', 'B'],
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 529.0,
+      ReceiverNominalRating.voltageKey: 230.0,
+      ReceiverNominalRating.currentKey: 0.43478260869565216,
+      ReceiverNominalRating.powerKey: 100.0,
+      ComponentParameterKeys.thermalWithstandSeconds: 0.5,
+    },
+    displayLabel: 'Lampe 230 V',
+    subtitle: '230 V AC · 100 W',
   ),
   F9PaletteDefinition(
     keyName: 'resistor',
@@ -172,7 +200,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.electrical_services_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['IN', 'OUT'],
-    subtitle: 'Protection 2 bornes',
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Protection 10 A CC',
   ),
   F9PaletteDefinition(
     keyName: 'push-button-no',
@@ -212,7 +245,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.horizontal_rule,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['IN', 'OUT'],
-    subtitle: 'Protection simple',
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Fusible 10 A CC',
   ),
   F9PaletteDefinition(
     keyName: 'diode',
@@ -1369,7 +1407,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.electrical_services_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['L', 'T'],
-    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
     subtitle: 'Protection monophasée',
   ),
@@ -1381,7 +1421,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.horizontal_rule,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['L', 'T'],
-    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
     subtitle: 'Fusible monophasé',
   ),
@@ -1599,7 +1641,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: '6t3',
       ),
     ],
-    defaultParameters: <String, Object?>{'ratedCurrentA': 10.0},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 10.0,
+    },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
     subtitle: 'Protection triphasée',
   ),
@@ -2263,6 +2307,18 @@ class _PaletteDraggableTile extends StatelessWidget {
             child: F18ComponentAssetVisual(
               modelType: definition.renderedModelType,
               variantKey: definition.visualVariant,
+      ratedVoltageV:
+          (definition.defaultParameters[ReceiverNominalRating.voltageKey] as num?)
+                  ?.toDouble() ??
+              24.0,
+      ratedPowerW:
+          (definition.defaultParameters[ReceiverNominalRating.powerKey] as num?)
+                  ?.toDouble() ??
+              10.0,
+      ratedCurrentA:
+          (definition.defaultParameters[ProtectionRating.ratedCurrentKey] as num?)
+                  ?.toDouble() ??
+              1.0,
               size:
                   F18ReferenceComponentVisuals.supports(
                     definition.renderedModelType,
@@ -2301,6 +2357,18 @@ class F9ComponentPreview extends StatelessWidget {
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,
       variantKey: definition.visualVariant,
+      ratedVoltageV:
+          (definition.defaultParameters[ReceiverNominalRating.voltageKey] as num?)
+                  ?.toDouble() ??
+              24.0,
+      ratedPowerW:
+          (definition.defaultParameters[ReceiverNominalRating.powerKey] as num?)
+                  ?.toDouble() ??
+              10.0,
+      ratedCurrentA:
+          (definition.defaultParameters[ProtectionRating.ratedCurrentKey] as num?)
+                  ?.toDouble() ??
+              1.0,
       size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
           ? (compact
                 ? F18ReferenceComponentMetrics.paletteSizeFor(

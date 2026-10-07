@@ -1,7 +1,5 @@
 import 'example_definition.dart';
 import 'fault_scenario_definition.dart';
-import 'v2_product_examples.dart';
-import 'v2_product_faults.dart';
 
 final class V2ProductLibrary {
   V2ProductLibrary({
@@ -35,13 +33,13 @@ final class V2ProductLibrary {
       );
 }
 
-V2ProductLibrary buildV2ProductLibrary() {
-  final examples = buildV2ProductExampleRepository().all;
-  final faults = buildV2ProductFaultRepository().all;
-
-  return V2ProductLibrary(
-    version: '2.0.0',
-    schemas: examples,
-    faultScenarios: faults,
-  );
-}
+/// Product libraries intentionally restart empty after CORE-UNIFY.
+///
+/// Historical bootstrap examples and fault scenarios used component instances
+/// created before the canonical physics/runtime contracts and must not leak
+/// into the product. New libraries will be authored from the current palette.
+V2ProductLibrary buildV2ProductLibrary() => V2ProductLibrary(
+  version: '3.0.0-core-unify',
+  schemas: const <ExampleDefinition>[],
+  faultScenarios: const <FaultScenarioDefinition>[],
+);

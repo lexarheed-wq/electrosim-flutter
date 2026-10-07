@@ -5,17 +5,27 @@ import 'wire_geometry.dart';
 enum WireRouteFailure { noCrossingFreeRoute }
 
 final class WireRouteResult {
-  const WireRouteResult._({required this.path, required this.failure});
+  const WireRouteResult._({
+    required this.path,
+    required this.failure,
+    required this.usesBridgedCrossing,
+  });
 
-  factory WireRouteResult.resolved(OrthogonalWirePath path) {
-    return WireRouteResult._(path: path, failure: null);
-  }
+  factory WireRouteResult.resolved(
+    OrthogonalWirePath path, {
+    bool usesBridgedCrossing = false,
+  }) => WireRouteResult._(
+    path: path,
+    failure: null,
+    usesBridgedCrossing: usesBridgedCrossing,
+  );
 
   const WireRouteResult.unresolved(WireRouteFailure failure)
-    : this._(path: null, failure: failure);
+    : this._(path: null, failure: failure, usesBridgedCrossing: false);
 
   final OrthogonalWirePath? path;
   final WireRouteFailure? failure;
+  final bool usesBridgedCrossing;
 
   bool get isResolved => path != null;
 }
@@ -24,11 +34,43 @@ abstract final class WireRouteSafety {
   static bool hasDifferentNetCrossing({
     required OrthogonalWirePath candidate,
     required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  }) =>
+      countPerpendicularCrossings(
+            candidate: candidate,
+            occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+          ) >
+          0 ||
+      hasCollinearOverlap(
+        candidate: candidate,
+        occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      );
+
+  static int countPerpendicularCrossings({
+    required OrthogonalWirePath candidate,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  }) {
+    var count = 0;
+    for (final OrthogonalSegment candidateSegment in candidate.segments) {
+      for (final OrthogonalWirePath occupied in occupiedDifferentNetPaths) {
+        for (final OrthogonalSegment occupiedSegment in occupied.segments) {
+          if (candidateSegment.axis == occupiedSegment.axis) continue;
+          if (candidateSegment.intersectionWith(occupiedSegment) != null) {
+            count++;
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  static bool hasCollinearOverlap({
+    required OrthogonalWirePath candidate,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
   }) {
     for (final OrthogonalSegment candidateSegment in candidate.segments) {
       for (final OrthogonalWirePath occupied in occupiedDifferentNetPaths) {
         for (final OrthogonalSegment occupiedSegment in occupied.segments) {
-          if (_segmentsConflict(candidateSegment, occupiedSegment)) {
+          if (_hasPositiveCollinearOverlap(candidateSegment, occupiedSegment)) {
             return true;
           }
         }
@@ -37,35 +79,26 @@ abstract final class WireRouteSafety {
     return false;
   }
 
-  static bool _segmentsConflict(
+  static bool _hasPositiveCollinearOverlap(
     OrthogonalSegment first,
     OrthogonalSegment second,
   ) {
-    if (first.axis != second.axis) {
-      return first.intersectionWith(second) != null;
-    }
-
+    if (first.axis != second.axis) return false;
+    const double epsilon = 0.001;
     if (first.axis == WireAxis.horizontal) {
-      if (first.start.dy != second.start.dy) {
-        return false;
-      }
-      return _rangesOverlap(first.minX, first.maxX, second.minX, second.maxX);
+      if ((first.start.dy - second.start.dy).abs() > epsilon) return false;
+      final double overlap =
+          _min(first.maxX, second.maxX) - _max(first.minX, second.minX);
+      return overlap > epsilon;
     }
-
-    if (first.start.dx != second.start.dx) {
-      return false;
-    }
-    return _rangesOverlap(first.minY, first.maxY, second.minY, second.maxY);
+    if ((first.start.dx - second.start.dx).abs() > epsilon) return false;
+    final double overlap =
+        _min(first.maxY, second.maxY) - _max(first.minY, second.minY);
+    return overlap > epsilon;
   }
 
-  static bool _rangesOverlap(
-    double firstMin,
-    double firstMax,
-    double secondMin,
-    double secondMax,
-  ) {
-    return firstMax >= secondMin && secondMax >= firstMin;
-  }
+  static double _min(double a, double b) => a < b ? a : b;
+  static double _max(double a, double b) => a > b ? a : b;
 }
 
 final class OrthogonalWireRouter {
@@ -74,15 +107,18 @@ final class OrthogonalWireRouter {
     required this.obstacleClearance,
     required this.envelopePadding,
     this.bendPenalty = 30,
+    this.crossingPenalty = 600,
   }) : assert(grid > 0),
        assert(obstacleClearance >= 0),
        assert(envelopePadding >= 0),
-       assert(bendPenalty >= 0);
+       assert(bendPenalty >= 0),
+       assert(crossingPenalty > 0);
 
   final double grid;
   final double obstacleClearance;
   final double envelopePadding;
   final double bendPenalty;
+  final double crossingPenalty;
 
   WireRouteResult route({
     required Offset start,
@@ -100,37 +136,116 @@ final class OrthogonalWireRouter {
     final List<RoutingObstacle> expandedObstacles = obstacles
         .map((RoutingObstacle obstacle) => obstacle.expanded(obstacleClearance))
         .toList(growable: false);
+    final Rect envelope = _routingEnvelope(
+      start: start,
+      end: end,
+      obstacles: expandedObstacles,
+      occupied: occupiedDifferentNetPaths,
+    );
+    final List<List<Offset>> candidates = _candidatePolylines(
+      start: start,
+      end: end,
+      envelope: envelope,
+      obstacles: expandedObstacles,
+      occupied: occupiedDifferentNetPaths,
+    );
 
-    Rect routingBounds = Rect.fromLTRB(
+    final OrthogonalWirePath? clean = _bestCandidate(
+      candidates,
+      obstacles: expandedObstacles,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: false,
+    );
+    if (clean != null) return WireRouteResult.resolved(clean);
+
+    final OrthogonalWirePath? cleanAStar = _routeManhattanAStar(
+      start: start,
+      end: end,
+      envelope: envelope,
+      obstacles: expandedObstacles,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: false,
+    );
+    if (cleanAStar != null) return WireRouteResult.resolved(cleanAStar);
+
+    final OrthogonalWirePath? bridged = _bestCandidate(
+      candidates,
+      obstacles: expandedObstacles,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: true,
+    );
+    if (bridged != null) {
+      return WireRouteResult.resolved(
+        bridged,
+        usesBridgedCrossing: WireRouteSafety.countPerpendicularCrossings(
+              candidate: bridged,
+              occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+            ) >
+            0,
+      );
+    }
+
+    final OrthogonalWirePath? bridgedAStar = _routeManhattanAStar(
+      start: start,
+      end: end,
+      envelope: envelope,
+      obstacles: expandedObstacles,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: true,
+    );
+    if (bridgedAStar != null) {
+      return WireRouteResult.resolved(
+        bridgedAStar,
+        usesBridgedCrossing: WireRouteSafety.countPerpendicularCrossings(
+              candidate: bridgedAStar,
+              occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+            ) >
+            0,
+      );
+    }
+
+    return const WireRouteResult.unresolved(
+      WireRouteFailure.noCrossingFreeRoute,
+    );
+  }
+
+  Rect _routingEnvelope({
+    required Offset start,
+    required Offset end,
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupied,
+  }) {
+    Rect bounds = Rect.fromLTRB(
       _min(start.dx, end.dx),
       _min(start.dy, end.dy),
       _max(start.dx, end.dx),
       _max(start.dy, end.dy),
     );
-    for (final RoutingObstacle obstacle in expandedObstacles) {
-      routingBounds = routingBounds.expandToInclude(obstacle.bounds);
+    for (final RoutingObstacle obstacle in obstacles) {
+      bounds = bounds.expandToInclude(obstacle.bounds);
     }
-    for (final OrthogonalWirePath occupied in occupiedDifferentNetPaths) {
-      for (final Offset point in occupied.points) {
-        routingBounds = routingBounds.expandToInclude(
+    for (final OrthogonalWirePath path in occupied) {
+      for (final Offset point in path.points) {
+        bounds = bounds.expandToInclude(
           Rect.fromLTWH(point.dx, point.dy, 0, 0),
         );
       }
     }
+    return bounds.inflate(envelopePadding);
+  }
 
-    // Routing is performed on an effectively open workspace. The previous
-    // envelope was bounded only around start/end, so a finite existing wire
-    // could look like an impenetrable wall even though free space existed a
-    // little farther away. Include all known obstacles and occupied paths,
-    // then add an escape margin around their complete extent.
-    final Rect envelope = routingBounds.inflate(envelopePadding);
-
-    final List<List<Offset>> candidatePoints = <List<Offset>>[];
-
+  List<List<Offset>> _candidatePolylines({
+    required Offset start,
+    required Offset end,
+    required Rect envelope,
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupied,
+  }) {
+    final List<List<Offset>> candidates = <List<Offset>>[];
     if (start.dx == end.dx || start.dy == end.dy) {
-      candidatePoints.add(<Offset>[start, end]);
+      candidates.add(<Offset>[start, end]);
     } else {
-      candidatePoints
+      candidates
         ..add(<Offset>[start, Offset(end.dx, start.dy), end])
         ..add(<Offset>[start, Offset(start.dx, end.dy), end]);
     }
@@ -138,13 +253,15 @@ final class OrthogonalWireRouter {
     final List<double> horizontalChannels = <double>[
       _snap(envelope.top),
       _snap(envelope.bottom),
+      _snap((start.dy + end.dy) / 2),
     ];
     final List<double> verticalChannels = <double>[
       _snap(envelope.left),
       _snap(envelope.right),
+      _snap((start.dx + end.dx) / 2),
     ];
 
-    for (final RoutingObstacle obstacle in expandedObstacles) {
+    for (final RoutingObstacle obstacle in obstacles) {
       horizontalChannels
         ..add(_snap(obstacle.bounds.top - grid))
         ..add(_snap(obstacle.bounds.bottom + grid));
@@ -152,9 +269,8 @@ final class OrthogonalWireRouter {
         ..add(_snap(obstacle.bounds.left - grid))
         ..add(_snap(obstacle.bounds.right + grid));
     }
-
-    for (final OrthogonalWirePath occupied in occupiedDifferentNetPaths) {
-      for (final OrthogonalSegment segment in occupied.segments) {
+    for (final OrthogonalWirePath path in occupied) {
+      for (final OrthogonalSegment segment in path.segments) {
         horizontalChannels
           ..add(_snap(segment.minY - grid))
           ..add(_snap(segment.maxY + grid));
@@ -165,80 +281,73 @@ final class OrthogonalWireRouter {
     }
 
     for (final double y in _dedupeSorted(horizontalChannels)) {
-      if (y < envelope.top || y > envelope.bottom) {
-        continue;
-      }
-      candidatePoints.add(<Offset>[
+      if (y < envelope.top || y > envelope.bottom) continue;
+      candidates.add(<Offset>[
         start,
         Offset(start.dx, y),
         Offset(end.dx, y),
         end,
       ]);
     }
-
     for (final double x in _dedupeSorted(verticalChannels)) {
-      if (x < envelope.left || x > envelope.right) {
-        continue;
-      }
-      candidatePoints.add(<Offset>[
+      if (x < envelope.left || x > envelope.right) continue;
+      candidates.add(<Offset>[
         start,
         Offset(x, start.dy),
         Offset(x, end.dy),
         end,
       ]);
     }
+    return candidates;
+  }
 
+  OrthogonalWirePath? _bestCandidate(
+    List<List<Offset>> candidates, {
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+    required bool allowBridgedCrossings,
+  }) {
     OrthogonalWirePath? best;
     double? bestCost;
-
-    for (final List<Offset> raw in candidatePoints) {
-      final List<Offset> normalized = _normalize(raw);
-      if (normalized.length < 2) {
-        continue;
-      }
+    for (final List<Offset> raw in candidates) {
+      final List<Offset> points = _normalize(raw);
+      if (points.length < 2) continue;
 
       OrthogonalWirePath candidate;
       try {
-        candidate = OrthogonalWirePath(points: normalized);
+        candidate = OrthogonalWirePath(points: points);
       } on ArgumentError {
         continue;
       }
+      if (_hitsObstacle(candidate, obstacles)) continue;
 
-      if (_hitsObstacle(candidate, expandedObstacles)) {
-        continue;
-      }
-      if (WireRouteSafety.hasDifferentNetCrossing(
+      if (allowBridgedCrossings) {
+        if (WireRouteSafety.hasCollinearOverlap(
+          candidate: candidate,
+          occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+        )) {
+          continue;
+        }
+      } else if (WireRouteSafety.hasDifferentNetCrossing(
         candidate: candidate,
         occupiedDifferentNetPaths: occupiedDifferentNetPaths,
       )) {
         continue;
       }
 
-      final double cost = _cost(candidate);
+      final int crossings = allowBridgedCrossings
+          ? WireRouteSafety.countPerpendicularCrossings(
+              candidate: candidate,
+              occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+            )
+          : 0;
+      final double cost = _cost(candidate) + crossings * crossingPenalty;
       if (bestCost == null || cost < bestCost) {
         best = candidate;
         bestCost = cost;
       }
     }
-
-    if (best != null) {
-      return WireRouteResult.resolved(best);
-    }
-
-    final OrthogonalWirePath? manhattan = _routeManhattanAStar(
-      start: start,
-      end: end,
-      envelope: envelope,
-      obstacles: expandedObstacles,
-      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
-    );
-    if (manhattan != null) {
-      return WireRouteResult.resolved(manhattan);
-    }
-
-    return const WireRouteResult.unresolved(
-      WireRouteFailure.noCrossingFreeRoute,
-    );
+    return best;
   }
 
   OrthogonalWirePath? _routeManhattanAStar({
@@ -247,6 +356,7 @@ final class OrthogonalWireRouter {
     required Rect envelope,
     required List<RoutingObstacle> obstacles,
     required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+    required bool allowBridgedCrossings,
   }) {
     final List<double> xs = _gridCoordinates(
       envelope.left,
@@ -262,9 +372,7 @@ final class OrthogonalWireRouter {
     final int startY = ys.indexOf(start.dy);
     final int endX = xs.indexOf(end.dx);
     final int endY = ys.indexOf(end.dy);
-    if (startX < 0 || startY < 0 || endX < 0 || endY < 0) {
-      return null;
-    }
+    if (startX < 0 || startY < 0 || endX < 0 || endY < 0) return null;
 
     final List<_SearchNode> open = <_SearchNode>[
       _SearchNode(
@@ -295,10 +403,7 @@ final class OrthogonalWireRouter {
         current.previousAxis,
       );
       final double? knownBest = bestG[currentKey];
-      if (knownBest == null || current.g > knownBest + 0.0001) {
-        continue;
-      }
-
+      if (knownBest == null || current.g > knownBest + 0.0001) continue;
       if (current.xIndex == endX && current.yIndex == endY) {
         goal = current;
         break;
@@ -326,21 +431,24 @@ final class OrthogonalWireRouter {
           segment,
           obstacles: obstacles,
           occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+          allowBridgedCrossings: allowBridgedCrossings,
         )) {
           continue;
         }
 
-        final double stepCost =
+        final int crossings = allowBridgedCrossings
+            ? _segmentCrossingCount(segment, occupiedDifferentNetPaths)
+            : 0;
+        final double nextG =
+            current.g +
             segment.length +
             (current.previousAxis != null && current.previousAxis != axis
                 ? bendPenalty
-                : 0);
-        final double nextG = current.g + stepCost;
+                : 0) +
+            crossings * crossingPenalty;
         final String nextKey = _stateKey(nextX, nextY, axis);
         final double? existing = bestG[nextKey];
-        if (existing != null && nextG >= existing - 0.0001) {
-          continue;
-        }
+        if (existing != null && nextG >= existing - 0.0001) continue;
 
         final Offset nextPoint = Offset(xs[nextX], ys[nextY]);
         final _SearchNode nextNode = _SearchNode(
@@ -357,25 +465,17 @@ final class OrthogonalWireRouter {
       }
     }
 
-    if (goal == null) {
-      return null;
-    }
-
+    if (goal == null) return null;
     final List<Offset> reversed = <Offset>[];
     String? key = _stateKey(goal.xIndex, goal.yIndex, goal.previousAxis);
     while (key != null) {
       final _SearchNode? node = nodes[key];
-      if (node == null) {
-        return null;
-      }
+      if (node == null) return null;
       reversed.add(Offset(xs[node.xIndex], ys[node.yIndex]));
       key = previous[key];
     }
-
     final List<Offset> points = _normalize(reversed.reversed.toList());
-    if (points.length < 2) {
-      return null;
-    }
+    if (points.length < 2) return null;
     return OrthogonalWirePath(points: points);
   }
 
@@ -383,63 +483,35 @@ final class OrthogonalWireRouter {
     OrthogonalSegment segment, {
     required List<RoutingObstacle> obstacles,
     required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+    required bool allowBridgedCrossings,
   }) {
     for (final RoutingObstacle obstacle in obstacles) {
-      if (_segmentHitsRect(segment, obstacle.bounds)) {
-        return false;
-      }
+      if (_segmentHitsRect(segment, obstacle.bounds)) return false;
+    }
+    final OrthogonalWirePath oneSegment = OrthogonalWirePath(
+      points: <Offset>[segment.start, segment.end],
+    );
+    if (allowBridgedCrossings) {
+      return !WireRouteSafety.hasCollinearOverlap(
+        candidate: oneSegment,
+        occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      );
     }
     return !WireRouteSafety.hasDifferentNetCrossing(
-      candidate: OrthogonalWirePath(
-        points: <Offset>[segment.start, segment.end],
-      ),
+      candidate: oneSegment,
       occupiedDifferentNetPaths: occupiedDifferentNetPaths,
     );
   }
 
-  List<double> _gridCoordinates(
-    double minimum,
-    double maximum, {
-    required List<double> extras,
-  }) {
-    final double first = (minimum / grid).ceilToDouble() * grid;
-    final double last = (maximum / grid).floorToDouble() * grid;
-    final List<double> values = <double>[...extras];
-    for (double value = first; value <= last + 0.0001; value += grid) {
-      values.add(value);
-    }
-    return _dedupeSorted(values);
-  }
-
-  static String _stateKey(int x, int y, WireAxis? axis) {
-    return '$x:$y:${axis?.index ?? -1}';
-  }
-
-  static double _manhattanDistance(Offset first, Offset second) {
-    return (first.dx - second.dx).abs() + (first.dy - second.dy).abs();
-  }
-
-  static int _compareSearchNodes(_SearchNode first, _SearchNode second) {
-    final int byF = first.f.compareTo(second.f);
-    if (byF != 0) {
-      return byF;
-    }
-    final int byG = first.g.compareTo(second.g);
-    if (byG != 0) {
-      return byG;
-    }
-    final int byY = first.yIndex.compareTo(second.yIndex);
-    if (byY != 0) {
-      return byY;
-    }
-    final int byX = first.xIndex.compareTo(second.xIndex);
-    if (byX != 0) {
-      return byX;
-    }
-    return (first.previousAxis?.index ?? -1).compareTo(
-      second.previousAxis?.index ?? -1,
-    );
-  }
+  int _segmentCrossingCount(
+    OrthogonalSegment segment,
+    List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  ) => WireRouteSafety.countPerpendicularCrossings(
+    candidate: OrthogonalWirePath(
+      points: <Offset>[segment.start, segment.end],
+    ),
+    occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+  );
 
   double _cost(OrthogonalWirePath path) {
     final double length = path.segments.fold<double>(
@@ -452,9 +524,7 @@ final class OrthogonalWireRouter {
   bool _hitsObstacle(OrthogonalWirePath path, List<RoutingObstacle> obstacles) {
     for (final OrthogonalSegment segment in path.segments) {
       for (final RoutingObstacle obstacle in obstacles) {
-        if (_segmentHitsRect(segment, obstacle.bounds)) {
-          return true;
-        }
+        if (_segmentHitsRect(segment, obstacle.bounds)) return true;
       }
     }
     return false;
@@ -463,17 +533,26 @@ final class OrthogonalWireRouter {
   static bool _segmentHitsRect(OrthogonalSegment segment, Rect rect) {
     if (segment.axis == WireAxis.horizontal) {
       final double y = segment.start.dy;
-      if (y < rect.top || y > rect.bottom) {
-        return false;
-      }
+      if (y < rect.top || y > rect.bottom) return false;
       return segment.maxX >= rect.left && segment.minX <= rect.right;
     }
-
     final double x = segment.start.dx;
-    if (x < rect.left || x > rect.right) {
-      return false;
-    }
+    if (x < rect.left || x > rect.right) return false;
     return segment.maxY >= rect.top && segment.minY <= rect.bottom;
+  }
+
+  List<double> _gridCoordinates(
+    double minValue,
+    double maxValue, {
+    required List<double> extras,
+  }) {
+    final Set<double> values = <double>{...extras};
+    final double first = (minValue / grid).floorToDouble() * grid;
+    final double last = (maxValue / grid).ceilToDouble() * grid;
+    for (double value = first; value <= last + 0.0001; value += grid) {
+      values.add(value);
+    }
+    return _dedupeSorted(values.toList(growable: false));
   }
 
   double _snap(double value) => (value / grid).roundToDouble() * grid;
@@ -482,9 +561,7 @@ final class OrthogonalWireRouter {
     final List<double> sorted = <double>[...values]..sort();
     final List<double> result = <double>[];
     for (final double value in sorted) {
-      if (result.isEmpty || result.last != value) {
-        result.add(value);
-      }
+      if (result.isEmpty || result.last != value) result.add(value);
     }
     return result;
   }
@@ -492,11 +569,8 @@ final class OrthogonalWireRouter {
   static List<Offset> _normalize(List<Offset> points) {
     final List<Offset> result = <Offset>[];
     for (final Offset point in points) {
-      if (result.isEmpty || result.last != point) {
-        result.add(point);
-      }
+      if (result.isEmpty || result.last != point) result.add(point);
     }
-
     var index = 1;
     while (index < result.length - 1) {
       final Offset before = result[index - 1];
@@ -511,6 +585,26 @@ final class OrthogonalWireRouter {
       }
     }
     return result;
+  }
+
+  static double _manhattanDistance(Offset first, Offset second) =>
+      (first.dx - second.dx).abs() + (first.dy - second.dy).abs();
+
+  static String _stateKey(int x, int y, WireAxis? axis) =>
+      '$x:$y:\${axis?.index ?? -1}';
+
+  static int _compareSearchNodes(_SearchNode first, _SearchNode second) {
+    final int byF = first.f.compareTo(second.f);
+    if (byF != 0) return byF;
+    final int byG = first.g.compareTo(second.g);
+    if (byG != 0) return byG;
+    final int byY = first.yIndex.compareTo(second.yIndex);
+    if (byY != 0) return byY;
+    final int byX = first.xIndex.compareTo(second.xIndex);
+    if (byX != 0) return byX;
+    return (first.previousAxis?.index ?? -1).compareTo(
+      second.previousAxis?.index ?? -1,
+    );
   }
 
   static double _min(double a, double b) => a < b ? a : b;

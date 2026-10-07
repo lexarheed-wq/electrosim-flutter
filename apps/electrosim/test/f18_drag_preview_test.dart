@@ -48,11 +48,13 @@ void main() {
       },
     );
 
-    final CircuitVisualLayout preview = F18DragPreviewPolicy.previewMove(
+    final F18DragSession session = F18DragSession.begin(
       circuit: circuit,
       baseLayout: layout,
       elementId: 'moving',
-      position: const Offset(360, 420),
+    );
+    final CircuitVisualLayout preview = session.previewAt(
+      const Offset(360, 420),
     );
 
     expect(preview.positionOf('moving'), const Offset(360, 420));
@@ -101,11 +103,13 @@ void main() {
       },
     );
 
-    final CircuitVisualLayout preview = F18DragPreviewPolicy.previewMove(
+    final F18DragSession session = F18DragSession.begin(
       circuit: circuit,
       baseLayout: layout,
       elementId: 'moving',
-      position: const Offset(220, 180),
+    );
+    final CircuitVisualLayout preview = session.previewAt(
+      const Offset(220, 180),
     );
 
     expect(preview.positionOf('moving'), const Offset(220, 180));

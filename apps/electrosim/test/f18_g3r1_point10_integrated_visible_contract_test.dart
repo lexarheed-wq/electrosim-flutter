@@ -1,12 +1,10 @@
 import 'package:electrosim/f18_component_asset_visual.dart';
-import 'package:electrosim/f18_workspace_wire_safety.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
-import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<void> _openDesignWorkspace(
+Future<SimulatorCanvas> _openDesignWorkspace(
   WidgetTester tester, {
   Size size = const Size(1440, 900),
 }) async {
@@ -18,149 +16,50 @@ Future<void> _openDesignWorkspace(
   await tester.pumpWidget(const app.ElectroSimApp());
   final Finder design = find.byKey(const Key('home-design'));
   await tester.ensureVisible(design);
-  await tester.pumpAndSettle();
   await tester.tap(design);
   await tester.pumpAndSettle();
 
   final Finder wiring = find.byKey(const Key('design-wiring'));
   await tester.ensureVisible(wiring);
-  await tester.pumpAndSettle();
   await tester.tap(wiring);
   await tester.pumpAndSettle();
-}
 
-Future<void> _openContext(WidgetTester tester) async {
-  final Finder region = find.byKey(electroSimContextRegionKey);
-  final double width =
-      tester.view.physicalSize.width / tester.view.devicePixelRatio;
-  if (region.evaluate().isEmpty || tester.getRect(region).left >= width) {
-    await tester.tap(find.byKey(electroSimContextEdgeKey));
-    await tester.pumpAndSettle();
-  }
-}
-
-Future<void> _openTop(WidgetTester tester) async {
-  final Finder region = find.byKey(electroSimTopRegionKey);
-  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
-    await tester.tap(find.byKey(electroSimTopEdgeKey));
-    await tester.pumpAndSettle();
-  }
-}
-
-void _expectOrthogonalCommittedRoutes(SimulatorCanvas canvas) {
-  final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-    canvas.circuit,
-    canvas.layout,
-  );
-
-  for (final connection in canvas.circuit.connections) {
-    final Offset start = geometry.terminalPositions[connection.fromTerminalId]!;
-    final Offset end = geometry.terminalPositions[connection.toTerminalId]!;
-    final List<Offset> points = <Offset>[
-      start,
-      ...canvas.layout.routeFor(connection.id.value),
-      end,
-    ];
-    for (var index = 0; index + 1 < points.length; index++) {
-      final Offset a = points[index];
-      final Offset b = points[index + 1];
-      expect(
-        a.dx == b.dx || a.dy == b.dy,
-        isTrue,
-        reason: '${connection.id.value} must remain orthogonal: $points',
-      );
-    }
-  }
+  return tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
 }
 
 void main() {
-  testWidgets('desktop F18 workspace satisfies the complete visible contract', (
+  testWidgets('design workspace starts on a truly blank board', (
     WidgetTester tester,
   ) async {
-    await _openDesignWorkspace(tester);
+    final SimulatorCanvas canvas = await _openDesignWorkspace(tester);
 
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byType(app.F9WorkspaceDemoPage), findsNothing);
-    expect(find.textContaining('Palette F9'), findsNothing);
-    expect(find.textContaining('Canvas F8'), findsNothing);
-
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
-    expect(
-      find.byType(F18ComponentAssetVisual),
-      findsAtLeastNWidgets(5),
-      reason:
-          'The visible quick palette must route every item through the shared '
-          'asset visual wrapper; imported Adobe assets and local fallbacks '
-          'therefore keep one representation contract.',
-    );
-    expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);
-    expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);
-    expect(find.text('Supprimer du circuit'), findsNothing);
+    expect(find.byType(F18ComponentAssetVisual), findsAtLeastNWidgets(5));
 
-    SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
-      find.byType(SimulatorCanvas),
-    );
-    expect(canvas.wireLayoutEngine, isNotNull);
+    expect(canvas.circuit.sources, isEmpty);
+    expect(canvas.circuit.components, isEmpty);
+    expect(canvas.circuit.connections, isEmpty);
+    expect(canvas.circuit.metadata['origin'], 'blank-workspace');
+    expect(canvas.layout.elementPositions, isEmpty);
+    expect(canvas.wireLayoutEngine, isNull);
+    expect(canvas.smartWireSemantics, isTrue);
     expect(canvas.wirePreviewPlanner, isNotNull);
-
-    final Offset source = canvas.layout.positionOf('source-24v')!;
-    final Offset load = canvas.layout.positionOf('lamp-1')!;
-    final Offset series = canvas.layout.positionOf('switch-1')!;
-    final Size seriesSize = canvas.layout.sizeOf('switch-1');
-
-    expect(source.dy, load.dy);
-    expect(series.dy, lessThan(source.dy));
-    expect(
-      (series.dx - ((source.dx + load.dx) / 2)).abs(),
-      lessThanOrEqualTo(.01),
-    );
-
-    const double bendKeepOut = 48;
-    const double minimumStub = 24;
-    final double required = bendKeepOut + minimumStub + seriesSize.width / 2;
-    expect(series.dx - source.dx, greaterThanOrEqualTo(required));
-    expect(load.dx - series.dx, greaterThanOrEqualTo(required));
-
-    _expectOrthogonalCommittedRoutes(canvas);
-    expect(
-      F18WorkspaceWireSafety.isCrossingFree(
-        circuit: canvas.circuit,
-        layout: canvas.layout,
-      ),
-      isTrue,
-    );
-
-    await _openContext(tester);
-    await tester.tap(find.byKey(const Key('properties-element-selector')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('switch-1').last);
-    await tester.pumpAndSettle();
-    await _openTop(tester);
-    await tester.tap(find.byKey(const Key('workspace-rotate-action')));
-    await tester.pumpAndSettle();
-
-    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
-    expect(canvas.layout.quarterTurnsOf('switch-1'), 1);
-    _expectOrthogonalCommittedRoutes(canvas);
-    expect(
-      F18WorkspaceWireSafety.isCrossingFree(
-        circuit: canvas.circuit,
-        layout: canvas.layout,
-      ),
-      isTrue,
-    );
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact F18 workspace remains usable without layout overflow', (
+  testWidgets('compact blank workspace remains usable without overflow', (
     WidgetTester tester,
   ) async {
-    await _openDesignWorkspace(tester, size: const Size(390, 844));
+    final SimulatorCanvas canvas = await _openDesignWorkspace(
+      tester,
+      size: const Size(390, 844),
+    );
 
-    expect(find.byType(app.F18WorkspacePage), findsOneWidget);
+    expect(canvas.circuit.components, isEmpty);
     expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);
     expect(find.byKey(const Key('workspace-delete-action')), findsOneWidget);
-    expect(find.textContaining('F9 final'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

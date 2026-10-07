@@ -85,11 +85,13 @@ final class WirePreviewPlanner {
         .toList(growable: false);
 
     final TopologyGraph topology = topologyEngine.compile(circuit);
+    final String? startNetId = topology.terminalToNode[startTerminalId];
+    final String? targetNetId = targetId == null
+        ? null
+        : topology.terminalToNode[targetId];
     final Set<String> joiningNetIds = <String>{
-      if (topology.terminalToNode[startTerminalId] case final String id) id,
-      if (targetId != null &&
-          topology.terminalToNode[targetId] case final String id)
-        id,
+      if (startNetId != null) startNetId,
+      if (targetNetId != null) targetNetId,
     };
 
     final List<OrthogonalWirePath> occupiedDifferentNetPaths =
@@ -138,7 +140,7 @@ final class WirePreviewPlanner {
     final String? from = topology.terminalToNode[connection.fromTerminalId];
     final String? to = topology.terminalToNode[connection.toTerminalId];
     if (connection.enabled && from != null && from == to) return from;
-    return 'connection:' + connection.id.value;
+    return 'connection:${connection.id.value}';
   }
 
   MapEntry<TerminalId, Offset>? _nearestTerminal({

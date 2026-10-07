@@ -5,6 +5,8 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/regression_fixture.dart';
+
 Terminal _terminal(String id, TerminalRole role) =>
     Terminal(id: TerminalId(id), name: id, role: role);
 
@@ -91,10 +93,13 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(const app.ElectroSimApp());
-      await tester.tap(find.byKey(const Key('home-design')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('design-wiring')));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: buildRegressionFixtureCircuit(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
@@ -157,10 +162,13 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(const app.ElectroSimApp());
-      await tester.tap(find.byKey(const Key('home-design')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('design-wiring')));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: buildRegressionFixtureCircuit(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('workspace-rotate-action')), findsOneWidget);

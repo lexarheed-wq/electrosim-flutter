@@ -31,6 +31,12 @@ jobs:
           flutter-version: '3.38.10'
           channel: stable
           cache: true
+      - name: Repository hygiene
+        run: |
+          set -euo pipefail
+          git diff --check
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
       - name: Canvas package
         working-directory: packages/electrosim_canvas
         run: |
@@ -61,3 +67,6 @@ jobs:
           path: apps/electrosim/test/failures
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Automated gate marker
+        run: echo WIRE_ROUTE02_CANVAS_PERF01_PASS

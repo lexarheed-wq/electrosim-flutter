@@ -128,6 +128,45 @@ void main() {
     );
   });
 
+
+  test(
+    'uses an explicit bridged crossing only when a different-net barrier cannot be bypassed',
+    () {
+      final OrthogonalWirePath closedBarrier = OrthogonalWirePath(
+        points: const <Offset>[
+          Offset(0, 0),
+          Offset(240, 0),
+          Offset(240, 240),
+          Offset(0, 240),
+          Offset(0, 0),
+        ],
+      );
+
+      final WireRouteResult result = router.route(
+        start: const Offset(120, 120),
+        end: const Offset(360, 120),
+        occupiedDifferentNetPaths: <OrthogonalWirePath>[closedBarrier],
+      );
+
+      expect(result.isResolved, isTrue);
+      expect(result.usesBridgedCrossing, isTrue);
+      expect(
+        WireRouteSafety.countPerpendicularCrossings(
+          candidate: result.path!,
+          occupiedDifferentNetPaths: <OrthogonalWirePath>[closedBarrier],
+        ),
+        greaterThan(0),
+      );
+      expect(
+        WireRouteSafety.hasCollinearOverlap(
+          candidate: result.path!,
+          occupiedDifferentNetPaths: <OrthogonalWirePath>[closedBarrier],
+        ),
+        isFalse,
+      );
+    },
+  );
+
   test('routing is deterministic for identical inputs', () {
     const List<RoutingObstacle> obstacles = <RoutingObstacle>[
       RoutingObstacle(bounds: Rect.fromLTWH(120, 72, 72, 96)),

@@ -666,6 +666,8 @@ class _F9ReferenceAsset extends StatelessWidget {
     this.currentA = 0,
     this.voltageV = 0,
     this.ratedCurrentA = 1,
+    this.ratedVoltageV = 24,
+    this.ratedPowerW = 10,
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
   });

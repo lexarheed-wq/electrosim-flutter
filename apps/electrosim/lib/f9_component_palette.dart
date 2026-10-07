@@ -146,7 +146,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'lamp',
-    title: 'Lampe 24 V CC',
+    title: 'Lampe',
     category: 'Récepteurs',
     modelType: 'lamp',
     icon: Icons.lightbulb_outline,
@@ -161,7 +161,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ComponentParameterKeys.thermalWithstandSeconds: 0.5,
     },
     displayLabel: 'Lampe 24 V',
-    subtitle: '24 V CC · 24 W',
+    subtitle: 'Charge résistive',
   ),
   F9PaletteDefinition(
     keyName: 'lamp-ac1-230v',
@@ -171,7 +171,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.lightbulb_outline,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['A', 'B'],
-    supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
     defaultParameters: <String, Object?>{
       ComponentParameterKeys.resistanceOhm: 529.0,
       ReceiverNominalRating.voltageKey: 230.0,
@@ -205,7 +205,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ProtectionRating.ratedCurrentKey: 10.0,
     },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
-    subtitle: 'Protection 10 A CC',
+    subtitle: 'Protection 2 bornes',
   ),
   F9PaletteDefinition(
     keyName: 'push-button-no',
@@ -250,7 +250,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ProtectionRating.ratedCurrentKey: 10.0,
     },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
-    subtitle: 'Fusible 10 A CC',
+    subtitle: 'Protection simple',
   ),
   F9PaletteDefinition(
     keyName: 'diode',
@@ -1232,44 +1232,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
     supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-    terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec(
-        'U1',
-        role: TerminalRole.lineL1,
-        phase: PhaseTag.l1,
-        idSuffix: 'u1',
-      ),
-      F9PaletteTerminalSpec(
-        'V1',
-        role: TerminalRole.lineL2,
-        phase: PhaseTag.l2,
-        idSuffix: 'v1',
-      ),
-      F9PaletteTerminalSpec(
-        'W1',
-        role: TerminalRole.lineL3,
-        phase: PhaseTag.l3,
-        idSuffix: 'w1',
-      ),
-      F9PaletteTerminalSpec(
-        'U2',
-        role: TerminalRole.loadT1,
-        phase: PhaseTag.l1,
-        idSuffix: 'u2',
-      ),
-      F9PaletteTerminalSpec(
-        'V2',
-        role: TerminalRole.loadT2,
-        phase: PhaseTag.l2,
-        idSuffix: 'v2',
-      ),
-      F9PaletteTerminalSpec(
-        'W2',
-        role: TerminalRole.loadT3,
-        phase: PhaseTag.l3,
-        idSuffix: 'w2',
-      ),
-    ],
+    terminals: f9Motor3p6tTerminals,
     defaultParameters: <String, Object?>{
       'resistanceOhm': 18.0,
       'inductanceH': 0.035,
@@ -1283,7 +1246,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'load-wye-3p',
-    title: 'Charge triphasée étoile',
+    title: 'Charge triphasée Y (3 impédances)',
     category: 'Charges 3φ',
     modelType: 'load_wye_3p',
     icon: Icons.change_history_outlined,
@@ -1322,11 +1285,11 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     },
     visualVariant: 'load-wye',
     displayLabel: 'Charge Y',
-    subtitle: '3 branches L-N',
+    subtitle: '3 branches phase-point étoile · neutre optionnel',
   ),
   F9PaletteDefinition(
     keyName: 'load-delta-3p',
-    title: 'Charge triphasée triangle',
+    title: 'Charge triphasée Δ (3 impédances)',
     category: 'Charges 3φ',
     modelType: 'load_delta_3p',
     icon: Icons.change_history,
@@ -1359,7 +1322,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     },
     visualVariant: 'load-delta',
     displayLabel: 'Charge Δ',
-    subtitle: '3 branches L-L',
+    subtitle: '3 branches entre phases · sans neutre',
   ),
 
   // C14 Wave 1 — canonical models already supported by the V2 electrical core.
@@ -2307,18 +2270,6 @@ class _PaletteDraggableTile extends StatelessWidget {
             child: F18ComponentAssetVisual(
               modelType: definition.renderedModelType,
               variantKey: definition.visualVariant,
-      ratedVoltageV:
-          (definition.defaultParameters[ReceiverNominalRating.voltageKey] as num?)
-                  ?.toDouble() ??
-              24.0,
-      ratedPowerW:
-          (definition.defaultParameters[ReceiverNominalRating.powerKey] as num?)
-                  ?.toDouble() ??
-              10.0,
-      ratedCurrentA:
-          (definition.defaultParameters[ProtectionRating.ratedCurrentKey] as num?)
-                  ?.toDouble() ??
-              1.0,
               size:
                   F18ReferenceComponentVisuals.supports(
                     definition.renderedModelType,
@@ -2357,18 +2308,6 @@ class F9ComponentPreview extends StatelessWidget {
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,
       variantKey: definition.visualVariant,
-      ratedVoltageV:
-          (definition.defaultParameters[ReceiverNominalRating.voltageKey] as num?)
-                  ?.toDouble() ??
-              24.0,
-      ratedPowerW:
-          (definition.defaultParameters[ReceiverNominalRating.powerKey] as num?)
-                  ?.toDouble() ??
-              10.0,
-      ratedCurrentA:
-          (definition.defaultParameters[ProtectionRating.ratedCurrentKey] as num?)
-                  ?.toDouble() ??
-              1.0,
       size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
           ? (compact
                 ? F18ReferenceComponentMetrics.paletteSizeFor(

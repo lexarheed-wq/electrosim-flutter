@@ -100,6 +100,7 @@ void main() {
           phase: PhaseTag.neutral,
         ),
       ],
+      settings: const <String, Object?>{'frequencyHz': 50.0},
     );
 
     final ElectroSimRuntimeSnapshot snapshot =

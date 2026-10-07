@@ -173,11 +173,32 @@ final class TopologyEngine {
       );
     }
 
+    final Set<TerminalId> optionalAc3NeutralTerminalIds =
+        circuit.mode == ElectricalMode.ac3
+        ? <TerminalId>{
+            for (final SourceInstance source in circuit.sources)
+              if (source.modelType == 'ac3_voltage_source')
+                for (final Terminal terminal in source.terminals)
+                  if (terminal.phase == PhaseTag.neutral ||
+                      terminal.role == TerminalRole.neutral)
+                    terminal.id,
+            for (final ComponentInstance component in circuit.components)
+              if (component.modelType == 'load_wye_3p')
+                for (final Terminal terminal in component.terminals)
+                  if (terminal.phase == PhaseTag.neutral ||
+                      terminal.role == TerminalRole.neutral)
+                    terminal.id,
+          }
+        : const <TerminalId>{};
+
     for (final TopologyNode node in nodes) {
       final bool hasEnabledConductor = node.terminalIds.any(
         (TerminalId id) => enabledConnectionDegree[id]! > 0,
       );
-      if (!hasEnabledConductor) {
+      final bool optionalNeutralNode =
+          node.terminalIds.isNotEmpty &&
+          node.terminalIds.every(optionalAc3NeutralTerminalIds.contains);
+      if (!hasEnabledConductor && !optionalNeutralNode) {
         findings.add(
           TopologyFinding(
             code: TopologyFindingCode.floatingNode,

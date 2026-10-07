@@ -25,6 +25,28 @@ void main() {
     expect(result.currentBalanced, isTrue);
   });
 
+  test('six-terminal motor windings solve in external delta connection', () {
+    final CircuitState circuit = _motorDeltaCircuit();
+    final TopologyGraph topology = topologyEngine.compile(circuit);
+    expect(
+      topology.findings.where(
+        (TopologyFinding finding) =>
+            finding.code == TopologyFindingCode.conflictingPhases,
+      ),
+      isEmpty,
+    );
+
+    final Ac3SolveResult result = solver.solve(circuit, topology);
+    expect(result.status, Ac3SolveStatus.solved);
+    final List<double> windingCurrents = <double>[
+      for (final String winding in <String>['U', 'V', 'W'])
+        result.branch('component:m1:winding:$winding').current!.magnitude,
+    ];
+    expect(windingCurrents[0], closeTo(windingCurrents[1], 1e-7));
+    expect(windingCurrents[1], closeTo(windingCurrents[2], 1e-7));
+    expect(windingCurrents.every((double current) => current > 0), isTrue);
+  });
+
   test('three-phase motor open condition creates an explicit floating island', () {
     final CircuitState base = _motorStarCircuit();
     final CircuitState circuit = _replaceOnlyComponent(
@@ -172,6 +194,47 @@ CircuitState _motorStarCircuit() {
       _w('l3', 's3-p', 'w1'),
       _w('star1', 'u2', 'v2'),
       _w('star2', 'v2', 'w2'),
+      _w('n12', 's1-n', 's2-n'),
+      _w('n23', 's2-n', 's3-n'),
+    ],
+    settings: const <String, Object?>{'frequencyHz': 50.0},
+  );
+}
+
+CircuitState _motorDeltaCircuit() {
+  final List<SourceInstance> sources = _sources();
+  final List<Terminal> t = <Terminal>[
+    _t('u1', 'U1', PhaseTag.l1),
+    _t('v1', 'V1', PhaseTag.l2),
+    _t('w1', 'W1', PhaseTag.l3),
+    _t('u2', 'U2', PhaseTag.none),
+    _t('v2', 'V2', PhaseTag.none),
+    _t('w2', 'W2', PhaseTag.none),
+  ];
+
+  return CircuitState(
+    circuitId: CircuitId('motor-delta'),
+    revision: 0,
+    mode: ElectricalMode.ac3,
+    sources: sources,
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId('m1'),
+        modelType: 'motor_3p_6t',
+        terminals: t,
+        parameters: const <String, Object?>{
+          'resistanceOhm': 39.83716857408418,
+          'inductanceH': 0.0,
+        },
+      ),
+    ],
+    connections: <Connection>[
+      _w('l1', 's1-p', 'u1'),
+      _w('l2', 's2-p', 'v1'),
+      _w('l3', 's3-p', 'w1'),
+      _w('delta-u', 'u2', 'v1'),
+      _w('delta-v', 'v2', 'w1'),
+      _w('delta-w', 'w2', 'u1'),
       _w('n12', 's1-n', 's2-n'),
       _w('n23', 's2-n', 's3-n'),
     ],

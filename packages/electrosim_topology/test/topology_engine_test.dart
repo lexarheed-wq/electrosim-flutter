@@ -98,6 +98,63 @@ void main() {
   });
 
   group('TopologyEngine pre-solve findings', () {
+
+    test('AC3 four-wire source neutral may remain unused with a delta load', () {
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('ac3-delta-no-neutral'),
+        revision: 0,
+        mode: ElectricalMode.ac3,
+        sources: <SourceInstance>[
+          SourceInstance(
+            id: SourceId('grid'),
+            modelType: 'ac3_voltage_source',
+            terminals: <Terminal>[
+              Terminal(id: TerminalId('grid-l1'), name: 'L1', role: TerminalRole.phaseL1, phase: PhaseTag.l1),
+              Terminal(id: TerminalId('grid-l2'), name: 'L2', role: TerminalRole.phaseL2, phase: PhaseTag.l2),
+              Terminal(id: TerminalId('grid-l3'), name: 'L3', role: TerminalRole.phaseL3, phase: PhaseTag.l3),
+              Terminal(id: TerminalId('grid-n'), name: 'N', role: TerminalRole.neutral, phase: PhaseTag.neutral),
+            ],
+            parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
+          ),
+        ],
+        components: <ComponentInstance>[
+          ComponentInstance(
+            id: ComponentId('delta'),
+            modelType: 'load_delta_3p',
+            terminals: <Terminal>[
+              Terminal(id: TerminalId('d-l1'), name: 'L1', phase: PhaseTag.l1),
+              Terminal(id: TerminalId('d-l2'), name: 'L2', phase: PhaseTag.l2),
+              Terminal(id: TerminalId('d-l3'), name: 'L3', phase: PhaseTag.l3),
+            ],
+            parameters: const <String, Object?>{'resistanceOhm': 80.0, 'inductanceH': 0.0},
+          ),
+        ],
+        connections: <Connection>[
+          Connection(id: ConnectionId('l1'), fromTerminalId: TerminalId('grid-l1'), toTerminalId: TerminalId('d-l1')),
+          Connection(id: ConnectionId('l2'), fromTerminalId: TerminalId('grid-l2'), toTerminalId: TerminalId('d-l2')),
+          Connection(id: ConnectionId('l3'), fromTerminalId: TerminalId('grid-l3'), toTerminalId: TerminalId('d-l3')),
+        ],
+        settings: const <String, Object?>{'frequencyHz': 50.0},
+      );
+
+      final TopologyGraph graph = engine.compile(circuit);
+      expect(
+        graph.findings.where(
+          (TopologyFinding finding) =>
+              finding.code == TopologyFindingCode.floatingNode &&
+              finding.terminalIds.contains(TerminalId('grid-n')),
+        ),
+        isEmpty,
+      );
+      expect(
+        graph.findings.where(
+          (TopologyFinding finding) =>
+              finding.code == TopologyFindingCode.conflictingPhases,
+        ),
+        isEmpty,
+      );
+    });
+
     test('disabled conductor is excluded and reported explicitly', () {
       final CircuitState base = _simpleDcCircuit();
       final CircuitState circuit = CircuitState(

@@ -99,6 +99,27 @@ void main() {
     );
   });
 
+  test('four-wire AC3 source feeds balanced delta without external neutral', () {
+    final CircuitState circuit = _balancedDeltaCircuit();
+    final Ac3SolveResult result = solver.solve(
+      circuit,
+      topologyEngine.compile(circuit),
+    );
+
+    expect(result.status, Ac3SolveStatus.solved);
+    expect(result.neutralConnected, isFalse);
+    expect(result.neutralCurrent.magnitude, closeTo(0.0, 1e-9));
+    expect(result.voltageBalanced, isTrue);
+    expect(result.currentBalanced, isTrue);
+    expect(
+      result.diagnostics.where(
+        (Ac3SolverDiagnostic item) =>
+            item.severity == Ac3DiagnosticSeverity.error,
+      ),
+      isEmpty,
+    );
+  });
+
   test('four-wire AC3 source produces positive 400/230 V sequence', () {
     final CircuitState circuit = _balancedWyeCircuit();
     final Ac3SolveResult result = solver.solve(
@@ -148,6 +169,48 @@ void main() {
       closeTo(230.0, 1e-8),
     );
   });
+}
+
+CircuitState _balancedDeltaCircuit() {
+  return CircuitState(
+    circuitId: CircuitId('ac3-four-wire-delta-no-neutral'),
+    revision: 0,
+    mode: ElectricalMode.ac3,
+    sources: <SourceInstance>[
+      SourceInstance(
+        id: SourceId('grid'),
+        modelType: 'ac3_voltage_source',
+        terminals: <Terminal>[
+          _t('grid-l1', 'L1', PhaseTag.l1, TerminalRole.phaseL1),
+          _t('grid-l2', 'L2', PhaseTag.l2, TerminalRole.phaseL2),
+          _t('grid-l3', 'L3', PhaseTag.l3, TerminalRole.phaseL3),
+          _t('grid-n', 'N', PhaseTag.neutral, TerminalRole.neutral),
+        ],
+        parameters: const <String, Object?>{'phaseVoltageRmsV': 230.0},
+      ),
+    ],
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId('delta'),
+        modelType: 'load_delta_3p',
+        terminals: <Terminal>[
+          _t('delta-l1', 'L1', PhaseTag.l1, TerminalRole.lineL1),
+          _t('delta-l2', 'L2', PhaseTag.l2, TerminalRole.lineL2),
+          _t('delta-l3', 'L3', PhaseTag.l3, TerminalRole.lineL3),
+        ],
+        parameters: const <String, Object?>{
+          'resistanceOhm': 80.0,
+          'inductanceH': 0.0,
+        },
+      ),
+    ],
+    connections: <Connection>[
+      _w('l1', 'grid-l1', 'delta-l1', PhaseTag.l1),
+      _w('l2', 'grid-l2', 'delta-l2', PhaseTag.l2),
+      _w('l3', 'grid-l3', 'delta-l3', PhaseTag.l3),
+    ],
+    settings: const <String, Object?>{'frequencyHz': 50.0},
+  );
 }
 
 CircuitState _balancedWyeCircuit() {

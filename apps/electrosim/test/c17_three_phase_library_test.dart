@@ -28,6 +28,40 @@ void main() {
     }
   });
 
+  test('C17 motor secondary winding ends are phase-neutral before coupling', () {
+    final F9PaletteDefinition motor = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'motor-3p-6t',
+    );
+    expect(motor.terminals, hasLength(6));
+    expect(
+      motor.terminals.skip(3).map((F9PaletteTerminalSpec item) => item.phase),
+      everyElement(PhaseTag.none),
+    );
+  });
+
+  test('C17 triphasé excludes the 24 V DC lamp and offers the 230 V AC lamp', () {
+    final F9PaletteDefinition dcLamp = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'lamp',
+    );
+    final F9PaletteDefinition acLamp = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'lamp-ac1-230v',
+    );
+    expect(dcLamp.supportsMode(ElectricalMode.ac3), isFalse);
+    expect(acLamp.supportsMode(ElectricalMode.ac3), isTrue);
+    expect(
+      acLamp.defaultParameters[ReceiverNominalRating.voltageKey],
+      230.0,
+    );
+  });
+
+  test('C17 delta load is explicitly documented as a three-wire line load', () {
+    final F9PaletteDefinition delta = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition value) => value.keyName == 'load-delta-3p',
+    );
+    expect(delta.title, contains('Δ'));
+    expect(delta.subtitle, contains('sans neutre'));
+  });
+
   test('C17 motor exposes six distinct physical connection anchors', () {
     const Size size = Size(260, 240);
     final Set<Offset> points = <Offset>{

@@ -3,52 +3,96 @@ import 'dart:ui';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-/// Lightweight drag preview used while a pointer is moving.
+/// Immutable drag session prepared once at pointer-down.
 ///
-/// This path deliberately performs no global routing. It moves only the
-/// selected element and updates only the directly attached wire previews with
-/// one Manhattan corner. The authoritative G2A routing is deferred until the
-/// pointer is released.
-abstract final class F18DragPreviewPolicy {
-  static CircuitVisualLayout previewMove({
+/// Geometry and attachment discovery are intentionally done once. Pointer-move
+/// updates only translate the selected element and its directly attached wire
+/// endpoints. Global G2A routing remains deferred until pointer-up.
+final class F18DragSession {
+  F18DragSession._({
+    required this.baseLayout,
+    required this.elementId,
+    required this.basePosition,
+    required List<_AttachedWire> attachedWires,
+  }) : attachedWires = List<_AttachedWire>.unmodifiable(attachedWires);
+
+  factory F18DragSession.begin({
     required CircuitState circuit,
     required CircuitVisualLayout baseLayout,
     required String elementId,
-    required Offset position,
   }) {
-    final CircuitVisualLayout moved = baseLayout.moveElement(
-      elementId,
-      position,
-    );
-    final Set<TerminalId> terminals = terminalIdsFor(circuit, elementId);
-    if (terminals.isEmpty) {
-      return moved;
+    final Offset? basePosition = baseLayout.positionOf(elementId);
+    if (basePosition == null) {
+      throw ArgumentError.value(
+        elementId,
+        'elementId',
+        'Dragged element has no visual position.',
+      );
     }
 
+    final Set<TerminalId> movingTerminals = _terminalIdsFor(
+      circuit,
+      elementId,
+    );
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
       circuit,
-      moved,
+      baseLayout,
     );
-    final Map<String, List<Offset>> routes = <String, List<Offset>>{
-      ...baseLayout.wireRoutes,
-    };
+    final List<_AttachedWire> attached = <_AttachedWire>[];
 
     for (final Connection connection in circuit.connections) {
-      final bool attached =
-          terminals.contains(connection.fromTerminalId) ||
-          terminals.contains(connection.toTerminalId);
-      if (!attached) {
-        continue;
-      }
+      final bool startMoves = movingTerminals.contains(
+        connection.fromTerminalId,
+      );
+      final bool endMoves = movingTerminals.contains(connection.toTerminalId);
+      if (!startMoves && !endMoves) continue;
 
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
-      if (start == null || end == null) {
-        continue;
-      }
+      if (start == null || end == null) continue;
+      attached.add(
+        _AttachedWire(
+          connectionId: connection.id.value,
+          baseStart: start,
+          baseEnd: end,
+          startMoves: startMoves,
+          endMoves: endMoves,
+        ),
+      );
+    }
 
-      routes[connection.id.value] = start.dx == end.dx || start.dy == end.dy
+    return F18DragSession._(
+      baseLayout: baseLayout,
+      elementId: elementId,
+      basePosition: basePosition,
+      attachedWires: attached,
+    );
+  }
+
+  final CircuitVisualLayout baseLayout;
+  final String elementId;
+  final Offset basePosition;
+  final List<_AttachedWire> attachedWires;
+
+  CircuitVisualLayout previewAt(Offset position) {
+    final Offset delta = position - basePosition;
+    final CircuitVisualLayout moved = baseLayout.moveElement(
+      elementId,
+      position,
+    );
+    if (attachedWires.isEmpty) return moved;
+
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      ...baseLayout.wireRoutes,
+    };
+    for (final _AttachedWire wire in attachedWires) {
+      final Offset start = wire.startMoves
+          ? wire.baseStart + delta
+          : wire.baseStart;
+      final Offset end = wire.endMoves ? wire.baseEnd + delta : wire.baseEnd;
+      routes[wire.connectionId] =
+          start.dx == end.dx || start.dy == end.dy
           ? const <Offset>[]
           : <Offset>[Offset(end.dx, start.dy)];
     }
@@ -62,7 +106,7 @@ abstract final class F18DragPreviewPolicy {
     );
   }
 
-  static Set<TerminalId> terminalIdsFor(
+  static Set<TerminalId> _terminalIdsFor(
     CircuitState circuit,
     String elementId,
   ) {
@@ -80,4 +124,20 @@ abstract final class F18DragPreviewPolicy {
     }
     return const <TerminalId>{};
   }
+}
+
+final class _AttachedWire {
+  const _AttachedWire({
+    required this.connectionId,
+    required this.baseStart,
+    required this.baseEnd,
+    required this.startMoves,
+    required this.endMoves,
+  });
+
+  final String connectionId;
+  final Offset baseStart;
+  final Offset baseEnd;
+  final bool startMoves;
+  final bool endMoves;
 }

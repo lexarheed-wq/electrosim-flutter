@@ -4,6 +4,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -1119,17 +1120,6 @@ class _F9StaticOverlayPainter extends CustomPainter {
       _ => modelType.replaceAll('_', ' '),
     };
   }
-
-  static Color _phaseColor(PhaseTag phase) => switch (phase) {
-    PhaseTag.dcPositive => const Color(0xFFDC2626),
-    PhaseTag.dcNegative => const Color(0xFF111827),
-    PhaseTag.l1 => const Color(0xFF92400E),
-    PhaseTag.l2 => const Color(0xFF111827),
-    PhaseTag.l3 => const Color(0xFF6B7280),
-    PhaseTag.neutral => const Color(0xFF2563EB),
-    PhaseTag.protectiveEarth => const Color(0xFF15803D),
-    PhaseTag.none => const Color(0xFF475569),
-  };
 
   @override
   bool shouldRepaint(_F9StaticOverlayPainter oldDelegate) => true;

@@ -33,7 +33,6 @@ import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_persistence_controller.dart';
-import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
@@ -784,9 +783,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 (CanvasHitResult hit) {
                                                   setState(() {
                                                     _status =
-                                                        'Action contextuelle : ' +
-                                                        hit.kind.name +
-                                                        '. Les mêmes actions sont disponibles dans Propriétés.';
+                                                        'Action contextuelle : \${hit.kind.name}. '
+                                                        'Les mêmes actions sont disponibles dans Propriétés.';
                                                   });
                                                 },
                                             enableInteraction: false,
@@ -2062,7 +2060,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _wiringHoverTerminal = null;
       _status = routeRenderable
           ? decision.message
-          : decision.message + ' Routage graphique provisoire.';
+          : '\${decision.message} Routage graphique provisoire.';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
@@ -3205,7 +3203,7 @@ CircuitState _buildRegressionFixtureCircuit() {
   );
 }
 
-CircuitState _buildBlankCircuit() => const CircuitState(
+CircuitState _buildBlankCircuit() => CircuitState(
   circuitId: CircuitId('workspace-blank'),
   revision: 0,
   mode: ElectricalMode.dc,

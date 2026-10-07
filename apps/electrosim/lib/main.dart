@@ -521,6 +521,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   String? _directDragElementId;
   Offset? _directDragGrabDelta;
   CircuitVisualLayout? _directDragBaseLayout;
+  F18DragSession? _directDragSession;
+  final ValueNotifier<CircuitVisualLayout?> _dragPreviewLayout =
+      ValueNotifier<CircuitVisualLayout?>(null);
   Offset? _lastCanvasPointerLocal;
   bool _backgroundPanActive = false;
   bool _directPointerMoved = false;
@@ -1488,6 +1491,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _directDragElementId = null;
     _directDragGrabDelta = null;
     _directDragBaseLayout = null;
+    _directDragSession = null;
+    _dragPreviewLayout.value = null;
 
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
       if (_studentTpReadOnly) {
@@ -1532,6 +1537,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           _directDragElementId = id;
           _directDragGrabDelta = current - world;
           _directDragBaseLayout = _layout;
+          _directDragSession = F18DragSession.begin(
+            circuit: _circuit,
+            baseLayout: _layout,
+            elementId: id,
+          );
         }
         _status = _studentTpReadOnly
             ? '${_selectionStatus('Sélection')} — TP en lecture seule'
@@ -1622,10 +1632,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _onCanvasPointerCancel(PointerCancelEvent event) {
     if (_activeCanvasPointer == event.pointer) {
-      final CircuitVisualLayout? base = _directDragBaseLayout;
-      if (base != null) {
-        setState(() => _layout = base);
-      }
+      _dragPreviewLayout.value = null;
       _clearDirectPointerState();
     }
   }
@@ -1635,6 +1642,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _directDragElementId = null;
     _directDragGrabDelta = null;
     _directDragBaseLayout = null;
+    _directDragSession = null;
+    _dragPreviewLayout.value = null;
     _lastCanvasPointerLocal = null;
     _backgroundPanActive = false;
     _directPointerMoved = false;
@@ -2029,16 +2038,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     bool moving = false,
   }) {
     if (moving) {
-      final CircuitVisualLayout base = _directDragBaseLayout ?? _layout;
-      final CircuitVisualLayout preview = F18DragPreviewPolicy.previewMove(
-        circuit: _circuit,
-        baseLayout: base,
-        elementId: elementId,
-        position: position,
-      );
-      setState(() {
-        _layout = preview;
-      });
+      final F18DragSession session =
+          _directDragSession ??
+          F18DragSession.begin(
+            circuit: _circuit,
+            baseLayout: _directDragBaseLayout ?? _layout,
+            elementId: elementId,
+          );
+      _directDragSession = session;
+      _dragPreviewLayout.value = session.previewAt(position);
       return;
     }
 
@@ -2061,7 +2069,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitVisualLayout? base = _directDragBaseLayout;
     if (base == null) return;
 
-    final CircuitVisualLayout candidate = _routeWithG2A(_circuit, _layout);
+    final CircuitVisualLayout preview = _dragPreviewLayout.value ?? _layout;
+    final CircuitVisualLayout candidate = _routeWithG2A(_circuit, preview);
     setState(() {
       _layout = candidate;
       _status = F18WorkspaceWireSafety.isRenderable(
@@ -2071,17 +2080,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Position graphique mise à jour : $elementId'
           : 'Position mise à jour : routage graphique provisoire.';
     });
+    _dragPreviewLayout.value = null;
   }
 
   void _cancelCanvasInteraction() {
-    final CircuitVisualLayout? dragBase = _directDragBaseLayout;
+    _dragPreviewLayout.value = null;
     setState(() {
       _canvasInteractionEpoch += 1;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
-      if (dragBase != null) {
-        _layout = dragBase;
-      }
       _clearDirectPointerState();
       _status = 'Interaction de câblage annulée (Échap).';
     });
@@ -2704,6 +2711,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (host != null) unawaited(host.close());
     final ElectroSimLanSyncClient? client = widget.syncClient;
     if (client != null) unawaited(client.close());
+    _dragPreviewLayout.dispose();
     _viewport.dispose();
     if (_ownsTpController || client != null) {
       _tpController.dispose();

@@ -62,6 +62,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   Offset? _dragGrabDelta;
   Offset? _dragPreviewPosition;
   Offset? _pointerWorldPosition;
+  WirePreviewSession? _wirePreviewSession;
   Offset? _lastScaleFocal;
   double _scaleStartValue = 1;
   bool _scaleStartedOnBackground = false;
@@ -94,6 +95,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
         !identical(oldWidget.layout, widget.layout) ||
         oldWidget.wireLayoutEngine != widget.wireLayoutEngine) {
       _refreshEffectiveLayout();
+      _refreshWirePreviewSession();
     }
     if (oldWidget.viewportController != widget.viewportController) {
       _detachViewport();
@@ -101,6 +103,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     }
     if (_pendingTerminalId != null && !_terminalExists(_pendingTerminalId!)) {
       _pendingTerminalId = null;
+      _wirePreviewSession = null;
     }
   }
 
@@ -109,6 +112,18 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     _effectiveLayout = engine == null
         ? widget.layout
         : engine.routeAll(circuit: widget.circuit, layout: widget.layout);
+  }
+
+  void _refreshWirePreviewSession() {
+    final TerminalId? pending = _pendingTerminalId;
+    final WirePreviewPlanner? planner = widget.wirePreviewPlanner;
+    _wirePreviewSession = pending == null || planner == null
+        ? null
+        : planner.prepare(
+            circuit: widget.circuit,
+            layout: _effectiveLayout,
+            startTerminalId: pending,
+          );
   }
 
   void _attachViewport(ViewportController? controller) {
@@ -173,17 +188,24 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
           setState(() {
             _pendingTerminalId = terminalId;
             _pointerWorldPosition = hit.worldPosition;
+            _wirePreviewSession = widget.wirePreviewPlanner?.prepare(
+              circuit: widget.circuit,
+              layout: _effectiveLayout,
+              startTerminalId: terminalId,
+            );
           });
         } else if (pending == terminalId) {
           setState(() {
             _pendingTerminalId = null;
             _pointerWorldPosition = null;
+            _wirePreviewSession = null;
           });
         } else {
           widget.onConnectionRequested?.call(pending, terminalId);
           setState(() {
             _pendingTerminalId = null;
             _pointerWorldPosition = null;
+            _wirePreviewSession = null;
           });
         }
         return;
@@ -202,6 +224,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
           setState(() {
             _pendingTerminalId = null;
             _pointerWorldPosition = null;
+            _wirePreviewSession = null;
           });
         }
         _select(null);
@@ -338,8 +361,10 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     if (_pendingTerminalId == null && _draggingElementId == null) {
       return;
     }
+    final Offset next = _viewport.screenToWorld(event.localPosition);
+    if (_pointerWorldPosition == next) return;
     setState(() {
-      _pointerWorldPosition = _viewport.screenToWorld(event.localPosition);
+      _pointerWorldPosition = next;
     });
   }
 
@@ -357,11 +382,14 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
               : SystemMouseCursors.grabbing,
           onHover: (PointerHoverEvent event) {
             if (_pendingTerminalId != null) {
-              setState(() {
-                _pointerWorldPosition = _viewport.screenToWorld(
-                  event.localPosition,
-                );
-              });
+              final Offset next = _viewport.screenToWorld(
+                event.localPosition,
+              );
+              if (_pointerWorldPosition != next) {
+                setState(() {
+                  _pointerWorldPosition = next;
+                });
+              }
             }
           },
           child: GestureDetector(
@@ -372,21 +400,48 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
             onLongPressEnd: _onLongPressEnd,
             onScaleStart: _onScaleStart,
             onScaleUpdate: _onScaleUpdate,
-            child: CustomPaint(
-              painter: CircuitScenePainter(
-                circuit: widget.circuit,
-                layout: _effectiveLayout,
-                viewport: _viewport,
-                selectedElementId: _selectedElementId,
-                pendingTerminalId: _pendingTerminalId,
-                pointerWorldPosition: _pointerWorldPosition,
-                previewPositions: _previewPositions,
-                wirePreviewPlanner: widget.wirePreviewPlanner,
-                smartWireSemantics:
-                    widget.smartWireSemantics || widget.wireLayoutEngine != null,
-                paintElementChrome: widget.paintElementChrome,
-              ),
-              size: Size.infinite,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                RepaintBoundary(
+                  child: CustomPaint(
+                    painter: CircuitScenePainter(
+                      circuit: widget.circuit,
+                      layout: _effectiveLayout,
+                      viewport: _viewport,
+                      selectedElementId: _selectedElementId,
+                      pendingTerminalId: _pendingTerminalId,
+                      pointerWorldPosition: widget.wirePreviewPlanner == null
+                          ? _pointerWorldPosition
+                          : null,
+                      previewPositions: _previewPositions,
+                      wirePreviewPlanner: widget.wirePreviewPlanner,
+                      wirePreviewSession: _wirePreviewSession,
+                      smartWireSemantics:
+                          widget.smartWireSemantics ||
+                          widget.wireLayoutEngine != null,
+                      paintElementChrome: widget.paintElementChrome,
+                    ),
+                    size: Size.infinite,
+                  ),
+                ),
+                if (widget.wirePreviewPlanner != null &&
+                    _wirePreviewSession != null &&
+                    _pointerWorldPosition != null)
+                  IgnorePointer(
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        painter: CircuitWirePreviewPainter(
+                          viewport: _viewport,
+                          planner: widget.wirePreviewPlanner!,
+                          session: _wirePreviewSession!,
+                          pointerWorldPosition: _pointerWorldPosition!,
+                        ),
+                        size: Size.infinite,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

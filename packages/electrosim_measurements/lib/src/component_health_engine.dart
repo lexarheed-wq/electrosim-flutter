@@ -4,7 +4,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'operating_state.dart';
 
-enum ComponentHealthCode { normal, stressed, failedOpen }
+enum ComponentHealthCode { normal, stressed, degraded, failedOpen }
 
 final class ComponentHealthState {
   const ComponentHealthState({
@@ -79,7 +79,9 @@ final class ComponentHealthEngine {
       );
     }
     return ComponentHealthState(
-      code: exposure > 0.0 || stress > 1.0
+      code: exposure >= 0.55
+          ? ComponentHealthCode.degraded
+          : exposure > 0.0 || stress > 1.0
           ? ComponentHealthCode.stressed
           : ComponentHealthCode.normal,
       thermalExposure: exposure,

@@ -17,9 +17,11 @@ final class CircuitScenePainter extends CustomPainter {
     this.pointerWorldPosition,
     this.previewPositions = const <String, Offset>{},
     this.wirePreviewPlanner,
+    this.wirePreviewSession,
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
-  });
+  }) : viewportScaleAtBuild = viewport.scale,
+       viewportTranslationAtBuild = viewport.translation;
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
@@ -29,7 +31,10 @@ final class CircuitScenePainter extends CustomPainter {
   final Offset? pointerWorldPosition;
   final Map<String, Offset> previewPositions;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final WirePreviewSession? wirePreviewSession;
   final bool smartWireSemantics;
+  final double viewportScaleAtBuild;
+  final Offset viewportTranslationAtBuild;
   final bool paintElementChrome;
 
   static const Color boardColor = Color(0xFFF6F8FB);
@@ -257,12 +262,18 @@ final class CircuitScenePainter extends CustomPainter {
 
     final WirePreviewPlanner? planner = wirePreviewPlanner;
     if (planner != null) {
-      final WirePreviewPlan preview = planner.plan(
-        circuit: circuit,
-        layout: layout,
-        startTerminalId: pendingTerminalId!,
-        pointerWorldPosition: pointerWorldPosition!,
-      );
+      final WirePreviewSession? session = wirePreviewSession;
+      final WirePreviewPlan preview = session == null
+          ? planner.plan(
+              circuit: circuit,
+              layout: layout,
+              startTerminalId: pendingTerminalId!,
+              pointerWorldPosition: pointerWorldPosition!,
+            )
+          : planner.planPrepared(
+              session: session,
+              pointerWorldPosition: pointerWorldPosition!,
+            );
       if (!preview.route.isResolved) {
         return;
       }
@@ -309,5 +320,72 @@ final class CircuitScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CircuitScenePainter oldDelegate) =>
-      !identical(oldDelegate, this);
+      oldDelegate.circuit != circuit ||
+      oldDelegate.layout != layout ||
+      oldDelegate.selectedElementId != selectedElementId ||
+      oldDelegate.pendingTerminalId != pendingTerminalId ||
+      oldDelegate.pointerWorldPosition != pointerWorldPosition ||
+      oldDelegate.previewPositions != previewPositions ||
+      oldDelegate.wirePreviewPlanner != wirePreviewPlanner ||
+      oldDelegate.wirePreviewSession != wirePreviewSession ||
+      oldDelegate.smartWireSemantics != smartWireSemantics ||
+      oldDelegate.paintElementChrome != paintElementChrome ||
+      oldDelegate.viewportScaleAtBuild != viewportScaleAtBuild ||
+      oldDelegate.viewportTranslationAtBuild != viewportTranslationAtBuild;
+}
+
+/// Lightweight painter used during an active wire gesture.
+///
+/// The dense static circuit lives behind a repaint boundary; pointer movement
+/// only repaints this overlay and uses the prepared routing session.
+final class CircuitWirePreviewPainter extends CustomPainter {
+  CircuitWirePreviewPainter({
+    required this.viewport,
+    required this.planner,
+    required this.session,
+    required this.pointerWorldPosition,
+  }) : viewportScaleAtBuild = viewport.scale,
+       viewportTranslationAtBuild = viewport.translation;
+
+  final ViewportController viewport;
+  final WirePreviewPlanner planner;
+  final WirePreviewSession session;
+  final Offset pointerWorldPosition;
+  final double viewportScaleAtBuild;
+  final Offset viewportTranslationAtBuild;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final WirePreviewPlan preview = planner.planPrepared(
+      session: session,
+      pointerWorldPosition: pointerWorldPosition,
+    );
+    if (!preview.route.isResolved) return;
+    final List<Offset> points = preview.route.path!.points;
+    if (points.isEmpty) return;
+    final Path path = Path();
+    final Offset first = viewport.worldToScreen(points.first);
+    path.moveTo(first.dx, first.dy);
+    for (final Offset worldPoint in points.skip(1)) {
+      final Offset point = viewport.worldToScreen(worldPoint);
+      path.lineTo(point.dx, point.dy);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = CircuitScenePainter.pendingColor
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CircuitWirePreviewPainter oldDelegate) =>
+      oldDelegate.pointerWorldPosition != pointerWorldPosition ||
+      oldDelegate.session != session ||
+      oldDelegate.planner != planner ||
+      oldDelegate.viewportScaleAtBuild != viewportScaleAtBuild ||
+      oldDelegate.viewportTranslationAtBuild != viewportTranslationAtBuild;
 }

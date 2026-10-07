@@ -37,4 +37,48 @@ void main() {
 
     expect(state.failedOpen, isTrue);
   });
+
+
+  test('generic thermal exposure reports degraded state before destruction', () {
+    final ComponentInstance receiver = ComponentInstance(
+      id: ComponentId('receiver-degraded'),
+      modelType: 'lamp',
+      terminals: <Terminal>[
+        Terminal(id: TerminalId('rd-a'), name: 'A'),
+        Terminal(id: TerminalId('rd-b'), name: 'B'),
+      ],
+      parameters: <String, Object?>{
+        'resistanceOhm': 24.0,
+        ReceiverNominalRating.voltageKey: 24.0,
+        ReceiverNominalRating.currentKey: 1.0,
+        ReceiverNominalRating.powerKey: 24.0,
+        ComponentParameterKeys.thermalWithstandSeconds: 1.0,
+      },
+    );
+    final ComponentOperatingState operating = ComponentOperatingState(
+      componentId: receiver.id,
+      code: ComponentOperatingCode.overloaded,
+      voltageV: 30.0,
+      currentA: 1.25,
+      powerW: 37.5,
+      warnings: const <OperatingWarning>[],
+      evidenceIds: const <String>[],
+    );
+
+    const ComponentHealthEngine engine = ComponentHealthEngine();
+    final ComponentHealthState state = engine.advance(
+      component: receiver,
+      operatingState: operating,
+      elapsed: const Duration(milliseconds: 400),
+      previous: const ComponentHealthState(
+        code: ComponentHealthCode.stressed,
+        thermalExposure: 0.45,
+        stressRatio: 1.25,
+      ),
+    );
+
+    expect(state.code, ComponentHealthCode.degraded);
+    expect(state.failedOpen, isFalse);
+    expect(state.thermalExposure, greaterThanOrEqualTo(0.55));
+  });
 }

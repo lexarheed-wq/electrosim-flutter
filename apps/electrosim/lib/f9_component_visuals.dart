@@ -152,6 +152,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double ratedCurrentA,
       required double currentLimitA,
       required double resistanceOhm,
+      ComponentHealthState healthState = const ComponentHealthState.normal(),
     }) {
       final String renderedModelType = visualModelType ?? modelType;
       if (!F18ReferenceComponentVisuals.supports(renderedModelType)) return;
@@ -177,26 +178,30 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           child: Center(
             child: Transform.rotate(
               angle: math.pi / 2 * quarterTurns,
-              child: _F9ReferenceAsset(
-                key: ValueKey<String>('board-v1-visual-$elementId'),
-                modelType: renderedModelType,
-                variantKey: visualVariant,
-                size: baseVisualSize,
-                active: enabled,
-                energized: energized,
-                closed: closed,
-                tripped: tripped,
-                pressed: pressed,
-                actuated: actuated,
+              child: _F9HealthVisual(
+                healthState: healthState,
                 motionSeconds: _motionSeconds,
-                animate: energized,
-                showTerminals: true,
-                currentA: currentA,
-                voltageV: voltageV,
-                batterySoc: batterySoc,
-                ratedCurrentA: ratedCurrentA,
-                currentLimitA: currentLimitA,
-                resistanceOhm: resistanceOhm,
+                child: _F9ReferenceAsset(
+                  key: ValueKey<String>('board-v1-visual-$elementId'),
+                  modelType: renderedModelType,
+                  variantKey: visualVariant,
+                  size: baseVisualSize,
+                  active: enabled,
+                  energized: energized,
+                  closed: closed,
+                  tripped: tripped,
+                  pressed: pressed,
+                  actuated: actuated,
+                  motionSeconds: _motionSeconds,
+                  animate: energized,
+                  showTerminals: true,
+                  currentA: currentA,
+                  voltageV: voltageV,
+                  batterySoc: batterySoc,
+                  ratedCurrentA: ratedCurrentA,
+                  currentLimitA: currentLimitA,
+                  resistanceOhm: resistanceOhm,
+                ),
               ),
             ),
           ),
@@ -307,6 +312,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
+        healthState:
+            runtime?.componentHealthState(component.id) ??
+            const ComponentHealthState.normal(),
       );
     }
     return widgets;
@@ -606,6 +614,114 @@ class _F9ReferenceAsset extends StatelessWidget {
           _visual(motionSeconds.value % 1.0),
     );
   }
+}
+
+
+class _F9HealthVisual extends StatelessWidget {
+  const _F9HealthVisual({
+    required this.healthState,
+    required this.motionSeconds,
+    required this.child,
+  });
+
+  final ComponentHealthState healthState;
+  final ValueListenable<double> motionSeconds;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (healthState.code == ComponentHealthCode.normal) return child;
+    return AnimatedBuilder(
+      animation: motionSeconds,
+      child: child,
+      builder: (BuildContext context, Widget? stableChild) {
+        final double phase = motionSeconds.value * math.pi * 2;
+        final double pulse = (math.sin(phase) + 1) / 2;
+        final double opacity = switch (healthState.code) {
+          ComponentHealthCode.normal => 1.0,
+          ComponentHealthCode.stressed => 0.94 + pulse * 0.06,
+          ComponentHealthCode.degraded => 0.72 + pulse * 0.16,
+          ComponentHealthCode.failedOpen => 0.42,
+        };
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Opacity(opacity: opacity, child: stableChild),
+            IgnorePointer(
+              child: CustomPaint(
+                painter: _F9HealthOverlayPainter(
+                  state: healthState.code,
+                  pulse: pulse,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _F9HealthOverlayPainter extends CustomPainter {
+  const _F9HealthOverlayPainter({required this.state, required this.pulse});
+
+  final ComponentHealthCode state;
+  final double pulse;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect bounds = Offset.zero & size;
+    final Color warning = switch (state) {
+      ComponentHealthCode.normal => Colors.transparent,
+      ComponentHealthCode.stressed => const Color(0xFFFFA000),
+      ComponentHealthCode.degraded => const Color(0xFFEF6C00),
+      ComponentHealthCode.failedOpen => const Color(0xFF5D4037),
+    };
+    if (warning == Colors.transparent) return;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(bounds.deflate(1.5), const Radius.circular(8)),
+      Paint()
+        ..color = warning.withValues(
+          alpha: state == ComponentHealthCode.failedOpen
+              ? 0.55
+              : 0.22 + pulse * 0.18,
+        )
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = state == ComponentHealthCode.failedOpen ? 2.4 : 1.8,
+    );
+
+    if (state == ComponentHealthCode.degraded ||
+        state == ComponentHealthCode.failedOpen) {
+      final Offset center = Offset(size.width * 0.70, size.height * 0.34);
+      final double radius = math.min(size.width, size.height) * 0.075;
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = const Color(0xFF3E2723).withValues(
+            alpha: state == ComponentHealthCode.failedOpen ? 0.62 : 0.28,
+          ),
+      );
+      final Paint crack = Paint()
+        ..color = const Color(0xFF3E2723).withValues(
+          alpha: state == ComponentHealthCode.failedOpen ? 0.85 : 0.50,
+        )
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke;
+      final Path path = Path()
+        ..moveTo(center.dx - radius * 0.7, center.dy - radius * 0.8)
+        ..lineTo(center.dx - radius * 0.1, center.dy - radius * 0.1)
+        ..lineTo(center.dx - radius * 0.45, center.dy + radius * 0.45)
+        ..moveTo(center.dx - radius * 0.1, center.dy - radius * 0.1)
+        ..lineTo(center.dx + radius * 0.65, center.dy + radius * 0.55);
+      canvas.drawPath(path, crack);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_F9HealthOverlayPainter oldDelegate) =>
+      oldDelegate.state != state || oldDelegate.pulse != pulse;
 }
 
 class _F9CurrentFlowPainter extends CustomPainter {

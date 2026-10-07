@@ -52,6 +52,49 @@ void main() {
     );
   });
 
+
+
+  test('finite diode series resistance keeps direct 24 V source solvable', () {
+    final Terminal vp = _t('direct-vp', '+', phase: PhaseTag.dcPositive);
+    final Terminal vn = _t('direct-vn', '−', phase: PhaseTag.dcNegative);
+    final Terminal a = _t('direct-a', 'A', role: TerminalRole.input);
+    final Terminal k = _t('direct-k', 'K', role: TerminalRole.output);
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('diode-direct-source'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('d1'),
+          modelType: 'diode',
+          terminals: <Terminal>[a, k],
+          parameters: const <String, Object?>{
+            ComponentParameterKeys.forwardVoltageV: 2.0,
+            ComponentParameterKeys.seriesResistanceOhm: 5.0,
+          },
+        ),
+      ],
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[vp, vn],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        ),
+      ],
+      connections: <Connection>[
+        _w('direct-p', vp.id, a.id),
+        _w('direct-n', k.id, vn.id),
+      ],
+    );
+
+    final DcSolveResult result = solve(circuit);
+    expect(result.status, DcSolveStatus.solved);
+    final DcBranchResult diode = result.branch('component:d1');
+    expect(diode.voltageV, closeTo(24.0, 1e-9));
+    expect(diode.currentA, closeTo(4.4, 1e-9));
+  });
+
   test('diode parameters are validated', () {
     final CircuitState circuit = _seriesDiode(
       reverse: false,

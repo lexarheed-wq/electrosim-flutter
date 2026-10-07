@@ -1,4 +1,6 @@
 import 'package:electrosim/main.dart' as app;
+import 'package:electrosim/f18_g7_property_presenter.dart';
+import 'package:electrosim/f9_element_editor.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
@@ -102,4 +104,119 @@ void main() {
       isTrue,
     );
   });
+
+  test('F18-G7 reports runtime component health and damage', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('f18-g7-health'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v1'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('vp'), name: '+', phase: PhaseTag.dcPositive),
+            Terminal(id: TerminalId('vn'), name: '−', phase: PhaseTag.dcNegative),
+          ],
+          parameters: const <String, Object?>{'voltageV': 30.0},
+        ),
+      ],
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('lamp-health'),
+          modelType: 'lamp',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('lh-a'), name: 'A'),
+            Terminal(id: TerminalId('lh-b'), name: 'B'),
+          ],
+          parameters: const <String, Object?>{
+            ComponentParameterKeys.resistanceOhm: 24.0,
+            ReceiverNominalRating.voltageKey: 24.0,
+            ReceiverNominalRating.currentKey: 1.0,
+            ReceiverNominalRating.powerKey: 24.0,
+            ComponentParameterKeys.thermalWithstandSeconds: 1.0,
+          },
+        ),
+      ],
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('hp'),
+          fromTerminalId: TerminalId('vp'),
+          toTerminalId: TerminalId('lh-a'),
+        ),
+        Connection(
+          id: ConnectionId('hn'),
+          fromTerminalId: TerminalId('lh-b'),
+          toTerminalId: TerminalId('vn'),
+        ),
+      ],
+    );
+    const ElectroSimRuntimeEngine engine = ElectroSimRuntimeEngine();
+    final ElectroSimRuntimeSnapshot first = engine.advance(
+      circuit,
+      elapsed: const Duration(milliseconds: 400),
+      previousComponentHealthStates: <ComponentId, ComponentHealthState>{
+        ComponentId('lamp-health'): ComponentHealthState(
+          code: ComponentHealthCode.stressed,
+          thermalExposure: 0.45,
+          stressRatio: 1.25,
+        ),
+      },
+    );
+    final F9ElementDetails details = F9ElementEditor.describe(
+      circuit,
+      'lamp-health',
+    )!;
+    final F18G7PropertySnapshot properties = F18G7PropertyPresenter.describe(
+      details: details,
+      runtimeSnapshot: first,
+    );
+
+    expect(
+      properties.runtimeValues.any(
+        (F18G7PropertyRow row) =>
+            row.label == 'Santé' && row.value == 'Dégradée',
+      ),
+      isTrue,
+    );
+    expect(
+      properties.runtimeValues.any(
+        (F18G7PropertyRow row) => row.label == 'Dommage thermique',
+      ),
+      isTrue,
+    );
+  });
+
+  test('F18-G7 never labels health normal when solver is unresolved', () {
+    final ComponentInstance unsupported = ComponentInstance(
+      id: ComponentId('health-unresolved'),
+      modelType: 'unsupported_health',
+      terminals: <Terminal>[
+        Terminal(id: TerminalId('hu-a'), name: 'A'),
+        Terminal(id: TerminalId('hu-b'), name: 'B'),
+      ],
+    );
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('f18-g7-health-unresolved'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[unsupported],
+    );
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
+    final F18G7PropertySnapshot properties = F18G7PropertyPresenter.describe(
+      details: F9ElementEditor.describe(circuit, unsupported.id.value)!,
+      runtimeSnapshot: snapshot,
+    );
+
+    expect(
+      properties.runtimeValues.any(
+        (F18G7PropertyRow row) =>
+            row.label == 'Santé' &&
+            row.value == 'Non évaluée — solveur indisponible',
+      ),
+      isTrue,
+    );
+  });
+
 }

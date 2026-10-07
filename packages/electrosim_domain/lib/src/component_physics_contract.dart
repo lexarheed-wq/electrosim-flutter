@@ -60,6 +60,7 @@ abstract final class ComponentParameterKeys {
   static const String inductanceH = 'inductanceH';
   static const String forwardVoltageV = 'forwardVoltageV';
   static const String offResistanceOhm = 'offResistanceOhm';
+  static const String seriesResistanceOhm = 'seriesResistanceOhm';
   static const String reverseBreakdownVoltageV = 'reverseBreakdownVoltageV';
   static const String maxVoltageV = 'maxVoltageV';
   static const String maxCurrentA = 'maxCurrentA';
@@ -161,6 +162,9 @@ abstract final class CoreComponentPhysicsContracts {
           'diode': const ComponentPhysicsContract(
             modelType: 'diode',
             electricalLaw: ComponentElectricalLaw.diode,
+            dynamicBehaviors: <ComponentDynamicBehavior>{
+              ComponentDynamicBehavior.thermalStress,
+            },
           ),
           'impedance': const ComponentPhysicsContract(
             modelType: 'impedance',

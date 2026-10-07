@@ -282,6 +282,8 @@ final class SolverDC {
           current = element.value;
         case _ElementKind.idealVoltage:
           current = element.redundant ? null : network.idealCurrentA(element.id);
+        case _ElementKind.seriesVoltage:
+          current = network.idealCurrentA(element.id);
       }
       if (current != null) {
         current = _clean(current, options.residualTolerance);
@@ -570,6 +572,8 @@ final class SolverDC {
               component.parameters[ComponentParameterKeys.offResistanceOhm];
           final Object? rawBreakdown = component
               .parameters[ComponentParameterKeys.reverseBreakdownVoltageV];
+          final Object? rawSeriesResistance = component
+              .parameters[ComponentParameterKeys.seriesResistanceOhm];
           final double forwardVoltageV = rawForward == null
               ? 0.7
               : rawForward is num
@@ -585,10 +589,17 @@ final class SolverDC {
               : rawBreakdown is num
               ? rawBreakdown.toDouble()
               : double.nan;
+          final double seriesResistanceOhm = rawSeriesResistance == null
+              ? 1e-9
+              : rawSeriesResistance is num
+              ? rawSeriesResistance.toDouble()
+              : double.nan;
           if (!forwardVoltageV.isFinite ||
               forwardVoltageV < 0.0 ||
               !offResistanceOhm.isFinite ||
               offResistanceOhm < 1e6 ||
+              !seriesResistanceOhm.isFinite ||
+              seriesResistanceOhm <= 0.0 ||
               (reverseBreakdownVoltageV != null &&
                   (!reverseBreakdownVoltageV.isFinite ||
                       reverseBreakdownVoltageV <= 0.0))) {
@@ -610,6 +621,7 @@ final class SolverDC {
                 toNodeId: toNode,
                 forwardVoltageV: forwardVoltageV,
                 offResistanceOhm: offResistanceOhm,
+                seriesResistanceOhm: seriesResistanceOhm,
                 reverseBreakdownVoltageV: reverseBreakdownVoltageV,
               ),
             );
@@ -1242,7 +1254,8 @@ final class SolverDC {
         activeElements
             .where(
               (_Element element) =>
-                  element.kind == _ElementKind.idealVoltage &&
+                  (element.kind == _ElementKind.idealVoltage ||
+                      element.kind == _ElementKind.seriesVoltage) &&
                   !element.redundant,
             )
             .toList(growable: false)
@@ -1294,6 +1307,18 @@ final class SolverDC {
               element.value,
             );
           }
+        case _ElementKind.seriesVoltage:
+          _stampSeriesVoltage(
+            matrix,
+            rhs,
+            nodeIndex,
+            referenceNodeId,
+            nodeCount + idealIndex[element.id]!,
+            element.fromNodeId,
+            element.toNodeId,
+            element.value,
+            element.diodeSeriesResistanceOhm!,
+          );
       }
     }
 
@@ -1430,6 +1455,33 @@ void _stampIdealVoltage(
     matrix[sourceIndex][negativeIndex] -= 1.0;
   }
   rhs[sourceIndex] += voltage;
+}
+
+
+void _stampSeriesVoltage(
+  List<List<double>> matrix,
+  List<double> rhs,
+  Map<String, int> nodeIndex,
+  String reference,
+  int branchIndex,
+  String positive,
+  String negative,
+  double voltage,
+  double seriesResistanceOhm,
+) {
+  _stampIdealVoltage(
+    matrix,
+    rhs,
+    nodeIndex,
+    reference,
+    branchIndex,
+    positive,
+    negative,
+    voltage,
+  );
+  // V+ - V- - R*I = Vdrop. The finite slope makes the piecewise-linear
+  // diode compatible with a stiff source while retaining a physical current.
+  matrix[branchIndex][branchIndex] -= seriesResistanceOhm;
 }
 
 _LinearSolveOutcome _solveLinearSystem(
@@ -1619,7 +1671,7 @@ double _limitedSourceCurrent(double voltageV, double currentLimitA) =>
 double _clean(double value, double tolerance) =>
     value.abs() <= tolerance ? 0.0 : value;
 
-enum _ElementKind { resistor, idealVoltage, currentSource }
+enum _ElementKind { resistor, idealVoltage, seriesVoltage, currentSource }
 
 enum _DiodeMode { off, forward, reverseBreakdown }
 
@@ -1637,6 +1689,7 @@ final class _Element {
     this.sourceId,
     this.diodeForwardVoltageV,
     this.diodeOffResistanceOhm,
+    this.diodeSeriesResistanceOhm,
     this.diodeReverseBreakdownVoltageV,
     this.diodeMode = _DiodeMode.off,
   });
@@ -1708,6 +1761,7 @@ final class _Element {
     required String toNodeId,
     required double forwardVoltageV,
     required double offResistanceOhm,
+    required double seriesResistanceOhm,
     double? reverseBreakdownVoltageV,
   }) => _Element._(
     id: id,
@@ -1720,6 +1774,7 @@ final class _Element {
     redundant: false,
     diodeForwardVoltageV: forwardVoltageV,
     diodeOffResistanceOhm: offResistanceOhm,
+    diodeSeriesResistanceOhm: seriesResistanceOhm,
     diodeReverseBreakdownVoltageV: reverseBreakdownVoltageV,
     diodeMode: _DiodeMode.off,
   );
@@ -1731,6 +1786,7 @@ final class _Element {
     required String toNodeId,
     required double forwardVoltageV,
     required double offResistanceOhm,
+    required double seriesResistanceOhm,
     required _DiodeMode mode,
     double? reverseBreakdownVoltageV,
   }) {
@@ -1743,7 +1799,7 @@ final class _Element {
     return _Element._(
       id: id,
       modelType: modelType,
-      kind: _ElementKind.idealVoltage,
+      kind: _ElementKind.seriesVoltage,
       publicKind: DcBranchKind.diode,
       fromNodeId: fromNodeId,
       toNodeId: toNodeId,
@@ -1751,6 +1807,7 @@ final class _Element {
       redundant: fromNodeId == toNodeId,
       diodeForwardVoltageV: forwardVoltageV,
       diodeOffResistanceOhm: offResistanceOhm,
+      diodeSeriesResistanceOhm: seriesResistanceOhm,
       diodeReverseBreakdownVoltageV: reverseBreakdownVoltageV,
       diodeMode: mode,
     );
@@ -1768,6 +1825,7 @@ final class _Element {
   final SourceId? sourceId;
   final double? diodeForwardVoltageV;
   final double? diodeOffResistanceOhm;
+  final double? diodeSeriesResistanceOhm;
   final double? diodeReverseBreakdownVoltageV;
   final _DiodeMode diodeMode;
 
@@ -1785,6 +1843,7 @@ final class _Element {
         toNodeId: toNodeId,
         forwardVoltageV: diodeForwardVoltageV!,
         offResistanceOhm: diodeOffResistanceOhm!,
+        seriesResistanceOhm: diodeSeriesResistanceOhm!,
         reverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
       );
     }
@@ -1795,6 +1854,7 @@ final class _Element {
       toNodeId: toNodeId,
       forwardVoltageV: diodeForwardVoltageV!,
       offResistanceOhm: diodeOffResistanceOhm!,
+      seriesResistanceOhm: diodeSeriesResistanceOhm!,
       reverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
       mode: mode,
     );
@@ -1813,6 +1873,7 @@ final class _Element {
     sourceId: sourceId,
     diodeForwardVoltageV: diodeForwardVoltageV,
     diodeOffResistanceOhm: diodeOffResistanceOhm,
+    diodeSeriesResistanceOhm: diodeSeriesResistanceOhm,
     diodeReverseBreakdownVoltageV: diodeReverseBreakdownVoltageV,
     diodeMode: diodeMode,
   );

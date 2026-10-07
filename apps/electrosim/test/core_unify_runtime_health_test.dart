@@ -82,4 +82,83 @@ void main() {
     );
     expect(snapshot.dc.branch('component:lamp-1').currentA, 0.0);
   });
+
+  test('24 V direct LED is solved, overstressed and fails open', () {
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('core-unify-led-health'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('v-led'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('led-vp'),
+              name: '+',
+              role: TerminalRole.positive,
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('led-vn'),
+              name: '−',
+              role: TerminalRole.negative,
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        ),
+      ],
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('led-1'),
+          modelType: 'diode',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('led-a'), name: 'A'),
+            Terminal(id: TerminalId('led-k'), name: 'K'),
+          ],
+          parameters: const <String, Object?>{
+            '_visualVariant': 'led-red',
+            ComponentParameterKeys.forwardVoltageV: 2.0,
+            ComponentParameterKeys.seriesResistanceOhm: 5.0,
+            ComponentParameterKeys.reverseBreakdownVoltageV: 5.0,
+            ComponentParameterKeys.maxVoltageV: 3.0,
+            ComponentParameterKeys.maxCurrentA: 0.020,
+            ComponentParameterKeys.maxPowerW: 0.060,
+            ComponentParameterKeys.thermalWithstandSeconds: 0.050,
+          },
+        ),
+      ],
+      connections: <Connection>[
+        Connection(
+          id: ConnectionId('led-p'),
+          fromTerminalId: TerminalId('led-vp'),
+          toTerminalId: TerminalId('led-a'),
+        ),
+        Connection(
+          id: ConnectionId('led-n'),
+          fromTerminalId: TerminalId('led-k'),
+          toTerminalId: TerminalId('led-vn'),
+        ),
+      ],
+    );
+
+    const ElectroSimRuntimeEngine engine = ElectroSimRuntimeEngine();
+    final ElectroSimRuntimeSnapshot snapshot = engine.advance(
+      circuit,
+      elapsed: const Duration(milliseconds: 100),
+    );
+
+    expect(snapshot.solved, isTrue);
+    expect(
+      snapshot.componentHealthState(ComponentId('led-1')).code,
+      ComponentHealthCode.failedOpen,
+    );
+    expect(
+      snapshot.effectiveCircuit.components.single.condition,
+      ComponentCondition.openCircuit,
+    );
+    expect(snapshot.dc.branch('component:led-1').currentA, 0.0);
+  });
+
 }

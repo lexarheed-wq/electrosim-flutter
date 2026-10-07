@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - wire-route02-canvas-perf01-20261007
-    paths:
-      - '.github/workflows/wire-route02-final-candidate.yml'
+      - prebaseline-r2-perf-damage-20261007
   workflow_dispatch:
 
 permissions:
@@ -117,6 +116,7 @@ jobs:
           flutter test test/circuit_wire_layout_engine_test.dart
           flutter test test/wire_semantics_test.dart
           flutter test test/canvas_performance_test.dart
+          flutter test test/wire_preview_planner_test.dart
 
       - name: Prepare native runner with LAN configuration
         id: runner
@@ -142,6 +142,7 @@ jobs:
           flutter test test/blank_product_workspace_test.dart
           flutter test test/core_unify_runtime_health_test.dart
           flutter test test/core_unify_current_flow_test.dart
+          flutter test test/f18_g7_instruments_properties_test.dart
           flutter test test/f18_drag_architecture_test.dart
           flutter test test/f18_drag_preview_test.dart
           flutter test test/f18_g10b_library_ui_test.dart
@@ -185,7 +186,7 @@ jobs:
           B — Fluidité Canvas
           4. Ajouter progressivement 25 composants puis déplacer plusieurs composants : déplacement fluide.
           5. Monter à environ 50 composants : le drag doit rester immédiat, sans gel du pointeur.
-          6. Si possible monter à 100 composants : vérifier drag, pan et zoom.
+          6. Monter à 100 composants puis, si possible, 150 à 200 : vérifier drag, pan, zoom et surtout création de nouveaux fils sans retard perceptible du preview.
           7. Pendant un drag, seuls le déplacement visuel et les liaisons concernées doivent évoluer; aucune pause longue de reroutage avant le relâchement.
           8. Au relâchement, le routage final doit rester orthogonal et propre.
 
@@ -207,7 +208,7 @@ jobs:
           19. Refaire le test lampe 24 V nominale puis surtension : états et destruction doivent rester cohérents.
           20. Vérifier disjoncteur 10 A, moteur à 0 A, inversion moteur, relais, bornier multipolaire et sources DC en série.
           21. Propriétés, Mesures et EIE doivent rester cohérents avec le RuntimeSnapshot.
-          22. Aucun crash, NaN, infini, gel durable ou état visuel contradictoire.
+          22. Brancher une LED rouge directement sur 24 V : le solveur doit rester résolu, le composant doit passer par un état de stress/dommage puis HS ouvert, les Propriétés doivent afficher la santé/dommage et le visuel doit refléter l'état dégradé/HS. Aucun crash, NaN, infini, gel durable ou état visuel contradictoire.
 
           Si les 22 contrôles passent, signaler exactement :
           WIRE_ROUTE02_CANVAS_PERF01_PHYSICAL_MAC_PASS

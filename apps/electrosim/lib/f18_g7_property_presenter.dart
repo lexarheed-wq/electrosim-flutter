@@ -80,6 +80,35 @@ abstract final class F18G7PropertyPresenter {
           );
         }
       }
+      if (runtimeSnapshot.solved) {
+        final ComponentHealthState health = runtimeSnapshot.componentHealthState(
+          ComponentId(details.id),
+        );
+        runtimeValues.add(
+          F18G7PropertyRow(label: 'Santé', value: _healthLabel(health.code)),
+        );
+        runtimeValues.add(
+          F18G7PropertyRow(
+            label: 'Dommage thermique',
+            value: '${(health.thermalExposure * 100).clamp(0, 100).toStringAsFixed(0)} %',
+          ),
+        );
+        if (health.stressRatio > 0) {
+          runtimeValues.add(
+            F18G7PropertyRow(
+              label: 'Niveau de stress',
+              value: '×${health.stressRatio.toStringAsFixed(2)}',
+            ),
+          );
+        }
+      } else {
+        runtimeValues.add(
+          const F18G7PropertyRow(
+            label: 'Santé',
+            value: 'Non évaluée — solveur indisponible',
+          ),
+        );
+      }
     } else if (details.kind == F9ElementKind.source) {
       final SourceInstance? source = _sourceById(
         runtimeSnapshot.circuit,
@@ -206,6 +235,13 @@ abstract final class F18G7PropertyPresenter {
         ComponentOperatingCode.undetermined => 'Indéterminé',
       };
 
+  static String _healthLabel(ComponentHealthCode code) => switch (code) {
+    ComponentHealthCode.normal => 'Normale',
+    ComponentHealthCode.stressed => 'Sous contrainte',
+    ComponentHealthCode.degraded => 'Dégradée',
+    ComponentHealthCode.failedOpen => 'HS — circuit ouvert',
+  };
+
   static String _warningLabel(OperatingWarningCode code) => switch (code) {
     OperatingWarningCode.simulationNotSolved => 'Simulation non résolue',
     OperatingWarningCode.missingBranchResult => 'Résultat de branche absent',
@@ -223,6 +259,7 @@ abstract final class F18G7PropertyPresenter {
     'currentA': 'Courant',
     'currentRmsA': 'Courant efficace',
     'resistanceOhm': 'Résistance',
+    ComponentParameterKeys.seriesResistanceOhm: 'Résistance série interne',
     'coilResistanceOhm': 'Résistance bobine',
     'impedanceOhm': 'Impédance',
     ProtectionRating.ratedCurrentKey: 'Calibre',
@@ -281,7 +318,10 @@ abstract final class F18G7PropertyPresenter {
       ReceiverNominalRating.currentKey ||
       'nominalCurrentA' ||
       'maxCurrentA' => ' A',
-      'resistanceOhm' || 'coilResistanceOhm' || 'impedanceOhm' => ' Ω',
+      'resistanceOhm' ||
+      ComponentParameterKeys.seriesResistanceOhm ||
+      'coilResistanceOhm' ||
+      'impedanceOhm' => ' Ω',
       ReceiverNominalRating.powerKey || 'maxPowerW' || 'powerW' => ' W',
       'frequencyHz' => ' Hz',
       'phaseDeg' => ' °',

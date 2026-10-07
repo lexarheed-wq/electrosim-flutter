@@ -591,7 +591,7 @@ final class OrthogonalWireRouter {
       (first.dx - second.dx).abs() + (first.dy - second.dy).abs();
 
   static String _stateKey(int x, int y, WireAxis? axis) =>
-      '$x:$y:' + (axis?.index ?? -1).toString();
+      '$x:$y:${axis?.index ?? -1}';
 
   static int _compareSearchNodes(_SearchNode first, _SearchNode second) {
     final int byF = first.f.compareTo(second.f);

@@ -1,0 +1,234 @@
+name: CORE-UNIFY final qualification and Mac Intel candidate
+
+on:
+  push:
+    branches:
+      - core-unify-20261006
+    paths:
+      - '.github/workflows/core-unify-final-qualification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-unify-final-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  final-core:
+    name: CORE-UNIFY final core qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify toolchain and architecture guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py
+
+      - name: Domain and canonical physics
+        working-directory: packages/electrosim_domain
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Topology and DC islands
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_topology
+          dart pub get
+          dart analyze
+          dart test
+          cd ../electrosim_solver_dc
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: AC and PV solvers
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_solver_ac
+          dart pub get
+          dart analyze
+          dart test
+          cd ../electrosim_pv
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Controls, measurements and health
+        run: |
+          set -euo pipefail
+          cd packages/electrosim_controls
+          dart pub get
+          dart analyze
+          dart test
+          cd ../electrosim_measurements
+          dart pub get
+          dart analyze
+          dart test
+
+      - name: Complete Flutter regression suite
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test
+
+  macos-intel:
+    name: CORE-UNIFY macOS Intel release candidate
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify exact source and architecture guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+
+      - name: Prepare native runner with LAN configuration
+        id: runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) tmp="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          echo "path=$tmp" >> "$GITHUB_OUTPUT"
+
+      - name: Analyze and run CORE-UNIFY Mac smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter test test/core_unify_runtime_health_test.dart
+          flutter test test/core_unify_current_flow_test.dart
+          flutter test test/postv2_p1_wiring_policy_test.dart
+          flutter test test/postv2_p1_motor_visual_direction_test.dart
+
+      - name: Build and prove Intel candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.runner.outputs.path }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          executable="$(find "$app_path/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          architecture="$(file "$executable")"
+          printf '%s\n' "$architecture"
+          grep -qi 'x86_64' <<< "$architecture"
+
+          out="$GITHUB_WORKSPACE/audit/core-unify/macos"
+          mkdir -p "$out"
+          base_sha="$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)"
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+
+          cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
+          ELECTROSIM CORE-UNIFY — validation physique Mac Intel / Ventura 13.7
+
+          1. L'application démarre sans crash; navigation, tableaux de bord, TP et simulateur restent accessibles.
+          2. Disjoncteur 10 A : l'étiquette, les Propriétés et le moteur affichent le même calibre.
+          3. Lampe 24 V / 24 W sous 24 V : fonctionnement nominal cohérent (~1 A, ~24 W).
+          4. Lampe 24 V fortement surtendue : l'état physique passe en surcharge/défaillance selon le modèle et ne reste pas indéfiniment normale.
+          5. Après défaillance ouverte d'un récepteur, le courant devient nul dans sa branche et le visuel cesse d'indiquer un fonctionnement normal.
+          6. Moteur DC à 0 A : aucune animation de rotation soutenue ne doit rester active.
+          7. Inversion de polarité du moteur DC : sens visuel inversé avec grandeur électrique cohérente.
+          8. Bobine relais 24 V : pickup/dropout cohérents; un montage auto-interrompu ne doit pas être présenté comme un faux état stable.
+          9. Bornier multipolaire avec pôles inutilisés : le circuit utile reste simulable; les pôles flottants n'imposent pas une singularité globale.
+          10. Deux sources DC compatibles en série/parallèle suivent les règles Post-V2 P1 sans blocage arbitraire du câblage.
+          11. Deux sources idéales incompatibles peuvent être câblées mais produisent un diagnostic de conflit au calcul.
+          12. Le sens animé du courant DC suit le courant signé calculé, pas le sens de dessin du fil.
+          13. En AC, aucune animation unidirectionnelle fictive n'est imposée lorsqu'un sens instantané n'est pas défini.
+          14. Propriétés affiche Tension / Courant / Puissance et l'état physique du composant sélectionné, sans libellé « moteur » pour les autres composants.
+          15. Aucun NaN, infini, crash, gel, état visuel contradictoire ou singularité inexpliquée pendant ces essais.
+
+          Si les 15 points passent, signaler exactement :
+          CORE_UNIFY_PHYSICAL_MAC_PASS
+          EOF
+
+          ditto -c -k --sequesterRsrc --keepParent "$app_path"             "$out/ElectroSim_CORE_UNIFY_${base_sha:0:12}_macOS_Intel.zip"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - name: Package exact source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/audit/core-unify/source"
+          mkdir -p "$out"
+          base_sha="$(git rev-parse HEAD)"
+          git archive --format=zip             --output="$out/ElectroSim_CORE_UNIFY_SOURCE_${base_sha:0:12}.zip"             HEAD
+          printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
+          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-CORE-UNIFY-macOS-Intel
+          path: audit/core-unify/macos
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-CORE-UNIFY-source
+          path: audit/core-unify/source
+          if-no-files-found: error
+          retention-days: 14
+
+  automated-gate:
+    name: CORE-UNIFY automated final gate
+    needs:
+      - final-core
+      - macos-intel
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo CORE_UNIFY_AUTOMATED_FINAL_PASS
+          echo CORE_UNIFY_PHYSICAL_MAC_PASS=PENDING_USER_VALIDATION

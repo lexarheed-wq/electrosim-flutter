@@ -725,6 +725,13 @@ class _F9HealthOverlayPainter extends CustomPainter {
 }
 
 @visibleForTesting
+bool f9ShouldPaintCurrentFlow(
+  ConnectionCurrentEvidence flow, {
+  double minimumCurrentA = 1e-6,
+}) =>
+    flow.magnitudeA > minimumCurrentA;
+
+@visibleForTesting
 double f9CurrentFlowDashPhase({
   required double elapsedSeconds,
   required double speed,
@@ -767,7 +774,7 @@ class _F9CurrentFlowPainter extends CustomPainter {
       final ConnectionCurrentEvidence flow =
           runtime.connectionCurrentEvidence(connection);
       final double currentA = flow.magnitudeA;
-      if (currentA <= 1e-6) continue;
+      if (!f9ShouldPaintCurrentFlow(flow)) continue;
 
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];

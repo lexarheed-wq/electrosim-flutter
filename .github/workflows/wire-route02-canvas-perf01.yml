@@ -52,3 +52,12 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test
+
+      - name: Upload Flutter test failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wire-route02-test-failures
+          path: apps/electrosim/test/failures
+          if-no-files-found: ignore
+          retention-days: 7

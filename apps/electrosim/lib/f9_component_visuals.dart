@@ -724,6 +724,16 @@ class _F9HealthOverlayPainter extends CustomPainter {
       oldDelegate.state != state || oldDelegate.pulse != pulse;
 }
 
+@visibleForTesting
+double f9CurrentFlowDashPhase({
+  required double elapsedSeconds,
+  required double speed,
+  double cycle = 14,
+}) {
+  assert(cycle > 0);
+  return (elapsedSeconds * speed) % cycle;
+}
+
 class _F9CurrentFlowPainter extends CustomPainter {
   _F9CurrentFlowPainter({
     required this.circuit,
@@ -823,7 +833,11 @@ class _F9CurrentFlowPainter extends CustomPainter {
     const double dash = 2;
     const double gap = 12;
     const double cycle = dash + gap;
-    final double offset = (elapsedSeconds * speed) % cycle;
+    final double offset = f9CurrentFlowDashPhase(
+      elapsedSeconds: elapsedSeconds,
+      speed: speed,
+      cycle: cycle,
+    );
     final Paint paint = Paint()
       ..color = const Color(0xEBFFFFFF)
       ..strokeWidth = 1.8
@@ -831,7 +845,7 @@ class _F9CurrentFlowPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     for (final metric in path.computeMetrics()) {
-      double cursor = -offset;
+      double cursor = offset;
       while (cursor < metric.length) {
         final double start = math.max(0, cursor);
         final double end = math.min(metric.length, cursor + dash);

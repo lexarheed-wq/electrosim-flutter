@@ -1,9 +1,32 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:electrosim/f9_component_visuals.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 
 void main() {
+  test('dash phase follows signed conventional current', () {
+    final double forwardEarly = f9CurrentFlowDashPhase(
+      elapsedSeconds: 0.05,
+      speed: 20,
+    );
+    final double forwardLater = f9CurrentFlowDashPhase(
+      elapsedSeconds: 0.10,
+      speed: 20,
+    );
+    final double reverseEarly = f9CurrentFlowDashPhase(
+      elapsedSeconds: 0.05,
+      speed: -20,
+    );
+    final double reverseLater = f9CurrentFlowDashPhase(
+      elapsedSeconds: 0.10,
+      speed: -20,
+    );
+
+    expect(forwardLater, greaterThan(forwardEarly));
+    expect(reverseLater, lessThan(reverseEarly));
+  });
+
   test('DC wire flow follows solved current, not stored drawing direction', () {
     final Connection positiveWire = Connection(
       id: ConnectionId('positive-wire'),

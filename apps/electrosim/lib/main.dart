@@ -548,7 +548,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   @override
   void initState() {
     super.initState();
-    _circuit = widget.initialCircuit ?? _buildDemoCircuit();
+    _circuit = widget.initialCircuit ?? _buildBlankCircuit();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
     _ownsTpController = widget.tpSessionController == null;
@@ -3095,89 +3095,13 @@ class _StatusBar extends StatelessWidget {
   }
 }
 
-CircuitState _buildDemoCircuit() {
-  final Terminal sourcePositive = Terminal(
-    id: TerminalId('source-pos'),
-    name: '+',
-    role: TerminalRole.positive,
-    phase: PhaseTag.dcPositive,
-  );
-  final Terminal sourceNegative = Terminal(
-    id: TerminalId('source-neg'),
-    name: '−',
-    role: TerminalRole.negative,
-    phase: PhaseTag.dcNegative,
-  );
-  final Terminal switchIn = Terminal(
-    id: TerminalId('switch-in'),
-    name: '1',
-    role: TerminalRole.input,
-    phase: PhaseTag.dcPositive,
-  );
-  final Terminal switchOut = Terminal(
-    id: TerminalId('switch-out'),
-    name: '2',
-    role: TerminalRole.output,
-    phase: PhaseTag.dcPositive,
-  );
-  final Terminal lampIn = Terminal(
-    id: TerminalId('lamp-in'),
-    name: 'A',
-    role: TerminalRole.input,
-    phase: PhaseTag.dcPositive,
-  );
-  final Terminal lampOut = Terminal(
-    id: TerminalId('lamp-out'),
-    name: 'B',
-    role: TerminalRole.output,
-    phase: PhaseTag.dcNegative,
-  );
-
-  return CircuitState(
-    circuitId: CircuitId('f18-workspace-demo'),
-    revision: 1,
-    mode: ElectricalMode.dc,
-    sources: <SourceInstance>[
-      SourceInstance(
-        id: SourceId('source-24v'),
-        modelType: 'dc_voltage_source',
-        terminals: <Terminal>[sourcePositive, sourceNegative],
-        parameters: const <String, Object?>{'voltageV': 24.0},
-      ),
-    ],
-    components: <ComponentInstance>[
-      ComponentInstance(
-        id: ComponentId('switch-1'),
-        modelType: 'switch',
-        terminals: <Terminal>[switchIn, switchOut],
-        controlState: const <String, Object?>{'closed': true},
-      ),
-      ComponentInstance(
-        id: ComponentId('lamp-1'),
-        modelType: 'lamp',
-        terminals: <Terminal>[lampIn, lampOut],
-        parameters: const <String, Object?>{'resistanceOhm': 24.0},
-      ),
-    ],
-    connections: <Connection>[
-      Connection(
-        id: ConnectionId('wire-1'),
-        fromTerminalId: sourcePositive.id,
-        toTerminalId: switchIn.id,
-        phase: PhaseTag.dcPositive,
-      ),
-      Connection(
-        id: ConnectionId('wire-2'),
-        fromTerminalId: switchOut.id,
-        toTerminalId: lampIn.id,
-        phase: PhaseTag.dcPositive,
-      ),
-      Connection(
-        id: ConnectionId('wire-3'),
-        fromTerminalId: lampOut.id,
-        toTerminalId: sourceNegative.id,
-        phase: PhaseTag.dcNegative,
-      ),
-    ],
-  );
-}
+CircuitState _buildBlankCircuit() => const CircuitState(
+  circuitId: CircuitId('workspace-blank'),
+  revision: 0,
+  mode: ElectricalMode.dc,
+  components: <ComponentInstance>[],
+  connections: <Connection>[],
+  sources: <SourceInstance>[],
+  settings: <String, Object?>{},
+  metadata: <String, Object?>{'origin': 'blank-workspace'},
+);

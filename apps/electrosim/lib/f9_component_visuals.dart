@@ -49,6 +49,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   late final Ticker _ticker;
   double _motionBaseSeconds = 0;
 
+  CircuitState? _cachedCircuit;
+  CircuitVisualLayout? _cachedLayout;
+  CircuitGeometryIndex? _cachedGeometry;
+  WireSemantics? _cachedSemantics;
+  TerminalId? _cachedPendingTerminalId;
+  WirePreviewPlanner? _cachedWirePreviewPlanner;
+  WirePreviewSession? _cachedWirePreviewSession;
+  Map<TerminalId, F9WiringDecision> _cachedWiringDecisions =
+      const <TerminalId, F9WiringDecision>{};
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +73,86 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   @override
   void didUpdateWidget(F9CanvasVisualOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.circuit != widget.circuit ||
+        !identical(oldWidget.layout, widget.layout)) {
+      _cachedCircuit = null;
+      _cachedLayout = null;
+      _cachedGeometry = null;
+      _cachedSemantics = null;
+      _cachedPendingTerminalId = null;
+      _cachedWirePreviewPlanner = null;
+      _cachedWirePreviewSession = null;
+      _cachedWiringDecisions = const <TerminalId, F9WiringDecision>{};
+    } else if (oldWidget.pendingTerminalId != widget.pendingTerminalId ||
+        oldWidget.wirePreviewPlanner != widget.wirePreviewPlanner) {
+      _cachedPendingTerminalId = null;
+      _cachedWirePreviewPlanner = null;
+      _cachedWirePreviewSession = null;
+      _cachedWiringDecisions = const <TerminalId, F9WiringDecision>{};
+    }
     _syncMotion();
+  }
+
+  void _ensureOverlayCaches() {
+    final bool staticCacheInvalid =
+        _cachedGeometry == null ||
+        _cachedSemantics == null ||
+        _cachedCircuit != widget.circuit ||
+        !identical(_cachedLayout, widget.layout);
+
+    if (staticCacheInvalid) {
+      _cachedCircuit = widget.circuit;
+      _cachedLayout = widget.layout;
+      _cachedGeometry = CircuitGeometryIndex.build(
+        widget.circuit,
+        widget.layout,
+      );
+      _cachedSemantics = const WireSemanticsAnalyzer().analyze(
+        circuit: widget.circuit,
+        layout: widget.layout,
+      );
+      _cachedPendingTerminalId = null;
+      _cachedWirePreviewPlanner = null;
+      _cachedWirePreviewSession = null;
+      _cachedWiringDecisions = const <TerminalId, F9WiringDecision>{};
+    }
+
+    final TerminalId? pending = widget.pendingTerminalId;
+    final WirePreviewPlanner? planner = widget.wirePreviewPlanner;
+    final bool interactionCacheInvalid =
+        _cachedPendingTerminalId != pending ||
+        _cachedWirePreviewPlanner != planner;
+
+    if (!interactionCacheInvalid) return;
+
+    _cachedPendingTerminalId = pending;
+    _cachedWirePreviewPlanner = planner;
+    _cachedWirePreviewSession = pending == null || planner == null
+        ? null
+        : planner.prepare(
+            circuit: widget.circuit,
+            layout: widget.layout,
+            startTerminalId: pending,
+          );
+
+    if (pending == null) {
+      _cachedWiringDecisions = const <TerminalId, F9WiringDecision>{};
+      return;
+    }
+
+    final Map<TerminalId, F9WiringDecision> decisions =
+        <TerminalId, F9WiringDecision>{};
+    for (final TerminalId terminalId in _cachedGeometry!.terminalPositions.keys) {
+      if (terminalId == pending) continue;
+      decisions[terminalId] = F9WiringPolicy.evaluateAndBuild(
+        widget.circuit,
+        pending,
+        terminalId,
+      );
+    }
+    _cachedWiringDecisions = Map<TerminalId, F9WiringDecision>.unmodifiable(
+      decisions,
+    );
   }
 
   void _syncMotion() {
@@ -80,18 +169,17 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
   @override
   Widget build(BuildContext context) {
+    _ensureOverlayCaches();
+    final CircuitGeometryIndex geometry = _cachedGeometry!;
+    final WireSemantics semantics = _cachedSemantics!;
+    final WirePreviewSession? wirePreviewSession = _cachedWirePreviewSession;
+    final Map<TerminalId, F9WiringDecision> wiringDecisions =
+        _cachedWiringDecisions;
+
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: widget.viewport,
         builder: (BuildContext context, Widget? child) {
-          final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-            widget.circuit,
-            widget.layout,
-          );
-          final WireSemantics semantics = const WireSemanticsAnalyzer().analyze(
-            circuit: widget.circuit,
-            layout: widget.layout,
-          );
           return Stack(
             fit: StackFit.expand,
             children: <Widget>[
@@ -122,6 +210,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   hoverTerminalId: widget.hoverTerminalId,
                   pointerWorldPosition: widget.pointerWorldPosition,
                   wirePreviewPlanner: widget.wirePreviewPlanner,
+                  wirePreviewSession: wirePreviewSession,
+                  wiringDecisions: wiringDecisions,
                 ),
                 size: Size.infinite,
               ),
@@ -890,6 +980,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
     required this.hoverTerminalId,
     required this.pointerWorldPosition,
     required this.wirePreviewPlanner,
+    required this.wirePreviewSession,
+    required this.wiringDecisions,
   });
 
   final CircuitState circuit;
@@ -901,6 +993,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
+  final WirePreviewSession? wirePreviewSession;
+  final Map<TerminalId, F9WiringDecision> wiringDecisions;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1007,12 +1101,18 @@ class _F9StaticOverlayPainter extends CustomPainter {
     final WirePreviewPlanner? planner = wirePreviewPlanner;
     if (pending == null || pointer == null || planner == null) return;
 
-    final WirePreviewPlan plan = planner.plan(
-      circuit: circuit,
-      layout: layout,
-      startTerminalId: pending,
-      pointerWorldPosition: pointer,
-    );
+    final WirePreviewSession? session = wirePreviewSession;
+    final WirePreviewPlan plan = session == null
+        ? planner.plan(
+            circuit: circuit,
+            layout: layout,
+            startTerminalId: pending,
+            pointerWorldPosition: pointer,
+          )
+        : planner.planPrepared(
+            session: session,
+            pointerWorldPosition: pointer,
+          );
     if (!plan.route.isResolved) return;
 
     final List<Offset> points = plan.route.path!.points;
@@ -1141,11 +1241,9 @@ class _F9StaticOverlayPainter extends CustomPainter {
         in geometry.terminalPositions.entries) {
       final Offset screen = viewport.worldToScreen(entry.value);
       if (entry.key == pending) continue;
-      final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
-        circuit,
-        pending,
-        entry.key,
-      );
+      final F9WiringDecision decision =
+          wiringDecisions[entry.key] ??
+          F9WiringPolicy.evaluateAndBuild(circuit, pending, entry.key);
       final bool hovered = entry.key == hoverTerminalId;
       if (!decision.accepted && !hovered) continue;
       final Color color = decision.accepted

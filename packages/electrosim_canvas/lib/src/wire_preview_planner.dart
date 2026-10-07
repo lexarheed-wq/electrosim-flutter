@@ -36,10 +36,14 @@ final class WirePreviewSession {
     required this.startOwner,
     required this.startNetId,
     required this.baseObstacles,
-    required this.occupiedExcludingStartNet,
-    required this.terminalBuckets,
+    required List<_NetWirePath> occupiedExcludingStartNet,
+    required Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> terminalBuckets,
     required this.bucketSize,
-  });
+  }) : _occupiedExcludingStartNet = occupiedExcludingStartNet,
+       _terminalBuckets = terminalBuckets;
+
+  /*
+  */
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
@@ -50,8 +54,8 @@ final class WirePreviewSession {
   final String? startOwner;
   final String? startNetId;
   final List<RoutingObstacle> baseObstacles;
-  final List<_NetWirePath> occupiedExcludingStartNet;
-  final Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> terminalBuckets;
+  final List<_NetWirePath> _occupiedExcludingStartNet;
+  final Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> _terminalBuckets;
   final double bucketSize;
 }
 
@@ -265,7 +269,7 @@ final class WirePreviewPlanner {
         .toList(growable: false);
 
     Iterable<_NetWirePath> occupiedCandidates =
-        session.occupiedExcludingStartNet;
+        session._occupiedExcludingStartNet;
     if (targetNetId != null && targetNetId != session.startNetId) {
       occupiedCandidates = occupiedCandidates.where(
         (_NetWirePath entry) => entry.netId != targetNetId,
@@ -312,7 +316,7 @@ final class WirePreviewPlanner {
     for (var dx = -1; dx <= 1; dx++) {
       for (var dy = -1; dy <= 1; dy++) {
         final List<MapEntry<TerminalId, Offset>> candidates =
-            session.terminalBuckets[
+            session._terminalBuckets[
                   _TerminalBucket(center.x + dx, center.y + dy)
                 ] ??
                 const <MapEntry<TerminalId, Offset>>[];

@@ -723,72 +723,86 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               onPointerPanZoomUpdate:
                                   _onCanvasPointerPanZoomUpdate,
                               onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
-                              child: Stack(
-                                clipBehavior: Clip.hardEdge,
-                                fit: StackFit.expand,
-                                children: <Widget>[
-                                  SimulatorCanvas(
-                                    key: ValueKey<int>(_canvasInteractionEpoch),
-                                    circuit: _circuit,
-                                    layout: _layout,
-                                    viewportController: _viewport,
-                                    selectedElementId: _selected,
-                                    onSelectionChanged: (String? id) {
-                                      setState(() {
-                                        _selected = id;
-                                        _status = id == null
-                                            ? 'Sélection effacée'
-                                            : 'Sélection : $id';
-                                      });
+                              child: ValueListenableBuilder<
+                                CircuitVisualLayout?
+                              >(
+                                valueListenable: _dragPreviewLayout,
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      CircuitVisualLayout? dragLayout,
+                                      Widget? child,
+                                    ) {
+                                      final CircuitVisualLayout canvasLayout =
+                                          dragLayout ?? _layout;
+                                      return Stack(
+                                        clipBehavior: Clip.hardEdge,
+                                        fit: StackFit.expand,
+                                        children: <Widget>[
+                                          SimulatorCanvas(
+                                            key: ValueKey<int>(
+                                              _canvasInteractionEpoch,
+                                            ),
+                                            circuit: _circuit,
+                                            layout: canvasLayout,
+                                            viewportController: _viewport,
+                                            selectedElementId: _selected,
+                                            onSelectionChanged: (String? id) {
+                                              setState(() {
+                                                _selected = id;
+                                                _status = id == null
+                                                    ? 'Sélection effacée'
+                                                    : 'Sélection : $id';
+                                              });
+                                            },
+                                            onElementMoved:
+                                                (String id, Offset position) {
+                                                  _commitElementMoveIfSafe(
+                                                    id,
+                                                    position,
+                                                  );
+                                                },
+                                            onConnectionRequested:
+                                                _handleConnectionRequested,
+                                            onContextAction:
+                                                (CanvasHitResult hit) {
+                                                  setState(() {
+                                                    _status =
+                                                        'Action contextuelle : ' +
+                                                        hit.kind.name +
+                                                        '. Les mêmes actions sont disponibles dans Propriétés.';
+                                                  });
+                                                },
+                                            enableInteraction: false,
+                                            paintElementChrome: false,
+                                            smartWireSemantics: true,
+                                            wirePreviewPlanner:
+                                                _g2aWirePreviewPlanner,
+                                          ),
+                                          F9CanvasVisualOverlay(
+                                            circuit: _circuit,
+                                            layout: canvasLayout,
+                                            viewport: _viewport,
+                                            selectedElementIds: _selectedIds,
+                                            pendingTerminalId:
+                                                _wiringPendingTerminal,
+                                            hoverTerminalId:
+                                                _wiringHoverTerminal,
+                                            pointerWorldPosition:
+                                                _lastCanvasPointerLocal == null
+                                                ? null
+                                                : _viewport.screenToWorld(
+                                                    _lastCanvasPointerLocal!,
+                                                  ),
+                                            wirePreviewPlanner:
+                                                _g2aWirePreviewPlanner,
+                                            runtimeSnapshot: runtimeSnapshot,
+                                            simulationRunning:
+                                                _simulation.running,
+                                          ),
+                                        ],
+                                      );
                                     },
-                                    onElementMoved:
-                                        (String id, Offset position) {
-                                          _commitElementMoveIfSafe(
-                                            id,
-                                            position,
-                                          );
-                                        },
-                                    onConnectionRequested:
-                                        _handleConnectionRequested,
-                                    onContextAction: (CanvasHitResult hit) {
-                                      setState(() {
-                                        _status =
-                                            'Action contextuelle : ${hit.kind.name}. Les mêmes actions sont disponibles dans Propriétés.';
-                                      });
-                                    },
-                                    enableInteraction: false,
-                                    paintElementChrome: false,
-                                    wireLayoutEngine: _g2aWireLayoutEngine,
-                                    wirePreviewPlanner: _g2aWirePreviewPlanner,
-                                  ),
-                                  AnimatedBuilder(
-                                    animation: _viewport,
-                                    builder:
-                                        (
-                                          BuildContext context,
-                                          Widget? child,
-                                        ) => F9CanvasVisualOverlay(
-                                          circuit: _circuit,
-                                          layout: _layout,
-                                          viewport: _viewport,
-                                          selectedElementIds: _selectedIds,
-                                          pendingTerminalId:
-                                              _wiringPendingTerminal,
-                                          hoverTerminalId: _wiringHoverTerminal,
-                                          pointerWorldPosition:
-                                              _lastCanvasPointerLocal == null
-                                              ? null
-                                              : _viewport.screenToWorld(
-                                                  _lastCanvasPointerLocal!,
-                                                ),
-                                          wirePreviewPlanner:
-                                              _g2aWirePreviewPlanner,
-                                          runtimeSnapshot: runtimeSnapshot,
-                                          simulationRunning:
-                                              _simulation.running,
-                                        ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),

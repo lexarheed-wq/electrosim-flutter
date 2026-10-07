@@ -51,10 +51,9 @@ final class CircuitWireLayoutEngine {
         topology: topology,
         orderedConnections: order,
       );
-      if (best == null || candidate.resolvedCount > best.resolvedCount) {
+      if (best == null || candidate.isBetterThan(best)) {
         best = candidate;
       }
-      if (candidate.complete) return candidate.layout;
     }
     return best?.layout ?? layout;
   }
@@ -72,6 +71,10 @@ final class CircuitWireLayoutEngine {
     final List<_OccupiedRoute> occupied = <_OccupiedRoute>[];
     var eligibleCount = 0;
     var resolvedCount = 0;
+    var differentNetCrossingCount = 0;
+    var differentNetOverlapCount = 0;
+    var totalRouteLength = 0.0;
+    var totalBendCount = 0;
 
     final List<RoutingObstacle> obstacles = geometry.elementRects.values
         .map((Rect rect) => RoutingObstacle(bounds: rect))
@@ -160,6 +163,23 @@ final class CircuitWireLayoutEngine {
       // normal routing should make this branch exceptional.
       path ??= _emergencyOrthogonalPath(start, end);
 
+      differentNetCrossingCount +=
+          WireRouteSafety.countPerpendicularCrossings(
+            candidate: path,
+            occupiedDifferentNetPaths: differentNetPaths,
+          );
+      if (WireRouteSafety.hasCollinearOverlap(
+        candidate: path,
+        occupiedDifferentNetPaths: differentNetPaths,
+      )) {
+        differentNetOverlapCount += 1;
+      }
+      totalRouteLength += path.segments.fold<double>(
+        0,
+        (double sum, OrthogonalSegment segment) => sum + segment.length,
+      );
+      totalBendCount += path.bends.length;
+
       nextRoutes[connection.id.value] = path.points.length <= 2
           ? const <Offset>[]
           : List<Offset>.unmodifiable(
@@ -179,6 +199,10 @@ final class CircuitWireLayoutEngine {
       ),
       resolvedCount: resolvedCount,
       eligibleCount: eligibleCount,
+      differentNetCrossingCount: differentNetCrossingCount,
+      differentNetOverlapCount: differentNetOverlapCount,
+      totalRouteLength: totalRouteLength,
+      totalBendCount: totalBendCount,
     );
   }
 
@@ -327,11 +351,35 @@ final class _RoutePass {
     required this.layout,
     required this.resolvedCount,
     required this.eligibleCount,
+    required this.differentNetCrossingCount,
+    required this.differentNetOverlapCount,
+    required this.totalRouteLength,
+    required this.totalBendCount,
   });
 
   final CircuitVisualLayout layout;
   final int resolvedCount;
   final int eligibleCount;
+  final int differentNetCrossingCount;
+  final int differentNetOverlapCount;
+  final double totalRouteLength;
+  final int totalBendCount;
 
   bool get complete => resolvedCount >= eligibleCount;
+
+  bool isBetterThan(_RoutePass other) {
+    if (resolvedCount != other.resolvedCount) {
+      return resolvedCount > other.resolvedCount;
+    }
+    if (differentNetOverlapCount != other.differentNetOverlapCount) {
+      return differentNetOverlapCount < other.differentNetOverlapCount;
+    }
+    if (differentNetCrossingCount != other.differentNetCrossingCount) {
+      return differentNetCrossingCount < other.differentNetCrossingCount;
+    }
+    if (totalBendCount != other.totalBendCount) {
+      return totalBendCount < other.totalBendCount;
+    }
+    return totalRouteLength < other.totalRouteLength;
+  }
 }

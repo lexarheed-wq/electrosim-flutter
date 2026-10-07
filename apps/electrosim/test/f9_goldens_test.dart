@@ -4,6 +4,8 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/regression_fixture.dart';
+
 void main() {
   Future<void> pumpWorkspace(
     WidgetTester tester,
@@ -20,6 +22,7 @@ void main() {
         theme: ElectroSimTheme.light(),
         home: app.F9WorkspaceDemoPage(
           initialSelectedElementId: selected,
+          initialCircuit: buildRegressionFixtureCircuit(),
           role: role,
           initialWorkspace: workspace,
         ),

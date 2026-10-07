@@ -783,7 +783,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 (CanvasHitResult hit) {
                                                   setState(() {
                                                     _status =
-                                                        'Action contextuelle : \${hit.kind.name}. '
+                                                        'Action contextuelle : ${hit.kind.name}. '
                                                         'Les mêmes actions sont disponibles dans Propriétés.';
                                                   });
                                                 },
@@ -2060,7 +2060,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _wiringHoverTerminal = null;
       _status = routeRenderable
           ? decision.message
-          : '\${decision.message} Routage graphique provisoire.';
+          : '${decision.message} Routage graphique provisoire.';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();

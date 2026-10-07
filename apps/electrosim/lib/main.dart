@@ -419,11 +419,10 @@ class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
   }
 }
 
-/// Test/proof-only workspace fixture.
+/// Compatibility entry point used by legacy tests and proof binaries.
 ///
-/// Production navigation instantiates [F18WorkspacePage] directly and therefore
-/// always starts from the blank CORE-UNIFY board. This subclass preserves a
-/// deterministic circuit only for historical widget/golden regression tests.
+/// It no longer injects a product demo circuit. Callers that need a deterministic
+/// regression fixture must provide [initialCircuit] explicitly.
 class F9WorkspaceDemoPage extends F18WorkspacePage {
   const F9WorkspaceDemoPage({
     super.key,
@@ -441,9 +440,6 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.onExitWorkspace,
   });
 
-  @override
-  CircuitState? get initialCircuit =>
-      super.initialCircuit ?? _buildRegressionFixtureCircuit();
 }
 
 class F18WorkspacePage extends StatefulWidget {

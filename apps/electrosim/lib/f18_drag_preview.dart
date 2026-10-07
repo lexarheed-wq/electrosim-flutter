@@ -14,7 +14,7 @@ final class F18DragSession {
     required this.elementId,
     required this.basePosition,
     required List<_AttachedWire> attachedWires,
-  }) : attachedWires = List<_AttachedWire>.unmodifiable(attachedWires);
+  }) : _attachedWires = List<_AttachedWire>.unmodifiable(attachedWires);
 
   factory F18DragSession.begin({
     required CircuitState circuit,
@@ -73,7 +73,7 @@ final class F18DragSession {
   final CircuitVisualLayout baseLayout;
   final String elementId;
   final Offset basePosition;
-  final List<_AttachedWire> attachedWires;
+  final List<_AttachedWire> _attachedWires;
 
   CircuitVisualLayout previewAt(Offset position) {
     final Offset delta = position - basePosition;
@@ -81,12 +81,12 @@ final class F18DragSession {
       elementId,
       position,
     );
-    if (attachedWires.isEmpty) return moved;
+    if (_attachedWires.isEmpty) return moved;
 
     final Map<String, List<Offset>> routes = <String, List<Offset>>{
       ...baseLayout.wireRoutes,
     };
-    for (final _AttachedWire wire in attachedWires) {
+    for (final _AttachedWire wire in _attachedWires) {
       final Offset start = wire.startMoves
           ? wire.baseStart + delta
           : wire.baseStart;

@@ -283,9 +283,10 @@ final class WirePreviewPlanner {
             .toList(growable: false);
 
     return WirePreviewPlan(
-      route: router.route(
+      route: _fastPreviewRoute(
         start: start,
         end: end,
+        envelope: localEnvelope,
         obstacles: localObstacles,
         occupiedDifferentNetPaths: occupiedDifferentNetPaths,
       ),
@@ -293,6 +294,221 @@ final class WirePreviewPlanner {
       endPoint: end,
     );
   }
+
+  WireRouteResult _fastPreviewRoute({
+    required Offset start,
+    required Offset end,
+    required Rect envelope,
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+  }) {
+    final List<RoutingObstacle> expanded = obstacles
+        .map(
+          (RoutingObstacle obstacle) =>
+              obstacle.expanded(router.obstacleClearance),
+        )
+        .toList(growable: false);
+    final List<List<Offset>> candidates = <List<Offset>>[];
+
+    void addCandidate(List<Offset> raw) {
+      final List<Offset> normalized = _normalizePreviewPoints(raw);
+      if (normalized.length >= 2) candidates.add(normalized);
+    }
+
+    if (start.dx == end.dx || start.dy == end.dy) {
+      addCandidate(<Offset>[start, end]);
+    } else {
+      addCandidate(<Offset>[start, Offset(end.dx, start.dy), end]);
+      addCandidate(<Offset>[start, Offset(start.dx, end.dy), end]);
+    }
+
+    final double middleX = _snapPreview((start.dx + end.dx) / 2);
+    final double middleY = _snapPreview((start.dy + end.dy) / 2);
+    addCandidate(<Offset>[
+      start,
+      Offset(middleX, start.dy),
+      Offset(middleX, end.dy),
+      end,
+    ]);
+    addCandidate(<Offset>[
+      start,
+      Offset(start.dx, middleY),
+      Offset(end.dx, middleY),
+      end,
+    ]);
+
+    final List<double> xs = <double>[
+      _snapPreview(envelope.left),
+      _snapPreview(envelope.right),
+    ];
+    final List<double> ys = <double>[
+      _snapPreview(envelope.top),
+      _snapPreview(envelope.bottom),
+    ];
+    for (final RoutingObstacle obstacle in expanded) {
+      xs
+        ..add(_snapPreview(obstacle.bounds.left - router.grid))
+        ..add(_snapPreview(obstacle.bounds.right + router.grid));
+      ys
+        ..add(_snapPreview(obstacle.bounds.top - router.grid))
+        ..add(_snapPreview(obstacle.bounds.bottom + router.grid));
+    }
+
+    for (final double x in xs.toSet()) {
+      addCandidate(<Offset>[
+        start,
+        Offset(x, start.dy),
+        Offset(x, end.dy),
+        end,
+      ]);
+    }
+    for (final double y in ys.toSet()) {
+      addCandidate(<Offset>[
+        start,
+        Offset(start.dx, y),
+        Offset(end.dx, y),
+        end,
+      ]);
+    }
+
+    final OrthogonalWirePath? clean = _bestPreviewCandidate(
+      candidates,
+      obstacles: expanded,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: false,
+    );
+    if (clean != null) return WireRouteResult.resolved(clean);
+
+    final OrthogonalWirePath? bridged = _bestPreviewCandidate(
+      candidates,
+      obstacles: expanded,
+      occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      allowBridgedCrossings: true,
+    );
+    if (bridged != null) {
+      return WireRouteResult.resolved(
+        bridged,
+        usesBridgedCrossing: WireRouteSafety.countPerpendicularCrossings(
+              candidate: bridged,
+              occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+            ) >
+            0,
+      );
+    }
+
+    return const WireRouteResult.unresolved(
+      WireRouteFailure.noCrossingFreeRoute,
+    );
+  }
+
+  OrthogonalWirePath? _bestPreviewCandidate(
+    List<List<Offset>> candidates, {
+    required List<RoutingObstacle> obstacles,
+    required List<OrthogonalWirePath> occupiedDifferentNetPaths,
+    required bool allowBridgedCrossings,
+  }) {
+    OrthogonalWirePath? best;
+    double? bestCost;
+    for (final List<Offset> points in candidates) {
+      OrthogonalWirePath candidate;
+      try {
+        candidate = OrthogonalWirePath(points: points);
+      } on ArgumentError {
+        continue;
+      }
+      if (_previewHitsObstacle(candidate, obstacles)) continue;
+
+      if (allowBridgedCrossings) {
+        if (WireRouteSafety.hasCollinearOverlap(
+          candidate: candidate,
+          occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+        )) {
+          continue;
+        }
+      } else if (WireRouteSafety.hasDifferentNetCrossing(
+        candidate: candidate,
+        occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+      )) {
+        continue;
+      }
+
+      final int crossings = allowBridgedCrossings
+          ? WireRouteSafety.countPerpendicularCrossings(
+              candidate: candidate,
+              occupiedDifferentNetPaths: occupiedDifferentNetPaths,
+            )
+          : 0;
+      double length = 0;
+      for (final OrthogonalSegment segment in candidate.segments) {
+        length += segment.length;
+      }
+      final double cost =
+          length +
+          candidate.bends.length * router.bendPenalty +
+          crossings * router.crossingPenalty;
+      if (bestCost == null || cost < bestCost) {
+        best = candidate;
+        bestCost = cost;
+      }
+    }
+    return best;
+  }
+
+  static bool _previewHitsObstacle(
+    OrthogonalWirePath path,
+    List<RoutingObstacle> obstacles,
+  ) {
+    const double epsilon = 0.001;
+    for (final OrthogonalSegment segment in path.segments) {
+      for (final RoutingObstacle obstacle in obstacles) {
+        final Rect rect = obstacle.bounds;
+        if (segment.axis == WireAxis.horizontal) {
+          final bool yInside =
+              segment.start.dy > rect.top + epsilon &&
+              segment.start.dy < rect.bottom - epsilon;
+          final bool xOverlap =
+              segment.maxX > rect.left + epsilon &&
+              segment.minX < rect.right - epsilon;
+          if (yInside && xOverlap) return true;
+        } else {
+          final bool xInside =
+              segment.start.dx > rect.left + epsilon &&
+              segment.start.dx < rect.right - epsilon;
+          final bool yOverlap =
+              segment.maxY > rect.top + epsilon &&
+              segment.minY < rect.bottom - epsilon;
+          if (xInside && yOverlap) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  List<Offset> _normalizePreviewPoints(List<Offset> raw) {
+    final List<Offset> points = <Offset>[];
+    for (final Offset point in raw) {
+      if (points.isEmpty || points.last != point) points.add(point);
+    }
+    var changed = true;
+    while (changed && points.length > 2) {
+      changed = false;
+      for (var i = 1; i < points.length - 1; i++) {
+        final Offset a = points[i - 1];
+        final Offset b = points[i];
+        final Offset d = points[i + 1];
+        if ((a.dx == b.dx && b.dx == d.dx) ||
+            (a.dy == b.dy && b.dy == d.dy)) {
+          points.removeAt(i);
+          changed = true;
+          break;
+        }
+      }
+    }
+    return points;
+  }
+
+  double _snapPreview(double value) =>
+      (value / router.grid).roundToDouble() * router.grid;
 
   static String _connectionNetId(
     Connection connection,

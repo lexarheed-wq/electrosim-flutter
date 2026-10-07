@@ -9,6 +9,8 @@ dependencies:
     sdk: flutter
   electrosim_domain:
     path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
 dev_dependencies:
   flutter_test:
     sdk: flutter

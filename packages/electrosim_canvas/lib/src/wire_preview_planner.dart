@@ -36,8 +36,8 @@ final class WirePreviewSession {
     required this.startOwner,
     required this.startNetId,
     required this.baseObstacles,
-    required List<_NetWirePath> occupiedExcludingStartNet,
-    required Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>>
+    required List<NetWirePath> occupiedExcludingStartNet,
+    required Map<TerminalBucket, List<MapEntry<TerminalId, Offset>>>
         terminalBuckets,
     required this.bucketSize,
   }) : _occupiedExcludingStartNet = occupiedExcludingStartNet,
@@ -52,27 +52,27 @@ final class WirePreviewSession {
   final String? startOwner;
   final String? startNetId;
   final List<RoutingObstacle> baseObstacles;
-  final List<_NetWirePath> _occupiedExcludingStartNet;
-  final Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> _terminalBuckets;
+  final List<NetWirePath> _occupiedExcludingStartNet;
+  final Map<TerminalBucket, List<MapEntry<TerminalId, Offset>>> _terminalBuckets;
   final double bucketSize;
 }
 
-final class _NetWirePath {
-  const _NetWirePath(this.netId, this.path);
+final class NetWirePath {
+  const NetWirePath(this.netId, this.path);
 
   final String netId;
   final OrthogonalWirePath path;
 }
 
-final class _TerminalBucket {
-  const _TerminalBucket(this.x, this.y);
+final class TerminalBucket {
+  const TerminalBucket(this.x, this.y);
 
   final int x;
   final int y;
 
   @override
   bool operator ==(Object other) =>
-      other is _TerminalBucket && other.x == x && other.y == y;
+      other is TerminalBucket && other.x == x && other.y == y;
 
   @override
   int get hashCode => Object.hash(x, y);
@@ -111,7 +111,7 @@ final class WirePreviewPlanner {
         )
         .toList(growable: false);
 
-    final List<_NetWirePath> occupied = <_NetWirePath>[];
+    final List<NetWirePath> occupied = <NetWirePath>[];
     for (final Connection connection in circuit.connections) {
       final String connectionNet = _connectionNetId(connection, topology);
       if (startNetId != null && connectionNet == startNetId) continue;
@@ -124,7 +124,7 @@ final class WirePreviewPlanner {
 
       try {
         occupied.add(
-          _NetWirePath(
+          NetWirePath(
             connectionNet,
             OrthogonalWirePath(
               points: <Offset>[
@@ -141,12 +141,12 @@ final class WirePreviewPlanner {
     }
 
     final double bucketSize = terminalSnapRadius;
-    final Map<_TerminalBucket, List<MapEntry<TerminalId, Offset>>> buckets =
-        <_TerminalBucket, List<MapEntry<TerminalId, Offset>>>{};
+    final Map<TerminalBucket, List<MapEntry<TerminalId, Offset>>> buckets =
+        <TerminalBucket, List<MapEntry<TerminalId, Offset>>>{};
     for (final MapEntry<TerminalId, Offset> entry
         in geometry.terminalPositions.entries) {
       if (entry.key == startTerminalId) continue;
-      final _TerminalBucket bucket = _bucketFor(entry.value, bucketSize);
+      final TerminalBucket bucket = _bucketFor(entry.value, bucketSize);
       buckets.putIfAbsent(
         bucket,
         () => <MapEntry<TerminalId, Offset>>[],
@@ -163,12 +163,12 @@ final class WirePreviewPlanner {
       startOwner: startOwner,
       startNetId: startNetId,
       baseObstacles: List<RoutingObstacle>.unmodifiable(baseObstacles),
-      occupiedExcludingStartNet: List<_NetWirePath>.unmodifiable(occupied),
-      terminalBuckets: Map<_TerminalBucket,
+      occupiedExcludingStartNet: List<NetWirePath>.unmodifiable(occupied),
+      terminalBuckets: Map<TerminalBucket,
           List<MapEntry<TerminalId, Offset>>>.unmodifiable(
-        <_TerminalBucket, List<MapEntry<TerminalId, Offset>>>{
+        <TerminalBucket, List<MapEntry<TerminalId, Offset>>>{
           for (final MapEntry<
-              _TerminalBucket,
+              TerminalBucket,
               List<MapEntry<TerminalId, Offset>>> entry in buckets.entries)
             entry.key: List<MapEntry<TerminalId, Offset>>.unmodifiable(entry.value),
         },
@@ -266,20 +266,20 @@ final class WirePreviewPlanner {
         )
         .toList(growable: false);
 
-    Iterable<_NetWirePath> occupiedCandidates =
+    Iterable<NetWirePath> occupiedCandidates =
         session._occupiedExcludingStartNet;
     if (targetNetId != null && targetNetId != session.startNetId) {
       occupiedCandidates = occupiedCandidates.where(
-        (_NetWirePath entry) => entry.netId != targetNetId,
+        (NetWirePath entry) => entry.netId != targetNetId,
       );
     }
     final List<OrthogonalWirePath> occupiedDifferentNetPaths =
         occupiedCandidates
             .where(
-              (_NetWirePath entry) =>
+              (NetWirePath entry) =>
                   _pathOverlapsRect(entry.path, localEnvelope),
             )
-            .map((_NetWirePath entry) => entry.path)
+            .map((NetWirePath entry) => entry.path)
             .toList(growable: false);
 
     return WirePreviewPlan(
@@ -526,12 +526,12 @@ final class WirePreviewPlanner {
   }) {
     MapEntry<TerminalId, Offset>? best;
     double? bestDistance;
-    final _TerminalBucket center = _bucketFor(pointer, session.bucketSize);
+    final TerminalBucket center = _bucketFor(pointer, session.bucketSize);
     for (var dx = -1; dx <= 1; dx++) {
       for (var dy = -1; dy <= 1; dy++) {
         final List<MapEntry<TerminalId, Offset>> candidates =
             session._terminalBuckets[
-                  _TerminalBucket(center.x + dx, center.y + dy)
+                  TerminalBucket(center.x + dx, center.y + dy)
                 ] ??
                 const <MapEntry<TerminalId, Offset>>[];
         for (final MapEntry<TerminalId, Offset> entry in candidates) {
@@ -567,8 +567,8 @@ final class WirePreviewPlanner {
     return false;
   }
 
-  static _TerminalBucket _bucketFor(Offset point, double bucketSize) =>
-      _TerminalBucket(
+  static TerminalBucket _bucketFor(Offset point, double bucketSize) =>
+      TerminalBucket(
         (point.dx / bucketSize).floor(),
         (point.dy / bucketSize).floor(),
       );

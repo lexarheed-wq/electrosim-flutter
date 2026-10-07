@@ -104,6 +104,7 @@ jobs:
           git diff --check
           python3 tools/core_unify_architecture_guard.py
           python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py
 
       - name: Canvas and routing smoke tests on Intel runner
         shell: bash

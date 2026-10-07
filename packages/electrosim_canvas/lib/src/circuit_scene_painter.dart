@@ -21,7 +21,18 @@ final class CircuitScenePainter extends CustomPainter {
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
   }) : viewportScaleAtBuild = viewport.scale,
-       viewportTranslationAtBuild = viewport.translation;
+       viewportTranslationAtBuild = viewport.translation,
+       geometryAtBuild = CircuitGeometryIndex.build(
+         circuit,
+         layout,
+         previewPositions: previewPositions,
+       ),
+       semanticsAtBuild = smartWireSemantics
+           ? const WireSemanticsAnalyzer().analyze(
+               circuit: circuit,
+               layout: layout,
+             )
+           : null;
 
   final CircuitState circuit;
   final CircuitVisualLayout layout;
@@ -36,6 +47,8 @@ final class CircuitScenePainter extends CustomPainter {
   final double viewportScaleAtBuild;
   final Offset viewportTranslationAtBuild;
   final bool paintElementChrome;
+  final CircuitGeometryIndex geometryAtBuild;
+  final WireSemantics? semanticsAtBuild;
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -52,17 +65,8 @@ final class CircuitScenePainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, Paint()..color = boardColor);
     _paintGrid(canvas, size);
 
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-      circuit,
-      layout,
-      previewPositions: previewPositions,
-    );
-    final WireSemantics? semantics = smartWireSemantics
-        ? const WireSemanticsAnalyzer().analyze(
-            circuit: circuit,
-            layout: layout,
-          )
-        : null;
+    final CircuitGeometryIndex geometry = geometryAtBuild;
+    final WireSemantics? semantics = semanticsAtBuild;
     _paintWires(canvas, geometry);
     if (semantics != null) {
       _paintNonJunctionCrossingGaps(canvas, semantics);

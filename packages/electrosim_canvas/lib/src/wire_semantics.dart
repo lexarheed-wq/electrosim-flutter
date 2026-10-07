@@ -164,7 +164,7 @@ final class WireSemanticsAnalyzer {
     final String? from = topology.terminalToNode[connection.fromTerminalId];
     final String? to = topology.terminalToNode[connection.toTerminalId];
     if (connection.enabled && from != null && from == to) return from;
-    return 'connection:' + connection.id.value;
+    return 'connection:${connection.id.value}';
   }
 
   static bool _isSharedTerminalPoint({

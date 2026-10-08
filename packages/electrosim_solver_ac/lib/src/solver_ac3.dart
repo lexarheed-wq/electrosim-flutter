@@ -774,6 +774,7 @@ _CompiledAc3Model _compileModel(
           ),
         );
       case ComponentElectricalLaw.feedThrough:
+      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1699,7 +1700,8 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
-    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorDc:
+      case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:
@@ -1777,7 +1779,8 @@ Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
-    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorDc:
+      case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:
@@ -2074,10 +2077,10 @@ bool _balancedMagnitudes(List<AcComplex?> values, double relativeTolerance) {
       .map((AcComplex value) => value.magnitude)
       .toList(growable: false);
   final double maximum = magnitudes.reduce(
-    (double a, double b) => math.max(a, b),
+    math.max,
   );
   final double minimum = magnitudes.reduce(
-    (double a, double b) => math.min(a, b),
+    math.min,
   );
   if (maximum <= 1e-15) {
     return true;

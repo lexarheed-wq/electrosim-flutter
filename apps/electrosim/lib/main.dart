@@ -518,6 +518,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   String _status = 'ElectroSim F18 — espace de travail prêt';
+  bool _saveInProgress = false;
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
@@ -890,11 +891,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Future<void> _saveWorkspace() async {
     final ElectroSimPersistenceController? persistence =
         widget.persistenceController;
-    if (persistence == null) return;
+    if (persistence == null || _saveInProgress) return;
+    _saveInProgress = true;
     try {
       final saved = await persistence.saveWorkspace(
         circuit: _circuit,
         workspace: _workspace,
+        visualLayout: _layout,
         tpController: _tpController,
       );
       if (!mounted) return;
@@ -904,6 +907,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } catch (error) {
       if (!mounted) return;
       _setStatus('Échec de sauvegarde locale : $error');
+    } finally {
+      _saveInProgress = false;
     }
   }
 
@@ -924,7 +929,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _circuit = restored.circuit;
         _workspace = restored.workspace;
         _selected = null;
-        _layout = _layoutForCircuit(_circuit);
+        _layout = restored.visualLayout ?? _layoutForCircuit(_circuit);
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
       });

@@ -32,6 +32,7 @@ import 'f9_component_visuals.dart';
 import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
+import 'runtime/electrosim_connection_router.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -498,6 +499,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
+  final ElectroSimConnectionRouter _connectionRouter = ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
     scale: 1,
     translation: const Offset(40, 40),
@@ -2068,7 +2070,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _circuit,
       connection,
     );
-    final CircuitVisualLayout nextLayout = _routeWithG2A(nextCircuit, _layout);
+    final bool backgroundRouting =
+        nextCircuit.components.length + nextCircuit.sources.length >= 30;
+    final CircuitVisualLayout nextLayout = backgroundRouting
+        ? provisionalConnectionLayout(circuit: nextCircuit, layout: _layout,
+            connection: connection)
+        : _g2aWireLayoutEngine.routeConnection(circuit: nextCircuit,
+            layout: _layout, connectionId: connection.id);
     final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
       circuit: nextCircuit,
       layout: nextLayout,
@@ -2080,13 +2088,44 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
       _wiringPointerWorld.value = null;
-      _status = routeRenderable
+      _status = backgroundRouting
+          ? '${decision.message} Ajustement du trajet en cours…'
+          : routeRenderable
           ? decision.message
           : '${decision.message} Routage graphique provisoire.';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
+    if (backgroundRouting) {
+      unawaited(_finishConnectionRoute(nextCircuit, nextLayout,
+        connection.id, decision.message));
+    }
+  }
+
+  Future<void> _finishConnectionRoute(CircuitState circuit,
+      CircuitVisualLayout baseLayout, ConnectionId id, String message) async {
+    try {
+      final routed = await _connectionRouter.route(circuit: circuit,
+        layout: baseLayout, connectionId: id);
+      // A newer connection, component move or restored workspace owns the
+      // state now. Never overwrite it with an old background result.
+      if (!mounted || routed == null || !identical(_circuit, circuit) ||
+          !identical(_layout, baseLayout)) {
+        return;
+      }
+      setState(() {
+        _layout = routed;
+        _status = F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: routed)
+            ? message : '$message Routage graphique provisoire.';
+      });
+    } catch (error) {
+      if (!mounted || !identical(_circuit, circuit) ||
+          !identical(_layout, baseLayout)) {
+        return;
+      }
+      _setStatus('$message Trajet provisoire conservé : $error');
+    }
   }
 
   void _commitElementMoveIfSafe(
@@ -2752,6 +2791,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   void dispose() {
+    _connectionRouter.dispose();
     for (final Timer timer in _momentaryReleaseTimers.values) {
       timer.cancel();
     }

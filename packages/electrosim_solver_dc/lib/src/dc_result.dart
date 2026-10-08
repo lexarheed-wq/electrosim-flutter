@@ -6,6 +6,7 @@ enum DcSolveStatus { solved, singular, invalid }
 
 enum DcBranchKind {
   resistor,
+  motor,
   idealSwitch,
   idealShort,
   idealProtection,

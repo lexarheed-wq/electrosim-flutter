@@ -85,13 +85,27 @@ check("student-coach-not-reintroduced", "coach" not in panels.lower())
 check("single-delete-policy-no-properties-delete", "properties-delete-element" not in panels)
 check("single-delete-policy-topbar-delete", "onDeleteSelected:" in main)
 check("g10-does-not-import-bootstrap-catalog", "f16_catalog" not in g10_catalog.lower())
+# CORE-UNIFY first removed the old fixture-backed catalog. G10-RQ now
+# reintroduces clean, independent V2-native product content; never require
+# that the final product library remains empty after its own qualification.
+g10_examples = g10_examples_path.read_text(encoding="utf-8") if g10_examples_path.exists() else ""
+g10_faults = g10_faults_path.read_text(encoding="utf-8") if g10_faults_path.exists() else ""
 check(
-    "g10-product-library-restarts-empty",
-    "schemas: const <ExampleDefinition>[]" in g10_catalog
-    and "faultScenarios: const <FaultScenarioDefinition>[]" in g10_catalog,
+    "g10-native-schemas-present",
+    g10_examples_path.exists()
+    and "buildV2ProductExampleRepository" in g10_catalog
+    and "'origin': 'v2-native'" in g10_examples
+    and "'libraryKind': 'healthy-schema'" in g10_examples,
 )
-check("g10-obsolete-product-examples-removed", not g10_examples_path.exists())
-check("g10-obsolete-product-faults-removed", not g10_faults_path.exists())
+check(
+    "g10-native-independent-faults-present",
+    g10_faults_path.exists()
+    and "buildV2ProductFaultRepository" in g10_catalog
+    and "'autonomousFaultScenario': true" in g10_faults
+    and "'origin': 'v2-native'" in g10_faults
+    and "v2_product_examples" not in g10_faults
+    and all(x not in g10_faults.lower() for x in ("exampleid", "example_id", "examplecircuit")),
+)
 
 # Temporary payload/bootstrap files were useful during construction but must never
 # survive in the integration candidate.

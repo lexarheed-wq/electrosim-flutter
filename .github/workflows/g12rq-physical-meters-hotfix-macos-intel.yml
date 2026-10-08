@@ -1,0 +1,95 @@
+name: G12RQ physical meters palette hotfix - Flutter and Mac Intel
+on:
+  push:
+    branches:
+      - fix/g12rq-physical-meter-palette-visibility-20261008
+permissions:
+  contents: read
+concurrency:
+  group: g12rq-physical-meter-hotfix-mac
+  cancel-in-progress: true
+jobs:
+  flutter-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify instrument UI category and board placement
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub test/sim_r1_instrument_palette_discoverability_test.dart test/sim_r1_board_instrument_ui_test.dart test/sim_r1_physical_instrument_projection_test.dart
+      - name: Complete Flutter application suite
+        working-directory: apps/electrosim
+        run: flutter test --no-pub
+      - name: Recheck Canvas and UI kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_canvas electrosim_ui_kit; do
+            (cd "packages/$p" && flutter pub get && flutter analyze && flutter test)
+          done
+      - name: Electrical physics nonregressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_domain electrosim_solver_dc electrosim_solver_ac electrosim_measurements electrosim_pv; do
+            (cd "packages/$p" && dart pub get && dart analyze && dart test)
+          done
+      - name: Architecture guard
+        shell: bash
+        run: |
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+  macos-intel:
+    needs: flutter-regressions
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build and verify Intel macOS candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) root="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          exe="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$exe"
+          out="$base/electrosim-meter-hotfix-mac"
+          mkdir -p "$out"
+          file "$exe" | tee "$out/MAC_ARCH_PROOF.txt"
+          grep -qi x86_64 "$out/MAC_ARCH_PROOF.txt"
+          git -C "$base" rev-parse HEAD > "$out/SOURCE_SHA.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/ElectroSim_G12RQ_PhysicalMeters_Fix_macOS_Intel.zip"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-PhysicalMeters-Fix-macOS-Intel
+          path: electrosim-meter-hotfix-mac/
+          if-no-files-found: error
+          retention-days: 14

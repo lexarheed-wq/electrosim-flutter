@@ -24,13 +24,17 @@ final class ElectroSimSimulationController extends ChangeNotifier {
   Duration _simulatedTime = Duration.zero;
   Timer? _timer;
   bool _running = false;
+  bool _fastForwarding = false;
+  int _operationRevision = 0;
 
   CircuitState get circuit => _circuit;
   ElectroSimRuntimeSnapshot get snapshot => _snapshot;
   Duration get simulatedTime => _simulatedTime;
   bool get running => _running;
+  bool get fastForwarding => _fastForwarding;
 
   void updateCircuit(CircuitState next) {
+    _operationRevision++;
     final bool sameCircuit = next.circuitId == _circuit.circuitId;
     _circuit = next;
 
@@ -54,7 +58,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
   }
 
   void start() {
-    if (_running) return;
+    if (_fastForwarding || _running) return;
     _running = true;
     _timer = Timer.periodic(fixedStep, (_) {
       if (_running) {
@@ -101,7 +105,57 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Integrate physical runtime states over a requested simulated duration.
+  ///
+  /// Long intervals are split so protections, energy and minSOC are
+  /// re-evaluated during the interval rather than changing only the clock.
+  /// This is a reduced-fidelity long-time stepping policy, not a transient
+  /// RLC solver. Scheduling yields after every electrical solve, allowing
+  /// pointer interaction and cancellation between steps.
+  Future<void> advanceBy(Duration requested) async {
+    if (requested <= Duration.zero) {
+      throw ArgumentError.value(requested, 'requested',
+          'The simulation advance must be positive.');
+    }
+    if (_fastForwarding) return;
+    pause();
+    final int revision = ++_operationRevision;
+    _fastForwarding = true;
+    notifyListeners();
+    final Duration step = requested <= const Duration(minutes: 1)
+        ? const Duration(seconds: 1)
+        : requested <= const Duration(hours: 1)
+            ? const Duration(seconds: 30)
+            : const Duration(minutes: 5);
+    Duration remaining = requested;
+    try {
+      while (remaining > Duration.zero &&
+          revision == _operationRevision) {
+        final Duration elapsed = remaining < step ? remaining : step;
+        advance(elapsed);
+        remaining -= elapsed;
+        // One electrical solve may already exceed the frame budget for
+        // dense/nonlinear networks. Never add a synchronous batch on top.
+        await Future<void>.delayed(Duration.zero);
+      }
+    } finally {
+      if (revision == _operationRevision) {
+        _fastForwarding = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  void cancelAdvance() {
+    if (!_fastForwarding) return;
+    _operationRevision++;
+    _fastForwarding = false;
+    notifyListeners();
+  }
+
   void resetDynamics() {
+    _operationRevision++;
+    _fastForwarding = false;
     pause();
     _simulatedTime = Duration.zero;
     _snapshot = _runtimeEngine.evaluate(_circuit);
@@ -140,6 +194,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _operationRevision++;
     _timer?.cancel();
     _timer = null;
     _running = false;

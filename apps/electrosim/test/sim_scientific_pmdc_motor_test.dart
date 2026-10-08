@@ -52,8 +52,7 @@ CircuitState motorCircuit({double volts = 24.0, double resistance = 4.0}) {
 
 void main() {
   test('PMDC: startup current is U/R; rotor starts at rest', () {
-    final snapshot =
-        const ElectroSimRuntimeEngine().evaluate(motorCircuit());
+    final snapshot = const ElectroSimRuntimeEngine().evaluate(motorCircuit());
     expect(snapshot.solved, isTrue);
     expect(snapshot.dc.branch('component:m').currentA, closeTo(6.0, 1e-7));
     expect(snapshot.dc.branch('component:m').powerW, closeTo(144.0, 1e-6));
@@ -73,8 +72,9 @@ void main() {
     for (var i = 0; i < 19; i++) {
       controller.advance(const Duration(seconds: 1));
     }
-    final double atTwenty =
-        controller.snapshot.dc.branch('component:m').currentA!;
+    final double atTwenty = controller.snapshot.dc
+        .branch('component:m')
+        .currentA!;
     final double speedTwenty = controller.snapshot.motorAngularSpeedsRadS[id]!;
     expect(controller.snapshot.solved, isTrue);
     expect(speedTwenty, greaterThan(rpmOne));
@@ -91,13 +91,17 @@ void main() {
     final controller = ElectroSimSimulationController(circuit: motorCircuit());
     addTearDown(controller.dispose);
     controller.advance(const Duration(seconds: 5));
-    expect(controller.snapshot.motorAngularSpeedsRadS[ComponentId('m')]!, 
-        greaterThan(0.0));
+    expect(
+      controller.snapshot.motorAngularSpeedsRadS[ComponentId('m')]!,
+      greaterThan(0.0),
+    );
     controller.resetDynamics();
     expect(controller.snapshot.motorAngularSpeedsRadS[ComponentId('m')], 0.0);
     expect(controller.simulatedTime, Duration.zero);
-    expect(controller.snapshot.dc.branch('component:m').currentA, 
-        closeTo(6.0, 1e-7));
+    expect(
+      controller.snapshot.dc.branch('component:m').currentA,
+      closeTo(6.0, 1e-7),
+    );
   });
 
   test('PMDC: invalid negative inertia is rejected by the solver', () {

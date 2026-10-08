@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/services.dart';
 import 'package:electrosim/f18_premium_rcd2p_showcase.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +74,16 @@ void main() {
   testWidgets('actual Flutter raster: original 3D palette plus frontal board', (
     tester,
   ) async {
+    // Stock Flutter golden fonts replace letters with black blocks. Load an
+    // ordinary system font for an honest, readable visual review. This font
+    // is never packaged in the ElectroSim application or test artifact.
+    final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    if (font.existsSync()) {
+      final bytes = font.readAsBytesSync();
+      await (FontLoader('Roboto')
+            ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
+          .load();
+    }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

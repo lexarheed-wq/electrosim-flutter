@@ -521,26 +521,36 @@ final class ElectroSimRuntimeSnapshot {
 }
 
 final class _DcWireCurrentContext {
-  const _DcWireCurrentContext(this.externalLeavingA, this.connectionsByNode);
-  final Map<TerminalId, double> externalLeavingA;
-  final Map<String, List<Connection>> connectionsByNode;
+  const _DcWireCurrentContext(this.byConnection, this.connections);
+  final Map<ConnectionId, ConnectionCurrentEvidence> byConnection;
+  final Map<ConnectionId, Connection> connections;
 }
 
+final class _WireNeighbor {
+  const _WireNeighbor(this.connection, this.other);
+  final Connection connection;
+  final TerminalId other;
+}
+
+/// O(V+E) snapshot preparation: each wire is handled once using bridge
+/// detection. A wire within an ideal parallel loop has indeterminate current;
+/// never invent a signed flow or claim a physical magnitude for it.
 _DcWireCurrentContext _prepareDcWireCurrentContext(
   CircuitState circuit,
   TopologyGraph topology,
   DcSolveResult simulation,
 ) {
-  final resultsById = {
-    for (final branch in simulation.branchResults) branch.id: branch,
+  final Map<String, DcBranchResult> resultsById = <String, DcBranchResult>{
+    for (final DcBranchResult branch in simulation.branchResults)
+      branch.id: branch,
   };
   final Map<TerminalId, double> externalLeavingA = <TerminalId, double>{};
-  void add(TerminalId terminalId, double currentA) {
-    if (!currentA.isFinite) return;
+  void add(TerminalId terminal, double current) {
+    if (!current.isFinite) return;
     externalLeavingA.update(
-      terminalId,
-      (double value) => value + currentA,
-      ifAbsent: () => currentA,
+      terminal,
+      (value) => value + current,
+      ifAbsent: () => current,
     );
   }
 
@@ -552,36 +562,88 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
       final String resultId = branches.length == 1
           ? 'component:${component.id.value}'
           : 'component:${component.id.value}:${branch.branchId}';
-      final DcBranchResult? result = resultsById[resultId];
-      final double? currentA = result?.currentA;
-      if (currentA == null) continue;
-      add(branch.fromTerminalId, currentA);
-      add(branch.toTerminalId, -currentA);
+      final double? current = resultsById[resultId]?.currentA;
+      if (current == null) continue;
+      add(branch.fromTerminalId, current);
+      add(branch.toTerminalId, -current);
     }
   }
-
   for (final SourceInstance source in circuit.sources) {
     if (source.terminals.length < 2) continue;
-    final result = resultsById['source:${source.id.value}'];
-    final double? currentA = result?.currentA;
-    if (currentA == null) continue;
-    add(source.terminals[0].id, currentA);
-    add(source.terminals[1].id, -currentA);
+    final double? current = resultsById['source:${source.id.value}']?.currentA;
+    if (current == null) continue;
+    add(source.terminals[0].id, current);
+    add(source.terminals[1].id, -current);
   }
 
-  final connectionsByNode = <String, List<Connection>>{};
-  for (final connection in circuit.connections) {
+  final Map<TerminalId, List<_WireNeighbor>> adjacency =
+      <TerminalId, List<_WireNeighbor>>{};
+  final Map<ConnectionId, ConnectionCurrentEvidence> readings =
+      <ConnectionId, ConnectionCurrentEvidence>{};
+  for (final Connection connection in circuit.connections) {
     if (!connection.enabled ||
         !topology.enabledConnectionIds.contains(connection.id)) {
       continue;
     }
-    final node = topology.terminalToNode[connection.fromTerminalId];
-    if (node != null &&
-        node == topology.terminalToNode[connection.toTerminalId]) {
-      connectionsByNode.putIfAbsent(node, () => []).add(connection);
+    final String? fromNode = topology.terminalToNode[connection.fromTerminalId];
+    if (fromNode == null ||
+        fromNode != topology.terminalToNode[connection.toTerminalId]) {
+      continue;
+    }
+    adjacency
+        .putIfAbsent(connection.fromTerminalId, () => <_WireNeighbor>[])
+        .add(_WireNeighbor(connection, connection.toTerminalId));
+    adjacency
+        .putIfAbsent(connection.toTerminalId, () => <_WireNeighbor>[])
+        .add(_WireNeighbor(connection, connection.fromTerminalId));
+    readings[connection.id] = const ConnectionCurrentEvidence(
+      signedCurrentA: 0.0,
+      directionKnown: false,
+      alternating: false,
+    );
+  }
+
+  final Map<TerminalId, int> discovery = <TerminalId, int>{};
+  final Map<TerminalId, int> low = <TerminalId, int>{};
+  final Map<TerminalId, double> subtree = <TerminalId, double>{};
+  var sequence = 0;
+  void visit(TerminalId terminal, ConnectionId? incoming) {
+    final int index = ++sequence;
+    discovery[terminal] = index;
+    low[terminal] = index;
+    subtree[terminal] = externalLeavingA[terminal] ?? 0.0;
+    for (final _WireNeighbor edge in adjacency[terminal]!) {
+      if (edge.connection.id == incoming) continue;
+      final TerminalId target = edge.other;
+      if (!discovery.containsKey(target)) {
+        visit(target, edge.connection.id);
+        subtree[terminal] = subtree[terminal]! + subtree[target]!;
+        if (low[target]! < low[terminal]!) low[terminal] = low[target]!;
+        if (low[target]! > index) {
+          final double current = edge.connection.fromTerminalId == terminal
+              ? subtree[target]!
+              : -subtree[target]!;
+          readings[edge.connection.id] = ConnectionCurrentEvidence(
+            signedCurrentA: current.abs() < 1e-12 ? 0.0 : current,
+            directionKnown: true,
+            alternating: false,
+          );
+        }
+      } else if (discovery[target]! < low[terminal]!) {
+        low[terminal] = discovery[target]!;
+      }
     }
   }
-  return _DcWireCurrentContext(externalLeavingA, connectionsByNode);
+
+  for (final TerminalId terminal in adjacency.keys) {
+    if (!discovery.containsKey(terminal)) visit(terminal, null);
+  }
+  return _DcWireCurrentContext(
+    Map<ConnectionId, ConnectionCurrentEvidence>.unmodifiable(readings),
+    <ConnectionId, Connection>{
+      for (final Connection item in circuit.connections) item.id: item,
+    },
+  );
 }
 
 ConnectionCurrentEvidence _resolveDcConnectionCurrent({
@@ -591,62 +653,25 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
   required Connection connection,
   required _DcWireCurrentContext context,
 }) {
-  final String? nodeId = topology.terminalToNode[connection.fromTerminalId];
-  if (nodeId == null ||
-      topology.terminalToNode[connection.toTerminalId] != nodeId) {
+  final ConnectionCurrentEvidence? evidence =
+      context.byConnection[connection.id];
+  final Connection? physical = context.connections[connection.id];
+  if (evidence == null || physical == null) {
     return const ConnectionCurrentEvidence.zero();
   }
-
-  final externalLeavingA = context.externalLeavingA;
-  final nodeConnections =
-      context.connectionsByNode[nodeId] ?? const <Connection>[];
-
-  final Map<TerminalId, List<TerminalId>> adjacency =
-      <TerminalId, List<TerminalId>>{};
-  for (final Connection item in nodeConnections) {
-    if (item.id == connection.id) continue;
-    adjacency
-        .putIfAbsent(item.fromTerminalId, () => <TerminalId>[])
-        .add(item.toTerminalId);
-    adjacency
-        .putIfAbsent(item.toTerminalId, () => <TerminalId>[])
-        .add(item.fromTerminalId);
+  if (physical.fromTerminalId == connection.fromTerminalId &&
+      physical.toTerminalId == connection.toTerminalId) {
+    return evidence;
   }
-
-  final Set<TerminalId> fromSide = <TerminalId>{};
-  final List<TerminalId> pending = <TerminalId>[connection.fromTerminalId];
-  while (pending.isNotEmpty) {
-    final TerminalId terminal = pending.removeLast();
-    if (!fromSide.add(terminal)) continue;
-    for (final TerminalId next in adjacency[terminal] ?? const <TerminalId>[]) {
-      if (!fromSide.contains(next)) pending.add(next);
-    }
-  }
-
-  if (fromSide.contains(connection.toTerminalId)) {
-    // Multiple ideal-wire paths exist. The solver determines node current, but
-    // not a unique split between zero-impedance parallel conductors.
-    double magnitude = 0.0;
-    for (final double value in externalLeavingA.values) {
-      if (value.abs() > magnitude) magnitude = value.abs();
-    }
+  if (physical.fromTerminalId == connection.toTerminalId &&
+      physical.toTerminalId == connection.fromTerminalId) {
     return ConnectionCurrentEvidence(
-      signedCurrentA: magnitude,
-      directionKnown: false,
-      alternating: false,
+      signedCurrentA: -evidence.signedCurrentA,
+      directionKnown: evidence.directionKnown,
+      alternating: evidence.alternating,
     );
   }
-
-  double externalFromSideA = 0.0;
-  for (final TerminalId terminal in fromSide) {
-    externalFromSideA += externalLeavingA[terminal] ?? 0.0;
-  }
-  final double signedCurrentA = -externalFromSideA;
-  return ConnectionCurrentEvidence(
-    signedCurrentA: signedCurrentA.abs() < 1e-12 ? 0.0 : signedCurrentA,
-    directionKnown: true,
-    alternating: false,
-  );
+  return const ConnectionCurrentEvidence.zero();
 }
 
 final class ElectroSimRuntimeEngine {

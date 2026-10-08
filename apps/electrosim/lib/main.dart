@@ -661,6 +661,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       simulatedTime: _simulation.simulatedTime,
                       onToggleSimulation: _simulation.toggle,
                       onResetSimulation: _simulation.resetDynamics,
+                      simulationAdvancing: _simulation.fastForwarding,
+                      onAdvanceSimulation: (Duration elapsed) {
+                        unawaited(_advanceSimulation(elapsed));
+                      },
+                      onCancelAdvance: _simulation.cancelAdvance,
                     ),
               ),
               palette: F9ComponentPalette(
@@ -1434,6 +1439,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _meterReadoutCacheSecond = second;
     _meterReadoutCache = Map<String, String>.unmodifiable(results);
     return _meterReadoutCache;
+  }
+
+  Future<void> _advanceSimulation(Duration elapsed) async {
+    _setStatus('Avance du temps simulé en cours : ${elapsed.inMinutes} min.');
+    try {
+      await _simulation.advanceBy(elapsed);
+      if (mounted) {
+        _setStatus(
+          'Simulation à t=${_simulation.simulatedTime.inSeconds} s. '
+          'Résultats électriques recalculés.',
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) _setStatus('Avance temporelle interrompue : $error');
+    }
   }
 
   void _addPhysicalInstrument(
@@ -2646,21 +2666,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       } else {
         sizes.remove(selected);
       }
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
-          elementPositions: _layout.elementPositions,
-          elementSizes: sizes,
-          wireRoutes: _layout.wireRoutes,
-          elementQuarterTurns: _layout.elementQuarterTurns,
-          defaultElementSize: _layout.defaultElementSize,
-        ),
+      _layout = CircuitVisualLayout(
+        elementPositions: _layout.elementPositions,
+        elementSizes: sizes,
+        wireRoutes: _layout.wireRoutes,
+        elementQuarterTurns: _layout.elementQuarterTurns,
+        defaultElementSize: _layout.defaultElementSize,
       );
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
+    unawaited(_finishElementRoute(_circuit, _layout, selected));
   }
 
   void _toggleSelectedPrimaryState() {
@@ -2696,32 +2714,60 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitVisualLayout rotated = _layout.rotateElement(selected);
-    final CircuitVisualLayout candidate = _routeWithG2A(
-      _circuit,
-      CircuitVisualLayout(
-        elementPositions: rotated.elementPositions,
-        elementSizes: rotated.elementSizes,
-        elementQuarterTurns: rotated.elementQuarterTurns,
-        defaultElementSize: rotated.defaultElementSize,
-      ),
-    );
-    if (!F18WorkspaceWireSafety.isRenderable(
-      circuit: _circuit,
-      layout: candidate,
-    )) {
-      _setStatus(
-        'Rotation refusée : aucun routage sans croisement automatique.',
-      );
-      return;
-    }
-
+    final CircuitVisualLayout previous = _layout;
+    final CircuitVisualLayout provisional = previous.rotateElement(selected);
+    final CircuitState circuit = _circuit;
     setState(() {
-      _layout = candidate;
-      _status =
-          'Rotation 90° : $selected · ${_layout.quarterTurnsOf(selected) * 90}°';
+      _layout = provisional;
+      _status = 'Rotation 90° : $selected · routage en cours.';
     });
-    _announce(_status);
+    unawaited(_finishRotationRoute(circuit, provisional, previous, selected));
+  }
+
+  Future<void> _finishRotationRoute(
+    CircuitState circuit,
+    CircuitVisualLayout provisional,
+    CircuitVisualLayout previous,
+    String elementId,
+  ) async {
+    try {
+      final CircuitVisualLayout? routed = await _connectionRouter
+          .routeChangedElement(
+            circuit: circuit,
+            layout: provisional,
+            elementId: elementId,
+          );
+      if (!mounted ||
+          routed == null ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional)) {
+        return;
+      }
+      if (!F18WorkspaceWireSafety.isRenderable(
+        circuit: circuit,
+        layout: routed,
+      )) {
+        setState(() {
+          _layout = previous;
+          _status = 'Rotation refusée : fils non routables.';
+        });
+        return;
+      }
+      setState(() {
+        _layout = routed;
+        _status = 'Rotation 90° : $elementId';
+      });
+    } on Object catch (error) {
+      if (!mounted ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional)) {
+        return;
+      }
+      setState(() {
+        _layout = previous;
+        _status = 'Rotation annulée : $error';
+      });
+    }
   }
 
   void _deleteSelectedElement() {
@@ -2795,15 +2841,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }..remove(selected);
       setState(() {
         _circuit = next;
-        _layout = _routeWithG2A(
-          _circuit,
-          CircuitVisualLayout(
-            elementPositions: _layout.elementPositions,
-            elementSizes: _layout.elementSizes,
-            wireRoutes: routes,
-            elementQuarterTurns: _layout.elementQuarterTurns,
-            defaultElementSize: _layout.defaultElementSize,
-          ),
+        _layout = CircuitVisualLayout(
+          elementPositions: _layout.elementPositions,
+          elementSizes: _layout.elementSizes,
+          wireRoutes: routes,
+          elementQuarterTurns: _layout.elementQuarterTurns,
+          defaultElementSize: _layout.defaultElementSize,
         );
         _selected = null;
         _status = 'Suppression : fil — $selected';
@@ -2852,15 +2895,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         );
     setState(() {
       _circuit = next;
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
-          elementPositions: positions,
-          elementSizes: sizes,
-          wireRoutes: routes,
-          elementQuarterTurns: rotations,
-          defaultElementSize: _layout.defaultElementSize,
-        ),
+      _layout = CircuitVisualLayout(
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
       );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
@@ -2951,15 +2991,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     setState(() {
       _circuit = next;
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
-          elementPositions: positions,
-          elementSizes: sizes,
-          wireRoutes: routes,
-          elementQuarterTurns: rotations,
-          defaultElementSize: _layout.defaultElementSize,
-        ),
+      _layout = CircuitVisualLayout(
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
       );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
@@ -3235,6 +3272,9 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.simulatedTime,
     required this.onToggleSimulation,
     required this.onResetSimulation,
+    required this.simulationAdvancing,
+    required this.onAdvanceSimulation,
+    required this.onCancelAdvance,
   });
 
   final String entryLabel;
@@ -3255,6 +3295,9 @@ class _WorkspaceTopBar extends StatelessWidget {
   final Duration simulatedTime;
   final VoidCallback onToggleSimulation;
   final VoidCallback onResetSimulation;
+  final bool simulationAdvancing;
+  final ValueChanged<Duration> onAdvanceSimulation;
+  final VoidCallback onCancelAdvance;
 
   @override
   Widget build(BuildContext context) {
@@ -3383,16 +3426,48 @@ class _WorkspaceTopBar extends StatelessWidget {
                   ],
                   IconButton(
                     key: const Key('workspace-simulation-toggle'),
-                    tooltip: simulationRunning
+                    tooltip: simulationAdvancing
+                        ? 'Annuler l’avance temporelle'
+                        : simulationRunning
                         ? 'Mettre la simulation en pause'
                         : 'Démarrer la simulation',
-                    onPressed: onToggleSimulation,
+                    onPressed: simulationAdvancing
+                        ? onCancelAdvance
+                        : onToggleSimulation,
                     icon: Icon(
-                      simulationRunning
+                      simulationAdvancing
+                          ? Icons.stop_circle_outlined
+                          : simulationRunning
                           ? Icons.pause_circle_outline
                           : Icons.play_circle_outline,
                     ),
                   ),
+                  if (!compact)
+                    PopupMenuButton<Duration>(
+                      key: const Key('workspace-time-advance'),
+                      tooltip: 'Avancer le temps simulé',
+                      enabled: !simulationAdvancing,
+                      icon: const Icon(Icons.more_time_outlined),
+                      onSelected: onAdvanceSimulation,
+                      itemBuilder: (BuildContext context) =>
+                          const <PopupMenuEntry<Duration>>[
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-minute'),
+                              value: Duration(minutes: 1),
+                              child: Text('Avancer de +1 min'),
+                            ),
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-hour'),
+                              value: Duration(hours: 1),
+                              child: Text('Avancer de +1 h'),
+                            ),
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-day'),
+                              value: Duration(hours: 24),
+                              child: Text('Avancer de +24 h'),
+                            ),
+                          ],
+                    ),
                   IconButton(
                     key: const Key('workspace-rotate-action'),
                     tooltip: 'Rotation 90°',
@@ -3419,6 +3494,12 @@ class _WorkspaceTopBar extends StatelessWidget {
                           onRecenter();
                         case _WorkspaceSecondaryAction.resetSimulation:
                           onResetSimulation();
+                        case _WorkspaceSecondaryAction.advanceMinute:
+                          onAdvanceSimulation(const Duration(minutes: 1));
+                        case _WorkspaceSecondaryAction.advanceHour:
+                          onAdvanceSimulation(const Duration(hours: 1));
+                        case _WorkspaceSecondaryAction.advanceDay:
+                          onAdvanceSimulation(const Duration(hours: 24));
                       }
                     },
                     itemBuilder: (BuildContext context) =>
@@ -3452,6 +3533,23 @@ class _WorkspaceTopBar extends StatelessWidget {
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
+                          if (compact && !simulationAdvancing) ...const [
+                            PopupMenuItem<_WorkspaceSecondaryAction>(
+                              key: Key('workspace-time-plus-minute'),
+                              value: _WorkspaceSecondaryAction.advanceMinute,
+                              child: Text('Avancer de +1 min'),
+                            ),
+                            PopupMenuItem<_WorkspaceSecondaryAction>(
+                              key: Key('workspace-time-plus-hour'),
+                              value: _WorkspaceSecondaryAction.advanceHour,
+                              child: Text('Avancer de +1 h'),
+                            ),
+                            PopupMenuItem<_WorkspaceSecondaryAction>(
+                              key: Key('workspace-time-plus-day'),
+                              value: _WorkspaceSecondaryAction.advanceDay,
+                              child: Text('Avancer de +24 h'),
+                            ),
+                          ],
                           const PopupMenuItem<_WorkspaceSecondaryAction>(
                             key: Key('workspace-recenter-action'),
                             value: _WorkspaceSecondaryAction.recenter,
@@ -3473,7 +3571,15 @@ class _WorkspaceTopBar extends StatelessWidget {
   }
 }
 
-enum _WorkspaceSecondaryAction { save, open, recenter, resetSimulation }
+enum _WorkspaceSecondaryAction {
+  save,
+  open,
+  recenter,
+  resetSimulation,
+  advanceMinute,
+  advanceHour,
+  advanceDay,
+}
 
 class _DashboardDestination extends StatelessWidget {
   const _DashboardDestination({

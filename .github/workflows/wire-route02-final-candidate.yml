@@ -5,7 +5,6 @@ on:
     branches:
       - wire-route02-canvas-perf01-20261007
       - prebaseline-r2-perf-damage-20261007
-      - core-island01-prebaseline-r3-20261008
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,64 @@
+name: PREBASELINE-R3 core gate
+
+on:
+  push:
+    branches:
+      - core-island01-prebaseline-r3-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prebaseline-r3-core-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: PREBASELINE-R3 physics and app regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Architecture guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          python3 tools/f18_g11_audit.py
+
+      - name: Canonical physics packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in electrosim_domain electrosim_topology electrosim_solver_dc electrosim_solver_ac electrosim_pv electrosim_controls electrosim_measurements electrosim_diagnostics; do
+            (
+              cd "packages/$pkg"
+              dart pub get
+              dart analyze
+              dart test
+            )
+          done
+
+      - name: Application analyze and tests
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          git diff --exit-code -- pubspec.lock
+          flutter analyze
+          flutter test

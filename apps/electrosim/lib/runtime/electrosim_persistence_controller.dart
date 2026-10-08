@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'electrosim_tp_session_controller.dart';
+import 'electrosim_layout_persistence.dart';
 
 final class ElectroSimRestoredWorkspace {
   const ElectroSimRestoredWorkspace({
@@ -13,6 +15,7 @@ final class ElectroSimRestoredWorkspace {
     required this.circuit,
     required this.workspace,
     required this.updatedAtUtc,
+    this.visualLayout,
   });
 
   final String saveId;
@@ -20,6 +23,7 @@ final class ElectroSimRestoredWorkspace {
   final CircuitState circuit;
   final String workspace;
   final DateTime updatedAtUtc;
+  final CircuitVisualLayout? visualLayout;
 }
 
 final class ElectroSimPersistenceController {
@@ -45,6 +49,7 @@ final class ElectroSimPersistenceController {
   Future<SavedCircuitDocument> saveWorkspace({
     required CircuitState circuit,
     required String workspace,
+    CircuitVisualLayout? visualLayout,
     required ElectroSimTpSessionController tpController,
     String saveId = defaultSaveId,
     String title = 'Dernière session ElectroSim',
@@ -70,6 +75,8 @@ final class ElectroSimPersistenceController {
       engineVersion: engineVersion,
       appState: <String, Object?>{
         'workspace': workspace,
+        if (visualLayout != null)
+          'visualLayout': ElectroSimLayoutPersistence.encode(visualLayout),
         'tp': tpController.toPersistenceJson(),
       },
     );
@@ -108,6 +115,7 @@ final class ElectroSimPersistenceController {
       title: document.title,
       circuit: document.circuit,
       workspace: workspace,
+      visualLayout: ElectroSimLayoutPersistence.decode(document.appState['visualLayout']),
       updatedAtUtc: document.updatedAtUtc,
     );
   }

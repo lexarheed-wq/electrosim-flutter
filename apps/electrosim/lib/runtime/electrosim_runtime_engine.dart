@@ -540,11 +540,10 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
   TopologyGraph topology,
   DcSolveResult simulation,
 ) {
-  final Map<String, DcBranchResult> resultsById =
-      <String, DcBranchResult>{
-        for (final DcBranchResult branch in simulation.branchResults)
-          branch.id: branch,
-      };
+  final Map<String, DcBranchResult> resultsById = <String, DcBranchResult>{
+    for (final DcBranchResult branch in simulation.branchResults)
+      branch.id: branch,
+  };
   final Map<TerminalId, double> externalLeavingA = <TerminalId, double>{};
   void add(TerminalId terminal, double current) {
     if (!current.isFinite) return;
@@ -571,8 +570,7 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
   }
   for (final SourceInstance source in circuit.sources) {
     if (source.terminals.length < 2) continue;
-    final double? current =
-        resultsById['source:${source.id.value}']?.currentA;
+    final double? current = resultsById['source:${source.id.value}']?.currentA;
     if (current == null) continue;
     add(source.terminals[0].id, current);
     add(source.terminals[1].id, -current);
@@ -584,19 +582,19 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
       <ConnectionId, ConnectionCurrentEvidence>{};
   for (final Connection connection in circuit.connections) {
     if (!connection.enabled ||
-        !topology.enabledConnectionIds.contains(connection.id)) continue;
-    final String? fromNode =
-        topology.terminalToNode[connection.fromTerminalId];
+        !topology.enabledConnectionIds.contains(connection.id))
+      continue;
+    final String? fromNode = topology.terminalToNode[connection.fromTerminalId];
     if (fromNode == null ||
         fromNode != topology.terminalToNode[connection.toTerminalId]) {
       continue;
     }
-    adjacency.putIfAbsent(
-      connection.fromTerminalId, () => <_WireNeighbor>[],
-    ).add(_WireNeighbor(connection, connection.toTerminalId));
-    adjacency.putIfAbsent(
-      connection.toTerminalId, () => <_WireNeighbor>[],
-    ).add(_WireNeighbor(connection, connection.fromTerminalId));
+    adjacency
+        .putIfAbsent(connection.fromTerminalId, () => <_WireNeighbor>[])
+        .add(_WireNeighbor(connection, connection.toTerminalId));
+    adjacency
+        .putIfAbsent(connection.toTerminalId, () => <_WireNeighbor>[])
+        .add(_WireNeighbor(connection, connection.fromTerminalId));
     readings[connection.id] = const ConnectionCurrentEvidence(
       signedCurrentA: 0.0,
       directionKnown: false,
@@ -661,7 +659,8 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
     return const ConnectionCurrentEvidence.zero();
   }
   if (physical.fromTerminalId == connection.fromTerminalId &&
-      physical.toTerminalId == connection.toTerminalId) return evidence;
+      physical.toTerminalId == connection.toTerminalId)
+    return evidence;
   if (physical.fromTerminalId == connection.toTerminalId &&
       physical.toTerminalId == connection.fromTerminalId) {
     return ConnectionCurrentEvidence(

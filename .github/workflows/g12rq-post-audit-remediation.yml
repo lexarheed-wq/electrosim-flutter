@@ -24,9 +24,9 @@ jobs:
           set -euo pipefail
           git diff --check
           python3 tools/core_unify_architecture_guard.py
-          dart format apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
-          git --no-pager diff -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
-          git diff --exit-code -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
+          dart format apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart apps/electrosim/test/audit_400_batched_wire_current_test.dart
+          git --no-pager diff -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart apps/electrosim/test/audit_400_batched_wire_current_test.dart
+          git diff --exit-code -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart apps/electrosim/test/audit_400_batched_wire_current_test.dart
       - name: UI kit analysis and tests
         working-directory: packages/electrosim_ui_kit
         shell: bash
@@ -42,4 +42,4 @@ jobs:
           set -euo pipefail
           flutter pub get
           flutter analyze
-          flutter test --no-pub test/g12rq_postaudit_time_and_ui_test.dart test/core_island01_autonomous_storage_test.dart test/audit_canvas_routing_performance_test.dart test/connection_current_cache_test.dart test/core_unify_current_flow_test.dart test/sim_r1_board_instrument_ui_test.dart test/f18_g3_session_dashboard_test.dart
+          flutter test --no-pub test/g12rq_postaudit_time_and_ui_test.dart test/core_island01_autonomous_storage_test.dart test/audit_canvas_routing_performance_test.dart test/connection_current_cache_test.dart test/core_unify_current_flow_test.dart test/audit_400_batched_wire_current_test.dart test/sim_r1_board_instrument_ui_test.dart test/f18_g3_session_dashboard_test.dart

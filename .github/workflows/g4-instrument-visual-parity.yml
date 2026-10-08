@@ -1,0 +1,33 @@
+name: G4-RQ physical instrument visual parity and format
+on:
+  push:
+    branches:
+      - fix/sim-r1-visual-parity-20261008
+permissions:
+  contents: read
+jobs:
+  visual_parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Show canonical Dart 3.10.9 formatting delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/f18_g4_visual_framework_gate_test.dart apps/electrosim/test/f18_point5_component_visual_identity_test.dart
+          git --no-pager diff -- apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/f18_g4_visual_framework_gate_test.dart apps/electrosim/test/f18_point5_component_visual_identity_test.dart
+          test -z "$(git status --porcelain -- apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/f18_g4_visual_framework_gate_test.dart apps/electrosim/test/f18_point5_component_visual_identity_test.dart)"
+      - name: G4 critical visual families and instrument preview parity
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub test/f18_g4_visual_framework_gate_test.dart test/f18_point5_component_visual_identity_test.dart test/sim_r1_board_instrument_ui_test.dart

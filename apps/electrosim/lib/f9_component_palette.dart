@@ -36,6 +36,7 @@ class F9PaletteDefinition {
     this.defaultParameters = const <String, Object?>{},
     this.defaultControlState = const <String, Object?>{},
     this.supportedModes = const <ElectricalMode>{},
+    this.searchOnlyModes = const <ElectricalMode>{},
     this.visualModelType,
     this.visualVariant,
     this.displayLabel,
@@ -53,6 +54,7 @@ class F9PaletteDefinition {
   final Map<String, Object?> defaultParameters;
   final Map<String, Object?> defaultControlState;
   final Set<ElectricalMode> supportedModes;
+  final Set<ElectricalMode> searchOnlyModes;
   final String? visualModelType;
   final String? visualVariant;
   final String? displayLabel;
@@ -164,25 +166,6 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'Charge résistive',
   ),
   F9PaletteDefinition(
-    keyName: 'lamp-dc-48v',
-    title: 'Lampe 48 V CC',
-    category: 'Récepteurs',
-    modelType: 'lamp',
-    icon: Icons.lightbulb_outline,
-    kind: F9PaletteElementKind.component,
-    terminalLabels: <String>['A', 'B'],
-    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
-    defaultParameters: <String, Object?>{
-      ComponentParameterKeys.resistanceOhm: 48.0,
-      ReceiverNominalRating.voltageKey: 48.0,
-      ReceiverNominalRating.currentKey: 1.0,
-      ReceiverNominalRating.powerKey: 48.0,
-      ComponentParameterKeys.thermalWithstandSeconds: 0.5,
-    },
-    displayLabel: 'Lampe 48 V',
-    subtitle: '48 V CC · 48 W',
-  ),
-  F9PaletteDefinition(
     keyName: 'lamp-ac1-230v',
     title: 'Lampe 230 V AC',
     category: 'Récepteurs',
@@ -225,6 +208,27 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
     subtitle: 'Protection 2 bornes',
+  ),
+  F9PaletteDefinition(
+    keyName: 'lamp-dc-48v',
+    title: 'Lampe 48 V CC',
+    category: 'Récepteurs',
+    modelType: 'lamp',
+    icon: Icons.lightbulb_outline,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['A', 'B'],
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 48.0,
+      ReceiverNominalRating.voltageKey: 48.0,
+      ReceiverNominalRating.currentKey: 1.0,
+      ReceiverNominalRating.powerKey: 48.0,
+      ComponentParameterKeys.thermalWithstandSeconds: 0.5,
+    },
+    visualVariant: 'dc-48v',
+    displayLabel: 'Lampe 48 V',
+    subtitle: '48 V CC · 48 W',
   ),
   F9PaletteDefinition(
     keyName: 'push-button-no',
@@ -1052,13 +1056,14 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'pv-battery',
-    title: 'Batterie 48 V',
-    category: 'Stockage CC',
+    title: 'Batterie photovoltaïque',
+    category: 'Photovoltaïque',
     modelType: 'pv_battery',
     icon: Icons.battery_full,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
     supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc},
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '+',
@@ -1086,8 +1091,8 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'dischargeEfficiency': 0.95,
     },
     visualVariant: 'pv-battery',
-    displayLabel: 'Batterie 48 V',
-    subtitle: '48 V · 100 Ah · source DC autonome',
+    displayLabel: 'Batterie PV',
+    subtitle: '48 V · 100 Ah',
   ),
   F9PaletteDefinition(
     keyName: 'pv-inverter',
@@ -2067,6 +2072,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     return f9PaletteCatalog
         .where((F9PaletteDefinition item) {
           if (!item.supportsMode(widget.mode)) return false;
+          if (q.isEmpty && item.searchOnlyModes.contains(widget.mode)) {
+            return false;
+          }
           final bool categoryMatches =
               _category == 'Tous' || item.category == _category;
           final bool queryMatches =

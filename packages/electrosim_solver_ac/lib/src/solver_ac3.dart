@@ -376,10 +376,7 @@ final class SolverAC3 {
                         (PhaseTag phase) =>
                             lineCurrents[phase]?.magnitude ?? 0.0,
                       )
-                      .fold<double>(
-                        0.0,
-                        math.max,
-                      ),
+                      .fold<double>(0.0, math.max),
                 );
 
     final List<Ac3PhaseOrderObservation> observations =

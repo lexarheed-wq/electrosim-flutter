@@ -117,6 +117,18 @@ final class HitTestEngine {
     );
     if (terminal.kind == CanvasHitKind.terminal) return terminal;
 
+    // Instruments are independent drawable objects: treat them as selectable
+    // and movable, without inventing any electrical component branch.
+    for (final InstrumentInstance instrument in circuit.instruments.reversed) {
+      final Rect? rect = geometry.elementRects[instrument.id.value];
+      if (rect?.contains(worldPoint) ?? false) {
+        return CanvasHitResult(
+          kind: CanvasHitKind.component,
+          worldPosition: worldPoint,
+          elementId: instrument.id.value,
+        );
+      }
+    }
     for (final ComponentInstance component in circuit.components.reversed) {
       final Rect? rect = geometry.elementRects[component.id.value];
       if (rect?.contains(worldPoint) ?? false) {

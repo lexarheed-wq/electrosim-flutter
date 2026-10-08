@@ -485,10 +485,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       if (modelType == 'pv_inverter') {
         return pv.inverterOutputCurrentRmsA;
       }
-      if (modelType == 'pv_resistive_load') {
-        for (final load in pv.loadResults) {
-          if (load.componentId == id) return load.currentRmsA;
-        }
+      for (final load in pv.loadResults) {
+        if (load.componentId == id) return load.currentRmsA;
       }
     }
     return 0;
@@ -630,10 +628,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       if (modelType == 'pv_inverter') {
         return pv.inverterOutputVoltageRmsV;
       }
-      if (modelType == 'pv_resistive_load') {
-        for (final load in pv.loadResults) {
-          if (load.componentId == id) return load.voltageRmsV;
-        }
+      for (final load in pv.loadResults) {
+        if (load.componentId == id) return load.voltageRmsV;
       }
     }
     return value;

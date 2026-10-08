@@ -620,6 +620,45 @@ void main() {
       );
     });
 
+    test('PV-LOAD02 canonical 230 V lamp is powered by inverter output', () {
+      final CircuitState base = _pvCircuit(includeLoad: false);
+      final ComponentInstance lamp = ComponentInstance(
+        id: ComponentId('lamp230'),
+        modelType: 'lamp',
+        terminals: <Terminal>[
+          Terminal(id: TerminalId('lamp-a'), name: 'A'),
+          Terminal(id: TerminalId('lamp-b'), name: 'B'),
+        ],
+        parameters: const <String, Object?>{
+          'resistanceOhm': 529.0,
+          'receiverNominalVoltageV': 230.0,
+          'receiverNominalCurrentA': 0.43478260869565216,
+          'receiverNominalPowerW': 100.0,
+        },
+      );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('pv-canonical-lamp'),
+        revision: 0,
+        mode: ElectricalMode.pv,
+        components: <ComponentInstance>[...base.components, lamp],
+        connections: <Connection>[
+          ...base.connections,
+          _wire('lamp-l', 'inv-l', 'lamp-a', PhaseTag.l1),
+          _wire('lamp-n', 'inv-n', 'lamp-b', PhaseTag.neutral),
+        ],
+        sources: base.sources,
+        settings: base.settings,
+      );
+
+      final PvSolveResult result = solve(circuit);
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.inverterState, PvInverterState.running);
+      final PvLoadResult load = result.load(ComponentId('lamp230'));
+      expect(load.voltageRmsV, closeTo(230.0, 1e-9));
+      expect(load.currentRmsA, closeTo(100.0 / 230.0, 1e-9));
+      expect(load.activePowerW, closeTo(100.0, 1e-7));
+    });
+
     test('same PV input is deterministic', () {
       final CircuitState circuit = _pvCircuit(
         loadPowerAt230W: 2750.0,

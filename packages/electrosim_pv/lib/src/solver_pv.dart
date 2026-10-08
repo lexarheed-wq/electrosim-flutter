@@ -289,60 +289,74 @@ final class SolverPV {
               topology.nodeForTerminal(battery.terminals[1].id).id ==
                   inverterNegativeNode;
 
-    final List<ComponentInstance> loads =
+    final List<ComponentInstance> loadCandidates =
         circuit.components
-            .where(
-              (ComponentInstance component) =>
-                  _hasFunctionalRole(component, ComponentFunctionalRole.pvLoad),
-            )
+            .where((ComponentInstance component) {
+              final ComponentPhysicsContract physics =
+                  CoreComponentPhysicsContracts.resolveComponent(component);
+              return physics.functionalRole == ComponentFunctionalRole.pvLoad ||
+                  (physics.electricalLaw == ComponentElectricalLaw.resistive &&
+                      component.terminals.length == 2);
+            })
             .toList(growable: false)
           ..sort(
             (ComponentInstance a, ComponentInstance b) =>
                 a.id.value.compareTo(b.id.value),
           );
     final List<_LoadParameters> loadParameters = <_LoadParameters>[];
-    if (inverter == null && loads.isNotEmpty) {
-      diagnostics.add(
-        const PvSolverDiagnostic(
-          code: PvDiagnosticCode.missingInverter,
-          severity: PvDiagnosticSeverity.error,
-          message: 'PV AC loads require a pv_inverter component.',
-        ),
-      );
-      return _failure(circuit, diagnostics);
-    }
     final String? inverterLineNode = inverterTerminals == null
         ? null
         : topology.nodeForTerminal(inverterTerminals.acLine.id).id;
     final String? inverterNeutralNode = inverterTerminals == null
         ? null
         : topology.nodeForTerminal(inverterTerminals.acNeutral.id).id;
-    for (final ComponentInstance load in loads) {
-      final _LoadParameters? parameters = _loadParameters(load, diagnostics);
+    for (final ComponentInstance load in loadCandidates) {
+      final ComponentPhysicsContract physics =
+          CoreComponentPhysicsContracts.resolveComponent(load);
+      final bool explicitPvLoad =
+          physics.functionalRole == ComponentFunctionalRole.pvLoad;
+      if (inverter == null || inverterLineNode == null || inverterNeutralNode == null) {
+        if (explicitPvLoad) {
+          diagnostics.add(
+            PvSolverDiagnostic(
+              code: PvDiagnosticCode.missingInverter,
+              severity: PvDiagnosticSeverity.error,
+              message: 'PV AC load ${load.id.value} requires a pv_inverter component.',
+              componentId: load.id,
+            ),
+          );
+        }
+        continue;
+      }
+
       final _LoadTerminalContract? terminals = _loadTerminals(
         load,
         diagnostics,
+        allowGenericPair: !explicitPvLoad,
       );
-      if (parameters == null || terminals == null) {
+      if (terminals == null) continue;
+      final String firstNode = topology.nodeForTerminal(terminals.line.id).id;
+      final String secondNode = topology.nodeForTerminal(terminals.neutral.id).id;
+      final bool connectedToAcBus =
+          (firstNode == inverterLineNode && secondNode == inverterNeutralNode) ||
+          (firstNode == inverterNeutralNode && secondNode == inverterLineNode);
+      if (!connectedToAcBus) {
+        if (explicitPvLoad) {
+          diagnostics.add(
+            PvSolverDiagnostic(
+              code: PvDiagnosticCode.acOutputDisconnected,
+              severity: PvDiagnosticSeverity.error,
+              message:
+                  'PV load ${load.id.value} is not connected to the inverter AC output bus.',
+              componentId: load.id,
+            ),
+          );
+        }
         continue;
       }
-      final String lineNode = topology.nodeForTerminal(terminals.line.id).id;
-      final String neutralNode = topology
-          .nodeForTerminal(terminals.neutral.id)
-          .id;
-      if (lineNode != inverterLineNode || neutralNode != inverterNeutralNode) {
-        diagnostics.add(
-          PvSolverDiagnostic(
-            code: PvDiagnosticCode.acOutputDisconnected,
-            severity: PvDiagnosticSeverity.error,
-            message:
-                'PV load ${load.id.value} is not connected to the inverter AC output bus.',
-            componentId: load.id,
-          ),
-        );
-        continue;
-      }
-      loadParameters.add(parameters);
+
+      final _LoadParameters? parameters = _loadParameters(load, diagnostics);
+      if (parameters != null) loadParameters.add(parameters);
     }
     if (_hasErrors(diagnostics)) {
       return _failure(circuit, diagnostics);
@@ -1348,7 +1362,7 @@ final class SolverPV {
         PvSolverDiagnostic(
           code: PvDiagnosticCode.invalidLoadParameter,
           severity: PvDiagnosticSeverity.error,
-          message: 'pv_resistive_load requires positive resistanceOhm.',
+          message: 'PV resistive receiver requires positive resistanceOhm.',
           componentId: load.id,
         ),
       );
@@ -1426,26 +1440,33 @@ final class SolverPV {
 
   _LoadTerminalContract? _loadTerminals(
     ComponentInstance load,
-    List<PvSolverDiagnostic> diagnostics,
-  ) {
+    List<PvSolverDiagnostic> diagnostics, {
+    bool allowGenericPair = false,
+  }) {
     final Terminal? line = _terminalForPhase(load.terminals, PhaseTag.l1);
     final Terminal? neutral = _terminalForPhase(
       load.terminals,
       PhaseTag.neutral,
     );
-    if (line == null || neutral == null) {
-      diagnostics.add(
-        PvSolverDiagnostic(
-          code: PvDiagnosticCode.invalidTerminalContract,
-          severity: PvDiagnosticSeverity.error,
-          message:
-              'pv_resistive_load requires explicit l1 and neutral terminals.',
-          componentId: load.id,
-        ),
-      );
-      return null;
+    if (line != null && neutral != null) {
+      return _LoadTerminalContract(line: line, neutral: neutral);
     }
-    return _LoadTerminalContract(line: line, neutral: neutral);
+    if (allowGenericPair && load.terminals.length == 2) {
+      return _LoadTerminalContract(
+        line: load.terminals[0],
+        neutral: load.terminals[1],
+      );
+    }
+    diagnostics.add(
+      PvSolverDiagnostic(
+        code: PvDiagnosticCode.invalidTerminalContract,
+        severity: PvDiagnosticSeverity.error,
+        message:
+            'PV AC load requires two terminals connected across inverter L-N.',
+        componentId: load.id,
+      ),
+    );
+    return null;
   }
 
   _InverterAvailability _inverterAvailability(

@@ -154,6 +154,16 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
           evidenceId: 'pv:load:${component.id.value}',
         );
       case ComponentFunctionalRole.generic:
+        final PvLoadResult? load = _pvLoad(simulation, component.id);
+        if (load != null) {
+          return _fromExactValues(
+            component: component,
+            voltageV: load.voltageRmsV,
+            currentA: load.currentRmsA,
+            powerW: load.activePowerW,
+            evidenceId: 'pv:load:${component.id.value}',
+          );
+        }
         return ComponentOperatingState(
           componentId: component.id,
           code: ComponentOperatingCode.undetermined,
@@ -164,7 +174,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
             OperatingWarning(
               code: OperatingWarningCode.missingBranchResult,
               message:
-                  'No PV operating-state adapter exists for this canonical component role.',
+                  'No PV operating-state evidence exists for this component.',
             ),
           ],
           evidenceIds: <String>['component:${component.id.value}'],

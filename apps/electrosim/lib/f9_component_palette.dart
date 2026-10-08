@@ -173,7 +173,11 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.lightbulb_outline,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['A', 'B'],
-    supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+    supportedModes: <ElectricalMode>{
+      ElectricalMode.ac1,
+      ElectricalMode.ac3,
+      ElectricalMode.pv,
+    },
     defaultParameters: <String, Object?>{
       ComponentParameterKeys.resistanceOhm: 529.0,
       ReceiverNominalRating.voltageKey: 230.0,

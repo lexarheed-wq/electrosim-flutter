@@ -1,0 +1,2125 @@
+diff --git a/apps/electrosim/lib/f14_library_components.dart b/apps/electrosim/lib/f14_library_components.dart
+index 240960f..5b23167 100644
+--- a/apps/electrosim/lib/f14_library_components.dart
++++ b/apps/electrosim/lib/f14_library_components.dart
+@@ -54,10 +54,10 @@ abstract final class F14LibraryGeometry {
+     F14LibraryDevice.impedance => const Size(220, 110),
+     F14LibraryDevice.auxiliaryNo => const Size(120, 170),
+     F14LibraryDevice.auxiliaryNc => const Size(120, 170),
+-    F14LibraryDevice.contactorAc1 => const Size(160, 210),
+-    F14LibraryDevice.contactor3p => const Size(220, 240),
+-    F14LibraryDevice.breaker3p => const Size(190, 220),
+-    F14LibraryDevice.thermalOverload3p => const Size(200, 220),
++    F14LibraryDevice.contactorAc1 => const Size(110, 190),
++    F14LibraryDevice.contactor3p => const Size(145, 220),
++    F14LibraryDevice.breaker3p => const Size(120, 180),
++    F14LibraryDevice.thermalOverload3p => const Size(145, 180),
+   };
+ }
+ 
+@@ -141,9 +141,9 @@ final class _Painter {
+   Offset get c => rect.center;
+ 
+   Paint get outline => Paint()
+-    ..color = const Color(0xFF263746)
++    ..color = const Color(0xFF61717B)
+     ..style = PaintingStyle.stroke
+-    ..strokeWidth = math.max(1.1, s * .018)
++    ..strokeWidth = math.max(.7, s * .007)
+     ..strokeJoin = StrokeJoin.round
+     ..strokeCap = StrokeCap.round;
+ 
+@@ -167,6 +167,16 @@ final class _Painter {
+     );
+     canvas.drawRRect(rr, gradient(body, colors));
+     canvas.drawRRect(rr, outline);
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(
++        body.deflate(1.5),
++        Radius.circular(math.max(1, radius - 1)),
++      ),
++      Paint()
++        ..color = const Color(0xA0FFFFFF)
++        ..style = PaintingStyle.stroke
++        ..strokeWidth = .8,
++    );
+   }
+ 
+   void terminal(Offset p, {String? label}) {
+@@ -178,9 +188,9 @@ final class _Painter {
+         ..shader = const RadialGradient(
+           center: Alignment(-.35, -.35),
+           colors: <Color>[
+-            Color(0xFFFFE9A7),
+-            Color(0xFFC99538),
+-            Color(0xFF6D4B1E),
++            Color(0xFFF7FAFA),
++            Color(0xFF9CA9B0),
++            Color(0xFF52616B),
+           ],
+         ).createShader(Rect.fromCircle(center: p, radius: r)),
+     );
+@@ -212,6 +222,7 @@ final class _Painter {
+       text: TextSpan(
+         text: value,
+         style: TextStyle(
++          fontFamily: 'Roboto',
+           color: color,
+           fontSize: size ?? math.max(7, h * .07),
+           fontWeight: weight,
+@@ -411,111 +422,119 @@ final class _Painter {
+   }
+ 
+   void contactor({required bool singlePhase}) {
+-    final Rect body = Rect.fromCenter(
+-      center: c,
+-      width: singlePhase ? w * .68 : w * .72,
+-      height: h * .76,
+-    );
++    final body = Rect.fromCenter(center: c, width: w * .92, height: h * .94);
+     housing(
+       body,
+-      colors: const <Color>[Color(0xFFF8F8F5), Color(0xFFC9D0D4)],
+-      radius: h * .035,
+-    );
+-
+-    final int poles = singlePhase ? 1 : 3;
+-    final List<double> xs = poles == 1
+-        ? <double>[c.dx - body.width * .18]
+-        : <double>[c.dx - body.width * .28, c.dx, c.dx + body.width * .28];
+-    for (var i = 0; i < poles; i++) {
+-      final Offset top = Offset(xs[i], rect.top + h * .08);
+-      final Offset bottom = Offset(xs[i], rect.bottom - h * .08);
+-      terminal(
+-        top,
+-        label: poles == 1 ? '1L1' : <String>['1L1', '3L2', '5L3'][i],
+-      );
+-      terminal(
+-        bottom,
+-        label: poles == 1 ? '2T1' : <String>['2T1', '4T2', '6T3'][i],
+-      );
+-      lead(
+-        top.translate(0, h * .03),
+-        Offset(xs[i], body.top + body.height * .12),
+-      );
+-      lead(
+-        Offset(xs[i], body.bottom - body.height * .12),
+-        bottom.translate(0, -h * .03),
+-      );
+-      final Rect poleWindow = Rect.fromCenter(
+-        center: Offset(xs[i], c.dy - h * .02),
+-        width: body.width / (poles * 2.4),
+-        height: body.height * .30,
++      colors: const [Color(0xFFF8F8F3), Color(0xFFD5D8D3), Color(0xFFB7BDB8)],
++      radius: h * .022,
++    );
++    // Insulating terminal decks encompass the actual contact points.
++    for (final y in [rect.top + h * .035, rect.bottom - h * .145]) {
++      final deck = Rect.fromLTWH(
++        body.left + w * .025,
++        y,
++        body.width - w * .05,
++        h * .11,
+       );
+       canvas.drawRRect(
+-        RRect.fromRectAndRadius(poleWindow, Radius.circular(h * .02)),
+-        Paint()..color = const Color(0xFF36444D),
+-      );
+-      canvas.drawRect(
+-        Rect.fromCenter(
+-          center: poleWindow.center.translate(
+-            0,
+-            state.actuated ? poleWindow.height * .12 : -poleWindow.height * .12,
+-          ),
+-          width: poleWindow.width * .55,
+-          height: poleWindow.height * .24,
+-        ),
+-        Paint()
+-          ..color = state.actuated
+-              ? const Color(0xFF52A96B)
+-              : const Color(0xFFB8C1C7),
++        RRect.fromRectAndRadius(deck, Radius.circular(h * .012)),
++        gradient(deck, const [Color(0xFF3C464B), Color(0xFF172229)]),
+       );
+     }
+-
+-    final Offset a1 = Offset(rect.left + w * .08, c.dy + h * .08);
+-    final Offset a2 = Offset(rect.right - w * .08, c.dy + h * .08);
+-    terminal(a1, label: 'A1');
+-    terminal(a2, label: 'A2');
+-    final Rect coil = Rect.fromCenter(
+-      center: Offset(c.dx, body.bottom - body.height * .16),
+-      width: body.width * .34,
+-      height: body.height * .15,
++    final face = Rect.fromLTWH(
++      body.left + w * .08,
++      rect.top + h * .24,
++      body.width - w * .16,
++      h * .43,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(face, Radius.circular(h * .022)),
++      gradient(face, const [Color(0xFFFCFDF7), Color(0xFFDFE2DA)]),
+     );
+     canvas.drawRRect(
+-      RRect.fromRectAndRadius(coil, Radius.circular(h * .025)),
++      RRect.fromRectAndRadius(face, Radius.circular(h * .022)),
+       Paint()
+-        ..color = state.actuated
+-            ? const Color(0xFFD87831)
+-            : const Color(0xFF7B4C2C),
++        ..color = const Color(0xFF9FA9A1)
++        ..style = PaintingStyle.stroke
++        ..strokeWidth = .7,
+     );
+-    for (var i = 0; i < 6; i++) {
+-      final double x = coil.left + coil.width * (.12 + i * .15);
+-      canvas.drawLine(
+-        Offset(x, coil.top + coil.height * .16),
+-        Offset(x, coil.bottom - coil.height * .16),
+-        Paint()
+-          ..color = const Color(0xFFFFB36B)
+-          ..strokeWidth = math.max(1, s * .012),
++    text(
++      'CONTACTEUR',
++      Offset(c.dx, face.top + h * .07),
++      size: h * .045,
++      color: const Color(0xFF35735B),
++    );
++    final window = Rect.fromCenter(
++      center: Offset(c.dx, c.dy - h * .02),
++      width: w * .42,
++      height: h * .11,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(window, Radius.circular(h * .008)),
++      gradient(window, const [Color(0xFF0E171E), Color(0xFF34424D)]),
++    );
++    for (var i = 0; i < (singlePhase ? 1 : 3); i++) {
++      final x = singlePhase
++          ? window.center.dx
++          : window.left + window.width * (.23 + i * .27);
++      final movingBar = Rect.fromCenter(
++        center: Offset(
++          x,
++          window.center.dy + (state.actuated ? h * .012 : -h * .012),
++        ),
++        width: w * .06,
++        height: h * .075,
++      );
++      canvas.drawRect(
++        movingBar,
++        gradient(movingBar, const [Color(0xFFB8C3CA), Color(0xFF697A87)]),
+       );
+     }
+     text(
+-      state.actuated ? 'I' : 'O',
+-      Offset(c.dx, body.top + h * .09),
+-      size: h * .11,
+-      color: state.actuated ? const Color(0xFF167A3E) : const Color(0xFF5A6871),
++      singlePhase ? '1 PÔLE' : '3 PÔLES',
++      Offset(c.dx, face.bottom - h * .035),
++      size: h * .045,
++    );
++    // Keep the established electrical terminal order and exact anchor fractions.
++    final xs = singlePhase
++        ? [c.dx - w * .1224]
++        : [c.dx - w * .2016, c.dx, c.dx + w * .2016];
++    for (var i = 0; i < xs.length; i++) {
++      terminal(
++        Offset(xs[i], rect.top + h * .08),
++        label: singlePhase ? '1L1' : ['1L1', '3L2', '5L3'][i],
++      );
++      terminal(
++        Offset(xs[i], rect.bottom - h * .08),
++        label: singlePhase ? '2T1' : ['2T1', '4T2', '6T3'][i],
++      );
++    }
++    terminal(Offset(rect.left + w * .08, c.dy + h * .08), label: 'A1');
++    terminal(Offset(rect.right - w * .08, c.dy + h * .08), label: 'A2');
++    // Mechanical state flag, not a simulated pilot lamp.
++    final flag = Rect.fromLTWH(
++      c.dx - w * .07,
++      rect.top + h * .72,
++      w * .14,
++      h * .045,
++    );
++    canvas.drawRect(
++      flag,
++      Paint()
++        ..color = state.actuated
++            ? const Color(0xFF3B8058)
++            : const Color(0xFF66716D),
+     );
+   }
+ 
+   void breaker3p() {
+     final Rect body = Rect.fromCenter(
+       center: c,
+-      width: w * .72,
+-      height: h * .78,
++      width: w * .86,
++      height: h * .94,
+     );
+     housing(body, radius: h * .03);
+-    final List<double> xs = <double>[
+-      c.dx - body.width * .28,
+-      c.dx,
+-      c.dx + body.width * .28,
+-    ];
++    final List<double> xs = <double>[c.dx - w * .2016, c.dx, c.dx + w * .2016];
+     for (var i = 0; i < 3; i++) {
+       final Offset top = Offset(xs[i], rect.top + h * .08);
+       final Offset bottom = Offset(xs[i], rect.bottom - h * .08);
+@@ -545,12 +564,19 @@ final class _Painter {
+         gradient(lever, const <Color>[Color(0xFF515E67), Color(0xFF172027)]),
+       );
+     }
+-    text('C10  3P', Offset(c.dx, body.top + h * .08), size: h * .07);
++    final badge = Rect.fromLTWH(
++      body.left + w * .06,
++      rect.top + h * .21,
++      body.width - w * .12,
++      h * .015,
++    );
++    canvas.drawRect(badge, Paint()..color = const Color(0xFF5A7380));
++    text('3 PÔLES', Offset(c.dx, rect.top + h * .255), size: h * .052);
+     final Color indicator = state.tripped
+         ? const Color(0xFFD64545)
+         : (state.closed ? const Color(0xFF3AA964) : const Color(0xFF9AA7AE));
+     canvas.drawCircle(
+-      Offset(c.dx, body.bottom - h * .08),
++      Offset(c.dx, rect.top + h * .75),
+       h * .025,
+       Paint()..color = indicator,
+     );
+@@ -559,19 +585,33 @@ final class _Painter {
+   void thermalOverload3p() {
+     final Rect body = Rect.fromCenter(
+       center: c,
+-      width: w * .74,
+-      height: h * .76,
++      width: w * .88,
++      height: h * .94,
+     );
+     housing(
+       body,
+       colors: const <Color>[Color(0xFFF3F1EA), Color(0xFFC8C4B7)],
+       radius: h * .035,
+     );
+-    final List<double> xs = <double>[
+-      c.dx - body.width * .28,
+-      c.dx,
+-      c.dx + body.width * .28,
+-    ];
++    final face = Rect.fromLTWH(
++      body.left + w * .055,
++      rect.top + h * .15,
++      body.width - w * .11,
++      h * .59,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(face, Radius.circular(h * .018)),
++      gradient(face, const [Color(0xFFF9F8F1), Color(0xFFDEDED1)]),
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(face, Radius.circular(h * .018)),
++      Paint()
++        ..color = const Color(0xFFAAAFA4)
++        ..style = PaintingStyle.stroke
++        ..strokeWidth = .6,
++    );
++
++    final List<double> xs = <double>[c.dx - w * .2072, c.dx, c.dx + w * .2072];
+     for (var i = 0; i < 3; i++) {
+       terminal(
+         Offset(xs[i], rect.top + h * .08),
+@@ -581,25 +621,8 @@ final class _Painter {
+         Offset(xs[i], rect.bottom - h * .08),
+         label: <String>['2T1', '4T2', '6T3'][i],
+       );
+-      final Rect path = Rect.fromCenter(
+-        center: Offset(xs[i], c.dy + h * .08),
+-        width: body.width * .13,
+-        height: body.height * .30,
+-      );
+-      canvas.drawRRect(
+-        RRect.fromRectAndRadius(path, Radius.circular(h * .02)),
+-        Paint()..color = const Color(0xFF59666D),
+-      );
+-      canvas.drawLine(
+-        Offset(path.center.dx, path.top + path.height * .18),
+-        Offset(path.center.dx, path.bottom - path.height * .18),
+-        Paint()
+-          ..color = state.tripped
+-              ? const Color(0xFFE04D45)
+-              : const Color(0xFFEBB04C)
+-          ..strokeWidth = math.max(2, s * .02),
+-      );
+     }
++
+     final Offset dial = Offset(
+       c.dx - body.width * .20,
+       body.top + body.height * .22,
+@@ -615,13 +638,49 @@ final class _Painter {
+         ..strokeWidth = math.max(1.2, s * .012)
+         ..style = PaintingStyle.stroke,
+     );
++    for (var i = 0; i < 7; i++) {
++      final angle = -math.pi * .75 + i * math.pi * 1.5 / 6;
++      final delta = Offset(math.cos(angle), math.sin(angle));
++      canvas.drawLine(
++        dial + delta * h * .085,
++        dial + delta * h * .095,
++        Paint()
++          ..color = const Color(0xFF56625A)
++          ..strokeWidth = .8,
++      );
++    }
++    canvas.drawLine(
++      dial,
++      dial + Offset(h * .034, -h * .039),
++      Paint()
++        ..color = const Color(0xFFF5F8F3)
++        ..strokeWidth = 1.7,
++    );
++    for (final entry in [
++      ('STOP', .21, const Color(0xFFAA302C), const Color(0xFFE37669)),
++      ('RESET', .31, const Color(0xFF1D5785), const Color(0xFF6AA8C9)),
++    ]) {
++      final button = Rect.fromCenter(
++        center: Offset(c.dx + body.width * .21, rect.top + h * entry.$2),
++        width: w * .25,
++        height: h * .075,
++      );
++      canvas.drawRRect(
++        RRect.fromRectAndRadius(
++          button.shift(Offset(0, h * .008)),
++          Radius.circular(2),
++        ),
++        Paint()..color = const Color(0xFF3D4240),
++      );
++      canvas.drawRRect(
++        RRect.fromRectAndRadius(button, Radius.circular(2)),
++        gradient(button, [entry.$4, entry.$3]),
++      );
++      text(entry.$1, button.center, size: h * .035, color: Colors.white);
++    }
++    text('3 PÔLES', Offset(c.dx, rect.top + h * .59), size: h * .052);
+     text(
+-      'RESET',
+-      Offset(c.dx + body.width * .18, body.top + body.height * .18),
+-      size: h * .055,
+-    );
+-    text(
+-      state.tripped ? 'TRIP' : '5.0 A',
++      state.tripped ? 'TRIP' : 'THERMIQUE',
+       Offset(c.dx, body.top + body.height * .38),
+       size: h * .075,
+       color: state.tripped ? const Color(0xFFB42318) : const Color(0xFF34454F),
+diff --git a/apps/electrosim/lib/f17_three_phase_components.dart b/apps/electrosim/lib/f17_three_phase_components.dart
+index 129b799..192d118 100644
+--- a/apps/electrosim/lib/f17_three_phase_components.dart
++++ b/apps/electrosim/lib/f17_three_phase_components.dart
+@@ -1,6 +1,7 @@
+ import 'dart:math' as math;
+ 
+ import 'package:flutter/material.dart';
++import 'package:electrosim_canvas/electrosim_canvas.dart';
+ 
+ enum F17ThreePhaseDevice { motor6t, wyeLoad, deltaLoad }
+ 
+@@ -93,8 +94,8 @@ final class _P {
+   double get s => rect.shortestSide;
+ 
+   Paint get outline => Paint()
+-    ..color = const Color(0xFF2D3A42)
+-    ..strokeWidth = math.max(1.2, s * .016)
++    ..color = const Color(0xFF365463)
++    ..strokeWidth = math.max(.8, s * .006)
+     ..style = PaintingStyle.stroke
+     ..strokeCap = StrokeCap.round
+     ..strokeJoin = StrokeJoin.round;
+@@ -116,6 +117,7 @@ final class _P {
+       text: TextSpan(
+         text: value,
+         style: TextStyle(
++          fontFamily: 'Roboto',
+           fontSize: size ?? math.max(7, h * .055),
+           fontWeight: FontWeight.w700,
+           color: color,
+@@ -172,95 +174,159 @@ final class _P {
+   };
+ 
+   void motor6t() {
+-    final Rect shell = Rect.fromCenter(
+-      center: Offset(c.dx, c.dy - h * .01),
+-      width: w * .60,
+-      height: h * .54,
++    final shell = Rect.fromLTWH(
++      rect.left + w * .17,
++      rect.top + h * .37,
++      w * .65,
++      h * .43,
+     );
+-    final RRect rr = RRect.fromRectAndRadius(shell, Radius.circular(h * .17));
++    final body = RRect.fromRectAndRadius(shell, Radius.circular(h * .10));
+     canvas.drawRRect(
+-      rr.shift(Offset(0, h * .018)),
+-      Paint()..color = const Color(0x26000000),
++      body.shift(Offset(0, h * .018)),
++      Paint()..color = const Color(0x35000000),
+     );
++    // Cast mounting feet and their fixing holes.
++    for (final x in [shell.left + w * .08, shell.right - w * .14]) {
++      final foot = Rect.fromLTWH(x, shell.bottom - h * .03, w * .14, h * .10);
++      canvas.drawRRect(
++        RRect.fromRectAndRadius(foot, Radius.circular(h * .016)),
++        grad(foot, const [Color(0xFF2C79AC), Color(0xFF0B3353)]),
++      );
++      canvas.drawOval(
++        Rect.fromCenter(
++          center: foot.center.translate(0, h * .025),
++          width: w * .045,
++          height: h * .018,
++        ),
++        Paint()..color = const Color(0xFF142C3F),
++      );
++    }
+     canvas.drawRRect(
+-      rr,
+-      grad(shell, const <Color>[
+-        Color(0xFFE7ECEF),
+-        Color(0xFF9AA8B0),
+-        Color(0xFF687780),
++      body,
++      grad(shell, const [
++        Color(0xFF3D91BE),
++        Color(0xFF1C6698),
++        Color(0xFF0C355A),
+       ]),
+     );
+-    canvas.drawRRect(rr, outline);
+-
+-    for (var i = 0; i < 8; i++) {
+-      final double x = shell.left + shell.width * (.11 + i * .11);
++    canvas.drawRRect(body, outline);
++    // Longitudinal cooling fins retain the silhouette of a horizontal motor.
++    for (var i = 0; i < 7; i++) {
++      final y = shell.top + shell.height * (.14 + i * .115);
++      canvas.drawLine(
++        Offset(shell.left + w * .10, y),
++        Offset(shell.right - w * .06, y),
++        Paint()
++          ..color = const Color(0xFF0B3A60)
++          ..strokeWidth = h * .012,
++      );
+       canvas.drawLine(
+-        Offset(x, shell.top + h * .045),
+-        Offset(x, shell.bottom - h * .045),
++        Offset(shell.left + w * .10, y - h * .004),
++        Offset(shell.right - w * .06, y - h * .004),
+         Paint()
+-          ..color = const Color(0xFF718088)
+-          ..strokeWidth = math.max(.8, s * .009),
++          ..color = const Color(0xFF5799C2)
++          ..strokeWidth = h * .004,
+       );
+     }
+-
+-    final Offset rotor = shell.center;
+-    canvas.drawCircle(
+-      rotor,
+-      h * .125,
+-      Paint()..color = const Color(0xFF354149),
++    // Fan cover on the rear and bearing flange at the shaft end.
++    final cover = Rect.fromCenter(
++      center: Offset(shell.left + w * .03, shell.center.dy),
++      width: w * .15,
++      height: shell.height,
+     );
+-    final double angle = state.energized
+-        ? state.animationValue * math.pi * 2 * 2.3
+-        : 0;
+-    canvas.save();
+-    canvas.translate(rotor.dx, rotor.dy);
+-    canvas.rotate(angle);
+-    for (var i = 0; i < 4; i++) {
+-      canvas.rotate(math.pi / 2);
+-      canvas.drawRRect(
+-        RRect.fromRectAndRadius(
+-          Rect.fromLTWH(h * .02, -h * .018, h * .09, h * .036),
+-          Radius.circular(h * .01),
+-        ),
++    canvas.drawOval(
++      cover,
++      grad(cover, const [Color(0xFF4B96BF), Color(0xFF123E63)]),
++    );
++    canvas.drawOval(cover, outline);
++    for (var i = -2; i <= 2; i++) {
++      final x = cover.center.dx + i * w * .014;
++      canvas.drawLine(
++        Offset(x, cover.top + h * .10),
++        Offset(x, cover.bottom - h * .10),
+         Paint()
+-          ..color = state.energized
+-              ? const Color(0xFFD6A24E)
+-              : const Color(0xFF849198),
++          ..color = const Color(0xFF153C59)
++          ..strokeWidth = w * .008,
+       );
+     }
+-    canvas.restore();
+-    canvas.drawCircle(
+-      rotor,
+-      h * .035,
+-      Paint()..color = const Color(0xFFD5DEE3),
++    final flange = Rect.fromCenter(
++      center: Offset(shell.right, shell.center.dy),
++      width: w * .09,
++      height: shell.height * .9,
+     );
+-
+-    final List<double> xs = <double>[c.dx - w * .20, c.dx, c.dx + w * .20];
+-    const List<String> upper = <String>['U1', 'V1', 'W1'];
+-    const List<String> lower = <String>['U2', 'V2', 'W2'];
+-    for (var i = 0; i < 3; i++) {
+-      terminal(Offset(xs[i], rect.top + h * .08), upper[i], phase(i));
+-      terminal(Offset(xs[i], rect.bottom - h * .08), lower[i], phase(i));
++    canvas.drawOval(
++      flange,
++      grad(flange, const [Color(0xFF5899BE), Color(0xFF0E385A)]),
++    );
++    canvas.drawOval(flange, outline);
++    final shaft = Rect.fromLTWH(
++      shell.right + w * .015,
++      shell.center.dy - h * .04,
++      w * .105,
++      h * .08,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(shaft, Radius.circular(h * .01)),
++      grad(shaft, const [
++        Color(0xFFEEEEEA),
++        Color(0xFF8B969C),
++        Color(0xFFD9E0E3),
++      ]),
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(shaft, Radius.circular(h * .01)),
++      outline,
++    );
++    if (state.energized) {
++      final y =
++          shaft.center.dy +
++          math.sin(state.animationValue * math.pi * 2) * shaft.height * .3;
++      canvas.drawLine(
++        Offset(shaft.left + 2, y),
++        Offset(shaft.right - 2, y),
++        Paint()
++          ..color = const Color(0xFF5C6870)
++          ..strokeWidth = 1,
++      );
+     }
+-
+-    final Rect plate = Rect.fromCenter(
+-      center: Offset(c.dx, shell.bottom - h * .06),
+-      width: shell.width * .34,
+-      height: h * .08,
++    // Open terminal box, shared exactly with interactive canvas anchors.
++    final box = Rect.fromLTWH(
++      rect.left + w * .22,
++      rect.top + h * .055,
++      w * .56,
++      h * .32,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(
++        box.shift(Offset(0, h * .015)),
++        Radius.circular(h * .018),
++      ),
++      Paint()..color = const Color(0x35000000),
+     );
+     canvas.drawRRect(
+-      RRect.fromRectAndRadius(plate, Radius.circular(h * .012)),
+-      Paint()..color = const Color(0xFFE8EDEE),
++      RRect.fromRectAndRadius(box, Radius.circular(h * .018)),
++      grad(box, const [Color(0xFF477F9F), Color(0xFF163F5B)]),
+     );
+     canvas.drawRRect(
+-      RRect.fromRectAndRadius(plate, Radius.circular(h * .012)),
++      RRect.fromRectAndRadius(box, Radius.circular(h * .018)),
+       outline,
+     );
+-    text(
+-      state.energized ? 'M 3~  ${state.currentA.toStringAsFixed(1)} A' : 'M 3~',
+-      plate.center,
+-      size: h * .043,
++    const labels = ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'];
++    final terminals = SixTerminalMotorGeometry.offsets(rect.size);
++    for (var i = 0; i < terminals.length; i++) {
++      terminal(c + terminals[i], labels[i], const Color(0xFFB69A5C));
++    }
++    final plate = Rect.fromLTWH(
++      shell.left + w * .16,
++      shell.top + h * .055,
++      w * .26,
++      h * .065,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(plate, Radius.circular(2)),
++      Paint()..color = const Color(0xFFDFE7E8),
+     );
++    text('M 3~', plate.center, size: h * .04);
+   }
+ 
+   void wyeLoad() {
+diff --git a/apps/electrosim/lib/f18_component_asset_visual.dart b/apps/electrosim/lib/f18_component_asset_visual.dart
+index 54c46ed..0189900 100644
+--- a/apps/electrosim/lib/f18_component_asset_visual.dart
++++ b/apps/electrosim/lib/f18_component_asset_visual.dart
+@@ -14,9 +14,9 @@ import 'reference_components/reference_widgets_extended.dart';
+ 
+ /// Unified reference-component contract.
+ ///
+-/// The five uploaded components are rendered by the uploaded Dart painters
+-/// unchanged. The eight additional components use the same vector approach.
+-/// This adapter only maps ElectroSim runtime state to those painters.
++/// Device-specific vector painters share their physical anchors with the
++/// interactive canvas. This adapter maps existing runtime state to artwork;
++/// the visual layer never advances electrical physics.
+ abstract final class F18ReferenceComponentVisuals {
+   static const Set<String> coveredModelTypes = <String>{
+     'dc_voltage_source',
+@@ -113,7 +113,7 @@ abstract final class F18ReferenceComponentMetrics {
+     'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
+     'push_button_no' => const Size(90, 140),
+     'resistor' => const Size(280, 110),
+-    'push_button_nc' => const Size(180, 180),
++    'push_button_nc' => const Size(90, 140),
+     'buzzer' => const Size(190, 190),
+     'fuse_dc' || 'fuse_ac1' || 'fuse' => const Size(300, 110),
+     'diode' => const Size(270, 105),
+diff --git a/apps/electrosim/lib/f23_distribution_components.dart b/apps/electrosim/lib/f23_distribution_components.dart
+index d54acb6..42c6abd 100644
+--- a/apps/electrosim/lib/f23_distribution_components.dart
++++ b/apps/electrosim/lib/f23_distribution_components.dart
+@@ -24,7 +24,7 @@ abstract final class F23DistributionGeometry {
+   static Size boardSizeFor(F23DistributionDevice device) => switch (device) {
+     F23DistributionDevice.isolator3p => const Size(200, 230),
+     F23DistributionDevice.isolator4p => const Size(240, 230),
+-    F23DistributionDevice.breaker4p => const Size(240, 230),
++    F23DistributionDevice.breaker4p => const Size(144, 185),
+     F23DistributionDevice.terminalBlock5 => const Size(280, 210),
+   };
+ }
+@@ -119,6 +119,7 @@ final class _P {
+       text: TextSpan(
+         text: value,
+         style: TextStyle(
++          fontFamily: 'Roboto',
+           fontSize: size ?? math.max(7, h * .05),
+           fontWeight: FontWeight.w700,
+           color: color,
+@@ -193,8 +194,8 @@ final class _P {
+   void multipoleSwitch({required int poles, required bool breaker}) {
+     final Rect body = Rect.fromCenter(
+       center: c,
+-      width: w * .74,
+-      height: h * .72,
++      width: w * .90,
++      height: h * .95,
+     );
+     final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .035));
+     canvas.drawRRect(
+@@ -212,9 +213,9 @@ final class _P {
+     );
+     canvas.drawRRect(rr, outline);
+ 
+-    final double step = body.width / poles;
++    final double step = w * .74 / poles;
+     for (var pole = 0; pole < poles; pole++) {
+-      final double x = body.left + step * (pole + .5);
++      final double x = c.dx + step * (pole - (poles - 1) / 2);
+       final Offset top = Offset(x, rect.top + h * .075);
+       final Offset bottom = Offset(x, rect.bottom - h * .075);
+       terminal(top, topLabel(pole, poles), phaseColor(pole));
+diff --git a/apps/electrosim/lib/f9_component_visuals.dart b/apps/electrosim/lib/f9_component_visuals.dart
+index 888cc60..acc8129 100644
+--- a/apps/electrosim/lib/f9_component_visuals.dart
++++ b/apps/electrosim/lib/f9_component_visuals.dart
+@@ -48,8 +48,9 @@ class F9CanvasVisualOverlay extends StatefulWidget {
+ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+     with SingleTickerProviderStateMixin {
+   final ValueNotifier<double> _motionSeconds = ValueNotifier<double>(0);
+-  final ValueNotifier<Offset?> _fallbackPointerWorld =
+-      ValueNotifier<Offset?>(null);
++  final ValueNotifier<Offset?> _fallbackPointerWorld = ValueNotifier<Offset?>(
++    null,
++  );
+   late final Ticker _ticker;
+   double _motionBaseSeconds = 0;
+ 
+@@ -151,7 +152,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+ 
+     final Map<TerminalId, F9WiringDecision> decisions =
+         <TerminalId, F9WiringDecision>{};
+-    for (final TerminalId terminalId in _cachedGeometry!.terminalPositions.keys) {
++    for (final TerminalId terminalId
++        in _cachedGeometry!.terminalPositions.keys) {
+       if (terminalId == pending) continue;
+       decisions[terminalId] = F9WiringPolicy.evaluateAndBuild(
+         widget.circuit,
+@@ -234,27 +236,28 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+                 valueListenable:
+                     widget.pointerWorldPositionListenable ??
+                     _fallbackPointerWorld,
+-                builder: (BuildContext context, Offset? pointer, Widget? child) =>
+-                    RepaintBoundary(
+-                      child: CustomPaint(
+-                        painter: _F9StaticOverlayPainter(
+-                          circuit: widget.circuit,
+-                          layout: widget.layout,
+-                          viewport: widget.viewport,
+-                          geometry: geometry,
+-                          selectedElementIds: widget.selectedElementIds,
+-                          pendingTerminalId: widget.pendingTerminalId,
+-                          hoverTerminalId: widget.hoverTerminalId,
+-                          pointerWorldPosition: pointer,
+-                          wirePreviewPlanner: widget.wirePreviewPlanner,
+-                          wirePreviewSession: wirePreviewSession,
+-                          wiringDecisions: wiringDecisions,
+-                          paintStaticChrome: false,
+-                          paintInteraction: true,
++                builder:
++                    (BuildContext context, Offset? pointer, Widget? child) =>
++                        RepaintBoundary(
++                          child: CustomPaint(
++                            painter: _F9StaticOverlayPainter(
++                              circuit: widget.circuit,
++                              layout: widget.layout,
++                              viewport: widget.viewport,
++                              geometry: geometry,
++                              selectedElementIds: widget.selectedElementIds,
++                              pendingTerminalId: widget.pendingTerminalId,
++                              hoverTerminalId: widget.hoverTerminalId,
++                              pointerWorldPosition: pointer,
++                              wirePreviewPlanner: widget.wirePreviewPlanner,
++                              wirePreviewSession: wirePreviewSession,
++                              wiringDecisions: wiringDecisions,
++                              paintStaticChrome: false,
++                              paintInteraction: true,
++                            ),
++                            size: Size.infinite,
++                          ),
+                         ),
+-                        size: Size.infinite,
+-                      ),
+-                    ),
+               ),
+             ],
+           );
+@@ -264,9 +267,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+   }
+ 
+   @visibleForTesting
+-  static bool requiresContinuousAnimation(String modelType) => switch (
+-        modelType.toLowerCase()
+-      ) {
++  static bool requiresContinuousAnimation(String modelType) =>
++      switch (modelType.toLowerCase()) {
+         'fan_dc' ||
+         'motor_dc' ||
+         'pv_array' ||
+@@ -342,7 +344,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+                   pressed: pressed,
+                   actuated: actuated,
+                   motionSeconds: _motionSeconds,
+-                  animate: energized && requiresContinuousAnimation(renderedModelType),
++                  animate:
++                      energized &&
++                      requiresContinuousAnimation(renderedModelType),
+                   showTerminals: true,
+                   currentA: currentA,
+                   voltageV: voltageV,
+@@ -460,16 +464,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
+         batterySoc: batterySoc,
+         ratedCurrentA:
+             (component.parameters[ProtectionRating.ratedCurrentKey] as num?)
+-                    ?.toDouble() ??
+-                0,
++                ?.toDouble() ??
++            0,
+         ratedVoltageV:
+             (component.parameters[ReceiverNominalRating.voltageKey] as num?)
+-                    ?.toDouble() ??
+-                0,
++                ?.toDouble() ??
++            0,
+         ratedPowerW:
+             (component.parameters[ReceiverNominalRating.powerKey] as num?)
+-                    ?.toDouble() ??
+-                0,
++                ?.toDouble() ??
++            0,
+         currentLimitA: 2,
+         resistanceOhm:
+             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
+@@ -780,7 +784,6 @@ class _F9ReferenceAsset extends StatelessWidget {
+   }
+ }
+ 
+-
+ class _F9HealthVisual extends StatelessWidget {
+   const _F9HealthVisual({
+     required this.healthState,
+@@ -892,8 +895,7 @@ class _F9HealthOverlayPainter extends CustomPainter {
+ bool f9ShouldPaintCurrentFlow(
+   ConnectionCurrentEvidence flow, {
+   double minimumCurrentA = 1e-6,
+-}) =>
+-    flow.magnitudeA > minimumCurrentA;
++}) => flow.magnitudeA > minimumCurrentA;
+ 
+ @visibleForTesting
+ double f9CurrentFlowDashPhase({
+@@ -935,8 +937,9 @@ class _F9CurrentFlowPainter extends CustomPainter {
+       if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
+         continue;
+       }
+-      final ConnectionCurrentEvidence flow =
+-          runtime.connectionCurrentEvidence(connection);
++      final ConnectionCurrentEvidence flow = runtime.connectionCurrentEvidence(
++        connection,
++      );
+       final double currentA = flow.magnitudeA;
+       if (!f9ShouldPaintCurrentFlow(flow)) continue;
+ 
+@@ -952,13 +955,10 @@ class _F9CurrentFlowPainter extends CustomPainter {
+       ];
+       if (points.length < 2) continue;
+ 
+-      final Path path = Path();
+-      final Offset first = viewport.worldToScreen(points.first);
+-      path.moveTo(first.dx, first.dy);
+-      for (final Offset worldPoint in points.skip(1)) {
+-        final Offset p = viewport.worldToScreen(worldPoint);
+-        path.lineTo(p.dx, p.dy);
+-      }
++      final Path path = buildPhysicalWirePath(
++        points.map(viewport.worldToScreen).toList(),
++        bendRadius: 6 * viewport.scale,
++      );
+ 
+       final Color phase = _phaseColor(connection.phase);
+       canvas.drawPath(
+@@ -1190,10 +1190,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
+             startTerminalId: pending,
+             pointerWorldPosition: pointer,
+           )
+-        : planner.planPrepared(
+-            session: session,
+-            pointerWorldPosition: pointer,
+-          );
++        : planner.planPrepared(session: session, pointerWorldPosition: pointer);
+     if (!plan.route.isResolved) return;
+ 
+     final List<Offset> points = plan.route.path!.points;
+@@ -1343,6 +1340,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
+           text: TextSpan(
+             text: decision.accepted ? '✓' : '×',
+             style: TextStyle(
++              fontFamily: 'Roboto',
+               color: color,
+               fontSize: 12,
+               fontWeight: FontWeight.w800,
+@@ -1364,7 +1362,12 @@ class _F9StaticOverlayPainter extends CustomPainter {
+     String? displayLabel,
+   }) {
+     final Offset center = viewport.worldToScreen(worldRect.center);
+-    final Size visualSize = _f9VisualSize(worldRect, viewport);
++    final Size visualSize = F18ReferenceComponentVisuals.supports(modelType)
++        ? Size(
++            worldRect.width * viewport.scale,
++            worldRect.height * viewport.scale,
++          )
++        : _f9VisualSize(worldRect, viewport);
+     final Color color = active
+         ? ElectroSimColors.primary
+         : ElectroSimColors.textSecondary;
+@@ -1391,6 +1394,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
+         text: TextSpan(
+           text: displayLabel ?? _boardLabel(modelType),
+           style: TextStyle(
++            fontFamily: 'Roboto',
+             color: ElectroSimColors.textPrimary,
+             fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),
+             fontWeight: FontWeight.w700,
+diff --git a/apps/electrosim/lib/professional_residual_current_visual.dart b/apps/electrosim/lib/professional_residual_current_visual.dart
+new file mode 100644
+index 0000000..58c35ad
+--- /dev/null
++++ b/apps/electrosim/lib/professional_residual_current_visual.dart
+@@ -0,0 +1,208 @@
++import 'package:flutter/material.dart';
++
++/// Front-view artwork only. This widget does not evaluate residual currents,
++/// trip a circuit or register a simulation model. Bind a qualified electrical
++/// model before adding a differential device to a functioning circuit palette.
++class ResidualCurrentVisual extends StatelessWidget {
++  const ResidualCurrentVisual({
++    super.key,
++    this.size = const Size(108, 180),
++    this.poles = 2,
++    this.closed = true,
++    this.tripped = false,
++    this.ratedCurrentA = 40,
++    this.residualCurrentMa = 30,
++  }) : assert(poles == 2 || poles == 4),
++       assert(ratedCurrentA > 0),
++       assert(residualCurrentMa > 0);
++
++  final Size size;
++  final int poles;
++  final bool closed;
++  final bool tripped;
++  final double ratedCurrentA;
++  final double residualCurrentMa;
++
++  /// Offsets from the housing centre, ordered top row then bottom row.
++  static List<Offset> terminalOffsets(Size size, {required int poles}) => [
++    for (final y in [-.42, .42])
++      for (var i = 0; i < poles; i++)
++        Offset(size.width * .72 * ((i + .5) / poles - .5), size.height * y),
++  ];
++
++  @override
++  Widget build(BuildContext context) => Semantics(
++    label:
++        'Différentiel $poles pôles, rendu visuel, modèle électrique non intégré',
++    child: SizedBox.fromSize(
++      size: size,
++      child: CustomPaint(painter: _ResidualCurrentPainter(this)),
++    ),
++  );
++}
++
++class _ResidualCurrentPainter extends CustomPainter {
++  const _ResidualCurrentPainter(this.device);
++  final ResidualCurrentVisual device;
++
++  @override
++  void paint(Canvas canvas, Size size) {
++    final w = size.width;
++    final h = size.height;
++    final body = Rect.fromLTWH(w * .04, h * .025, w * .92, h * .95);
++    final shape = RRect.fromRectAndRadius(body, Radius.circular(h * .025));
++    canvas.drawRRect(
++      shape.shift(Offset(0, h * .012)),
++      Paint()..color = const Color(0x35000000),
++    );
++    canvas.drawRRect(
++      shape,
++      Paint()
++        ..shader = const LinearGradient(
++          begin: Alignment.topLeft,
++          end: Alignment.bottomRight,
++          colors: [Color(0xFFFDFDF8), Color(0xFFE2E4DD), Color(0xFFBFC5BE)],
++        ).createShader(body),
++    );
++    canvas.drawRRect(
++      shape,
++      Paint()
++        ..color = const Color(0xFF7D8982)
++        ..style = PaintingStyle.stroke
++        ..strokeWidth = .8,
++    );
++    final face = Rect.fromLTWH(w * .11, h * .23, w * .78, h * .48);
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(face, const Radius.circular(2)),
++      Paint()..color = const Color(0xFFEFF1E9),
++    );
++    canvas.drawRect(
++      Rect.fromLTWH(face.left, face.top, face.width, h * .025),
++      Paint()..color = const Color(0xFF496875),
++    );
++    void text(String value, Offset centre, double fontSize) {
++      final p = TextPainter(
++        text: TextSpan(
++          text: value,
++          style: TextStyle(
++            fontFamily: 'Roboto',
++            color: const Color(0xFF34443B),
++            fontSize: fontSize,
++            fontWeight: FontWeight.w600,
++          ),
++        ),
++        textDirection: TextDirection.ltr,
++      )..layout();
++      p.paint(canvas, centre - Offset(p.width / 2, p.height / 2));
++    }
++
++    text('DIFFÉRENTIEL', Offset(w * .5, h * .30), h * .044);
++    text(
++      '${device.ratedCurrentA.toStringAsFixed(0)} A',
++      Offset(w * .29, h * .38),
++      h * .055,
++    );
++    text(
++      'IΔn ${device.residualCurrentMa.toStringAsFixed(0)} mA',
++      Offset(w * .5, h * .76),
++      h * .045,
++    );
++    // Physical test button is artwork, not a fake functional control.
++    final testButton = Rect.fromCenter(
++      center: Offset(w * .28, h * .52),
++      width: w * .23,
++      height: h * .10,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(testButton, const Radius.circular(3)),
++      Paint()
++        ..shader = const LinearGradient(
++          colors: [Color(0xFFEAF0E6), Color(0xFF8C9B8B)],
++        ).createShader(testButton),
++    );
++    text('T', testButton.center, h * .065);
++    final slot = Rect.fromLTWH(w * .56, h * .37, w * .24, h * .27);
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(slot, const Radius.circular(3)),
++      Paint()..color = const Color(0xFF202B32),
++    );
++    final handle = Rect.fromCenter(
++      center: Offset(
++        slot.center.dx,
++        device.tripped
++            ? slot.center.dy
++            : device.closed
++            ? slot.top + h * .07
++            : slot.bottom - h * .07,
++      ),
++      width: slot.width * .86,
++      height: h * .095,
++    );
++    canvas.drawRRect(
++      RRect.fromRectAndRadius(handle, const Radius.circular(2)),
++      Paint()
++        ..shader = LinearGradient(
++          colors: device.tripped
++              ? const [Color(0xFFEAB265), Color(0xFF8C581D)]
++              : const [Color(0xFF647078), Color(0xFF192731)],
++        ).createShader(handle),
++    );
++    final terminals = ResidualCurrentVisual.terminalOffsets(
++      size,
++      poles: device.poles,
++    );
++    for (var i = 0; i < terminals.length; i++) {
++      final relative = terminals[i];
++      final centre = size.center(Offset.zero) + relative;
++      final recess = Rect.fromCenter(
++        center: centre,
++        width: w * .65 / device.poles,
++        height: h * .07,
++      );
++      canvas.drawRRect(
++        RRect.fromRectAndRadius(recess, const Radius.circular(2)),
++        Paint()..color = const Color(0xFF49565B),
++      );
++      final radius = (w / device.poles * .12).clamp(3.0, 6.0).toDouble();
++      canvas.drawCircle(
++        centre,
++        radius,
++        Paint()
++          ..shader = const RadialGradient(
++            center: Alignment(-.4, -.4),
++            colors: [Color(0xFFF4F7F7), Color(0xFF89989F), Color(0xFF45545D)],
++          ).createShader(Rect.fromCircle(center: centre, radius: radius)),
++      );
++      final screw = Paint()
++        ..color = const Color(0xFF273740)
++        ..strokeWidth = 1;
++      canvas.drawLine(
++        centre + Offset(-radius * .6, 0),
++        centre + Offset(radius * .6, 0),
++        screw,
++      );
++      canvas.drawLine(
++        centre + Offset(0, -radius * .6),
++        centre + Offset(0, radius * .6),
++        screw,
++      );
++      final pole = i % device.poles;
++      final label = pole == device.poles - 1
++          ? 'N'
++          : '${pole * 2 + (i < device.poles ? 1 : 2)}';
++      text(
++        label,
++        centre.translate(0, i < device.poles ? h * .075 : -h * .075),
++        h * .039,
++      );
++    }
++  }
++
++  @override
++  bool shouldRepaint(_ResidualCurrentPainter old) =>
++      old.device.poles != device.poles ||
++      old.device.closed != device.closed ||
++      old.device.tripped != device.tripped ||
++      old.device.ratedCurrentA != device.ratedCurrentA ||
++      old.device.residualCurrentMa != device.residualCurrentMa;
++}
+diff --git a/apps/electrosim/lib/reference_components/reference_widgets.dart b/apps/electrosim/lib/reference_components/reference_widgets.dart
+index ef239b9..cfd5ce5 100644
+--- a/apps/electrosim/lib/reference_components/reference_widgets.dart
++++ b/apps/electrosim/lib/reference_components/reference_widgets.dart
+@@ -258,6 +258,19 @@ class _DevicePainter extends CustomPainter {
+         ..style = PaintingStyle.stroke
+         ..strokeWidth = .8,
+     );
++    // Moulded edge highlight stays inside the existing physical housing.
++    if (rect.shortestSide > 18) {
++      canvas.drawRRect(
++        RRect.fromRectAndRadius(
++          rect.deflate(1.2),
++          Radius.circular(math.max(1, radius - 1)),
++        ),
++        Paint()
++          ..color = const Color(0x80FFFFFF)
++          ..style = PaintingStyle.stroke
++          ..strokeWidth = .7,
++      );
++    }
+   }
+ 
+   void _text(
+@@ -271,6 +284,7 @@ class _DevicePainter extends CustomPainter {
+       text: TextSpan(
+         text: value,
+         style: TextStyle(
++          fontFamily: 'Roboto',
+           fontSize: size,
+           color: color,
+           fontWeight: FontWeight.w600,
+@@ -282,6 +296,11 @@ class _DevicePainter extends CustomPainter {
+   }
+ 
+   void _screw(Canvas canvas, Offset center, {double radius = 5}) {
++    canvas.drawCircle(
++      center + const Offset(0, .7),
++      radius + .7,
++      Paint()..color = const Color(0xFF424B50),
++    );
+     canvas.drawCircle(
+       center,
+       radius,
+@@ -299,6 +318,13 @@ class _DevicePainter extends CustomPainter {
+         ..color = const Color(0xFF34434C)
+         ..strokeWidth = 1.5,
+     );
++    canvas.drawLine(
++      center + Offset(-radius * .22, -radius * .52),
++      center + Offset(radius * .22, radius * .52),
++      Paint()
++        ..color = const Color(0xFF34434C)
++        ..strokeWidth = 1.2,
++    );
+   }
+ 
+   void _terminal(
+@@ -428,6 +454,33 @@ class _DevicePainter extends CustomPainter {
+         Color(0xFF737C7C),
+         Color(0xFF2C3538),
+       ], radius: 2);
++      // Recessed captive screw is hardware, even when connection markers
++      // are supplied by the interactive canvas overlay.
++      _screw(c, Offset(36, y + 9), radius: 5);
++    }
++    _box(c, const Rect.fromLTWH(16, 34, 40, 27), const [
++      Color(0xFFF8F8F3),
++      Color(0xFFE0E1DA),
++    ], radius: 1);
++    c.drawRect(
++      const Rect.fromLTWH(16, 34, 40, 2),
++      Paint()..color = const Color(0xFF516474),
++    );
++    for (final y in [32.0, 124.0]) {
++      c.drawLine(
++        Offset(14, y),
++        Offset(58, y),
++        Paint()
++          ..color = const Color(0xFF949A96)
++          ..strokeWidth = .6,
++      );
++      c.drawLine(
++        Offset(14, y + 1),
++        Offset(58, y + 1),
++        Paint()
++          ..color = const Color(0xBBFFFFFF)
++          ..strokeWidth = .6,
++      );
+     }
+     _text(c, state.protectionDomainLabel, const Offset(28, 38), size: 8);
+     _text(
+@@ -539,6 +592,21 @@ class _DevicePainter extends CustomPainter {
+         ).createShader(Rect.fromCircle(center: center, radius: 23)),
+     );
+     _text(c, 'NO', const Offset(39, 91), size: 8);
++    c.drawArc(
++      Rect.fromCircle(center: center, radius: 19),
++      math.pi * 1.1,
++      math.pi * .55,
++      false,
++      Paint()
++        ..color = const Color(0x80D1FFE2)
++        ..style = PaintingStyle.stroke
++        ..strokeWidth = 1,
++    );
++    for (final terminal in ReferenceComponentGeometry.forDevice(
++      device,
++    ).terminals) {
++      _screw(c, terminal, radius: 4);
++    }
+     _text(c, '13', const Offset(27, 105), size: 6, color: Colors.white70);
+     _text(c, '14', const Offset(55, 105), size: 6, color: Colors.white70);
+   }
+@@ -646,7 +714,7 @@ class _DevicePainter extends CustomPainter {
+     _text(
+       c,
+       '${state.ratedVoltageV.toStringAsFixed(0)} V • '
+-          '${state.ratedPowerW.toStringAsFixed(0)} W',
++      '${state.ratedPowerW.toStringAsFixed(0)} W',
+       const Offset(95, 123),
+       size: 7,
+       color: Colors.white,
+diff --git a/apps/electrosim/lib/reference_components/reference_widgets_extended.dart b/apps/electrosim/lib/reference_components/reference_widgets_extended.dart
+index a8d342d..d94e816 100644
+--- a/apps/electrosim/lib/reference_components/reference_widgets_extended.dart
++++ b/apps/electrosim/lib/reference_components/reference_widgets_extended.dart
+@@ -60,7 +60,7 @@ final class ExtendedReferenceVisualState {
+ abstract final class ExtendedReferenceGeometry {
+   static Size designSizeFor(ExtendedReferenceDevice device) => switch (device) {
+     ExtendedReferenceDevice.resistor => const Size(280, 110),
+-    ExtendedReferenceDevice.pushButtonNc => const Size(180, 180),
++    ExtendedReferenceDevice.pushButtonNc => const Size(90, 140),
+     ExtendedReferenceDevice.buzzer => const Size(190, 190),
+     ExtendedReferenceDevice.fuse => const Size(300, 110),
+     ExtendedReferenceDevice.diode => const Size(270, 105),
+@@ -81,8 +81,8 @@ abstract final class ExtendedReferenceGeometry {
+           Offset(218, 55),
+         ],
+         ExtendedReferenceDevice.pushButtonNc => const <Offset>[
+-          Offset(70, 153),
+-          Offset(110, 153),
++          Offset(31, 119),
++          Offset(59, 119),
+         ],
+         ExtendedReferenceDevice.buzzer => const <Offset>[
+           Offset(70, 160),
+@@ -229,7 +229,12 @@ class _ExtendedReferencePainter extends CustomPainter {
+     final TextPainter tp = TextPainter(
+       text: TextSpan(
+         text: value,
+-        style: TextStyle(fontSize: size, color: color, fontWeight: weight),
++        style: TextStyle(
++          fontFamily: 'Roboto',
++          fontSize: size,
++          color: color,
++          fontWeight: weight,
++        ),
+       ),
+       textDirection: TextDirection.ltr,
+     )..layout();
+@@ -359,69 +364,55 @@ class _ExtendedReferencePainter extends CustomPainter {
+   }
+ 
+   void _paintPushButtonNc(Canvas c, Size s) {
+-    final Offset left = ExtendedReferenceGeometry.terminalOffset(
+-      device,
+-      right: false,
+-    );
+-    final Offset right = ExtendedReferenceGeometry.terminalOffset(
+-      device,
+-      right: true,
+-    );
+-    const Offset center = Offset(90, 88);
+-    const double bezelR = 55;
+-
+-    if (showTerminals) {
+-      _terminal(c, left, const Offset(70, 139));
+-      _terminal(c, right, const Offset(110, 139));
+-    }
+-
+-    final Rect bezel = Rect.fromCircle(center: center, radius: bezelR);
++    _box(c, const Rect.fromLTWH(12, 8, 66, 124), const [
++      Color(0xFFD8DFE0),
++      Color(0xFF76858C),
++    ], shadow: true);
++    _box(c, const Rect.fromLTWH(20, 104, 50, 24), const [
++      Color(0xFF424B4C),
++      Color(0xFF222B30),
++    ], radius: 3);
++    const bezelCentre = Offset(45, 58);
++    final capCentre = Offset(45, state.pressed ? 61 : 56);
++    final bezel = Rect.fromCircle(center: bezelCentre, radius: 29);
+     c.drawCircle(
+-      center,
+-      bezelR,
+-      _linear(bezel, const <Color>[
+-        Color(0xFFF7F9F9),
+-        Color(0xFFC4CDD0),
+-        Color(0xFF68787F),
++      bezelCentre,
++      29,
++      _linear(bezel, const [
++        Color(0xFFFCFFFF),
++        Color(0xFFBEC9CD),
++        Color(0xFF5D717B),
+       ]),
+     );
+     c.drawCircle(
+-      center,
+-      bezelR,
+-      _stroke(color: const Color(0xFF53636A), width: 1.3),
+-    );
+-    c.drawCircle(center, 46, Paint()..color = const Color(0xFF343B3F));
+-
+-    final Offset capCenter = Offset(
+-      center.dx,
+-      center.dy + (state.pressed ? 6 : 0),
++      capCentre + const Offset(0, 3),
++      23,
++      Paint()..color = const Color(0xFF521F1E),
+     );
+-    final double capR = state.pressed ? 34 : 39;
+-    final Rect cap = Rect.fromCircle(center: capCenter, radius: capR);
+     c.drawCircle(
+-      capCenter,
+-      capR,
++      capCentre,
++      state.pressed ? 21 : 23,
+       Paint()
+         ..shader = const RadialGradient(
+-          center: Alignment(-.35, -.4),
+-          colors: <Color>[
+-            Color(0xFFFF7C70),
+-            Color(0xFFD93A32),
+-            Color(0xFF7B1614),
+-          ],
+-        ).createShader(cap),
+-    );
+-    c.drawCircle(
+-      capCenter,
+-      capR,
+-      _stroke(color: const Color(0xFF6D1513), width: 1.3),
+-    );
+-    c.drawCircle(
+-      capCenter + const Offset(-12, -14),
+-      7,
+-      Paint()..color = const Color(0x44FFFFFF),
+-    );
+-    _text(c, 'NC', const Offset(80, 151), size: 11);
++          center: Alignment(-.4, -.5),
++          colors: [Color(0xFFFF8A7B), Color(0xFFD44338), Color(0xFF861A19)],
++        ).createShader(Rect.fromCircle(center: capCentre, radius: 23)),
++    );
++    c.drawArc(
++      Rect.fromCircle(center: capCentre, radius: 19),
++      math.pi * 1.1,
++      math.pi * .55,
++      false,
++      _stroke(color: const Color(0x90FFD7CF), width: 1),
++    );
++    _text(c, 'NC', const Offset(39, 91), size: 8);
++    _text(c, '21', const Offset(27, 105), size: 6, color: Colors.white70);
++    _text(c, '22', const Offset(55, 105), size: 6, color: Colors.white70);
++    for (final terminal in ExtendedReferenceGeometry.terminalOffsetsFor(
++      device,
++    )) {
++      _screw(c, terminal, radius: 4);
++    }
+   }
+ 
+   void _paintBuzzer(Canvas c, Size s) {
+diff --git a/apps/electrosim/test/industrial_realism_contract_test.dart b/apps/electrosim/test/industrial_realism_contract_test.dart
+new file mode 100644
+index 0000000..16093a0
+--- /dev/null
++++ b/apps/electrosim/test/industrial_realism_contract_test.dart
+@@ -0,0 +1,55 @@
++import 'package:electrosim/f14_library_components.dart';
++import 'package:electrosim/f18_component_asset_visual.dart';
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('NO and NC push buttons share the same narrow front footprint', () {
++    expect(
++      F18ReferenceComponentMetrics.boardSizeFor('push_button_nc'),
++      F18ReferenceComponentMetrics.boardSizeFor('push_button_no'),
++    );
++  });
++  test('DIN contactors and breakers use slender front-view proportions', () {
++    for (final model in ['contactor_ac1', 'contactor_3p', 'breaker_3p']) {
++      final size = F18ReferenceComponentMetrics.boardSizeFor(model);
++      expect(size.width / size.height, lessThan(.72), reason: model);
++    }
++  });
++
++  test('all six motor studs coincide with their interactive anchors', () {
++    final size = F18ReferenceComponentMetrics.boardSizeFor('motor_3p_6t');
++    final studs = SixTerminalMotorGeometry.offsets(size);
++    for (var i = 0; i < 6; i++) {
++      expect(
++        TerminalVisualProfile.terminalOffset(
++          modelType: 'motor_3p_6t',
++          size: size,
++          index: i,
++          count: 6,
++        ),
++        studs[i],
++      );
++    }
++  });
++
++  testWidgets('contactor state remains supplied by the simulation', (t) async {
++    await t.pumpWidget(
++      const MaterialApp(
++        home: F18ComponentAssetVisual(
++          modelType: 'contactor_3p',
++          size: Size(145, 220),
++          active: true,
++          energized: true,
++          closed: true,
++        ),
++      ),
++    );
++    final view = t.widget<F14LibraryComponentView>(
++      find.byType(F14LibraryComponentView),
++    );
++    expect(view.state.energized, isTrue);
++    expect(t.takeException(), isNull);
++  });
++}
+diff --git a/apps/electrosim/test/residual_current_visual_test.dart b/apps/electrosim/test/residual_current_visual_test.dart
+new file mode 100644
+index 0000000..29f46a5
+--- /dev/null
++++ b/apps/electrosim/test/residual_current_visual_test.dart
+@@ -0,0 +1,30 @@
++import 'package:electrosim/professional_residual_current_visual.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('differential terminals remain inside the top and bottom decks', () {
++    for (final poles in [2, 4]) {
++      final points = ResidualCurrentVisual.terminalOffsets(
++        const Size(108, 180),
++        poles: poles,
++      );
++      expect(points, hasLength(poles * 2));
++      expect(points.take(poles).every((p) => p.dy < 0), isTrue);
++      expect(points.skip(poles).every((p) => p.dy > 0), isTrue);
++      expect(points.every((p) => p.dx.abs() < 54 && p.dy.abs() < 90), isTrue);
++    }
++  });
++  testWidgets(
++    'visual-only differential makes no claim to simulate protection',
++    (t) async {
++      final semantics = t.ensureSemantics();
++      await t.pumpWidget(
++        const MaterialApp(home: Center(child: ResidualCurrentVisual())),
++      );
++      expect(find.bySemanticsLabel(RegExp('.*rendu visuel.*')), findsOneWidget);
++      expect(t.takeException(), isNull);
++      semantics.dispose();
++    },
++  );
++}
+diff --git a/packages/electrosim_canvas/lib/electrosim_canvas.dart b/packages/electrosim_canvas/lib/electrosim_canvas.dart
+index 74d59de..797dcbb 100644
+--- a/packages/electrosim_canvas/lib/electrosim_canvas.dart
++++ b/packages/electrosim_canvas/lib/electrosim_canvas.dart
+@@ -12,3 +12,6 @@ export 'src/dc_rectangular_arrange.dart';
+ export 'src/circuit_wire_layout_engine.dart';
+ export 'src/wire_preview_planner.dart';
+ export 'src/wire_semantics.dart';
++export 'src/physical_wire_path.dart';
++export 'src/din_rail_visual.dart';
++export 'src/motor_terminal_geometry.dart';
+diff --git a/packages/electrosim_canvas/lib/src/canvas_geometry.dart b/packages/electrosim_canvas/lib/src/canvas_geometry.dart
+index f48f4c3..4cf66d7 100644
+--- a/packages/electrosim_canvas/lib/src/canvas_geometry.dart
++++ b/packages/electrosim_canvas/lib/src/canvas_geometry.dart
+@@ -4,6 +4,7 @@ import 'dart:ui';
+ import 'package:electrosim_domain/electrosim_domain.dart';
+ 
+ import 'circuit_visual_layout.dart';
++import 'motor_terminal_geometry.dart';
+ 
+ /// Presentation-only terminal anchors for component drawings.
+ ///
+@@ -57,8 +58,8 @@ abstract final class TerminalVisualProfile {
+         Offset(w * 0.2785714286, 0),
+       ],
+       'push_button_nc' => <Offset>[
+-        Offset(w * -0.1111111111, h * 0.35),
+-        Offset(w * 0.1111111111, h * 0.35),
++        Offset(w * -0.1555555556, h * 0.35),
++        Offset(w * 0.1555555556, h * 0.35),
+       ],
+       'buzzer' => <Offset>[
+         Offset(w * -0.1315789474, h * 0.3421052632),
+@@ -157,14 +158,7 @@ abstract final class TerminalVisualProfile {
+         Offset(w * -0.16, h * 0.41),
+         Offset(w * 0.16, h * 0.41),
+       ],
+-      'motor_3p_6t' => <Offset>[
+-        Offset(w * -0.20, h * -0.42),
+-        Offset(0, h * -0.42),
+-        Offset(w * 0.20, h * -0.42),
+-        Offset(w * -0.20, h * 0.42),
+-        Offset(0, h * 0.42),
+-        Offset(w * 0.20, h * 0.42),
+-      ],
++      'motor_3p_6t' => SixTerminalMotorGeometry.offsets(Size(w, h)),
+       'load_wye_3p' => <Offset>[
+         Offset(w * -0.20, h * -0.42),
+         Offset(0, h * -0.42),
+diff --git a/packages/electrosim_canvas/lib/src/circuit_scene_painter.dart b/packages/electrosim_canvas/lib/src/circuit_scene_painter.dart
+index e838018..bdba5cc 100644
+--- a/packages/electrosim_canvas/lib/src/circuit_scene_painter.dart
++++ b/packages/electrosim_canvas/lib/src/circuit_scene_painter.dart
+@@ -6,6 +6,8 @@ import 'circuit_visual_layout.dart';
+ import 'viewport_controller.dart';
+ import 'wire_preview_planner.dart';
+ import 'wire_semantics.dart';
++import 'physical_wire_path.dart';
++import 'din_rail_visual.dart';
+ 
+ final class CircuitScenePainter extends CustomPainter {
+   CircuitScenePainter({
+@@ -49,6 +51,7 @@ final class CircuitScenePainter extends CustomPainter {
+   final bool paintElementChrome;
+   final CircuitGeometryIndex geometryAtBuild;
+   final WireSemantics? semanticsAtBuild;
++  late final List<Rect> dinSupportsAtBuild = _buildDinSupports();
+ 
+   static const Color boardColor = Color(0xFFF6F8FB);
+   static const Color gridColor = Color(0xFFE3E8EF);
+@@ -67,6 +70,9 @@ final class CircuitScenePainter extends CustomPainter {
+ 
+     final CircuitGeometryIndex geometry = geometryAtBuild;
+     final WireSemantics? semantics = semanticsAtBuild;
++    if (!paintElementChrome) {
++      _paintDinSupports(canvas, geometry);
++    }
+     _paintWires(canvas, geometry);
+     if (semantics != null) {
+       _paintNonJunctionCrossingGaps(canvas, semantics);
+@@ -99,6 +105,64 @@ final class CircuitScenePainter extends CustomPainter {
+     }
+   }
+ 
++  List<Rect> _buildDinSupports() {
++    const mountedTypes = <String>{
++      'breaker_dc',
++      'breaker_ac1',
++      'breaker',
++      'breaker_3p',
++      'breaker_4p',
++      'contactor_ac1',
++      'contactor_3p',
++      'relay_coil',
++      'isolator_3p',
++      'isolator_4p',
++      'terminal_block_5',
++      'thermal_overload_3p',
++    };
++    final mounts = <Rect>[];
++    for (final component in circuit.components) {
++      final type =
++          ((component.parameters['_visualModelType'] as String?) ??
++                  component.modelType)
++              .toLowerCase();
++      if (!mountedTypes.contains(type) ||
++          layout.quarterTurnsOf(component.id.value) != 0) {
++        continue;
++      }
++      final rect = geometryAtBuild.elementRects[component.id.value];
++      if (rect != null) mounts.add(rect);
++    }
++    // Generic front-view mounting plates for aligned panel push buttons.
++    // This is decorative assembly artwork, not a mechanical compatibility
++    // check. Only extend an existing DIN row; do not invent a rail elsewhere.
++    final rows = mounts.map((r) => r.center.dy).toSet();
++    for (final component in circuit.components) {
++      final type =
++          ((component.parameters['_visualModelType'] as String?) ??
++                  component.modelType)
++              .toLowerCase();
++      if ((type != 'push_button_no' && type != 'push_button_nc') ||
++          layout.quarterTurnsOf(component.id.value) != 0) {
++        continue;
++      }
++      final rect = geometryAtBuild.elementRects[component.id.value];
++      if (rect != null && rows.contains(rect.center.dy)) mounts.add(rect);
++    }
++    return layoutDinRails(mounts);
++  }
++
++  void _paintDinSupports(Canvas canvas, CircuitGeometryIndex geometry) {
++    for (final rail in dinSupportsAtBuild) {
++      final rect = Rect.fromCenter(
++        center: viewport.worldToScreen(rail.center),
++        width: rail.width * viewport.scale,
++        height: rail.height * viewport.scale,
++      );
++      paintDinRail(canvas, rect, scale: viewport.scale);
++    }
++  }
++
+   void _paintWires(Canvas canvas, CircuitGeometryIndex geometry) {
+     for (final Connection connection in circuit.connections) {
+       final Offset? start =
+@@ -112,25 +176,45 @@ final class CircuitScenePainter extends CustomPainter {
+         ...layout.routeFor(connection.id.value),
+         end,
+       ];
+-      final Path path = Path()
+-        ..moveTo(
+-          viewport.worldToScreen(worldPoints.first).dx,
+-          viewport.worldToScreen(worldPoints.first).dy,
++      final Path path = buildPhysicalWirePath(
++        worldPoints.map(viewport.worldToScreen).toList(),
++        bendRadius: paintElementChrome ? 0 : 6 * viewport.scale,
++      );
++      final bool selected = selectedElementId == connection.id.value;
++      final double wireWidth = paintElementChrome
++          ? 3
++          : (4 * viewport.scale).clamp(2.0, 7.0).toDouble();
++      if (!paintElementChrome) {
++        canvas.drawPath(
++          path.shift(const Offset(0, 1.2)),
++          Paint()
++            ..color = const Color(0x35000000)
++            ..strokeWidth = wireWidth + 2
++            ..style = PaintingStyle.stroke
++            ..strokeCap = StrokeCap.round
++            ..strokeJoin = StrokeJoin.round,
+         );
+-      for (final Offset worldPoint in worldPoints.skip(1)) {
+-        final Offset point = viewport.worldToScreen(worldPoint);
+-        path.lineTo(point.dx, point.dy);
+       }
+-      final bool selected = selectedElementId == connection.id.value;
+       canvas.drawPath(
+         path,
+         Paint()
+           ..color = selected ? selectionColor : _phaseColor(connection.phase)
+-          ..strokeWidth = selected ? 5 : 3
++          ..strokeWidth = selected ? wireWidth + 2 : wireWidth
+           ..style = PaintingStyle.stroke
+           ..strokeCap = StrokeCap.round
+           ..strokeJoin = StrokeJoin.round,
+       );
++      if (!paintElementChrome && viewport.scale >= .65) {
++        canvas.drawPath(
++          path,
++          Paint()
++            ..color = const Color(0x45FFFFFF)
++            ..strokeWidth = wireWidth * .25
++            ..style = PaintingStyle.stroke
++            ..strokeCap = StrokeCap.round
++            ..strokeJoin = StrokeJoin.round,
++        );
++      }
+     }
+   }
+ 
+diff --git a/packages/electrosim_canvas/lib/src/din_rail_visual.dart b/packages/electrosim_canvas/lib/src/din_rail_visual.dart
+new file mode 100644
+index 0000000..102e366
+--- /dev/null
++++ b/packages/electrosim_canvas/lib/src/din_rail_visual.dart
+@@ -0,0 +1,136 @@
++import 'package:flutter/painting.dart';
++
++/// Decorative supports for already aligned front-view DIN housings.
++/// Does not snap, move or electrically connect devices. Different mounting
++/// heights retain independent supports rather than inventing an alignment.
++List<Rect> layoutDinRails(List<Rect> mounts) {
++  final rows = <double, List<Rect>>{};
++  for (final mount in mounts) {
++    rows.putIfAbsent(mount.center.dy, () => []).add(mount);
++  }
++  final result = <Rect>[];
++  for (final row in rows.entries) {
++    final spans =
++        row.value
++            .map(
++              (r) => Rect.fromLTRB(
++                r.left - 48,
++                row.key - 27,
++                r.right + 48,
++                row.key + 27,
++              ),
++            )
++            .toList()
++          ..sort((a, b) => a.left.compareTo(b.left));
++    Rect? current;
++    for (final span in spans) {
++      if (current == null) {
++        current = span;
++      } else if (span.left <= current.right) {
++        current = current.expandToInclude(span);
++      } else {
++        result.add(current);
++        current = span;
++      }
++    }
++    if (current != null) result.add(current);
++  }
++  return result;
++}
++
++void paintDinRail(Canvas canvas, Rect rect, {required double scale}) {
++  final border = Paint()
++    ..color = const Color(0xFF7A858C)
++    ..style = PaintingStyle.stroke
++    ..strokeWidth = .8;
++  canvas.drawRect(
++    rect.shift(Offset(0, 2 * scale)),
++    Paint()..color = const Color(0x24000000),
++  );
++  canvas.drawRect(
++    rect,
++    Paint()
++      ..shader = const LinearGradient(
++        begin: Alignment.topCenter,
++        end: Alignment.bottomCenter,
++        colors: [
++          Color(0xFFF4F6F7),
++          Color(0xFF919BA2),
++          Color(0xFFD6DCE0),
++          Color(0xFFB7C0C6),
++          Color(0xFF747F87),
++          Color(0xFFE5E9EC),
++        ],
++        stops: [0, .12, .22, .76, .9, 1],
++      ).createShader(rect),
++  );
++  canvas.drawRect(rect, border);
++  for (final y in [rect.top + 8 * scale, rect.bottom - 8 * scale]) {
++    canvas.drawLine(
++      Offset(rect.left, y),
++      Offset(rect.right, y),
++      Paint()
++        ..color = const Color(0xFF6E7C86)
++        ..strokeWidth = .8,
++    );
++    canvas.drawLine(
++      Offset(rect.left, y + scale),
++      Offset(rect.right, y + scale),
++      Paint()
++        ..color = const Color(0xC0FFFFFF)
++        ..strokeWidth = .8,
++    );
++  }
++  if (scale < .5) return;
++  for (
++    double x = rect.left + 18 * scale;
++    x < rect.right - 10 * scale;
++    x += 42 * scale
++  ) {
++    final slot = RRect.fromRectAndRadius(
++      Rect.fromCenter(
++        center: Offset(x, rect.center.dy),
++        width: 24 * scale,
++        height: 6 * scale,
++      ),
++      Radius.circular(3 * scale),
++    );
++    canvas.drawRRect(
++      slot.shift(Offset(0, scale)),
++      Paint()..color = const Color(0xC0FFFFFF),
++    );
++    canvas.drawRRect(slot, Paint()..color = const Color(0xFF89949C));
++    canvas.drawRRect(slot, border);
++  }
++  for (final x in [rect.left + 9 * scale, rect.right - 9 * scale]) {
++    final centre = Offset(x, rect.center.dy);
++    final radius = 4.5 * scale;
++    canvas.drawCircle(
++      centre,
++      radius + scale,
++      Paint()..color = const Color(0xFF69757E),
++    );
++    canvas.drawCircle(
++      centre,
++      radius,
++      Paint()
++        ..shader = const RadialGradient(
++          center: Alignment(-.4, -.4),
++          colors: [Color(0xFFF8FAFA), Color(0xFFA0ADB5), Color(0xFF61717D)],
++        ).createShader(Rect.fromCircle(center: centre, radius: radius)),
++    );
++    final screw = Paint()
++      ..color = const Color(0xFF354650)
++      ..strokeWidth = scale;
++    canvas.drawLine(
++      centre + Offset(-radius * .6, 0),
++      centre + Offset(radius * .6, 0),
++      screw,
++    );
++    canvas.drawLine(
++      centre + Offset(0, -radius * .6),
++      centre + Offset(0, radius * .6),
++      screw,
++    );
++  }
++}
+diff --git a/packages/electrosim_canvas/lib/src/motor_terminal_geometry.dart b/packages/electrosim_canvas/lib/src/motor_terminal_geometry.dart
+new file mode 100644
+index 0000000..a4916ac
+--- /dev/null
++++ b/packages/electrosim_canvas/lib/src/motor_terminal_geometry.dart
+@@ -0,0 +1,14 @@
++import 'dart:ui';
++
++/// Logical winding order U1,V1,W1,U2,V2,W2. The physical bottom row is
++/// W2,U2,V2, allowing star/delta links inside a single open terminal box.
++abstract final class SixTerminalMotorGeometry {
++  static List<Offset> offsets(Size size) => [
++    Offset(-size.width * .20, -size.height * .36),
++    Offset(0, -size.height * .36),
++    Offset(size.width * .20, -size.height * .36),
++    Offset(0, -size.height * .22),
++    Offset(size.width * .20, -size.height * .22),
++    Offset(-size.width * .20, -size.height * .22),
++  ];
++}
+diff --git a/packages/electrosim_canvas/lib/src/physical_wire_path.dart b/packages/electrosim_canvas/lib/src/physical_wire_path.dart
+new file mode 100644
+index 0000000..44ba7d8
+--- /dev/null
++++ b/packages/electrosim_canvas/lib/src/physical_wire_path.dart
+@@ -0,0 +1,37 @@
++import 'dart:math' as math;
++import 'dart:ui';
++
++/// Display-only smoothing. Saved routes and electrical endpoints are unchanged.
++/// A bend never consumes more than half either adjacent segment.
++Path buildPhysicalWirePath(List<Offset> points, {double bendRadius = 6}) {
++  final clean = <Offset>[];
++  for (final point in points) {
++    if (clean.isEmpty || clean.last != point) clean.add(point);
++  }
++  final path = Path();
++  if (clean.isEmpty) return path;
++  path.moveTo(clean.first.dx, clean.first.dy);
++  final radius = bendRadius.isFinite ? math.max(0.0, bendRadius) : 0.0;
++  for (var i = 1; i < clean.length - 1; i++) {
++    final corner = clean[i];
++    final incoming = corner - clean[i - 1];
++    final outgoing = clean[i + 1] - corner;
++    final a = incoming / incoming.distance;
++    final b = outgoing / outgoing.distance;
++    final cross = a.dx * b.dy - a.dy * b.dx;
++    if (cross.abs() < .000001 || radius == 0) {
++      path.lineTo(corner.dx, corner.dy);
++      continue;
++    }
++    final trim = math.min(
++      radius,
++      math.min(incoming.distance, outgoing.distance) / 2,
++    );
++    final entry = corner - a * trim;
++    final exit = corner + b * trim;
++    path.lineTo(entry.dx, entry.dy);
++    path.quadraticBezierTo(corner.dx, corner.dy, exit.dx, exit.dy);
++  }
++  if (clean.length > 1) path.lineTo(clean.last.dx, clean.last.dy);
++  return path;
++}
+diff --git a/packages/electrosim_canvas/test/din_rail_layout_test.dart b/packages/electrosim_canvas/test/din_rail_layout_test.dart
+new file mode 100644
+index 0000000..e5235c3
+--- /dev/null
++++ b/packages/electrosim_canvas/test/din_rail_layout_test.dart
+@@ -0,0 +1,72 @@
++import 'dart:ui';
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:electrosim_domain/electrosim_domain.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test(
++    'an aligned thermal relay and panel adapters share the lower support',
++    () {
++      final viewport = ViewportController();
++      addTearDown(viewport.dispose);
++      final circuit = CircuitState(
++        circuitId: CircuitId('supports'),
++        revision: 0,
++        mode: ElectricalMode.ac3,
++        components: [
++          for (final type in [
++            'breaker_3p',
++            'thermal_overload_3p',
++            'push_button_no',
++            'push_button_nc',
++          ])
++            ComponentInstance(
++              id: ComponentId(type),
++              modelType: type,
++              terminals: [],
++            ),
++        ],
++      );
++      final layout = CircuitVisualLayout(
++        elementPositions: const {
++          'breaker_3p': Offset(140, 165),
++          'thermal_overload_3p': Offset(455, 455),
++          'push_button_no': Offset(135, 455),
++          'push_button_nc': Offset(255, 455),
++        },
++      );
++      final painter = CircuitScenePainter(
++        circuit: circuit,
++        layout: layout,
++        viewport: viewport,
++        paintElementChrome: false,
++      );
++      expect(painter.dinSupportsAtBuild, hasLength(2));
++      final lower = painter.dinSupportsAtBuild.singleWhere(
++        (r) => r.center.dy == 455,
++      );
++      expect(lower.left, lessThan(100));
++      expect(lower.right, greaterThan(500));
++    },
++  );
++  test('aligned housings share a rail without moving their bounds', () {
++    const mounts = [
++      Rect.fromLTWH(40, 20, 60, 160),
++      Rect.fromLTWH(160, 0, 100, 200),
++    ];
++    final rails = layoutDinRails(mounts);
++    expect(rails, hasLength(1));
++    expect(rails.single.center.dy, 100);
++    expect(rails.single.left, lessThan(40));
++    expect(rails.single.right, greaterThan(260));
++    expect(mounts.first.left, 40);
++  });
++  test('different rows and distant devices retain separate supports', () {
++    final rails = layoutDinRails(const [
++      Rect.fromLTWH(0, 0, 60, 160),
++      Rect.fromLTWH(0, 250, 60, 160),
++      Rect.fromLTWH(1000, 0, 60, 160),
++    ]);
++    expect(rails, hasLength(3));
++  });
++}
+diff --git a/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart b/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart
+new file mode 100644
+index 0000000..1e818d7
+--- /dev/null
++++ b/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart
+@@ -0,0 +1,19 @@
++import 'dart:ui';
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('six motor terminals occupy a single accessible terminal box', () {
++    final p = SixTerminalMotorGeometry.offsets(const Size(260, 240));
++    expect(p, hasLength(6));
++    // Logical order stays U1,V1,W1,U2,V2,W2. Physical bottom row is W2,U2,V2.
++    expect(p[0].dy, p[2].dy);
++    expect(p[3].dy, p[5].dy);
++    expect(p.every((v) => v.dy < 0), isTrue);
++    expect(p[5].dx, p[0].dx);
++    expect(p[3].dx, p[1].dx);
++    expect(p[4].dx, p[2].dx);
++    expect((p[0] - p[1]).distance, greaterThan(40));
++    expect((p[0] - p[5]).distance, greaterThan(30));
++  });
++}
+diff --git a/packages/electrosim_canvas/test/physical_terminal_profile_test.dart b/packages/electrosim_canvas/test/physical_terminal_profile_test.dart
+index 4717cfc..c442e61 100644
+--- a/packages/electrosim_canvas/test/physical_terminal_profile_test.dart
++++ b/packages/electrosim_canvas/test/physical_terminal_profile_test.dart
+@@ -60,8 +60,8 @@ void main() {
+       cases = <String, (Size, List<Offset>)>{
+         'resistor': (Size(280, 110), <Offset>[Offset(-78, 0), Offset(78, 0)]),
+         'push_button_nc': (
+-          Size(180, 180),
+-          <Offset>[Offset(-20, 63), Offset(20, 63)],
++          Size(90, 140),
++          <Offset>[Offset(-14, 49), Offset(14, 49)],
+         ),
+         'buzzer': (Size(190, 190), <Offset>[Offset(-25, 65), Offset(25, 65)]),
+         'fuse_dc': (Size(300, 110), <Offset>[Offset(-102, 0), Offset(102, 0)]),
+@@ -135,11 +135,11 @@ void main() {
+     expectOffset(
+       TerminalVisualProfile.routingOffset(
+         modelType: 'push_button_nc',
+-        size: const Size(180, 180),
++        size: const Size(90, 140),
+         index: 0,
+         count: 2,
+       ),
+-      const Offset(-20, 90),
++      const Offset(-14, 70),
+       reason: 'NC button route 0',
+     );
+     expectOffset(
+diff --git a/packages/electrosim_canvas/test/physical_wire_path_test.dart b/packages/electrosim_canvas/test/physical_wire_path_test.dart
+new file mode 100644
+index 0000000..5193f2f
+--- /dev/null
++++ b/packages/electrosim_canvas/test/physical_wire_path_test.dart
+@@ -0,0 +1,41 @@
++import 'dart:ui' show Rect;
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('rounding keeps endpoints and bounds without editing saved routes', () {
++    const points = [Offset(10, 10), Offset(110, 10), Offset(110, 90)];
++    final path = buildPhysicalWirePath(points, bendRadius: 8);
++    final metric = path.computeMetrics().single;
++    expect(metric.getTangentForOffset(0)!.position, points.first);
++    expect(
++      (metric.getTangentForOffset(metric.length)!.position - points.last)
++          .distance,
++      lessThan(.001),
++    );
++    expect(path.getBounds(), const Rect.fromLTRB(10, 10, 110, 90));
++    expect(metric.length, lessThan(180));
++    expect(metric.length, greaterThan(170));
++    expect(points[1], const Offset(110, 10));
++  });
++
++  test('short segments and duplicate points remain finite', () {
++    final path = buildPhysicalWirePath(const [
++      Offset.zero,
++      Offset(2, 0),
++      Offset(2, 0),
++      Offset(2, 2),
++    ], bendRadius: 20);
++    expect(path.computeMetrics().single.length.isFinite, isTrue);
++    expect(path.getBounds(), const Rect.fromLTWH(0, 0, 2, 2));
++  });
++
++  test('a reversal keeps its full route length', () {
++    final path = buildPhysicalWirePath(const [
++      Offset.zero,
++      Offset(10, 0),
++      Offset.zero,
++    ]);
++    expect(path.computeMetrics().single.length, 20);
++  });
++}

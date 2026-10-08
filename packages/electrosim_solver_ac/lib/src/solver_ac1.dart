@@ -626,6 +626,7 @@ _CompiledAc1Model _compileModel(
         );
       case ComponentElectricalLaw.diode:
       case ComponentElectricalLaw.motorDc:
+      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1007,7 +1008,8 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
-    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorDc:
+      case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:
@@ -1084,7 +1086,8 @@ Ac1BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
-    case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorDc:
+      case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:

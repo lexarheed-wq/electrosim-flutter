@@ -2657,6 +2657,47 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Suppression impossible : aucune sélection.');
       return;
     }
+    if (_circuit.instruments.any((item) => item.id.value == selected)) {
+      final CircuitState next = CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        components: _circuit.components,
+        sources: _circuit.sources,
+        connections: _circuit.connections,
+        instruments: <InstrumentInstance>[
+          for (final InstrumentInstance item in _circuit.instruments)
+            if (item.id.value != selected) item,
+        ],
+        probes: <ProbeConnection>[
+          for (final ProbeConnection item in _circuit.probes)
+            if (item.instrumentId.value != selected) item,
+        ],
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      );
+      final CircuitVisualLayout old = _layout;
+      setState(() {
+        _circuit = next;
+        _layout = CircuitVisualLayout(
+          elementPositions: <String, Offset>{
+            ...old.elementPositions,
+          }..remove(selected),
+          elementSizes: <String, Size>{
+            ...old.elementSizes,
+          }..remove(selected),
+          wireRoutes: old.wireRoutes,
+          elementQuarterTurns: <String, int>{
+            ...old.elementQuarterTurns,
+          }..remove(selected),
+          defaultElementSize: old.defaultElementSize,
+        );
+        _selected = null;
+        _status = 'Instrument physique supprimé : $selected';
+      });
+      _simulation.updateCircuit(next);
+      return;
+    }
     final F9ElementDetails? details = F9ElementEditor.describe(
       _circuit,
       selected,
@@ -2767,6 +2808,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final F9ElementDetails? details =
           F9ElementEditor.describe(next, id) ??
           F9ElementEditor.describe(_circuit, id);
+      if (details == null &&
+          next.instruments.any((item) => item.id.value == id)) {
+        next = CircuitState(
+          circuitId: next.circuitId,
+          revision: next.revision + 1,
+          mode: next.mode,
+          components: next.components,
+          sources: next.sources,
+          connections: next.connections,
+          instruments: <InstrumentInstance>[
+            for (final InstrumentInstance item in next.instruments)
+              if (item.id.value != id) item,
+          ],
+          probes: <ProbeConnection>[
+            for (final ProbeConnection item in next.probes)
+              if (item.instrumentId.value != id) item,
+          ],
+          settings: next.settings,
+          metadata: next.metadata,
+        );
+        removedCount += 1;
+        continue;
+      }
       if (details == null) continue;
       final CircuitState candidate = details.kind == F9ElementKind.connection
           ? F9ElementEditor.deleteConnection(next, id)
@@ -2785,6 +2849,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Set<String> remainingElements = <String>{
       ...next.sources.map((SourceInstance item) => item.id.value),
       ...next.components.map((ComponentInstance item) => item.id.value),
+      ...next.instruments.map((InstrumentInstance item) => item.id.value),
     };
     final Set<String> remainingConnections = next.connections
         .map((Connection item) => item.id.value)

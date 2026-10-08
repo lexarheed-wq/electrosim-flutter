@@ -6,6 +6,7 @@ on:
     branches:
       - f18-g12-final-qualification-20261006
       - v2-post-mac-audit-fixes-20261005
+      - release/g12rq-mac-test-20261008
     paths:
       - '.github/workflows/f18-g12-final-qualification.yml'
       - 'tools/f18_g12_contract.py'
@@ -42,6 +43,8 @@ jobs:
           git diff --check
           python3 tools/f18_g12_contract.py
           python3 tools/f18_g11_audit.py
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
 
       - name: Re-run current gate contracts
         run: |
@@ -50,6 +53,7 @@ jobs:
           python3 tools/f18_g8_contract.py
           python3 tools/f18_g9_contract.py
           python3 tools/f18_g10_contract.py
+          python3 tools/f18_g10b_contract.py
 
       - name: Complete application qualification
         working-directory: apps/electrosim
@@ -67,6 +71,9 @@ jobs:
           flutter test test/f17_lan_sync_test.dart
           flutter test test/f18_g8_tp_teacher_student_test.dart
           flutter test test/f18_g9_internal_eie_test.dart
+          flutter test test/sim_r1_board_instrument_ui_test.dart
+          flutter test test/sim_r1_physical_instrument_projection_test.dart
+          flutter test test/core_island01_autonomous_storage_test.dart
 
       - name: Critical canvas and V2 library checks
         run: |
@@ -75,6 +82,8 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test test/canvas_performance_test.dart
+          flutter test test/canvas_interaction_performance_test.dart
+          flutter test test/connection_commit_performance_test.dart
           flutter test test/wire_routing_robustness_test.dart
           flutter test test/simulator_canvas_golden_test.dart
           cd ../electrosim_scenarios
@@ -84,6 +93,7 @@ jobs:
 
   macos-intel:
     name: macOS Intel release candidate
+    needs: final-core
     runs-on: macos-15-intel
     timeout-minutes: 90
     steps:
@@ -127,6 +137,9 @@ jobs:
           flutter analyze
           flutter test test/f0_smoke_test.dart
           flutter test test/f17_lan_sync_test.dart
+          flutter test test/sim_r1_board_instrument_ui_test.dart
+          flutter test test/sim_r1_physical_instrument_projection_test.dart
+          flutter test test/core_island01_autonomous_storage_test.dart
 
       - name: Build and prove Intel release
         shell: bash
@@ -171,6 +184,22 @@ jobs:
           
           If every item passes, report exactly:
           F18_PHYSICAL_MAC_PASS
+          EOF
+
+          cat >> "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
+
+          14. Dépôt de 25/50/100 composants ; aucune pause bloquante.
+          15. Batterie autonome 48 V + lampe 48 V, charge SOC réelle affichée.
+          16. Décharge temporelle au seuil minSOC : lampe éteinte.
+          17. PV + MPPT + batterie + charge CC 48 V sans onduleur : lampe allumée.
+          18. PV hybride CC+AC : bilan puissance cohérent des deux récepteurs.
+          19. Les appareils physiques V/A ont même silhouette palette/platine.
+          20. Sondes V/COM : tension moteur correcte sur bornes connues.
+          21. Ampèremètre en série : lecture du courant et sécurité fusible.
+          22. Sauvegarde/réouverture : positions, fils et sondes conservés.
+          23. Suppression d'appareil/fil et multisélection avec modificateur.
+          24. Reconnexion LAN élève usurpée sans jeton refusée.
+          25. Propriétés/mesures/EIE restent cohérents avec RuntimeSnapshot.
           EOF
 
           ditto -c -k --sequesterRsrc --keepParent "$app_path" \

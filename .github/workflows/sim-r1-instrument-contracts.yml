@@ -1,0 +1,34 @@
+name: SIM-R1 domain physical instruments
+
+on:
+  push:
+    branches:
+      - feature/sim-r1-instruments-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  instruments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Qualify immutable instrument/probe contracts
+        working-directory: packages/electrosim_domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+      - name: Architecture invariants
+        run: |
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py

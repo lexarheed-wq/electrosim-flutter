@@ -1,5 +1,8 @@
 name: G12-RQ professional workspace merge and Intel candidate
 on:
+  pull_request:
+    branches:
+      - release/g12rq-post-audit-mac-20261008
   push:
     branches:
       - feat/g12rq-professional-workspace-20261008
@@ -18,6 +21,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Merge supplied patch without overwriting newer product code
         shell: bash
         run: |

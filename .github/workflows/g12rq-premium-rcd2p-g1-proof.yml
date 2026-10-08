@@ -1,0 +1,65 @@
+name: G12RQ premium real 3D breaker G1 proof
+on:
+  push:
+    branches:
+      - feat/g12rq-premium-rcd2p-visual-g1-20261008
+permissions:
+  contents: write
+concurrency:
+  group: g12rq-premium-rcd2p-g1
+  cancel-in-progress: true
+jobs:
+  verify-real-premium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Restore authentic original vector source (SHA-256 guarded)
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Analyze and test actual premium painter
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format lib/reference_components/disjoncteur_3d.dart lib/f18_premium_rcd2p_showcase.dart test/g12rq_premium_rcd2p_visual_test.dart
+          flutter analyze
+          flutter test --no-pub --update-goldens test/g12rq_premium_rcd2p_visual_test.dart
+          flutter test --no-pub test/g12rq_premium_rcd2p_visual_test.dart
+      - name: Legacy component safety regressions
+        working-directory: apps/electrosim
+        run: |
+          flutter test --no-pub test/g12rq_real_industrial_artwork_test.dart test/sim_r1_instrument_palette_discoverability_test.dart
+      - name: Architectural and formatting guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+      - name: Publish real Flutter reference screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Premium-2P-OriginalPainter-DoubleVue-Flutter
+          path: apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Commit actual Dart painter and visual evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/lib/reference_components/disjoncteur_3d.dart
+          git add apps/electrosim/lib/f18_premium_rcd2p_showcase.dart
+          git add apps/electrosim/test/g12rq_premium_rcd2p_visual_test.dart
+          git add apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          if ! git diff --staged --quiet; then
+            git commit -m "feat(premium): add actual 3D differential painter and authentic Flutter proof [skip ci]"
+            git push origin HEAD:feat/g12rq-premium-rcd2p-visual-g1-20261008
+          fi

@@ -1,5 +1,4 @@
 import 'package:electrosim/f9_component_palette.dart';
-import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_pv/electrosim_pv.dart';

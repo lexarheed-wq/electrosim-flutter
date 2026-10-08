@@ -80,7 +80,7 @@ void main() {
         ),
       ));
       expect(find.byType(IndustrialPhysicalView), findsOneWidget);
-      expect(find.byKey(Key('new-industrial-' + device.name)), findsOneWidget);
+      expect(find.byKey(Key('new-industrial-${device.name}')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

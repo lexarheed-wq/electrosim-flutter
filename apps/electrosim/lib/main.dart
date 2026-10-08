@@ -661,6 +661,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       simulatedTime: _simulation.simulatedTime,
                       onToggleSimulation: _simulation.toggle,
                       onResetSimulation: _simulation.resetDynamics,
+                      simulationAdvancing: _simulation.fastForwarding,
+                      onAdvanceSimulation: (Duration elapsed) {
+                        unawaited(_advanceSimulation(elapsed));
+                      },
+                      onCancelAdvance: _simulation.cancelAdvance,
                     ),
               ),
               palette: F9ComponentPalette(
@@ -1434,6 +1439,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _meterReadoutCacheSecond = second;
     _meterReadoutCache = Map<String, String>.unmodifiable(results);
     return _meterReadoutCache;
+  }
+
+  Future<void> _advanceSimulation(Duration elapsed) async {
+    _setStatus('Avance du temps simulé en cours : ${elapsed.inMinutes} min.');
+    try {
+      await _simulation.advanceBy(elapsed);
+      if (mounted) {
+        _setStatus(
+          'Simulation à t=${_simulation.simulatedTime.inSeconds} s. '
+          'Résultats électriques recalculés.',
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) _setStatus('Avance temporelle interrompue : $error');
+    }
   }
 
   void _addPhysicalInstrument(
@@ -3235,6 +3255,9 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.simulatedTime,
     required this.onToggleSimulation,
     required this.onResetSimulation,
+    required this.simulationAdvancing,
+    required this.onAdvanceSimulation,
+    required this.onCancelAdvance,
   });
 
   final String entryLabel;
@@ -3255,6 +3278,9 @@ class _WorkspaceTopBar extends StatelessWidget {
   final Duration simulatedTime;
   final VoidCallback onToggleSimulation;
   final VoidCallback onResetSimulation;
+  final bool simulationAdvancing;
+  final ValueChanged<Duration> onAdvanceSimulation;
+  final VoidCallback onCancelAdvance;
 
   @override
   Widget build(BuildContext context) {
@@ -3383,15 +3409,46 @@ class _WorkspaceTopBar extends StatelessWidget {
                   ],
                   IconButton(
                     key: const Key('workspace-simulation-toggle'),
-                    tooltip: simulationRunning
-                        ? 'Mettre la simulation en pause'
-                        : 'Démarrer la simulation',
-                    onPressed: onToggleSimulation,
+                    tooltip: simulationAdvancing
+                        ? 'Annuler l’avance temporelle'
+                        : simulationRunning
+                            ? 'Mettre la simulation en pause'
+                            : 'Démarrer la simulation',
+                    onPressed: simulationAdvancing
+                        ? onCancelAdvance
+                        : onToggleSimulation,
                     icon: Icon(
-                      simulationRunning
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
+                      simulationAdvancing
+                          ? Icons.stop_circle_outlined
+                          : simulationRunning
+                              ? Icons.pause_circle_outline
+                              : Icons.play_circle_outline,
                     ),
+                  ),
+                  PopupMenuButton<Duration>(
+                    key: const Key('workspace-time-advance'),
+                    tooltip: 'Avancer le temps simulé',
+                    enabled: !simulationAdvancing,
+                    icon: const Icon(Icons.more_time_outlined),
+                    onSelected: onAdvanceSimulation,
+                    itemBuilder: (BuildContext context) =>
+                        const <PopupMenuEntry<Duration>>[
+                          PopupMenuItem<Duration>(
+                            key: Key('workspace-time-plus-minute'),
+                            value: Duration(minutes: 1),
+                            child: Text('Avancer de +1 min'),
+                          ),
+                          PopupMenuItem<Duration>(
+                            key: Key('workspace-time-plus-hour'),
+                            value: Duration(hours: 1),
+                            child: Text('Avancer de +1 h'),
+                          ),
+                          PopupMenuItem<Duration>(
+                            key: Key('workspace-time-plus-day'),
+                            value: Duration(hours: 24),
+                            child: Text('Avancer de +24 h'),
+                          ),
+                        ],
                   ),
                   IconButton(
                     key: const Key('workspace-rotate-action'),

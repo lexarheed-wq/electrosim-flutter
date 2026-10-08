@@ -250,6 +250,8 @@ abstract final class F18G7PropertyPresenter {
     OperatingWarningCode.overVoltage => 'Surtension',
     OperatingWarningCode.overCurrent => 'Surintensité',
     OperatingWarningCode.overPower => 'Surpuissance',
+    OperatingWarningCode.invalidMotorCoupling =>
+      'Couplage moteur Y/Δ incomplet ou invalide',
   };
 
   static const Map<String, String> _labels = <String, String>{
@@ -267,6 +269,8 @@ abstract final class F18G7PropertyPresenter {
     ReceiverNominalRating.currentKey: 'Courant nominal',
     ReceiverNominalRating.powerKey: 'Puissance nominale',
     'nominalCurrentA': 'Courant nominal',
+    'ratedDeltaVoltageV': 'Tension nominale Δ',
+    'ratedStarVoltageV': 'Tension nominale Y',
     'maxVoltageV': 'Tension maximale',
     'maxCurrentA': 'Courant maximal',
     'maxPowerW': 'Puissance maximale',

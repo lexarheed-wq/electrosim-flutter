@@ -10,7 +10,7 @@ void main() {
     const expected = <String, IndustrialDevice>{
       'dc_voltage_source': IndustrialDevice.supply,
       'breaker_dc': IndustrialDevice.breaker,
-      'switch_spst': IndustrialDevice.switch,
+      'switch_spst': IndustrialDevice.toggle,
       'push_button_no': IndustrialDevice.button,
       'lamp': IndustrialDevice.lamp,
       'fan_dc': IndustrialDevice.fan,
@@ -29,7 +29,7 @@ void main() {
     const short = <IndustrialDevice, ReferenceDevice>{
       IndustrialDevice.supply: ReferenceDevice.supply,
       IndustrialDevice.breaker: ReferenceDevice.breaker,
-      IndustrialDevice.switch: ReferenceDevice.toggle,
+      IndustrialDevice.toggle: ReferenceDevice.toggle,
       IndustrialDevice.button: ReferenceDevice.button,
       IndustrialDevice.lamp: ReferenceDevice.lamp,
     };

@@ -6,7 +6,7 @@ import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('CORE-ISLAND01 PV workspace resolves standalone battery + 48 V lamp as DC', () {
+  test('CORE-ISLAND01 PV workspace resolves standalone battery + 48 V lamp as DC', () async {
     final Terminal bp = Terminal(
       id: TerminalId('bat-pos'),
       name: '+',
@@ -96,5 +96,24 @@ void main() {
     final ComponentOperatingState afterCutoff =
         controller.snapshot.componentOperatingState(ComponentId('lamp'))!;
     expect(afterCutoff.currentA ?? 0.0, closeTo(0.0, 1e-6));
+
+    // G12-RQ: an accelerated minute and hour advance physical energy,
+    // protection and battery SOC, not only the displayed clock.
+    controller.resetDynamics();
+    expect(controller.simulatedTime, Duration.zero);
+    await controller.advanceBy(const Duration(minutes: 1));
+    expect(controller.simulatedTime, const Duration(minutes: 1));
+    final double socAfterMinute = controller.snapshot.dcBatterySocs[batteryId]!;
+    expect(socAfterMinute, lessThan(initial));
+    expect(socAfterMinute, greaterThan(0.10));
+    await controller.advanceBy(const Duration(hours: 1));
+    expect(controller.simulatedTime, const Duration(minutes: 61));
+    expect(controller.snapshot.dcBatterySocs[batteryId], closeTo(0.10, 1e-7));
+    final ComponentOperatingState depleted =
+        controller.snapshot.componentOperatingState(ComponentId('lamp'))!;
+    expect(depleted.currentA ?? 0.0, closeTo(0.0, 1e-6));
+    controller.resetDynamics();
+    expect(controller.simulatedTime, Duration.zero);
+    expect(controller.snapshot.dcBatterySocs[batteryId], closeTo(initial, 1e-8));
   });
 }

@@ -832,14 +832,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                           if (_circuit.instruments.isNotEmpty)
                                             AnimatedBuilder(
                                               animation: _simulation,
-                                              builder: (BuildContext context, Widget? child) =>
-                                                  IgnorePointer(
+                                              builder:
+                                                  (
+                                                    BuildContext context,
+                                                    Widget? child,
+                                                  ) => IgnorePointer(
                                                     child: CustomPaint(
-                                                      painter: F18PhysicalInstrumentReadouts(
-                                                        layout: canvasLayout,
-                                                        viewport: _viewport,
-                                                        readouts: _physicalMeterReadouts(),
-                                                      ),
+                                                      painter:
+                                                          F18PhysicalInstrumentReadouts(
+                                                            layout:
+                                                                canvasLayout,
+                                                            viewport: _viewport,
+                                                            readouts:
+                                                                _physicalMeterReadouts(),
+                                                          ),
                                                       size: Size.infinite,
                                                     ),
                                                   ),
@@ -1408,7 +1414,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
       final double? value = reading.result?.reading?.value;
       if (reading.status == PhysicalInstrumentStatus.valid && value != null) {
-        final bool current = item.mode == InstrumentMode.currentDc ||
+        final bool current =
+            item.mode == InstrumentMode.currentDc ||
             item.mode == InstrumentMode.currentAcRms;
         results[item.id.value] =
             '${value.toStringAsFixed(2)} ${current ? 'A' : 'V'}';
@@ -1435,7 +1442,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ) {
     final bool current = definition.keyName == 'instrument-ammeter';
     final String elementId = _allocateElementId(definition.keyName);
-    final bool dc = _circuit.mode == ElectricalMode.dc ||
+    final bool dc =
+        _circuit.mode == ElectricalMode.dc ||
         _circuit.mode == ElectricalMode.pv;
     final InstrumentInstance instrument = InstrumentInstance(
       id: InstrumentId(elementId),
@@ -1459,7 +1467,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     setState(() {
       _circuit = next;
       final CircuitVisualLayout moved = _layout.moveElement(
-        elementId, worldPosition);
+        elementId,
+        worldPosition,
+      );
       _layout = CircuitVisualLayout(
         elementPositions: moved.elementPositions,
         elementSizes: <String, Size>{
@@ -1775,11 +1785,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         .where((item) => item.instrumentId == meter!.id)
         .toList(growable: false);
     final bool hasV = existing.any(
-      (item) => item.port == InstrumentPort.voltOhm);
+      (item) => item.port == InstrumentPort.voltOhm,
+    );
     final bool hasCom = existing.any(
-      (item) => item.port == InstrumentPort.common);
-    final InstrumentPort port =
-        hasV && !hasCom ? InstrumentPort.common : InstrumentPort.voltOhm;
+      (item) => item.port == InstrumentPort.common,
+    );
+    final InstrumentPort port = hasV && !hasCom
+        ? InstrumentPort.common
+        : InstrumentPort.voltOhm;
     final bool resetBoth = hasV && hasCom;
     final ProbeConnection added = ProbeConnection(
       id: ProbeId('${meter.id.value}-${port.name}'),
@@ -1798,7 +1811,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       probes: <ProbeConnection>[
         for (final ProbeConnection item in _circuit.probes)
           if (item.instrumentId != meter.id ||
-              (!resetBoth && item.port != port)) item,
+              (!resetBoth && item.port != port))
+            item,
         added,
       ],
       settings: _circuit.settings,
@@ -1830,10 +1844,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return true;
     }
     final Connection? wire = _circuit.connections
-        .where((item) => item.id == target).firstOrNull;
+        .where((item) => item.id == target)
+        .firstOrNull;
     if (wire == null || !wire.enabled) return false;
     final bool alreadyCut = _circuit.instruments.any(
-      (item) => item.id != meter!.id && item.cutConnectionId == target);
+      (item) => item.id != meter!.id && item.cutConnectionId == target,
+    );
     if (alreadyCut) {
       _setStatus('Fil déjà instrumenté par un autre ampèremètre.');
       return true;
@@ -1884,7 +1900,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     setState(() {
       _circuit = next;
-      _status = 'Ampèremètre inséré virtuellement en série sur ${target.value}.';
+      _status =
+          'Ampèremètre inséré virtuellement en série sur ${target.value}.';
     });
     _simulation.updateCircuit(next);
     return true;
@@ -2741,16 +2758,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _circuit = next;
         _layout = CircuitVisualLayout(
-          elementPositions: <String, Offset>{
-            ...old.elementPositions,
-          }..remove(selected),
-          elementSizes: <String, Size>{
-            ...old.elementSizes,
-          }..remove(selected),
+          elementPositions: <String, Offset>{...old.elementPositions}
+            ..remove(selected),
+          elementSizes: <String, Size>{...old.elementSizes}..remove(selected),
           wireRoutes: old.wireRoutes,
-          elementQuarterTurns: <String, int>{
-            ...old.elementQuarterTurns,
-          }..remove(selected),
+          elementQuarterTurns: <String, int>{...old.elementQuarterTurns}
+            ..remove(selected),
           defaultElementSize: old.defaultElementSize,
         );
         _selected = null;

@@ -14,6 +14,16 @@ void main() {
 
   test('G5 exposes no decorative or unregistered electrical component', () {
     for (final F9PaletteDefinition item in f9PaletteCatalog) {
+      if (item.kind == F9PaletteElementKind.instrument) {
+        expect(item.modelType.startsWith('physical_'), isTrue);
+        expect(item.terminalCount, 0);
+        expect(
+          CoreComponentModelContracts.registry.resolve(item.modelType),
+          isNull,
+          reason: 'A measuring device is never a solver receiver.',
+        );
+        continue;
+      }
       if (item.kind == F9PaletteElementKind.source) {
         expect(
           supportedSourceModels,
@@ -45,7 +55,8 @@ void main() {
             .toList(growable: false);
         expect(visibleModes, isNotEmpty, reason: item.keyName);
 
-        if (item.kind == F9PaletteElementKind.source) {
+        if (item.kind == F9PaletteElementKind.source ||
+            item.kind == F9PaletteElementKind.instrument) {
           continue;
         }
         final ComponentModelContract contract = CoreComponentModelContracts

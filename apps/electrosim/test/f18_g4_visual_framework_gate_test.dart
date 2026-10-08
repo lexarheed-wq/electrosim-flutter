@@ -100,6 +100,15 @@ void main() {
         expect(item.title.trim(), item.title);
         expect(item.modelType.trim(), item.modelType);
         expect(item.renderedModelType.trim(), item.renderedModelType);
+        if (item.kind == F9PaletteElementKind.instrument) {
+          expect(item.terminalCount, 0, reason: item.keyName);
+          expect(
+            item.renderedModelType.startsWith('physical_'),
+            isTrue,
+            reason: 'Meters must not masquerade as circuit branches.',
+          );
+          continue;
+        }
         expect(item.terminalCount, greaterThan(0), reason: item.keyName);
         expect(
           F18ReferenceComponentVisuals.supports(item.renderedModelType),

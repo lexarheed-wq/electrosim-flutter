@@ -135,8 +135,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.speed,
     kind: F9PaletteElementKind.instrument,
     terminalLabels: <String>[],
-    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
-      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{
+      ElectricalMode.dc,
+      ElectricalMode.ac1,
+      ElectricalMode.ac3,
+      ElectricalMode.pv,
+    },
     subtitle: 'Sondes V/Ω et COM, impédance réelle',
   ),
   F9PaletteDefinition(
@@ -147,8 +151,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.electric_meter,
     kind: F9PaletteElementKind.instrument,
     terminalLabels: <String>[],
-    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
-      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{
+      ElectricalMode.dc,
+      ElectricalMode.ac1,
+      ElectricalMode.ac3,
+      ElectricalMode.pv,
+    },
     subtitle: 'Insertion en série, fusible et charge interne',
   ),
   F9PaletteDefinition(
@@ -2125,8 +2133,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   @override
   Widget build(BuildContext context) {
     final List<F9PaletteDefinition> filtered = _filtered;
-    final int availableCount =
-        _query.trim().isEmpty && _category == 'Tous'
+    final int availableCount = _query.trim().isEmpty && _category == 'Tous'
         ? f9PaletteCatalog
               .where(
                 (F9PaletteDefinition item) => item.supportsMode(widget.mode),
@@ -2342,18 +2349,20 @@ class _PaletteDraggableTile extends StatelessWidget {
           color: Colors.transparent,
           child: Opacity(
             opacity: 0.94,
-            child: F18ComponentAssetVisual(
-              modelType: definition.renderedModelType,
-              variantKey: definition.visualVariant,
-              size:
-                  F18ReferenceComponentVisuals.supports(
-                    definition.renderedModelType,
-                  )
-                  ? F18ReferenceComponentMetrics.dragSizeFor(
-                      definition.renderedModelType,
-                    )
-                  : F18ComponentIdentityMetrics.dragSize,
-            ),
+            child: definition.kind == F9PaletteElementKind.instrument
+                ? F9ComponentPreview(definition: definition)
+                : F18ComponentAssetVisual(
+                    modelType: definition.renderedModelType,
+                    variantKey: definition.visualVariant,
+                    size:
+                        F18ReferenceComponentVisuals.supports(
+                          definition.renderedModelType,
+                        )
+                        ? F18ReferenceComponentMetrics.dragSizeFor(
+                            definition.renderedModelType,
+                          )
+                        : F18ComponentIdentityMetrics.dragSize,
+                  ),
           ),
         ),
         childWhenDragging: Opacity(opacity: 0.35, child: tile),
@@ -2365,6 +2374,97 @@ class _PaletteDraggableTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Vector instrument artwork shares the front-facing form, display and
+/// red/COM sockets of the physical board entity. It is not an electrical
+/// component symbol and does not pass through the electrical model painter.
+class F18PhysicalInstrumentPreview extends StatelessWidget {
+  const F18PhysicalInstrumentPreview({
+    super.key,
+    required this.ammeter,
+    this.compact = false,
+  });
+
+  final bool ammeter;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: compact ? 72 : 112,
+      height: compact ? 94 : 152,
+      child: CustomPaint(
+        painter: _F18PhysicalInstrumentPreviewPainter(ammeter),
+      ),
+    );
+  }
+}
+
+final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
+  const _F18PhysicalInstrumentPreviewPainter(this.ammeter);
+  final bool ammeter;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect caseRect = Offset.zero & size;
+    final double radius = size.width * .105;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(caseRect, Radius.circular(radius)),
+      Paint()..color = const Color(0xFF283748),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(caseRect, Radius.circular(radius)),
+      Paint()
+        ..color = const Color(0xFF101E30)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+    final Rect display = Rect.fromLTWH(
+      size.width * .10,
+      size.height * .11,
+      size.width * .80,
+      size.height * .38,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(display, Radius.circular(size.width * .028)),
+      Paint()..color = const Color(0xFFD5E5D6),
+    );
+    final TextPainter text = TextPainter(
+      text: TextSpan(
+        text: ammeter ? '— A' : '— V',
+        style: TextStyle(
+          fontSize: size.width * .12,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF142C1F),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: display.width);
+    text.paint(
+      canvas,
+      Offset(
+        display.center.dx - text.width / 2,
+        display.center.dy - text.height / 2,
+      ),
+    );
+    final double y = size.height * .80;
+    final double socketRadius = size.width * .04;
+    canvas.drawCircle(
+      Offset(size.width * .28, y),
+      socketRadius,
+      Paint()..color = const Color(0xFFD12B3C),
+    );
+    canvas.drawCircle(
+      Offset(size.width * .72, y),
+      socketRadius,
+      Paint()..color = const Color(0xFF15202D),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _F18PhysicalInstrumentPreviewPainter old) =>
+      ammeter != old.ammeter;
 }
 
 class F9ComponentPreview extends StatelessWidget {
@@ -2379,6 +2479,13 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (definition.kind == F9PaletteElementKind.instrument) {
+      return F18PhysicalInstrumentPreview(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        ammeter: definition.keyName == 'instrument-ammeter',
+        compact: compact,
+      );
+    }
     return F18ComponentAssetVisual(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,

@@ -23,6 +23,12 @@ void main() {
           );
           await tester.pump();
 
+          if (item.kind == F9PaletteElementKind.instrument) {
+            expect(find.byType(F18PhysicalInstrumentPreview), findsOneWidget);
+            expect(find.byType(F18ComponentAssetVisual), findsNothing);
+            expect(tester.takeException(), isNull);
+            continue;
+          }
           final Finder finder = find.byType(F18ComponentAssetVisual);
           expect(finder, findsOneWidget, reason: item.modelType);
           final F18ComponentAssetVisual visual = tester
@@ -125,12 +131,17 @@ void main() {
 
     test('production palette is fully covered by the reference renderer', () {
       for (final F9PaletteDefinition item in f9PaletteCatalog) {
-        expect(
-          F18ReferenceComponentVisuals.supports(item.renderedModelType),
-          isTrue,
-          reason:
-              '${item.title} (${item.modelType} → ${item.renderedModelType})',
-        );
+        if (item.kind == F9PaletteElementKind.instrument) {
+          expect(item.modelType.startsWith('physical_'), isTrue);
+          expect(item.terminalCount, 0);
+        } else {
+          expect(
+            F18ReferenceComponentVisuals.supports(item.renderedModelType),
+            isTrue,
+            reason:
+                '${item.title} (${item.modelType} → ${item.renderedModelType})',
+          );
+        }
       }
     });
 

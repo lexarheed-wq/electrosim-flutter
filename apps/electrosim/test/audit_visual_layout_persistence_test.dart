@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:electrosim/main.dart';
 import 'package:electrosim/runtime/electrosim_layout_persistence.dart';

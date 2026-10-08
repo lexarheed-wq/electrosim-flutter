@@ -24,7 +24,9 @@ jobs:
           set -euo pipefail
           git diff --check
           python3 tools/core_unify_architecture_guard.py
-          dart format --output=none --set-exit-if-changed apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
+          dart format apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
+          git --no-pager diff -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
+          git diff --exit-code -- apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
       - name: UI kit analysis and tests
         working-directory: packages/electrosim_ui_kit
         shell: bash

@@ -440,7 +440,6 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.onSessionManage,
     super.onExitWorkspace,
   });
-
 }
 
 class F18WorkspacePage extends StatefulWidget {
@@ -499,7 +498,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
-  final ElectroSimConnectionRouter _connectionRouter = ElectroSimConnectionRouter();
+  final ElectroSimConnectionRouter _connectionRouter =
+      ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
     scale: 1,
     translation: const Offset(40, 40),
@@ -525,8 +525,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   HitTestSession? _hitTestSession;
   CircuitState? _hitTestSessionCircuit;
   CircuitVisualLayout? _hitTestSessionLayout;
-  final ValueNotifier<Offset?> _wiringPointerWorld =
-      ValueNotifier<Offset?>(null);
+  final ValueNotifier<Offset?> _wiringPointerWorld = ValueNotifier<Offset?>(
+    null,
+  );
   TerminalId? _wiringPendingTerminal;
   TerminalId? _wiringHoverTerminal;
   int? _activeCanvasPointer;
@@ -620,40 +621,41 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             child: ElectroSimWorkspaceShell(
               topBar: AnimatedBuilder(
                 animation: _simulation,
-                builder: (BuildContext context, Widget? child) => _WorkspaceTopBar(
-                entryLabel: widget.entryLabel,
-                workspace: _workspace,
-                sessionNavigation: widget.sessionNavigation,
-                onHome: () => Navigator.of(
-                  context,
-                ).popUntil((Route<dynamic> route) => route.isFirst),
-                onDashboard: widget.sessionNavigation
-                    ? (widget.onSessionDashboard ?? _showDashboard)
-                    : null,
-                onManageSession: widget.sessionNavigation
-                    ? (widget.onSessionManage ?? _showManageSession)
-                    : null,
-                onExitWorkspace: widget.onExitWorkspace,
-                onSave: widget.persistenceController == null
-                    ? null
-                    : _saveWorkspace,
-                onOpen: widget.persistenceController == null
-                    ? null
-                    : _openLatestWorkspace,
-                onRotateSelected: canRotateSelection
-                    ? _rotateSelectedElement
-                    : null,
-                onDeleteSelected: canDeleteSelection
-                    ? _deleteSelectedElement
-                    : null,
-                onRecenter: _fitCircuitToViewport,
-                electricalMode: _circuit.mode,
-                onSelectElectricalMode: _requestElectricalModeChange,
-                simulationRunning: _simulation.running,
-                simulatedTime: _simulation.simulatedTime,
-                onToggleSimulation: _simulation.toggle,
-                onResetSimulation: _simulation.resetDynamics,
-              ),
+                builder: (BuildContext context, Widget? child) =>
+                    _WorkspaceTopBar(
+                      entryLabel: widget.entryLabel,
+                      workspace: _workspace,
+                      sessionNavigation: widget.sessionNavigation,
+                      onHome: () => Navigator.of(
+                        context,
+                      ).popUntil((Route<dynamic> route) => route.isFirst),
+                      onDashboard: widget.sessionNavigation
+                          ? (widget.onSessionDashboard ?? _showDashboard)
+                          : null,
+                      onManageSession: widget.sessionNavigation
+                          ? (widget.onSessionManage ?? _showManageSession)
+                          : null,
+                      onExitWorkspace: widget.onExitWorkspace,
+                      onSave: widget.persistenceController == null
+                          ? null
+                          : _saveWorkspace,
+                      onOpen: widget.persistenceController == null
+                          ? null
+                          : _openLatestWorkspace,
+                      onRotateSelected: canRotateSelection
+                          ? _rotateSelectedElement
+                          : null,
+                      onDeleteSelected: canDeleteSelection
+                          ? _deleteSelectedElement
+                          : null,
+                      onRecenter: _fitCircuitToViewport,
+                      electricalMode: _circuit.mode,
+                      onSelectElectricalMode: _requestElectricalModeChange,
+                      simulationRunning: _simulation.running,
+                      simulatedTime: _simulation.simulatedTime,
+                      onToggleSimulation: _simulation.toggle,
+                      onResetSimulation: _simulation.resetDynamics,
+                    ),
               ),
               palette: F9ComponentPalette(
                 mode: _circuit.mode,
@@ -666,46 +668,47 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                   ? F17TpSupervisionPanel(controller: _tpController)
                   : AnimatedBuilder(
                       animation: _simulation,
-                      builder: (BuildContext context, Widget? child) => F9ContextPanels(
-                      circuit: _circuit,
-                      selectedId: _selected,
-                      status: _status,
-                      workspace: _workspace,
-                      role: widget.role,
-                      onTogglePrimaryState:
-                          selectedDetails == null ||
-                              _usesDirectCanvasControl(
-                                selectedDetails.modelType,
-                              )
-                          ? null
-                          : _toggleSelectedPrimaryState,
-                      onReplaceSelected: _selectedIds.length == 1
-                          ? _replaceSelectedElement
-                          : null,
-                      onSelectElement: (String? id) {
-                        setState(() {
-                          _selected = id;
-                          _status = id == null
-                              ? 'Sélection effacée'
-                              : 'Sélection clavier : $id';
-                        });
-                      },
-                      runtimeSnapshot: _simulation.snapshot,
-                      tpSessionController:
-                          widget.sessionNavigation ||
-                              widget.tpSessionController != null
-                          ? _tpController
-                          : null,
-                    ),
+                      builder: (BuildContext context, Widget? child) =>
+                          F9ContextPanels(
+                            circuit: _circuit,
+                            selectedId: _selected,
+                            status: _status,
+                            workspace: _workspace,
+                            role: widget.role,
+                            onTogglePrimaryState:
+                                selectedDetails == null ||
+                                    _usesDirectCanvasControl(
+                                      selectedDetails.modelType,
+                                    )
+                                ? null
+                                : _toggleSelectedPrimaryState,
+                            onReplaceSelected: _selectedIds.length == 1
+                                ? _replaceSelectedElement
+                                : null,
+                            onSelectElement: (String? id) {
+                              setState(() {
+                                _selected = id;
+                                _status = id == null
+                                    ? 'Sélection effacée'
+                                    : 'Sélection clavier : $id';
+                              });
+                            },
+                            runtimeSnapshot: _simulation.snapshot,
+                            tpSessionController:
+                                widget.sessionNavigation ||
+                                    widget.tpSessionController != null
+                                ? _tpController
+                                : null,
+                          ),
                     ),
               statusBar: AnimatedBuilder(
                 animation: _simulation,
                 builder: (BuildContext context, Widget? child) => _StatusBar(
-                circuit: _circuit,
-                status: _status,
-                simulationRunning: _simulation.running,
-                simulatedTime: _simulation.simulatedTime,
-              ),
+                  circuit: _circuit,
+                  status: _status,
+                  simulationRunning: _simulation.running,
+                  simulatedTime: _simulation.simulatedTime,
+                ),
               ),
               canvas: KeyedSubtree(
                 key: const Key('f18-canvas-drop-region'),
@@ -742,9 +745,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                               onPointerPanZoomUpdate:
                                   _onCanvasPointerPanZoomUpdate,
                               onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
-                              child: ValueListenableBuilder<
-                                CircuitVisualLayout?
-                              >(
+                              child: ValueListenableBuilder<CircuitVisualLayout?>(
                                 valueListenable: _dragPreviewLayout,
                                 builder:
                                     (
@@ -783,14 +784,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 },
                                             onConnectionRequested:
                                                 _handleConnectionRequested,
-                                            onContextAction:
-                                                (CanvasHitResult hit) {
-                                                  setState(() {
-                                                    _status =
-                                                        'Action contextuelle : ${hit.kind.name}. '
-                                                        'Les mêmes actions sont disponibles dans Propriétés.';
-                                                  });
-                                                },
+                                            onContextAction: (CanvasHitResult hit) {
+                                              setState(() {
+                                                _status =
+                                                    'Action contextuelle : ${hit.kind.name}. '
+                                                    'Les mêmes actions sont disponibles dans Propriétés.';
+                                              });
+                                            },
                                             enableInteraction: false,
                                             paintElementChrome: false,
                                             smartWireSemantics: true,
@@ -804,22 +804,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                   BuildContext context,
                                                   Widget? child,
                                                 ) => F9CanvasVisualOverlay(
-                                            circuit: _circuit,
-                                            layout: canvasLayout,
-                                            viewport: _viewport,
-                                            selectedElementIds: _selectedIds,
-                                            pendingTerminalId:
-                                                _wiringPendingTerminal,
-                                            hoverTerminalId:
-                                                _wiringHoverTerminal,
-                                            pointerWorldPositionListenable:
-                                                _wiringPointerWorld,
-                                            wirePreviewPlanner:
-                                                _g2aWirePreviewPlanner,
-                                            runtimeSnapshot: _simulation.snapshot,
-                                            simulationRunning:
-                                                _simulation.running,
-                                          ),
+                                                  circuit: _circuit,
+                                                  layout: canvasLayout,
+                                                  viewport: _viewport,
+                                                  selectedElementIds:
+                                                      _selectedIds,
+                                                  pendingTerminalId:
+                                                      _wiringPendingTerminal,
+                                                  hoverTerminalId:
+                                                      _wiringHoverTerminal,
+                                                  pointerWorldPositionListenable:
+                                                      _wiringPointerWorld,
+                                                  wirePreviewPlanner:
+                                                      _g2aWirePreviewPlanner,
+                                                  runtimeSnapshot:
+                                                      _simulation.snapshot,
+                                                  simulationRunning:
+                                                      _simulation.running,
+                                                ),
                                           ),
                                         ],
                                       );
@@ -2079,10 +2081,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final bool backgroundRouting =
         nextCircuit.components.length + nextCircuit.sources.length >= 30;
     final CircuitVisualLayout nextLayout = backgroundRouting
-        ? provisionalConnectionLayout(circuit: nextCircuit, layout: _layout,
-            connection: connection)
-        : _g2aWireLayoutEngine.routeConnection(circuit: nextCircuit,
-            layout: _layout, connectionId: connection.id);
+        ? provisionalConnectionLayout(
+            circuit: nextCircuit,
+            layout: _layout,
+            connection: connection,
+          )
+        : _g2aWireLayoutEngine.routeConnection(
+            circuit: nextCircuit,
+            layout: _layout,
+            connectionId: connection.id,
+          );
     final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
       circuit: nextCircuit,
       layout: nextLayout,
@@ -2104,29 +2112,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _syncStudentTpCircuit();
     _announce(_status);
     if (backgroundRouting) {
-      unawaited(_finishConnectionRoute(nextCircuit, nextLayout,
-        connection.id, decision.message));
+      unawaited(
+        _finishConnectionRoute(
+          nextCircuit,
+          nextLayout,
+          connection.id,
+          decision.message,
+        ),
+      );
     }
   }
 
-  Future<void> _finishConnectionRoute(CircuitState circuit,
-      CircuitVisualLayout baseLayout, ConnectionId id, String message) async {
+  Future<void> _finishConnectionRoute(
+    CircuitState circuit,
+    CircuitVisualLayout baseLayout,
+    ConnectionId id,
+    String message,
+  ) async {
     try {
-      final routed = await _connectionRouter.route(circuit: circuit,
-        layout: baseLayout, connectionId: id);
+      final routed = await _connectionRouter.route(
+        circuit: circuit,
+        layout: baseLayout,
+        connectionId: id,
+      );
       // A newer connection, component move or restored workspace owns the
       // state now. Never overwrite it with an old background result.
-      if (!mounted || routed == null || !identical(_circuit, circuit) ||
+      if (!mounted ||
+          routed == null ||
+          !identical(_circuit, circuit) ||
           !identical(_layout, baseLayout)) {
         return;
       }
       setState(() {
         _layout = routed;
-        _status = F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: routed)
-            ? message : '$message Routage graphique provisoire.';
+        _status =
+            F18WorkspaceWireSafety.isRenderable(
+              circuit: circuit,
+              layout: routed,
+            )
+            ? message
+            : '$message Routage graphique provisoire.';
       });
     } catch (error) {
-      if (!mounted || !identical(_circuit, circuit) ||
+      if (!mounted ||
+          !identical(_circuit, circuit) ||
           !identical(_layout, baseLayout)) {
         return;
       }
@@ -2156,7 +2185,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitVisualLayout moved = _layout.moveElement(elementId, position);
     setState(() {
       _layout = moved;
-      _status = 'Position graphique mise à jour : $elementId — routage en cours.';
+      _status =
+          'Position graphique mise à jour : $elementId — routage en cours.';
     });
     unawaited(_finishElementRoute(circuit, moved, elementId));
   }
@@ -2169,7 +2199,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitState circuit = _circuit;
     setState(() {
       _layout = preview;
-      _status = 'Position graphique mise à jour : $elementId — routage en cours.';
+      _status =
+          'Position graphique mise à jour : $elementId — routage en cours.';
     });
     _dragPreviewLayout.value = null;
     unawaited(_finishElementRoute(circuit, preview, elementId));
@@ -2181,18 +2212,26 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     String elementId,
   ) async {
     try {
-      final CircuitVisualLayout? routed =
-          await _connectionRouter.routeChangedElement(
-        circuit: circuit, layout: base, elementId: elementId);
-      if (!mounted || routed == null ||
-          !identical(_circuit, circuit) || !identical(_layout, base)) {
+      final CircuitVisualLayout? routed = await _connectionRouter
+          .routeChangedElement(
+            circuit: circuit,
+            layout: base,
+            elementId: elementId,
+          );
+      if (!mounted ||
+          routed == null ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, base)) {
         return;
       }
       if (identical(routed, base)) return;
       setState(() {
         _layout = routed;
-        _status = F18WorkspaceWireSafety.isRenderable(
-          circuit: circuit, layout: routed)
+        _status =
+            F18WorkspaceWireSafety.isRenderable(
+              circuit: circuit,
+              layout: routed,
+            )
             ? 'Routage ajusté : $elementId'
             : 'Position conservée ; trajet provisoire à vérifier.';
       });

@@ -1,0 +1,24 @@
+name: RQ Dart formatter evidence (no release)
+on:
+  push:
+    branches:
+      - fix/rq-dart-format-20261008
+permissions:
+  contents: read
+jobs:
+  format_evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Show exact formatter patch for G9 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format apps/electrosim/lib/runtime/electrosim_runtime_engine.dart
+          git --no-pager diff -- apps/electrosim/lib/runtime/electrosim_runtime_engine.dart
+          test -z "$(git status --porcelain -- apps/electrosim/lib/runtime/electrosim_runtime_engine.dart)"

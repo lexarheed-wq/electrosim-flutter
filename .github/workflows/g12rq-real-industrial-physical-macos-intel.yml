@@ -1,0 +1,128 @@
+name: G12RQ genuine industrial physical artwork Mac Intel
+on:
+  push:
+    branches: [fix/g12rq-real-physical-models-20261008]
+permissions:
+  contents: write
+concurrency:
+  group: g12rq-genuine-physical-macos
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/g12rq-real-physical-models-20261008
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify genuinely replaced eight physical painters and canonical board geometry
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format lib/f18_industrial_dual_view.dart lib/f18_industrial_physical_devices.dart lib/f18_component_asset_visual.dart lib/f9_component_palette.dart lib/f9_component_visuals.dart test/f18_industrial_dual_view_library_test.dart test/g12rq_real_industrial_artwork_test.dart
+          flutter analyze
+          flutter test --no-pub test/g12rq_real_industrial_artwork_test.dart test/f18_industrial_dual_view_library_test.dart test/sim_r1_instrument_palette_discoverability_test.dart test/sim_r1_board_instrument_ui_test.dart
+      - name: Rebaseline palette golden images for intentional perspective change
+        working-directory: apps/electrosim
+        run: flutter test --no-pub --update-goldens test/f9_goldens_test.dart
+      - name: Confirm golden references reproducibly in isolation
+        working-directory: apps/electrosim
+        run: flutter test --no-pub test/f9_goldens_test.dart
+      - name: Complete app behavioral regression suite
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
+          flutter test --no-pub "${files[@]}"
+      - name: Canvas and UI Kit regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_canvas electrosim_ui_kit; do
+            (cd "packages/$p" && flutter pub get && flutter analyze && flutter test)
+          done
+      - name: Electrical science and physics regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_domain electrosim_solver_dc electrosim_solver_ac electrosim_measurements electrosim_pv; do
+            (cd "packages/$p" && dart pub get && dart analyze && dart test)
+          done
+      - name: Architecture and clean diff guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+      - name: Retain verified Dart formatting and new palette golden screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/lib/f18_industrial_physical_devices.dart apps/electrosim/lib/f18_component_asset_visual.dart apps/electrosim/test/g12rq_real_industrial_artwork_test.dart
+          git add apps/electrosim/lib/f18_industrial_dual_view.dart
+          git add apps/electrosim/lib/f9_component_palette.dart
+          git add apps/electrosim/lib/f9_component_visuals.dart
+          git add apps/electrosim/test/f18_industrial_dual_view_library_test.dart
+          git add apps/electrosim/test/goldens
+          if ! git diff --staged --quiet; then
+            git commit -m "test(render): qualify dual-view catalogue and refresh golden images [skip ci]"
+            git push origin HEAD:fix/g12rq-real-physical-models-20261008
+          fi
+  macos-intel:
+    needs: qualify
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/g12rq-real-physical-models-20261008
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Release build and architecture proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) root="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          exe="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$exe"
+          out="$base/g12rq-real-physical-mac"
+          mkdir -p "$out"
+          file "$exe" | tee "$out/MAC_ARCH_PROOF.txt"
+          grep -qi x86_64 "$out/MAC_ARCH_PROOF.txt"
+          git -C "$base" rev-parse HEAD > "$out/SOURCE_SHA.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/ElectroSim_G12RQ_Nouveaux_Composants_Industriels_macOS_Intel.zip"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-RealIndustrialComponents-macOS-Intel
+          path: g12rq-real-physical-mac/
+          if-no-files-found: error
+          retention-days: 14

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - work/rq-visual-instruments-g4g7-20261008
+      - work/rq-closure-20261008
   workflow_dispatch:
 
 permissions:

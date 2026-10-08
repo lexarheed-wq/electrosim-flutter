@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
           flutter pub get
-          dart format lib/f18_industrial_dual_view.dart lib/f18_industrial_physical_devices.dart lib/f18_component_asset_visual.dart lib/f9_component_palette.dart lib/f9_component_visuals.dart test/f18_industrial_dual_view_library_test.dart test/g12rq_real_industrial_artwork_test.dart
+          dart format lib/f18_industrial_dual_view.dart lib/f18_industrial_physical_devices.dart lib/f18_component_asset_visual.dart lib/f9_component_palette.dart lib/f9_component_visuals.dart test/f18_industrial_dual_view_library_test.dart test/g12rq_real_industrial_artwork_test.dart test/g12rq_real_industrial_capture_test.dart
           flutter analyze
           flutter test --no-pub test/g12rq_real_industrial_artwork_test.dart test/f18_industrial_dual_view_library_test.dart test/sim_r1_instrument_palette_discoverability_test.dart test/sim_r1_board_instrument_ui_test.dart
       - name: Rebaseline palette golden images for intentional perspective change
@@ -42,6 +42,16 @@ jobs:
           set -euo pipefail
           mapfile -t files < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
           flutter test --no-pub "${files[@]}"
+      - name: Render eight genuinely new components in both views
+        working-directory: apps/electrosim
+        run: flutter test --no-pub test/g12rq_real_industrial_capture_test.dart
+      - name: Publish visual proof as image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-RealIndustrialEight-VisualProof
+          path: apps/electrosim/build/visual-proof/*.png
+          retention-days: 14
+          if-no-files-found: error
       - name: Canvas and UI Kit regression
         shell: bash
         run: |
@@ -69,7 +79,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/electrosim/lib/f18_industrial_physical_devices.dart apps/electrosim/lib/f18_component_asset_visual.dart apps/electrosim/test/g12rq_real_industrial_artwork_test.dart
+          git add apps/electrosim/lib/f18_industrial_physical_devices.dart apps/electrosim/lib/f18_component_asset_visual.dart apps/electrosim/test/g12rq_real_industrial_artwork_test.dart apps/electrosim/test/g12rq_real_industrial_capture_test.dart
           git add apps/electrosim/lib/f18_industrial_dual_view.dart
           git add apps/electrosim/lib/f9_component_palette.dart
           git add apps/electrosim/lib/f9_component_visuals.dart

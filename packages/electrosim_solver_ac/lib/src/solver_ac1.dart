@@ -626,7 +626,6 @@ _CompiledAc1Model _compileModel(
         );
       case ComponentElectricalLaw.diode:
       case ComponentElectricalLaw.motorDc:
-      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:

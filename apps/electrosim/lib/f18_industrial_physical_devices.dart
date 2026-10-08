@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 /// Genuine replacement artwork for the eight original educational devices.
 /// Does not introduce electrical ports or change their world coordinates.
-enum IndustrialDevice { supply, breaker, switch, button, lamp, fan, motor, coil }
+enum IndustrialDevice { supply, breaker, toggle, button, lamp, fan, motor, coil }
 
 abstract final class IndustrialDeviceContract {
   static IndustrialDevice? resolve(String type) => switch (type.toLowerCase()) {
     'dc_voltage_source' || 'voltage_source' => IndustrialDevice.supply,
     'breaker_dc' || 'breaker_ac1' || 'breaker' => IndustrialDevice.breaker,
-    'switch' || 'switch_spst' => IndustrialDevice.switch,
+    'switch' || 'switch_spst' => IndustrialDevice.toggle,
     'push_button_no' => IndustrialDevice.button,
     'lamp' => IndustrialDevice.lamp,
     'fan_dc' => IndustrialDevice.fan,
@@ -21,7 +21,7 @@ abstract final class IndustrialDeviceContract {
   static Size designSize(IndustrialDevice device) => switch (device) {
     IndustrialDevice.supply => const Size(140, 160),
     IndustrialDevice.breaker => const Size(72, 160),
-    IndustrialDevice.switch => const Size(90, 140),
+    IndustrialDevice.toggle => const Size(90, 140),
     IndustrialDevice.button => const Size(90, 140),
     IndustrialDevice.lamp => const Size(130, 160),
     IndustrialDevice.fan => const Size(210, 210),
@@ -33,7 +33,7 @@ abstract final class IndustrialDeviceContract {
   static List<Offset> anchors(IndustrialDevice device) => switch (device) {
     IndustrialDevice.supply => const [Offset(42, 127), Offset(94, 127)],
     IndustrialDevice.breaker => const [Offset(36, 23), Offset(36, 137)],
-    IndustrialDevice.switch => const [Offset(45, 20), Offset(45, 120)],
+    IndustrialDevice.toggle => const [Offset(45, 20), Offset(45, 120)],
     IndustrialDevice.button => const [Offset(31, 119), Offset(59, 119)],
     IndustrialDevice.lamp => const [Offset(40, 139), Offset(90, 139)],
     IndustrialDevice.fan => const [Offset(82, 187), Offset(128, 187)],
@@ -306,7 +306,7 @@ final class _IndustrialPainter extends CustomPainter {
     switch (v.device) {
       case IndustrialDevice.supply: supply(canvas);
       case IndustrialDevice.breaker: breaker(canvas);
-      case IndustrialDevice.switch: toggle(canvas);
+      case IndustrialDevice.toggle: toggle(canvas);
       case IndustrialDevice.button: button(canvas);
       case IndustrialDevice.lamp: lamp(canvas);
       case IndustrialDevice.fan: fan(canvas);

@@ -54,8 +54,10 @@ class _RcdViewPanel extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
         const SizedBox(height: 12),
         Disjoncteur3D(
           key: Key('premium-rcd-${vue.name}'),
@@ -70,8 +72,10 @@ class _RcdViewPanel extends StatelessWidget {
           onBorne: null,
         ),
         const SizedBox(height: 8),
-        const Text('APERÇU VISUEL · NON SIMULABLE',
-            style: TextStyle(fontSize: 10, color: Color(0xFF5A6872))),
+        const Text(
+          'APERÇU VISUEL · NON SIMULABLE',
+          style: TextStyle(fontSize: 10, color: Color(0xFF5A6872)),
+        ),
       ],
     ),
   );

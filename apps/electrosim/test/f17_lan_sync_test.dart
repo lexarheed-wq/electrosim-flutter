@@ -226,6 +226,57 @@ void main() {
       );
     });
 
+    test('G8-RQ impersonation with same student ID but no token is forbidden',
+        () async {
+      final ElectroSimTpSessionController teacher =
+          ElectroSimTpSessionController();
+      teacher.createDraft();
+      teacher.publish();
+      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+        controller: teacher,
+        sessionCode: 'LOCK99',
+      );
+      final ElectroSimLanHostInfo info = await host.start(
+        address: InternetAddress.loopbackIPv4,
+      );
+      final ElectroSimLanSyncClient legitimate = ElectroSimLanSyncClient(
+        controller: ElectroSimTpSessionController(),
+        sessionCode: 'LOCK99',
+        clientId: 'student-secure',
+        autoReconnect: false,
+      );
+      addTearDown(legitimate.close);
+      addTearDown(host.close);
+      await legitimate.connect(info.preferredEndpoint);
+      expect(legitimate.synchronized, isTrue);
+
+      final Uri attack = info.preferredEndpoint.replace(
+        queryParameters: <String, String>{
+          'code': 'LOCK99',
+          'clientId': 'student-secure',
+        },
+      );
+      await expectLater(
+        WebSocket.connect(attack.toString()),
+        throwsA(isA<WebSocketException>()),
+      );
+      final Uri wrongToken = attack.replace(
+        queryParameters: <String, String>{
+          ...attack.queryParameters,
+          'reconnectToken': 'invalid-individual-token',
+        },
+      );
+      await expectLater(
+        WebSocket.connect(wrongToken.toString()),
+        throwsA(isA<WebSocketException>()),
+      );
+      expect(host.connectedClientIds, contains('student-secure'));
+      expect(legitimate.synchronized, isTrue);
+      await legitimate.reconnect();
+      expect(legitimate.synchronized, isTrue);
+      expect(host.connectedClientIds, <String>['student-secure']);
+    });
+
     test(
       'manual reconnect catches up to the latest authoritative teacher state',
       () async {

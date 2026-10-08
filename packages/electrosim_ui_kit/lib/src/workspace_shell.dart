@@ -324,7 +324,10 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             child: Column(
               children: [
                 KeyedSubtree(key: electroSimTopRegionKey, child: widget.topBar),
-                _switcher(docked, compact),
+                _switcher(
+                  docked,
+                  compact || MediaQuery.textScalerOf(context).scale(14) > 18,
+                ),
                 Expanded(
                   child: docked
                       ? Stack(

@@ -2100,8 +2100,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   @override
   Widget build(BuildContext context) {
     final List<F9PaletteDefinition> filtered = _filtered;
-    final int availableCount =
-        _query.trim().isEmpty && _category == 'Tous'
+    final int availableCount = _query.trim().isEmpty && _category == 'Tous'
         ? f9PaletteCatalog
               .where(
                 (F9PaletteDefinition item) => item.supportsMode(widget.mode),
@@ -2256,10 +2255,14 @@ class _PaletteDraggableTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget tile = Material(
-      color: Colors.transparent,
+      color: ElectroSimColors.surfaceMuted,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+        side: const BorderSide(color: ElectroSimColors.workspaceDivider),
+      ),
       child: InkWell(
         key: Key('palette-item-${definition.keyName}'),
-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
         onTap: () => onStatus(
           'Palette : ${definition.title} sélectionné — glissez-le sur la platine ou utilisez +.',
         ),
@@ -2276,11 +2279,17 @@ class _PaletteDraggableTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      definition.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge,
+                    Tooltip(
+                      message: definition.title,
+                      child: Text(
+                        definition.title,
+                        maxLines:
+                            MediaQuery.textScalerOf(context).scale(14) > 18
+                            ? 2
+                            : 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

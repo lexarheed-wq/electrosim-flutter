@@ -2980,219 +2980,314 @@ class _WorkspaceTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: ElectroSimColors.surfaceElevated,
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final bool compact =
-              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
-          return SizedBox(
-            height: compact
-                ? ElectroSimGeometry.compactTopBarHeight
-                : ElectroSimGeometry.desktopTopBarHeight,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: ElectroSimSpacing.xs,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 720;
+        final wrapTools =
+            constraints.maxWidth < 1000 ||
+            MediaQuery.textScalerOf(context).scale(14) > 18;
+        final headerIcons = IconButtonThemeData(
+          style: IconButton.styleFrom(
+            foregroundColor: ElectroSimColors.workspaceOnHeader,
+            minimumSize: const Size.square(48),
+          ),
+        );
+        final tools = <Widget>[
+          _modeMenu(compact),
+          if (!compact && onSave != null)
+            IconButton(
+              key: const Key('workspace-save-direct-action'),
+              tooltip: 'Sauvegarder',
+              onPressed: onSave,
+              icon: const Icon(Icons.save_outlined),
+            ),
+          if (!compact && onOpen != null)
+            IconButton(
+              key: const Key('workspace-open-direct-action'),
+              tooltip: 'Reprendre',
+              onPressed: onOpen,
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
+          IconButton(
+            key: const Key('workspace-rotate-action'),
+            tooltip: 'Rotation 90°',
+            onPressed: onRotateSelected,
+            icon: const Icon(Icons.rotate_right_outlined),
+          ),
+          IconButton(
+            key: const Key('workspace-delete-action'),
+            tooltip: 'Supprimer la sélection',
+            onPressed: onDeleteSelected,
+            icon: const Icon(Icons.delete_outline),
+          ),
+          Tooltip(
+            message: simulationRunning
+                ? 'Mettre la simulation en pause'
+                : 'Démarrer la simulation',
+            child: FilledButton.icon(
+              key: const Key('workspace-simulation-toggle'),
+              onPressed: onToggleSimulation,
+              style: FilledButton.styleFrom(
+                backgroundColor: simulationRunning
+                    ? ElectroSimColors.primary
+                    : ElectroSimColors.success,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(0, 48),
               ),
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    key: const Key('session-home-action'),
-                    tooltip: 'Accueil',
-                    onPressed: onHome,
-                    icon: const Icon(Icons.home_outlined),
-                  ),
-                  if (onExitWorkspace != null)
-                    IconButton(
-                      key: const Key('workspace-exit-action'),
-                      tooltip: 'Quitter l’atelier',
-                      onPressed: onExitWorkspace,
-                      icon: const Icon(Icons.arrow_back_outlined),
+              icon: Icon(simulationRunning ? Icons.pause : Icons.play_arrow),
+              label: Text(simulationRunning ? 'Pause' : 'Lancer'),
+            ),
+          ),
+          _moreMenu(),
+        ];
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Material(
+              color: ElectroSimColors.workspaceHeader,
+              child: Theme(
+                data: Theme.of(context).copyWith(iconButtonTheme: headerIcons),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: compact ? 56 : 64),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
                     ),
-                  const SizedBox(width: ElectroSimSpacing.xxs),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          entryLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          key: const Key('session-home-action'),
+                          tooltip: 'Accueil',
+                          onPressed: onHome,
+                          icon: const Icon(Icons.home_outlined),
                         ),
-                        if (!compact)
+                        if (onExitWorkspace != null)
+                          IconButton(
+                            key: const Key('workspace-exit-action'),
+                            tooltip: 'Quitter l’atelier',
+                            onPressed: onExitWorkspace,
+                            icon: const Icon(Icons.arrow_back_outlined),
+                          ),
+                        if (!compact && !wrapTools) ...[
+                          const Icon(
+                            Icons.hub_outlined,
+                            color: ElectroSimColors.workspaceAccent,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            workspace,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
+                            'ElectroSim',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: ElectroSimColors.workspaceAccent,
+                                ),
+                          ),
+                          const SizedBox(width: 24),
+                        ],
+                        Expanded(
+                          child: Tooltip(
+                            message: entryLabel,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entryLabel,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(
+                                        color:
+                                            ElectroSimColors.workspaceOnHeader,
+                                      ),
+                                ),
+                                Text(
+                                  workspace,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: const Color(0xFFB9C7D9),
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (sessionNavigation) ...[
+                          IconButton(
+                            key: const Key('session-dashboard-action'),
+                            tooltip: 'Tableau de bord',
+                            onPressed: onDashboard,
+                            icon: const Icon(Icons.dashboard_outlined),
+                          ),
+                          IconButton(
+                            key: const Key('session-manage-action'),
+                            tooltip: 'Gérer la session',
+                            onPressed: onManageSession,
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Material(
+              color: ElectroSimColors.surface,
+              child: Container(
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: ElectroSimColors.workspaceDivider,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: wrapTools
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: tools,
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          Text(
+                            'Outils de l’atelier',
+                            style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
                                   color: ElectroSimColors.textSecondary,
                                 ),
                           ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<ElectricalMode>(
-                    key: const Key('workspace-electrical-mode'),
-                    tooltip: 'Domaine électrique',
-                    initialValue: electricalMode,
-                    onSelected: onSelectElectricalMode,
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<ElectricalMode>>[
-                          const PopupMenuItem<ElectricalMode>(
-                            key: Key('workspace-mode-dc'),
-                            value: ElectricalMode.dc,
-                            enabled: true,
-                            child: Text('CC — courant continu'),
-                          ),
-                          const PopupMenuItem<ElectricalMode>(
-                            key: Key('workspace-mode-ac1'),
-                            value: ElectricalMode.ac1,
-                            enabled: true,
-                            child: Text('AC 1φ — monophasé'),
-                          ),
-                          const PopupMenuItem<ElectricalMode>(
-                            key: Key('workspace-mode-ac3'),
-                            value: ElectricalMode.ac3,
-                            enabled: true,
-                            child: Text('AC 3φ — triphasé'),
-                          ),
-                          const PopupMenuItem<ElectricalMode>(
-                            key: Key('workspace-mode-pv'),
-                            value: ElectricalMode.pv,
-                            enabled: true,
-                            child: Text('PV — photovoltaïque'),
-                          ),
-                        ],
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: ElectroSimSpacing.xs,
-                        vertical: ElectroSimSpacing.xxs,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(Icons.bolt_outlined, size: 18),
-                          if (!compact) ...<Widget>[
-                            const SizedBox(width: 4),
-                            Text(switch (electricalMode) {
-                              ElectricalMode.dc => 'CC',
-                              ElectricalMode.ac1 => 'AC 1φ',
-                              ElectricalMode.ac3 => 'AC 3φ',
-                              ElectricalMode.pv => 'PV',
-                            }, style: Theme.of(context).textTheme.labelMedium),
-                          ],
+                          const Spacer(),
+                          ...tools,
                         ],
                       ),
-                    ),
-                  ),
-                  if (sessionNavigation) ...<Widget>[
-                    IconButton(
-                      key: const Key('session-dashboard-action'),
-                      tooltip: 'Tableau de bord',
-                      onPressed: onDashboard,
-                      icon: const Icon(Icons.dashboard_outlined),
-                    ),
-                    IconButton(
-                      key: const Key('session-manage-action'),
-                      tooltip: 'Gérer la session',
-                      onPressed: onManageSession,
-                      icon: const Icon(Icons.settings_outlined),
-                    ),
-                  ],
-                  IconButton(
-                    key: const Key('workspace-simulation-toggle'),
-                    tooltip: simulationRunning
-                        ? 'Mettre la simulation en pause'
-                        : 'Démarrer la simulation',
-                    onPressed: onToggleSimulation,
-                    icon: Icon(
-                      simulationRunning
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
-                    ),
-                  ),
-                  IconButton(
-                    key: const Key('workspace-rotate-action'),
-                    tooltip: 'Rotation 90°',
-                    onPressed: onRotateSelected,
-                    icon: const Icon(Icons.rotate_right_outlined),
-                  ),
-                  IconButton(
-                    key: const Key('workspace-delete-action'),
-                    tooltip: 'Supprimer la sélection',
-                    onPressed: onDeleteSelected,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                  PopupMenuButton<_WorkspaceSecondaryAction>(
-                    key: const Key('workspace-more-actions'),
-                    tooltip: 'Plus d’actions',
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (_WorkspaceSecondaryAction action) {
-                      switch (action) {
-                        case _WorkspaceSecondaryAction.save:
-                          onSave?.call();
-                        case _WorkspaceSecondaryAction.open:
-                          onOpen?.call();
-                        case _WorkspaceSecondaryAction.recenter:
-                          onRecenter();
-                        case _WorkspaceSecondaryAction.resetSimulation:
-                          onResetSimulation();
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<_WorkspaceSecondaryAction>>[
-                          if (onSave != null)
-                            const PopupMenuItem<_WorkspaceSecondaryAction>(
-                              key: Key('workspace-save-action'),
-                              value: _WorkspaceSecondaryAction.save,
-                              child: ListTile(
-                                leading: Icon(Icons.save_outlined),
-                                title: Text('Sauvegarder'),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          if (onOpen != null)
-                            const PopupMenuItem<_WorkspaceSecondaryAction>(
-                              key: Key('workspace-open-action'),
-                              value: _WorkspaceSecondaryAction.open,
-                              child: ListTile(
-                                leading: Icon(Icons.restore_outlined),
-                                title: Text('Reprendre'),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          const PopupMenuItem<_WorkspaceSecondaryAction>(
-                            key: Key('workspace-reset-simulation-action'),
-                            value: _WorkspaceSecondaryAction.resetSimulation,
-                            child: ListTile(
-                              leading: Icon(Icons.restart_alt),
-                              title: Text('Réinitialiser la simulation'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                          const PopupMenuItem<_WorkspaceSecondaryAction>(
-                            key: Key('workspace-recenter-action'),
-                            value: _WorkspaceSecondaryAction.recenter,
-                            child: ListTile(
-                              leading: Icon(Icons.center_focus_strong),
-                              title: Text('Recentrer la platine'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ],
-                  ),
-                ],
               ),
             ),
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
+
+  Widget _modeMenu(bool compact) => PopupMenuButton<ElectricalMode>(
+    key: const Key('workspace-electrical-mode'),
+    tooltip: 'Domaine électrique',
+    initialValue: electricalMode,
+    onSelected: onSelectElectricalMode,
+    itemBuilder: (context) => const [
+      PopupMenuItem(
+        key: Key('workspace-mode-dc'),
+        value: ElectricalMode.dc,
+        child: Text('CC — courant continu'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-ac1'),
+        value: ElectricalMode.ac1,
+        child: Text('AC 1φ — monophasé'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-ac3'),
+        value: ElectricalMode.ac3,
+        child: Text('AC 3φ — triphasé'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-pv'),
+        value: ElectricalMode.pv,
+        child: Text('PV — photovoltaïque'),
+      ),
+    ],
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bolt_outlined, size: 20),
+            if (!compact) ...[
+              const SizedBox(width: 6),
+              Text(switch (electricalMode) {
+                ElectricalMode.dc => 'CC',
+                ElectricalMode.ac1 => 'AC 1φ',
+                ElectricalMode.ac3 => 'AC 3φ',
+                ElectricalMode.pv => 'PV',
+              }),
+            ],
+            const Icon(Icons.arrow_drop_down, size: 18),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _moreMenu() => PopupMenuButton<_WorkspaceSecondaryAction>(
+    key: const Key('workspace-more-actions'),
+    tooltip: 'Plus d’actions',
+    icon: const Icon(Icons.more_horiz),
+    onSelected: (action) {
+      switch (action) {
+        case _WorkspaceSecondaryAction.save:
+          onSave?.call();
+        case _WorkspaceSecondaryAction.open:
+          onOpen?.call();
+        case _WorkspaceSecondaryAction.recenter:
+          onRecenter();
+        case _WorkspaceSecondaryAction.resetSimulation:
+          onResetSimulation();
+      }
+    },
+    itemBuilder: (context) => [
+      if (onSave != null)
+        const PopupMenuItem(
+          key: Key('workspace-save-action'),
+          value: _WorkspaceSecondaryAction.save,
+          child: ListTile(
+            leading: Icon(Icons.save_outlined),
+            title: Text('Sauvegarder'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onOpen != null)
+        const PopupMenuItem(
+          key: Key('workspace-open-action'),
+          value: _WorkspaceSecondaryAction.open,
+          child: ListTile(
+            leading: Icon(Icons.restore_outlined),
+            title: Text('Reprendre'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      const PopupMenuItem(
+        key: Key('workspace-reset-simulation-action'),
+        value: _WorkspaceSecondaryAction.resetSimulation,
+        child: ListTile(
+          leading: Icon(Icons.restart_alt),
+          title: Text('Réinitialiser la simulation'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      const PopupMenuItem(
+        key: Key('workspace-recenter-action'),
+        value: _WorkspaceSecondaryAction.recenter,
+        child: ListTile(
+          leading: Icon(Icons.center_focus_strong),
+          title: Text('Recentrer la platine'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    ],
+  );
 }
 
 enum _WorkspaceSecondaryAction { save, open, recenter, resetSimulation }

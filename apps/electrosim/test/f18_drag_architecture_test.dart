@@ -53,7 +53,7 @@ void main() {
     expect(hotPath, isNot(contains('routeAll(')));
   });
 
-  test('authoritative routing is deferred to pointer-up', () {
+  test('authoritative routing is offloaded to worker after pointer-up', () {
     final String source = File('lib/main.dart').readAsStringSync();
     final int start = source.indexOf('void _finalizeDirectDrag(');
     final int end = source.indexOf('void _cancelCanvasInteraction(', start);
@@ -62,7 +62,8 @@ void main() {
 
     final String method = source.substring(start, end);
     expect(method, contains('_dragPreviewLayout.value ?? _layout'));
-    expect(method, contains('_routeWithG2A(_circuit, preview)'));
-    expect(method, contains('F18WorkspaceWireSafety.isRenderable'));
+    expect(method, contains('unawaited(_finishElementRoute('));
+    expect(method, isNot(contains('_routeWithG2A(')));
+    expect(method, isNot(contains('routeAll(')));
   });
 }

@@ -53,10 +53,56 @@ final class ElectroSimConnectionRouter {
     required CircuitState circuit,
     required CircuitVisualLayout layout,
     required ConnectionId connectionId,
+  }) => _enqueue(circuit, layout, <ConnectionId>[connectionId]);
+
+  /// Geometry changes are not topology edits: only attached or newly
+  /// obstructed wires need new paths. All pathfinding runs off the UI isolate.
+  Future<CircuitVisualLayout?> routeChangedElement({
+    required CircuitState circuit,
+    required CircuitVisualLayout layout,
+    required String elementId,
   }) {
-    if (_disposed) return Future.value(null);
-    _dirty.add(connectionId);
-    final job = _Job(_Request(circuit, layout, [connectionId]));
+    if (_disposed) return Future<CircuitVisualLayout?>.value(null);
+    final CircuitGeometryIndex geometry =
+        CircuitGeometryIndex.build(circuit, layout);
+    final Rect? obstacle = geometry.elementRects[elementId]?.inflate(28);
+    final List<ConnectionId> affected = <ConnectionId>[];
+    for (final Connection wire in circuit.connections) {
+      if (geometry.terminalOwners[wire.fromTerminalId] == elementId ||
+          geometry.terminalOwners[wire.toTerminalId] == elementId) {
+        affected.add(wire.id);
+        continue;
+      }
+      if (obstacle == null) continue;
+      final Offset? start = geometry.terminalPositions[wire.fromTerminalId];
+      final Offset? end = geometry.terminalPositions[wire.toTerminalId];
+      if (start == null || end == null) continue;
+      final List<Offset> path = <Offset>[
+        start,
+        ...layout.routeFor(wire.id.value),
+        end,
+      ];
+      for (var i = 1; i < path.length; i++) {
+        if (Rect.fromPoints(path[i - 1], path[i])
+            .inflate(1)
+            .overlaps(obstacle)) {
+          affected.add(wire.id);
+          break;
+        }
+      }
+    }
+    return _enqueue(circuit, layout, affected);
+  }
+
+  Future<CircuitVisualLayout?> _enqueue(
+    CircuitState circuit,
+    CircuitVisualLayout layout,
+    List<ConnectionId> ids,
+  ) {
+    if (_disposed) return Future<CircuitVisualLayout?>.value(null);
+    if (ids.isEmpty) return Future<CircuitVisualLayout?>.value(layout);
+    _dirty.addAll(ids);
+    final _Job job = _Job(_Request(circuit, layout, ids));
     _pending?.completer.complete(null);
     _pending = job;
     unawaited(_drain());

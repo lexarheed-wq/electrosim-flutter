@@ -1343,21 +1343,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           definition.renderedModelType,
         );
       }
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
-          elementPositions: moved.elementPositions,
-          elementSizes: sizes,
-          wireRoutes: moved.wireRoutes,
-          elementQuarterTurns: moved.elementQuarterTurns,
-          defaultElementSize: moved.defaultElementSize,
-        ),
+      _layout = CircuitVisualLayout(
+        elementPositions: moved.elementPositions,
+        elementSizes: sizes,
+        wireRoutes: moved.wireRoutes,
+        elementQuarterTurns: moved.elementQuarterTurns,
+        defaultElementSize: moved.defaultElementSize,
       );
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
+    final CircuitVisualLayout afterInsertion = _layout;
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
+    unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
   }
 
   List<Terminal> _buildPaletteTerminals(
@@ -2151,19 +2150,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitVisualLayout candidate = _routeWithG2A(
-      _circuit,
-      _layout.moveElement(elementId, position),
-    );
+    final CircuitState circuit = _circuit;
+    final CircuitVisualLayout moved = _layout.moveElement(elementId, position);
     setState(() {
-      _layout = candidate;
-      _status = F18WorkspaceWireSafety.isRenderable(
-        circuit: _circuit,
-        layout: candidate,
-      )
-          ? 'Position graphique mise à jour : $elementId'
-          : 'Position mise à jour : routage graphique provisoire.';
+      _layout = moved;
+      _status = 'Position graphique mise à jour : $elementId — routage en cours.';
     });
+    unawaited(_finishElementRoute(circuit, moved, elementId));
   }
 
   void _finalizeDirectDrag(String elementId) {
@@ -2171,17 +2164,41 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (base == null) return;
 
     final CircuitVisualLayout preview = _dragPreviewLayout.value ?? _layout;
-    final CircuitVisualLayout candidate = _routeWithG2A(_circuit, preview);
+    final CircuitState circuit = _circuit;
     setState(() {
-      _layout = candidate;
-      _status = F18WorkspaceWireSafety.isRenderable(
-        circuit: _circuit,
-        layout: candidate,
-      )
-          ? 'Position graphique mise à jour : $elementId'
-          : 'Position mise à jour : routage graphique provisoire.';
+      _layout = preview;
+      _status = 'Position graphique mise à jour : $elementId — routage en cours.';
     });
     _dragPreviewLayout.value = null;
+    unawaited(_finishElementRoute(circuit, preview, elementId));
+  }
+
+  Future<void> _finishElementRoute(
+    CircuitState circuit,
+    CircuitVisualLayout base,
+    String elementId,
+  ) async {
+    try {
+      final CircuitVisualLayout? routed =
+          await _connectionRouter.routeChangedElement(
+        circuit: circuit, layout: base, elementId: elementId);
+      if (!mounted || routed == null ||
+          !identical(_circuit, circuit) || !identical(_layout, base)) {
+        return;
+      }
+      if (identical(routed, base)) return;
+      setState(() {
+        _layout = routed;
+        _status = F18WorkspaceWireSafety.isRenderable(
+          circuit: circuit, layout: routed)
+            ? 'Routage ajusté : $elementId'
+            : 'Position conservée ; trajet provisoire à vérifier.';
+      });
+    } catch (error) {
+      if (mounted && identical(_circuit, circuit) && identical(_layout, base)) {
+        _setStatus('Position conservée ; routage différé : $error');
+      }
+    }
   }
 
   void _cancelCanvasInteraction() {

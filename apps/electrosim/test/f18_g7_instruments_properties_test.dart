@@ -185,6 +185,15 @@ void main() {
       ),
       isTrue,
     );
+    expect(
+      properties.runtimeValues.any(
+        (F18G7PropertyRow row) =>
+            row.label == 'Sollicitation du seuil' &&
+            row.value.contains('100 % = limite admissible') &&
+            !row.value.startsWith('×'),
+      ),
+      isTrue,
+    );
   });
 
   test('F18-G7 never labels health normal when solver is unresolved', () {

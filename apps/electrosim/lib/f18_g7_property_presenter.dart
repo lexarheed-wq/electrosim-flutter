@@ -96,8 +96,10 @@ abstract final class F18G7PropertyPresenter {
         if (health.stressRatio > 0) {
           runtimeValues.add(
             F18G7PropertyRow(
-              label: 'Niveau de stress',
-              value: '×${health.stressRatio.toStringAsFixed(2)}',
+              label: 'Sollicitation du seuil',
+              value:
+                  '${(health.stressRatio * 100).toStringAsFixed(0)} % '
+                  '(100 % = limite admissible)',
             ),
           );
         }

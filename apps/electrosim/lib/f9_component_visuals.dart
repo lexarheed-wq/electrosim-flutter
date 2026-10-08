@@ -408,11 +408,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         component.id,
         component.modelType,
       );
-      final double batterySoc =
-          component.modelType == 'pv_battery' &&
-              (runtime?.pvResult?.isSolved ?? false)
-          ? runtime!.pvResult!.batterySoc
-          : 0;
+      final double batterySoc = component.modelType != 'pv_battery'
+          ? 0.0
+          : (runtime?.pvResult?.isSolved ?? false)
+              ? runtime!.pvResult!.batterySoc
+              : runtime?.dcBatterySocs[component.id] ??
+                  (component.parameters['initialSoc'] as num?)?.toDouble() ??
+                  0.0;
       final componentState = runtime?.componentOperatingState(component.id);
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||

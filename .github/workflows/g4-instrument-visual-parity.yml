@@ -30,4 +30,4 @@ jobs:
           set -euo pipefail
           flutter pub get
           flutter analyze
-          flutter test --no-pub test/f18_g4_visual_framework_gate_test.dart test/f18_point5_component_visual_identity_test.dart test/sim_r1_board_instrument_ui_test.dart
+          flutter test --no-pub test/f18_g4_visual_framework_gate_test.dart test/f18_point5_component_visual_identity_test.dart test/f18_g5_supported_parity_gate_test.dart test/sim_r1_board_instrument_ui_test.dart

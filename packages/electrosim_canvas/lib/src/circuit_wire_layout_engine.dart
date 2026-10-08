@@ -17,6 +17,48 @@ final class CircuitWireLayoutEngine {
   final OrthogonalWireRouter router;
   final TopologyEngine topologyEngine;
 
+  /// Routes only the added connection. Other conductors remain fixed and act
+  /// as obstacles, classified against the NEW topology (nets may have merged).
+  /// Call [routeAll] when component geometry changes or global optimization
+  /// is explicitly requested, not after each electrical connection.
+  CircuitVisualLayout routeConnection({
+    required CircuitState circuit,
+    required CircuitVisualLayout layout,
+    required ConnectionId connectionId,
+  }) {
+    final connection = circuit.connections.firstWhere(
+      (item) => item.id == connectionId,
+      orElse: () => throw ArgumentError.value(connectionId, 'connectionId'),
+    );
+    final geometry = CircuitGeometryIndex.build(circuit, layout);
+    final topology = topologyEngine.compile(circuit);
+    final occupied = <_OccupiedRoute>[];
+    for (final item in circuit.connections) {
+      if (item.id == connectionId) continue;
+      final start = geometry.terminalPositions[item.fromTerminalId];
+      final end = geometry.terminalPositions[item.toTerminalId];
+      if (start == null || end == null || start == end) continue;
+      final path = _orthogonalPathOrNull([
+        start,
+        ...layout.routeFor(item.id.value),
+        end,
+      ]);
+      if (path != null) {
+        occupied.add(
+          _OccupiedRoute(netId: _connectionNetId(item, topology), path: path),
+        );
+      }
+    }
+    return _routePass(
+      circuit: circuit,
+      layout: layout,
+      geometry: geometry,
+      topology: topology,
+      orderedConnections: [connection],
+      initialOccupied: occupied,
+    ).layout;
+  }
+
   CircuitVisualLayout routeAll({
     required CircuitState circuit,
     required CircuitVisualLayout layout,
@@ -64,11 +106,12 @@ final class CircuitWireLayoutEngine {
     required CircuitGeometryIndex geometry,
     required TopologyGraph topology,
     required List<Connection> orderedConnections,
+    List<_OccupiedRoute> initialOccupied = const [],
   }) {
     final Map<String, List<Offset>> nextRoutes = <String, List<Offset>>{
       ...layout.wireRoutes,
     };
-    final List<_OccupiedRoute> occupied = <_OccupiedRoute>[];
+    final List<_OccupiedRoute> occupied = <_OccupiedRoute>[...initialOccupied];
     var eligibleCount = 0;
     var resolvedCount = 0;
     var differentNetCrossingCount = 0;
@@ -163,11 +206,10 @@ final class CircuitWireLayoutEngine {
       // normal routing should make this branch exceptional.
       path ??= _emergencyOrthogonalPath(start, end);
 
-      differentNetCrossingCount +=
-          WireRouteSafety.countPerpendicularCrossings(
-            candidate: path,
-            occupiedDifferentNetPaths: differentNetPaths,
-          );
+      differentNetCrossingCount += WireRouteSafety.countPerpendicularCrossings(
+        candidate: path,
+        occupiedDifferentNetPaths: differentNetPaths,
+      );
       if (WireRouteSafety.hasCollinearOverlap(
         candidate: path,
         occupiedDifferentNetPaths: differentNetPaths,
@@ -300,10 +342,7 @@ final class CircuitWireLayoutEngine {
     end,
   ]);
 
-  static OrthogonalWirePath _emergencyOrthogonalPath(
-    Offset start,
-    Offset end,
-  ) {
+  static OrthogonalWirePath _emergencyOrthogonalPath(Offset start, Offset end) {
     if (start.dx == end.dx || start.dy == end.dy) {
       return OrthogonalWirePath(points: <Offset>[start, end]);
     }

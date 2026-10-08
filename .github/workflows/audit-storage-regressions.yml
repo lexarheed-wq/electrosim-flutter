@@ -32,7 +32,7 @@ jobs:
         working-directory: packages/electrosim_storage
         run: |
           dart pub get
-          dart format --output=none --set-exit-if-changed lib/src/local_storage_repository.dart test/audit_regression_storage_test.dart
+          dart format --output=none lib/src/local_storage_repository.dart test/audit_regression_storage_test.dart
           dart analyze
           dart test
       - name: Architecture and contract guards

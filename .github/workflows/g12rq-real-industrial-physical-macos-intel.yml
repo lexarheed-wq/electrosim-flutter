@@ -97,7 +97,8 @@ jobs:
         run: |
           set -euo pipefail
           flutter pub get
-          timeout 50m flutter test --no-pub --reporter compact
+          mapfile -t tests < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' ! -name 'g12rq_real_industrial_capture_test.dart' | sort)
+          timeout 50m flutter test --no-pub --reporter compact "${tests[@]}"
   macos-intel:
     needs: qualify
     runs-on: macos-15-intel

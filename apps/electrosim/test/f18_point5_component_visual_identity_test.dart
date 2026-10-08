@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:electrosim/f18_component_asset_visual.dart';
+import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:electrosim/reference_components/reference_widgets_extended.dart';
@@ -45,7 +46,7 @@ void main() {
     );
 
     testWidgets(
-      'uploaded five render through uploaded ReferenceComponentView',
+      'original five now render genuinely new industrial front painters',
       (WidgetTester tester) async {
         const List<String> models = <String>[
           'dc_voltage_source',
@@ -74,7 +75,7 @@ void main() {
           await tester.pump();
 
           expect(
-            find.byType(ReferenceComponentView),
+            find.byType(IndustrialPhysicalView),
             findsOneWidget,
             reason: modelType,
           );
@@ -89,7 +90,7 @@ void main() {
     );
 
     testWidgets(
-      'eight additional models use dedicated extended vector painters',
+      'extended models retain their canonical silhouettes except three physical upgrades',
       (WidgetTester tester) async {
         const List<String> models = <String>[
           'resistor',
@@ -119,11 +120,14 @@ void main() {
           );
           await tester.pump();
 
-          expect(
-            find.byType(ExtendedReferenceComponentView),
-            findsOneWidget,
-            reason: modelType,
-          );
+          if (IndustrialDeviceContract.resolve(modelType) != null) {
+            expect(find.byType(IndustrialPhysicalView), findsOneWidget,
+                reason: modelType);
+            expect(find.byType(ExtendedReferenceComponentView), findsNothing);
+          } else {
+            expect(find.byType(ExtendedReferenceComponentView), findsOneWidget,
+                reason: modelType);
+          }
           expect(tester.takeException(), isNull, reason: modelType);
         }
       },

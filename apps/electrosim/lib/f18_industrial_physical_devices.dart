@@ -77,6 +77,16 @@ class IndustrialPhysicalView extends StatelessWidget {
   final double animationValue, currentA, voltageV, ratedCurrentA;
   final String domain;
 
+  /// Rotational phase is strictly display-only; polarity is supplied by the
+  /// solver. A reversed motor rotates in the opposite direction.
+  static double signedMotorPhaseAngle(
+    double animationValue,
+    double signedCurrentA, {
+    required bool energized,
+  }) => energized && signedCurrentA.isFinite
+      ? animationValue * 2 * math.pi * (signedCurrentA < 0 ? -1 : 1)
+      : 0;
+
   @override
   Widget build(BuildContext context) => SizedBox(
     width: size.width,
@@ -458,6 +468,23 @@ final class _IndustrialPainter extends CustomPainter {
       10,
       Paint()..color = const Color(0xFFDAE3DE),
     );
+    // Visible shaft rotation. Do not rotate the housing or terminal box.
+    c.save();
+    c.translate(115, 93);
+    c.rotate(IndustrialPhysicalView.signedMotorPhaseAngle(
+      v.animationValue, v.currentA, energized: v.energized,
+    ));
+    for (var n = 0; n < 3; n++) {
+      c.rotate(math.pi * 2 / 3);
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-2, -17, 4, 8),
+          const Radius.circular(1),
+        ),
+        Paint()..color = const Color(0xFF223F47),
+      );
+    }
+    c.restore();
     box(
       c,
       const Rect.fromLTWH(66, 146, 98, 34),

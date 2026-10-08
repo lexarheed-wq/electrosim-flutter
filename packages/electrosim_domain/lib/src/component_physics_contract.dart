@@ -70,6 +70,14 @@ abstract final class ComponentParameterKeys {
   static const String coilDropoutVoltageV = 'coilDropoutVoltageV';
   static const String coilResistanceOhm = 'coilResistanceOhm';
   static const String coilInductanceH = 'coilInductanceH';
+
+  // Storage/source parameters. These remain generic so batteries and future
+  // DC storage devices share one canonical contract.
+  static const String storageNominalVoltageV = 'nominalVoltageV';
+  static const String storageInternalResistanceOhm = 'internalResistanceOhm';
+  static const String storageMaxDischargeCurrentA = 'maxDischargeCurrentA';
+  static const String storageInitialSoc = 'initialSoc';
+  static const String storageMinSoc = 'minSoc';
 }
 
 /// Canonical physics semantics for one component model.

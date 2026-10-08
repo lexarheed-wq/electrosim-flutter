@@ -68,6 +68,78 @@ void main() {
       isNotEmpty,
     );
   });
+
+  test('CORE-ISLAND01 battery is an autonomous non-ideal DC source', () {
+    final Terminal bp = Terminal(
+      id: TerminalId('bat-pos'),
+      name: '+',
+      role: TerminalRole.positive,
+      phase: PhaseTag.dcPositive,
+    );
+    final Terminal bn = Terminal(
+      id: TerminalId('bat-neg'),
+      name: '-',
+      role: TerminalRole.negative,
+      phase: PhaseTag.dcNegative,
+    );
+    final Terminal la = Terminal(id: TerminalId('lamp-a'), name: 'A');
+    final Terminal lb = Terminal(id: TerminalId('lamp-b'), name: 'B');
+
+    final CircuitState circuit = CircuitState(
+      circuitId: CircuitId('battery-autonomous-dc'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('battery'),
+          modelType: 'pv_battery',
+          terminals: <Terminal>[bp, bn],
+          parameters: const <String, Object?>{
+            'nominalVoltageV': 48.0,
+            'internalResistanceOhm': 0.08,
+            'capacityAh': 100.0,
+            'initialSoc': 0.60,
+            'minSoc': 0.10,
+            'maxDischargeCurrentA': 60.0,
+          },
+        ),
+        ComponentInstance(
+          id: ComponentId('lamp'),
+          modelType: 'lamp',
+          terminals: <Terminal>[la, lb],
+          parameters: const <String, Object?>{
+            'resistanceOhm': 48.0,
+            ReceiverNominalRating.voltageKey: 48.0,
+            ReceiverNominalRating.currentKey: 1.0,
+            ReceiverNominalRating.powerKey: 48.0,
+          },
+        ),
+      ],
+      connections: <Connection>[
+        _wire('bat-plus', bp.id, la.id),
+        _wire('bat-minus', lb.id, bn.id),
+      ],
+    );
+
+    final TopologyGraph topology = const TopologyEngine().compile(circuit);
+    final DcSolveResult result = const SolverDC().solve(circuit, topology);
+
+    expect(result.status, DcSolveStatus.solved);
+    final double expectedCurrent = 48.0 / (48.0 + 0.08);
+    expect(
+      result.branch('component:lamp').currentA,
+      closeTo(expectedCurrent, 1e-6),
+    );
+    expect(
+      result.branch('component:battery').currentA!.abs(),
+      closeTo(expectedCurrent, 1e-6),
+    );
+    expect(
+      result.branch('component:lamp').voltageV.abs(),
+      closeTo(48.0 * 48.0 / 48.08, 1e-6),
+    );
+  });
+
 }
 
 Connection _wire(String id, TerminalId from, TerminalId to) => Connection(

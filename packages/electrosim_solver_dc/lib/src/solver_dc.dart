@@ -205,7 +205,8 @@ final class SolverDC {
 
       final List<_Element> violations = <_Element>[];
       for (final _Element element in activeElements) {
-        if (element.kind != _ElementKind.idealVoltage ||
+        if ((element.kind != _ElementKind.idealVoltage &&
+                element.kind != _ElementKind.seriesVoltage) ||
             element.currentLimitA == null ||
             element.redundant) {
           continue;
@@ -249,7 +250,7 @@ final class SolverDC {
             code: DcDiagnosticCode.sourceCurrentLimited,
             severity: DcDiagnosticSeverity.warning,
             message:
-                'DC voltage source entered current-limited regulation at ${limit} A.',
+                'DC source entered current-limited regulation at ${limit} A.',
             sourceId: element.sourceId,
             nodeIds: <String>[element.fromNodeId, element.toNodeId],
           ),
@@ -722,8 +723,120 @@ final class SolverDC {
         case ComponentElectricalLaw.motorThreePhase:
         case ComponentElectricalLaw.loadWyeThreePhase:
         case ComponentElectricalLaw.loadDeltaThreePhase:
-        case ComponentElectricalLaw.converter:
         case ComponentElectricalLaw.storage:
+          final bool storageOpen =
+              component.condition == ComponentCondition.openCircuit ||
+              component.condition == ComponentCondition.disabled;
+          if (storageOpen) {
+            inactive.add(
+              _InactiveElement(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+              ),
+            );
+            continue;
+          }
+
+          final double? nominalVoltageV = _positiveParameter(
+            component.parameters,
+            ComponentParameterKeys.storageNominalVoltageV,
+          );
+          if (nominalVoltageV == null) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'DC storage requires a positive finite nominalVoltageV.',
+                componentId: component.id,
+              ),
+            );
+            continue;
+          }
+          final double internalResistanceOhm =
+              _positiveParameter(
+                component.parameters,
+                ComponentParameterKeys.storageInternalResistanceOhm,
+              ) ??
+              0.05;
+          final double? maxDischargeCurrentA = component.parameters.containsKey(
+            ComponentParameterKeys.storageMaxDischargeCurrentA,
+          )
+              ? _positiveParameter(
+                  component.parameters,
+                  ComponentParameterKeys.storageMaxDischargeCurrentA,
+                )
+              : null;
+          if (component.parameters.containsKey(
+                ComponentParameterKeys.storageMaxDischargeCurrentA,
+              ) &&
+              maxDischargeCurrentA == null) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'DC storage maxDischargeCurrentA must be finite and greater than zero.',
+                componentId: component.id,
+              ),
+            );
+            continue;
+          }
+          final double initialSoc =
+              _finiteParameter(
+                component.parameters,
+                ComponentParameterKeys.storageInitialSoc,
+              ) ??
+              1.0;
+          final double minSoc =
+              _finiteParameter(
+                component.parameters,
+                ComponentParameterKeys.storageMinSoc,
+              ) ??
+              0.0;
+          if (!initialSoc.isFinite ||
+              !minSoc.isFinite ||
+              initialSoc < 0.0 ||
+              initialSoc > 1.0 ||
+              minSoc < 0.0 ||
+              minSoc > 1.0 ||
+              minSoc > initialSoc) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'DC storage initialSoc/minSoc must satisfy 0 <= minSoc <= initialSoc <= 1.',
+                componentId: component.id,
+              ),
+            );
+            continue;
+          }
+          if (initialSoc <= minSoc + options.residualTolerance) {
+            inactive.add(
+              _InactiveElement(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+              ),
+            );
+            continue;
+          }
+          active.add(
+            _Element.seriesSource(
+              id: 'component:${component.id.value}',
+              modelType: component.modelType,
+              fromNodeId: fromNode,
+              toNodeId: toNode,
+              voltageV: nominalVoltageV,
+              seriesResistanceOhm: internalResistanceOhm,
+              currentLimitA: maxDischargeCurrentA,
+            ),
+          );
+        case ComponentElectricalLaw.converter:
         case ComponentElectricalLaw.unsupported:
           diagnostics.add(
             DcSolverDiagnostic(
@@ -999,6 +1112,17 @@ final class SolverDC {
             terminal.role == TerminalRole.neutral ||
             terminal.phase == PhaseTag.dcNegative ||
             terminal.phase == PhaseTag.neutral) {
+          preferred.add(topology.terminalToNode[terminal.id]!);
+        }
+      }
+    }
+    for (final ComponentInstance component in circuit.components) {
+      final ComponentPhysicsContract? physics =
+          CoreComponentPhysicsContracts.resolve(component.modelType);
+      if (physics?.electricalLaw != ComponentElectricalLaw.storage) continue;
+      for (final Terminal terminal in component.terminals) {
+        if (terminal.role == TerminalRole.negative ||
+            terminal.phase == PhaseTag.dcNegative) {
           preferred.add(topology.terminalToNode[terminal.id]!);
         }
       }
@@ -1317,7 +1441,7 @@ final class SolverDC {
             element.fromNodeId,
             element.toNodeId,
             element.value,
-            element.diodeSeriesResistanceOhm!,
+            element.seriesResistanceOhm!,
           );
       }
     }
@@ -1687,6 +1811,7 @@ final class _Element {
     required this.redundant,
     this.currentLimitA,
     this.sourceId,
+    this.seriesResistanceOhm,
     this.diodeForwardVoltageV,
     this.diodeOffResistanceOhm,
     this.diodeSeriesResistanceOhm,
@@ -1754,6 +1879,27 @@ final class _Element {
     sourceId: sourceId,
   );
 
+  factory _Element.seriesSource({
+    required String id,
+    required String modelType,
+    required String fromNodeId,
+    required String toNodeId,
+    required double voltageV,
+    required double seriesResistanceOhm,
+    double? currentLimitA,
+  }) => _Element._(
+    id: id,
+    modelType: modelType,
+    kind: _ElementKind.seriesVoltage,
+    publicKind: DcBranchKind.voltageSource,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: voltageV,
+    redundant: fromNodeId == toNodeId,
+    currentLimitA: currentLimitA,
+    seriesResistanceOhm: seriesResistanceOhm,
+  );
+
   factory _Element.diodeOff({
     required String id,
     required String modelType,
@@ -1805,6 +1951,7 @@ final class _Element {
       toNodeId: toNodeId,
       value: drop,
       redundant: fromNodeId == toNodeId,
+      seriesResistanceOhm: seriesResistanceOhm,
       diodeForwardVoltageV: forwardVoltageV,
       diodeOffResistanceOhm: offResistanceOhm,
       diodeSeriesResistanceOhm: seriesResistanceOhm,
@@ -1823,6 +1970,7 @@ final class _Element {
   final bool redundant;
   final double? currentLimitA;
   final SourceId? sourceId;
+  final double? seriesResistanceOhm;
   final double? diodeForwardVoltageV;
   final double? diodeOffResistanceOhm;
   final double? diodeSeriesResistanceOhm;
@@ -1871,6 +2019,7 @@ final class _Element {
     redundant: value,
     currentLimitA: currentLimitA,
     sourceId: sourceId,
+    seriesResistanceOhm: seriesResistanceOhm,
     diodeForwardVoltageV: diodeForwardVoltageV,
     diodeOffResistanceOhm: diodeOffResistanceOhm,
     diodeSeriesResistanceOhm: diodeSeriesResistanceOhm,
@@ -1879,9 +2028,11 @@ final class _Element {
   );
 
   _Element asCurrentLimited(double currentA) {
-    if (kind != _ElementKind.idealVoltage || currentLimitA == null) {
+    if ((kind != _ElementKind.idealVoltage &&
+            kind != _ElementKind.seriesVoltage) ||
+        currentLimitA == null) {
       throw StateError(
-        'Only a current-limited ideal voltage source can enter current regulation.',
+        'Only a current-limited voltage source can enter current regulation.',
       );
     }
     return _Element.currentSource(

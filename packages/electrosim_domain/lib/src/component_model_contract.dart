@@ -706,7 +706,7 @@ final class CoreComponentModelContracts {
       modelType: 'pv_battery',
       family: ComponentFamily.other,
       terminalCount: 2,
-      supportedModes: <ElectricalMode>{ElectricalMode.pv},
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
       branches: <ComponentBranchDefinition>[
         ComponentBranchDefinition(
           id: 'storage',

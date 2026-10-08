@@ -233,7 +233,7 @@ final class ElectroSimRuntimeSnapshot {
     Map<ComponentId, ComponentHealthState> states,
   ) => ElectroSimRuntimeSnapshot(
     circuit: circuit,
-    effectiveCircuit: effectiveCircuit,
+    effectiveCircuit: solverCircuit,
     topology: topology,
     diagnostics: diagnostics,
     solverKind: solverKind,
@@ -723,11 +723,14 @@ final class ElectroSimRuntimeEngine {
     required double? previousPvBatterySoc,
     required Map<ComponentId, ComponentHealthState> componentHealthStates,
   }) {
-    final TopologyGraph topology = topologyEngine.compile(effectiveCircuit);
-    switch (effectiveCircuit.mode) {
+    final CircuitState solverCircuit = _projectAutonomousStorageDc(
+      effectiveCircuit,
+    );
+    final TopologyGraph topology = topologyEngine.compile(solverCircuit);
+    switch (solverCircuit.mode) {
       case ElectricalMode.dc:
         final ProtectionDcOutcome coordinated = protectionCoordinator.advanceDc(
-          circuit: effectiveCircuit,
+          circuit: solverCircuit,
           topology: topology,
           elapsed: elapsed,
           previous: previousProtectionState,
@@ -742,7 +745,7 @@ final class ElectroSimRuntimeEngine {
         );
         return ElectroSimRuntimeSnapshot(
           circuit: designCircuit,
-          effectiveCircuit: effectiveCircuit,
+          effectiveCircuit: solverCircuit,
           topology: topology,
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.dc,
@@ -758,7 +761,7 @@ final class ElectroSimRuntimeEngine {
         );
       case ElectricalMode.ac1:
         final ProtectionAc1Outcome coordinated = protectionCoordinator.advanceAc1(
-          circuit: effectiveCircuit,
+          circuit: solverCircuit,
           topology: topology,
           elapsed: elapsed,
           previous: previousProtectionState,
@@ -773,7 +776,7 @@ final class ElectroSimRuntimeEngine {
         );
         return ElectroSimRuntimeSnapshot(
           circuit: designCircuit,
-          effectiveCircuit: effectiveCircuit,
+          effectiveCircuit: solverCircuit,
           topology: topology,
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac1,
@@ -789,7 +792,7 @@ final class ElectroSimRuntimeEngine {
         );
       case ElectricalMode.ac3:
         final ProtectionAc3Outcome coordinated = protectionCoordinator.advanceAc3(
-          circuit: effectiveCircuit,
+          circuit: solverCircuit,
           topology: topology,
           elapsed: elapsed,
           previous: previousProtectionState,
@@ -803,7 +806,7 @@ final class ElectroSimRuntimeEngine {
         );
         return ElectroSimRuntimeSnapshot(
           circuit: designCircuit,
-          effectiveCircuit: effectiveCircuit,
+          effectiveCircuit: solverCircuit,
           topology: topology,
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.ac3,
@@ -830,7 +833,7 @@ final class ElectroSimRuntimeEngine {
         );
         return ElectroSimRuntimeSnapshot(
           circuit: designCircuit,
-          effectiveCircuit: effectiveCircuit,
+          effectiveCircuit: solverCircuit,
           topology: topology,
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.pv,
@@ -841,6 +844,57 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
     }
+  }
+
+  CircuitState _projectAutonomousStorageDc(CircuitState circuit) {
+    if (circuit.mode != ElectricalMode.pv) return circuit;
+
+    final bool hasPvArray = circuit.sources.any(
+      (SourceInstance source) => source.modelType == 'pv_array',
+    );
+    if (hasPvArray) return circuit;
+
+    var hasStorage = false;
+    for (final ComponentInstance component in circuit.components) {
+      final ComponentPhysicsContract? physics =
+          CoreComponentPhysicsContracts.resolve(component.modelType);
+      final ComponentModelContract? structure =
+          CoreComponentModelContracts.registry.resolve(component.modelType);
+      if (physics?.electricalLaw == ComponentElectricalLaw.converter) {
+        return circuit;
+      }
+      if (physics?.electricalLaw == ComponentElectricalLaw.storage) {
+        hasStorage = true;
+      }
+      if (structure == null || !structure.supportsMode(ElectricalMode.dc)) {
+        return circuit;
+      }
+    }
+    if (!hasStorage) return circuit;
+
+    final bool dcSourcesOnly = circuit.sources.every(
+      (SourceInstance source) =>
+          source.modelType == 'dc_voltage_source' ||
+          source.modelType == 'voltage_source' ||
+          source.modelType == 'dc_current_source' ||
+          source.modelType == 'current_source',
+    );
+    if (!dcSourcesOnly) return circuit;
+
+    return CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision,
+      mode: ElectricalMode.dc,
+      components: circuit.components,
+      connections: circuit.connections,
+      sources: circuit.sources,
+      settings: circuit.settings,
+      metadata: <String, Object?>{
+        ...circuit.metadata,
+        'runtimeProjectedFromMode': circuit.mode.name,
+        'runtimeProjection': 'autonomous-storage-dc',
+      },
+    );
   }
 
   Map<ComponentId, ComponentHealthState> _advanceComponentHealth({

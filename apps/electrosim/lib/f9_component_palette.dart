@@ -164,6 +164,25 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'Charge résistive',
   ),
   F9PaletteDefinition(
+    keyName: 'lamp-dc-48v',
+    title: 'Lampe 48 V CC',
+    category: 'Récepteurs',
+    modelType: 'lamp',
+    icon: Icons.lightbulb_outline,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['A', 'B'],
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 48.0,
+      ReceiverNominalRating.voltageKey: 48.0,
+      ReceiverNominalRating.currentKey: 1.0,
+      ReceiverNominalRating.powerKey: 48.0,
+      ComponentParameterKeys.thermalWithstandSeconds: 0.5,
+    },
+    displayLabel: 'Lampe 48 V',
+    subtitle: '48 V CC · 48 W',
+  ),
+  F9PaletteDefinition(
     keyName: 'lamp-ac1-230v',
     title: 'Lampe 230 V AC',
     category: 'Récepteurs',
@@ -914,7 +933,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.solar_power_outlined,
     kind: F9PaletteElementKind.source,
     terminalLabels: <String>['+', '−'],
-    supportedModes: <ElectricalMode>{ElectricalMode.pv},
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '+',
@@ -1033,8 +1052,8 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'pv-battery',
-    title: 'Batterie photovoltaïque',
-    category: 'Photovoltaïque',
+    title: 'Batterie 48 V',
+    category: 'Stockage CC',
     modelType: 'pv_battery',
     icon: Icons.battery_full,
     kind: F9PaletteElementKind.component,
@@ -1056,6 +1075,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     ],
     defaultParameters: <String, Object?>{
       'nominalVoltageV': 48.0,
+      'internalResistanceOhm': 0.08,
       'capacityAh': 100.0,
       'initialSoc': 0.60,
       'minSoc': 0.10,
@@ -1066,8 +1086,8 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'dischargeEfficiency': 0.95,
     },
     visualVariant: 'pv-battery',
-    displayLabel: 'Batterie PV',
-    subtitle: '48 V · 100 Ah',
+    displayLabel: 'Batterie 48 V',
+    subtitle: '48 V · 100 Ah · source DC autonome',
   ),
   F9PaletteDefinition(
     keyName: 'pv-inverter',

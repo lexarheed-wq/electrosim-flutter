@@ -624,6 +624,7 @@ _CompiledAc1Model _compileModel(
           'Feed-through components are handled before single-branch AC1 compilation.',
         );
       case ComponentElectricalLaw.diode:
+      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:

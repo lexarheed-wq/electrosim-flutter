@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-G11_MERGED_SHA = "2b481cba17d27644c5671ef99dad9d1e7786ebd9"
+G11_MERGED_SHA = "3bb6d7368cf32351843afb8f35440dc65e129c35"
 errors: list[str] = []
 checks: dict[str, bool] = {}
 

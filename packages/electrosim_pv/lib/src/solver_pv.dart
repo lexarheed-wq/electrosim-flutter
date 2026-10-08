@@ -576,15 +576,6 @@ final class SolverPV {
           currentRmsA: outputVoltageV / load.resistanceOhm,
           activePowerW: outputVoltageV * outputVoltageV / load.resistanceOhm,
         ),
-      for (final _LoadParameters load in dcLoadParameters)
-        PvLoadResult(
-          componentId: load.componentId,
-          resistanceOhm: load.resistanceOhm,
-          voltageRmsV: dcBusLoadVoltageV,
-          currentRmsA: dcBusLoadVoltageV / load.resistanceOhm,
-          activePowerW:
-              dcBusLoadVoltageV * dcBusLoadVoltageV / load.resistanceOhm,
-        ),
     ];
 
     return PvSolveResult(
@@ -1162,6 +1153,15 @@ final class SolverPV {
           voltageRmsV: outputVoltageV,
           currentRmsA: outputVoltageV / load.resistanceOhm,
           activePowerW: outputVoltageV * outputVoltageV / load.resistanceOhm,
+        ),
+      for (final _LoadParameters load in dcLoadParameters)
+        PvLoadResult(
+          componentId: load.componentId,
+          resistanceOhm: load.resistanceOhm,
+          voltageRmsV: dcBusLoadVoltageV,
+          currentRmsA: dcBusLoadVoltageV / load.resistanceOhm,
+          activePowerW:
+              dcBusLoadVoltageV * dcBusLoadVoltageV / load.resistanceOhm,
         ),
     ];
 

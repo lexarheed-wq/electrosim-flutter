@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
+import 'f18_industrial_dual_view.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
 
@@ -2382,20 +2383,9 @@ class _PaletteDraggableTile extends StatelessWidget {
           color: Colors.transparent,
           child: Opacity(
             opacity: 0.94,
-            child: definition.kind == F9PaletteElementKind.instrument
-                ? F9ComponentPreview(definition: definition)
-                : F18ComponentAssetVisual(
-                    modelType: definition.renderedModelType,
-                    variantKey: definition.visualVariant,
-                    size:
-                        F18ReferenceComponentVisuals.supports(
-                          definition.renderedModelType,
-                        )
-                        ? F18ReferenceComponentMetrics.dragSizeFor(
-                            definition.renderedModelType,
-                          )
-                        : F18ComponentIdentityMetrics.dragSize,
-                  ),
+            // Drag uses the SAME 3/4 image as the palette. The actual board
+            // is rendered frontally by F9CanvasVisualOverlay after dropping.
+            child: F9ComponentPreview(definition: definition),
           ),
         ),
         childWhenDragging: Opacity(opacity: 0.35, child: tile),
@@ -2512,28 +2502,40 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (definition.kind == F9PaletteElementKind.instrument) {
-      return F18PhysicalInstrumentPreview(
-        key: Key('component-identity-preview-${definition.keyName}'),
-        ammeter: definition.keyName == 'instrument-ammeter',
-        compact: compact,
-      );
-    }
-    return F18ComponentAssetVisual(
+    final Size visualSize = definition.kind == F9PaletteElementKind.instrument
+        ? (compact ? const Size(72, 94) : const Size(112, 152))
+        : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
+        ? (compact
+              ? F18ReferenceComponentMetrics.paletteSizeFor(
+                  definition.renderedModelType,
+                )
+              : F18ReferenceComponentMetrics.dragSizeFor(
+                  definition.renderedModelType,
+                ))
+        : (compact
+              ? F18ComponentIdentityMetrics.paletteSize
+              : F18ComponentIdentityMetrics.dragSize);
+
+    final Widget canonicalArtwork =
+        definition.kind == F9PaletteElementKind.instrument
+            ? F18PhysicalInstrumentPreview(
+                ammeter: definition.keyName == 'instrument-ammeter',
+                compact: compact,
+              )
+            : F18ComponentAssetVisual(
+                modelType: definition.renderedModelType,
+                variantKey: definition.visualVariant,
+                size: visualSize,
+              );
+
+    // Every family including physical meters uses the same appearance rule.
+    // Palette and drag = product perspective; board = untransformed artwork.
+    return F18IndustrialDualView(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,
-      variantKey: definition.visualVariant,
-      size: F18ReferenceComponentVisuals.supports(definition.renderedModelType)
-          ? (compact
-                ? F18ReferenceComponentMetrics.paletteSizeFor(
-                    definition.renderedModelType,
-                  )
-                : F18ReferenceComponentMetrics.dragSizeFor(
-                    definition.renderedModelType,
-                  ))
-          : (compact
-                ? F18ComponentIdentityMetrics.paletteSize
-                : F18ComponentIdentityMetrics.dragSize),
+      size: visualSize,
+      presentation: F18IndustrialPresentation.palettePerspective,
+      child: canonicalArtwork,
     );
   }
 }

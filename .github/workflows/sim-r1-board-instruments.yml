@@ -1,0 +1,39 @@
+name: SIM-R1 physical instruments on canvas (no release)
+on:
+  push:
+    branches:
+      - feature/sim-r1-board-instruments-20261008
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  board_instruments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify canonical physics invariants
+        run: |
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+      - name: Canvas package analysis and geometry regressions
+        working-directory: packages/electrosim_canvas
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Physical device UI and probe integration
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/main.dart lib/f9_component_palette.dart lib/f18_physical_instrument_readouts.dart test/sim_r1_board_instrument_ui_test.dart
+          flutter test --no-pub test/sim_r1_board_instrument_ui_test.dart test/sim_r1_physical_instrument_projection_test.dart test/core_island01_autonomous_storage_test.dart

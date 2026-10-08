@@ -2666,21 +2666,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       } else {
         sizes.remove(selected);
       }
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
+      _layout = CircuitVisualLayout(
           elementPositions: _layout.elementPositions,
           elementSizes: sizes,
           wireRoutes: _layout.wireRoutes,
           elementQuarterTurns: _layout.elementQuarterTurns,
           defaultElementSize: _layout.defaultElementSize,
-        ),
-      );
+        ),;
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
+    unawaited(_finishElementRoute(_circuit, _layout, selected));
   }
 
   void _toggleSelectedPrimaryState() {
@@ -2716,32 +2714,49 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitVisualLayout rotated = _layout.rotateElement(selected);
-    final CircuitVisualLayout candidate = _routeWithG2A(
-      _circuit,
-      CircuitVisualLayout(
-        elementPositions: rotated.elementPositions,
-        elementSizes: rotated.elementSizes,
-        elementQuarterTurns: rotated.elementQuarterTurns,
-        defaultElementSize: rotated.defaultElementSize,
-      ),
-    );
-    if (!F18WorkspaceWireSafety.isRenderable(
-      circuit: _circuit,
-      layout: candidate,
-    )) {
-      _setStatus(
-        'Rotation refusée : aucun routage sans croisement automatique.',
-      );
-      return;
-    }
-
+    final CircuitVisualLayout previous = _layout;
+    final CircuitVisualLayout provisional = previous.rotateElement(selected);
+    final CircuitState circuit = _circuit;
     setState(() {
-      _layout = candidate;
-      _status =
-          'Rotation 90° : $selected · ${_layout.quarterTurnsOf(selected) * 90}°';
+      _layout = provisional;
+      _status = 'Rotation 90° : $selected · routage en cours.';
     });
-    _announce(_status);
+    unawaited(_finishRotationRoute(circuit, provisional, previous, selected));
+  }
+
+  Future<void> _finishRotationRoute(
+    CircuitState circuit,
+    CircuitVisualLayout provisional,
+    CircuitVisualLayout previous,
+    String elementId,
+  ) async {
+    try {
+      final CircuitVisualLayout? routed =
+          await _connectionRouter.routeChangedElement(
+        circuit: circuit,
+        layout: provisional,
+        elementId: elementId,
+      );
+      if (!mounted || routed == null || !identical(_circuit, circuit) ||
+          !identical(_layout, provisional)) return;
+      if (!F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: routed)) {
+        setState(() {
+          _layout = previous;
+          _status = 'Rotation refusée : fils non routables.';
+        });
+        return;
+      }
+      setState(() {
+        _layout = routed;
+        _status = 'Rotation 90° : $elementId';
+      });
+    } on Object catch (error) {
+      if (!mounted || !identical(_circuit,circuit) || !identical(_layout,provisional)) return;
+      setState(() {
+        _layout = previous;
+        _status = 'Rotation annulée : $error';
+      });
+    }
   }
 
   void _deleteSelectedElement() {
@@ -2815,16 +2830,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }..remove(selected);
       setState(() {
         _circuit = next;
-        _layout = _routeWithG2A(
-          _circuit,
-          CircuitVisualLayout(
+        _layout = CircuitVisualLayout(
             elementPositions: _layout.elementPositions,
             elementSizes: _layout.elementSizes,
             wireRoutes: routes,
             elementQuarterTurns: _layout.elementQuarterTurns,
             defaultElementSize: _layout.defaultElementSize,
-          ),
-        );
+          ),;
         _selected = null;
         _status = 'Suppression : fil — $selected';
       });
@@ -2872,16 +2884,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         );
     setState(() {
       _circuit = next;
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
+      _layout = CircuitVisualLayout(
           elementPositions: positions,
           elementSizes: sizes,
           wireRoutes: routes,
           elementQuarterTurns: rotations,
           defaultElementSize: _layout.defaultElementSize,
-        ),
-      );
+        ),;
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
@@ -2971,16 +2980,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     setState(() {
       _circuit = next;
-      _layout = _routeWithG2A(
-        _circuit,
-        CircuitVisualLayout(
+      _layout = CircuitVisualLayout(
           elementPositions: positions,
           elementSizes: sizes,
           wireRoutes: routes,
           elementQuarterTurns: rotations,
           defaultElementSize: _layout.defaultElementSize,
-        ),
-      );
+        ),;
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
     });

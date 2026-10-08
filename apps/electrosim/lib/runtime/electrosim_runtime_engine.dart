@@ -75,6 +75,7 @@ final class ElectroSimRuntimeSnapshot {
   final Ac1SolveResult? ac1Result;
   final Ac3SolveResult? ac3Result;
   final PvSolveResult? pvResult;
+
   /// Physical state of autonomous DC batteries, not an invented PV reading.
   final Map<ComponentId, double> dcBatterySocs;
   final Map<ComponentId, ContactorActuationState> contactorStates;
@@ -690,7 +691,8 @@ final class ElectroSimRuntimeEngine {
     Map<ComponentId, ComponentHealthState> previousComponentHealthStates =
         const <ComponentId, ComponentHealthState>{},
     double? previousPvBatterySoc,
-    Map<ComponentId, double> previousDcBatterySocs = const <ComponentId, double>{},
+    Map<ComponentId, double> previousDcBatterySocs =
+        const <ComponentId, double>{},
   }) {
     if (elapsed.isNegative) {
       throw ArgumentError.value(
@@ -799,7 +801,11 @@ final class ElectroSimRuntimeEngine {
           solverKind: ElectroSimRuntimeSolverKind.dc,
           dcResult: dc,
           dcBatterySocs: _advanceDcBatterySoc(
-            solverCircuit, dc, previousDcBatterySocs, elapsed),
+            solverCircuit,
+            dc,
+            previousDcBatterySocs,
+            elapsed,
+          ),
           contactorStates: coordinated.relays,
           controlIssues: coordinated.controlIssues,
           protectionState: coordinated.state,
@@ -957,31 +963,37 @@ final class ElectroSimRuntimeEngine {
       double param(String key, double fallback) =>
           (component.parameters[key] as num?)?.toDouble() ?? fallback;
       final double nominalV = param(
-          ComponentParameterKeys.storageNominalVoltageV, 48.0);
-      final double capacityAh = param(
-          'capacityAh', 100.0);
+        ComponentParameterKeys.storageNominalVoltageV,
+        48.0,
+      );
+      final double capacityAh = param('capacityAh', 100.0);
       final double capacityWh = nominalV * capacityAh;
       final double minSoc = param(ComponentParameterKeys.storageMinSoc, 0.0);
       final double maxSoc = param('maxSoc', 1.0);
-      final double soc = (previous[component.id] ??
-          param(ComponentParameterKeys.storageInitialSoc, 1.0))
-          .clamp(minSoc, maxSoc).toDouble();
+      final double soc =
+          (previous[component.id] ??
+                  param(ComponentParameterKeys.storageInitialSoc, 1.0))
+              .clamp(minSoc, maxSoc)
+              .toDouble();
       final DcBranchResult? branch = dc.isSolved
-          ? dc.branchResults.where((DcBranchResult b) =>
-              b.id == 'component:${component.id.value}').firstOrNull
+          ? dc.branchResults
+                .where(
+                  (DcBranchResult b) =>
+                      b.id == 'component:${component.id.value}',
+                )
+                .firstOrNull
           : null;
       final double branchPowerW = branch?.powerW ?? 0.0;
-      final double chargeEff = param(
-          'chargeEfficiency', 0.95);
-      final double dischargeEff = param(
-          'dischargeEfficiency', 0.95);
+      final double chargeEff = param('chargeEfficiency', 0.95);
+      final double dischargeEff = param('dischargeEfficiency', 0.95);
       final double netStoredPowerW = branchPowerW >= 0.0
           ? branchPowerW * chargeEff
           : branchPowerW / dischargeEff;
       final double updated = capacityWh <= 0.0
           ? soc
           : (soc + netStoredPowerW * hours / capacityWh)
-              .clamp(minSoc, maxSoc).toDouble();
+                .clamp(minSoc, maxSoc)
+                .toDouble();
       next[component.id] = updated;
     }
     return Map<ComponentId, double>.unmodifiable(next);

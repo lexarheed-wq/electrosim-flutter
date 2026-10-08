@@ -6,6 +6,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -479,7 +480,81 @@ class F18WorkspacePage extends StatefulWidget {
   State<F18WorkspacePage> createState() => _F18WorkspacePageState();
 }
 
+final class _F18WorkspaceHistoryEntry {
+  const _F18WorkspaceHistoryEntry(this.circuit, this.layout, this.selectedId);
+  final CircuitState circuit;
+  final CircuitVisualLayout layout;
+  final String? selectedId;
+}
+
 class _F18WorkspacePageState extends State<F18WorkspacePage> {
+  static const int _maxHistoryEntries = 64;
+  final List<_F18WorkspaceHistoryEntry> _undoHistory =
+      <_F18WorkspaceHistoryEntry>[];
+  final List<_F18WorkspaceHistoryEntry> _redoHistory =
+      <_F18WorkspaceHistoryEntry>[];
+  bool _restoringHistory = false;
+
+  bool _sameEditableGeometry(
+    CircuitVisualLayout before,
+    CircuitVisualLayout after,
+  ) =>
+      mapEquals(before.elementPositions, after.elementPositions) &&
+      mapEquals(before.elementSizes, after.elementSizes) &&
+      mapEquals(before.elementQuarterTurns, after.elementQuarterTurns);
+
+  @override
+  void setState(VoidCallback fn) {
+    final CircuitState beforeCircuit = _circuit;
+    final CircuitVisualLayout beforeLayout = _layout;
+    final String? beforeSelection = _selected;
+    super.setState(fn);
+    if (_restoringHistory || _studentTpReadOnly) return;
+    if (!identical(beforeCircuit, _circuit) ||
+        !_sameEditableGeometry(beforeLayout, _layout)) {
+      _undoHistory.add(
+        _F18WorkspaceHistoryEntry(beforeCircuit, beforeLayout, beforeSelection),
+      );
+      if (_undoHistory.length > _maxHistoryEntries) {
+        _undoHistory.removeAt(0);
+      }
+      _redoHistory.clear();
+    }
+  }
+
+  void _undoEdit() {
+    if (_studentTpReadOnly || _undoHistory.isEmpty) return;
+    final _F18WorkspaceHistoryEntry previous = _undoHistory.removeLast();
+    _redoHistory.add(_F18WorkspaceHistoryEntry(_circuit, _layout, _selected));
+    _restoreEdit(previous, 'Modification annulée');
+  }
+
+  void _redoEdit() {
+    if (_studentTpReadOnly || _redoHistory.isEmpty) return;
+    final _F18WorkspaceHistoryEntry next = _redoHistory.removeLast();
+    _undoHistory.add(_F18WorkspaceHistoryEntry(_circuit, _layout, _selected));
+    _restoreEdit(next, 'Modification rétablie');
+  }
+
+  void _restoreEdit(_F18WorkspaceHistoryEntry entry, String status) {
+    _restoringHistory = true;
+    try {
+      setState(() {
+        _circuit = entry.circuit;
+        _layout = entry.layout;
+        _selected = entry.selectedId;
+        _status = status;
+        _wiringPendingTerminal = null;
+        _wiringHoverTerminal = null;
+        _dragPreviewLayout.value = null;
+      });
+    } finally {
+      _restoringHistory = false;
+    }
+    _simulation.updateCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
   static const OrthogonalWireRouter _g2aRouter = OrthogonalWireRouter(
     grid: 24,
     obstacleClearance: 24,
@@ -617,6 +692,22 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 _deleteSelectedElement,
             const SingleActivator(LogicalKeyboardKey.backspace):
                 _deleteSelectedElement,
+            const SingleActivator(LogicalKeyboardKey.keyZ, meta: true):
+                _undoEdit,
+            const SingleActivator(LogicalKeyboardKey.keyZ, control: true):
+                _undoEdit,
+            const SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              meta: true,
+              shift: true,
+            ): _redoEdit,
+            const SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              control: true,
+              shift: true,
+            ): _redoEdit,
+            const SingleActivator(LogicalKeyboardKey.keyY, control: true):
+                _redoEdit,
             const SingleActivator(LogicalKeyboardKey.equal, shift: true): () =>
                 _viewport.zoomAt(const Offset(400, 300), 1.1),
             const SingleActivator(LogicalKeyboardKey.minus): () =>
@@ -666,6 +757,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                         unawaited(_advanceSimulation(elapsed));
                       },
                       onCancelAdvance: _simulation.cancelAdvance,
+                      onUndo: _undoHistory.isEmpty || _studentTpReadOnly
+                          ? null
+                          : _undoEdit,
+                      onRedo: _redoHistory.isEmpty || _studentTpReadOnly
+                          ? null
+                          : _redoEdit,
                     ),
               ),
               palette: F9ComponentPalette(
@@ -3275,6 +3372,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.simulationAdvancing,
     required this.onAdvanceSimulation,
     required this.onCancelAdvance,
+    required this.onUndo,
+    required this.onRedo,
   });
 
   final String entryLabel;
@@ -3298,6 +3397,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final bool simulationAdvancing;
   final ValueChanged<Duration> onAdvanceSimulation;
   final VoidCallback onCancelAdvance;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
 
   @override
   Widget build(BuildContext context) {
@@ -3486,6 +3587,10 @@ class _WorkspaceTopBar extends StatelessWidget {
                     icon: const Icon(Icons.more_vert),
                     onSelected: (_WorkspaceSecondaryAction action) {
                       switch (action) {
+                        case _WorkspaceSecondaryAction.undo:
+                          onUndo?.call();
+                        case _WorkspaceSecondaryAction.redo:
+                          onRedo?.call();
                         case _WorkspaceSecondaryAction.save:
                           onSave?.call();
                         case _WorkspaceSecondaryAction.open:
@@ -3504,6 +3609,18 @@ class _WorkspaceTopBar extends StatelessWidget {
                     },
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<_WorkspaceSecondaryAction>>[
+                          PopupMenuItem<_WorkspaceSecondaryAction>(
+                            key: const Key('workspace-undo-action'),
+                            value: _WorkspaceSecondaryAction.undo,
+                            enabled: onUndo != null,
+                            child: const Text('Annuler · ⌘Z / Ctrl+Z'),
+                          ),
+                          PopupMenuItem<_WorkspaceSecondaryAction>(
+                            key: const Key('workspace-redo-action'),
+                            value: _WorkspaceSecondaryAction.redo,
+                            enabled: onRedo != null,
+                            child: const Text('Rétablir · ⌘⇧Z / Ctrl+Y'),
+                          ),
                           if (onSave != null)
                             const PopupMenuItem<_WorkspaceSecondaryAction>(
                               key: Key('workspace-save-action'),
@@ -3572,6 +3689,8 @@ class _WorkspaceTopBar extends StatelessWidget {
 }
 
 enum _WorkspaceSecondaryAction {
+  undo,
+  redo,
   save,
   open,
   recenter,

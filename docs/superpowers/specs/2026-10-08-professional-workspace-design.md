@@ -1,6 +1,6 @@
 # ElectroSim — atelier professionnel
 
-Statut : proposition visuelle approuvée dans la conversation ; spécification écrite à relire avant plan d’implémentation.
+Statut : direction visuelle et spécification validées dans la conversation ; plan du lot A préparé pour revue avant implémentation.
 
 ## Objectif
 

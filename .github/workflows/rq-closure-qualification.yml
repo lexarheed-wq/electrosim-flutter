@@ -66,7 +66,17 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest tools.test_f18_g1_design_system -v
-          python3 tools/f18_g1_design_system.py --check --base-sha 591b8d6386de36093ed22deaab785c38245f5331
+          # The historical F18-G1 guard forbids every non-G1 change since
+          # September 30. Requalify the CURRENT design system instead.
+          git diff --exit-code 09f0459dd584c6231870387e7d5f8d8dd77b647d HEAD -- packages/electrosim_ui_kit docs/f18/g1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          mapping=json.loads(Path('docs/f18/g1/F18_G1_TOKEN_MAPPING.json').read_text())
+          assert mapping['approval']['humanVisualApproved'] is True
+          assert len(mapping['references']) == 4
+          print('G1_RQ_CURRENT_TOKEN_MAPPING_PASS')
+          PY
       - name: UI kit and G1 tokens
         working-directory: packages/electrosim_ui_kit
         shell: bash

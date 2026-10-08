@@ -23,18 +23,27 @@ void main() {
         reason: item.keyName,
       );
     }
-    expect(F18IndustrialIdentity.familyOf('physical_voltmeter'),
-        F18IndustrialFamily.instrument);
-    expect(F18IndustrialIdentity.familyOf('breaker_3p'),
-        F18IndustrialFamily.modularProtection);
-    expect(F18IndustrialIdentity.familyOf('motor_3p_6t'),
-        F18IndustrialFamily.drive);
-    expect(F18IndustrialIdentity.familyOf('pv_array'),
-        F18IndustrialFamily.solar);
+    expect(
+      F18IndustrialIdentity.familyOf('physical_voltmeter'),
+      F18IndustrialFamily.instrument,
+    );
+    expect(
+      F18IndustrialIdentity.familyOf('breaker_3p'),
+      F18IndustrialFamily.modularProtection,
+    );
+    expect(
+      F18IndustrialIdentity.familyOf('motor_3p_6t'),
+      F18IndustrialFamily.drive,
+    );
+    expect(
+      F18IndustrialIdentity.familyOf('pv_array'),
+      F18IndustrialFamily.solar,
+    );
   });
 
-  testWidgets('board presentation retains the child without transforms',
-      (tester) async {
+  testWidgets('board presentation retains the child without transforms', (
+    tester,
+  ) async {
     const child = Text('canonical board artwork', key: Key('front-art'));
     await tester.pumpWidget(
       const Directionality(
@@ -71,18 +80,19 @@ void main() {
   ];
 
   for (final id in examples) {
-    testWidgets('$id renders as a three-quarter palette identity',
-        (tester) async {
+    testWidgets('$id renders as a three-quarter palette identity', (
+      tester,
+    ) async {
       final definition = f9PaletteCatalog.singleWhere(
         (item) => item.keyName == id,
       );
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: F9ComponentPreview(definition: definition),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(child: F9ComponentPreview(definition: definition)),
           ),
         ),
-      ));
+      );
       await tester.pump();
       final visual = tester.widget<F18IndustrialDualView>(
         find.byType(F18IndustrialDualView),

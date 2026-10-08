@@ -2518,15 +2518,15 @@ class F9ComponentPreview extends StatelessWidget {
 
     final Widget canonicalArtwork =
         definition.kind == F9PaletteElementKind.instrument
-            ? F18PhysicalInstrumentPreview(
-                ammeter: definition.keyName == 'instrument-ammeter',
-                compact: compact,
-              )
-            : F18ComponentAssetVisual(
-                modelType: definition.renderedModelType,
-                variantKey: definition.visualVariant,
-                size: visualSize,
-              );
+        ? F18PhysicalInstrumentPreview(
+            ammeter: definition.keyName == 'instrument-ammeter',
+            compact: compact,
+          )
+        : F18ComponentAssetVisual(
+            modelType: definition.renderedModelType,
+            variantKey: definition.visualVariant,
+            size: visualSize,
+          );
 
     // Every family including physical meters uses the same appearance rule.
     // Palette and drag = product perspective; board = untransformed artwork.

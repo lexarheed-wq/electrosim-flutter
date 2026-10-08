@@ -416,10 +416,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final double batterySoc = component.modelType != 'pv_battery'
           ? 0.0
           : (runtime?.pvResult?.isSolved ?? false)
-              ? runtime!.pvResult!.batterySoc
-              : runtime?.dcBatterySocs[component.id] ??
-                  (component.parameters['initialSoc'] as num?)?.toDouble() ??
-                  0.0;
+          ? runtime!.pvResult!.batterySoc
+          : runtime?.dcBatterySocs[component.id] ??
+                (component.parameters['initialSoc'] as num?)?.toDouble() ??
+                0.0;
       final componentState = runtime?.componentOperatingState(component.id);
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
@@ -762,24 +762,24 @@ class _F9ReferenceAsset extends StatelessWidget {
     presentation: F18IndustrialPresentation.boardFront,
     child: F18ComponentAssetVisual(
       modelType: modelType,
-    variantKey: variantKey,
-    size: size,
-    active: active,
-    energized: energized,
-    closed: closed,
-    tripped: tripped,
-    pressed: pressed,
-    actuated: actuated,
-    animationValue: phase,
-    batterySoc: batterySoc,
-    showTerminals: showTerminals,
-    currentA: currentA,
-    voltageV: voltageV,
-    ratedCurrentA: ratedCurrentA,
-    ratedVoltageV: ratedVoltageV,
-    ratedPowerW: ratedPowerW,
-    currentLimitA: currentLimitA,
-    resistanceOhm: resistanceOhm,
+      variantKey: variantKey,
+      size: size,
+      active: active,
+      energized: energized,
+      closed: closed,
+      tripped: tripped,
+      pressed: pressed,
+      actuated: actuated,
+      animationValue: phase,
+      batterySoc: batterySoc,
+      showTerminals: showTerminals,
+      currentA: currentA,
+      voltageV: voltageV,
+      ratedCurrentA: ratedCurrentA,
+      ratedVoltageV: ratedVoltageV,
+      ratedPowerW: ratedPowerW,
+      currentLimitA: currentLimitA,
+      resistanceOhm: resistanceOhm,
     ),
   );
 

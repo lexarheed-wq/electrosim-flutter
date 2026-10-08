@@ -40,7 +40,8 @@ abstract final class F18IndustrialIdentity {
         type.contains('push_button')) {
       return F18IndustrialFamily.switching;
     }
-    if (type.contains('motor') || type.contains('fan') ||
+    if (type.contains('motor') ||
+        type.contains('fan') ||
         type.contains('generator')) {
       return F18IndustrialFamily.drive;
     }
@@ -153,7 +154,8 @@ final class _F18IndustrialDepthPainter extends CustomPainter {
     );
 
     // These families have a meaningful rectangular enclosure or DIN housing.
-    final boxed = family == F18IndustrialFamily.modularProtection ||
+    final boxed =
+        family == F18IndustrialFamily.modularProtection ||
         family == F18IndustrialFamily.switching ||
         family == F18IndustrialFamily.enclosure ||
         family == F18IndustrialFamily.instrument ||
@@ -177,10 +179,14 @@ final class _F18IndustrialDepthPainter extends CustomPainter {
       ..close();
 
     final colors = switch (family) {
-      F18IndustrialFamily.instrument =>
-        (const Color(0xFF334459), const Color(0xFF1F2D3C)),
-      F18IndustrialFamily.solar =>
-        (const Color(0xFFE5EDF0), const Color(0xFF889DAB)),
+      F18IndustrialFamily.instrument => (
+        const Color(0xFF334459),
+        const Color(0xFF1F2D3C),
+      ),
+      F18IndustrialFamily.solar => (
+        const Color(0xFFE5EDF0),
+        const Color(0xFF889DAB),
+      ),
       _ => (const Color(0xFFF6F8F5), const Color(0xFFB5BEC2)),
     };
 

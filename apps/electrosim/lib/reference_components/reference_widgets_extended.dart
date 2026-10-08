@@ -60,7 +60,7 @@ final class ExtendedReferenceVisualState {
 abstract final class ExtendedReferenceGeometry {
   static Size designSizeFor(ExtendedReferenceDevice device) => switch (device) {
     ExtendedReferenceDevice.resistor => const Size(280, 110),
-    ExtendedReferenceDevice.pushButtonNc => const Size(180, 180),
+    ExtendedReferenceDevice.pushButtonNc => const Size(90, 140),
     ExtendedReferenceDevice.buzzer => const Size(190, 190),
     ExtendedReferenceDevice.fuse => const Size(300, 110),
     ExtendedReferenceDevice.diode => const Size(270, 105),
@@ -81,8 +81,8 @@ abstract final class ExtendedReferenceGeometry {
           Offset(218, 55),
         ],
         ExtendedReferenceDevice.pushButtonNc => const <Offset>[
-          Offset(70, 153),
-          Offset(110, 153),
+          Offset(31, 119),
+          Offset(59, 119),
         ],
         ExtendedReferenceDevice.buzzer => const <Offset>[
           Offset(70, 160),
@@ -229,7 +229,12 @@ class _ExtendedReferencePainter extends CustomPainter {
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
-        style: TextStyle(fontSize: size, color: color, fontWeight: weight),
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: size,
+          color: color,
+          fontWeight: weight,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -359,69 +364,55 @@ class _ExtendedReferencePainter extends CustomPainter {
   }
 
   void _paintPushButtonNc(Canvas c, Size s) {
-    final Offset left = ExtendedReferenceGeometry.terminalOffset(
-      device,
-      right: false,
-    );
-    final Offset right = ExtendedReferenceGeometry.terminalOffset(
-      device,
-      right: true,
-    );
-    const Offset center = Offset(90, 88);
-    const double bezelR = 55;
-
-    if (showTerminals) {
-      _terminal(c, left, const Offset(70, 139));
-      _terminal(c, right, const Offset(110, 139));
-    }
-
-    final Rect bezel = Rect.fromCircle(center: center, radius: bezelR);
+    _box(c, const Rect.fromLTWH(12, 8, 66, 124), const [
+      Color(0xFFD8DFE0),
+      Color(0xFF76858C),
+    ], shadow: true);
+    _box(c, const Rect.fromLTWH(20, 104, 50, 24), const [
+      Color(0xFF424B4C),
+      Color(0xFF222B30),
+    ], radius: 3);
+    const bezelCentre = Offset(45, 58);
+    final capCentre = Offset(45, state.pressed ? 61 : 56);
+    final bezel = Rect.fromCircle(center: bezelCentre, radius: 29);
     c.drawCircle(
-      center,
-      bezelR,
-      _linear(bezel, const <Color>[
-        Color(0xFFF7F9F9),
-        Color(0xFFC4CDD0),
-        Color(0xFF68787F),
+      bezelCentre,
+      29,
+      _linear(bezel, const [
+        Color(0xFFFCFFFF),
+        Color(0xFFBEC9CD),
+        Color(0xFF5D717B),
       ]),
     );
     c.drawCircle(
-      center,
-      bezelR,
-      _stroke(color: const Color(0xFF53636A), width: 1.3),
+      capCentre + const Offset(0, 3),
+      23,
+      Paint()..color = const Color(0xFF521F1E),
     );
-    c.drawCircle(center, 46, Paint()..color = const Color(0xFF343B3F));
-
-    final Offset capCenter = Offset(
-      center.dx,
-      center.dy + (state.pressed ? 6 : 0),
-    );
-    final double capR = state.pressed ? 34 : 39;
-    final Rect cap = Rect.fromCircle(center: capCenter, radius: capR);
     c.drawCircle(
-      capCenter,
-      capR,
+      capCentre,
+      state.pressed ? 21 : 23,
       Paint()
         ..shader = const RadialGradient(
-          center: Alignment(-.35, -.4),
-          colors: <Color>[
-            Color(0xFFFF7C70),
-            Color(0xFFD93A32),
-            Color(0xFF7B1614),
-          ],
-        ).createShader(cap),
+          center: Alignment(-.4, -.5),
+          colors: [Color(0xFFFF8A7B), Color(0xFFD44338), Color(0xFF861A19)],
+        ).createShader(Rect.fromCircle(center: capCentre, radius: 23)),
     );
-    c.drawCircle(
-      capCenter,
-      capR,
-      _stroke(color: const Color(0xFF6D1513), width: 1.3),
+    c.drawArc(
+      Rect.fromCircle(center: capCentre, radius: 19),
+      math.pi * 1.1,
+      math.pi * .55,
+      false,
+      _stroke(color: const Color(0x90FFD7CF), width: 1),
     );
-    c.drawCircle(
-      capCenter + const Offset(-12, -14),
-      7,
-      Paint()..color = const Color(0x44FFFFFF),
-    );
-    _text(c, 'NC', const Offset(80, 151), size: 11);
+    _text(c, 'NC', const Offset(39, 91), size: 8);
+    _text(c, '21', const Offset(27, 105), size: 6, color: Colors.white70);
+    _text(c, '22', const Offset(55, 105), size: 6, color: Colors.white70);
+    for (final terminal in ExtendedReferenceGeometry.terminalOffsetsFor(
+      device,
+    )) {
+      _screw(c, terminal, radius: 4);
+    }
   }
 
   void _paintBuzzer(Canvas c, Size s) {

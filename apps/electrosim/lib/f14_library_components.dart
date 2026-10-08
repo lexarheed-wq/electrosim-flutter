@@ -54,10 +54,10 @@ abstract final class F14LibraryGeometry {
     F14LibraryDevice.impedance => const Size(220, 110),
     F14LibraryDevice.auxiliaryNo => const Size(120, 170),
     F14LibraryDevice.auxiliaryNc => const Size(120, 170),
-    F14LibraryDevice.contactorAc1 => const Size(160, 210),
-    F14LibraryDevice.contactor3p => const Size(220, 240),
-    F14LibraryDevice.breaker3p => const Size(190, 220),
-    F14LibraryDevice.thermalOverload3p => const Size(200, 220),
+    F14LibraryDevice.contactorAc1 => const Size(110, 190),
+    F14LibraryDevice.contactor3p => const Size(145, 220),
+    F14LibraryDevice.breaker3p => const Size(120, 180),
+    F14LibraryDevice.thermalOverload3p => const Size(145, 180),
   };
 }
 
@@ -141,9 +141,9 @@ final class _Painter {
   Offset get c => rect.center;
 
   Paint get outline => Paint()
-    ..color = const Color(0xFF263746)
+    ..color = const Color(0xFF61717B)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = math.max(1.1, s * .018)
+    ..strokeWidth = math.max(.7, s * .007)
     ..strokeJoin = StrokeJoin.round
     ..strokeCap = StrokeCap.round;
 
@@ -167,6 +167,16 @@ final class _Painter {
     );
     canvas.drawRRect(rr, gradient(body, colors));
     canvas.drawRRect(rr, outline);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        body.deflate(1.5),
+        Radius.circular(math.max(1, radius - 1)),
+      ),
+      Paint()
+        ..color = const Color(0xA0FFFFFF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .8,
+    );
   }
 
   void terminal(Offset p, {String? label}) {
@@ -178,9 +188,9 @@ final class _Painter {
         ..shader = const RadialGradient(
           center: Alignment(-.35, -.35),
           colors: <Color>[
-            Color(0xFFFFE9A7),
-            Color(0xFFC99538),
-            Color(0xFF6D4B1E),
+            Color(0xFFF7FAFA),
+            Color(0xFF9CA9B0),
+            Color(0xFF52616B),
           ],
         ).createShader(Rect.fromCircle(center: p, radius: r)),
     );
@@ -212,6 +222,7 @@ final class _Painter {
       text: TextSpan(
         text: value,
         style: TextStyle(
+          fontFamily: 'Roboto',
           color: color,
           fontSize: size ?? math.max(7, h * .07),
           fontWeight: weight,
@@ -411,111 +422,119 @@ final class _Painter {
   }
 
   void contactor({required bool singlePhase}) {
-    final Rect body = Rect.fromCenter(
-      center: c,
-      width: singlePhase ? w * .68 : w * .72,
-      height: h * .76,
-    );
+    final body = Rect.fromCenter(center: c, width: w * .92, height: h * .94);
     housing(
       body,
-      colors: const <Color>[Color(0xFFF8F8F5), Color(0xFFC9D0D4)],
-      radius: h * .035,
+      colors: const [Color(0xFFF8F8F3), Color(0xFFD5D8D3), Color(0xFFB7BDB8)],
+      radius: h * .022,
     );
-
-    final int poles = singlePhase ? 1 : 3;
-    final List<double> xs = poles == 1
-        ? <double>[c.dx - body.width * .18]
-        : <double>[c.dx - body.width * .28, c.dx, c.dx + body.width * .28];
-    for (var i = 0; i < poles; i++) {
-      final Offset top = Offset(xs[i], rect.top + h * .08);
-      final Offset bottom = Offset(xs[i], rect.bottom - h * .08);
-      terminal(
-        top,
-        label: poles == 1 ? '1L1' : <String>['1L1', '3L2', '5L3'][i],
-      );
-      terminal(
-        bottom,
-        label: poles == 1 ? '2T1' : <String>['2T1', '4T2', '6T3'][i],
-      );
-      lead(
-        top.translate(0, h * .03),
-        Offset(xs[i], body.top + body.height * .12),
-      );
-      lead(
-        Offset(xs[i], body.bottom - body.height * .12),
-        bottom.translate(0, -h * .03),
-      );
-      final Rect poleWindow = Rect.fromCenter(
-        center: Offset(xs[i], c.dy - h * .02),
-        width: body.width / (poles * 2.4),
-        height: body.height * .30,
+    // Insulating terminal decks encompass the actual contact points.
+    for (final y in [rect.top + h * .035, rect.bottom - h * .145]) {
+      final deck = Rect.fromLTWH(
+        body.left + w * .025,
+        y,
+        body.width - w * .05,
+        h * .11,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(poleWindow, Radius.circular(h * .02)),
-        Paint()..color = const Color(0xFF36444D),
-      );
-      canvas.drawRect(
-        Rect.fromCenter(
-          center: poleWindow.center.translate(
-            0,
-            state.actuated ? poleWindow.height * .12 : -poleWindow.height * .12,
-          ),
-          width: poleWindow.width * .55,
-          height: poleWindow.height * .24,
-        ),
-        Paint()
-          ..color = state.actuated
-              ? const Color(0xFF52A96B)
-              : const Color(0xFFB8C1C7),
+        RRect.fromRectAndRadius(deck, Radius.circular(h * .012)),
+        gradient(deck, const [Color(0xFF3C464B), Color(0xFF172229)]),
       );
     }
-
-    final Offset a1 = Offset(rect.left + w * .08, c.dy + h * .08);
-    final Offset a2 = Offset(rect.right - w * .08, c.dy + h * .08);
-    terminal(a1, label: 'A1');
-    terminal(a2, label: 'A2');
-    final Rect coil = Rect.fromCenter(
-      center: Offset(c.dx, body.bottom - body.height * .16),
-      width: body.width * .34,
-      height: body.height * .15,
+    final face = Rect.fromLTWH(
+      body.left + w * .08,
+      rect.top + h * .24,
+      body.width - w * .16,
+      h * .43,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(coil, Radius.circular(h * .025)),
-      Paint()
-        ..color = state.actuated
-            ? const Color(0xFFD87831)
-            : const Color(0xFF7B4C2C),
+      RRect.fromRectAndRadius(face, Radius.circular(h * .022)),
+      gradient(face, const [Color(0xFFFCFDF7), Color(0xFFDFE2DA)]),
     );
-    for (var i = 0; i < 6; i++) {
-      final double x = coil.left + coil.width * (.12 + i * .15);
-      canvas.drawLine(
-        Offset(x, coil.top + coil.height * .16),
-        Offset(x, coil.bottom - coil.height * .16),
-        Paint()
-          ..color = const Color(0xFFFFB36B)
-          ..strokeWidth = math.max(1, s * .012),
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(face, Radius.circular(h * .022)),
+      Paint()
+        ..color = const Color(0xFF9FA9A1)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .7,
+    );
+    text(
+      'CONTACTEUR',
+      Offset(c.dx, face.top + h * .07),
+      size: h * .045,
+      color: const Color(0xFF35735B),
+    );
+    final window = Rect.fromCenter(
+      center: Offset(c.dx, c.dy - h * .02),
+      width: w * .42,
+      height: h * .11,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(window, Radius.circular(h * .008)),
+      gradient(window, const [Color(0xFF0E171E), Color(0xFF34424D)]),
+    );
+    for (var i = 0; i < (singlePhase ? 1 : 3); i++) {
+      final x = singlePhase
+          ? window.center.dx
+          : window.left + window.width * (.23 + i * .27);
+      final movingBar = Rect.fromCenter(
+        center: Offset(
+          x,
+          window.center.dy + (state.actuated ? h * .012 : -h * .012),
+        ),
+        width: w * .06,
+        height: h * .075,
+      );
+      canvas.drawRect(
+        movingBar,
+        gradient(movingBar, const [Color(0xFFB8C3CA), Color(0xFF697A87)]),
       );
     }
     text(
-      state.actuated ? 'I' : 'O',
-      Offset(c.dx, body.top + h * .09),
-      size: h * .11,
-      color: state.actuated ? const Color(0xFF167A3E) : const Color(0xFF5A6871),
+      singlePhase ? '1 PÔLE' : '3 PÔLES',
+      Offset(c.dx, face.bottom - h * .035),
+      size: h * .045,
+    );
+    // Keep the established electrical terminal order and exact anchor fractions.
+    final xs = singlePhase
+        ? [c.dx - w * .1224]
+        : [c.dx - w * .2016, c.dx, c.dx + w * .2016];
+    for (var i = 0; i < xs.length; i++) {
+      terminal(
+        Offset(xs[i], rect.top + h * .08),
+        label: singlePhase ? '1L1' : ['1L1', '3L2', '5L3'][i],
+      );
+      terminal(
+        Offset(xs[i], rect.bottom - h * .08),
+        label: singlePhase ? '2T1' : ['2T1', '4T2', '6T3'][i],
+      );
+    }
+    terminal(Offset(rect.left + w * .08, c.dy + h * .08), label: 'A1');
+    terminal(Offset(rect.right - w * .08, c.dy + h * .08), label: 'A2');
+    // Mechanical state flag, not a simulated pilot lamp.
+    final flag = Rect.fromLTWH(
+      c.dx - w * .07,
+      rect.top + h * .72,
+      w * .14,
+      h * .045,
+    );
+    canvas.drawRect(
+      flag,
+      Paint()
+        ..color = state.actuated
+            ? const Color(0xFF3B8058)
+            : const Color(0xFF66716D),
     );
   }
 
   void breaker3p() {
     final Rect body = Rect.fromCenter(
       center: c,
-      width: w * .72,
-      height: h * .78,
+      width: w * .86,
+      height: h * .94,
     );
     housing(body, radius: h * .03);
-    final List<double> xs = <double>[
-      c.dx - body.width * .28,
-      c.dx,
-      c.dx + body.width * .28,
-    ];
+    final List<double> xs = <double>[c.dx - w * .2016, c.dx, c.dx + w * .2016];
     for (var i = 0; i < 3; i++) {
       final Offset top = Offset(xs[i], rect.top + h * .08);
       final Offset bottom = Offset(xs[i], rect.bottom - h * .08);
@@ -545,12 +564,19 @@ final class _Painter {
         gradient(lever, const <Color>[Color(0xFF515E67), Color(0xFF172027)]),
       );
     }
-    text('C10  3P', Offset(c.dx, body.top + h * .08), size: h * .07);
+    final badge = Rect.fromLTWH(
+      body.left + w * .06,
+      rect.top + h * .21,
+      body.width - w * .12,
+      h * .015,
+    );
+    canvas.drawRect(badge, Paint()..color = const Color(0xFF5A7380));
+    text('3 PÔLES', Offset(c.dx, rect.top + h * .255), size: h * .052);
     final Color indicator = state.tripped
         ? const Color(0xFFD64545)
         : (state.closed ? const Color(0xFF3AA964) : const Color(0xFF9AA7AE));
     canvas.drawCircle(
-      Offset(c.dx, body.bottom - h * .08),
+      Offset(c.dx, rect.top + h * .75),
       h * .025,
       Paint()..color = indicator,
     );
@@ -559,19 +585,33 @@ final class _Painter {
   void thermalOverload3p() {
     final Rect body = Rect.fromCenter(
       center: c,
-      width: w * .74,
-      height: h * .76,
+      width: w * .88,
+      height: h * .94,
     );
     housing(
       body,
       colors: const <Color>[Color(0xFFF3F1EA), Color(0xFFC8C4B7)],
       radius: h * .035,
     );
-    final List<double> xs = <double>[
-      c.dx - body.width * .28,
-      c.dx,
-      c.dx + body.width * .28,
-    ];
+    final face = Rect.fromLTWH(
+      body.left + w * .055,
+      rect.top + h * .15,
+      body.width - w * .11,
+      h * .59,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(face, Radius.circular(h * .018)),
+      gradient(face, const [Color(0xFFF9F8F1), Color(0xFFDEDED1)]),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(face, Radius.circular(h * .018)),
+      Paint()
+        ..color = const Color(0xFFAAAFA4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .6,
+    );
+
+    final List<double> xs = <double>[c.dx - w * .2072, c.dx, c.dx + w * .2072];
     for (var i = 0; i < 3; i++) {
       terminal(
         Offset(xs[i], rect.top + h * .08),
@@ -581,25 +621,8 @@ final class _Painter {
         Offset(xs[i], rect.bottom - h * .08),
         label: <String>['2T1', '4T2', '6T3'][i],
       );
-      final Rect path = Rect.fromCenter(
-        center: Offset(xs[i], c.dy + h * .08),
-        width: body.width * .13,
-        height: body.height * .30,
-      );
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(path, Radius.circular(h * .02)),
-        Paint()..color = const Color(0xFF59666D),
-      );
-      canvas.drawLine(
-        Offset(path.center.dx, path.top + path.height * .18),
-        Offset(path.center.dx, path.bottom - path.height * .18),
-        Paint()
-          ..color = state.tripped
-              ? const Color(0xFFE04D45)
-              : const Color(0xFFEBB04C)
-          ..strokeWidth = math.max(2, s * .02),
-      );
     }
+
     final Offset dial = Offset(
       c.dx - body.width * .20,
       body.top + body.height * .22,
@@ -615,13 +638,49 @@ final class _Painter {
         ..strokeWidth = math.max(1.2, s * .012)
         ..style = PaintingStyle.stroke,
     );
-    text(
-      'RESET',
-      Offset(c.dx + body.width * .18, body.top + body.height * .18),
-      size: h * .055,
+    for (var i = 0; i < 7; i++) {
+      final angle = -math.pi * .75 + i * math.pi * 1.5 / 6;
+      final delta = Offset(math.cos(angle), math.sin(angle));
+      canvas.drawLine(
+        dial + delta * h * .085,
+        dial + delta * h * .095,
+        Paint()
+          ..color = const Color(0xFF56625A)
+          ..strokeWidth = .8,
+      );
+    }
+    canvas.drawLine(
+      dial,
+      dial + Offset(h * .034, -h * .039),
+      Paint()
+        ..color = const Color(0xFFF5F8F3)
+        ..strokeWidth = 1.7,
     );
+    for (final entry in [
+      ('STOP', .21, const Color(0xFFAA302C), const Color(0xFFE37669)),
+      ('RESET', .31, const Color(0xFF1D5785), const Color(0xFF6AA8C9)),
+    ]) {
+      final button = Rect.fromCenter(
+        center: Offset(c.dx + body.width * .21, rect.top + h * entry.$2),
+        width: w * .25,
+        height: h * .075,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          button.shift(Offset(0, h * .008)),
+          Radius.circular(2),
+        ),
+        Paint()..color = const Color(0xFF3D4240),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(button, Radius.circular(2)),
+        gradient(button, [entry.$4, entry.$3]),
+      );
+      text(entry.$1, button.center, size: h * .035, color: Colors.white);
+    }
+    text('3 PÔLES', Offset(c.dx, rect.top + h * .59), size: h * .052);
     text(
-      state.tripped ? 'TRIP' : '5.0 A',
+      state.tripped ? 'TRIP' : 'THERMIQUE',
       Offset(c.dx, body.top + body.height * .38),
       size: h * .075,
       color: state.tripped ? const Color(0xFFB42318) : const Color(0xFF34454F),

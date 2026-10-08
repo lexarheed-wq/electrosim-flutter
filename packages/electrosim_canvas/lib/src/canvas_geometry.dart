@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'circuit_visual_layout.dart';
+import 'motor_terminal_geometry.dart';
 
 /// Presentation-only terminal anchors for component drawings.
 ///
@@ -57,8 +58,8 @@ abstract final class TerminalVisualProfile {
         Offset(w * 0.2785714286, 0),
       ],
       'push_button_nc' => <Offset>[
-        Offset(w * -0.1111111111, h * 0.35),
-        Offset(w * 0.1111111111, h * 0.35),
+        Offset(w * -0.1555555556, h * 0.35),
+        Offset(w * 0.1555555556, h * 0.35),
       ],
       'buzzer' => <Offset>[
         Offset(w * -0.1315789474, h * 0.3421052632),
@@ -157,14 +158,7 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.16, h * 0.41),
         Offset(w * 0.16, h * 0.41),
       ],
-      'motor_3p_6t' => <Offset>[
-        Offset(w * -0.20, h * -0.42),
-        Offset(0, h * -0.42),
-        Offset(w * 0.20, h * -0.42),
-        Offset(w * -0.20, h * 0.42),
-        Offset(0, h * 0.42),
-        Offset(w * 0.20, h * 0.42),
-      ],
+      'motor_3p_6t' => SixTerminalMotorGeometry.offsets(Size(w, h)),
       'load_wye_3p' => <Offset>[
         Offset(w * -0.20, h * -0.42),
         Offset(0, h * -0.42),

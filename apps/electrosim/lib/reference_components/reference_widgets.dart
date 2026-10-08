@@ -258,6 +258,19 @@ class _DevicePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = .8,
     );
+    // Moulded edge highlight stays inside the existing physical housing.
+    if (rect.shortestSide > 18) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          rect.deflate(1.2),
+          Radius.circular(math.max(1, radius - 1)),
+        ),
+        Paint()
+          ..color = const Color(0x80FFFFFF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = .7,
+      );
+    }
   }
 
   void _text(
@@ -271,6 +284,7 @@ class _DevicePainter extends CustomPainter {
       text: TextSpan(
         text: value,
         style: TextStyle(
+          fontFamily: 'Roboto',
           fontSize: size,
           color: color,
           fontWeight: FontWeight.w600,
@@ -282,6 +296,11 @@ class _DevicePainter extends CustomPainter {
   }
 
   void _screw(Canvas canvas, Offset center, {double radius = 5}) {
+    canvas.drawCircle(
+      center + const Offset(0, .7),
+      radius + .7,
+      Paint()..color = const Color(0xFF424B50),
+    );
     canvas.drawCircle(
       center,
       radius,
@@ -298,6 +317,13 @@ class _DevicePainter extends CustomPainter {
       Paint()
         ..color = const Color(0xFF34434C)
         ..strokeWidth = 1.5,
+    );
+    canvas.drawLine(
+      center + Offset(-radius * .22, -radius * .52),
+      center + Offset(radius * .22, radius * .52),
+      Paint()
+        ..color = const Color(0xFF34434C)
+        ..strokeWidth = 1.2,
     );
   }
 
@@ -428,6 +454,33 @@ class _DevicePainter extends CustomPainter {
         Color(0xFF737C7C),
         Color(0xFF2C3538),
       ], radius: 2);
+      // Recessed captive screw is hardware, even when connection markers
+      // are supplied by the interactive canvas overlay.
+      _screw(c, Offset(36, y + 9), radius: 5);
+    }
+    _box(c, const Rect.fromLTWH(16, 34, 40, 27), const [
+      Color(0xFFF8F8F3),
+      Color(0xFFE0E1DA),
+    ], radius: 1);
+    c.drawRect(
+      const Rect.fromLTWH(16, 34, 40, 2),
+      Paint()..color = const Color(0xFF516474),
+    );
+    for (final y in [32.0, 124.0]) {
+      c.drawLine(
+        Offset(14, y),
+        Offset(58, y),
+        Paint()
+          ..color = const Color(0xFF949A96)
+          ..strokeWidth = .6,
+      );
+      c.drawLine(
+        Offset(14, y + 1),
+        Offset(58, y + 1),
+        Paint()
+          ..color = const Color(0xBBFFFFFF)
+          ..strokeWidth = .6,
+      );
     }
     _text(c, state.protectionDomainLabel, const Offset(28, 38), size: 8);
     _text(
@@ -539,6 +592,21 @@ class _DevicePainter extends CustomPainter {
         ).createShader(Rect.fromCircle(center: center, radius: 23)),
     );
     _text(c, 'NO', const Offset(39, 91), size: 8);
+    c.drawArc(
+      Rect.fromCircle(center: center, radius: 19),
+      math.pi * 1.1,
+      math.pi * .55,
+      false,
+      Paint()
+        ..color = const Color(0x80D1FFE2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    for (final terminal in ReferenceComponentGeometry.forDevice(
+      device,
+    ).terminals) {
+      _screw(c, terminal, radius: 4);
+    }
     _text(c, '13', const Offset(27, 105), size: 6, color: Colors.white70);
     _text(c, '14', const Offset(55, 105), size: 6, color: Colors.white70);
   }
@@ -646,7 +714,7 @@ class _DevicePainter extends CustomPainter {
     _text(
       c,
       '${state.ratedVoltageV.toStringAsFixed(0)} V • '
-          '${state.ratedPowerW.toStringAsFixed(0)} W',
+      '${state.ratedPowerW.toStringAsFixed(0)} W',
       const Offset(95, 123),
       size: 7,
       color: Colors.white,

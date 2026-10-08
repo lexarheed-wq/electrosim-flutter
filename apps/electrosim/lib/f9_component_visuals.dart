@@ -48,8 +48,9 @@ class F9CanvasVisualOverlay extends StatefulWidget {
 class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     with SingleTickerProviderStateMixin {
   final ValueNotifier<double> _motionSeconds = ValueNotifier<double>(0);
-  final ValueNotifier<Offset?> _fallbackPointerWorld =
-      ValueNotifier<Offset?>(null);
+  final ValueNotifier<Offset?> _fallbackPointerWorld = ValueNotifier<Offset?>(
+    null,
+  );
   late final Ticker _ticker;
   double _motionBaseSeconds = 0;
 
@@ -151,7 +152,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final Map<TerminalId, F9WiringDecision> decisions =
         <TerminalId, F9WiringDecision>{};
-    for (final TerminalId terminalId in _cachedGeometry!.terminalPositions.keys) {
+    for (final TerminalId terminalId
+        in _cachedGeometry!.terminalPositions.keys) {
       if (terminalId == pending) continue;
       decisions[terminalId] = F9WiringPolicy.evaluateAndBuild(
         widget.circuit,
@@ -234,27 +236,28 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                 valueListenable:
                     widget.pointerWorldPositionListenable ??
                     _fallbackPointerWorld,
-                builder: (BuildContext context, Offset? pointer, Widget? child) =>
-                    RepaintBoundary(
-                      child: CustomPaint(
-                        painter: _F9StaticOverlayPainter(
-                          circuit: widget.circuit,
-                          layout: widget.layout,
-                          viewport: widget.viewport,
-                          geometry: geometry,
-                          selectedElementIds: widget.selectedElementIds,
-                          pendingTerminalId: widget.pendingTerminalId,
-                          hoverTerminalId: widget.hoverTerminalId,
-                          pointerWorldPosition: pointer,
-                          wirePreviewPlanner: widget.wirePreviewPlanner,
-                          wirePreviewSession: wirePreviewSession,
-                          wiringDecisions: wiringDecisions,
-                          paintStaticChrome: false,
-                          paintInteraction: true,
+                builder:
+                    (BuildContext context, Offset? pointer, Widget? child) =>
+                        RepaintBoundary(
+                          child: CustomPaint(
+                            painter: _F9StaticOverlayPainter(
+                              circuit: widget.circuit,
+                              layout: widget.layout,
+                              viewport: widget.viewport,
+                              geometry: geometry,
+                              selectedElementIds: widget.selectedElementIds,
+                              pendingTerminalId: widget.pendingTerminalId,
+                              hoverTerminalId: widget.hoverTerminalId,
+                              pointerWorldPosition: pointer,
+                              wirePreviewPlanner: widget.wirePreviewPlanner,
+                              wirePreviewSession: wirePreviewSession,
+                              wiringDecisions: wiringDecisions,
+                              paintStaticChrome: false,
+                              paintInteraction: true,
+                            ),
+                            size: Size.infinite,
+                          ),
                         ),
-                        size: Size.infinite,
-                      ),
-                    ),
               ),
             ],
           );
@@ -264,9 +267,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   }
 
   @visibleForTesting
-  static bool requiresContinuousAnimation(String modelType) => switch (
-        modelType.toLowerCase()
-      ) {
+  static bool requiresContinuousAnimation(String modelType) =>
+      switch (modelType.toLowerCase()) {
         'fan_dc' ||
         'motor_dc' ||
         'pv_array' ||
@@ -342,7 +344,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   pressed: pressed,
                   actuated: actuated,
                   motionSeconds: _motionSeconds,
-                  animate: energized && requiresContinuousAnimation(renderedModelType),
+                  animate:
+                      energized &&
+                      requiresContinuousAnimation(renderedModelType),
                   showTerminals: true,
                   currentA: currentA,
                   voltageV: voltageV,
@@ -462,16 +466,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         batterySoc: batterySoc,
         ratedCurrentA:
             (component.parameters[ProtectionRating.ratedCurrentKey] as num?)
-                    ?.toDouble() ??
-                0,
+                ?.toDouble() ??
+            0,
         ratedVoltageV:
             (component.parameters[ReceiverNominalRating.voltageKey] as num?)
-                    ?.toDouble() ??
-                0,
+                ?.toDouble() ??
+            0,
         ratedPowerW:
             (component.parameters[ReceiverNominalRating.powerKey] as num?)
-                    ?.toDouble() ??
-                0,
+                ?.toDouble() ??
+            0,
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
@@ -782,7 +786,6 @@ class _F9ReferenceAsset extends StatelessWidget {
   }
 }
 
-
 class _F9HealthVisual extends StatelessWidget {
   const _F9HealthVisual({
     required this.healthState,
@@ -894,8 +897,7 @@ class _F9HealthOverlayPainter extends CustomPainter {
 bool f9ShouldPaintCurrentFlow(
   ConnectionCurrentEvidence flow, {
   double minimumCurrentA = 1e-6,
-}) =>
-    flow.magnitudeA > minimumCurrentA;
+}) => flow.magnitudeA > minimumCurrentA;
 
 @visibleForTesting
 double f9CurrentFlowDashPhase({
@@ -937,8 +939,9 @@ class _F9CurrentFlowPainter extends CustomPainter {
       if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
         continue;
       }
-      final ConnectionCurrentEvidence flow =
-          runtime.connectionCurrentEvidence(connection);
+      final ConnectionCurrentEvidence flow = runtime.connectionCurrentEvidence(
+        connection,
+      );
       final double currentA = flow.magnitudeA;
       if (!f9ShouldPaintCurrentFlow(flow)) continue;
 
@@ -954,13 +957,10 @@ class _F9CurrentFlowPainter extends CustomPainter {
       ];
       if (points.length < 2) continue;
 
-      final Path path = Path();
-      final Offset first = viewport.worldToScreen(points.first);
-      path.moveTo(first.dx, first.dy);
-      for (final Offset worldPoint in points.skip(1)) {
-        final Offset p = viewport.worldToScreen(worldPoint);
-        path.lineTo(p.dx, p.dy);
-      }
+      final Path path = buildPhysicalWirePath(
+        points.map(viewport.worldToScreen).toList(),
+        bendRadius: 6 * viewport.scale,
+      );
 
       final Color phase = _phaseColor(connection.phase);
       canvas.drawPath(
@@ -1192,10 +1192,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
             startTerminalId: pending,
             pointerWorldPosition: pointer,
           )
-        : planner.planPrepared(
-            session: session,
-            pointerWorldPosition: pointer,
-          );
+        : planner.planPrepared(session: session, pointerWorldPosition: pointer);
     if (!plan.route.isResolved) return;
 
     final List<Offset> points = plan.route.path!.points;
@@ -1345,6 +1342,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
           text: TextSpan(
             text: decision.accepted ? '✓' : '×',
             style: TextStyle(
+              fontFamily: 'Roboto',
               color: color,
               fontSize: 12,
               fontWeight: FontWeight.w800,
@@ -1366,7 +1364,12 @@ class _F9StaticOverlayPainter extends CustomPainter {
     String? displayLabel,
   }) {
     final Offset center = viewport.worldToScreen(worldRect.center);
-    final Size visualSize = _f9VisualSize(worldRect, viewport);
+    final Size visualSize = F18ReferenceComponentVisuals.supports(modelType)
+        ? Size(
+            worldRect.width * viewport.scale,
+            worldRect.height * viewport.scale,
+          )
+        : _f9VisualSize(worldRect, viewport);
     final Color color = active
         ? ElectroSimColors.primary
         : ElectroSimColors.textSecondary;
@@ -1393,6 +1396,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
         text: TextSpan(
           text: displayLabel ?? _boardLabel(modelType),
           style: TextStyle(
+            fontFamily: 'Roboto',
             color: ElectroSimColors.textPrimary,
             fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),
             fontWeight: FontWeight.w700,

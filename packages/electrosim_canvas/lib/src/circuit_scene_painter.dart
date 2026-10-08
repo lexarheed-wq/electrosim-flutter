@@ -6,6 +6,8 @@ import 'circuit_visual_layout.dart';
 import 'viewport_controller.dart';
 import 'wire_preview_planner.dart';
 import 'wire_semantics.dart';
+import 'physical_wire_path.dart';
+import 'din_rail_visual.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -49,6 +51,7 @@ final class CircuitScenePainter extends CustomPainter {
   final bool paintElementChrome;
   final CircuitGeometryIndex geometryAtBuild;
   final WireSemantics? semanticsAtBuild;
+  late final List<Rect> dinSupportsAtBuild = _buildDinSupports();
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -67,6 +70,9 @@ final class CircuitScenePainter extends CustomPainter {
 
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
+    if (!paintElementChrome) {
+      _paintDinSupports(canvas, geometry);
+    }
     _paintWires(canvas, geometry);
     if (semantics != null) {
       _paintNonJunctionCrossingGaps(canvas, semantics);
@@ -102,6 +108,64 @@ final class CircuitScenePainter extends CustomPainter {
     }
   }
 
+  List<Rect> _buildDinSupports() {
+    const mountedTypes = <String>{
+      'breaker_dc',
+      'breaker_ac1',
+      'breaker',
+      'breaker_3p',
+      'breaker_4p',
+      'contactor_ac1',
+      'contactor_3p',
+      'relay_coil',
+      'isolator_3p',
+      'isolator_4p',
+      'terminal_block_5',
+      'thermal_overload_3p',
+    };
+    final mounts = <Rect>[];
+    for (final component in circuit.components) {
+      final type =
+          ((component.parameters['_visualModelType'] as String?) ??
+                  component.modelType)
+              .toLowerCase();
+      if (!mountedTypes.contains(type) ||
+          layout.quarterTurnsOf(component.id.value) != 0) {
+        continue;
+      }
+      final rect = geometryAtBuild.elementRects[component.id.value];
+      if (rect != null) mounts.add(rect);
+    }
+    // Generic front-view mounting plates for aligned panel push buttons.
+    // This is decorative assembly artwork, not a mechanical compatibility
+    // check. Only extend an existing DIN row; do not invent a rail elsewhere.
+    final rows = mounts.map((r) => r.center.dy).toSet();
+    for (final component in circuit.components) {
+      final type =
+          ((component.parameters['_visualModelType'] as String?) ??
+                  component.modelType)
+              .toLowerCase();
+      if ((type != 'push_button_no' && type != 'push_button_nc') ||
+          layout.quarterTurnsOf(component.id.value) != 0) {
+        continue;
+      }
+      final rect = geometryAtBuild.elementRects[component.id.value];
+      if (rect != null && rows.contains(rect.center.dy)) mounts.add(rect);
+    }
+    return layoutDinRails(mounts);
+  }
+
+  void _paintDinSupports(Canvas canvas, CircuitGeometryIndex geometry) {
+    for (final rail in dinSupportsAtBuild) {
+      final rect = Rect.fromCenter(
+        center: viewport.worldToScreen(rail.center),
+        width: rail.width * viewport.scale,
+        height: rail.height * viewport.scale,
+      );
+      paintDinRail(canvas, rect, scale: viewport.scale);
+    }
+  }
+
   void _paintWires(Canvas canvas, CircuitGeometryIndex geometry) {
     for (final Connection connection in circuit.connections) {
       final Offset? start =
@@ -115,25 +179,45 @@ final class CircuitScenePainter extends CustomPainter {
         ...layout.routeFor(connection.id.value),
         end,
       ];
-      final Path path = Path()
-        ..moveTo(
-          viewport.worldToScreen(worldPoints.first).dx,
-          viewport.worldToScreen(worldPoints.first).dy,
-        );
-      for (final Offset worldPoint in worldPoints.skip(1)) {
-        final Offset point = viewport.worldToScreen(worldPoint);
-        path.lineTo(point.dx, point.dy);
-      }
+      final Path path = buildPhysicalWirePath(
+        worldPoints.map(viewport.worldToScreen).toList(),
+        bendRadius: paintElementChrome ? 0 : 6 * viewport.scale,
+      );
       final bool selected = selectedElementId == connection.id.value;
+      final double wireWidth = paintElementChrome
+          ? 3
+          : (4 * viewport.scale).clamp(2.0, 7.0).toDouble();
+      if (!paintElementChrome) {
+        canvas.drawPath(
+          path.shift(const Offset(0, 1.2)),
+          Paint()
+            ..color = const Color(0x35000000)
+            ..strokeWidth = wireWidth + 2
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
+      }
       canvas.drawPath(
         path,
         Paint()
           ..color = selected ? selectionColor : _phaseColor(connection.phase)
-          ..strokeWidth = selected ? 5 : 3
+          ..strokeWidth = selected ? wireWidth + 2 : wireWidth
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
+      if (!paintElementChrome && viewport.scale >= .65) {
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = const Color(0x45FFFFFF)
+            ..strokeWidth = wireWidth * .25
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
+      }
     }
   }
 

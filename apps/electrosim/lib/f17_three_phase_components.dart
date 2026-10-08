@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 
 enum F17ThreePhaseDevice { motor6t, wyeLoad, deltaLoad }
 
@@ -93,8 +94,8 @@ final class _P {
   double get s => rect.shortestSide;
 
   Paint get outline => Paint()
-    ..color = const Color(0xFF2D3A42)
-    ..strokeWidth = math.max(1.2, s * .016)
+    ..color = const Color(0xFF365463)
+    ..strokeWidth = math.max(.8, s * .006)
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
@@ -116,6 +117,7 @@ final class _P {
       text: TextSpan(
         text: value,
         style: TextStyle(
+          fontFamily: 'Roboto',
           fontSize: size ?? math.max(7, h * .055),
           fontWeight: FontWeight.w700,
           color: color,
@@ -172,95 +174,159 @@ final class _P {
   };
 
   void motor6t() {
-    final Rect shell = Rect.fromCenter(
-      center: Offset(c.dx, c.dy - h * .01),
-      width: w * .60,
-      height: h * .54,
+    final shell = Rect.fromLTWH(
+      rect.left + w * .17,
+      rect.top + h * .37,
+      w * .65,
+      h * .43,
     );
-    final RRect rr = RRect.fromRectAndRadius(shell, Radius.circular(h * .17));
+    final body = RRect.fromRectAndRadius(shell, Radius.circular(h * .10));
     canvas.drawRRect(
-      rr.shift(Offset(0, h * .018)),
-      Paint()..color = const Color(0x26000000),
+      body.shift(Offset(0, h * .018)),
+      Paint()..color = const Color(0x35000000),
     );
+    // Cast mounting feet and their fixing holes.
+    for (final x in [shell.left + w * .08, shell.right - w * .14]) {
+      final foot = Rect.fromLTWH(x, shell.bottom - h * .03, w * .14, h * .10);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(foot, Radius.circular(h * .016)),
+        grad(foot, const [Color(0xFF2C79AC), Color(0xFF0B3353)]),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: foot.center.translate(0, h * .025),
+          width: w * .045,
+          height: h * .018,
+        ),
+        Paint()..color = const Color(0xFF142C3F),
+      );
+    }
     canvas.drawRRect(
-      rr,
-      grad(shell, const <Color>[
-        Color(0xFFE7ECEF),
-        Color(0xFF9AA8B0),
-        Color(0xFF687780),
+      body,
+      grad(shell, const [
+        Color(0xFF3D91BE),
+        Color(0xFF1C6698),
+        Color(0xFF0C355A),
       ]),
     );
-    canvas.drawRRect(rr, outline);
-
-    for (var i = 0; i < 8; i++) {
-      final double x = shell.left + shell.width * (.11 + i * .11);
+    canvas.drawRRect(body, outline);
+    // Longitudinal cooling fins retain the silhouette of a horizontal motor.
+    for (var i = 0; i < 7; i++) {
+      final y = shell.top + shell.height * (.14 + i * .115);
       canvas.drawLine(
-        Offset(x, shell.top + h * .045),
-        Offset(x, shell.bottom - h * .045),
+        Offset(shell.left + w * .10, y),
+        Offset(shell.right - w * .06, y),
         Paint()
-          ..color = const Color(0xFF718088)
-          ..strokeWidth = math.max(.8, s * .009),
+          ..color = const Color(0xFF0B3A60)
+          ..strokeWidth = h * .012,
+      );
+      canvas.drawLine(
+        Offset(shell.left + w * .10, y - h * .004),
+        Offset(shell.right - w * .06, y - h * .004),
+        Paint()
+          ..color = const Color(0xFF5799C2)
+          ..strokeWidth = h * .004,
       );
     }
-
-    final Offset rotor = shell.center;
-    canvas.drawCircle(
-      rotor,
-      h * .125,
-      Paint()..color = const Color(0xFF354149),
+    // Fan cover on the rear and bearing flange at the shaft end.
+    final cover = Rect.fromCenter(
+      center: Offset(shell.left + w * .03, shell.center.dy),
+      width: w * .15,
+      height: shell.height,
     );
-    final double angle = state.energized
-        ? state.animationValue * math.pi * 2 * 2.3
-        : 0;
-    canvas.save();
-    canvas.translate(rotor.dx, rotor.dy);
-    canvas.rotate(angle);
-    for (var i = 0; i < 4; i++) {
-      canvas.rotate(math.pi / 2);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(h * .02, -h * .018, h * .09, h * .036),
-          Radius.circular(h * .01),
-        ),
+    canvas.drawOval(
+      cover,
+      grad(cover, const [Color(0xFF4B96BF), Color(0xFF123E63)]),
+    );
+    canvas.drawOval(cover, outline);
+    for (var i = -2; i <= 2; i++) {
+      final x = cover.center.dx + i * w * .014;
+      canvas.drawLine(
+        Offset(x, cover.top + h * .10),
+        Offset(x, cover.bottom - h * .10),
         Paint()
-          ..color = state.energized
-              ? const Color(0xFFD6A24E)
-              : const Color(0xFF849198),
+          ..color = const Color(0xFF153C59)
+          ..strokeWidth = w * .008,
       );
     }
-    canvas.restore();
-    canvas.drawCircle(
-      rotor,
-      h * .035,
-      Paint()..color = const Color(0xFFD5DEE3),
+    final flange = Rect.fromCenter(
+      center: Offset(shell.right, shell.center.dy),
+      width: w * .09,
+      height: shell.height * .9,
     );
-
-    final List<double> xs = <double>[c.dx - w * .20, c.dx, c.dx + w * .20];
-    const List<String> upper = <String>['U1', 'V1', 'W1'];
-    const List<String> lower = <String>['U2', 'V2', 'W2'];
-    for (var i = 0; i < 3; i++) {
-      terminal(Offset(xs[i], rect.top + h * .08), upper[i], phase(i));
-      terminal(Offset(xs[i], rect.bottom - h * .08), lower[i], phase(i));
-    }
-
-    final Rect plate = Rect.fromCenter(
-      center: Offset(c.dx, shell.bottom - h * .06),
-      width: shell.width * .34,
-      height: h * .08,
+    canvas.drawOval(
+      flange,
+      grad(flange, const [Color(0xFF5899BE), Color(0xFF0E385A)]),
+    );
+    canvas.drawOval(flange, outline);
+    final shaft = Rect.fromLTWH(
+      shell.right + w * .015,
+      shell.center.dy - h * .04,
+      w * .105,
+      h * .08,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(plate, Radius.circular(h * .012)),
-      Paint()..color = const Color(0xFFE8EDEE),
+      RRect.fromRectAndRadius(shaft, Radius.circular(h * .01)),
+      grad(shaft, const [
+        Color(0xFFEEEEEA),
+        Color(0xFF8B969C),
+        Color(0xFFD9E0E3),
+      ]),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(plate, Radius.circular(h * .012)),
+      RRect.fromRectAndRadius(shaft, Radius.circular(h * .01)),
       outline,
     );
-    text(
-      state.energized ? 'M 3~  ${state.currentA.toStringAsFixed(1)} A' : 'M 3~',
-      plate.center,
-      size: h * .043,
+    if (state.energized) {
+      final y =
+          shaft.center.dy +
+          math.sin(state.animationValue * math.pi * 2) * shaft.height * .3;
+      canvas.drawLine(
+        Offset(shaft.left + 2, y),
+        Offset(shaft.right - 2, y),
+        Paint()
+          ..color = const Color(0xFF5C6870)
+          ..strokeWidth = 1,
+      );
+    }
+    // Open terminal box, shared exactly with interactive canvas anchors.
+    final box = Rect.fromLTWH(
+      rect.left + w * .22,
+      rect.top + h * .055,
+      w * .56,
+      h * .32,
     );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        box.shift(Offset(0, h * .015)),
+        Radius.circular(h * .018),
+      ),
+      Paint()..color = const Color(0x35000000),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(box, Radius.circular(h * .018)),
+      grad(box, const [Color(0xFF477F9F), Color(0xFF163F5B)]),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(box, Radius.circular(h * .018)),
+      outline,
+    );
+    const labels = ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'];
+    final terminals = SixTerminalMotorGeometry.offsets(rect.size);
+    for (var i = 0; i < terminals.length; i++) {
+      terminal(c + terminals[i], labels[i], const Color(0xFFB69A5C));
+    }
+    final plate = Rect.fromLTWH(
+      shell.left + w * .16,
+      shell.top + h * .055,
+      w * .26,
+      h * .065,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(plate, Radius.circular(2)),
+      Paint()..color = const Color(0xFFDFE7E8),
+    );
+    text('M 3~', plate.center, size: h * .04);
   }
 
   void wyeLoad() {

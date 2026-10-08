@@ -378,8 +378,7 @@ final class SolverAC3 {
                       )
                       .fold<double>(
                         0.0,
-                        (double maximum, double value) =>
-                            math.max(maximum, value),
+                        math.max,
                       ),
                 );
 

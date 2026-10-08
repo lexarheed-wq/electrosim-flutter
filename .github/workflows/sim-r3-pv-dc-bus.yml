@@ -1,0 +1,34 @@
+name: SIM-R3 PV direct DC bus gate
+
+on:
+  push:
+    branches:
+      - fix/pv-dc-bus-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pv_dc_bus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Physics architecture guards
+        run: |
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+      - name: PV solver static and functional qualification
+        working-directory: packages/electrosim_pv
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test

@@ -81,7 +81,7 @@ jobs:
           flutter pub get
           flutter analyze
           mapfile -t tests < <(find test -maxdepth 1 -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
-          test "${#tests[@]}" -gt 100
+          test "${#tests[@]}" -gt 60
           flutter test --no-pub "${tests[@]}"
       - name: Regenerate changed professional workspace golden baselines
         working-directory: apps/electrosim

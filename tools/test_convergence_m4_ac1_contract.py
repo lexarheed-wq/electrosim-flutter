@@ -11,9 +11,13 @@ class M4Ac1ContractTest(unittest.TestCase):
         self.assertNotIn('component.terminals[1].id', text)
 
     def test_ac1_canonical_models_are_explicit(self):
-        text = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac1.dart').read_text(encoding='utf-8')
+        physics = (ROOT / 'packages/electrosim_domain/lib/src/component_physics_contract.dart').read_text(encoding='utf-8')
+        solver = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac1.dart').read_text(encoding='utf-8')
         for model in ('lamp', 'inductor', 'capacitor', 'impedance', 'switch', 'breaker_ac1', 'fuse_ac1'):
-            self.assertIn(f"'{model}'", text)
+            self.assertIn(f"modelType: '{model}'", physics)
+        self.assertIn('CoreComponentPhysicsContracts', solver)
+        for law in ('resistive', 'inductor', 'capacitor', 'acImpedance', 'binarySwitch', 'protectionSwitch'):
+            self.assertIn(f'ComponentElectricalLaw.{law}', solver)
 
     def test_ac_passives_have_domain_contracts(self):
         text = (ROOT / 'packages/electrosim_domain/lib/src/component_model_contract.dart').read_text(encoding='utf-8')

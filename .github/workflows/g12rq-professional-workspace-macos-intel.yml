@@ -44,11 +44,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p integration-capture/apps/electrosim/lib integration-capture/packages/electrosim_ui_kit/lib/src
-          cp apps/electrosim/lib/main.dart integration-capture/apps/electrosim/lib/main.dart
-          cp packages/electrosim_ui_kit/lib/src/workspace_shell.dart integration-capture/packages/electrosim_ui_kit/lib/src/workspace_shell.dart
+          mkdir -p integration-capture
           git status --short > integration-capture/status.txt
           git ls-files -u > integration-capture/conflicts-index.txt
+          git ls-files --modified --others --exclude-standard -z | while IFS= read -r -d '' changed; do
+            case "$changed" in integration-capture/*) continue;; esac
+            test -f "$changed" || continue
+            mkdir -p "integration-capture/$(dirname "$changed")"
+            cp "$changed" "integration-capture/$changed"
+          done
           git archive --format=zip --output=integration-capture/current-source.zip HEAD
       - uses: actions/upload-artifact@v4
         if: failure()

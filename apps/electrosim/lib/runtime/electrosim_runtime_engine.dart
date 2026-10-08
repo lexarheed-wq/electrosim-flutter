@@ -51,6 +51,7 @@ final class ElectroSimRuntimeSnapshot {
     this.ac1Result,
     this.ac3Result,
     this.pvResult,
+    this.dcBatterySocs = const <ComponentId, double>{},
     this.contactorStates = const <ComponentId, ContactorActuationState>{},
     this.controlIssues = const <ElectromechanicalControlIssue>[],
     this.protectionState,
@@ -74,6 +75,8 @@ final class ElectroSimRuntimeSnapshot {
   final Ac1SolveResult? ac1Result;
   final Ac3SolveResult? ac3Result;
   final PvSolveResult? pvResult;
+  /// Physical state of autonomous DC batteries, not an invented PV reading.
+  final Map<ComponentId, double> dcBatterySocs;
   final Map<ComponentId, ContactorActuationState> contactorStates;
   final List<ElectromechanicalControlIssue> controlIssues;
   final ProtectionRuntimeState? protectionState;
@@ -264,6 +267,7 @@ final class ElectroSimRuntimeSnapshot {
     ac1Result: ac1Result,
     ac3Result: ac3Result,
     pvResult: pvResult,
+    dcBatterySocs: dcBatterySocs,
     contactorStates: contactorStates,
     controlIssues: controlIssues,
     protectionState: protectionState,
@@ -686,6 +690,7 @@ final class ElectroSimRuntimeEngine {
     Map<ComponentId, ComponentHealthState> previousComponentHealthStates =
         const <ComponentId, ComponentHealthState>{},
     double? previousPvBatterySoc,
+    Map<ComponentId, double> previousDcBatterySocs = const <ComponentId, double>{},
   }) {
     if (elapsed.isNegative) {
       throw ArgumentError.value(
@@ -706,6 +711,7 @@ final class ElectroSimRuntimeEngine {
       previousProtectionState: previousProtectionState,
       previousContactorStates: previousContactorStates,
       previousPvBatterySoc: previousPvBatterySoc,
+      previousDcBatterySocs: previousDcBatterySocs,
       componentHealthStates: previousComponentHealthStates,
     );
 
@@ -747,6 +753,7 @@ final class ElectroSimRuntimeEngine {
       previousPvBatterySoc: snapshot.pvResult?.batteryPresent == true
           ? snapshot.pvResult!.batterySoc
           : previousPvBatterySoc,
+      previousDcBatterySocs: snapshot.dcBatterySocs,
       componentHealthStates: nextHealth,
     );
   }
@@ -758,11 +765,15 @@ final class ElectroSimRuntimeEngine {
     required ProtectionRuntimeState? previousProtectionState,
     required Map<ComponentId, bool> previousContactorStates,
     required double? previousPvBatterySoc,
+    required Map<ComponentId, double> previousDcBatterySocs,
     required Map<ComponentId, ComponentHealthState> componentHealthStates,
   }) {
-    final CircuitState solverCircuit = _projectAutonomousStorageDc(
+    final CircuitState projected = _projectAutonomousStorageDc(
       effectiveCircuit,
     );
+    final CircuitState solverCircuit = projected.mode == ElectricalMode.dc
+        ? _projectDcBatteryState(projected, previousDcBatterySocs)
+        : projected;
     final TopologyGraph topology = topologyEngine.compile(solverCircuit);
     switch (solverCircuit.mode) {
       case ElectricalMode.dc:
@@ -787,6 +798,8 @@ final class ElectroSimRuntimeEngine {
           diagnostics: diagnostics,
           solverKind: ElectroSimRuntimeSolverKind.dc,
           dcResult: dc,
+          dcBatterySocs: _advanceDcBatterySoc(
+            solverCircuit, dc, previousDcBatterySocs, elapsed),
           contactorStates: coordinated.relays,
           controlIssues: coordinated.controlIssues,
           protectionState: coordinated.state,
@@ -883,6 +896,93 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
     }
+  }
+
+  /// Project the persisted SOC into the next DC solve without mutating the
+  /// user's circuit. The existing DC storage law enforces the minSOC cutoff.
+  CircuitState _projectDcBatteryState(
+    CircuitState circuit,
+    Map<ComponentId, double> previous,
+  ) {
+    if (previous.isEmpty) return circuit;
+    final List<ComponentInstance> components = <ComponentInstance>[];
+    var changed = false;
+    for (final ComponentInstance component in circuit.components) {
+      final double? soc = previous[component.id];
+      if (soc == null || component.modelType != 'pv_battery') {
+        components.add(component);
+        continue;
+      }
+      if (!soc.isFinite) throw StateError('Non-finite battery SOC.');
+      changed = true;
+      components.add(
+        ComponentInstance(
+          id: component.id,
+          modelType: component.modelType,
+          terminals: component.terminals,
+          parameters: <String, Object?>{
+            ...component.parameters,
+            ComponentParameterKeys.storageInitialSoc: soc,
+          },
+          condition: component.condition,
+          controlState: component.controlState,
+        ),
+      );
+    }
+    if (!changed) return circuit;
+    return CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision,
+      mode: circuit.mode,
+      components: components,
+      connections: circuit.connections,
+      sources: circuit.sources,
+      settings: circuit.settings,
+      metadata: circuit.metadata,
+    );
+  }
+
+  Map<ComponentId, double> _advanceDcBatterySoc(
+    CircuitState circuit,
+    DcSolveResult dc,
+    Map<ComponentId, double> previous,
+    Duration elapsed,
+  ) {
+    final double hours = elapsed.inMicroseconds / 3600000000.0;
+    final Map<ComponentId, double> next = <ComponentId, double>{};
+    for (final ComponentInstance component in circuit.components) {
+      if (component.modelType != 'pv_battery') continue;
+      double param(String key, double fallback) =>
+          (component.parameters[key] as num?)?.toDouble() ?? fallback;
+      final double nominalV = param(
+          ComponentParameterKeys.storageNominalVoltageV, 48.0);
+      final double capacityAh = param(
+          ComponentParameterKeys.storageCapacityAh, 100.0);
+      final double capacityWh = nominalV * capacityAh;
+      final double minSoc = param(ComponentParameterKeys.storageMinSoc, 0.0);
+      final double maxSoc = param(ComponentParameterKeys.storageMaxSoc, 1.0);
+      final double soc = (previous[component.id] ??
+          param(ComponentParameterKeys.storageInitialSoc, 1.0))
+          .clamp(minSoc, maxSoc).toDouble();
+      final DcBranchResult? branch = dc.isSolved
+          ? dc.branchResults.where((DcBranchResult b) =>
+              b.id == 'component:${component.id.value}').firstOrNull
+          : null;
+      final double branchPowerW = branch?.powerW ?? 0.0;
+      final double chargeEff = param(
+          ComponentParameterKeys.storageChargeEfficiency, 0.95);
+      final double dischargeEff = param(
+          ComponentParameterKeys.storageDischargeEfficiency, 0.95);
+      final double netStoredPowerW = branchPowerW >= 0.0
+          ? branchPowerW * chargeEff
+          : branchPowerW / dischargeEff;
+      final double updated = capacityWh <= 0.0
+          ? soc
+          : (soc + netStoredPowerW * hours / capacityWh)
+              .clamp(minSoc, maxSoc).toDouble();
+      next[component.id] = updated;
+    }
+    return Map<ComponentId, double>.unmodifiable(next);
   }
 
   CircuitState _projectAutonomousStorageDc(CircuitState circuit) {

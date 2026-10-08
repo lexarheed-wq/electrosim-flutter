@@ -35,6 +35,7 @@ import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
 import 'runtime/electrosim_instrument_projection.dart';
+import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';

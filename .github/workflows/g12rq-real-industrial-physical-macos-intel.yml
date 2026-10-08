@@ -35,13 +35,6 @@ jobs:
       - name: Confirm golden references reproducibly in isolation
         working-directory: apps/electrosim
         run: flutter test --no-pub test/f9_goldens_test.dart
-      - name: Complete app behavioral regression suite
-        working-directory: apps/electrosim
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
-          flutter test --no-pub "${files[@]}"
       - name: Render eight genuinely new components in both views
         working-directory: apps/electrosim
         run: flutter test --no-pub test/g12rq_real_industrial_capture_test.dart
@@ -89,6 +82,25 @@ jobs:
             git commit -m "test(render): qualify dual-view catalogue and refresh golden images [skip ci]"
             git push origin HEAD:fix/g12rq-real-physical-models-20261008
           fi
+  behavior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/g12rq-real-physical-models-20261008
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Complete app behavioral regression suite
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          timeout 50m flutter test --no-pub --reporter compact
   macos-intel:
     needs: qualify
     runs-on: macos-15-intel

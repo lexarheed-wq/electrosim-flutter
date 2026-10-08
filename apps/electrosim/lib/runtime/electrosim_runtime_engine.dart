@@ -582,8 +582,9 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
       <ConnectionId, ConnectionCurrentEvidence>{};
   for (final Connection connection in circuit.connections) {
     if (!connection.enabled ||
-        !topology.enabledConnectionIds.contains(connection.id))
+        !topology.enabledConnectionIds.contains(connection.id)) {
       continue;
+    }
     final String? fromNode = topology.terminalToNode[connection.fromTerminalId];
     if (fromNode == null ||
         fromNode != topology.terminalToNode[connection.toTerminalId]) {
@@ -659,8 +660,9 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
     return const ConnectionCurrentEvidence.zero();
   }
   if (physical.fromTerminalId == connection.fromTerminalId &&
-      physical.toTerminalId == connection.toTerminalId)
+      physical.toTerminalId == connection.toTerminalId) {
     return evidence;
+  }
   if (physical.fromTerminalId == connection.toTerminalId &&
       physical.toTerminalId == connection.fromTerminalId) {
     return ConnectionCurrentEvidence(

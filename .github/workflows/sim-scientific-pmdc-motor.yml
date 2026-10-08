@@ -49,3 +49,6 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test --no-pub test/sim_scientific_pmdc_motor_test.dart test/core_island01_autonomous_storage_test.dart test/core_unify_current_flow_test.dart test/connection_current_cache_test.dart
+      - name: Full Flutter application nonregression before merge
+        working-directory: apps/electrosim
+        run: flutter test --no-pub

@@ -69,7 +69,8 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
       <ElectroSimWorkspacePanel, Timer>{};
 
   bool get _compactScreen =>
-      MediaQuery.sizeOf(context).width < ElectroSimBreakpoints.compactUpperBound;
+      MediaQuery.sizeOf(context).width <
+      ElectroSimBreakpoints.compactUpperBound;
 
   void _closeOppositeSideOnCompact(ElectroSimWorkspacePanel panel) {
     if (!_compactScreen) return;
@@ -188,8 +189,9 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             : 24;
         final double topInset = _isOpen(ElectroSimWorkspacePanel.top)
             ? (compact
-                ? ElectroSimGeometry.compactTopBarHeight
-                : ElectroSimGeometry.desktopTopBarHeight) + railHeight
+                      ? ElectroSimGeometry.compactTopBarHeight
+                      : ElectroSimGeometry.desktopTopBarHeight) +
+                  railHeight
             : 0;
         final double bottomInset = _isOpen(ElectroSimWorkspacePanel.status)
             ? ElectroSimGeometry.statusBarHeight + railHeight

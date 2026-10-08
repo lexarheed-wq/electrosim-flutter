@@ -163,9 +163,9 @@ final class _IndustrialPainter extends CustomPainter {
     box(c, const Rect.fromLTWH(16, 24, 108, 73),
         const Color(0xFF1F3438), const Color(0xFF091A20));
     label(c, 'ALIMENTATION CC', 17, 13, font: 7, color: Colors.white);
-    label(c, v.energized ? v.voltageV.abs().toStringAsFixed(2) + ' V' : '0.00 V',
+    label(c, v.voltageV.abs().toStringAsFixed(2) + ' V',
         22, 35, font: 18, color: const Color(0xFF99F6D6));
-    label(c, v.energized ? v.currentA.abs().toStringAsFixed(3) + ' A' : '0.000 A',
+    label(c, v.currentA.abs().toStringAsFixed(3) + ' A',
         22, 65, font: 14, color: const Color(0xFF99F6D6));
     c.drawCircle(const Offset(39, 107), 4,
         Paint()..color = v.energized ? emerald : Colors.white24);

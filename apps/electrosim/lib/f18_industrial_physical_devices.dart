@@ -74,7 +74,7 @@ class IndustrialPhysicalView extends StatelessWidget {
     height: size.height,
     child: RepaintBoundary(
       child: CustomPaint(
-        key: Key('new-industrial-' + device.name),
+        key: Key('new-industrial-${device.name}'),
         painter: _IndustrialPainter(this),
       ),
     ),
@@ -85,7 +85,6 @@ final class _IndustrialPainter extends CustomPainter {
   const _IndustrialPainter(this.v);
   final IndustrialPhysicalView v;
   static const dark = Color(0xFF26383E);
-  static const metal = Color(0xFF889B9E);
   static const emerald = Color(0xFF148148);
 
   void box(Canvas c, Rect r, Color light, Color shade, {double radius = 4}) {
@@ -145,7 +144,7 @@ final class _IndustrialPainter extends CustomPainter {
     label(c, 'PROTECTION', 16, 43, font: 6.5);
     label(c, v.domain, 16, 53, font: 8);
     if (v.ratedCurrentA > 0 && v.ratedCurrentA.isFinite) {
-      label(c, v.ratedCurrentA.toStringAsFixed(1) + ' A', 16, 62, font: 7.2);
+      label(c, '${v.ratedCurrentA.toStringAsFixed(1)} A', 16, 62, font: 7.2);
     }
     box(c, const Rect.fromLTWH(20, 75, 32, 42),
         const Color(0xFF849095), const Color(0xFF333F44), radius: 5);
@@ -163,9 +162,9 @@ final class _IndustrialPainter extends CustomPainter {
     box(c, const Rect.fromLTWH(16, 24, 108, 73),
         const Color(0xFF1F3438), const Color(0xFF091A20));
     label(c, 'ALIMENTATION CC', 17, 13, font: 7, color: Colors.white);
-    label(c, v.voltageV.abs().toStringAsFixed(2) + ' V',
+    label(c, '${v.voltageV.abs().toStringAsFixed(2)} V',
         22, 35, font: 18, color: const Color(0xFF99F6D6));
-    label(c, v.currentA.abs().toStringAsFixed(3) + ' A',
+    label(c, '${v.currentA.abs().toStringAsFixed(3)} A',
         22, 65, font: 14, color: const Color(0xFF99F6D6));
     c.drawCircle(const Offset(39, 107), 4,
         Paint()..color = v.energized ? emerald : Colors.white24);
@@ -198,7 +197,7 @@ final class _IndustrialPainter extends CustomPainter {
     c.drawCircle(const Offset(45, 55), 30,
         Paint()..shader = const RadialGradient(
           colors: [Color(0xFFFFFFFF), Color(0xFFA5BAB5), Color(0xFFE1E8E2)],
-        ).createShader(const Rect.fromCircle(center: Offset(45, 55), radius: 30)));
+        ).createShader(Rect.fromCircle(center: Offset(45, 55), radius: 30)));
     final rad = v.pressed ? 21.0 : 25.0;
     c.drawCircle(const Offset(45, 55), rad,
         Paint()..shader = const RadialGradient(
@@ -216,7 +215,7 @@ final class _IndustrialPainter extends CustomPainter {
           colors: v.energized
           ? const [Color(0xFFFFFFF1), Color(0xFFFFEDAB), Color(0xFFD9B16A)]
           : const [Color(0xFFFFFFFF), Color(0xFFDDE8E7), Color(0xFF9BACAF)],
-        ).createShader(const Rect.fromCircle(center: Offset(65, 74), radius: 43)));
+        ).createShader(Rect.fromCircle(center: Offset(65, 74), radius: 43)));
     final p = Paint()..color = const Color(0xFF896E5B)..strokeWidth = 2;
     c.drawLine(const Offset(52, 60), const Offset(52, 87), p);
     c.drawLine(const Offset(78, 60), const Offset(78, 87), p);
@@ -263,7 +262,7 @@ final class _IndustrialPainter extends CustomPainter {
     c.drawCircle(const Offset(115, 93), 48,
         Paint()..shader = const RadialGradient(
           colors: [Color(0xFFCAD7D6), Color(0xFF789097), Color(0xFF2F4951)],
-        ).createShader(const Rect.fromCircle(center: Offset(115, 93), radius: 48)));
+        ).createShader(Rect.fromCircle(center: Offset(115, 93), radius: 48)));
     c.drawCircle(const Offset(115, 93), 22,
         Paint()..color = const Color(0xFF526C72));
     c.drawCircle(const Offset(115, 93), 10,

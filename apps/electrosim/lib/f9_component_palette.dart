@@ -933,7 +933,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.solar_power_outlined,
     kind: F9PaletteElementKind.source,
     terminalLabels: <String>['+', '−'],
-    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
+    supportedModes: <ElectricalMode>{ElectricalMode.pv},
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '+',
@@ -1058,7 +1058,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.battery_full,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
-    supportedModes: <ElectricalMode>{ElectricalMode.pv},
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.pv},
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '+',

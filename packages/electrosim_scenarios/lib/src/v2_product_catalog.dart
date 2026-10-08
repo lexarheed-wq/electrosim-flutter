@@ -1,5 +1,7 @@
 import 'example_definition.dart';
 import 'fault_scenario_definition.dart';
+import 'v2_product_examples.dart';
+import 'v2_product_faults.dart';
 
 final class V2ProductLibrary {
   V2ProductLibrary({
@@ -33,13 +35,10 @@ final class V2ProductLibrary {
       );
 }
 
-/// Product libraries intentionally restart empty after CORE-UNIFY.
-///
-/// Historical bootstrap examples and fault scenarios used component instances
-/// created before the canonical physics/runtime contracts and must not leak
-/// into the product. New libraries will be authored from the current palette.
+/// Clean native V2 wave rebuilt on CORE-UNIFY canonical contracts.
+/// No V1 drawings, scenarios or fixture references enter the product.
 V2ProductLibrary buildV2ProductLibrary() => V2ProductLibrary(
-  version: '3.0.0-core-unify',
-  schemas: const <ExampleDefinition>[],
-  faultScenarios: const <FaultScenarioDefinition>[],
+  version: '3.1.0-core-unify',
+  schemas: buildV2ProductExampleRepository().all,
+  faultScenarios: buildV2ProductFaultRepository().all,
 );

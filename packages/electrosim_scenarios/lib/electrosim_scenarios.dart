@@ -11,3 +11,6 @@ export 'src/f11_fault_scenarios.dart';
 export 'src/f16_catalog.dart';
 
 export 'src/v2_product_catalog.dart';
+
+export 'src/v2_product_examples.dart';
+export 'src/v2_product_faults.dart';

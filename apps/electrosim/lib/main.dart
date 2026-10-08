@@ -1713,6 +1713,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         },
         'motor-dc' => const <String, Object?>{
           ComponentParameterKeys.resistanceOhm: 8.0,
+          ComponentParameterKeys.motorBackEmfVPerRadS: 0.1,
+          ComponentParameterKeys.motorTorqueNmPerA: 0.1,
+          ComponentParameterKeys.motorInertiaKgM2: 0.01,
+          ComponentParameterKeys.motorFrictionNmPerRadS: 0.002,
+          ComponentParameterKeys.motorLoadTorqueNm: 0.0,
           ReceiverNominalRating.voltageKey: 24.0,
           ReceiverNominalRating.currentKey: 3.0,
           ReceiverNominalRating.powerKey: 72.0,

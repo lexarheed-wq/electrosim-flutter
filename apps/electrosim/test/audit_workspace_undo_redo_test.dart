@@ -28,10 +28,8 @@ void main() {
       find.byType(SimulatorCanvas),
     );
     final CircuitState before = initial.circuit;
-    tester
-        .widget<GestureDetector>(find.byKey(electroSimPaletteEdgeKey))
-        .onTap!();
-    await tester.pumpAndSettle();
+    // Professional desktop palette is already visible, do not toggle it closed.
+    expect(find.byKey(electroSimPaletteRegionKey), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('palette-search-field')),
       'voltmètre',
@@ -49,7 +47,7 @@ void main() {
     final Offset? position = added.layout.positionOf(instrumentId);
     expect(position, isNotNull);
 
-    tester.widget<GestureDetector>(find.byKey(electroSimTopEdgeKey)).onTap!();
+    // The top command bar is permanent.
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('workspace-more-actions')));
     await tester.pumpAndSettle();

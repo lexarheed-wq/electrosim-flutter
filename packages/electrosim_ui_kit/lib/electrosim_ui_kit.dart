@@ -6,3 +6,4 @@ export 'src/responsive.dart';
 export 'src/surface_components.dart';
 export 'src/typography_tokens.dart';
 export 'src/workspace_shell.dart';
+export 'src/workspace_layout_controller.dart';

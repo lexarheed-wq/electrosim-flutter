@@ -22,15 +22,9 @@ void main() {
           ),
         ),
       );
-      for (final (Key activator, Key pin) in <(Key, Key)>[
-        (electroSimContextEdgeKey, electroSimContextPinKey),
-        (electroSimTopEdgeKey, electroSimTopPinKey),
-      ]) {
-        tester.widget<GestureDetector>(find.byKey(activator)).onTap!();
-        await tester.pumpAndSettle();
-        tester.widget<IconButton>(find.byKey(pin)).onPressed!();
-        await tester.pumpAndSettle();
-      }
+      // Professional shell permanently displays its top bar and docked inspector.
+      await tester.pumpAndSettle();
+      expect(find.byKey(electroSimContextRegionKey), findsOneWidget);
       final Rect tab = tester.getRect(find.text('Mesures'));
       final Rect top = tester.getRect(find.byKey(electroSimTopRegionKey));
       expect(tab.top, greaterThanOrEqualTo(top.bottom));
@@ -53,7 +47,7 @@ void main() {
         ),
       ),
     );
-    tester.widget<GestureDetector>(find.byKey(electroSimTopEdgeKey)).onTap!();
+    // Permanent top command bar: no edge gesture is needed.
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('workspace-time-advance')));
     await tester.pumpAndSettle();
@@ -80,17 +74,13 @@ void main() {
         ),
       ),
     );
-    tester
-        .widget<GestureDetector>(find.byKey(electroSimPaletteEdgeKey))
-        .onTap!();
+    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
     await tester.pumpAndSettle();
     expect(
       find.byKey(electroSimPaletteRegionKey).hitTestable(),
       findsOneWidget,
     );
-    tester
-        .widget<GestureDetector>(find.byKey(electroSimContextEdgeKey))
-        .onTap!();
+    await tester.tap(find.byKey(electroSimContextEdgeKey));
     await tester.pumpAndSettle();
     expect(
       find.byKey(electroSimContextRegionKey).hitTestable(),

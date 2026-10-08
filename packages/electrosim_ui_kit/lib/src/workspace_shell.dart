@@ -1,9 +1,11 @@
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'design_tokens.dart';
-import 'responsive.dart';
+import 'workspace_layout_controller.dart';
+import 'workspace_resize_handle.dart';
 
 const Key electroSimCanvasRegionKey = Key('electrosim-canvas-region');
 const Key electroSimPaletteRegionKey = Key('electrosim-palette-region');
@@ -28,16 +30,7 @@ const Key electroSimMediumActionsKey = Key('electrosim-medium-actions');
 
 enum ElectroSimWorkspacePanel { palette, context, top, status }
 
-/// Workspace shell whose canvas always owns the full available surface.
-///
-/// Every auxiliary surface is an overlay:
-/// - mouse/trackpad: entering an edge opens it; leaving schedules auto-close;
-/// - touch: tapping the edge toggles it; tapping the canvas closes unpinned
-///   panels;
-/// - pin: keeps a panel open until explicitly unpinned.
-///
-/// Opening a panel never resizes the canvas, so component positions remain
-/// stable and large visual components do not lose placement area.
+/// Docked engineering workspace. Chrome never obscures another panel's tabs.
 class ElectroSimWorkspaceShell extends StatefulWidget {
   const ElectroSimWorkspaceShell({
     super.key,
@@ -46,459 +39,458 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
     required this.contextPanel,
     required this.topBar,
     required this.statusBar,
+    this.layoutController,
+    this.interactionLocked = false,
+    this.onBeforeLayoutChange,
+    this.onCanvasSizeChanged,
   });
-
   final Widget canvas;
   final Widget palette;
   final Widget contextPanel;
   final Widget topBar;
   final Widget statusBar;
-
+  final WorkspaceLayoutController? layoutController;
+  final bool interactionLocked;
+  final VoidCallback? onBeforeLayoutChange;
+  final ValueChanged<Size>? onCanvasSizeChanged;
   @override
   State<ElectroSimWorkspaceShell> createState() =>
       _ElectroSimWorkspaceShellState();
 }
 
 class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
-  static const Duration _motionDuration = Duration(milliseconds: 180);
-  static const Duration _closeDelay = Duration(milliseconds: 420);
+  late WorkspaceLayoutController _layout;
+  final _paletteFocus = FocusNode(debugLabel: 'workspace-palette-toggle');
+  final _contextFocus = FocusNode(debugLabel: 'workspace-context-toggle');
+  final _drawerFocus = FocusNode(debugLabel: 'workspace-drawer');
+  ElectroSimWorkspacePanel? _drawerPanel;
+  Size? _pendingSize;
+  Size? _reportedSize;
+  bool _sizeCallbackScheduled = false;
 
-  final Set<ElectroSimWorkspacePanel> _open = <ElectroSimWorkspacePanel>{};
-  final Set<ElectroSimWorkspacePanel> _pinned = <ElectroSimWorkspacePanel>{};
-  final Map<ElectroSimWorkspacePanel, Timer> _closeTimers =
-      <ElectroSimWorkspacePanel, Timer>{};
+  @override
+  void initState() {
+    super.initState();
+    _layout = widget.layoutController ?? WorkspaceLayoutController();
+    _layout.addListener(_layoutChanged);
+  }
 
-  bool get _compactScreen =>
-      MediaQuery.sizeOf(context).width <
-      ElectroSimBreakpoints.compactUpperBound;
-
-  void _closeOppositeSideOnCompact(ElectroSimWorkspacePanel panel) {
-    if (!_compactScreen) return;
-    final ElectroSimWorkspacePanel? opposite = switch (panel) {
-      ElectroSimWorkspacePanel.palette => ElectroSimWorkspacePanel.context,
-      ElectroSimWorkspacePanel.context => ElectroSimWorkspacePanel.palette,
-      _ => null,
-    };
-    if (opposite != null) {
-      _open.remove(opposite);
-      _pinned.remove(opposite);
-      _cancelClose(opposite);
+  @override
+  void didUpdateWidget(covariant ElectroSimWorkspaceShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.layoutController != widget.layoutController) {
+      _layout.removeListener(_layoutChanged);
+      if (oldWidget.layoutController == null) _layout.dispose();
+      _layout = widget.layoutController ?? WorkspaceLayoutController();
+      _layout.addListener(_layoutChanged);
     }
   }
 
-  bool _isOpen(ElectroSimWorkspacePanel panel) =>
-      _open.contains(panel) || _pinned.contains(panel);
-
-  void _cancelClose(ElectroSimWorkspacePanel panel) {
-    _closeTimers.remove(panel)?.cancel();
-  }
-
-  void _openPanel(ElectroSimWorkspacePanel panel) {
-    _cancelClose(panel);
-    if (_open.contains(panel)) return;
-    setState(() {
-      _closeOppositeSideOnCompact(panel);
-      _open.add(panel);
-    });
-  }
-
-  void _scheduleClose(ElectroSimWorkspacePanel panel) {
-    _cancelClose(panel);
-    if (_pinned.contains(panel)) return;
-    _closeTimers[panel] = Timer(_closeDelay, () {
-      if (!mounted || _pinned.contains(panel)) return;
-      setState(() => _open.remove(panel));
-    });
-  }
-
-  void _togglePanel(ElectroSimWorkspacePanel panel) {
-    _cancelClose(panel);
-    setState(() {
-      if (_isOpen(panel)) {
-        if (!_pinned.contains(panel)) {
-          _open.remove(panel);
-        }
-      } else {
-        _closeOppositeSideOnCompact(panel);
-        _open.add(panel);
-      }
-    });
-  }
-
-  void _togglePin(ElectroSimWorkspacePanel panel) {
-    _cancelClose(panel);
-    setState(() {
-      if (_pinned.remove(panel)) {
-        _open.add(panel);
-      } else {
-        _closeOppositeSideOnCompact(panel);
-        _pinned.add(panel);
-        _open.add(panel);
-      }
-    });
-  }
-
-  void _closeUnpinned() {
-    for (final Timer timer in _closeTimers.values) {
-      timer.cancel();
-    }
-    _closeTimers.clear();
-    final Set<ElectroSimWorkspacePanel> keep = <ElectroSimWorkspacePanel>{
-      ..._pinned,
-    };
-    if (_open.length == keep.length && _open.containsAll(keep)) return;
-    setState(() {
-      _open
-        ..clear()
-        ..addAll(keep);
-    });
+  void _layoutChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    for (final Timer timer in _closeTimers.values) {
-      timer.cancel();
-    }
+    _layout.removeListener(_layoutChanged);
+    if (widget.layoutController == null) _layout.dispose();
+    _paletteFocus.dispose();
+    _contextFocus.dispose();
+    _drawerFocus.dispose();
     super.dispose();
+  }
+
+  Duration get _duration => MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : const Duration(milliseconds: 200);
+
+  void _closeDrawer() {
+    final previous = _drawerPanel;
+    if (previous == null) return;
+    widget.onBeforeLayoutChange?.call();
+    setState(() => _drawerPanel = null);
+    (previous == ElectroSimWorkspacePanel.palette
+            ? _paletteFocus
+            : _contextFocus)
+        .requestFocus();
+  }
+
+  void _toggle(ElectroSimWorkspacePanel panel, bool docked) {
+    if (widget.interactionLocked) return;
+    widget.onBeforeLayoutChange?.call();
+    if (docked) {
+      final visible = panel == ElectroSimWorkspacePanel.palette
+          ? _layout.paletteVisible
+          : _layout.contextVisible;
+      _layout.setPanelVisible(panel, !visible);
+    } else {
+      if (_drawerPanel == panel) {
+        _closeDrawer();
+        return;
+      }
+      setState(() => _drawerPanel = panel);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _drawerPanel == panel) _drawerFocus.requestFocus();
+      });
+    }
+  }
+
+  void _reportSize(Size size) {
+    _pendingSize = size;
+    if (_sizeCallbackScheduled || size == _reportedSize) return;
+    _sizeCallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sizeCallbackScheduled = false;
+      if (!mounted || _pendingSize == null || _pendingSize == _reportedSize) {
+        return;
+      }
+      _reportedSize = _pendingSize;
+      widget.onCanvasSizeChanged?.call(_reportedSize!);
+    });
+  }
+
+  Widget _canvas({bool blocked = false}) => LayoutBuilder(
+    builder: (context, constraints) {
+      _reportSize(constraints.biggest);
+      return SizedBox.expand(
+        key: electroSimCanvasRegionKey,
+        child: ExcludeFocus(
+          excluding: blocked,
+          child: ExcludeSemantics(
+            excluding: blocked,
+            child: IgnorePointer(
+              ignoring: blocked,
+              child: RepaintBoundary(child: widget.canvas),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _panel(
+    ElectroSimWorkspacePanel panel, {
+    required VoidCallback onClose,
+  }) {
+    final palette = panel == ElectroSimWorkspacePanel.palette;
+    return Material(
+      key: palette ? electroSimPaletteRegionKey : electroSimContextRegionKey,
+      color: ElectroSimColors.surface,
+      child: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: ElectroSimColors.workspaceDivider),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Icon(
+                  palette ? Icons.grid_view_outlined : Icons.tune_outlined,
+                  size: 18,
+                  color: ElectroSimColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    palette ? 'Composants' : 'Inspecteur',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                IconButton(
+                  key: palette
+                      ? electroSimPalettePinKey
+                      : electroSimContextPinKey,
+                  tooltip: palette
+                      ? 'Masquer les composants'
+                      : 'Masquer l’inspecteur',
+                  onPressed: widget.interactionLocked ? null : onClose,
+                  icon: const Icon(Icons.close, size: 20),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: palette ? widget.palette : widget.contextPanel),
+        ],
+      ),
+    );
+  }
+
+  Widget _dock(ElectroSimWorkspacePanel panel, double width, bool visible) =>
+      AnimatedContainer(
+        duration: _duration,
+        curve: Curves.easeOutCubic,
+        width: visible ? width : 0,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            minWidth: width,
+            maxWidth: width,
+            child: IgnorePointer(
+              ignoring: !visible,
+              child: ExcludeSemantics(
+                excluding: !visible,
+                child: ExcludeFocus(
+                  excluding: !visible,
+                  child: _panel(panel, onClose: () => _toggle(panel, true)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+  Widget _switcher(bool docked, bool compact) {
+    Widget button(ElectroSimWorkspacePanel panel) {
+      final palette = panel == ElectroSimWorkspacePanel.palette;
+      final selected = docked
+          ? (palette ? _layout.paletteVisible : _layout.contextVisible)
+          : _drawerPanel == panel;
+      return IconButton(
+        key: palette ? electroSimPaletteEdgeKey : electroSimContextEdgeKey,
+        focusNode: palette ? _paletteFocus : _contextFocus,
+        tooltip: palette
+            ? 'Afficher ou masquer les composants'
+            : 'Afficher ou masquer les propriétés',
+        isSelected: selected,
+        onPressed: widget.interactionLocked
+            ? null
+            : () => _toggle(panel, docked),
+        icon: Icon(palette ? Icons.grid_view_outlined : Icons.tune_outlined),
+        style: IconButton.styleFrom(
+          backgroundColor: selected
+              ? ElectroSimColors.primary.withValues(alpha: .08)
+              : null,
+          foregroundColor: ElectroSimColors.primary,
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: ElectroSimColors.surface,
+        border: Border(
+          bottom: BorderSide(color: ElectroSimColors.workspaceDivider),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            button(ElectroSimWorkspacePanel.palette),
+            if (!compact) const Text('Bibliothèque'),
+            const SizedBox(width: 8),
+            button(ElectroSimWorkspacePanel.context),
+            if (!compact) const Text('Propriétés et mesures'),
+            const Spacer(),
+            if (!compact)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'PLATINE',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: ElectroSimColors.textSecondary,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final ElectroSimWindowClass windowClass =
-            ElectroSimBreakpoints.classify(constraints.maxWidth);
-        final bool compact = windowClass == ElectroSimWindowClass.compact;
-        final bool medium = windowClass == ElectroSimWindowClass.medium;
-
-        final double paletteWidth = compact
-            ? constraints.maxWidth * .88
-            : medium
-            ? ElectroSimGeometry.mediumPanelWidth
-            : ElectroSimGeometry.expandedPaletteWidth;
-        final double contextWidth = compact
-            ? constraints.maxWidth * .88
-            : medium
-            ? ElectroSimGeometry.mediumPanelWidth
-            : ElectroSimGeometry.expandedContextWidth;
-        // The horizontal overlays are above the side drawers in the Stack.
-        // Reserve their entire height, including the pin rail, so the
-        // inspector tabs (especially Mesures) remain accessible to clicks.
-        final double railHeight = compact
-            ? ElectroSimGeometry.minimumTouchTarget
-            : 24;
-        final double topInset = _isOpen(ElectroSimWorkspacePanel.top)
-            ? (compact
-                      ? ElectroSimGeometry.compactTopBarHeight
-                      : ElectroSimGeometry.desktopTopBarHeight) +
-                  railHeight
-            : 0;
-        final double bottomInset = _isOpen(ElectroSimWorkspacePanel.status)
-            ? ElectroSimGeometry.statusBarHeight + railHeight
-            : 0;
-
-        return Material(
-          color: ElectroSimColors.surface,
-          child: Stack(
-            clipBehavior: Clip.hardEdge,
-            children: <Widget>[
-              Positioned.fill(
-                key: electroSimCanvasRegionKey,
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: (_) => _closeUnpinned(),
-                  child: widget.canvas,
+      builder: (context, constraints) {
+        final kind = classifyWorkspaceWidth(constraints.maxWidth);
+        final compact = kind == ElectroSimWorkspaceLayoutClass.compact;
+        final requested =
+            (_layout.paletteVisible ? _layout.paletteWidth + 8 : 0) +
+            (_layout.contextVisible ? _layout.contextWidth + 8 : 0);
+        final docked =
+            kind == ElectroSimWorkspaceLayoutClass.expanded &&
+            constraints.maxWidth - requested >= 480;
+        final open = !docked && _drawerPanel != null;
+        return PopScope(
+          canPop: !open,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && mounted) _closeDrawer();
+          },
+          child: Material(
+            color: ElectroSimColors.canvasSurface,
+            child: Column(
+              children: [
+                KeyedSubtree(key: electroSimTopRegionKey, child: widget.topBar),
+                _switcher(
+                  docked,
+                  compact || MediaQuery.textScalerOf(context).scale(14) > 18,
                 ),
-              ),
-
-              _edgeActivator(
-                key: electroSimPaletteEdgeKey,
-                panel: ElectroSimWorkspacePanel.palette,
-                alignment: Alignment.centerLeft,
-                tooltip: 'Afficher la palette',
-                icon: Icons.grid_view_outlined,
-              ),
-              _edgeActivator(
-                key: electroSimContextEdgeKey,
-                panel: ElectroSimWorkspacePanel.context,
-                alignment: Alignment.centerRight,
-                tooltip: 'Afficher les propriétés',
-                icon: Icons.tune,
-              ),
-              _edgeActivator(
-                key: electroSimTopEdgeKey,
-                panel: ElectroSimWorkspacePanel.top,
-                alignment: Alignment.topCenter,
-                tooltip: 'Afficher les commandes',
-                icon: Icons.keyboard_arrow_down,
-              ),
-              _edgeActivator(
-                key: electroSimStatusEdgeKey,
-                panel: ElectroSimWorkspacePanel.status,
-                alignment: Alignment.bottomCenter,
-                tooltip: 'Afficher l’état',
-                icon: Icons.keyboard_arrow_up,
-              ),
-
-              _sideOverlay(
-                panel: ElectroSimWorkspacePanel.palette,
-                alignment: Alignment.centerLeft,
-                width: paletteWidth,
-                topInset: topInset,
-                bottomInset: bottomInset,
-                regionKey: electroSimPaletteRegionKey,
-                pinKey: electroSimPalettePinKey,
-                child: widget.palette,
-              ),
-              _sideOverlay(
-                panel: ElectroSimWorkspacePanel.context,
-                alignment: Alignment.centerRight,
-                width: contextWidth,
-                topInset: topInset,
-                bottomInset: bottomInset,
-                regionKey: electroSimContextRegionKey,
-                pinKey: electroSimContextPinKey,
-                child: widget.contextPanel,
-              ),
-              _horizontalOverlay(
-                panel: ElectroSimWorkspacePanel.top,
-                alignment: Alignment.topCenter,
-                regionKey: electroSimTopRegionKey,
-                pinKey: electroSimTopPinKey,
-                child: widget.topBar,
-              ),
-              _horizontalOverlay(
-                panel: ElectroSimWorkspacePanel.status,
-                alignment: Alignment.bottomCenter,
-                regionKey: electroSimStatusRegionKey,
-                pinKey: electroSimStatusPinKey,
-                child: widget.statusBar,
-              ),
-            ],
+                Expanded(
+                  child: docked
+                      ? Stack(
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _dock(
+                                  ElectroSimWorkspacePanel.palette,
+                                  _layout.paletteWidth,
+                                  _layout.paletteVisible,
+                                ),
+                                if (_layout.paletteVisible)
+                                  const SizedBox(width: 8),
+                                Expanded(child: _canvas()),
+                                if (_layout.contextVisible)
+                                  const SizedBox(width: 8),
+                                _dock(
+                                  ElectroSimWorkspacePanel.context,
+                                  _layout.contextWidth,
+                                  _layout.contextVisible,
+                                ),
+                              ],
+                            ),
+                            if (_layout.paletteVisible)
+                              Positioned(
+                                left: _layout.paletteWidth - 20,
+                                top: 0,
+                                bottom: 0,
+                                width: 48,
+                                child: WorkspaceResizeHandle(
+                                  key: const Key('workspace-palette-resizer'),
+                                  axis: Axis.horizontal,
+                                  semanticLabel: 'Largeur du catalogue',
+                                  enabled: !widget.interactionLocked,
+                                  onDelta: (delta) {
+                                    widget.onBeforeLayoutChange?.call();
+                                    _layout.setPaletteWidth(
+                                      _layout.paletteWidth + delta,
+                                    );
+                                  },
+                                ),
+                              ),
+                            if (_layout.contextVisible)
+                              Positioned(
+                                right: _layout.contextWidth - 20,
+                                top: 0,
+                                bottom: 0,
+                                width: 48,
+                                child: WorkspaceResizeHandle(
+                                  key: const Key('workspace-context-resizer'),
+                                  axis: Axis.horizontal,
+                                  semanticLabel: 'Largeur de l’inspecteur',
+                                  enabled: !widget.interactionLocked,
+                                  onDelta: (delta) {
+                                    widget.onBeforeLayoutChange?.call();
+                                    _layout.setContextWidth(
+                                      _layout.contextWidth - delta,
+                                    );
+                                  },
+                                ),
+                              ),
+                          ],
+                        )
+                      : Stack(
+                          children: [
+                            Positioned.fill(child: _canvas(blocked: open)),
+                            if (open)
+                              Positioned.fill(
+                                child: ModalBarrier(
+                                  color: Colors.black.withValues(alpha: .14),
+                                  onDismiss: _closeDrawer,
+                                  semanticsLabel: 'Fermer le panneau',
+                                  barrierSemanticsDismissible: true,
+                                ),
+                              ),
+                            Positioned.fill(
+                              child: AnimatedSwitcher(
+                                duration: _duration,
+                                transitionBuilder: (child, animation) =>
+                                    AnimatedBuilder(
+                                      animation: animation,
+                                      child: child,
+                                      builder: (context, child) {
+                                        final closing =
+                                            animation.status ==
+                                            AnimationStatus.reverse;
+                                        return IgnorePointer(
+                                          ignoring: closing,
+                                          child: ExcludeSemantics(
+                                            excluding: closing,
+                                            child: FadeTransition(
+                                              opacity: animation,
+                                              child: SlideTransition(
+                                                position:
+                                                    Tween<Offset>(
+                                                      begin: const Offset(
+                                                        .06,
+                                                        0,
+                                                      ),
+                                                      end: Offset.zero,
+                                                    ).animate(
+                                                      CurvedAnimation(
+                                                        parent: animation,
+                                                        curve:
+                                                            Curves.easeOutCubic,
+                                                      ),
+                                                    ),
+                                                child: child,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                child: !open
+                                    ? const SizedBox.shrink(
+                                        key: Key('drawer-closed'),
+                                      )
+                                    : Align(
+                                        key: ValueKey(_drawerPanel),
+                                        alignment:
+                                            _drawerPanel ==
+                                                ElectroSimWorkspacePanel.palette
+                                            ? Alignment.centerLeft
+                                            : Alignment.centerRight,
+                                        child: SizedBox(
+                                          width: math.min(
+                                            constraints.maxWidth - 32,
+                                            compact ? 360 : 304,
+                                          ),
+                                          child: CallbackShortcuts(
+                                            bindings: {
+                                              const SingleActivator(
+                                                LogicalKeyboardKey.escape,
+                                              ): _closeDrawer,
+                                            },
+                                            child: Focus(
+                                              autofocus: true,
+                                              focusNode: _drawerFocus,
+                                              child: _panel(
+                                                _drawerPanel!,
+                                                onClose: _closeDrawer,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                KeyedSubtree(
+                  key: electroSimStatusRegionKey,
+                  child: widget.statusBar,
+                ),
+              ],
+            ),
           ),
         );
       },
-    );
-  }
-
-  Widget _edgeActivator({
-    required Key key,
-    required ElectroSimWorkspacePanel panel,
-    required Alignment alignment,
-    required String tooltip,
-    required IconData icon,
-  }) {
-    final bool horizontal =
-        panel == ElectroSimWorkspacePanel.top ||
-        panel == ElectroSimWorkspacePanel.status;
-    final bool open = _isOpen(panel);
-
-    final Widget visibleHandle = Container(
-      width: horizontal ? 58 : 7,
-      height: horizontal ? 7 : 58,
-      decoration: BoxDecoration(
-        color: open
-            ? ElectroSimColors.primary.withValues(alpha: .38)
-            : ElectroSimColors.surfaceElevated.withValues(alpha: .92),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(blurRadius: 4, color: Color(0x22000000)),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: open
-          ? Icon(icon, size: 8, color: ElectroSimColors.textSecondary)
-          : null,
-    );
-
-    final Widget activationZone = MouseRegion(
-      onEnter: (_) => _openPanel(panel),
-      onExit: (_) => _scheduleClose(panel),
-      child: Semantics(
-        button: true,
-        label: tooltip,
-        child: Tooltip(
-          message: tooltip,
-          child: GestureDetector(
-            key: key,
-            behavior: HitTestBehavior.opaque,
-            onTap: () => _togglePanel(panel),
-            child: Center(child: visibleHandle),
-          ),
-        ),
-      ),
-    );
-
-    final double activationExtent = _compactScreen
-        ? ElectroSimGeometry.minimumTouchTarget
-        : 18;
-    if (alignment == Alignment.centerLeft) {
-      return Positioned(
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: activationExtent,
-        child: activationZone,
-      );
-    }
-    if (alignment == Alignment.centerRight) {
-      return Positioned(
-        right: 0,
-        top: 0,
-        bottom: 0,
-        width: activationExtent,
-        child: activationZone,
-      );
-    }
-    if (alignment == Alignment.topCenter) {
-      return Positioned(
-        left: 0,
-        right: 0,
-        top: 0,
-        height: activationExtent,
-        child: activationZone,
-      );
-    }
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: activationExtent,
-      child: activationZone,
-    );
-  }
-
-  Widget _sideOverlay({
-    required ElectroSimWorkspacePanel panel,
-    required Alignment alignment,
-    required double width,
-    required double topInset,
-    required double bottomInset,
-    required Key regionKey,
-    required Key pinKey,
-    required Widget child,
-  }) {
-    final bool open = _isOpen(panel);
-    final bool left = alignment == Alignment.centerLeft;
-    final Offset hiddenOffset = Offset(left ? -1.04 : 1.04, 0);
-
-    return Positioned(
-      top: topInset,
-      bottom: bottomInset,
-      left: left ? 0 : null,
-      right: left ? null : 0,
-      width: width,
-      child: IgnorePointer(
-        ignoring: !open,
-        child: AnimatedSlide(
-          duration: _motionDuration,
-          curve: Curves.easeOutCubic,
-          offset: open ? Offset.zero : hiddenOffset,
-          child: MouseRegion(
-            onEnter: (_) => _openPanel(panel),
-            onExit: (_) => _scheduleClose(panel),
-            child: Material(
-              key: regionKey,
-              elevation: 14,
-              color: ElectroSimColors.surfaceElevated,
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(child: child),
-                  Positioned(
-                    top: 4,
-                    right: left ? 4 : null,
-                    left: left ? null : 4,
-                    child: _pinButton(panel: panel, key: pinKey, compact: true),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _horizontalOverlay({
-    required ElectroSimWorkspacePanel panel,
-    required Alignment alignment,
-    required Key regionKey,
-    required Key pinKey,
-    required Widget child,
-  }) {
-    final bool open = _isOpen(panel);
-    final bool top = alignment == Alignment.topCenter;
-    final Offset hiddenOffset = Offset(0, top ? -1.08 : 1.08);
-
-    return Align(
-      alignment: alignment,
-      child: IgnorePointer(
-        ignoring: !open,
-        child: AnimatedSlide(
-          duration: _motionDuration,
-          curve: Curves.easeOutCubic,
-          offset: open ? Offset.zero : hiddenOffset,
-          child: MouseRegion(
-            onEnter: (_) => _openPanel(panel),
-            onExit: (_) => _scheduleClose(panel),
-            child: Material(
-              key: regionKey,
-              elevation: 14,
-              color: ElectroSimColors.surfaceElevated,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (!top) _horizontalPinRail(panel: panel, pinKey: pinKey),
-                  child,
-                  if (top) _horizontalPinRail(panel: panel, pinKey: pinKey),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _horizontalPinRail({
-    required ElectroSimWorkspacePanel panel,
-    required Key pinKey,
-  }) {
-    return SizedBox(
-      height: _compactScreen ? ElectroSimGeometry.minimumTouchTarget : 24,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: _pinButton(panel: panel, key: pinKey, compact: true),
-        ),
-      ),
-    );
-  }
-
-  Widget _pinButton({
-    required ElectroSimWorkspacePanel panel,
-    required Key key,
-    bool compact = false,
-  }) {
-    final bool pinned = _pinned.contains(panel);
-    final bool touch = _compactScreen;
-    return IconButton(
-      key: key,
-      tooltip: pinned ? 'Désépingler' : 'Épingler',
-      visualDensity: compact ? VisualDensity.compact : null,
-      padding: compact ? const EdgeInsets.all(3) : null,
-      constraints: compact
-          ? BoxConstraints.tightFor(
-              width: touch ? ElectroSimGeometry.minimumTouchTarget : 30,
-              height: touch ? ElectroSimGeometry.minimumTouchTarget : 30,
-            )
-          : null,
-      onPressed: () => _togglePin(panel),
-      icon: Icon(
-        pinned ? Icons.push_pin : Icons.push_pin_outlined,
-        size: compact ? 17 : 19,
-      ),
     );
   }
 }

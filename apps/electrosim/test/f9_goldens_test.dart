@@ -16,6 +16,7 @@ void main() {
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(
       MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -32,14 +33,26 @@ void main() {
   }
 
   Future<void> openPalette(WidgetTester tester) async {
-    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
-    await tester.pumpAndSettle();
+    if (find
+        .byKey(electroSimPaletteRegionKey)
+        .hitTestable()
+        .evaluate()
+        .isEmpty) {
+      await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+      await tester.pumpAndSettle();
+    }
     expect(find.byKey(electroSimPaletteRegionKey), findsOneWidget);
   }
 
   Future<void> openContext(WidgetTester tester) async {
-    await tester.tap(find.byKey(electroSimContextEdgeKey));
-    await tester.pumpAndSettle();
+    if (find
+        .byKey(electroSimContextRegionKey)
+        .hitTestable()
+        .evaluate()
+        .isEmpty) {
+      await tester.tap(find.byKey(electroSimContextEdgeKey));
+      await tester.pumpAndSettle();
+    }
     expect(find.byKey(electroSimContextRegionKey), findsOneWidget);
   }
 
@@ -54,6 +67,15 @@ void main() {
       matchesGoldenFile('goldens/${prefix}_base.png'),
     );
 
+    if (size.width >= 1200) {
+      tester
+          .widget<ElectroSimWorkspaceShell>(
+            find.byType(ElectroSimWorkspaceShell),
+          )
+          .layoutController!
+          .setPanelVisible(ElectroSimWorkspacePanel.context, false);
+      await tester.pumpAndSettle();
+    }
     await openPalette(tester);
     await expectLater(
       find.byType(Scaffold),
@@ -61,6 +83,15 @@ void main() {
     );
 
     await pumpWorkspace(tester, size, selected: 'switch-1');
+    if (size.width >= 1200) {
+      tester
+          .widget<ElectroSimWorkspaceShell>(
+            find.byType(ElectroSimWorkspaceShell),
+          )
+          .layoutController!
+          .setPanelVisible(ElectroSimWorkspacePanel.palette, false);
+      await tester.pumpAndSettle();
+    }
     await openContext(tester);
     await expectLater(
       find.byType(Scaffold),

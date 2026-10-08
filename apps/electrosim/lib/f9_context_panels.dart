@@ -87,6 +87,27 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
 
   @override
   Widget build(BuildContext context) {
+    final tabHeight = (44 + MediaQuery.textScalerOf(context).scale(14) * 2.4)
+        .clamp(72.0, 140.0);
+    Widget tab(String label, IconData icon, {Key? key}) => Tooltip(
+      message: label,
+      child: Tab(
+        key: key,
+        height: tabHeight,
+        icon: Icon(icon, size: 18),
+        child: Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.2,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
     return ColoredBox(
       color: ElectroSimColors.surfaceElevated,
       child: Column(
@@ -101,22 +122,19 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
               // cannot hit it without first scrolling the tab strip.
               isScrollable: false,
               tabs: <Widget>[
-                const Tab(icon: Icon(Icons.tune_outlined), text: 'Propriétés'),
-                const Tab(
-                  icon: Icon(Icons.straighten_outlined),
-                  text: 'Mesures',
-                ),
+                tab('Propriétés', Icons.tune_outlined),
+                tab('Mesures', Icons.straighten_outlined),
                 if (widget.showEie)
-                  const Tab(
-                    key: Key('eie-tab'),
-                    icon: Icon(Icons.psychology_alt_outlined),
-                    text: 'EIE',
+                  tab(
+                    'EIE',
+                    Icons.psychology_alt_outlined,
+                    key: const Key('eie-tab'),
                   ),
                 if (widget.showDiagnostic)
-                  const Tab(
-                    key: Key('diagnostic-tab'),
-                    icon: Icon(Icons.fact_check_outlined),
-                    text: 'Diagnostic',
+                  tab(
+                    'Diagnostic',
+                    Icons.fact_check_outlined,
+                    key: const Key('diagnostic-tab'),
                   ),
               ],
             ),
@@ -209,7 +227,7 @@ class _PropertiesPanel extends StatelessWidget {
       children: <Widget>[
         const ElectroSimSectionTitle(
           title: 'Propriétés',
-          subtitle: 'Paramètres canoniques + état runtime issu du moteur',
+          subtitle: 'Réglages et état du composant',
         ),
         const SizedBox(height: ElectroSimSpacing.md),
         InputDecorator(
@@ -435,7 +453,7 @@ class _MeasurementsPanel extends StatelessWidget {
         children: <Widget>[
           const ElectroSimSectionTitle(
             title: 'Mesures',
-            subtitle: 'Valeurs calculées uniquement par MeasurementEngine',
+            subtitle: 'Valeurs calculées par la simulation',
           ),
           const SizedBox(height: ElectroSimSpacing.md),
           if (ac3) ...<Widget>[
@@ -537,7 +555,7 @@ class _MeasurementsPanel extends StatelessWidget {
       children: <Widget>[
         const ElectroSimSectionTitle(
           title: 'Mesures',
-          subtitle: 'MeasurementEngine + résultat solveur courant',
+          subtitle: 'Valeurs issues du calcul électrique courant',
         ),
         const SizedBox(height: ElectroSimSpacing.md),
         ElectroSimStatusChip(
@@ -1120,19 +1138,35 @@ class _PropertyLine extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(
-            width: 72,
-            child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final labelWidget = Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: ElectroSimColors.textSecondary,
           ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
+        );
+        if (constraints.maxWidth < 260 ||
+            MediaQuery.textScalerOf(context).scale(14) > 18) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labelWidget, const SizedBox(height: 4), Text(value)],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: (constraints.maxWidth * .42).clamp(88.0, 128.0),
+              child: labelWidget,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(value)),
+          ],
+        );
+      },
+    ),
+  );
 }

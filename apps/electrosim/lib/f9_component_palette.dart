@@ -135,8 +135,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.speed,
     kind: F9PaletteElementKind.instrument,
     terminalLabels: <String>[],
-    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
-      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{
+      ElectricalMode.dc,
+      ElectricalMode.ac1,
+      ElectricalMode.ac3,
+      ElectricalMode.pv,
+    },
     subtitle: 'Sondes V/Ω et COM, impédance réelle',
   ),
   F9PaletteDefinition(
@@ -147,8 +151,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.electric_meter,
     kind: F9PaletteElementKind.instrument,
     terminalLabels: <String>[],
-    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
-      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    searchOnlyModes: <ElectricalMode>{
+      ElectricalMode.dc,
+      ElectricalMode.ac1,
+      ElectricalMode.ac3,
+      ElectricalMode.pv,
+    },
     subtitle: 'Insertion en série, fusible et charge interne',
   ),
   F9PaletteDefinition(
@@ -2125,8 +2133,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   @override
   Widget build(BuildContext context) {
     final List<F9PaletteDefinition> filtered = _filtered;
-    final int availableCount =
-        _query.trim().isEmpty && _category == 'Tous'
+    final int availableCount = _query.trim().isEmpty && _category == 'Tous'
         ? f9PaletteCatalog
               .where(
                 (F9PaletteDefinition item) => item.supportsMode(widget.mode),
@@ -2387,7 +2394,9 @@ class F18PhysicalInstrumentPreview extends StatelessWidget {
     return SizedBox(
       width: compact ? 72 : 112,
       height: compact ? 94 : 152,
-      child: CustomPaint(painter: _F18PhysicalInstrumentPreviewPainter(ammeter)),
+      child: CustomPaint(
+        painter: _F18PhysicalInstrumentPreviewPainter(ammeter),
+      ),
     );
   }
 }
@@ -2434,8 +2443,10 @@ final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
     )..layout(maxWidth: display.width);
     text.paint(
       canvas,
-      Offset(display.center.dx - text.width / 2,
-          display.center.dy - text.height / 2),
+      Offset(
+        display.center.dx - text.width / 2,
+        display.center.dy - text.height / 2,
+      ),
     );
     final double y = size.height * .80;
     final double socketRadius = size.width * .04;

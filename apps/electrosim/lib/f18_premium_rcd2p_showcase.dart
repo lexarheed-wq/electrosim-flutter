@@ -58,7 +58,7 @@ class _RcdViewPanel extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         const SizedBox(height: 12),
         Disjoncteur3D(
-          key: Key('premium-rcd-' + vue.name),
+          key: Key('premium-rcd-${vue.name}'),
           width: 280,
           height: 430,
           vue: vue,

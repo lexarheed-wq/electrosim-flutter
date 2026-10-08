@@ -512,8 +512,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (_restoringHistory || _studentTpReadOnly) return;
     if (!identical(beforeCircuit, _circuit) ||
         !_sameEditableGeometry(beforeLayout, _layout)) {
-      _undoHistory.add(_F18WorkspaceHistoryEntry(
-        beforeCircuit, beforeLayout, beforeSelection));
+      _undoHistory.add(
+        _F18WorkspaceHistoryEntry(beforeCircuit, beforeLayout, beforeSelection),
+      );
       if (_undoHistory.length > _maxHistoryEntries) {
         _undoHistory.removeAt(0);
       }
@@ -524,16 +525,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void _undoEdit() {
     if (_studentTpReadOnly || _undoHistory.isEmpty) return;
     final _F18WorkspaceHistoryEntry previous = _undoHistory.removeLast();
-    _redoHistory.add(_F18WorkspaceHistoryEntry(
-      _circuit, _layout, _selected));
+    _redoHistory.add(_F18WorkspaceHistoryEntry(_circuit, _layout, _selected));
     _restoreEdit(previous, 'Modification annulée');
   }
 
   void _redoEdit() {
     if (_studentTpReadOnly || _redoHistory.isEmpty) return;
     final _F18WorkspaceHistoryEntry next = _redoHistory.removeLast();
-    _undoHistory.add(_F18WorkspaceHistoryEntry(
-      _circuit, _layout, _selected));
+    _undoHistory.add(_F18WorkspaceHistoryEntry(_circuit, _layout, _selected));
     _restoreEdit(next, 'Modification rétablie');
   }
 
@@ -698,10 +697,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             const SingleActivator(LogicalKeyboardKey.keyZ, control: true):
                 _undoEdit,
             const SingleActivator(
-              LogicalKeyboardKey.keyZ, meta: true, shift: true,
+              LogicalKeyboardKey.keyZ,
+              meta: true,
+              shift: true,
             ): _redoEdit,
             const SingleActivator(
-              LogicalKeyboardKey.keyZ, control: true, shift: true,
+              LogicalKeyboardKey.keyZ,
+              control: true,
+              shift: true,
             ): _redoEdit,
             const SingleActivator(LogicalKeyboardKey.keyY, control: true):
                 _redoEdit,
@@ -755,9 +758,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       },
                       onCancelAdvance: _simulation.cancelAdvance,
                       onUndo: _undoHistory.isEmpty || _studentTpReadOnly
-                          ? null : _undoEdit,
+                          ? null
+                          : _undoEdit,
                       onRedo: _redoHistory.isEmpty || _studentTpReadOnly
-                          ? null : _redoEdit,
+                          ? null
+                          : _redoEdit,
                     ),
               ),
               palette: F9ComponentPalette(
@@ -3684,7 +3689,8 @@ class _WorkspaceTopBar extends StatelessWidget {
 }
 
 enum _WorkspaceSecondaryAction {
-  undo, redo,
+  undo,
+  redo,
   save,
   open,
   recenter,

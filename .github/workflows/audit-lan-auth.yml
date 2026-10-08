@@ -1,0 +1,30 @@
+name: AUDIT LAN identity authentication
+
+on:
+  push:
+    branches:
+      - fix/lan-reconnect-token-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Analyze identity and run network regressions
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/runtime/electrosim_lan_sync.dart test/f17_lan_sync_test.dart
+          flutter test --no-pub test/f17_lan_sync_test.dart

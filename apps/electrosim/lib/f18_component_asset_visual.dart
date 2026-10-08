@@ -8,6 +8,7 @@ import 'f17_three_phase_components.dart';
 import 'f20_catalog_components.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
+import 'f18_industrial_physical_devices.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/reference_widgets.dart';
 import 'reference_components/reference_widgets_extended.dart';
@@ -304,6 +305,27 @@ class F18ComponentAssetVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+
+    // Genuine replacement industrial drawings. Never wrap the old drawing
+    // and call it a replacement: these eight are new canonical silhouettes
+    // with preserved design-space ports for the existing G12RQ hit-testing.
+    final IndustrialDevice? physical = IndustrialDeviceContract.resolve(type);
+    if (physical != null) {
+      return IndustrialPhysicalView(
+        device: physical,
+        size: size,
+        closed: closed ?? true,
+        tripped: tripped,
+        pressed: pressed,
+        energized: energized,
+        animationValue: animationValue,
+        showTerminals: showTerminals,
+        currentA: currentA,
+        voltageV: voltageV,
+        ratedCurrentA: ratedCurrentA,
+        domain: type == 'breaker_ac1' ? 'AC' : 'CC',
+      );
+    }
 
     final ReferenceDevice? uploadedDevice =
         F18ReferenceComponentVisuals.uploadedDeviceFor(type);

@@ -1,5 +1,6 @@
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
+import 'package:electrosim/runtime/electrosim_simulation_controller.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,5 +76,25 @@ void main() {
         snapshot.componentOperatingState(ComponentId('lamp'))!;
     expect(state.voltageV, closeTo(47.92, 0.05));
     expect(state.currentA, closeTo(0.998, 0.01));
+
+    // The PV palette battery is solved through DC. Its SOC must be visible,
+    // evolve with energy consumed, and stop supplying below minSOC.
+    final ElectroSimSimulationController controller =
+        ElectroSimSimulationController(circuit: circuit);
+    addTearDown(controller.dispose);
+    final ComponentId batteryId = ComponentId('battery');
+    final double initial = controller.snapshot.dcBatterySocs[batteryId]!;
+    expect(initial, closeTo(0.60, 1e-8));
+    controller.advance(const Duration(hours: 1));
+    final double discharged = controller.snapshot.dcBatterySocs[batteryId]!;
+    expect(discharged, lessThan(initial));
+    expect(discharged, greaterThanOrEqualTo(0.10));
+    controller.advance(const Duration(hours: 100));
+    expect(controller.snapshot.dcBatterySocs[batteryId],
+        closeTo(0.10, 1e-8));
+    controller.advance(const Duration(seconds: 1));
+    final ComponentOperatingState afterCutoff =
+        controller.snapshot.componentOperatingState(ComponentId('lamp'))!;
+    expect(afterCutoff.currentA ?? 0.0, closeTo(0.0, 1e-6));
   });
 }

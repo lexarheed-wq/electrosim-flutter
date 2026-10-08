@@ -114,8 +114,11 @@ final class ElectroSimSimulationController extends ChangeNotifier {
   /// pointer interaction and cancellation between steps.
   Future<void> advanceBy(Duration requested) async {
     if (requested <= Duration.zero) {
-      throw ArgumentError.value(requested, 'requested',
-          'The simulation advance must be positive.');
+      throw ArgumentError.value(
+        requested,
+        'requested',
+        'The simulation advance must be positive.',
+      );
     }
     if (_fastForwarding) return;
     pause();
@@ -125,12 +128,11 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     final Duration step = requested <= const Duration(minutes: 1)
         ? const Duration(seconds: 1)
         : requested <= const Duration(hours: 1)
-            ? const Duration(seconds: 30)
-            : const Duration(minutes: 5);
+        ? const Duration(seconds: 30)
+        : const Duration(minutes: 5);
     Duration remaining = requested;
     try {
-      while (remaining > Duration.zero &&
-          revision == _operationRevision) {
+      while (remaining > Duration.zero && revision == _operationRevision) {
         final Duration elapsed = remaining < step ? remaining : step;
         advance(elapsed);
         remaining -= elapsed;

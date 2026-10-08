@@ -24,6 +24,7 @@ enum PvDiagnosticCode {
   invalidBatteryParameter,
   storageTopologyInvalid,
   controllerFaulted,
+  controllerInputVoltageOutOfRange,
   batteryEmpty,
   batteryFull,
 }

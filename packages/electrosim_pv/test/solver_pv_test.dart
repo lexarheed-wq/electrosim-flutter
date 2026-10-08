@@ -556,6 +556,70 @@ void main() {
       },
     );
 
+    test(
+      'PV-RUNTIME01 storage keeps charging when inverter is removed',
+      () {
+        final CircuitState circuit = _pvStorageCircuit(
+          includeInverter: false,
+          initialSoc: 0.50,
+        );
+        final PvSolveResult result = solver.solve(
+          circuit,
+          topologyEngine.compile(circuit),
+          previousBatterySoc: 0.50,
+          elapsed: const Duration(hours: 1),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.controllerPresent, isTrue);
+        expect(result.batteryPresent, isTrue);
+        expect(result.pvDrawnPowerW, greaterThan(0.0));
+        expect(result.batteryPowerW, lessThan(0.0));
+        expect(result.batterySoc, greaterThan(0.50));
+        expect(result.inverterOutputPowerW, 0.0);
+      },
+    );
+
+    test(
+      'PV-RUNTIME01 disconnecting inverter DC does not stop battery charging',
+      () {
+        final CircuitState circuit = _pvStorageCircuit(
+          disconnectInverterDc: true,
+          initialSoc: 0.50,
+        );
+        final PvSolveResult result = solver.solve(
+          circuit,
+          topologyEngine.compile(circuit),
+          previousBatterySoc: 0.50,
+          elapsed: const Duration(hours: 1),
+        );
+        expect(result.status, PvSolveStatus.solved);
+        expect(result.pvDrawnPowerW, greaterThan(0.0));
+        expect(result.batteryPowerW, lessThan(0.0));
+        expect(result.batterySoc, greaterThan(0.50));
+        expect(result.inverterOutputPowerW, 0.0);
+        expect(
+          result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+          contains(PvDiagnosticCode.dcInputDisconnected),
+        );
+      },
+    );
+
+    test('PV-RUNTIME01 PWM rejects a 360 V string on a 48 V controller', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        controllerType: 'pwm',
+        controllerMaxPvInputVoltageV: 60.0,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+      );
+      expect(result.status, PvSolveStatus.invalid);
+      expect(
+        result.diagnostics.map((PvSolverDiagnostic item) => item.code),
+        contains(PvDiagnosticCode.controllerInputVoltageOutOfRange),
+      );
+    });
+
     test('same PV input is deterministic', () {
       final CircuitState circuit = _pvCircuit(
         loadPowerAt230W: 2750.0,
@@ -727,6 +791,10 @@ CircuitState _pvStorageCircuit({
   double maxSoc = 0.95,
   bool includeController = true,
   bool includeBattery = true,
+  bool includeInverter = true,
+  bool disconnectInverterDc = false,
+  String controllerType = 'mppt',
+  double controllerMaxPvInputVoltageV = 450.0,
   double controllerOutputVoltageV = 48.0,
 }) {
   final double resistance = 230.0 * 230.0 / loadPowerAt230W;
@@ -800,6 +868,8 @@ CircuitState _pvStorageCircuit({
       'outputVoltageV': controllerOutputVoltageV,
       'maxOutputCurrentA': 60.0,
       'efficiency': 0.97,
+      'controllerType': controllerType,
+      'maxPvInputVoltageV': controllerMaxPvInputVoltageV,
     },
   );
   final ComponentInstance battery = ComponentInstance(
@@ -854,8 +924,8 @@ CircuitState _pvStorageCircuit({
   final List<ComponentInstance> components = <ComponentInstance>[
     if (includeController) controller,
     if (includeBattery) battery,
-    inverter,
-    load,
+    if (includeInverter) inverter,
+    if (includeInverter) load,
   ];
   final List<Connection> connections = <Connection>[
     if (includeController) ...<Connection>[
@@ -871,18 +941,34 @@ CircuitState _pvStorageCircuit({
         'storage-controller-pv-neg',
         PhaseTag.dcNegative,
       ),
-      _wire(
-        'storage-bus-pos',
-        'storage-controller-bus-pos',
-        'storage-inv-dc-pos',
-        PhaseTag.dcPositive,
-      ),
-      _wire(
-        'storage-bus-neg',
-        'storage-controller-bus-neg',
-        'storage-inv-dc-neg',
-        PhaseTag.dcNegative,
-      ),
+      if (includeInverter && !disconnectInverterDc)
+        _wire(
+          'storage-bus-pos',
+          'storage-controller-bus-pos',
+          'storage-inv-dc-pos',
+          PhaseTag.dcPositive,
+        )
+      else if (includeBattery)
+        _wire(
+          'storage-bus-pos-battery',
+          'storage-controller-bus-pos',
+          'storage-battery-pos',
+          PhaseTag.dcPositive,
+        ),
+      if (includeInverter && !disconnectInverterDc)
+        _wire(
+          'storage-bus-neg',
+          'storage-controller-bus-neg',
+          'storage-inv-dc-neg',
+          PhaseTag.dcNegative,
+        )
+      else if (includeBattery)
+        _wire(
+          'storage-bus-neg-battery',
+          'storage-controller-bus-neg',
+          'storage-battery-neg',
+          PhaseTag.dcNegative,
+        ),
     ] else ...<Connection>[
       _wire(
         'storage-direct-pos',
@@ -897,7 +983,7 @@ CircuitState _pvStorageCircuit({
         PhaseTag.dcNegative,
       ),
     ],
-    if (includeBattery) ...<Connection>[
+    if (includeBattery && includeInverter && !disconnectInverterDc) ...<Connection>[
       _wire(
         'storage-battery-pos-wire',
         'storage-battery-pos',
@@ -911,8 +997,10 @@ CircuitState _pvStorageCircuit({
         PhaseTag.dcNegative,
       ),
     ],
-    _wire('storage-ac-l', 'storage-inv-l', 'storage-load-l', PhaseTag.l1),
-    _wire('storage-ac-n', 'storage-inv-n', 'storage-load-n', PhaseTag.neutral),
+    if (includeInverter)
+      _wire('storage-ac-l', 'storage-inv-l', 'storage-load-l', PhaseTag.l1),
+    if (includeInverter)
+      _wire('storage-ac-n', 'storage-inv-n', 'storage-load-n', PhaseTag.neutral),
   ];
 
   return CircuitState(

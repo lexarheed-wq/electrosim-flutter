@@ -56,6 +56,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
+      previousMotorAngularSpeedsRadS: _snapshot.motorAngularSpeedsRadS,
     );
     notifyListeners();
   }
@@ -103,6 +104,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
+      previousMotorAngularSpeedsRadS: _snapshot.motorAngularSpeedsRadS,
     );
     _simulatedTime += elapsed;
     notifyListeners();
@@ -183,6 +185,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
+      previousMotorAngularSpeedsRadS: _snapshot.motorAngularSpeedsRadS,
     );
     notifyListeners();
   }

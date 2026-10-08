@@ -48,6 +48,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousContactorStates: _currentContactorStates(),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
+      previousDcBatterySocs: _snapshot.dcBatterySocs,
     );
     notifyListeners();
   }
@@ -94,6 +95,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousContactorStates: _currentContactorStates(),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
+      previousDcBatterySocs: _snapshot.dcBatterySocs,
     );
     _simulatedTime += elapsed;
     notifyListeners();
@@ -121,6 +123,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       previousContactorStates: _currentContactorStates(),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
+      previousDcBatterySocs: _snapshot.dcBatterySocs,
     );
     notifyListeners();
   }

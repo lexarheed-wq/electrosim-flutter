@@ -1,0 +1,35 @@
+name: AUDIT-UI circuit undo redo gate
+on:
+  push:
+    branches:
+      - feature/audit-ui-undo-redo-20261008
+permissions:
+  contents: read
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Audit architecture and formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          dart format apps/electrosim/lib/main.dart apps/electrosim/test/audit_workspace_undo_redo_test.dart
+          git --no-pager diff -- apps/electrosim/lib/main.dart apps/electrosim/test/audit_workspace_undo_redo_test.dart
+          git diff --exit-code -- apps/electrosim/lib/main.dart apps/electrosim/test/audit_workspace_undo_redo_test.dart
+      - name: Immutable workspace history integration and regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/main.dart test/audit_workspace_undo_redo_test.dart
+          flutter test --no-pub test/audit_workspace_undo_redo_test.dart test/f18_g6_multiselect_test.dart test/audit_visual_layout_persistence_test.dart

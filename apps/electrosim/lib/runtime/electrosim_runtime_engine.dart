@@ -11,7 +11,6 @@ import 'package:electrosim_topology/electrosim_topology.dart';
 
 enum ElectroSimRuntimeSolverKind { dc, ac1, ac3, pv }
 
-
 /// Solver-backed current evidence for one physical wire connection.
 ///
 /// [signedCurrentA] is positive from Connection.fromTerminalId to
@@ -37,6 +36,11 @@ final class ConnectionCurrentEvidence {
 }
 
 final class ElectroSimRuntimeSnapshot {
+  // Expando associates a cache with this immutable snapshot without changing
+  // the const constructor or retaining old snapshots after their disposal.
+  static final _wireEvidence =
+      Expando<Map<Connection, ConnectionCurrentEvidence>>();
+  static final _dcContexts = Expando<_DcWireCurrentContext>();
   const ElectroSimRuntimeSnapshot({
     required this.circuit,
     required this.effectiveCircuit,
@@ -110,6 +114,17 @@ final class ElectroSimRuntimeSnapshot {
       (pvResult?.isSolved ?? false);
 
   ConnectionCurrentEvidence connectionCurrentEvidence(Connection connection) {
+    final cache = _wireEvidence[this] ??=
+        <Connection, ConnectionCurrentEvidence>{};
+    return cache.putIfAbsent(
+      connection,
+      () => _calculateConnectionCurrentEvidence(connection),
+    );
+  }
+
+  ConnectionCurrentEvidence _calculateConnectionCurrentEvidence(
+    Connection connection,
+  ) {
     if (!connection.enabled ||
         !topology.enabledConnectionIds.contains(connection.id) ||
         !solved) {
@@ -122,6 +137,11 @@ final class ElectroSimRuntimeSnapshot {
         circuit: effectiveCircuit,
         topology: topology,
         simulation: dcLocal,
+        context: _dcContexts[this] ??= _prepareDcWireCurrentContext(
+          effectiveCircuit,
+          topology,
+          dcLocal,
+        ),
         connection: connection,
       );
     }
@@ -162,18 +182,21 @@ final class ElectroSimRuntimeSnapshot {
     final PvSolveResult? pvLocal = pvResult;
     if (pvLocal != null && pvLocal.isSolved) {
       magnitude = switch (connection.phase) {
-        PhaseTag.dcPositive || PhaseTag.dcNegative => pvLocal.pvDrawnCurrentA.abs(),
-        PhaseTag.l1 || PhaseTag.neutral =>
-          pvLocal.inverterOutputCurrentRmsA.abs(),
-        _ => pvLocal.pvDrawnCurrentA.abs() >
-                pvLocal.inverterOutputCurrentRmsA.abs()
-            ? pvLocal.pvDrawnCurrentA.abs()
-            : pvLocal.inverterOutputCurrentRmsA.abs(),
+        PhaseTag.dcPositive ||
+        PhaseTag.dcNegative => pvLocal.pvDrawnCurrentA.abs(),
+        PhaseTag.l1 ||
+        PhaseTag.neutral => pvLocal.inverterOutputCurrentRmsA.abs(),
+        _ =>
+          pvLocal.pvDrawnCurrentA.abs() >
+                  pvLocal.inverterOutputCurrentRmsA.abs()
+              ? pvLocal.pvDrawnCurrentA.abs()
+              : pvLocal.inverterOutputCurrentRmsA.abs(),
       };
       return ConnectionCurrentEvidence(
         signedCurrentA: magnitude,
         directionKnown: false,
-        alternating: connection.phase == PhaseTag.l1 ||
+        alternating:
+            connection.phase == PhaseTag.l1 ||
             connection.phase == PhaseTag.neutral,
       );
     }
@@ -245,7 +268,9 @@ final class ElectroSimRuntimeSnapshot {
     controlIssues: controlIssues,
     protectionState: protectionState,
     protectionIssues: protectionIssues,
-    componentHealthStates: Map<ComponentId, ComponentHealthState>.unmodifiable(states),
+    componentHealthStates: Map<ComponentId, ComponentHealthState>.unmodifiable(
+      states,
+    ),
     measurementEngine: measurementEngine,
     deviceStateEngine: deviceStateEngine,
     energyEngine: energyEngine,
@@ -490,19 +515,20 @@ final class ElectroSimRuntimeSnapshot {
   }
 }
 
+final class _DcWireCurrentContext {
+  const _DcWireCurrentContext(this.externalLeavingA, this.connectionsByNode);
+  final Map<TerminalId, double> externalLeavingA;
+  final Map<String, List<Connection>> connectionsByNode;
+}
 
-ConnectionCurrentEvidence _resolveDcConnectionCurrent({
-  required CircuitState circuit,
-  required TopologyGraph topology,
-  required DcSolveResult simulation,
-  required Connection connection,
-}) {
-  final String? nodeId = topology.terminalToNode[connection.fromTerminalId];
-  if (nodeId == null ||
-      topology.terminalToNode[connection.toTerminalId] != nodeId) {
-    return const ConnectionCurrentEvidence.zero();
-  }
-
+_DcWireCurrentContext _prepareDcWireCurrentContext(
+  CircuitState circuit,
+  TopologyGraph topology,
+  DcSolveResult simulation,
+) {
+  final resultsById = {
+    for (final branch in simulation.branchResults) branch.id: branch,
+  };
   final Map<TerminalId, double> externalLeavingA = <TerminalId, double>{};
   void add(TerminalId terminalId, double currentA) {
     if (!currentA.isFinite) return;
@@ -521,13 +547,7 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
       final String resultId = branches.length == 1
           ? 'component:${component.id.value}'
           : 'component:${component.id.value}:${branch.branchId}';
-      DcBranchResult? result;
-      for (final DcBranchResult candidate in simulation.branchResults) {
-        if (candidate.id == resultId) {
-          result = candidate;
-          break;
-        }
-      }
+      final DcBranchResult? result = resultsById[resultId];
       final double? currentA = result?.currentA;
       if (currentA == null) continue;
       add(branch.fromTerminalId, currentA);
@@ -537,40 +557,55 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
 
   for (final SourceInstance source in circuit.sources) {
     if (source.terminals.length < 2) continue;
-    DcBranchResult? result;
-    final String resultId = 'source:${source.id.value}';
-    for (final DcBranchResult candidate in simulation.branchResults) {
-      if (candidate.id == resultId) {
-        result = candidate;
-        break;
-      }
-    }
+    final result = resultsById['source:${source.id.value}'];
     final double? currentA = result?.currentA;
     if (currentA == null) continue;
     add(source.terminals[0].id, currentA);
     add(source.terminals[1].id, -currentA);
   }
 
-  final List<Connection> nodeConnections = circuit.connections
-      .where(
-        (Connection item) =>
-            item.enabled &&
-            topology.enabledConnectionIds.contains(item.id) &&
-            topology.terminalToNode[item.fromTerminalId] == nodeId &&
-            topology.terminalToNode[item.toTerminalId] == nodeId,
-      )
-      .toList(growable: false);
+  final connectionsByNode = <String, List<Connection>>{};
+  for (final connection in circuit.connections) {
+    if (!connection.enabled ||
+        !topology.enabledConnectionIds.contains(connection.id)) {
+      continue;
+    }
+    final node = topology.terminalToNode[connection.fromTerminalId];
+    if (node != null &&
+        node == topology.terminalToNode[connection.toTerminalId]) {
+      connectionsByNode.putIfAbsent(node, () => []).add(connection);
+    }
+  }
+  return _DcWireCurrentContext(externalLeavingA, connectionsByNode);
+}
+
+ConnectionCurrentEvidence _resolveDcConnectionCurrent({
+  required CircuitState circuit,
+  required TopologyGraph topology,
+  required DcSolveResult simulation,
+  required Connection connection,
+  required _DcWireCurrentContext context,
+}) {
+  final String? nodeId = topology.terminalToNode[connection.fromTerminalId];
+  if (nodeId == null ||
+      topology.terminalToNode[connection.toTerminalId] != nodeId) {
+    return const ConnectionCurrentEvidence.zero();
+  }
+
+  final externalLeavingA = context.externalLeavingA;
+  final nodeConnections =
+      context.connectionsByNode[nodeId] ?? const <Connection>[];
 
   final Map<TerminalId, List<TerminalId>> adjacency =
       <TerminalId, List<TerminalId>>{};
   for (final Connection item in nodeConnections) {
     if (item.id == connection.id) continue;
-    adjacency.putIfAbsent(item.fromTerminalId, () => <TerminalId>[]).add(
-      item.toTerminalId,
-    );
-    adjacency.putIfAbsent(item.toTerminalId, () => <TerminalId>[]).add(
-      item.fromTerminalId,
-    );
+    adjacency
+        .putIfAbsent(item.fromTerminalId, () => <TerminalId>[])
+        .add(item.toTerminalId);
+    adjacency
+        .putIfAbsent(item.toTerminalId, () => <TerminalId>[])
+        .add(item.fromTerminalId);
   }
 
   final Set<TerminalId> fromSide = <TerminalId>{};
@@ -683,7 +718,9 @@ final class ElectroSimRuntimeEngine {
         );
     snapshot = snapshot.withComponentHealthStates(nextHealth);
 
-    final bool newFailure = circuit.components.any((ComponentInstance component) {
+    final bool newFailure = circuit.components.any((
+      ComponentInstance component,
+    ) {
       final bool wasFailed =
           previousComponentHealthStates[component.id]?.failedOpen ?? false;
       final bool isFailed = nextHealth[component.id]?.failedOpen ?? false;
@@ -760,15 +797,16 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac1:
-        final ProtectionAc1Outcome coordinated = protectionCoordinator.advanceAc1(
-          circuit: solverCircuit,
-          topology: topology,
-          elapsed: elapsed,
-          previous: previousProtectionState,
-          solver: solverAC1,
-          controlsEngine: electromechanicalControlEngine,
-          previousContactorStates: previousContactorStates,
-        );
+        final ProtectionAc1Outcome coordinated = protectionCoordinator
+            .advanceAc1(
+              circuit: solverCircuit,
+              topology: topology,
+              elapsed: elapsed,
+              previous: previousProtectionState,
+              solver: solverAC1,
+              controlsEngine: electromechanicalControlEngine,
+              previousContactorStates: previousContactorStates,
+            );
         final Ac1SolveResult ac1 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc1(
           topology: topology,
@@ -791,14 +829,15 @@ final class ElectroSimRuntimeEngine {
           energyEngine: energyEngine,
         );
       case ElectricalMode.ac3:
-        final ProtectionAc3Outcome coordinated = protectionCoordinator.advanceAc3(
-          circuit: solverCircuit,
-          topology: topology,
-          elapsed: elapsed,
-          previous: previousProtectionState,
-          solver: solverAC3,
-          controlsEngine: electromechanicalControlEngine,
-        );
+        final ProtectionAc3Outcome coordinated = protectionCoordinator
+            .advanceAc3(
+              circuit: solverCircuit,
+              topology: topology,
+              elapsed: elapsed,
+              previous: previousProtectionState,
+              solver: solverAC3,
+              controlsEngine: electromechanicalControlEngine,
+            );
         final Ac3SolveResult ac3 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(
           topology: topology,
@@ -858,8 +897,9 @@ final class ElectroSimRuntimeEngine {
     for (final ComponentInstance component in circuit.components) {
       final ComponentPhysicsContract? physics =
           CoreComponentPhysicsContracts.resolve(component.modelType);
-      final ComponentModelContract? structure =
-          CoreComponentModelContracts.registry.resolve(component.modelType);
+      final ComponentModelContract? structure = CoreComponentModelContracts
+          .registry
+          .resolve(component.modelType);
       if (physics?.electricalLaw == ComponentElectricalLaw.converter) {
         return circuit;
       }
@@ -906,8 +946,8 @@ final class ElectroSimRuntimeEngine {
     final Map<ComponentId, ComponentHealthState> next =
         <ComponentId, ComponentHealthState>{};
     for (final ComponentInstance component in designCircuit.components) {
-      final ComponentOperatingState? operating =
-          snapshot.componentOperatingState(component.id);
+      final ComponentOperatingState? operating = snapshot
+          .componentOperatingState(component.id);
       final ComponentHealthState prior =
           previous[component.id] ?? const ComponentHealthState.normal();
       if (operating == null) {
@@ -959,5 +999,4 @@ final class ElectroSimRuntimeEngine {
       metadata: circuit.metadata,
     );
   }
-
 }

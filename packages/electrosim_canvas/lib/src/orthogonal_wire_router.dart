@@ -177,7 +177,8 @@ final class OrthogonalWireRouter {
     if (bridged != null) {
       return WireRouteResult.resolved(
         bridged,
-        usesBridgedCrossing: WireRouteSafety.countPerpendicularCrossings(
+        usesBridgedCrossing:
+            WireRouteSafety.countPerpendicularCrossings(
               candidate: bridged,
               occupiedDifferentNetPaths: occupiedDifferentNetPaths,
             ) >
@@ -196,7 +197,8 @@ final class OrthogonalWireRouter {
     if (bridgedAStar != null) {
       return WireRouteResult.resolved(
         bridgedAStar,
-        usesBridgedCrossing: WireRouteSafety.countPerpendicularCrossings(
+        usesBridgedCrossing:
+            WireRouteSafety.countPerpendicularCrossings(
               candidate: bridgedAStar,
               occupiedDifferentNetPaths: occupiedDifferentNetPaths,
             ) >
@@ -374,15 +376,14 @@ final class OrthogonalWireRouter {
     final int endY = ys.indexOf(end.dy);
     if (startX < 0 || startY < 0 || endX < 0 || endY < 0) return null;
 
-    final List<_SearchNode> open = <_SearchNode>[
-      _SearchNode(
-        xIndex: startX,
-        yIndex: startY,
-        previousAxis: null,
-        g: 0,
-        f: _manhattanDistance(start, end),
-      ),
-    ];
+    final startNode = _SearchNode(
+      xIndex: startX,
+      yIndex: startY,
+      previousAxis: null,
+      g: 0,
+      f: _manhattanDistance(start, end),
+    );
+    final open = _SearchFrontier(_compareSearchNodes)..add(startNode);
     final Map<String, double> bestG = <String, double>{
       _stateKey(startX, startY, null): 0,
     };
@@ -390,13 +391,12 @@ final class OrthogonalWireRouter {
       _stateKey(startX, startY, null): null,
     };
     final Map<String, _SearchNode> nodes = <String, _SearchNode>{
-      _stateKey(startX, startY, null): open.first,
+      _stateKey(startX, startY, null): startNode,
     };
 
     _SearchNode? goal;
     while (open.isNotEmpty) {
-      open.sort(_compareSearchNodes);
-      final _SearchNode current = open.removeAt(0);
+      final _SearchNode current = open.removeFirst();
       final String currentKey = _stateKey(
         current.xIndex,
         current.yIndex,
@@ -507,9 +507,7 @@ final class OrthogonalWireRouter {
     OrthogonalSegment segment,
     List<OrthogonalWirePath> occupiedDifferentNetPaths,
   ) => WireRouteSafety.countPerpendicularCrossings(
-    candidate: OrthogonalWirePath(
-      points: <Offset>[segment.start, segment.end],
-    ),
+    candidate: OrthogonalWirePath(points: <Offset>[segment.start, segment.end]),
     occupiedDifferentNetPaths: occupiedDifferentNetPaths,
   );
 
@@ -609,6 +607,47 @@ final class OrthogonalWireRouter {
 
   static double _min(double a, double b) => a < b ? a : b;
   static double _max(double a, double b) => a > b ? a : b;
+}
+
+/// Binary min heap; extracting a candidate no longer sorts the entire frontier.
+final class _SearchFrontier {
+  _SearchFrontier(this.compare);
+  final int Function(_SearchNode, _SearchNode) compare;
+  final List<_SearchNode> _heap = [];
+  bool get isNotEmpty => _heap.isNotEmpty;
+
+  void add(_SearchNode node) {
+    _heap.add(node);
+    var index = _heap.length - 1;
+    while (index > 0) {
+      final parent = (index - 1) ~/ 2;
+      if (compare(_heap[parent], node) <= 0) break;
+      _heap[index] = _heap[parent];
+      index = parent;
+    }
+    _heap[index] = node;
+  }
+
+  _SearchNode removeFirst() {
+    final first = _heap.first;
+    final last = _heap.removeLast();
+    if (_heap.isEmpty) return first;
+    var index = 0;
+    while (true) {
+      final left = index * 2 + 1;
+      if (left >= _heap.length) break;
+      final right = left + 1;
+      final child =
+          right < _heap.length && compare(_heap[right], _heap[left]) < 0
+          ? right
+          : left;
+      if (compare(last, _heap[child]) <= 0) break;
+      _heap[index] = _heap[child];
+      index = child;
+    }
+    _heap[index] = last;
+    return first;
+  }
 }
 
 final class _SearchNode {

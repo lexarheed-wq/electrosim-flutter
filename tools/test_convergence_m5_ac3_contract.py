@@ -16,10 +16,14 @@ class M5Ac3ContractTest(unittest.TestCase):
         self.assertIn('_Ac3Probe(', text)
 
     def test_ac3_switch_and_lamp_are_explicit(self):
-        text = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
-        self.assertIn("'lamp'", text)
-        self.assertIn("'switch'", text)
-        self.assertIn('Ac3BranchKind.idealSwitch', text)
+        physics = (ROOT / 'packages/electrosim_domain/lib/src/component_physics_contract.dart').read_text(encoding='utf-8')
+        solver = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
+        self.assertIn("modelType: 'lamp'", physics)
+        self.assertIn("modelType: 'switch'", physics)
+        self.assertIn('ComponentElectricalLaw.resistive', solver)
+        self.assertIn('ComponentElectricalLaw.binarySwitch', solver)
+        self.assertIn('Ac3BranchKind.idealSwitch', solver)
+        self.assertIn('_closedFromControlLawAc3', solver)
 
     def test_m5_tests_cover_balance_and_switching(self):
         text = (ROOT / 'packages/electrosim_solver_ac/test/m5_ac3_convergence_test.dart').read_text(encoding='utf-8')

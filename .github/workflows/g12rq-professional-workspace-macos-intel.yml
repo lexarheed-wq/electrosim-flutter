@@ -1,0 +1,135 @@
+name: G12-RQ professional workspace merge and Intel candidate
+on:
+  push:
+    branches:
+      - feat/g12rq-professional-workspace-20261008
+permissions:
+  contents: write
+concurrency:
+  group: professional-workspace-g12rq
+  cancel-in-progress: false
+jobs:
+  integration:
+    if: "!contains(github.event.head_commit.message, 'integrate(ui): professional workspace onto G12RQ')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge supplied patch without overwriting newer product code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f integration/professional-workspace/electrosim-interface-changements.patch
+          if ! git apply --3way integration/professional-workspace/electrosim-interface-changements.patch; then
+            echo 'PATCH_3WAY_CONFLICT: source changes require reviewed conflict resolution' >&2
+            git status --short >&2
+            exit 1
+          fi
+          if test -n "$(git ls-files -u)"; then
+            echo 'UNMERGED_FILES: no unsafe automated resolution permitted' >&2
+            git ls-files -u >&2
+            exit 1
+          fi
+          git diff --check
+          echo PROFESSIONAL_WORKSPACE_PATCH_APPLIED
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate UI kit
+        working-directory: packages/electrosim_ui_kit
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Validate canvas
+        working-directory: packages/electrosim_canvas
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Qualify full application and integrated physical regressions
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub
+      - name: Architecture checks
+        shell: bash
+        run: |
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+      - name: Commit integration only after entire suite succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/electrosim packages/electrosim_ui_kit packages/electrosim_canvas
+          git diff --cached --exit-code && { echo 'No source changes to commit'; exit 1; }
+          git commit -m 'integrate(ui): professional workspace onto G12RQ'
+          git push origin HEAD:feat/g12rq-professional-workspace-20261008
+          echo "INTEGRATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo PROFESSIONAL_WORKSPACE_INTEGRATION_PASS
+  macos-intel:
+    needs: integration
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout exact tested integrated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feat/g12rq-professional-workspace-20261008
+          git checkout -B g12rq-professional-built origin/feat/g12rq-professional-workspace-20261008
+          git log -1 --format=%s | grep -F 'integrate(ui): professional workspace onto G12RQ'
+          git diff --check
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build verified Intel macOS application
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) root="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          exe="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$exe"
+          file "$exe" | tee "$base/MAC_ARCH_PROOF.txt"
+          grep -qi x86_64 "$base/MAC_ARCH_PROOF.txt"
+          out="$base/electrosim-g12rq-professional-mac"
+          mkdir -p "$out"
+          cp "$base/MAC_ARCH_PROOF.txt" "$out/"
+          git -C "$base" rev-parse HEAD > "$out/SOURCE_SHA.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/ElectroSim_G12RQ_ProfessionalWorkspace_macOS_Intel.zip"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-ProfessionalWorkspace-macOS-Intel
+          path: electrosim-g12rq-professional-mac/
+          if-no-files-found: error
+          retention-days: 14

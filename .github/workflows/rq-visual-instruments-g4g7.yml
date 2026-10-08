@@ -1,0 +1,92 @@
+name: RQ G4-G7 visual and instruments audit (no release)
+
+on:
+  push:
+    branches:
+      - work/rq-visual-instruments-g4g7-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  g4_visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Analyze component design and visual contracts
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --no-pub test/f18_g4_visual_framework_gate_test.dart test/f14_visual_identity_test.dart test/f18_point5_component_visual_identity_test.dart
+
+  g5_parity:
+    needs: g4_visual
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Component catalog parity regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --no-pub test/f18_g5_supported_parity_gate_test.dart test/f9_catalog_visual_uniqueness_test.dart
+
+  g6_canvas:
+    needs: g5_parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Interaction, selection, and routing regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --no-pub test/f18_g6_multiselect_test.dart test/audit_canvas_routing_performance_test.dart test/connection_router_worker_test.dart
+
+  g7_properties_instruments:
+    needs: g6_canvas
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Properties and existing virtual instruments
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --no-pub test/f18_g7_instruments_properties_test.dart
+      - name: Physical instrument contract is still a required deliverable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/f18/g7/F18_G7_REPORT.md
+          echo "G7 historical instruments regression ran; SIM-R1 physical components require separate gate."

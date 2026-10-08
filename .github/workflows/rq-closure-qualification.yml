@@ -1,0 +1,49 @@
+name: RQ closure qualification (no release)
+
+on:
+  push:
+    branches:
+      - work/rq-closure-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rq-closure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  g0_storage_geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify exact architecture invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+      - name: Storage concurrency and corruption regressions
+        working-directory: packages/electrosim_storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+      - name: Canvas persistence and application regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/runtime/electrosim_layout_persistence.dart lib/runtime/electrosim_persistence_controller.dart lib/main.dart test/audit_visual_layout_persistence_test.dart
+          flutter test --no-pub test/audit_visual_layout_persistence_test.dart test/f17_persistence_test.dart

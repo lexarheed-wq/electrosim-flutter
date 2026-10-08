@@ -9,11 +9,16 @@ class WorkspaceResizeHandle extends StatelessWidget {
     required this.onDelta,
     required this.semanticLabel,
     required this.enabled,
-  });
+    this.increaseDirection = 1,
+  }) : assert(increaseDirection == 1 || increaseDirection == -1);
   final Axis axis;
   final ValueChanged<double> onDelta;
   final String semanticLabel;
   final bool enabled;
+
+  /// A right-hand dock grows when its physical separator moves to the left.
+  /// Semantic increase/decrease describe the dock width, not the drag direction.
+  final int increaseDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +30,8 @@ class WorkspaceResizeHandle extends StatelessWidget {
     return Semantics(
       label: semanticLabel,
       enabled: enabled,
-      onIncrease: enabled ? () => delta(8) : null,
-      onDecrease: enabled ? () => delta(-8) : null,
+      onIncrease: enabled ? () => delta(8.0 * increaseDirection) : null,
+      onDecrease: enabled ? () => delta(-8.0 * increaseDirection) : null,
       child: FocusableActionDetector(
         enabled: enabled,
         mouseCursor: enabled

@@ -437,6 +437,7 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.tpSessionController,
     super.persistenceController,
     super.layoutPreferences,
+    super.layoutPreferencesFuture,
     super.syncClient,
     super.onSessionDashboard,
     super.onSessionManage,
@@ -456,6 +457,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.tpSessionController,
     this.persistenceController,
     this.layoutPreferences,
+    this.layoutPreferencesFuture,
     this.syncClient,
     this.onSessionDashboard,
     this.onSessionManage,
@@ -471,6 +473,9 @@ class F18WorkspacePage extends StatefulWidget {
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
   final WorkspaceLayoutPreferences? layoutPreferences;
+
+  /// Hosts may resolve their native preference store during startup.
+  final Future<WorkspaceLayoutPreferences>? layoutPreferencesFuture;
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
   final VoidCallback? onSessionManage;
@@ -503,6 +508,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   final WorkspaceLayoutController _workspaceLayout =
       WorkspaceLayoutController();
   WorkspaceLayoutPreferences? _layoutPreferences;
+  late final Future<WorkspaceLayoutPreferences> _layoutPreferencesReady;
+  int _layoutEditOrder = 0;
   Timer? _layoutSaveTimer;
   bool _layoutEdited = false;
   bool _restoringLayout = false;
@@ -593,6 +600,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _layout = _layoutForCircuit(_circuit);
     _simulation = ElectroSimSimulationController(circuit: _circuit);
     _workspaceLayout.addListener(_scheduleLayoutSave);
+    _layoutPreferencesReady = widget.layoutPreferences != null
+        ? Future.value(widget.layoutPreferences!)
+        : widget.layoutPreferencesFuture ??
+              WorkspaceLayoutPreferences.createDefault();
     unawaited(_restoreWorkspaceLayout());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -604,8 +615,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void _prepareWorkspaceLayoutChange() {
     if (_activeCanvasPointer == null &&
         _wiringPendingTerminal == null &&
-        !_trackpadPanZoomActive)
+        !_trackpadPanZoomActive) {
       return;
+    }
     setState(() {
       _canvasInteractionEpoch += 1;
       _wiringPendingTerminal = null;
@@ -622,8 +634,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (!mounted ||
         size.isEmpty ||
         !size.width.isFinite ||
-        !size.height.isFinite)
+        !size.height.isFinite) {
       return;
+    }
     final previous = _lastWorkspaceCanvasSize;
     _lastWorkspaceCanvasSize = size;
     if (previous == null || previous == size) return;
@@ -633,9 +646,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Future<void> _restoreWorkspaceLayout() async {
     try {
-      final preferences =
-          widget.layoutPreferences ??
-          await WorkspaceLayoutPreferences.createDefault();
+      final preferences = await _layoutPreferencesReady;
       if (!mounted) return;
       _layoutPreferences = preferences;
       final stored = await preferences.load();
@@ -645,7 +656,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _workspaceLayout.restore(stored);
         _restoringLayout = false;
       } else if (_layoutEdited) {
-        _scheduleLayoutSave();
+        _scheduleLayoutSave(recordEdit: false);
       }
     } on Object {
       // Optional UI preferences must not prevent entering a workshop when the
@@ -653,22 +664,35 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
   }
 
-  void _scheduleLayoutSave() {
+  void _scheduleLayoutSave({bool recordEdit = true}) {
     if (_restoringLayout) return;
     _layoutEdited = true;
+    if (recordEdit) {
+      _layoutEditOrder = WorkspaceLayoutPreferences.reserveSaveOrder();
+    }
     _layoutSaveTimer?.cancel();
     if (_layoutPreferences == null) return;
     _layoutSaveTimer = Timer(const Duration(milliseconds: 300), () {
-      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
+      unawaited(
+        _persistWorkspaceLayout(
+          _workspaceLayout.toJson(),
+          order: _layoutEditOrder,
+        ),
+      );
     });
   }
 
-  Future<void> _persistWorkspaceLayout(Map<String, Object?> state) async {
+  Future<void> _persistWorkspaceLayout(
+    Map<String, Object?> state, {
+    required int order,
+  }) async {
     try {
-      await _layoutPreferences?.save(state);
+      final preferences = _layoutPreferences ?? await _layoutPreferencesReady;
+      await preferences.save(state, order: order);
     } on Object {
-      if (mounted)
+      if (mounted) {
         _setStatus('Disposition non enregistrée. L’atelier reste utilisable.');
+      }
     }
   }
 
@@ -2105,7 +2129,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         (size.width - 32).clamp(120.0, double.infinity) / bounds.width;
     final double scaleY =
         (size.height - 32).clamp(120.0, double.infinity) / bounds.height;
-    final double scale = math.min(scaleX, scaleY).clamp(0.75, 1.50).toDouble();
+    final double scale = math
+        .min(scaleX, scaleY)
+        .clamp(_viewport.minScale, 1.50)
+        .toDouble();
     final Offset translation = Offset(
       size.width / 2 - bounds.center.dx * scale,
       size.height / 2 - bounds.center.dy * scale,
@@ -2912,8 +2939,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void dispose() {
     _layoutSaveTimer?.cancel();
     _workspaceLayout.removeListener(_scheduleLayoutSave);
-    if (_layoutEdited && _layoutPreferences != null) {
-      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
+    if (_layoutEdited) {
+      unawaited(
+        _persistWorkspaceLayout(
+          _workspaceLayout.toJson(),
+          order: _layoutEditOrder,
+        ),
+      );
     }
     _workspaceLayout.dispose();
     _connectionRouter.dispose();

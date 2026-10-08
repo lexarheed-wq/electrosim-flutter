@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:electrosim/main.dart';
 import 'package:electrosim/runtime/workspace_layout_preferences.dart';
@@ -6,6 +7,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'an edit is flushed after exit when native storage resolves late',
+    (t) async {
+      await t.runAsync(() async {
+        final dir = await Directory.systemTemp.createTemp('layout-late-exit-');
+        try {
+          final store = WorkspaceLayoutPreferences(
+            File('${dir.path}/layout.json'),
+          );
+          final ready = Completer<WorkspaceLayoutPreferences>();
+          await t.pumpWidget(
+            MaterialApp(
+              home: F9WorkspaceDemoPage(layoutPreferencesFuture: ready.future),
+            ),
+          );
+          final layout = t
+              .widget<ElectroSimWorkspaceShell>(
+                find.byType(ElectroSimWorkspaceShell),
+              )
+              .layoutController!;
+          layout.setPaletteWidth(280);
+          await t.pumpWidget(const SizedBox());
+          ready.complete(store);
+          final watch = Stopwatch()..start();
+          while (!await store.file.exists() &&
+              watch.elapsedMilliseconds < 2000) {
+            await Future<void>.delayed(const Duration(milliseconds: 5));
+          }
+          expect((await store.load())!['paletteWidth'], 280);
+        } finally {
+          await dir.delete(recursive: true);
+        }
+      });
+    },
+  );
   for (final editFirst in [false, true]) {
     testWidgets(
       'preferences restore without overwriting early edits ($editFirst)',
@@ -32,14 +68,26 @@ void main() {
         );
         late WorkspaceLayoutController layout;
         await t.runAsync(() async {
-          await t.pumpWidget(MaterialApp(theme: ElectroSimTheme.light(), home: F18WorkspacePage(layoutPreferences: store)));
-          layout = t.widget<ElectroSimWorkspaceShell>(find.byType(ElectroSimWorkspaceShell)).layoutController!;
+          await t.pumpWidget(
+            MaterialApp(
+              theme: ElectroSimTheme.light(),
+              home: F18WorkspacePage(layoutPreferences: store),
+            ),
+          );
+          layout = t
+              .widget<ElectroSimWorkspaceShell>(
+                find.byType(ElectroSimWorkspaceShell),
+              )
+              .layoutController!;
           if (editFirst) layout.setPaletteWidth(280);
           final deadline = Stopwatch()..start();
-          while ((!editFirst && layout.paletteWidth != 310) && deadline.elapsedMilliseconds < 2000) {
+          while ((!editFirst && layout.paletteWidth != 310) &&
+              deadline.elapsedMilliseconds < 2000) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
-          if (editFirst) await Future<void>.delayed(const Duration(milliseconds: 30));
+          if (editFirst) {
+            await Future<void>.delayed(const Duration(milliseconds: 30));
+          }
         });
         await t.pumpAndSettle();
         expect(layout.paletteWidth, editFirst ? 280 : 310);
@@ -48,7 +96,8 @@ void main() {
         await t.runAsync(() async {
           await t.pumpWidget(const SizedBox());
           final deadline = Stopwatch()..start();
-          while ((await store.load())?['paletteWidth'] != 300 && deadline.elapsedMilliseconds < 2000) {
+          while ((await store.load())?['paletteWidth'] != 300 &&
+              deadline.elapsedMilliseconds < 2000) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
           expect((await store.load())!['paletteWidth'], 300);

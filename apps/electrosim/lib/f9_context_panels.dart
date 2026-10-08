@@ -100,6 +100,11 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.2,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

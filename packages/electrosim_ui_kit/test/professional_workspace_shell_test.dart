@@ -39,6 +39,24 @@ Future<void> mount(
 }
 
 void main() {
+  testWidgets(
+    'accessibility increase grows either dock instead of moving its separator',
+    (t) async {
+      final c = WorkspaceLayoutController();
+      addTearDown(c.dispose);
+      await mount(t, const Size(1440, 900), controller: c);
+      for (final label in ['Largeur du catalogue', 'Largeur de l’inspecteur']) {
+        final target = find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == label,
+        );
+        final control = t.widget<Semantics>(target);
+        control.properties.onIncrease!();
+        await t.pumpAndSettle();
+      }
+      expect(c.paletteWidth, 272);
+      expect(c.contextWidth, 312);
+    },
+  );
   testWidgets('desktop panels never overlap canvas or permanent command bars', (
     t,
   ) async {
@@ -136,4 +154,27 @@ void main() {
     await t.pumpAndSettle();
     expect(c.paletteWidth, 264);
   });
+  testWidgets(
+    'closing drawer leaves no keyboard targets during its exit transition',
+    (t) async {
+      await mount(t, const Size(390, 844));
+      await t.tap(find.byKey(electroSimContextEdgeKey));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(electroSimContextPinKey));
+      await t.pump(const Duration(milliseconds: 20));
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pump();
+      var insideClosingPanel = false;
+      FocusManager.instance.primaryFocus?.context?.visitAncestorElements((
+        element,
+      ) {
+        if (element.widget.key == electroSimContextRegionKey) {
+          insideClosingPanel = true;
+        }
+        return true;
+      });
+      expect(insideClosingPanel, isFalse);
+      await t.pumpAndSettle();
+    },
+  );
 }

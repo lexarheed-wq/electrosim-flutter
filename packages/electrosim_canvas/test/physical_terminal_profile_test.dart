@@ -60,8 +60,8 @@ void main() {
       cases = <String, (Size, List<Offset>)>{
         'resistor': (Size(280, 110), <Offset>[Offset(-78, 0), Offset(78, 0)]),
         'push_button_nc': (
-          Size(180, 180),
-          <Offset>[Offset(-20, 63), Offset(20, 63)],
+          Size(90, 140),
+          <Offset>[Offset(-14, 49), Offset(14, 49)],
         ),
         'buzzer': (Size(190, 190), <Offset>[Offset(-25, 65), Offset(25, 65)]),
         'fuse_dc': (Size(300, 110), <Offset>[Offset(-102, 0), Offset(102, 0)]),
@@ -135,11 +135,11 @@ void main() {
     expectOffset(
       TerminalVisualProfile.routingOffset(
         modelType: 'push_button_nc',
-        size: const Size(180, 180),
+        size: const Size(90, 140),
         index: 0,
         count: 2,
       ),
-      const Offset(-20, 90),
+      const Offset(-14, 70),
       reason: 'NC button route 0',
     );
     expectOffset(

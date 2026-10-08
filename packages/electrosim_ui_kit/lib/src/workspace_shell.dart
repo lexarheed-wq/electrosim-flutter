@@ -141,8 +141,9 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     _sizeCallbackScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _sizeCallbackScheduled = false;
-      if (!mounted || _pendingSize == null || _pendingSize == _reportedSize)
+      if (!mounted || _pendingSize == null || _pendingSize == _reportedSize) {
         return;
+      }
       _reportedSize = _pendingSize;
       widget.onCanvasSizeChanged?.call(_reportedSize!);
     });
@@ -381,6 +382,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                                   key: const Key('workspace-context-resizer'),
                                   axis: Axis.horizontal,
                                   semanticLabel: 'Largeur de l’inspecteur',
+                                  increaseDirection: -1,
                                   enabled: !widget.interactionLocked,
                                   onDelta: (delta) {
                                     widget.onBeforeLayoutChange?.call();

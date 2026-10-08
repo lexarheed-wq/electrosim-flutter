@@ -3,6 +3,21 @@ import 'package:electrosim/runtime/workspace_layout_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'a delayed old page cannot overwrite a more recent layout edit',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('layout-save-order-');
+      addTearDown(() => dir.delete(recursive: true));
+      final file = File('${dir.path}/layout.json');
+      final old = WorkspaceLayoutPreferences.reserveSaveOrder();
+      final recent = WorkspaceLayoutPreferences.reserveSaveOrder();
+      await WorkspaceLayoutPreferences(
+        file,
+      ).save({'width': 320}, order: recent);
+      await WorkspaceLayoutPreferences(file).save({'width': 280}, order: old);
+      expect((await WorkspaceLayoutPreferences(file).load())!['width'], 320);
+    },
+  );
   late Directory dir;
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('electrosim-layout-');

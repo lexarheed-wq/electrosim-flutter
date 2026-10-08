@@ -2119,11 +2119,6 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const ElectroSimSectionTitle(
-              title: 'Composants',
-              subtitle: 'Recherchez puis ajoutez un composant à la platine',
-            ),
-            const SizedBox(height: ElectroSimSpacing.md),
             TextField(
               key: const Key('palette-search-field'),
               controller: _searchController,
@@ -2273,7 +2268,17 @@ class _PaletteDraggableTile extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              F9ComponentPreview(definition: definition, compact: true),
+              SizedBox(
+                width: 48,
+                height: 56,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: F9ComponentPreview(
+                    definition: definition,
+                    compact: true,
+                  ),
+                ),
+              ),
               const SizedBox(width: ElectroSimSpacing.sm),
               Expanded(
                 child: Column(

@@ -32,9 +32,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: app.F9WorkspaceDemoPage(
-          initialCircuit: buildRegressionFixtureCircuit(),
-          initialSelectedElementId: 'lamp-1',
-        ),
+            initialCircuit: buildRegressionFixtureCircuit(),
+            initialSelectedElementId: 'lamp-1',
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -49,12 +49,32 @@ void main() {
       expect(find.text('Alimenté'), findsOneWidget);
       expect(find.text('24.000 V'), findsWidgets);
       expect(find.text('1.000 A'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('24.000 W'),
+        120,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('properties-panel')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(find.text('24.000 W'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Résistance'),
+        120,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('properties-panel')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(find.text('Résistance'), findsOneWidget);
       expect(find.text('resistanceOhm'), findsNothing);
-      await tester.drag(
-        find.byKey(const Key('properties-panel')),
-        const Offset(0, -360),
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('properties-runtime-evidence')),
+        -120,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('properties-panel')),
+          matching: find.byType(Scrollable),
+        ),
       );
       await tester.pumpAndSettle();
       expect(
@@ -115,8 +135,16 @@ void main() {
           id: SourceId('v1'),
           modelType: 'dc_voltage_source',
           terminals: <Terminal>[
-            Terminal(id: TerminalId('vp'), name: '+', phase: PhaseTag.dcPositive),
-            Terminal(id: TerminalId('vn'), name: '−', phase: PhaseTag.dcNegative),
+            Terminal(
+              id: TerminalId('vp'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('vn'),
+              name: '−',
+              phase: PhaseTag.dcNegative,
+            ),
           ],
           parameters: const <String, Object?>{'voltageV': 30.0},
         ),
@@ -227,5 +255,4 @@ void main() {
       isTrue,
     );
   });
-
 }

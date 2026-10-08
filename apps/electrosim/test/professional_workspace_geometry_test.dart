@@ -127,4 +127,30 @@ void main() {
     expect(board(t).circuit.components, isEmpty);
     expect(t.takeException(), isNull);
   });
+  testWidgets(
+    'compact recenter fits the fixture in the actual visible viewport',
+    (t) async {
+      await mount(t);
+      t.view.physicalSize = const Size(390, 844);
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('workspace-more-actions')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('workspace-recenter-action')));
+      await t.pumpAndSettle();
+      final canvas = board(t);
+      final geometry = CircuitGeometryIndex.build(
+        canvas.circuit,
+        canvas.layout,
+      );
+      final size = t.getSize(find.byKey(electroSimCanvasRegionKey));
+      for (final rect in geometry.elementRects.values) {
+        final a = canvas.viewportController!.worldToScreen(rect.topLeft);
+        final b = canvas.viewportController!.worldToScreen(rect.bottomRight);
+        expect(a.dx, greaterThanOrEqualTo(0));
+        expect(b.dx, lessThanOrEqualTo(size.width));
+        expect(a.dy, greaterThanOrEqualTo(0));
+        expect(b.dy, lessThanOrEqualTo(size.height));
+      }
+    },
+  );
 }

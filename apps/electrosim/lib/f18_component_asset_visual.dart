@@ -14,9 +14,9 @@ import 'reference_components/reference_widgets_extended.dart';
 
 /// Unified reference-component contract.
 ///
-/// The five uploaded components are rendered by the uploaded Dart painters
-/// unchanged. The eight additional components use the same vector approach.
-/// This adapter only maps ElectroSim runtime state to those painters.
+/// Device-specific vector painters share their physical anchors with the
+/// interactive canvas. This adapter maps existing runtime state to artwork;
+/// the visual layer never advances electrical physics.
 abstract final class F18ReferenceComponentVisuals {
   static const Set<String> coveredModelTypes = <String>{
     'dc_voltage_source',
@@ -113,7 +113,7 @@ abstract final class F18ReferenceComponentMetrics {
     'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
     'push_button_no' => const Size(90, 140),
     'resistor' => const Size(280, 110),
-    'push_button_nc' => const Size(180, 180),
+    'push_button_nc' => const Size(90, 140),
     'buzzer' => const Size(190, 190),
     'fuse_dc' || 'fuse_ac1' || 'fuse' => const Size(300, 110),
     'diode' => const Size(270, 105),

@@ -64,8 +64,9 @@ final class ViewportController extends ChangeNotifier {
         size.height.isFinite &&
         size.width > 0 &&
         size.height > 0;
-    if (!valid(previousSize) || !valid(nextSize) || previousSize == nextSize)
+    if (!valid(previousSize) || !valid(nextSize) || previousSize == nextSize) {
       return;
+    }
     _translation +=
         nextSize.center(Offset.zero) - previousSize.center(Offset.zero);
     notifyListeners();

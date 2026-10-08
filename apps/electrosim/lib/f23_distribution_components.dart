@@ -24,7 +24,7 @@ abstract final class F23DistributionGeometry {
   static Size boardSizeFor(F23DistributionDevice device) => switch (device) {
     F23DistributionDevice.isolator3p => const Size(200, 230),
     F23DistributionDevice.isolator4p => const Size(240, 230),
-    F23DistributionDevice.breaker4p => const Size(240, 230),
+    F23DistributionDevice.breaker4p => const Size(144, 185),
     F23DistributionDevice.terminalBlock5 => const Size(280, 210),
   };
 }
@@ -119,6 +119,7 @@ final class _P {
       text: TextSpan(
         text: value,
         style: TextStyle(
+          fontFamily: 'Roboto',
           fontSize: size ?? math.max(7, h * .05),
           fontWeight: FontWeight.w700,
           color: color,
@@ -193,8 +194,8 @@ final class _P {
   void multipoleSwitch({required int poles, required bool breaker}) {
     final Rect body = Rect.fromCenter(
       center: c,
-      width: w * .74,
-      height: h * .72,
+      width: w * .90,
+      height: h * .95,
     );
     final RRect rr = RRect.fromRectAndRadius(body, Radius.circular(h * .035));
     canvas.drawRRect(
@@ -212,9 +213,9 @@ final class _P {
     );
     canvas.drawRRect(rr, outline);
 
-    final double step = body.width / poles;
+    final double step = w * .74 / poles;
     for (var pole = 0; pole < poles; pole++) {
-      final double x = body.left + step * (pole + .5);
+      final double x = c.dx + step * (pole - (poles - 1) / 2);
       final Offset top = Offset(x, rect.top + h * .075);
       final Offset bottom = Offset(x, rect.bottom - h * .075);
       terminal(top, topLabel(pole, poles), phaseColor(pole));

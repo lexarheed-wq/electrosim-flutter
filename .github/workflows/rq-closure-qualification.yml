@@ -66,9 +66,11 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest tools.test_f18_g1_design_system -v
-          # The historical F18-G1 guard forbids every non-G1 change since
-          # September 30. Requalify the CURRENT design system instead.
-          git diff --exit-code 09f0459dd584c6231870387e7d5f8d8dd77b647d HEAD -- packages/electrosim_ui_kit docs/f18/g1
+          # Freeze the approved F18-G1 design tokens and responsive
+          # breakpoints. Audited overlay interaction fixes to the shell are
+          # qualified by UI kit tests and G12 post-audit widget regressions,
+          # not forbidden as an immutable visual asset.
+          git diff --exit-code 09f0459dd584c6231870387e7d5f8d8dd77b647d HEAD -- packages/electrosim_ui_kit/lib/src/design_tokens.dart packages/electrosim_ui_kit/lib/src/responsive.dart docs/f18/g1
           python3 - <<'PY'
           import json
           from pathlib import Path

@@ -79,9 +79,9 @@ void main() {
     final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
     if (font.existsSync()) {
       final bytes = font.readAsBytesSync();
-      await (FontLoader('Roboto')
-            ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
-          .load();
+      await (FontLoader(
+        'Roboto',
+      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
     }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;

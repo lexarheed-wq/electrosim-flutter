@@ -6,6 +6,7 @@ on:
     branches:
       - f18-g11-tests-audits-20261006
       - v2-post-mac-audit-fixes-20261005
+      - work/rq-closure-20261008
     paths:
       - 'apps/**'
       - 'packages/**'

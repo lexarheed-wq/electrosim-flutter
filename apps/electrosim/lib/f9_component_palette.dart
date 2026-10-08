@@ -2051,7 +2051,11 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   List<String> get _categories => <String>{
     'Tous',
     ...f9PaletteCatalog
-        .where((F9PaletteDefinition item) => item.supportsMode(widget.mode))
+        .where(
+          (F9PaletteDefinition item) =>
+              item.supportsMode(widget.mode) &&
+              !item.searchOnlyModes.contains(widget.mode),
+        )
         .map((F9PaletteDefinition item) => item.category),
   }.toList(growable: false);
 
@@ -2090,6 +2094,14 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
   @override
   Widget build(BuildContext context) {
     final List<F9PaletteDefinition> filtered = _filtered;
+    final int availableCount =
+        _query.trim().isEmpty && _category == 'Tous'
+        ? f9PaletteCatalog
+              .where(
+                (F9PaletteDefinition item) => item.supportsMode(widget.mode),
+              )
+              .length
+        : filtered.length;
     final bool canExpand = filtered.length > _collapsedLimit;
     final List<F9PaletteDefinition> visible = !_expanded && canExpand
         ? filtered.take(_collapsedLimit).toList(growable: false)
@@ -2203,8 +2215,8 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
             ],
             const SizedBox(height: ElectroSimSpacing.xs),
             Text(
-              '${filtered.length} composant${filtered.length > 1 ? 's' : ''} '
-              'disponible${filtered.length > 1 ? 's' : ''} · '
+              '$availableCount composant${availableCount > 1 ? 's' : ''} '
+              'disponible${availableCount > 1 ? 's' : ''} · '
               '${widget.mode.name.toUpperCase()}',
               key: const Key('palette-result-count'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

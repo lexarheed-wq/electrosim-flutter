@@ -1210,6 +1210,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Set<String> usedIds = <String>{
       ..._circuit.components.map((ComponentInstance item) => item.id.value),
       ..._circuit.sources.map((SourceInstance item) => item.id.value),
+      ..._circuit.instruments.map((InstrumentInstance item) => item.id.value),
     };
     var serial = 1;
     while (usedIds.contains('$keyName-$serial')) {
@@ -1223,6 +1224,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     Offset worldPosition,
   ) {
     if (_blockStudentTpMutation()) return;
+    if (definition.kind == F9PaletteElementKind.instrument) {
+      _addPhysicalInstrument(definition, worldPosition);
+      return;
+    }
     if (definition.kind == F9PaletteElementKind.component) {
       final ComponentModelContract? contract = CoreComponentModelContracts
           .registry
@@ -1361,6 +1366,55 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
+  }
+
+  void _addPhysicalInstrument(
+    F9PaletteDefinition definition,
+    Offset worldPosition,
+  ) {
+    final bool current = definition.keyName == 'instrument-ammeter';
+    final String elementId = _allocateElementId(definition.keyName);
+    final bool dc = _circuit.mode == ElectricalMode.dc ||
+        _circuit.mode == ElectricalMode.pv;
+    final InstrumentInstance instrument = InstrumentInstance(
+      id: InstrumentId(elementId),
+      kind: current ? InstrumentKind.ammeter : InstrumentKind.voltmeter,
+      mode: current
+          ? (dc ? InstrumentMode.currentDc : InstrumentMode.currentAcRms)
+          : (dc ? InstrumentMode.voltageDc : InstrumentMode.voltageAcRms),
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: <InstrumentInstance>[..._circuit.instruments, instrument],
+      probes: _circuit.probes,
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      final CircuitVisualLayout moved = _layout.moveElement(
+        elementId, worldPosition);
+      _layout = CircuitVisualLayout(
+        elementPositions: moved.elementPositions,
+        elementSizes: <String, Size>{
+          ...moved.elementSizes,
+          elementId: const Size(112, 152),
+        },
+        wireRoutes: moved.wireRoutes,
+        elementQuarterTurns: moved.elementQuarterTurns,
+        defaultElementSize: moved.defaultElementSize,
+      );
+      _selected = elementId;
+      _status = current
+          ? 'Ampèremètre physique ajouté : sélectionnez un fil pour l’insérer en série.'
+          : 'Voltmètre physique ajouté : sélectionnez V puis COM sur deux bornes.';
+    });
+    _simulation.updateCircuit(next);
   }
 
   List<Terminal> _buildPaletteTerminals(
@@ -2666,13 +2720,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           (item.parameters['_visualModelType'] as String?) ?? item.modelType,
         ),
       ),
+      ...circuit.instruments.map(
+        (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
+      ),
     ];
     for (var index = 0; index < elements.length; index++) {
       final int column = index % 3;
       final int row = index ~/ 3;
       final (String id, String modelType) = elements[index];
       positions[id] = Offset(144 + (column * 240.0), 192 + (row * 192.0));
-      if (F18ReferenceComponentVisuals.supports(modelType)) {
+      if (modelType == 'physical-instrument') {
+        sizes[id] = const Size(112, 152);
+      } else if (F18ReferenceComponentVisuals.supports(modelType)) {
         sizes[id] = F18ReferenceComponentMetrics.boardSizeFor(modelType);
       }
     }

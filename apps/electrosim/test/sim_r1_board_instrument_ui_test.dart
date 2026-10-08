@@ -20,6 +20,9 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
+    // F18 workspace auto-hides its palette: open it through its real edge.
+    await tester.tap(find.byKey(const Key('electrosim-palette-edge')));
+    await tester.pumpAndSettle();
     final CircuitState before = tester
         .widget<SimulatorCanvas>(find.byType(SimulatorCanvas)).circuit;
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'voltmètre');
@@ -64,6 +67,8 @@ void main() {
         initialCircuit: buildRegressionFixtureCircuit(),
       ),
     ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('electrosim-palette-edge')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'ampèremètre');
     await tester.pump();

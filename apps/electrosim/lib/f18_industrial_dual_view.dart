@@ -71,8 +71,7 @@ class F18IndustrialDualView extends StatelessWidget {
     required this.size,
     required this.presentation,
     required this.child,
-  }) : assert(size.width > 0),
-       assert(size.height > 0);
+  });
 
   final String modelType;
   final Size size;

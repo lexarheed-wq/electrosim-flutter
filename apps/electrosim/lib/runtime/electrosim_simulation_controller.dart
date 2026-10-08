@@ -34,7 +34,10 @@ final class ElectroSimSimulationController extends ChangeNotifier {
   bool get fastForwarding => _fastForwarding;
 
   void updateCircuit(CircuitState next) {
+    // An editor change invalidates a long-running time integration. The
+    // pending async loop must not hold the toolbar locked after cancellation.
     _operationRevision++;
+    _fastForwarding = false;
     final bool sameCircuit = next.circuitId == _circuit.circuitId;
     _circuit = next;
 

@@ -937,6 +937,8 @@ final class ElectroSimRuntimeEngine {
       components: components,
       connections: circuit.connections,
       sources: circuit.sources,
+      instruments: circuit.instruments,
+      probes: circuit.probes,
       settings: circuit.settings,
       metadata: circuit.metadata,
     );
@@ -1028,6 +1030,8 @@ final class ElectroSimRuntimeEngine {
       components: circuit.components,
       connections: circuit.connections,
       sources: circuit.sources,
+      instruments: circuit.instruments,
+      probes: circuit.probes,
       settings: circuit.settings,
       metadata: <String, Object?>{
         ...circuit.metadata,
@@ -1095,6 +1099,8 @@ final class ElectroSimRuntimeEngine {
       components: components,
       connections: circuit.connections,
       sources: circuit.sources,
+      instruments: circuit.instruments,
+      probes: circuit.probes,
       settings: circuit.settings,
       metadata: circuit.metadata,
     );

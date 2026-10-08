@@ -20,10 +20,12 @@ class ProtectionRuntimeContractTest(unittest.TestCase):
         self.assertIn('previousProtectionState', text)
 
     def test_ac3_solver_has_three_pole_protection_models(self):
-        text = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
-        self.assertIn("'breaker_3p'", text)
-        self.assertIn("'thermal_overload_3p'", text)
-        self.assertIn('Ac3BranchKind.idealProtection', text)
+        physics = (ROOT / 'packages/electrosim_domain/lib/src/component_physics_contract.dart').read_text(encoding='utf-8')
+        solver = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
+        self.assertIn("modelType: 'breaker_3p'", physics)
+        self.assertIn("modelType: 'thermal_overload_3p'", physics)
+        self.assertIn('ComponentElectricalLaw.protectionSwitch', solver)
+        self.assertIn('Ac3BranchKind.idealProtection', solver)
 
 if __name__ == '__main__':
     unittest.main()

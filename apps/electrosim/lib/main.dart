@@ -15,6 +15,7 @@ import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
+import 'f18_physical_instrument_readouts.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
@@ -33,6 +34,7 @@ import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
+import 'runtime/electrosim_instrument_projection.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -519,6 +521,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   String _status = 'ElectroSim F18 — espace de travail prêt';
   bool _saveInProgress = false;
+  CircuitState? _meterReadoutCacheCircuit;
+  int? _meterReadoutCacheSecond;
+  Map<String, String> _meterReadoutCache = const <String, String>{};
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
@@ -823,6 +828,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                       _simulation.running,
                                                 ),
                                           ),
+                                          if (_circuit.instruments.isNotEmpty)
+                                            AnimatedBuilder(
+                                              animation: _simulation,
+                                              builder: (BuildContext context, Widget? child) =>
+                                                  IgnorePointer(
+                                                    child: CustomPaint(
+                                                      painter: F18PhysicalInstrumentReadouts(
+                                                        layout: canvasLayout,
+                                                        viewport: _viewport,
+                                                        readouts: _physicalMeterReadouts(),
+                                                      ),
+                                                      size: Size.infinite,
+                                                    ),
+                                                  ),
+                                            ),
                                         ],
                                       );
                                     },
@@ -1366,6 +1386,45 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
+  }
+
+  Map<String, String> _physicalMeterReadouts() {
+    if (_circuit.instruments.isEmpty) return const <String, String>{};
+    final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
+    if (identical(_meterReadoutCacheCircuit, _circuit) &&
+        _meterReadoutCacheSecond == second) {
+      return _meterReadoutCache;
+    }
+    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
+    const ElectroSimInstrumentProjection projection =
+        ElectroSimInstrumentProjection();
+    final Map<String, String> results = <String, String>{};
+    for (final InstrumentInstance item in _circuit.instruments) {
+      final PhysicalInstrumentReading reading = projection.read(
+        snapshot: snapshot,
+        instrument: item,
+      );
+      final double? value = reading.result?.reading?.value;
+      if (reading.status == PhysicalInstrumentStatus.valid && value != null) {
+        final bool current = item.mode == InstrumentMode.currentDc ||
+            item.mode == InstrumentMode.currentAcRms;
+        results[item.id.value] =
+            '${value.toStringAsFixed(2)} ${current ? 'A' : 'V'}';
+      } else {
+        results[item.id.value] = switch (reading.status) {
+          PhysicalInstrumentStatus.off => 'OFF',
+          PhysicalInstrumentStatus.blownFuse => 'FUSE',
+          PhysicalInstrumentStatus.overRange => 'OL',
+          PhysicalInstrumentStatus.unsupportedMode => 'N/A',
+          PhysicalInstrumentStatus.unavailable => 'ERR',
+          _ => '—',
+        };
+      }
+    }
+    _meterReadoutCacheCircuit = _circuit;
+    _meterReadoutCacheSecond = second;
+    _meterReadoutCache = Map<String, String>.unmodifiable(results);
+    return _meterReadoutCache;
   }
 
   void _addPhysicalInstrument(

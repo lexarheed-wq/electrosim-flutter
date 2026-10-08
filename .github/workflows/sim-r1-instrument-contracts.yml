@@ -32,3 +32,23 @@ jobs:
         run: |
           git diff --check
           python3 tools/core_unify_architecture_guard.py
+
+  instrument_projection:
+    needs: instruments
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Physical loading and circuit integrity regression
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/runtime/electrosim_instrument_projection.dart lib/main.dart lib/runtime/electrosim_runtime_engine.dart test/sim_r1_physical_instrument_projection_test.dart
+          flutter test --no-pub test/sim_r1_physical_instrument_projection_test.dart test/core_island01_autonomous_storage_test.dart test/audit_visual_layout_persistence_test.dart

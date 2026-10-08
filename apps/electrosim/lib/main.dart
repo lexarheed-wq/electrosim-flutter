@@ -506,6 +506,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Timer? _layoutSaveTimer;
   bool _layoutEdited = false;
   bool _restoringLayout = false;
+  Size? _lastWorkspaceCanvasSize;
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
@@ -600,6 +601,36 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
   }
 
+  void _prepareWorkspaceLayoutChange() {
+    if (_activeCanvasPointer == null &&
+        _wiringPendingTerminal == null &&
+        !_trackpadPanZoomActive)
+      return;
+    setState(() {
+      _canvasInteractionEpoch += 1;
+      _wiringPendingTerminal = null;
+      _wiringHoverTerminal = null;
+      _wiringPointerWorld.value = null;
+      _clearDirectPointerState();
+      _trackpadPanZoomActive = false;
+      _trackpadLastScale = 1;
+      _status = 'Interaction annulée : disposition modifiée.';
+    });
+  }
+
+  void _onWorkspaceCanvasSizeChanged(Size size) {
+    if (!mounted ||
+        size.isEmpty ||
+        !size.width.isFinite ||
+        !size.height.isFinite)
+      return;
+    final previous = _lastWorkspaceCanvasSize;
+    _lastWorkspaceCanvasSize = size;
+    if (previous == null || previous == size) return;
+    _prepareWorkspaceLayoutChange();
+    _viewport.preserveWorldCenterOnResize(previous, size);
+  }
+
   Future<void> _restoreWorkspaceLayout() async {
     try {
       final preferences =
@@ -673,6 +704,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             autofocus: true,
             child: ElectroSimWorkspaceShell(
               layoutController: _workspaceLayout,
+              onBeforeLayoutChange: _prepareWorkspaceLayoutChange,
+              onCanvasSizeChanged: _onWorkspaceCanvasSizeChanged,
               topBar: AnimatedBuilder(
                 animation: _simulation,
                 builder: (BuildContext context, Widget? child) =>

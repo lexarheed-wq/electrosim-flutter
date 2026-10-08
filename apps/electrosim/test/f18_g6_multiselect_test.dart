@@ -81,8 +81,7 @@ void main() {
     await _modifierTap(tester, LogicalKeyboardKey.metaLeft, 'lamp-1');
     expect(_selection(tester).length, 2);
 
-    await tester.tap(find.byKey(electroSimTopEdgeKey));
-    await tester.pumpAndSettle();
+    expect(find.byKey(electroSimTopRegionKey).hitTestable(), findsOneWidget);
     await tester.tap(find.byKey(const Key('workspace-delete-action')));
     await tester.pumpAndSettle();
 

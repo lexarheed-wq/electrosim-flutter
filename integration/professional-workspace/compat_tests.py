@@ -4,7 +4,6 @@
 Only selector activation changes; all physical/electrical assertions stay intact.
 """
 from pathlib import Path
-from textwrap import dedent
 
 ROOT = Path.cwd()
 
@@ -25,7 +24,7 @@ edit("apps/electrosim/test/sim_r1_board_instrument_ui_test.dart", [
      "    // Do not close the default-visible professional palette.\n    expect(find.byKey(const Key('palette-search-field')), findsOneWidget);\n", 1),
 ])
 edit("apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart", [
-    (dedent("""\
+    (("""\
       for (final (Key activator, Key pin) in <(Key, Key)>[
         (electroSimContextEdgeKey, electroSimContextPinKey),
         (electroSimTopEdgeKey, electroSimTopPinKey),

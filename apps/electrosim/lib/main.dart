@@ -2740,8 +2740,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       if (!mounted ||
           routed == null ||
           !identical(_circuit, circuit) ||
-          !identical(_layout, provisional))
+          !identical(_layout, provisional)) {
         return;
+      }
       if (!F18WorkspaceWireSafety.isRenderable(
         circuit: circuit,
         layout: routed,
@@ -2759,8 +2760,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } on Object catch (error) {
       if (!mounted ||
           !identical(_circuit, circuit) ||
-          !identical(_layout, provisional))
+          !identical(_layout, provisional)) {
         return;
+      }
       setState(() {
         _layout = previous;
         _status = 'Rotation annulée : $error';

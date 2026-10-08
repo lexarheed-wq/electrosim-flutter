@@ -53,7 +53,7 @@ require(
 )
 require(
     'apps/electrosim/lib/f9_context_panels.dart',
-    "title: const Text('Preuves moteur')",
+    "title: const Text('Preuves de calcul')",
     'properties expose solver evidence',
 )
 forbid(

@@ -1,0 +1,36 @@
+name: SIM-R3 autonomous battery SOC gate
+
+on:
+  push:
+    branches:
+      - fix/dc-soc-runtime-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dc_battery_soc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Runtime architecture safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+      - name: Runtime analyzer and autonomous battery simulation tests
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/runtime/electrosim_runtime_engine.dart lib/runtime/electrosim_simulation_controller.dart lib/f9_component_visuals.dart test/core_island01_autonomous_storage_test.dart
+          flutter test --no-pub test/core_island01_autonomous_storage_test.dart test/f17_persistence_test.dart

@@ -1,0 +1,43 @@
+name: G12-RQ post-audit time, UI, and routing gate
+on:
+  push:
+    branches:
+      - fix/g12rq-postaudit-time-ui-20261008
+      - work/rq-closure-20261008
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postaudit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Architecture guards and canonical Dart formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          dart format --output=none --set-exit-if-changed apps/electrosim/lib/main.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart packages/electrosim_ui_kit/lib/src/workspace_shell.dart apps/electrosim/test/g12rq_postaudit_time_and_ui_test.dart apps/electrosim/test/core_island01_autonomous_storage_test.dart
+      - name: UI kit analysis and tests
+        working-directory: packages/electrosim_ui_kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Time, SOC, UI overlap and existing canvas regressions
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub test/g12rq_postaudit_time_and_ui_test.dart test/core_island01_autonomous_storage_test.dart test/audit_canvas_routing_performance_test.dart test/sim_r1_board_instrument_ui_test.dart test/f18_g3_session_dashboard_test.dart

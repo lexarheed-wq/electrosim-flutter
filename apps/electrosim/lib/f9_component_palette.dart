@@ -1267,6 +1267,8 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'inductanceH': 0.035,
       'ratedPowerW': 2200.0,
       'ratedVoltageV': 400.0,
+      'ratedDeltaVoltageV': 230.0,
+      'ratedStarVoltageV': 400.0,
       'ratedSpeedRpm': 1420.0,
     },
     visualVariant: 'motor-3p',

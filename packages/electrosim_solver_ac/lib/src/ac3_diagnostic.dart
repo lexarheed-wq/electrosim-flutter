@@ -17,6 +17,7 @@ enum Ac3DiagnosticCode {
   missingSourcePhaseTag,
   duplicatePhaseSource,
   phaseLoss,
+  invalidMotorCoupling,
   floatingElectricalIsland,
   singularMatrix,
   numericalResidualExceeded,

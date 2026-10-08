@@ -536,6 +536,22 @@ _CompiledAc3Model _compileModel(
       continue;
     }
 
+    if (physics.electricalLaw == ComponentElectricalLaw.motorThreePhase &&
+        component.condition == ComponentCondition.normal) {
+      final MotorThreePhaseCouplingAssessment coupling =
+          MotorThreePhaseCouplingEvaluator.evaluate(circuit, component);
+      if (!coupling.isValid) {
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.invalidMotorCoupling,
+            severity: Ac3DiagnosticSeverity.warning,
+            message: coupling.message,
+            componentId: component.id,
+          ),
+        );
+      }
+    }
+
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(
       component.id,
     );

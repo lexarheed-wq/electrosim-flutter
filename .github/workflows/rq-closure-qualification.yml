@@ -85,3 +85,46 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test
+
+  g2_navigation:
+    needs: g1_design_system
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: G2 shell/navigation and routes
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/f18_shell_navigation.dart lib/f18_home.dart
+          flutter test --no-pub test/f18_g2_navigation_test.dart
+
+  g3_session_canvas:
+    needs: g2_navigation
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: G3 session/dashboard and integrated canvas regressions
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub lib/main.dart lib/f18_session_coordinator.dart
+          flutter test --no-pub test/f18_g3_session_dashboard_test.dart
+          for test_file in test/f18_g3r1_point*.dart; do
+            flutter test --no-pub "$test_file"
+          done

@@ -1186,8 +1186,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         end,
       ]);
     }
-    final Size elementSize =
-        F18ReferenceComponentVisuals.supports(definition.renderedModelType)
+    final Size elementSize = definition.kind == F9PaletteElementKind.instrument
+        ? const Size(112, 152)
+        : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
         ? F18ReferenceComponentMetrics.boardSizeFor(
             definition.renderedModelType,
           )

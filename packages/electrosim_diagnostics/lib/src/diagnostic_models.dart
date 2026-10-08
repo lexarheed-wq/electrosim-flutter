@@ -40,6 +40,7 @@ enum EieAdviceCode {
   pvInverterDerated,
   pvPowerLimited,
   pvInvalidControllerParameter,
+  pvControllerInputVoltageOutOfRange,
   pvInvalidBatteryParameter,
   pvStorageTopologyInvalid,
   pvControllerFaulted,

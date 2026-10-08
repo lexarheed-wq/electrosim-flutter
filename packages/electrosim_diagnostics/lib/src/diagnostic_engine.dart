@@ -387,6 +387,8 @@ _MappedEvidence? _fromPvSolver(PvSolverDiagnostic diagnostic) {
     PvDiagnosticCode.powerLimited => EieAdviceCode.pvPowerLimited,
     PvDiagnosticCode.invalidControllerParameter =>
       EieAdviceCode.pvInvalidControllerParameter,
+    PvDiagnosticCode.controllerInputVoltageOutOfRange =>
+      EieAdviceCode.pvControllerInputVoltageOutOfRange,
     PvDiagnosticCode.invalidBatteryParameter =>
       EieAdviceCode.pvInvalidBatteryParameter,
     PvDiagnosticCode.storageTopologyInvalid =>
@@ -480,6 +482,8 @@ String _title(EieAdviceCode code) => switch (code) {
   EieAdviceCode.pvPowerLimited => 'Puissance PV limitée',
   EieAdviceCode.pvInvalidControllerParameter =>
     'Paramètre régulateur PV invalide',
+  EieAdviceCode.pvControllerInputVoltageOutOfRange =>
+    'Tension d’entrée régulateur PV hors plage',
   EieAdviceCode.pvInvalidBatteryParameter => 'Paramètre batterie PV invalide',
   EieAdviceCode.pvStorageTopologyInvalid => 'Topologie de stockage PV invalide',
   EieAdviceCode.pvControllerFaulted => 'Régulateur PV en défaut',

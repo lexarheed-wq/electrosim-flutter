@@ -15,6 +15,7 @@ import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
+import 'f18_physical_instrument_readouts.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
@@ -33,6 +34,8 @@ import 'f9_element_editor.dart';
 import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
+import 'runtime/electrosim_instrument_projection.dart';
+import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -519,6 +522,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   String _status = 'ElectroSim F18 — espace de travail prêt';
   bool _saveInProgress = false;
+  CircuitState? _meterReadoutCacheCircuit;
+  int? _meterReadoutCacheSecond;
+  Map<String, String> _meterReadoutCache = const <String, String>{};
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
@@ -823,6 +829,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                       _simulation.running,
                                                 ),
                                           ),
+                                          if (_circuit.instruments.isNotEmpty)
+                                            AnimatedBuilder(
+                                              animation: _simulation,
+                                              builder: (BuildContext context, Widget? child) =>
+                                                  IgnorePointer(
+                                                    child: CustomPaint(
+                                                      painter: F18PhysicalInstrumentReadouts(
+                                                        layout: canvasLayout,
+                                                        viewport: _viewport,
+                                                        readouts: _physicalMeterReadouts(),
+                                                      ),
+                                                      size: Size.infinite,
+                                                    ),
+                                                  ),
+                                            ),
                                         ],
                                       );
                                     },
@@ -1165,8 +1186,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         end,
       ]);
     }
-    final Size elementSize =
-        F18ReferenceComponentVisuals.supports(definition.renderedModelType)
+    final Size elementSize = definition.kind == F9PaletteElementKind.instrument
+        ? const Size(112, 152)
+        : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
         ? F18ReferenceComponentMetrics.boardSizeFor(
             definition.renderedModelType,
           )
@@ -1210,6 +1232,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Set<String> usedIds = <String>{
       ..._circuit.components.map((ComponentInstance item) => item.id.value),
       ..._circuit.sources.map((SourceInstance item) => item.id.value),
+      ..._circuit.instruments.map((InstrumentInstance item) => item.id.value),
     };
     var serial = 1;
     while (usedIds.contains('$keyName-$serial')) {
@@ -1223,6 +1246,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     Offset worldPosition,
   ) {
     if (_blockStudentTpMutation()) return;
+    if (definition.kind == F9PaletteElementKind.instrument) {
+      _addPhysicalInstrument(definition, worldPosition);
+      return;
+    }
     if (definition.kind == F9PaletteElementKind.component) {
       final ComponentModelContract? contract = CoreComponentModelContracts
           .registry
@@ -1361,6 +1388,94 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
+  }
+
+  Map<String, String> _physicalMeterReadouts() {
+    if (_circuit.instruments.isEmpty) return const <String, String>{};
+    final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
+    if (identical(_meterReadoutCacheCircuit, _circuit) &&
+        _meterReadoutCacheSecond == second) {
+      return _meterReadoutCache;
+    }
+    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
+    const ElectroSimInstrumentProjection projection =
+        ElectroSimInstrumentProjection();
+    final Map<String, String> results = <String, String>{};
+    for (final InstrumentInstance item in _circuit.instruments) {
+      final PhysicalInstrumentReading reading = projection.read(
+        snapshot: snapshot,
+        instrument: item,
+      );
+      final double? value = reading.result?.reading?.value;
+      if (reading.status == PhysicalInstrumentStatus.valid && value != null) {
+        final bool current = item.mode == InstrumentMode.currentDc ||
+            item.mode == InstrumentMode.currentAcRms;
+        results[item.id.value] =
+            '${value.toStringAsFixed(2)} ${current ? 'A' : 'V'}';
+      } else {
+        results[item.id.value] = switch (reading.status) {
+          PhysicalInstrumentStatus.off => 'OFF',
+          PhysicalInstrumentStatus.blownFuse => 'FUSE',
+          PhysicalInstrumentStatus.overRange => 'OL',
+          PhysicalInstrumentStatus.unsupportedMode => 'N/A',
+          PhysicalInstrumentStatus.unavailable => 'ERR',
+          _ => '—',
+        };
+      }
+    }
+    _meterReadoutCacheCircuit = _circuit;
+    _meterReadoutCacheSecond = second;
+    _meterReadoutCache = Map<String, String>.unmodifiable(results);
+    return _meterReadoutCache;
+  }
+
+  void _addPhysicalInstrument(
+    F9PaletteDefinition definition,
+    Offset worldPosition,
+  ) {
+    final bool current = definition.keyName == 'instrument-ammeter';
+    final String elementId = _allocateElementId(definition.keyName);
+    final bool dc = _circuit.mode == ElectricalMode.dc ||
+        _circuit.mode == ElectricalMode.pv;
+    final InstrumentInstance instrument = InstrumentInstance(
+      id: InstrumentId(elementId),
+      kind: current ? InstrumentKind.ammeter : InstrumentKind.voltmeter,
+      mode: current
+          ? (dc ? InstrumentMode.currentDc : InstrumentMode.currentAcRms)
+          : (dc ? InstrumentMode.voltageDc : InstrumentMode.voltageAcRms),
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: <InstrumentInstance>[..._circuit.instruments, instrument],
+      probes: _circuit.probes,
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      final CircuitVisualLayout moved = _layout.moveElement(
+        elementId, worldPosition);
+      _layout = CircuitVisualLayout(
+        elementPositions: moved.elementPositions,
+        elementSizes: <String, Size>{
+          ...moved.elementSizes,
+          elementId: const Size(112, 152),
+        },
+        wireRoutes: moved.wireRoutes,
+        elementQuarterTurns: moved.elementQuarterTurns,
+        defaultElementSize: moved.defaultElementSize,
+      );
+      _selected = elementId;
+      _status = current
+          ? 'Ampèremètre physique ajouté : sélectionnez un fil pour l’insérer en série.'
+          : 'Voltmètre physique ajouté : sélectionnez V puis COM sur deux bornes.';
+    });
+    _simulation.updateCircuit(next);
   }
 
   List<Terminal> _buildPaletteTerminals(
@@ -1549,6 +1664,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _dragPreviewLayout.value = null;
 
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
+      if (_connectSelectedInstrumentProbe(hit.terminalId!)) {
+        _clearDirectPointerState();
+        return;
+      }
       if (_studentTpReadOnly) {
         _setStatus('TP remis : câblage en lecture seule.');
         _clearDirectPointerState();
@@ -1611,6 +1730,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (hit.kind == CanvasHitKind.wire) {
       final String? id = hit.connectionId?.value;
       if (id == null) return;
+      if (_insertSelectedAmmeterOnWire(hit.connectionId!)) {
+        _clearDirectPointerState();
+        return;
+      }
       setState(() {
         _selection = _selection.select(
           id,
@@ -1631,6 +1754,140 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         });
       }
     }
+  }
+
+  bool _connectSelectedInstrumentProbe(TerminalId target) {
+    final String? selected = _selected;
+    if (selected == null) return false;
+    InstrumentInstance? meter;
+    for (final InstrumentInstance instrument in _circuit.instruments) {
+      if (instrument.id.value == selected) {
+        meter = instrument;
+        break;
+      }
+    }
+    if (meter == null || meter.kind != InstrumentKind.voltmeter) return false;
+    if (_studentTpReadOnly) {
+      _setStatus('TP remis : sondes en lecture seule.');
+      return true;
+    }
+    final List<ProbeConnection> existing = _circuit.probes
+        .where((item) => item.instrumentId == meter!.id)
+        .toList(growable: false);
+    final bool hasV = existing.any(
+      (item) => item.port == InstrumentPort.voltOhm);
+    final bool hasCom = existing.any(
+      (item) => item.port == InstrumentPort.common);
+    final InstrumentPort port =
+        hasV && !hasCom ? InstrumentPort.common : InstrumentPort.voltOhm;
+    final bool resetBoth = hasV && hasCom;
+    final ProbeConnection added = ProbeConnection(
+      id: ProbeId('${meter.id.value}-${port.name}'),
+      instrumentId: meter.id,
+      port: port,
+      terminalId: target,
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: _circuit.instruments,
+      probes: <ProbeConnection>[
+        for (final ProbeConnection item in _circuit.probes)
+          if (item.instrumentId != meter.id ||
+              (!resetBoth && item.port != port)) item,
+        added,
+      ],
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      _status = port == InstrumentPort.voltOhm
+          ? 'Sonde V/Ω : ${target.value}. Sélectionner une borne pour COM.'
+          : 'Sonde COM : ${target.value}. Mesure physique disponible.';
+    });
+    _simulation.updateCircuit(next);
+    return true;
+  }
+
+  bool _insertSelectedAmmeterOnWire(ConnectionId target) {
+    final String? selected = _selected;
+    if (selected == null) return false;
+    InstrumentInstance? meter;
+    for (final InstrumentInstance item in _circuit.instruments) {
+      if (item.id.value == selected) {
+        meter = item;
+        break;
+      }
+    }
+    if (meter == null || meter.kind != InstrumentKind.ammeter) return false;
+    if (_studentTpReadOnly) {
+      _setStatus('TP remis : ampèremètre en lecture seule.');
+      return true;
+    }
+    final Connection? wire = _circuit.connections
+        .where((item) => item.id == target).firstOrNull;
+    if (wire == null || !wire.enabled) return false;
+    final bool alreadyCut = _circuit.instruments.any(
+      (item) => item.id != meter!.id && item.cutConnectionId == target);
+    if (alreadyCut) {
+      _setStatus('Fil déjà instrumenté par un autre ampèremètre.');
+      return true;
+    }
+    final InstrumentInstance replacement = InstrumentInstance(
+      id: meter.id,
+      kind: meter.kind,
+      mode: meter.mode,
+      inputImpedanceOhm: meter.inputImpedanceOhm,
+      burdenResistanceOhm: meter.burdenResistanceOhm,
+      maximumVoltageV: meter.maximumVoltageV,
+      maximumCurrentA: meter.maximumCurrentA,
+      fuseRatingA: meter.fuseRatingA,
+      fuseBlown: meter.fuseBlown,
+      poweredOn: meter.poweredOn,
+      cutConnectionId: target,
+      settings: meter.settings,
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: <InstrumentInstance>[
+        for (final InstrumentInstance item in _circuit.instruments)
+          if (item.id == meter.id) replacement else item,
+      ],
+      probes: <ProbeConnection>[
+        for (final ProbeConnection item in _circuit.probes)
+          if (item.instrumentId != meter.id) item,
+        ProbeConnection(
+          id: ProbeId('${meter.id.value}-amp'),
+          instrumentId: meter.id,
+          port: InstrumentPort.amp,
+          terminalId: wire.fromTerminalId,
+        ),
+        ProbeConnection(
+          id: ProbeId('${meter.id.value}-com'),
+          instrumentId: meter.id,
+          port: InstrumentPort.common,
+          terminalId: wire.toTerminalId,
+        ),
+      ],
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Ampèremètre inséré virtuellement en série sur ${target.value}.';
+    });
+    _simulation.updateCircuit(next);
+    return true;
   }
 
   void _onCanvasPointerMove(PointerMoveEvent event) {
@@ -2461,6 +2718,47 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Suppression impossible : aucune sélection.');
       return;
     }
+    if (_circuit.instruments.any((item) => item.id.value == selected)) {
+      final CircuitState next = CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        components: _circuit.components,
+        sources: _circuit.sources,
+        connections: _circuit.connections,
+        instruments: <InstrumentInstance>[
+          for (final InstrumentInstance item in _circuit.instruments)
+            if (item.id.value != selected) item,
+        ],
+        probes: <ProbeConnection>[
+          for (final ProbeConnection item in _circuit.probes)
+            if (item.instrumentId.value != selected) item,
+        ],
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      );
+      final CircuitVisualLayout old = _layout;
+      setState(() {
+        _circuit = next;
+        _layout = CircuitVisualLayout(
+          elementPositions: <String, Offset>{
+            ...old.elementPositions,
+          }..remove(selected),
+          elementSizes: <String, Size>{
+            ...old.elementSizes,
+          }..remove(selected),
+          wireRoutes: old.wireRoutes,
+          elementQuarterTurns: <String, int>{
+            ...old.elementQuarterTurns,
+          }..remove(selected),
+          defaultElementSize: old.defaultElementSize,
+        );
+        _selected = null;
+        _status = 'Instrument physique supprimé : $selected';
+      });
+      _simulation.updateCircuit(next);
+      return;
+    }
     final F9ElementDetails? details = F9ElementEditor.describe(
       _circuit,
       selected,
@@ -2571,6 +2869,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final F9ElementDetails? details =
           F9ElementEditor.describe(next, id) ??
           F9ElementEditor.describe(_circuit, id);
+      if (details == null &&
+          next.instruments.any((item) => item.id.value == id)) {
+        next = CircuitState(
+          circuitId: next.circuitId,
+          revision: next.revision + 1,
+          mode: next.mode,
+          components: next.components,
+          sources: next.sources,
+          connections: next.connections,
+          instruments: <InstrumentInstance>[
+            for (final InstrumentInstance item in next.instruments)
+              if (item.id.value != id) item,
+          ],
+          probes: <ProbeConnection>[
+            for (final ProbeConnection item in next.probes)
+              if (item.instrumentId.value != id) item,
+          ],
+          settings: next.settings,
+          metadata: next.metadata,
+        );
+        removedCount += 1;
+        continue;
+      }
       if (details == null) continue;
       final CircuitState candidate = details.kind == F9ElementKind.connection
           ? F9ElementEditor.deleteConnection(next, id)
@@ -2589,6 +2910,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Set<String> remainingElements = <String>{
       ...next.sources.map((SourceInstance item) => item.id.value),
       ...next.components.map((ComponentInstance item) => item.id.value),
+      ...next.instruments.map((InstrumentInstance item) => item.id.value),
     };
     final Set<String> remainingConnections = next.connections
         .map((Connection item) => item.id.value)
@@ -2666,13 +2988,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           (item.parameters['_visualModelType'] as String?) ?? item.modelType,
         ),
       ),
+      ...circuit.instruments.map(
+        (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
+      ),
     ];
     for (var index = 0; index < elements.length; index++) {
       final int column = index % 3;
       final int row = index ~/ 3;
       final (String id, String modelType) = elements[index];
       positions[id] = Offset(144 + (column * 240.0), 192 + (row * 192.0));
-      if (F18ReferenceComponentVisuals.supports(modelType)) {
+      if (modelType == 'physical-instrument') {
+        sizes[id] = const Size(112, 152);
+      } else if (F18ReferenceComponentVisuals.supports(modelType)) {
         sizes[id] = F18ReferenceComponentMetrics.boardSizeFor(modelType);
       }
     }

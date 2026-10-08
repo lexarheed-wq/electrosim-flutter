@@ -77,6 +77,9 @@ final class CircuitScenePainter extends CustomPainter {
       _paintComponents(canvas, geometry);
       _paintTerminals(canvas, geometry, semantics);
     }
+    // Meters are physical artifacts regardless of the electrical symbol
+    // overlay and are never disguised as solver receiver components.
+    _paintInstruments(canvas, geometry);
     _paintWiringPreview(canvas, geometry);
   }
 
@@ -155,6 +158,67 @@ final class CircuitScenePainter extends CustomPainter {
           false,
         );
       }
+    }
+  }
+
+  void _paintInstruments(Canvas canvas, CircuitGeometryIndex geometry) {
+    for (final InstrumentInstance instrument in circuit.instruments) {
+      final Rect? worldRect = geometry.elementRects[instrument.id.value];
+      if (worldRect == null) continue;
+      final Rect rect = Rect.fromCenter(
+        center: viewport.worldToScreen(worldRect.center),
+        width: worldRect.width * viewport.scale,
+        height: worldRect.height * viewport.scale,
+      );
+      final bool selected = selectedElementId == instrument.id.value;
+      final RRect caseShape = RRect.fromRectAndRadius(
+        rect, Radius.circular(12 * viewport.scale));
+      canvas.drawRRect(caseShape, Paint()..color = const Color(0xFF283748));
+      canvas.drawRRect(
+        caseShape,
+        Paint()
+          ..color = selected ? selectionColor : const Color(0xFF101E30)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = selected ? 3 : 1.5,
+      );
+      final Rect display = Rect.fromLTWH(
+        rect.left + rect.width * 0.10,
+        rect.top + rect.height * 0.11,
+        rect.width * 0.80,
+        rect.height * 0.38,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(display, Radius.circular(3 * viewport.scale)),
+        Paint()..color = const Color(0xFFD5E5D6),
+      );
+      final bool current = instrument.kind == InstrumentKind.ammeter ||
+          instrument.mode == InstrumentMode.currentDc ||
+          instrument.mode == InstrumentMode.currentAcRms;
+      final String title = current ? 'A' : 'V';
+      // No fabricated electrical reading: dash until leads/solver are valid.
+      final TextPainter label = TextPainter(
+        text: TextSpan(
+          text: instrument.poweredOn ? '— $title' : 'OFF',
+          style: TextStyle(
+            fontSize: (13 * viewport.scale).clamp(7, 23).toDouble(),
+            color: const Color(0xFF142C1F),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: display.width);
+      label.paint(canvas, Offset(
+        display.center.dx - label.width / 2,
+        display.center.dy - label.height / 2,
+      ));
+      final double y = rect.bottom - rect.height * 0.20;
+      final double radius = (4.5 * viewport.scale).clamp(2, 9).toDouble();
+      canvas.drawCircle(
+        Offset(rect.left + rect.width * 0.28, y), radius,
+        Paint()..color = const Color(0xFFD12B3C));
+      canvas.drawCircle(
+        Offset(rect.left + rect.width * 0.72, y), radius,
+        Paint()..color = const Color(0xFF15202D));
     }
   }
 

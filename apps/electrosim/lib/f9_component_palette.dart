@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 
-enum F9PaletteElementKind { source, component }
+enum F9PaletteElementKind { source, component, instrument }
 
 @immutable
 class F9PaletteTerminalSpec {
@@ -67,6 +67,7 @@ class F9PaletteDefinition {
 
   bool supportsMode(ElectricalMode mode) {
     if (supportedModes.isNotEmpty) return supportedModes.contains(mode);
+    if (kind == F9PaletteElementKind.instrument) return true;
     if (kind == F9PaletteElementKind.source) {
       return switch (modelType) {
         'dc_voltage_source' ||
@@ -126,6 +127,30 @@ const List<F9PaletteTerminalSpec> f9Motor3p6tTerminals =
     ];
 
 const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
+  F9PaletteDefinition(
+    keyName: 'instrument-voltmeter',
+    title: 'Voltmètre physique',
+    category: 'Instruments de mesure',
+    modelType: 'physical_voltmeter',
+    icon: Icons.speed,
+    kind: F9PaletteElementKind.instrument,
+    terminalLabels: <String>[],
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
+      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    subtitle: 'Sondes V/Ω et COM, impédance réelle',
+  ),
+  F9PaletteDefinition(
+    keyName: 'instrument-ammeter',
+    title: 'Ampèremètre physique',
+    category: 'Instruments de mesure',
+    modelType: 'physical_ammeter',
+    icon: Icons.electric_meter,
+    kind: F9PaletteElementKind.instrument,
+    terminalLabels: <String>[],
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.dc,
+      ElectricalMode.ac1, ElectricalMode.ac3, ElectricalMode.pv},
+    subtitle: 'Insertion en série, fusible et charge interne',
+  ),
   F9PaletteDefinition(
     keyName: 'source-dc-24v',
     title: 'Source CC 24 V',

@@ -68,6 +68,23 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
   final Map<ElectroSimWorkspacePanel, Timer> _closeTimers =
       <ElectroSimWorkspacePanel, Timer>{};
 
+  bool get _compactScreen =>
+      MediaQuery.sizeOf(context).width < ElectroSimBreakpoints.compactUpperBound;
+
+  void _closeOppositeSideOnCompact(ElectroSimWorkspacePanel panel) {
+    if (!_compactScreen) return;
+    final ElectroSimWorkspacePanel? opposite = switch (panel) {
+      ElectroSimWorkspacePanel.palette => ElectroSimWorkspacePanel.context,
+      ElectroSimWorkspacePanel.context => ElectroSimWorkspacePanel.palette,
+      _ => null,
+    };
+    if (opposite != null) {
+      _open.remove(opposite);
+      _pinned.remove(opposite);
+      _cancelClose(opposite);
+    }
+  }
+
   bool _isOpen(ElectroSimWorkspacePanel panel) =>
       _open.contains(panel) || _pinned.contains(panel);
 
@@ -78,7 +95,10 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
   void _openPanel(ElectroSimWorkspacePanel panel) {
     _cancelClose(panel);
     if (_open.contains(panel)) return;
-    setState(() => _open.add(panel));
+    setState(() {
+      _closeOppositeSideOnCompact(panel);
+      _open.add(panel);
+    });
   }
 
   void _scheduleClose(ElectroSimWorkspacePanel panel) {
@@ -98,6 +118,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
           _open.remove(panel);
         }
       } else {
+        _closeOppositeSideOnCompact(panel);
         _open.add(panel);
       }
     });
@@ -109,6 +130,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
       if (_pinned.remove(panel)) {
         _open.add(panel);
       } else {
+        _closeOppositeSideOnCompact(panel);
         _pinned.add(panel);
         _open.add(panel);
       }
@@ -158,6 +180,20 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
             : medium
             ? ElectroSimGeometry.mediumPanelWidth
             : ElectroSimGeometry.expandedContextWidth;
+        // The horizontal overlays are above the side drawers in the Stack.
+        // Reserve their entire height, including the pin rail, so the
+        // inspector tabs (especially Mesures) remain accessible to clicks.
+        final double railHeight = compact
+            ? ElectroSimGeometry.minimumTouchTarget
+            : 24;
+        final double topInset = _isOpen(ElectroSimWorkspacePanel.top)
+            ? (compact
+                ? ElectroSimGeometry.compactTopBarHeight
+                : ElectroSimGeometry.desktopTopBarHeight) + railHeight
+            : 0;
+        final double bottomInset = _isOpen(ElectroSimWorkspacePanel.status)
+            ? ElectroSimGeometry.statusBarHeight + railHeight
+            : 0;
 
         return Material(
           color: ElectroSimColors.surface,
@@ -206,6 +242,8 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                 panel: ElectroSimWorkspacePanel.palette,
                 alignment: Alignment.centerLeft,
                 width: paletteWidth,
+                topInset: topInset,
+                bottomInset: bottomInset,
                 regionKey: electroSimPaletteRegionKey,
                 pinKey: electroSimPalettePinKey,
                 child: widget.palette,
@@ -214,6 +252,8 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                 panel: ElectroSimWorkspacePanel.context,
                 alignment: Alignment.centerRight,
                 width: contextWidth,
+                topInset: topInset,
+                bottomInset: bottomInset,
                 regionKey: electroSimContextRegionKey,
                 pinKey: electroSimContextPinKey,
                 child: widget.contextPanel,
@@ -287,7 +327,9 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
       ),
     );
 
-    const double activationExtent = 18;
+    final double activationExtent = _compactScreen
+        ? ElectroSimGeometry.minimumTouchTarget
+        : 18;
     if (alignment == Alignment.centerLeft) {
       return Positioned(
         left: 0,
@@ -328,6 +370,8 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     required ElectroSimWorkspacePanel panel,
     required Alignment alignment,
     required double width,
+    required double topInset,
+    required double bottomInset,
     required Key regionKey,
     required Key pinKey,
     required Widget child,
@@ -337,8 +381,8 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     final Offset hiddenOffset = Offset(left ? -1.04 : 1.04, 0);
 
     return Positioned(
-      top: 0,
-      bottom: 0,
+      top: topInset,
+      bottom: bottomInset,
       left: left ? 0 : null,
       right: left ? null : 0,
       width: width,
@@ -419,7 +463,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     required Key pinKey,
   }) {
     return SizedBox(
-      height: 24,
+      height: _compactScreen ? ElectroSimGeometry.minimumTouchTarget : 24,
       child: Align(
         alignment: Alignment.centerRight,
         child: Padding(
@@ -436,13 +480,17 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
     bool compact = false,
   }) {
     final bool pinned = _pinned.contains(panel);
+    final bool touch = _compactScreen;
     return IconButton(
       key: key,
       tooltip: pinned ? 'Désépingler' : 'Épingler',
       visualDensity: compact ? VisualDensity.compact : null,
       padding: compact ? const EdgeInsets.all(3) : null,
       constraints: compact
-          ? const BoxConstraints.tightFor(width: 30, height: 30)
+          ? BoxConstraints.tightFor(
+              width: touch ? ElectroSimGeometry.minimumTouchTarget : 30,
+              height: touch ? ElectroSimGeometry.minimumTouchTarget : 30,
+            )
           : null,
       onPressed: () => _togglePin(panel),
       icon: Icon(

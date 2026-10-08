@@ -518,8 +518,9 @@ _CompiledAc3Model _compileModel(
 
     final ComponentPhysicsContract? physics =
         CoreComponentPhysicsContracts.resolve(component.modelType);
-    final ComponentModelContract? structural =
-        CoreComponentModelContracts.registry.resolve(component.modelType);
+    final ComponentModelContract? structural = CoreComponentModelContracts
+        .registry
+        .resolve(component.modelType);
     if (physics == null ||
         structural == null ||
         !structural.supportsMode(ElectricalMode.ac3) ||
@@ -1022,8 +1023,9 @@ bool _compileFeedThroughAc3({
   if (physics.electricalLaw != ComponentElectricalLaw.feedThrough) {
     return false;
   }
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedBranches = structural?.branches.length ?? branches.length;
   if (branches.length != expectedBranches) {
     diagnostics.add(
@@ -1070,8 +1072,9 @@ bool _compileMultipoleSwitchAc3({
       physics.controlLaw != ComponentControlLaw.maintainedSwitch) {
     return false;
   }
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPoles =
       structural?.branches
           .where(
@@ -1154,8 +1157,9 @@ bool _compileThreePhaseImpedanceDeviceAc3({
       physics.electricalLaw == ComponentElectricalLaw.loadDeltaThreePhase;
   if (!supported) return false;
 
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedBranches = structural?.branches.length ?? 3;
   if (branches.length != expectedBranches) {
     diagnostics.add(
@@ -1284,8 +1288,9 @@ bool _compileThreePoleProtectionAc3({
     return false;
   }
 
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPoles =
       structural?.branches
           .where(
@@ -1488,8 +1493,9 @@ bool _compileElectromechanicalAc3({
             branch.role == ElectricalBranchRole.powerPole,
       )
       .toList(growable: false);
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPowerPoles =
       structural?.branches
           .where(
@@ -1701,7 +1707,7 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
-      case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:
@@ -1780,7 +1786,7 @@ Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
-      case ComponentElectricalLaw.motorThreePhase:
+    case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
     case ComponentElectricalLaw.converter:
@@ -2076,12 +2082,8 @@ bool _balancedMagnitudes(List<AcComplex?> values, double relativeTolerance) {
       .cast<AcComplex>()
       .map((AcComplex value) => value.magnitude)
       .toList(growable: false);
-  final double maximum = magnitudes.reduce(
-    math.max,
-  );
-  final double minimum = magnitudes.reduce(
-    math.min,
-  );
+  final double maximum = magnitudes.reduce(math.max);
+  final double minimum = magnitudes.reduce(math.min);
   if (maximum <= 1e-15) {
     return true;
   }

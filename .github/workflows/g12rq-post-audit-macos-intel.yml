@@ -1,0 +1,150 @@
+name: G12-RQ post-audit Mac Intel Ventura test candidate
+on:
+  push:
+    branches:
+      - release/g12rq-post-audit-mac-20261008
+permissions:
+  contents: read
+concurrency:
+  group: g12rq-postaudit-mac-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  frozen-science-and-ui:
+    name: Freeze proof and integrated qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Exact product freeze and scientific architecture checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse ${{ github.sha }})" = "$(git rev-parse HEAD)"
+          git cat-file -e 8344d81260a6f5ea5ac3c8d200a6a9e5679f29df^{commit}
+          test "$(git diff --name-only 8344d81260a6f5ea5ac3c8d200a6a9e5679f29df HEAD)" = '.github/workflows/g12rq-post-audit-macos-intel.yml'
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+          echo G12RQ_POSTAUDIT_SOURCE_FREEZE_PASS
+      - name: Whole Flutter application test suite
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub
+      - name: Physics and native Canvas package regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_domain electrosim_solver_dc electrosim_solver_ac electrosim_measurements electrosim_pv; do
+            (cd "packages/$p" && dart pub get && dart analyze && dart test)
+          done
+          (cd packages/electrosim_canvas && flutter pub get && flutter analyze && flutter test)
+      - name: Explicit scientific post-audit test matrix
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter test --no-pub test/sim_scientific_pmdc_motor_test.dart test/g12rq_postaudit_time_and_ui_test.dart test/audit_400_batched_wire_current_test.dart test/audit_workspace_undo_redo_test.dart test/core_island01_autonomous_storage_test.dart
+
+  macos-intel-release:
+    name: macOS Intel physical test ZIP
+    needs: frozen-science-and-ui
+    runs-on: macos-15-intel
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify exact frozen application source on Mac
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code 8344d81260a6f5ea5ac3c8d200a6a9e5679f29df HEAD -- apps packages tools ci
+          git diff --check
+          flutter --version | grep '3.38.10'
+          dart --version 2>&1 | grep '3.10.9'
+      - name: Build on Intel runner from native LAN-ready source
+        shell: bash
+        run: |
+          set -euo pipefail
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) root="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          file "$executable" | tee "$GITHUB_WORKSPACE/MAC_ARCH_PROOF.txt"
+          grep -qi x86_64 "$GITHUB_WORKSPACE/MAC_ARCH_PROOF.txt"
+          out="$GITHUB_WORKSPACE/g12rq-mac-test"
+          mkdir -p "$out"
+          cp "$GITHUB_WORKSPACE/MAC_ARCH_PROOF.txt" "$out/"
+          printf "%s\n" "$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" > "$out/BASE_SHA.txt"
+          printf "%s\n" "8344d81260a6f5ea5ac3c8d200a6a9e5679f29df" > "$out/QUALIFIED_PRODUCT_SHA.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+          cat > "$out/TEST_MAC_VENTURA_13_7.md" <<'EOF'
+          # ElectroSim — épreuve physique Mac Intel Ventura 13.7
+          La CI vérifie un binaire x86_64, pas sa fluidité sur la machine cible.
+          1. Lancer l'application, créer une platine CC, enregistrer et rouvrir.
+          2. Ajouter, supprimer, déplacer, tourner des composants et fils ; tester Annuler/Rétablir Cmd+Z/Cmd+Shift+Z.
+          3. Contrôler les palettes et propriétés sans chevauchement ; onglet Mesures cliquable.
+          4. Batterie autonome 48 V → lampe 48 V sans onduleur : tension, courant et autonomie.
+          5. Faire avancer +1 min, +1 h puis +24 h ; SOC diminue et les protections agissent.
+          6. 24 V → moteur CC : mesurer courant au départ, attendre accélération et vérifier sa baisse.
+          7. Contacteur, disjoncteur et boutons : commandes physiques et courbes de protection.
+          8. Tester CC, AC1, AC3, PV en circuits indépendants et associés quand physiquement permis.
+          9. Platine 25, 50, 100 puis 400 éléments : temps de pose, déplacement, fils, animation, zoom.
+          10. Déceler toute pause UI >100 ms et vérifier mesures stables, aucune direction de courant inventée.
+          11. Vérifier instruments physiques et lecture cohérente avec propriétés/RuntimeSnapshot.
+          12. Mettre en pause, reprendre, enregistrer et rouvrir ; relever tous écarts visibles.
+          Aucune conformité scientifique constructeur ou 60 FPS à 400 composants n'est attestée par la CI.
+          EOF
+          prefix="ElectroSim_G12RQ_POSTAUDIT_$(git -C "$GITHUB_WORKSPACE" rev-parse --short=12 HEAD)"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/${prefix}_macOS_Intel.zip"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - name: Package exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$GITHUB_WORKSPACE/g12rq-source"
+          mkdir -p "$out"
+          git archive --format=zip --output="$out/ElectroSim_G12RQ_POSTAUDIT_SOURCE_$(git rev-parse --short=12 HEAD).zip" HEAD
+          git rev-parse HEAD > "$out/BASE_SHA.txt"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-POSTAUDIT-macOS-Intel
+          path: g12rq-mac-test/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-POSTAUDIT-source
+          path: g12rq-source/
+          if-no-files-found: error
+          retention-days: 14

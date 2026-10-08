@@ -191,6 +191,8 @@ final class SolverPV {
         ? null
         : topology.nodeForTerminal(inverterTerminals.dcNegative.id).id;
 
+    String? dcBusPositiveNode;
+    String? dcBusNegativeNode;
     if (controller == null) {
       if (inverter == null || inverterTerminals == null) {
         diagnostics.add(
@@ -239,6 +241,8 @@ final class SolverPV {
       final String controllerBusNegativeNode = topology
           .nodeForTerminal(controllerTerminals.busNegative.id)
           .id;
+      dcBusPositiveNode = controllerBusPositiveNode;
+      dcBusNegativeNode = controllerBusNegativeNode;
       final String batteryPositiveNode = topology
           .nodeForTerminal(batteryTerminals.positive.id)
           .id;
@@ -304,6 +308,7 @@ final class SolverPV {
                 a.id.value.compareTo(b.id.value),
           );
     final List<_LoadParameters> loadParameters = <_LoadParameters>[];
+    final List<_LoadParameters> dcLoadParameters = <_LoadParameters>[];
     final String? inverterLineNode = inverterTerminals == null
         ? null
         : topology.nodeForTerminal(inverterTerminals.acLine.id).id;
@@ -315,7 +320,25 @@ final class SolverPV {
           CoreComponentPhysicsContracts.resolveComponent(load);
       final bool explicitPvLoad =
           physics.functionalRole == ComponentFunctionalRole.pvLoad;
-      if (inverter == null || inverterLineNode == null || inverterNeutralNode == null) {
+      if (!explicitPvLoad && dcBusPositiveNode != null &&
+          dcBusNegativeNode != null && load.terminals.length == 2) {
+        final String firstDcNode =
+            topology.nodeForTerminal(load.terminals[0].id).id;
+        final String secondDcNode =
+            topology.nodeForTerminal(load.terminals[1].id).id;
+        final bool isDcLoad =
+            (firstDcNode == dcBusPositiveNode &&
+             secondDcNode == dcBusNegativeNode) ||
+            (firstDcNode == dcBusNegativeNode &&
+             secondDcNode == dcBusPositiveNode);
+        if (isDcLoad) {
+          final _LoadParameters? parameters = _loadParameters(load, diagnostics);
+          if (parameters != null) dcLoadParameters.add(parameters);
+          continue;
+        }
+      }
+      if (inverter == null || inverterLineNode == null ||
+          inverterNeutralNode == null) {
         if (explicitPvLoad) {
           diagnostics.add(
             PvSolverDiagnostic(
@@ -438,6 +461,7 @@ final class SolverPV {
           battery: battery,
           controllerParameters: controllerParameters!,
           batteryParameters: batteryParameters!,
+          dcLoadParameters: dcLoadParameters,
           diagnostics: diagnostics,
           irradianceWm2: irradianceWm2,
           cellTemperatureC: cellTemperatureC,
@@ -584,6 +608,7 @@ final class SolverPV {
     required ComponentInstance battery,
     required _ControllerParameters controllerParameters,
     required _BatteryParameters batteryParameters,
+    required List<_LoadParameters> dcLoadParameters,
     required List<PvSolverDiagnostic> diagnostics,
     required double irradianceWm2,
     required double cellTemperatureC,
@@ -662,39 +687,80 @@ final class SolverPV {
             .clamp(batteryParameters.minSoc, batteryParameters.maxSoc)
             .toDouble();
     final double elapsedHours = elapsed.inMicroseconds / 3600000000.0;
-    final double batteryHeadroomWh = math.max(
-      0.0,
-      (batteryParameters.maxSoc - initialSoc) * capacityWh,
+    // Steady DC bus: allocate PV to consumers first, then battery power.
+    final double conductance = dcLoadParameters.fold<double>(
+      0.0, (double sum, _LoadParameters load) =>
+          sum + 1.0 / load.resistanceOhm,
     );
-    double maxChargeInputW = busVoltageV * batteryParameters.maxChargeCurrentA;
-    if (elapsedHours > 0.0) {
-      maxChargeInputW = math.min(
-        maxChargeInputW,
-        batteryHeadroomWh / (elapsedHours * batteryParameters.chargeEfficiency),
+    final double requestedLoadW = busVoltageV * busVoltageV * conductance;
+    final double pvToLoadDesiredW = math.min(pvBusAvailablePowerW, requestedLoadW);
+    final double dcDeficitW = math.max(0.0, requestedLoadW - pvToLoadDesiredW);
+    final double availableBatteryWh = math.max(
+      0.0, (initialSoc - batteryParameters.minSoc) * capacityWh,
+    );
+    double dischargeRawLimitW =
+        busVoltageV * batteryParameters.maxDischargeCurrentA;
+    if (availableBatteryWh <= options.numericTolerance) {
+      dischargeRawLimitW = 0.0;
+    } else if (elapsedHours > 0.0) {
+      dischargeRawLimitW = math.min(
+        dischargeRawLimitW, availableBatteryWh / elapsedHours);
+    }
+    final double dischargeRawW = math.min(
+      dischargeRawLimitW, dcDeficitW / batteryParameters.dischargeEfficiency);
+    final double dischargeBusW =
+        dischargeRawW * batteryParameters.dischargeEfficiency;
+    final double suppliedLoadW = pvToLoadDesiredW + dischargeBusW;
+    final double actualBusVoltageV = conductance <= options.numericTolerance
+        ? busVoltageV
+        : suppliedLoadW + options.numericTolerance >= requestedLoadW
+            ? busVoltageV
+            : suppliedLoadW <= options.numericTolerance
+                ? 0.0
+                : math.sqrt(suppliedLoadW / conductance);
+    final double dcLoadW =
+        actualBusVoltageV * actualBusVoltageV * conductance;
+    final double pvToLoadsW = math.min(pvBusAvailablePowerW, dcLoadW);
+    final double pvSurplusW = math.max(0.0, pvBusAvailablePowerW - pvToLoadsW);
+    final double batteryHeadroomWh = math.max(
+      0.0, (batteryParameters.maxSoc - initialSoc) * capacityWh,
+    );
+    double chargeLimitW = busVoltageV * batteryParameters.maxChargeCurrentA;
+    if (batteryHeadroomWh <= options.numericTolerance) {
+      chargeLimitW = 0.0;
+    } else if (elapsedHours > 0.0) {
+      chargeLimitW = math.min(
+        chargeLimitW,
+        batteryHeadroomWh /
+            (elapsedHours * batteryParameters.chargeEfficiency),
       );
     }
-
-    final double batteryChargeInputW = math.min(
-      pvBusAvailablePowerW,
-      maxChargeInputW,
-    );
+    final double batteryChargeInputW = math.min(pvSurplusW, chargeLimitW);
     final double batteryStoredChargeW =
         batteryChargeInputW * batteryParameters.chargeEfficiency;
     final double deltaEnergyWh = elapsedHours <= 0.0
         ? 0.0
-        : batteryStoredChargeW * elapsedHours;
+        : (batteryStoredChargeW - dischargeRawW) * elapsedHours;
     final double finalStoredEnergyWh = (initialSoc * capacityWh + deltaEnergyWh)
         .clamp(
           batteryParameters.minSoc * capacityWh,
           batteryParameters.maxSoc * capacityWh,
-        )
-        .toDouble();
+        ).toDouble();
     final double finalSoc = capacityWh <= options.numericTolerance
-        ? initialSoc
-        : finalStoredEnergyWh / capacityWh;
+        ? initialSoc : finalStoredEnergyWh / capacityWh;
 
-    if (pvBusAvailablePowerW >
-            batteryChargeInputW + options.numericTolerance &&
+    if (dcDeficitW > dischargeBusW + options.numericTolerance) {
+      diagnostics.add(
+        PvSolverDiagnostic(
+          code: availableBatteryWh <= options.numericTolerance
+              ? PvDiagnosticCode.batteryEmpty : PvDiagnosticCode.powerLimited,
+          severity: PvDiagnosticSeverity.warning,
+          message: 'PV DC load power is limited by panel and battery availability.',
+          componentId: battery.id,
+        ),
+      );
+    }
+    if (pvSurplusW > batteryChargeInputW + options.numericTolerance &&
         initialSoc >= batteryParameters.maxSoc - options.numericTolerance) {
       diagnostics.add(
         PvSolverDiagnostic(
@@ -705,24 +771,30 @@ final class SolverPV {
         ),
       );
     }
-
+    final double pvBusUsedW = pvToLoadsW + batteryChargeInputW;
     final double arrayDrawnPowerW = controllerOperational
-        ? math.min(
-            availablePowerW,
-            batteryChargeInputW / controllerParameters.efficiency,
-          )
+        ? math.min(availablePowerW, pvBusUsedW / controllerParameters.efficiency)
         : 0.0;
     final double drawnCurrentA = operatingVoltageV <= options.numericTolerance
-        ? 0.0
-        : arrayDrawnPowerW / operatingVoltageV;
-    final double controllerLossW = math.max(
-      0.0,
-      arrayDrawnPowerW - batteryChargeInputW,
-    );
+        ? 0.0 : arrayDrawnPowerW / operatingVoltageV;
+    final double controllerLossW =
+        math.max(0.0, arrayDrawnPowerW - pvBusUsedW);
     final double batteryLossW = math.max(
       0.0,
-      batteryChargeInputW - batteryStoredChargeW,
+      (dischargeRawW - dischargeBusW) +
+          (batteryChargeInputW - batteryStoredChargeW),
     );
+    final List<PvLoadResult> dcLoadResults = <PvLoadResult>[
+      for (final _LoadParameters load in dcLoadParameters)
+        PvLoadResult(
+          componentId: load.componentId,
+          resistanceOhm: load.resistanceOhm,
+          voltageRmsV: actualBusVoltageV,
+          currentRmsA: actualBusVoltageV / load.resistanceOhm,
+          activePowerW:
+              actualBusVoltageV * actualBusVoltageV / load.resistanceOhm,
+        ),
+    ];
 
     return PvSolveResult(
       circuitId: circuit.circuitId,
@@ -750,9 +822,10 @@ final class SolverPV {
       batteryVoltageV: busVoltageV,
       batterySoc: finalSoc,
       batteryStoredEnergyWh: finalStoredEnergyWh,
-      batteryPowerW: -batteryChargeInputW,
+      batteryPowerW: dischargeBusW > options.numericTolerance
+          ? dischargeBusW : -batteryChargeInputW,
       batteryConversionLossW: batteryLossW,
-      loadResults: const <PvLoadResult>[],
+      loadResults: dcLoadResults,
       diagnostics: diagnostics,
     );
   }

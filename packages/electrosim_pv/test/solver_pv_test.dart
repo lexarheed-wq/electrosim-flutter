@@ -556,6 +556,77 @@ void main() {
       },
     );
 
+    test('SIM-R3 PV-only DC bus powers 48V/48W lamp while charging surplus', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeInverter: false,
+        includeDcLamp: true,
+        initialSoc: 0.50,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.50,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.load(ComponentId('storage-dc-lamp')).voltageRmsV,
+          closeTo(48.0, 1e-6));
+      expect(result.load(ComponentId('storage-dc-lamp')).currentRmsA,
+          closeTo(1.0, 1e-6));
+      expect(result.load(ComponentId('storage-dc-lamp')).activePowerW,
+          closeTo(48.0, 1e-6));
+      expect(result.batterySoc, greaterThan(0.50));
+      expect(result.batteryPowerW, lessThan(0.0));
+      expect(result.inverterOutputPowerW, 0.0);
+      final double pvBusW =
+          result.pvDrawnPowerW - result.controllerConversionLossW;
+      expect(pvBusW, closeTo(
+          result.load(ComponentId('storage-dc-lamp')).activePowerW -
+          result.batteryPowerW, 1e-5));
+    });
+
+    test('SIM-R3 no sunshine makes battery feed DC lamp and SOC decreases', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeInverter: false,
+        includeDcLamp: true,
+        irradianceWm2: 0.0,
+        initialSoc: 0.50,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.50,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.load(ComponentId('storage-dc-lamp')).activePowerW,
+          closeTo(48.0, 1e-6));
+      expect(result.batteryPowerW, closeTo(48.0, 1e-6));
+      expect(result.batterySoc, lessThan(0.50));
+      expect(result.pvDrawnPowerW, 0.0);
+    });
+
+    test('SIM-R3 exhausted storage cuts DC lamp under no sunshine', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeInverter: false,
+        includeDcLamp: true,
+        irradianceWm2: 0.0,
+        initialSoc: 0.10,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit,
+        topologyEngine.compile(circuit),
+        previousBatterySoc: 0.10,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.load(ComponentId('storage-dc-lamp')).activePowerW, 0.0);
+      expect(result.batteryPowerW, 0.0);
+      expect(result.batterySoc, closeTo(0.10, 1e-9));
+      expect(result.diagnostics.map((item) => item.code),
+          contains(PvDiagnosticCode.batteryEmpty));
+    });
+
     test(
       'PV-RUNTIME01 storage keeps charging when inverter is removed',
       () {
@@ -831,6 +902,7 @@ CircuitState _pvStorageCircuit({
   bool includeController = true,
   bool includeBattery = true,
   bool includeInverter = true,
+  bool includeDcLamp = false,
   bool disconnectInverterDc = false,
   String controllerType = 'mppt',
   double controllerMaxPvInputVoltageV = 450.0,
@@ -960,7 +1032,27 @@ CircuitState _pvStorageCircuit({
     parameters: <String, Object?>{'resistanceOhm': resistance},
   );
 
+  final ComponentInstance dcLamp = ComponentInstance(
+    id: ComponentId('storage-dc-lamp'),
+    modelType: 'lamp',
+    terminals: <Terminal>[
+      Terminal(
+        id: TerminalId('storage-dc-lamp-plus'),
+        name: '+',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+      ),
+      Terminal(
+        id: TerminalId('storage-dc-lamp-minus'),
+        name: '-',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+      ),
+    ],
+    parameters: const <String, Object?>{'resistanceOhm': 48.0},
+  );
   final List<ComponentInstance> components = <ComponentInstance>[
+    if (includeDcLamp) dcLamp,
     if (includeController) controller,
     if (includeBattery) battery,
     if (includeInverter) inverter,
@@ -1035,6 +1127,12 @@ CircuitState _pvStorageCircuit({
         'storage-inv-dc-neg',
         PhaseTag.dcNegative,
       ),
+    ],
+    if (includeDcLamp) ...<Connection>[
+      _wire('storage-dc-load-pos', 'storage-dc-lamp-plus',
+        'storage-controller-bus-pos', PhaseTag.dcPositive),
+      _wire('storage-dc-load-neg', 'storage-dc-lamp-minus',
+        'storage-controller-bus-neg', PhaseTag.dcNegative),
     ],
     if (includeInverter)
       _wire('storage-ac-l', 'storage-inv-l', 'storage-load-l', PhaseTag.l1),

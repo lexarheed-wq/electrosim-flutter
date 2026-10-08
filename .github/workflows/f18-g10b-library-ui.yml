@@ -6,6 +6,7 @@ on:
     branches:
       - f18-g10b-library-ui-20261006
       - v2-post-mac-audit-fixes-20261005
+      - work/rq-closure-20261008
     paths:
       - 'apps/electrosim/lib/main.dart'
       - 'apps/electrosim/lib/f18_product_library_pages.dart'

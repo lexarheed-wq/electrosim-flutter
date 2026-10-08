@@ -20,9 +20,8 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    // F18 workspace auto-hides its palette: open it through its real edge.
-    await tester.tap(find.byKey(const Key('electrosim-palette-edge')));
-    await tester.pumpAndSettle();
+    // Desktop palette is docked and visible by default in the professional shell.
+    expect(find.byKey(const Key('palette-search-field')), findsOneWidget);
     final CircuitState before = tester
         .widget<SimulatorCanvas>(find.byType(SimulatorCanvas)).circuit;
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'voltmètre');
@@ -68,8 +67,8 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('electrosim-palette-edge')));
-    await tester.pumpAndSettle();
+    // Do not close the default-visible professional palette.
+    expect(find.byKey(const Key('palette-search-field')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('palette-search-field')), 'ampèremètre');
     await tester.pump();
     await tester.tap(find.byKey(

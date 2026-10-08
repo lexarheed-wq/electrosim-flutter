@@ -81,6 +81,13 @@ abstract final class ElectroSimTheme {
           ),
         ),
       ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: ElectroSimColors.primary,
+        unselectedLabelColor: ElectroSimColors.textSecondary,
+        indicatorColor: ElectroSimColors.primary,
+        dividerColor: ElectroSimColors.workspaceDivider,
+        indicatorSize: TabBarIndicatorSize.tab,
+      ),
       focusColor: ElectroSimColors.focus.withValues(alpha: 0.18),
     );
   }

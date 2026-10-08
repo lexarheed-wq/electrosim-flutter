@@ -57,6 +57,21 @@ final class ViewportController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Keep the same world point at the center when docked chrome resizes us.
+  void preserveWorldCenterOnResize(Size previousSize, Size nextSize) {
+    bool valid(Size size) =>
+        size.width.isFinite &&
+        size.height.isFinite &&
+        size.width > 0 &&
+        size.height > 0;
+    if (!valid(previousSize) || !valid(nextSize) || previousSize == nextSize) {
+      return;
+    }
+    _translation +=
+        nextSize.center(Offset.zero) - previousSize.center(Offset.zero);
+    notifyListeners();
+  }
+
   void reset({double scale = 1, Offset translation = Offset.zero}) {
     final double nextScale = scale.clamp(minScale, maxScale).toDouble();
     if (nextScale == _scale && translation == _translation) {

@@ -1,0 +1,179 @@
+name: G12-RQ professional workspace merge and Intel candidate
+on:
+  push:
+    branches:
+      - feat/g12rq-professional-workspace-20261008
+permissions:
+  contents: write
+concurrency:
+  group: professional-workspace-g12rq
+  cancel-in-progress: true
+jobs:
+  integration:
+    if: "!contains(github.event.head_commit.message, 'integrate(ui): professional workspace onto G12RQ')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Merge supplied patch without overwriting newer product code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f integration/professional-workspace/electrosim-interface-changements.patch
+          if git apply --3way integration/professional-workspace/electrosim-interface-changements.patch; then
+            echo PATCH_APPLIED_WITHOUT_CONFLICT
+          else
+            python3 integration/professional-workspace/resolve.py
+          fi
+          python3 integration/professional-workspace/compat_tests.py
+          git add apps/electrosim packages/electrosim_ui_kit packages/electrosim_canvas
+          test -z "$(git ls-files -u)"
+          git diff --cached --check
+          echo PROFESSIONAL_WORKSPACE_PATCH_APPLIED_AND_CONFLICTS_RESOLVED
+      - name: Capture exact three-way merge conflicts and current source
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p integration-capture
+          git status --short > integration-capture/status.txt
+          git ls-files -u > integration-capture/conflicts-index.txt
+          { git diff --cached --name-only -z; git ls-files --modified --others --exclude-standard -z; } | while IFS= read -r -d '' changed; do
+            case "$changed" in integration-capture/*) continue;; esac
+            test -f "$changed" || continue
+            mkdir -p "integration-capture/$(dirname "$changed")"
+            cp "$changed" "integration-capture/$changed"
+          done
+          git archive --format=zip --output=integration-capture/current-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: G12RQ-professional-merge-conflict-source
+          path: integration-capture/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate UI kit
+        working-directory: packages/electrosim_ui_kit
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Validate canvas
+        working-directory: packages/electrosim_canvas
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Qualify all behavioral Flutter application regressions
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          mapfile -t tests < <(find test -maxdepth 1 -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
+          test "${#tests[@]}" -gt 60
+          flutter test --no-pub "${tests[@]}"
+      - name: Regenerate changed professional workspace golden baselines
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter test --no-pub --update-goldens test/f9_goldens_test.dart
+          git diff --check
+          test -n "$(git status --short test/goldens)"
+          echo PROFESSIONAL_WORKSPACE_GOLDEN_REBASELINED
+      - name: Validate complete application suite against refreshed golden references
+        working-directory: apps/electrosim
+        run: flutter test --no-pub
+      - name: Physical model and measurement package nonregression
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_domain electrosim_solver_dc electrosim_solver_ac electrosim_measurements electrosim_pv; do
+            (cd "packages/$p" && dart pub get && dart analyze && dart test)
+          done
+      - name: Architecture checks
+        shell: bash
+        run: |
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+      - name: Commit integration only after entire suite succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/electrosim packages/electrosim_ui_kit packages/electrosim_canvas
+          git diff --cached --exit-code && { echo 'No source changes to commit'; exit 1; }
+          git commit -m 'integrate(ui): professional workspace onto G12RQ'
+          git push origin HEAD:feat/g12rq-professional-workspace-20261008
+          echo "INTEGRATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo PROFESSIONAL_WORKSPACE_INTEGRATION_PASS
+  macos-intel:
+    needs: integration
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout exact tested integrated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feat/g12rq-professional-workspace-20261008
+          git checkout -B g12rq-professional-built origin/feat/g12rq-professional-workspace-20261008
+          git log -1 --format=%s | grep -F 'integrate(ui): professional workspace onto G12RQ'
+          git diff --check
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build verified Intel macOS application
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          prep_out="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prep_out" in
+            F17_RUNNER_PATH=*) root="${prep_out#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $prep_out" >&2; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f0_smoke_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          exe="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$exe"
+          file "$exe" | tee "$base/MAC_ARCH_PROOF.txt"
+          grep -qi x86_64 "$base/MAC_ARCH_PROOF.txt"
+          out="$base/electrosim-g12rq-professional-mac"
+          mkdir -p "$out"
+          cp "$base/MAC_ARCH_PROOF.txt" "$out/"
+          git -C "$base" rev-parse HEAD > "$out/SOURCE_SHA.txt"
+          flutter --version > "$out/FLUTTER_VERSION.txt"
+          dart --version 2> "$out/DART_VERSION.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/ElectroSim_G12RQ_ProfessionalWorkspace_macOS_Intel.zip"
+          (cd "$out" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-ProfessionalWorkspace-macOS-Intel
+          path: electrosim-g12rq-professional-mac/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,3903 @@
+diff --git a/apps/electrosim/lib/f9_component_palette.dart b/apps/electrosim/lib/f9_component_palette.dart
+index 50dad3e..20cddca 100644
+--- a/apps/electrosim/lib/f9_component_palette.dart
++++ b/apps/electrosim/lib/f9_component_palette.dart
+@@ -2100,8 +2100,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
+   @override
+   Widget build(BuildContext context) {
+     final List<F9PaletteDefinition> filtered = _filtered;
+-    final int availableCount =
+-        _query.trim().isEmpty && _category == 'Tous'
++    final int availableCount = _query.trim().isEmpty && _category == 'Tous'
+         ? f9PaletteCatalog
+               .where(
+                 (F9PaletteDefinition item) => item.supportsMode(widget.mode),
+@@ -2120,11 +2119,6 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.stretch,
+           children: <Widget>[
+-            const ElectroSimSectionTitle(
+-              title: 'Composants',
+-              subtitle: 'Recherchez puis ajoutez un composant à la platine',
+-            ),
+-            const SizedBox(height: ElectroSimSpacing.md),
+             TextField(
+               key: const Key('palette-search-field'),
+               controller: _searchController,
+@@ -2256,10 +2250,14 @@ class _PaletteDraggableTile extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     final Widget tile = Material(
+-      color: Colors.transparent,
++      color: ElectroSimColors.surfaceMuted,
++      shape: RoundedRectangleBorder(
++        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
++        side: const BorderSide(color: ElectroSimColors.workspaceDivider),
++      ),
+       child: InkWell(
+         key: Key('palette-item-${definition.keyName}'),
+-        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
++        borderRadius: BorderRadius.circular(ElectroSimRadii.compact),
+         onTap: () => onStatus(
+           'Palette : ${definition.title} sélectionné — glissez-le sur la platine ou utilisez +.',
+         ),
+@@ -2270,17 +2268,33 @@ class _PaletteDraggableTile extends StatelessWidget {
+           ),
+           child: Row(
+             children: <Widget>[
+-              F9ComponentPreview(definition: definition, compact: true),
++              SizedBox(
++                width: 48,
++                height: 56,
++                child: FittedBox(
++                  fit: BoxFit.contain,
++                  child: F9ComponentPreview(
++                    definition: definition,
++                    compact: true,
++                  ),
++                ),
++              ),
+               const SizedBox(width: ElectroSimSpacing.sm),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: <Widget>[
+-                    Text(
+-                      definition.title,
+-                      maxLines: 1,
+-                      overflow: TextOverflow.ellipsis,
+-                      style: Theme.of(context).textTheme.labelLarge,
++                    Tooltip(
++                      message: definition.title,
++                      child: Text(
++                        definition.title,
++                        maxLines:
++                            MediaQuery.textScalerOf(context).scale(14) > 18
++                            ? 2
++                            : 1,
++                        overflow: TextOverflow.ellipsis,
++                        style: Theme.of(context).textTheme.labelLarge,
++                      ),
+                     ),
+                     const SizedBox(height: 2),
+                     Text(
+diff --git a/apps/electrosim/lib/f9_context_panels.dart b/apps/electrosim/lib/f9_context_panels.dart
+index b1331b2..1ab3ce4 100644
+--- a/apps/electrosim/lib/f9_context_panels.dart
++++ b/apps/electrosim/lib/f9_context_panels.dart
+@@ -87,6 +87,27 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
+ 
+   @override
+   Widget build(BuildContext context) {
++    final tabHeight = (44 + MediaQuery.textScalerOf(context).scale(14) * 2.4)
++        .clamp(72.0, 140.0);
++    Widget tab(String label, IconData icon, {Key? key}) => Tooltip(
++      message: label,
++      child: Tab(
++        key: key,
++        height: tabHeight,
++        icon: Icon(icon, size: 18),
++        child: Text(
++          label,
++          maxLines: 2,
++          overflow: TextOverflow.ellipsis,
++          textAlign: TextAlign.center,
++          style: const TextStyle(
++            fontSize: 12,
++            height: 1.2,
++            fontWeight: FontWeight.w600,
++          ),
++        ),
++      ),
++    );
+     return ColoredBox(
+       color: ElectroSimColors.surfaceElevated,
+       child: Column(
+@@ -101,22 +122,19 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
+               // cannot hit it without first scrolling the tab strip.
+               isScrollable: false,
+               tabs: <Widget>[
+-                const Tab(icon: Icon(Icons.tune_outlined), text: 'Propriétés'),
+-                const Tab(
+-                  icon: Icon(Icons.straighten_outlined),
+-                  text: 'Mesures',
+-                ),
++                tab('Propriétés', Icons.tune_outlined),
++                tab('Mesures', Icons.straighten_outlined),
+                 if (widget.showEie)
+-                  const Tab(
+-                    key: Key('eie-tab'),
+-                    icon: Icon(Icons.psychology_alt_outlined),
+-                    text: 'EIE',
++                  tab(
++                    'EIE',
++                    Icons.psychology_alt_outlined,
++                    key: const Key('eie-tab'),
+                   ),
+                 if (widget.showDiagnostic)
+-                  const Tab(
+-                    key: Key('diagnostic-tab'),
+-                    icon: Icon(Icons.fact_check_outlined),
+-                    text: 'Diagnostic',
++                  tab(
++                    'Diagnostic',
++                    Icons.fact_check_outlined,
++                    key: const Key('diagnostic-tab'),
+                   ),
+               ],
+             ),
+@@ -209,7 +227,7 @@ class _PropertiesPanel extends StatelessWidget {
+       children: <Widget>[
+         const ElectroSimSectionTitle(
+           title: 'Propriétés',
+-          subtitle: 'Paramètres canoniques + état runtime issu du moteur',
++          subtitle: 'Réglages et état du composant',
+         ),
+         const SizedBox(height: ElectroSimSpacing.md),
+         InputDecorator(
+@@ -435,7 +453,7 @@ class _MeasurementsPanel extends StatelessWidget {
+         children: <Widget>[
+           const ElectroSimSectionTitle(
+             title: 'Mesures',
+-            subtitle: 'Valeurs calculées uniquement par MeasurementEngine',
++            subtitle: 'Valeurs calculées par la simulation',
+           ),
+           const SizedBox(height: ElectroSimSpacing.md),
+           if (ac3) ...<Widget>[
+@@ -537,7 +555,7 @@ class _MeasurementsPanel extends StatelessWidget {
+       children: <Widget>[
+         const ElectroSimSectionTitle(
+           title: 'Mesures',
+-          subtitle: 'MeasurementEngine + résultat solveur courant',
++          subtitle: 'Valeurs issues du calcul électrique courant',
+         ),
+         const SizedBox(height: ElectroSimSpacing.md),
+         ElectroSimStatusChip(
+@@ -1120,19 +1138,35 @@ class _PropertyLine extends StatelessWidget {
+   final String value;
+ 
+   @override
+-  Widget build(BuildContext context) {
+-    return Padding(
+-      padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
+-      child: Row(
+-        crossAxisAlignment: CrossAxisAlignment.start,
+-        children: <Widget>[
+-          SizedBox(
+-            width: 72,
+-            child: Text(label, style: Theme.of(context).textTheme.labelMedium),
++  Widget build(BuildContext context) => Padding(
++    padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
++    child: LayoutBuilder(
++      builder: (context, constraints) {
++        final labelWidget = Text(
++          label,
++          style: Theme.of(context).textTheme.labelMedium?.copyWith(
++            color: ElectroSimColors.textSecondary,
+           ),
+-          Expanded(child: Text(value)),
+-        ],
+-      ),
+-    );
+-  }
++        );
++        if (constraints.maxWidth < 260 ||
++            MediaQuery.textScalerOf(context).scale(14) > 18) {
++          return Column(
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [labelWidget, const SizedBox(height: 4), Text(value)],
++          );
++        }
++        return Row(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            SizedBox(
++              width: (constraints.maxWidth * .42).clamp(88.0, 128.0),
++              child: labelWidget,
++            ),
++            const SizedBox(width: 8),
++            Expanded(child: Text(value)),
++          ],
++        );
++      },
++    ),
++  );
+ }
+diff --git a/apps/electrosim/lib/main.dart b/apps/electrosim/lib/main.dart
+index 16595b3..83aed06 100644
+--- a/apps/electrosim/lib/main.dart
++++ b/apps/electrosim/lib/main.dart
+@@ -36,6 +36,7 @@ import 'runtime/electrosim_connection_router.dart';
+ import 'runtime/electrosim_persistence_controller.dart';
+ import 'runtime/electrosim_simulation_controller.dart';
+ import 'runtime/electrosim_tp_session_controller.dart';
++import 'runtime/workspace_layout_preferences.dart';
+ 
+ Future<void> main() async {
+   WidgetsFlutterBinding.ensureInitialized();
+@@ -435,12 +436,12 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
+     super.role = F9UserRole.teacher,
+     super.tpSessionController,
+     super.persistenceController,
++    super.layoutPreferences,
+     super.syncClient,
+     super.onSessionDashboard,
+     super.onSessionManage,
+     super.onExitWorkspace,
+   });
+-
+ }
+ 
+ class F18WorkspacePage extends StatefulWidget {
+@@ -454,6 +455,7 @@ class F18WorkspacePage extends StatefulWidget {
+     this.role = F9UserRole.teacher,
+     this.tpSessionController,
+     this.persistenceController,
++    this.layoutPreferences,
+     this.syncClient,
+     this.onSessionDashboard,
+     this.onSessionManage,
+@@ -468,6 +470,7 @@ class F18WorkspacePage extends StatefulWidget {
+   final F9UserRole role;
+   final ElectroSimTpSessionController? tpSessionController;
+   final ElectroSimPersistenceController? persistenceController;
++  final WorkspaceLayoutPreferences? layoutPreferences;
+   final ElectroSimLanSyncClient? syncClient;
+   final VoidCallback? onSessionDashboard;
+   final VoidCallback? onSessionManage;
+@@ -497,9 +500,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+         minimumComponentGap: 48,
+       );
+ 
++  final WorkspaceLayoutController _workspaceLayout =
++      WorkspaceLayoutController();
++  WorkspaceLayoutPreferences? _layoutPreferences;
++  Timer? _layoutSaveTimer;
++  bool _layoutEdited = false;
++  bool _restoringLayout = false;
++  Size? _lastWorkspaceCanvasSize;
++
+   late CircuitState _circuit;
+   late CircuitVisualLayout _layout;
+-  final ElectroSimConnectionRouter _connectionRouter = ElectroSimConnectionRouter();
++  final ElectroSimConnectionRouter _connectionRouter =
++      ElectroSimConnectionRouter();
+   final ViewportController _viewport = ViewportController(
+     scale: 1,
+     translation: const Offset(40, 40),
+@@ -524,8 +536,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+   HitTestSession? _hitTestSession;
+   CircuitState? _hitTestSessionCircuit;
+   CircuitVisualLayout? _hitTestSessionLayout;
+-  final ValueNotifier<Offset?> _wiringPointerWorld =
+-      ValueNotifier<Offset?>(null);
++  final ValueNotifier<Offset?> _wiringPointerWorld = ValueNotifier<Offset?>(
++    null,
++  );
+   TerminalId? _wiringPendingTerminal;
+   TerminalId? _wiringHoverTerminal;
+   int? _activeCanvasPointer;
+@@ -579,6 +592,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     }
+     _layout = _layoutForCircuit(_circuit);
+     _simulation = ElectroSimSimulationController(circuit: _circuit);
++    _workspaceLayout.addListener(_scheduleLayoutSave);
++    unawaited(_restoreWorkspaceLayout());
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+       if (mounted) {
+         _fitCircuitToViewport();
+@@ -586,6 +601,80 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     });
+   }
+ 
++  void _prepareWorkspaceLayoutChange() {
++    if (_activeCanvasPointer == null &&
++        _wiringPendingTerminal == null &&
++        !_trackpadPanZoomActive) {
++      return;
++    }
++    setState(() {
++      _canvasInteractionEpoch += 1;
++      _wiringPendingTerminal = null;
++      _wiringHoverTerminal = null;
++      _wiringPointerWorld.value = null;
++      _clearDirectPointerState();
++      _trackpadPanZoomActive = false;
++      _trackpadLastScale = 1;
++      _status = 'Interaction annulée : disposition modifiée.';
++    });
++  }
++
++  void _onWorkspaceCanvasSizeChanged(Size size) {
++    if (!mounted ||
++        size.isEmpty ||
++        !size.width.isFinite ||
++        !size.height.isFinite) {
++      return;
++    }
++    final previous = _lastWorkspaceCanvasSize;
++    _lastWorkspaceCanvasSize = size;
++    if (previous == null || previous == size) return;
++    _prepareWorkspaceLayoutChange();
++    _viewport.preserveWorldCenterOnResize(previous, size);
++  }
++
++  Future<void> _restoreWorkspaceLayout() async {
++    try {
++      final preferences =
++          widget.layoutPreferences ??
++          await WorkspaceLayoutPreferences.createDefault();
++      if (!mounted) return;
++      _layoutPreferences = preferences;
++      final stored = await preferences.load();
++      if (!mounted) return;
++      if (!_layoutEdited && stored != null) {
++        _restoringLayout = true;
++        _workspaceLayout.restore(stored);
++        _restoringLayout = false;
++      } else if (_layoutEdited) {
++        _scheduleLayoutSave();
++      }
++    } on Object {
++      // Optional UI preferences must not prevent entering a workshop when the
++      // platform preference directory is unavailable.
++    }
++  }
++
++  void _scheduleLayoutSave() {
++    if (_restoringLayout) return;
++    _layoutEdited = true;
++    _layoutSaveTimer?.cancel();
++    if (_layoutPreferences == null) return;
++    _layoutSaveTimer = Timer(const Duration(milliseconds: 300), () {
++      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
++    });
++  }
++
++  Future<void> _persistWorkspaceLayout(Map<String, Object?> state) async {
++    try {
++      await _layoutPreferences?.save(state);
++    } on Object {
++      if (mounted) {
++        _setStatus('Disposition non enregistrée. L’atelier reste utilisable.');
++      }
++    }
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
+@@ -617,42 +706,46 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+           child: Focus(
+             autofocus: true,
+             child: ElectroSimWorkspaceShell(
++              layoutController: _workspaceLayout,
++              onBeforeLayoutChange: _prepareWorkspaceLayoutChange,
++              onCanvasSizeChanged: _onWorkspaceCanvasSizeChanged,
+               topBar: AnimatedBuilder(
+                 animation: _simulation,
+-                builder: (BuildContext context, Widget? child) => _WorkspaceTopBar(
+-                entryLabel: widget.entryLabel,
+-                workspace: _workspace,
+-                sessionNavigation: widget.sessionNavigation,
+-                onHome: () => Navigator.of(
+-                  context,
+-                ).popUntil((Route<dynamic> route) => route.isFirst),
+-                onDashboard: widget.sessionNavigation
+-                    ? (widget.onSessionDashboard ?? _showDashboard)
+-                    : null,
+-                onManageSession: widget.sessionNavigation
+-                    ? (widget.onSessionManage ?? _showManageSession)
+-                    : null,
+-                onExitWorkspace: widget.onExitWorkspace,
+-                onSave: widget.persistenceController == null
+-                    ? null
+-                    : _saveWorkspace,
+-                onOpen: widget.persistenceController == null
+-                    ? null
+-                    : _openLatestWorkspace,
+-                onRotateSelected: canRotateSelection
+-                    ? _rotateSelectedElement
+-                    : null,
+-                onDeleteSelected: canDeleteSelection
+-                    ? _deleteSelectedElement
+-                    : null,
+-                onRecenter: _fitCircuitToViewport,
+-                electricalMode: _circuit.mode,
+-                onSelectElectricalMode: _requestElectricalModeChange,
+-                simulationRunning: _simulation.running,
+-                simulatedTime: _simulation.simulatedTime,
+-                onToggleSimulation: _simulation.toggle,
+-                onResetSimulation: _simulation.resetDynamics,
+-              ),
++                builder: (BuildContext context, Widget? child) =>
++                    _WorkspaceTopBar(
++                      entryLabel: widget.entryLabel,
++                      workspace: _workspace,
++                      sessionNavigation: widget.sessionNavigation,
++                      onHome: () => Navigator.of(
++                        context,
++                      ).popUntil((Route<dynamic> route) => route.isFirst),
++                      onDashboard: widget.sessionNavigation
++                          ? (widget.onSessionDashboard ?? _showDashboard)
++                          : null,
++                      onManageSession: widget.sessionNavigation
++                          ? (widget.onSessionManage ?? _showManageSession)
++                          : null,
++                      onExitWorkspace: widget.onExitWorkspace,
++                      onSave: widget.persistenceController == null
++                          ? null
++                          : _saveWorkspace,
++                      onOpen: widget.persistenceController == null
++                          ? null
++                          : _openLatestWorkspace,
++                      onRotateSelected: canRotateSelection
++                          ? _rotateSelectedElement
++                          : null,
++                      onDeleteSelected: canDeleteSelection
++                          ? _deleteSelectedElement
++                          : null,
++                      onRecenter: _fitCircuitToViewport,
++                      electricalMode: _circuit.mode,
++                      onSelectElectricalMode: _requestElectricalModeChange,
++                      simulationRunning: _simulation.running,
++                      simulatedTime: _simulation.simulatedTime,
++                      onToggleSimulation: _simulation.toggle,
++                      onResetSimulation: _simulation.resetDynamics,
++                    ),
+               ),
+               palette: F9ComponentPalette(
+                 mode: _circuit.mode,
+@@ -665,46 +758,47 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+                   ? F17TpSupervisionPanel(controller: _tpController)
+                   : AnimatedBuilder(
+                       animation: _simulation,
+-                      builder: (BuildContext context, Widget? child) => F9ContextPanels(
+-                      circuit: _circuit,
+-                      selectedId: _selected,
+-                      status: _status,
+-                      workspace: _workspace,
+-                      role: widget.role,
+-                      onTogglePrimaryState:
+-                          selectedDetails == null ||
+-                              _usesDirectCanvasControl(
+-                                selectedDetails.modelType,
+-                              )
+-                          ? null
+-                          : _toggleSelectedPrimaryState,
+-                      onReplaceSelected: _selectedIds.length == 1
+-                          ? _replaceSelectedElement
+-                          : null,
+-                      onSelectElement: (String? id) {
+-                        setState(() {
+-                          _selected = id;
+-                          _status = id == null
+-                              ? 'Sélection effacée'
+-                              : 'Sélection clavier : $id';
+-                        });
+-                      },
+-                      runtimeSnapshot: _simulation.snapshot,
+-                      tpSessionController:
+-                          widget.sessionNavigation ||
+-                              widget.tpSessionController != null
+-                          ? _tpController
+-                          : null,
+-                    ),
++                      builder: (BuildContext context, Widget? child) =>
++                          F9ContextPanels(
++                            circuit: _circuit,
++                            selectedId: _selected,
++                            status: _status,
++                            workspace: _workspace,
++                            role: widget.role,
++                            onTogglePrimaryState:
++                                selectedDetails == null ||
++                                    _usesDirectCanvasControl(
++                                      selectedDetails.modelType,
++                                    )
++                                ? null
++                                : _toggleSelectedPrimaryState,
++                            onReplaceSelected: _selectedIds.length == 1
++                                ? _replaceSelectedElement
++                                : null,
++                            onSelectElement: (String? id) {
++                              setState(() {
++                                _selected = id;
++                                _status = id == null
++                                    ? 'Sélection effacée'
++                                    : 'Sélection clavier : $id';
++                              });
++                            },
++                            runtimeSnapshot: _simulation.snapshot,
++                            tpSessionController:
++                                widget.sessionNavigation ||
++                                    widget.tpSessionController != null
++                                ? _tpController
++                                : null,
++                          ),
+                     ),
+               statusBar: AnimatedBuilder(
+                 animation: _simulation,
+                 builder: (BuildContext context, Widget? child) => _StatusBar(
+-                circuit: _circuit,
+-                status: _status,
+-                simulationRunning: _simulation.running,
+-                simulatedTime: _simulation.simulatedTime,
+-              ),
++                  circuit: _circuit,
++                  status: _status,
++                  simulationRunning: _simulation.running,
++                  simulatedTime: _simulation.simulatedTime,
++                ),
+               ),
+               canvas: KeyedSubtree(
+                 key: const Key('f18-canvas-drop-region'),
+@@ -741,9 +835,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+                               onPointerPanZoomUpdate:
+                                   _onCanvasPointerPanZoomUpdate,
+                               onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
+-                              child: ValueListenableBuilder<
+-                                CircuitVisualLayout?
+-                              >(
++                              child: ValueListenableBuilder<CircuitVisualLayout?>(
+                                 valueListenable: _dragPreviewLayout,
+                                 builder:
+                                     (
+@@ -782,14 +874,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+                                                 },
+                                             onConnectionRequested:
+                                                 _handleConnectionRequested,
+-                                            onContextAction:
+-                                                (CanvasHitResult hit) {
+-                                                  setState(() {
+-                                                    _status =
+-                                                        'Action contextuelle : ${hit.kind.name}. '
+-                                                        'Les mêmes actions sont disponibles dans Propriétés.';
+-                                                  });
+-                                                },
++                                            onContextAction: (CanvasHitResult hit) {
++                                              setState(() {
++                                                _status =
++                                                    'Action contextuelle : ${hit.kind.name}. '
++                                                    'Les mêmes actions sont disponibles dans Propriétés.';
++                                              });
++                                            },
+                                             enableInteraction: false,
+                                             paintElementChrome: false,
+                                             smartWireSemantics: true,
+@@ -803,22 +894,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+                                                   BuildContext context,
+                                                   Widget? child,
+                                                 ) => F9CanvasVisualOverlay(
+-                                            circuit: _circuit,
+-                                            layout: canvasLayout,
+-                                            viewport: _viewport,
+-                                            selectedElementIds: _selectedIds,
+-                                            pendingTerminalId:
+-                                                _wiringPendingTerminal,
+-                                            hoverTerminalId:
+-                                                _wiringHoverTerminal,
+-                                            pointerWorldPositionListenable:
+-                                                _wiringPointerWorld,
+-                                            wirePreviewPlanner:
+-                                                _g2aWirePreviewPlanner,
+-                                            runtimeSnapshot: _simulation.snapshot,
+-                                            simulationRunning:
+-                                                _simulation.running,
+-                                          ),
++                                                  circuit: _circuit,
++                                                  layout: canvasLayout,
++                                                  viewport: _viewport,
++                                                  selectedElementIds:
++                                                      _selectedIds,
++                                                  pendingTerminalId:
++                                                      _wiringPendingTerminal,
++                                                  hoverTerminalId:
++                                                      _wiringHoverTerminal,
++                                                  pointerWorldPositionListenable:
++                                                      _wiringPointerWorld,
++                                                  wirePreviewPlanner:
++                                                      _g2aWirePreviewPlanner,
++                                                  runtimeSnapshot:
++                                                      _simulation.snapshot,
++                                                  simulationRunning:
++                                                      _simulation.running,
++                                                ),
+                                           ),
+                                         ],
+                                       );
+@@ -2015,7 +2108,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+         (size.width - 32).clamp(120.0, double.infinity) / bounds.width;
+     final double scaleY =
+         (size.height - 32).clamp(120.0, double.infinity) / bounds.height;
+-    final double scale = math.min(scaleX, scaleY).clamp(0.75, 1.50).toDouble();
++    final double scale = math
++        .min(scaleX, scaleY)
++        .clamp(_viewport.minScale, 1.50)
++        .toDouble();
+     final Offset translation = Offset(
+       size.width / 2 - bounds.center.dx * scale,
+       size.height / 2 - bounds.center.dy * scale,
+@@ -2073,10 +2169,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     final bool backgroundRouting =
+         nextCircuit.components.length + nextCircuit.sources.length >= 30;
+     final CircuitVisualLayout nextLayout = backgroundRouting
+-        ? provisionalConnectionLayout(circuit: nextCircuit, layout: _layout,
+-            connection: connection)
+-        : _g2aWireLayoutEngine.routeConnection(circuit: nextCircuit,
+-            layout: _layout, connectionId: connection.id);
++        ? provisionalConnectionLayout(
++            circuit: nextCircuit,
++            layout: _layout,
++            connection: connection,
++          )
++        : _g2aWireLayoutEngine.routeConnection(
++            circuit: nextCircuit,
++            layout: _layout,
++            connectionId: connection.id,
++          );
+     final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
+       circuit: nextCircuit,
+       layout: nextLayout,
+@@ -2098,29 +2200,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     _syncStudentTpCircuit();
+     _announce(_status);
+     if (backgroundRouting) {
+-      unawaited(_finishConnectionRoute(nextCircuit, nextLayout,
+-        connection.id, decision.message));
++      unawaited(
++        _finishConnectionRoute(
++          nextCircuit,
++          nextLayout,
++          connection.id,
++          decision.message,
++        ),
++      );
+     }
+   }
+ 
+-  Future<void> _finishConnectionRoute(CircuitState circuit,
+-      CircuitVisualLayout baseLayout, ConnectionId id, String message) async {
++  Future<void> _finishConnectionRoute(
++    CircuitState circuit,
++    CircuitVisualLayout baseLayout,
++    ConnectionId id,
++    String message,
++  ) async {
+     try {
+-      final routed = await _connectionRouter.route(circuit: circuit,
+-        layout: baseLayout, connectionId: id);
++      final routed = await _connectionRouter.route(
++        circuit: circuit,
++        layout: baseLayout,
++        connectionId: id,
++      );
+       // A newer connection, component move or restored workspace owns the
+       // state now. Never overwrite it with an old background result.
+-      if (!mounted || routed == null || !identical(_circuit, circuit) ||
++      if (!mounted ||
++          routed == null ||
++          !identical(_circuit, circuit) ||
+           !identical(_layout, baseLayout)) {
+         return;
+       }
+       setState(() {
+         _layout = routed;
+-        _status = F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: routed)
+-            ? message : '$message Routage graphique provisoire.';
++        _status =
++            F18WorkspaceWireSafety.isRenderable(
++              circuit: circuit,
++              layout: routed,
++            )
++            ? message
++            : '$message Routage graphique provisoire.';
+       });
+     } catch (error) {
+-      if (!mounted || !identical(_circuit, circuit) ||
++      if (!mounted ||
++          !identical(_circuit, circuit) ||
+           !identical(_layout, baseLayout)) {
+         return;
+       }
+@@ -2152,10 +2275,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     );
+     setState(() {
+       _layout = candidate;
+-      _status = F18WorkspaceWireSafety.isRenderable(
+-        circuit: _circuit,
+-        layout: candidate,
+-      )
++      _status =
++          F18WorkspaceWireSafety.isRenderable(
++            circuit: _circuit,
++            layout: candidate,
++          )
+           ? 'Position graphique mise à jour : $elementId'
+           : 'Position mise à jour : routage graphique provisoire.';
+     });
+@@ -2169,10 +2293,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+     final CircuitVisualLayout candidate = _routeWithG2A(_circuit, preview);
+     setState(() {
+       _layout = candidate;
+-      _status = F18WorkspaceWireSafety.isRenderable(
+-        circuit: _circuit,
+-        layout: candidate,
+-      )
++      _status =
++          F18WorkspaceWireSafety.isRenderable(
++            circuit: _circuit,
++            layout: candidate,
++          )
+           ? 'Position graphique mise à jour : $elementId'
+           : 'Position mise à jour : routage graphique provisoire.';
+     });
+@@ -2791,6 +2916,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
+ 
+   @override
+   void dispose() {
++    _layoutSaveTimer?.cancel();
++    _workspaceLayout.removeListener(_scheduleLayoutSave);
++    if (_layoutEdited && _layoutPreferences != null) {
++      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
++    }
++    _workspaceLayout.dispose();
+     _connectionRouter.dispose();
+     for (final Timer timer in _momentaryReleaseTimers.values) {
+       timer.cancel();
+@@ -2855,219 +2986,314 @@ class _WorkspaceTopBar extends StatelessWidget {
+ 
+   @override
+   Widget build(BuildContext context) {
+-    return Material(
+-      color: ElectroSimColors.surfaceElevated,
+-      child: LayoutBuilder(
+-        builder: (BuildContext context, BoxConstraints constraints) {
+-          final bool compact =
+-              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+-          return SizedBox(
+-            height: compact
+-                ? ElectroSimGeometry.compactTopBarHeight
+-                : ElectroSimGeometry.desktopTopBarHeight,
+-            child: Padding(
+-              padding: const EdgeInsets.symmetric(
+-                horizontal: ElectroSimSpacing.xs,
++    return LayoutBuilder(
++      builder: (context, constraints) {
++        final compact = constraints.maxWidth < 720;
++        final wrapTools =
++            constraints.maxWidth < 1000 ||
++            MediaQuery.textScalerOf(context).scale(14) > 18;
++        final headerIcons = IconButtonThemeData(
++          style: IconButton.styleFrom(
++            foregroundColor: ElectroSimColors.workspaceOnHeader,
++            minimumSize: const Size.square(48),
++          ),
++        );
++        final tools = <Widget>[
++          _modeMenu(compact),
++          if (!compact && onSave != null)
++            IconButton(
++              key: const Key('workspace-save-direct-action'),
++              tooltip: 'Sauvegarder',
++              onPressed: onSave,
++              icon: const Icon(Icons.save_outlined),
++            ),
++          if (!compact && onOpen != null)
++            IconButton(
++              key: const Key('workspace-open-direct-action'),
++              tooltip: 'Reprendre',
++              onPressed: onOpen,
++              icon: const Icon(Icons.folder_open_outlined),
++            ),
++          IconButton(
++            key: const Key('workspace-rotate-action'),
++            tooltip: 'Rotation 90°',
++            onPressed: onRotateSelected,
++            icon: const Icon(Icons.rotate_right_outlined),
++          ),
++          IconButton(
++            key: const Key('workspace-delete-action'),
++            tooltip: 'Supprimer la sélection',
++            onPressed: onDeleteSelected,
++            icon: const Icon(Icons.delete_outline),
++          ),
++          Tooltip(
++            message: simulationRunning
++                ? 'Mettre la simulation en pause'
++                : 'Démarrer la simulation',
++            child: FilledButton.icon(
++              key: const Key('workspace-simulation-toggle'),
++              onPressed: onToggleSimulation,
++              style: FilledButton.styleFrom(
++                backgroundColor: simulationRunning
++                    ? ElectroSimColors.primary
++                    : ElectroSimColors.success,
++                foregroundColor: Colors.white,
++                minimumSize: const Size(0, 48),
+               ),
+-              child: Row(
+-                children: <Widget>[
+-                  IconButton(
+-                    key: const Key('session-home-action'),
+-                    tooltip: 'Accueil',
+-                    onPressed: onHome,
+-                    icon: const Icon(Icons.home_outlined),
+-                  ),
+-                  if (onExitWorkspace != null)
+-                    IconButton(
+-                      key: const Key('workspace-exit-action'),
+-                      tooltip: 'Quitter l’atelier',
+-                      onPressed: onExitWorkspace,
+-                      icon: const Icon(Icons.arrow_back_outlined),
++              icon: Icon(simulationRunning ? Icons.pause : Icons.play_arrow),
++              label: Text(simulationRunning ? 'Pause' : 'Lancer'),
++            ),
++          ),
++          _moreMenu(),
++        ];
++        return Column(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            Material(
++              color: ElectroSimColors.workspaceHeader,
++              child: Theme(
++                data: Theme.of(context).copyWith(iconButtonTheme: headerIcons),
++                child: ConstrainedBox(
++                  constraints: BoxConstraints(minHeight: compact ? 56 : 64),
++                  child: Padding(
++                    padding: const EdgeInsets.symmetric(
++                      horizontal: 8,
++                      vertical: 8,
+                     ),
+-                  const SizedBox(width: ElectroSimSpacing.xxs),
+-                  Expanded(
+-                    child: Column(
+-                      mainAxisAlignment: MainAxisAlignment.center,
+-                      crossAxisAlignment: CrossAxisAlignment.start,
+-                      children: <Widget>[
+-                        Text(
+-                          entryLabel,
+-                          maxLines: 1,
+-                          overflow: TextOverflow.ellipsis,
+-                          style: Theme.of(context).textTheme.titleSmall
+-                              ?.copyWith(fontWeight: FontWeight.w700),
++                    child: Row(
++                      children: [
++                        IconButton(
++                          key: const Key('session-home-action'),
++                          tooltip: 'Accueil',
++                          onPressed: onHome,
++                          icon: const Icon(Icons.home_outlined),
+                         ),
+-                        if (!compact)
++                        if (onExitWorkspace != null)
++                          IconButton(
++                            key: const Key('workspace-exit-action'),
++                            tooltip: 'Quitter l’atelier',
++                            onPressed: onExitWorkspace,
++                            icon: const Icon(Icons.arrow_back_outlined),
++                          ),
++                        if (!compact && !wrapTools) ...[
++                          const Icon(
++                            Icons.hub_outlined,
++                            color: ElectroSimColors.workspaceAccent,
++                            size: 22,
++                          ),
++                          const SizedBox(width: 8),
+                           Text(
+-                            workspace,
+-                            maxLines: 1,
+-                            overflow: TextOverflow.ellipsis,
+-                            style: Theme.of(context).textTheme.bodySmall
++                            'ElectroSim',
++                            style: Theme.of(context).textTheme.titleMedium
+                                 ?.copyWith(
+-                                  color: ElectroSimColors.textSecondary,
++                                  color: ElectroSimColors.workspaceAccent,
+                                 ),
+                           ),
+-                      ],
+-                    ),
+-                  ),
+-                  PopupMenuButton<ElectricalMode>(
+-                    key: const Key('workspace-electrical-mode'),
+-                    tooltip: 'Domaine électrique',
+-                    initialValue: electricalMode,
+-                    onSelected: onSelectElectricalMode,
+-                    itemBuilder: (BuildContext context) =>
+-                        <PopupMenuEntry<ElectricalMode>>[
+-                          const PopupMenuItem<ElectricalMode>(
+-                            key: Key('workspace-mode-dc'),
+-                            value: ElectricalMode.dc,
+-                            enabled: true,
+-                            child: Text('CC — courant continu'),
+-                          ),
+-                          const PopupMenuItem<ElectricalMode>(
+-                            key: Key('workspace-mode-ac1'),
+-                            value: ElectricalMode.ac1,
+-                            enabled: true,
+-                            child: Text('AC 1φ — monophasé'),
++                          const SizedBox(width: 24),
++                        ],
++                        Expanded(
++                          child: Tooltip(
++                            message: entryLabel,
++                            child: Column(
++                              mainAxisSize: MainAxisSize.min,
++                              crossAxisAlignment: CrossAxisAlignment.start,
++                              children: [
++                                Text(
++                                  entryLabel,
++                                  maxLines: 2,
++                                  overflow: TextOverflow.ellipsis,
++                                  style: Theme.of(context).textTheme.titleSmall
++                                      ?.copyWith(
++                                        color:
++                                            ElectroSimColors.workspaceOnHeader,
++                                      ),
++                                ),
++                                Text(
++                                  workspace,
++                                  maxLines: 1,
++                                  overflow: TextOverflow.ellipsis,
++                                  style: Theme.of(context).textTheme.bodySmall
++                                      ?.copyWith(
++                                        color: const Color(0xFFB9C7D9),
++                                      ),
++                                ),
++                              ],
++                            ),
+                           ),
+-                          const PopupMenuItem<ElectricalMode>(
+-                            key: Key('workspace-mode-ac3'),
+-                            value: ElectricalMode.ac3,
+-                            enabled: true,
+-                            child: Text('AC 3φ — triphasé'),
++                        ),
++                        if (sessionNavigation) ...[
++                          IconButton(
++                            key: const Key('session-dashboard-action'),
++                            tooltip: 'Tableau de bord',
++                            onPressed: onDashboard,
++                            icon: const Icon(Icons.dashboard_outlined),
+                           ),
+-                          const PopupMenuItem<ElectricalMode>(
+-                            key: Key('workspace-mode-pv'),
+-                            value: ElectricalMode.pv,
+-                            enabled: true,
+-                            child: Text('PV — photovoltaïque'),
++                          IconButton(
++                            key: const Key('session-manage-action'),
++                            tooltip: 'Gérer la session',
++                            onPressed: onManageSession,
++                            icon: const Icon(Icons.settings_outlined),
+                           ),
+                         ],
+-                    child: Padding(
+-                      padding: const EdgeInsets.symmetric(
+-                        horizontal: ElectroSimSpacing.xs,
+-                        vertical: ElectroSimSpacing.xxs,
+-                      ),
+-                      child: Row(
+-                        mainAxisSize: MainAxisSize.min,
+-                        children: <Widget>[
+-                          const Icon(Icons.bolt_outlined, size: 18),
+-                          if (!compact) ...<Widget>[
+-                            const SizedBox(width: 4),
+-                            Text(switch (electricalMode) {
+-                              ElectricalMode.dc => 'CC',
+-                              ElectricalMode.ac1 => 'AC 1φ',
+-                              ElectricalMode.ac3 => 'AC 3φ',
+-                              ElectricalMode.pv => 'PV',
+-                            }, style: Theme.of(context).textTheme.labelMedium),
+-                          ],
+-                        ],
+-                      ),
++                      ],
+                     ),
+                   ),
+-                  if (sessionNavigation) ...<Widget>[
+-                    IconButton(
+-                      key: const Key('session-dashboard-action'),
+-                      tooltip: 'Tableau de bord',
+-                      onPressed: onDashboard,
+-                      icon: const Icon(Icons.dashboard_outlined),
+-                    ),
+-                    IconButton(
+-                      key: const Key('session-manage-action'),
+-                      tooltip: 'Gérer la session',
+-                      onPressed: onManageSession,
+-                      icon: const Icon(Icons.settings_outlined),
+-                    ),
+-                  ],
+-                  IconButton(
+-                    key: const Key('workspace-simulation-toggle'),
+-                    tooltip: simulationRunning
+-                        ? 'Mettre la simulation en pause'
+-                        : 'Démarrer la simulation',
+-                    onPressed: onToggleSimulation,
+-                    icon: Icon(
+-                      simulationRunning
+-                          ? Icons.pause_circle_outline
+-                          : Icons.play_circle_outline,
++                ),
++              ),
++            ),
++            Material(
++              color: ElectroSimColors.surface,
++              child: Container(
++                decoration: const BoxDecoration(
++                  border: Border(
++                    bottom: BorderSide(
++                      color: ElectroSimColors.workspaceDivider,
+                     ),
+                   ),
+-                  IconButton(
+-                    key: const Key('workspace-rotate-action'),
+-                    tooltip: 'Rotation 90°',
+-                    onPressed: onRotateSelected,
+-                    icon: const Icon(Icons.rotate_right_outlined),
+-                  ),
+-                  IconButton(
+-                    key: const Key('workspace-delete-action'),
+-                    tooltip: 'Supprimer la sélection',
+-                    onPressed: onDeleteSelected,
+-                    icon: const Icon(Icons.delete_outline),
+-                  ),
+-                  PopupMenuButton<_WorkspaceSecondaryAction>(
+-                    key: const Key('workspace-more-actions'),
+-                    tooltip: 'Plus d’actions',
+-                    icon: const Icon(Icons.more_vert),
+-                    onSelected: (_WorkspaceSecondaryAction action) {
+-                      switch (action) {
+-                        case _WorkspaceSecondaryAction.save:
+-                          onSave?.call();
+-                        case _WorkspaceSecondaryAction.open:
+-                          onOpen?.call();
+-                        case _WorkspaceSecondaryAction.recenter:
+-                          onRecenter();
+-                        case _WorkspaceSecondaryAction.resetSimulation:
+-                          onResetSimulation();
+-                      }
+-                    },
+-                    itemBuilder: (BuildContext context) =>
+-                        <PopupMenuEntry<_WorkspaceSecondaryAction>>[
+-                          if (onSave != null)
+-                            const PopupMenuItem<_WorkspaceSecondaryAction>(
+-                              key: Key('workspace-save-action'),
+-                              value: _WorkspaceSecondaryAction.save,
+-                              child: ListTile(
+-                                leading: Icon(Icons.save_outlined),
+-                                title: Text('Sauvegarder'),
+-                                contentPadding: EdgeInsets.zero,
+-                              ),
+-                            ),
+-                          if (onOpen != null)
+-                            const PopupMenuItem<_WorkspaceSecondaryAction>(
+-                              key: Key('workspace-open-action'),
+-                              value: _WorkspaceSecondaryAction.open,
+-                              child: ListTile(
+-                                leading: Icon(Icons.restore_outlined),
+-                                title: Text('Reprendre'),
+-                                contentPadding: EdgeInsets.zero,
+-                              ),
+-                            ),
+-                          const PopupMenuItem<_WorkspaceSecondaryAction>(
+-                            key: Key('workspace-reset-simulation-action'),
+-                            value: _WorkspaceSecondaryAction.resetSimulation,
+-                            child: ListTile(
+-                              leading: Icon(Icons.restart_alt),
+-                              title: Text('Réinitialiser la simulation'),
+-                              contentPadding: EdgeInsets.zero,
+-                            ),
+-                          ),
+-                          const PopupMenuItem<_WorkspaceSecondaryAction>(
+-                            key: Key('workspace-recenter-action'),
+-                            value: _WorkspaceSecondaryAction.recenter,
+-                            child: ListTile(
+-                              leading: Icon(Icons.center_focus_strong),
+-                              title: Text('Recentrer la platine'),
+-                              contentPadding: EdgeInsets.zero,
+-                            ),
++                ),
++                padding: const EdgeInsets.symmetric(
++                  horizontal: 12,
++                  vertical: 4,
++                ),
++                child: wrapTools
++                    ? Align(
++                        alignment: Alignment.centerLeft,
++                        child: Wrap(
++                          spacing: 4,
++                          runSpacing: 4,
++                          crossAxisAlignment: WrapCrossAlignment.center,
++                          children: tools,
++                        ),
++                      )
++                    : Row(
++                        children: [
++                          Text(
++                            'Outils de l’atelier',
++                            style: Theme.of(context).textTheme.labelLarge
++                                ?.copyWith(
++                                  color: ElectroSimColors.textSecondary,
++                                ),
+                           ),
++                          const Spacer(),
++                          ...tools,
+                         ],
+-                  ),
+-                ],
++                      ),
+               ),
+             ),
+-          );
+-        },
+-      ),
++          ],
++        );
++      },
+     );
+   }
++
++  Widget _modeMenu(bool compact) => PopupMenuButton<ElectricalMode>(
++    key: const Key('workspace-electrical-mode'),
++    tooltip: 'Domaine électrique',
++    initialValue: electricalMode,
++    onSelected: onSelectElectricalMode,
++    itemBuilder: (context) => const [
++      PopupMenuItem(
++        key: Key('workspace-mode-dc'),
++        value: ElectricalMode.dc,
++        child: Text('CC — courant continu'),
++      ),
++      PopupMenuItem(
++        key: Key('workspace-mode-ac1'),
++        value: ElectricalMode.ac1,
++        child: Text('AC 1φ — monophasé'),
++      ),
++      PopupMenuItem(
++        key: Key('workspace-mode-ac3'),
++        value: ElectricalMode.ac3,
++        child: Text('AC 3φ — triphasé'),
++      ),
++      PopupMenuItem(
++        key: Key('workspace-mode-pv'),
++        value: ElectricalMode.pv,
++        child: Text('PV — photovoltaïque'),
++      ),
++    ],
++    child: ConstrainedBox(
++      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
++      child: Padding(
++        padding: const EdgeInsets.symmetric(horizontal: 12),
++        child: Row(
++          mainAxisSize: MainAxisSize.min,
++          children: [
++            const Icon(Icons.bolt_outlined, size: 20),
++            if (!compact) ...[
++              const SizedBox(width: 6),
++              Text(switch (electricalMode) {
++                ElectricalMode.dc => 'CC',
++                ElectricalMode.ac1 => 'AC 1φ',
++                ElectricalMode.ac3 => 'AC 3φ',
++                ElectricalMode.pv => 'PV',
++              }),
++            ],
++            const Icon(Icons.arrow_drop_down, size: 18),
++          ],
++        ),
++      ),
++    ),
++  );
++
++  Widget _moreMenu() => PopupMenuButton<_WorkspaceSecondaryAction>(
++    key: const Key('workspace-more-actions'),
++    tooltip: 'Plus d’actions',
++    icon: const Icon(Icons.more_horiz),
++    onSelected: (action) {
++      switch (action) {
++        case _WorkspaceSecondaryAction.save:
++          onSave?.call();
++        case _WorkspaceSecondaryAction.open:
++          onOpen?.call();
++        case _WorkspaceSecondaryAction.recenter:
++          onRecenter();
++        case _WorkspaceSecondaryAction.resetSimulation:
++          onResetSimulation();
++      }
++    },
++    itemBuilder: (context) => [
++      if (onSave != null)
++        const PopupMenuItem(
++          key: Key('workspace-save-action'),
++          value: _WorkspaceSecondaryAction.save,
++          child: ListTile(
++            leading: Icon(Icons.save_outlined),
++            title: Text('Sauvegarder'),
++            contentPadding: EdgeInsets.zero,
++          ),
++        ),
++      if (onOpen != null)
++        const PopupMenuItem(
++          key: Key('workspace-open-action'),
++          value: _WorkspaceSecondaryAction.open,
++          child: ListTile(
++            leading: Icon(Icons.restore_outlined),
++            title: Text('Reprendre'),
++            contentPadding: EdgeInsets.zero,
++          ),
++        ),
++      const PopupMenuItem(
++        key: Key('workspace-reset-simulation-action'),
++        value: _WorkspaceSecondaryAction.resetSimulation,
++        child: ListTile(
++          leading: Icon(Icons.restart_alt),
++          title: Text('Réinitialiser la simulation'),
++          contentPadding: EdgeInsets.zero,
++        ),
++      ),
++      const PopupMenuItem(
++        key: Key('workspace-recenter-action'),
++        value: _WorkspaceSecondaryAction.recenter,
++        child: ListTile(
++          leading: Icon(Icons.center_focus_strong),
++          title: Text('Recentrer la platine'),
++          contentPadding: EdgeInsets.zero,
++        ),
++      ),
++    ],
++  );
+ }
+ 
+ enum _WorkspaceSecondaryAction { save, open, recenter, resetSimulation }
+diff --git a/apps/electrosim/lib/runtime/workspace_layout_preferences.dart b/apps/electrosim/lib/runtime/workspace_layout_preferences.dart
+new file mode 100644
+index 0000000..87b4aa7
+--- /dev/null
++++ b/apps/electrosim/lib/runtime/workspace_layout_preferences.dart
+@@ -0,0 +1,60 @@
++import 'dart:convert';
++import 'dart:io';
++
++import 'package:path_provider/path_provider.dart';
++
++/// Independent native UI preferences, never a circuit document.
++final class WorkspaceLayoutPreferences {
++  WorkspaceLayoutPreferences(this.file);
++  final File file;
++  static final Map<String, Future<void>> _pending = {};
++  static int _temporaryId = 0;
++
++  static Future<WorkspaceLayoutPreferences> createDefault() async {
++    final root = await getApplicationSupportDirectory();
++    return WorkspaceLayoutPreferences(
++      File(
++        '${root.path}${Platform.pathSeparator}ElectroSim${Platform.pathSeparator}workspace-layout-v1.json',
++      ),
++    );
++  }
++
++  Future<Map<String, Object?>?> load() async {
++    try {
++      final data = jsonDecode(await file.readAsString());
++      return data is Map<String, dynamic>
++          ? Map<String, Object?>.from(data)
++          : null;
++    } on FileSystemException {
++      return null;
++    } on FormatException {
++      return null;
++    }
++  }
++
++  Future<void> save(Map<String, Object?> state) {
++    // Snapshot now, before callers can mutate the data during another write.
++    final encoded = jsonEncode(state);
++    final key = file.absolute.path;
++    final previous = _pending[key] ?? Future<void>.value();
++    final write = previous.then((_) async {
++      final temp = File('$key.tmp-${++_temporaryId}');
++      try {
++        await file.parent.create(recursive: true);
++        await temp.writeAsString(encoded, flush: true);
++        await temp.rename(key);
++      } finally {
++        if (await temp.exists()) await temp.delete();
++      }
++    });
++    final tail = write.then<void>(
++      (_) {},
++      onError: (Object error, StackTrace stack) {},
++    );
++    _pending[key] = tail;
++    tail.then((_) {
++      if (identical(_pending[key], tail)) _pending.remove(key);
++    });
++    return write;
++  }
++}
+diff --git a/apps/electrosim/test/f18_g6_multiselect_test.dart b/apps/electrosim/test/f18_g6_multiselect_test.dart
+index 851f834..931e07a 100644
+--- a/apps/electrosim/test/f18_g6_multiselect_test.dart
++++ b/apps/electrosim/test/f18_g6_multiselect_test.dart
+@@ -81,8 +81,7 @@ void main() {
+     await _modifierTap(tester, LogicalKeyboardKey.metaLeft, 'lamp-1');
+     expect(_selection(tester).length, 2);
+ 
+-    await tester.tap(find.byKey(electroSimTopEdgeKey));
+-    await tester.pumpAndSettle();
++    expect(find.byKey(electroSimTopRegionKey).hitTestable(), findsOneWidget);
+     await tester.tap(find.byKey(const Key('workspace-delete-action')));
+     await tester.pumpAndSettle();
+ 
+diff --git a/apps/electrosim/test/f18_g7_instruments_properties_test.dart b/apps/electrosim/test/f18_g7_instruments_properties_test.dart
+index 585fd21..e1a5a00 100644
+--- a/apps/electrosim/test/f18_g7_instruments_properties_test.dart
++++ b/apps/electrosim/test/f18_g7_instruments_properties_test.dart
+@@ -32,9 +32,9 @@ void main() {
+       await tester.pumpWidget(
+         MaterialApp(
+           home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-          initialSelectedElementId: 'lamp-1',
+-        ),
++            initialCircuit: buildRegressionFixtureCircuit(),
++            initialSelectedElementId: 'lamp-1',
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -49,12 +49,32 @@ void main() {
+       expect(find.text('Alimenté'), findsOneWidget);
+       expect(find.text('24.000 V'), findsWidgets);
+       expect(find.text('1.000 A'), findsOneWidget);
++      await tester.scrollUntilVisible(
++        find.text('24.000 W'),
++        120,
++        scrollable: find.descendant(
++          of: find.byKey(const Key('properties-panel')),
++          matching: find.byType(Scrollable),
++        ),
++      );
+       expect(find.text('24.000 W'), findsOneWidget);
++      await tester.scrollUntilVisible(
++        find.text('Résistance'),
++        120,
++        scrollable: find.descendant(
++          of: find.byKey(const Key('properties-panel')),
++          matching: find.byType(Scrollable),
++        ),
++      );
+       expect(find.text('Résistance'), findsOneWidget);
+       expect(find.text('resistanceOhm'), findsNothing);
+-      await tester.drag(
+-        find.byKey(const Key('properties-panel')),
+-        const Offset(0, -360),
++      await tester.scrollUntilVisible(
++        find.byKey(const Key('properties-runtime-evidence')),
++        -120,
++        scrollable: find.descendant(
++          of: find.byKey(const Key('properties-panel')),
++          matching: find.byType(Scrollable),
++        ),
+       );
+       await tester.pumpAndSettle();
+       expect(
+@@ -115,8 +135,16 @@ void main() {
+           id: SourceId('v1'),
+           modelType: 'dc_voltage_source',
+           terminals: <Terminal>[
+-            Terminal(id: TerminalId('vp'), name: '+', phase: PhaseTag.dcPositive),
+-            Terminal(id: TerminalId('vn'), name: '−', phase: PhaseTag.dcNegative),
++            Terminal(
++              id: TerminalId('vp'),
++              name: '+',
++              phase: PhaseTag.dcPositive,
++            ),
++            Terminal(
++              id: TerminalId('vn'),
++              name: '−',
++              phase: PhaseTag.dcNegative,
++            ),
+           ],
+           parameters: const <String, Object?>{'voltageV': 30.0},
+         ),
+@@ -227,5 +255,4 @@ void main() {
+       isTrue,
+     );
+   });
+-
+ }
+diff --git a/apps/electrosim/test/f9_goldens_test.dart b/apps/electrosim/test/f9_goldens_test.dart
+index 2bf6794..65d89a3 100644
+--- a/apps/electrosim/test/f9_goldens_test.dart
++++ b/apps/electrosim/test/f9_goldens_test.dart
+@@ -16,6 +16,7 @@ void main() {
+   }) async {
+     tester.view.physicalSize = size;
+     tester.view.devicePixelRatio = 1;
++    await tester.pumpWidget(const SizedBox.shrink());
+     await tester.pumpWidget(
+       MaterialApp(
+         debugShowCheckedModeBanner: false,
+@@ -32,14 +33,26 @@ void main() {
+   }
+ 
+   Future<void> openPalette(WidgetTester tester) async {
+-    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+-    await tester.pumpAndSettle();
++    if (find
++        .byKey(electroSimPaletteRegionKey)
++        .hitTestable()
++        .evaluate()
++        .isEmpty) {
++      await tester.tap(find.byKey(electroSimPaletteEdgeKey));
++      await tester.pumpAndSettle();
++    }
+     expect(find.byKey(electroSimPaletteRegionKey), findsOneWidget);
+   }
+ 
+   Future<void> openContext(WidgetTester tester) async {
+-    await tester.tap(find.byKey(electroSimContextEdgeKey));
+-    await tester.pumpAndSettle();
++    if (find
++        .byKey(electroSimContextRegionKey)
++        .hitTestable()
++        .evaluate()
++        .isEmpty) {
++      await tester.tap(find.byKey(electroSimContextEdgeKey));
++      await tester.pumpAndSettle();
++    }
+     expect(find.byKey(electroSimContextRegionKey), findsOneWidget);
+   }
+ 
+@@ -54,6 +67,15 @@ void main() {
+       matchesGoldenFile('goldens/${prefix}_base.png'),
+     );
+ 
++    if (size.width >= 1200) {
++      tester
++          .widget<ElectroSimWorkspaceShell>(
++            find.byType(ElectroSimWorkspaceShell),
++          )
++          .layoutController!
++          .setPanelVisible(ElectroSimWorkspacePanel.context, false);
++      await tester.pumpAndSettle();
++    }
+     await openPalette(tester);
+     await expectLater(
+       find.byType(Scaffold),
+@@ -61,6 +83,15 @@ void main() {
+     );
+ 
+     await pumpWorkspace(tester, size, selected: 'switch-1');
++    if (size.width >= 1200) {
++      tester
++          .widget<ElectroSimWorkspaceShell>(
++            find.byType(ElectroSimWorkspaceShell),
++          )
++          .layoutController!
++          .setPanelVisible(ElectroSimWorkspacePanel.palette, false);
++      await tester.pumpAndSettle();
++    }
+     await openContext(tester);
+     await expectLater(
+       find.byType(Scaffold),
+diff --git a/apps/electrosim/test/f9_shell_test.dart b/apps/electrosim/test/f9_shell_test.dart
+index fa4c8ac..4c3f317 100644
+--- a/apps/electrosim/test/f9_shell_test.dart
++++ b/apps/electrosim/test/f9_shell_test.dart
+@@ -189,9 +189,13 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     expect(find.text('Câblage'), findsWidgets);
+     expect(find.text('Composants'), findsOneWidget);
+     expect(find.text('Propriétés'), findsWidgets);
+@@ -206,15 +210,19 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     await tester.pumpAndSettle();
+     expect(find.byType(SimulatorCanvas), findsOneWidget);
+     expect(find.byKey(electroSimPaletteEdgeKey), findsOneWidget);
+     expect(find.byKey(electroSimContextEdgeKey), findsOneWidget);
+-    expect(find.byKey(electroSimTopEdgeKey), findsOneWidget);
+-    expect(find.byKey(electroSimStatusEdgeKey), findsOneWidget);
++    expect(find.byKey(electroSimTopRegionKey).hitTestable(), findsOneWidget);
++    expect(find.byKey(electroSimStatusRegionKey).hitTestable(), findsOneWidget);
+     expect(tester.takeException(), isNull);
+   });
+ 
+@@ -226,9 +234,13 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     await _openPalette(tester);
+     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
+     expect(
+@@ -275,9 +287,11 @@ void main() {
+       addTearDown(tester.view.resetDevicePixelRatio);
+ 
+       await tester.pumpWidget(
+-        MaterialApp(home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-        )),
++        MaterialApp(
++          home: app.F9WorkspaceDemoPage(
++            initialCircuit: buildRegressionFixtureCircuit(),
++          ),
++        ),
+       );
+       await _openPalette(tester);
+       expect(find.byKey(const Key('status-circuit-count')), findsOneWidget);
+@@ -314,9 +328,13 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     await _openPalette(tester);
+     await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
+     await tester.pumpAndSettle();
+@@ -341,9 +359,13 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     await _openPalette(tester);
+     final Finder item = find.byKey(const Key('palette-item-resistor'));
+     final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
+@@ -382,9 +404,9 @@ void main() {
+       await tester.pumpWidget(
+         MaterialApp(
+           home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-          initialSelectedElementId: 'switch-1',
+-        ),
++            initialCircuit: buildRegressionFixtureCircuit(),
++            initialSelectedElementId: 'switch-1',
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -568,9 +590,9 @@ void main() {
+       await tester.pumpWidget(
+         MaterialApp(
+           home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-          initialSelectedElementId: 'wire-2',
+-        ),
++            initialCircuit: buildRegressionFixtureCircuit(),
++            initialSelectedElementId: 'wire-2',
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -616,9 +638,9 @@ void main() {
+       await tester.pumpWidget(
+         MaterialApp(
+           home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-          initialSelectedElementId: 'wire-1',
+-        ),
++            initialCircuit: buildRegressionFixtureCircuit(),
++            initialSelectedElementId: 'wire-1',
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -700,9 +722,11 @@ void main() {
+       addTearDown(tester.view.resetDevicePixelRatio);
+ 
+       await tester.pumpWidget(
+-        MaterialApp(home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-        )),
++        MaterialApp(
++          home: app.F9WorkspaceDemoPage(
++            initialCircuit: buildRegressionFixtureCircuit(),
++          ),
++        ),
+       );
+       await tester.pumpAndSettle();
+       await _openContext(tester);
+@@ -727,9 +751,11 @@ void main() {
+       addTearDown(tester.view.resetDevicePixelRatio);
+ 
+       await tester.pumpWidget(
+-        MaterialApp(home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-        )),
++        MaterialApp(
++          home: app.F9WorkspaceDemoPage(
++            initialCircuit: buildRegressionFixtureCircuit(),
++          ),
++        ),
+       );
+       await tester.pumpAndSettle();
+       final String before = (tester.widget<Text>(
+@@ -756,9 +782,13 @@ void main() {
+     addTearDown(tester.view.resetPhysicalSize);
+     addTearDown(tester.view.resetDevicePixelRatio);
+ 
+-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
++    await tester.pumpWidget(
++      MaterialApp(
++        home: app.F9WorkspaceDemoPage(
+           initialCircuit: buildRegressionFixtureCircuit(),
+-        )));
++        ),
++      ),
++    );
+     await tester.pumpAndSettle();
+     final String before = (tester.widget<Text>(
+       find.byKey(const Key('status-circuit-count')),
+@@ -787,9 +817,9 @@ void main() {
+       await tester.pumpWidget(
+         MaterialApp(
+           home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-          initialSelectedElementId: 'switch-1',
+-        ),
++            initialCircuit: buildRegressionFixtureCircuit(),
++            initialSelectedElementId: 'switch-1',
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -818,9 +848,11 @@ void main() {
+       await tester.pumpWidget(
+         MediaQuery(
+           data: const MediaQueryData(textScaler: TextScaler.linear(1.35)),
+-          child: MaterialApp(home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-        )),
++          child: MaterialApp(
++            home: app.F9WorkspaceDemoPage(
++              initialCircuit: buildRegressionFixtureCircuit(),
++            ),
++          ),
+         ),
+       );
+       await tester.pumpAndSettle();
+@@ -838,9 +870,11 @@ void main() {
+       addTearDown(tester.view.resetDevicePixelRatio);
+ 
+       await tester.pumpWidget(
+-        MaterialApp(home: app.F9WorkspaceDemoPage(
+-          initialCircuit: buildRegressionFixtureCircuit(),
+-        )),
++        MaterialApp(
++          home: app.F9WorkspaceDemoPage(
++            initialCircuit: buildRegressionFixtureCircuit(),
++          ),
++        ),
+       );
+       await tester.pumpAndSettle();
+ 
+diff --git a/apps/electrosim/test/professional_workspace_controls_test.dart b/apps/electrosim/test/professional_workspace_controls_test.dart
+new file mode 100644
+index 0000000..2ec936e
+--- /dev/null
++++ b/apps/electrosim/test/professional_workspace_controls_test.dart
+@@ -0,0 +1,122 @@
++import 'package:electrosim/main.dart' as app;
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'support/regression_fixture.dart';
++
++Future<void> mount(WidgetTester t, Size size, double textScale) async {
++  t.view.physicalSize = size;
++  t.view.devicePixelRatio = 1;
++  addTearDown(t.view.resetPhysicalSize);
++  addTearDown(t.view.resetDevicePixelRatio);
++  await t.pumpWidget(
++    MaterialApp(
++      theme: ElectroSimTheme.light(),
++      builder: (context, child) => MediaQuery(
++        data: MediaQuery.of(
++          context,
++        ).copyWith(textScaler: TextScaler.linear(textScale)),
++        child: child!,
++      ),
++      home: app.F9WorkspaceDemoPage(
++        initialCircuit: buildRegressionFixtureCircuit(),
++        initialSelectedElementId: 'lamp-1',
++      ),
++    ),
++  );
++  await t.pumpAndSettle();
++}
++
++void main() {
++  testWidgets(
++    'simulation command is labeled and represents actual controller state',
++    (t) async {
++      await mount(t, const Size(1440, 900), 1);
++      expect(find.text('Lancer').hitTestable(), findsOneWidget);
++      await t.tap(find.byKey(const Key('workspace-simulation-toggle')));
++      await t.pump(const Duration(milliseconds: 40));
++      expect(find.text('Pause').hitTestable(), findsOneWidget);
++      await t.tap(find.byKey(const Key('workspace-simulation-toggle')));
++      await t.pumpAndSettle();
++      expect(find.text('Lancer'), findsOneWidget);
++      await t.tap(find.byKey(const Key('workspace-more-actions')));
++      await t.pumpAndSettle();
++      expect(
++        find
++            .byKey(const Key('workspace-reset-simulation-action'))
++            .hitTestable(),
++        findsOneWidget,
++      );
++    },
++  );
++  testWidgets(
++    'Mesures is clickable below permanent toolbar and shows real measurements',
++    (t) async {
++      await mount(t, const Size(1440, 900), 1);
++      expect(
++        find
++            .descendant(of: find.byType(TabBar), matching: find.text('Mesures'))
++            .hitTestable(),
++        findsOneWidget,
++      );
++      await t.tap(
++        find.descendant(
++          of: find.byType(TabBar),
++          matching: find.text('Mesures'),
++        ),
++      );
++      await t.pumpAndSettle();
++      expect(
++        find
++            .descendant(of: find.byType(TabBar), matching: find.text('Mesures'))
++            .hitTestable(),
++        findsOneWidget,
++      );
++      expect(t.takeException(), isNull);
++    },
++  );
++  for (final size in [const Size(390, 844), const Size(1024, 768)]) {
++    for (final scale in [1.5, 2.0]) {
++      testWidgets('readable controls and inspector at $size text $scale', (
++        t,
++      ) async {
++        await mount(t, size, scale);
++        expect(
++          find.byKey(const Key('workspace-simulation-toggle')).hitTestable(),
++          findsOneWidget,
++        );
++        expect(
++          find.byKey(const Key('workspace-electrical-mode')).hitTestable(),
++          findsOneWidget,
++        );
++        await t.tap(find.byKey(electroSimContextEdgeKey));
++        await t.pumpAndSettle();
++        expect(
++          find
++              .descendant(
++                of: find.byType(TabBar),
++                matching: find.text('Mesures'),
++              )
++              .hitTestable(),
++          findsOneWidget,
++        );
++        await t.tap(
++          find.descendant(
++            of: find.byType(TabBar),
++            matching: find.text('Mesures'),
++          ),
++        );
++        await t.pumpAndSettle();
++        final semantics = t.ensureSemantics();
++        final targets = await androidTapTargetGuideline.evaluate(t);
++        expect(targets.passed, isTrue, reason: targets.reason);
++        final labels = await labeledTapTargetGuideline.evaluate(t);
++        expect(labels.passed, isTrue, reason: labels.reason);
++        semantics.dispose();
++        expect(find.byType(SimulatorCanvas), findsOneWidget);
++        expect(t.takeException(), isNull);
++      });
++    }
++  }
++}
+diff --git a/apps/electrosim/test/professional_workspace_geometry_test.dart b/apps/electrosim/test/professional_workspace_geometry_test.dart
+new file mode 100644
+index 0000000..ffcc25e
+--- /dev/null
++++ b/apps/electrosim/test/professional_workspace_geometry_test.dart
+@@ -0,0 +1,156 @@
++import 'package:electrosim/main.dart' as app;
++import 'package:electrosim_canvas/electrosim_canvas.dart';
++import 'package:electrosim_domain/electrosim_domain.dart';
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'support/regression_fixture.dart';
++
++SimulatorCanvas board(WidgetTester t) =>
++    t.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
++Future<void> mount(WidgetTester t, {bool unwired = false}) async {
++  t.view.physicalSize = const Size(1440, 900);
++  t.view.devicePixelRatio = 1;
++  addTearDown(t.view.resetPhysicalSize);
++  addTearDown(t.view.resetDevicePixelRatio);
++  final fixture = buildRegressionFixtureCircuit();
++  final circuit = unwired
++      ? CircuitState(
++          circuitId: fixture.circuitId,
++          revision: fixture.revision,
++          mode: fixture.mode,
++          sources: fixture.sources,
++          components: fixture.components,
++          connections: [],
++          settings: fixture.settings,
++        )
++      : fixture;
++  await t.pumpWidget(
++    MaterialApp(
++      theme: ElectroSimTheme.light(),
++      home: app.F9WorkspaceDemoPage(initialCircuit: circuit),
++    ),
++  );
++  await t.pumpAndSettle();
++}
++
++Offset terminal(WidgetTester t, String id) {
++  final canvas = board(t);
++  final geometry = CircuitGeometryIndex.build(canvas.circuit, canvas.layout);
++  return t.getTopLeft(find.byKey(electroSimCanvasRegionKey)) +
++      canvas.viewportController!.worldToScreen(
++        geometry.terminalPositions[TerminalId(id)]!,
++      );
++}
++
++void main() {
++  testWidgets(
++    'dock changes preserve world center and complete circuit layout',
++    (t) async {
++      await mount(t);
++      final first = board(t);
++      final vp = first.viewportController!;
++      final rect = t.getRect(find.byKey(electroSimCanvasRegionKey));
++      final worldCenter = vp.screenToWorld(rect.size.center(Offset.zero));
++      await t.tap(find.byKey(electroSimPaletteEdgeKey));
++      await t.pumpAndSettle();
++      final next = t.getRect(find.byKey(electroSimCanvasRegionKey));
++      expect(
++        (vp.screenToWorld(next.size.center(Offset.zero)) - worldCenter)
++            .distance,
++        lessThan(1e-6),
++      );
++      expect(board(t).layout.elementPositions, first.layout.elementPositions);
++      expect(board(t).layout.wireRoutes, first.layout.wireRoutes);
++      expect(board(t).circuit.revision, first.circuit.revision);
++      await t.drag(
++        find.byKey(const Key('workspace-context-resizer')),
++        const Offset(-25, 0),
++      );
++      await t.pumpAndSettle();
++      expect(board(t).layout.elementPositions, first.layout.elementPositions);
++      expect(board(t).layout.wireRoutes, first.layout.wireRoutes);
++      expect(t.takeException(), isNull);
++    },
++  );
++  testWidgets(
++    'connection pointer coordinates remain correct after closing docks',
++    (t) async {
++      await mount(t, unwired: true);
++      await t.tap(find.byKey(electroSimPaletteEdgeKey));
++      await t.pumpAndSettle();
++      await t.tap(find.byKey(electroSimContextEdgeKey));
++      await t.pumpAndSettle();
++      await t.tapAt(terminal(t, 'switch-out'));
++      await t.pump();
++      await t.tapAt(terminal(t, 'lamp-in'));
++      await t.pumpAndSettle();
++      expect(board(t).circuit.connections, hasLength(1));
++      final connection = board(t).circuit.connections.single;
++      expect(
++        {connection.fromTerminalId.value, connection.toTerminalId.value},
++        {'switch-out', 'lamp-in'},
++      );
++      expect(t.takeException(), isNull);
++    },
++  );
++  testWidgets(
++    'window resize cancels a pending wire without a phantom connection',
++    (t) async {
++      await mount(t, unwired: true);
++      await t.tapAt(terminal(t, 'switch-out'));
++      await t.pump();
++      t.view.physicalSize = const Size(1100, 900);
++      await t.pumpAndSettle();
++      await t.tapAt(terminal(t, 'lamp-in'));
++      await t.pumpAndSettle();
++      expect(board(t).circuit.connections, isEmpty);
++      expect(t.takeException(), isNull);
++    },
++  );
++  testWidgets('blank workspace remains usable after adaptive resize', (
++    t,
++  ) async {
++    t.view.physicalSize = const Size(1440, 900);
++    t.view.devicePixelRatio = 1;
++    addTearDown(t.view.resetPhysicalSize);
++    addTearDown(t.view.resetDevicePixelRatio);
++    await t.pumpWidget(
++      MaterialApp(
++        theme: ElectroSimTheme.light(),
++        home: const app.F18WorkspacePage(),
++      ),
++    );
++    await t.pumpAndSettle();
++    t.view.physicalSize = const Size(390, 844);
++    await t.pumpAndSettle();
++    expect(board(t).circuit.components, isEmpty);
++    expect(t.takeException(), isNull);
++  });
++  testWidgets(
++    'compact recenter fits the fixture in the actual visible viewport',
++    (t) async {
++      await mount(t);
++      t.view.physicalSize = const Size(390, 844);
++      await t.pumpAndSettle();
++      await t.tap(find.byKey(const Key('workspace-more-actions')));
++      await t.pumpAndSettle();
++      await t.tap(find.byKey(const Key('workspace-recenter-action')));
++      await t.pumpAndSettle();
++      final canvas = board(t);
++      final geometry = CircuitGeometryIndex.build(
++        canvas.circuit,
++        canvas.layout,
++      );
++      final size = t.getSize(find.byKey(electroSimCanvasRegionKey));
++      for (final rect in geometry.elementRects.values) {
++        final a = canvas.viewportController!.worldToScreen(rect.topLeft);
++        final b = canvas.viewportController!.worldToScreen(rect.bottomRight);
++        expect(a.dx, greaterThanOrEqualTo(0));
++        expect(b.dx, lessThanOrEqualTo(size.width));
++        expect(a.dy, greaterThanOrEqualTo(0));
++        expect(b.dy, lessThanOrEqualTo(size.height));
++      }
++    },
++  );
++}
+diff --git a/apps/electrosim/test/workspace_layout_preferences_test.dart b/apps/electrosim/test/workspace_layout_preferences_test.dart
+new file mode 100644
+index 0000000..1761d78
+--- /dev/null
++++ b/apps/electrosim/test/workspace_layout_preferences_test.dart
+@@ -0,0 +1,75 @@
++import 'dart:io';
++import 'package:electrosim/runtime/workspace_layout_preferences.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  late Directory dir;
++  setUp(() async {
++    dir = await Directory.systemTemp.createTemp('electrosim-layout-');
++  });
++  tearDown(() async {
++    await dir.delete(recursive: true);
++  });
++  test('missing file and corrupt JSON load safe defaults', () async {
++    final file = File('${dir.path}/layout.json');
++    final store = WorkspaceLayoutPreferences(file);
++    expect(await store.load(), isNull);
++    await file.writeAsString('{broken');
++    expect(await store.load(), isNull);
++    await file.writeAsString('[1,2]');
++    expect(await store.load(), isNull);
++  });
++  test('roundtrip stays separate from circuit documents', () async {
++    final file = File('${dir.path}/prefs/layout.json');
++    final store = WorkspaceLayoutPreferences(file);
++    final state = <String, Object?>{
++      'version': 1,
++      'paletteWidth': 280,
++      'paletteVisible': false,
++    };
++    await store.save(state);
++    expect(await store.load(), state);
++    expect(await dir.list().length, 1);
++  });
++  test(
++    'concurrent writes from separate views preserve the latest request',
++    () async {
++      final file = File('${dir.path}/layout.json');
++      final first = WorkspaceLayoutPreferences(file);
++      final second = WorkspaceLayoutPreferences(file);
++      await Future.wait(
++        List.generate(
++          12,
++          (i) => (i.isEven ? first : second).save({
++            'version': 1,
++            'paletteWidth': 264 + i,
++          }),
++        ),
++      );
++      expect((await first.load())!['paletteWidth'], 275);
++      expect((await dir.list().toList()).whereType<File>().length, 1);
++    },
++  );
++  test('failed write is surfaced and later valid writes still work', () async {
++    final blocker = File('${dir.path}/blocked');
++    await blocker.writeAsString('x');
++    final store = WorkspaceLayoutPreferences(
++      File('${blocker.path}/layout.json'),
++    );
++    await expectLater(
++      store.save({'version': 1}),
++      throwsA(isA<FileSystemException>()),
++    );
++    await blocker.delete();
++    await store.save({'version': 1, 'paletteWidth': 300});
++    expect((await store.load())!['paletteWidth'], 300);
++  });
++  test('save snapshots mutable input at request time', () async {
++    final store = WorkspaceLayoutPreferences(File('${dir.path}/layout.json'));
++    final data = <String, Object?>{'version': 1, 'paletteWidth': 300};
++    final saved = store.save(data);
++    data['paletteWidth'] = 999;
++    await saved;
++    expect((await store.load())!['paletteWidth'], 300);
++  });
++}
+diff --git a/apps/electrosim/test/workspace_layout_preferences_ui_test.dart b/apps/electrosim/test/workspace_layout_preferences_ui_test.dart
+new file mode 100644
+index 0000000..a058245
+--- /dev/null
++++ b/apps/electrosim/test/workspace_layout_preferences_ui_test.dart
+@@ -0,0 +1,72 @@
++import 'dart:io';
++import 'package:electrosim/main.dart';
++import 'package:electrosim/runtime/workspace_layout_preferences.dart';
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  for (final editFirst in [false, true]) {
++    testWidgets(
++      'preferences restore without overwriting early edits ($editFirst)',
++      (t) async {
++        t.view.physicalSize = const Size(1440, 900);
++        t.view.devicePixelRatio = 1;
++        addTearDown(t.view.resetPhysicalSize);
++        addTearDown(t.view.resetDevicePixelRatio);
++        final dir = (await t.runAsync(
++          () => Directory.systemTemp.createTemp('electrosim-ui-pref-'),
++        ))!;
++        addTearDown(() async {
++          await dir.delete(recursive: true);
++        });
++        final store = WorkspaceLayoutPreferences(
++          File('${dir.path}/layout.json'),
++        );
++        await t.runAsync(
++          () => store.save({
++            'version': 1,
++            'paletteWidth': 310,
++            'paletteVisible': false,
++          }),
++        );
++        late WorkspaceLayoutController layout;
++        await t.runAsync(() async {
++          await t.pumpWidget(
++            MaterialApp(
++              theme: ElectroSimTheme.light(),
++              home: F18WorkspacePage(layoutPreferences: store),
++            ),
++          );
++          layout = t
++              .widget<ElectroSimWorkspaceShell>(
++                find.byType(ElectroSimWorkspaceShell),
++              )
++              .layoutController!;
++          if (editFirst) layout.setPaletteWidth(280);
++          final deadline = Stopwatch()..start();
++          while ((!editFirst && layout.paletteWidth != 310) &&
++              deadline.elapsedMilliseconds < 2000) {
++            await Future<void>.delayed(const Duration(milliseconds: 5));
++          }
++          if (editFirst)
++            await Future<void>.delayed(const Duration(milliseconds: 30));
++        });
++        await t.pumpAndSettle();
++        expect(layout.paletteWidth, editFirst ? 280 : 310);
++        expect(layout.paletteVisible, editFirst);
++        layout.setPaletteWidth(300);
++        await t.runAsync(() async {
++          await t.pumpWidget(const SizedBox());
++          final deadline = Stopwatch()..start();
++          while ((await store.load())?['paletteWidth'] != 300 &&
++              deadline.elapsedMilliseconds < 2000) {
++            await Future<void>.delayed(const Duration(milliseconds: 5));
++          }
++          expect((await store.load())!['paletteWidth'], 300);
++        });
++        expect(t.takeException(), isNull);
++      },
++    );
++  }
++}
+diff --git a/packages/electrosim_canvas/lib/src/viewport_controller.dart b/packages/electrosim_canvas/lib/src/viewport_controller.dart
+index 009a16b..9d71238 100644
+--- a/packages/electrosim_canvas/lib/src/viewport_controller.dart
++++ b/packages/electrosim_canvas/lib/src/viewport_controller.dart
+@@ -57,6 +57,21 @@ final class ViewportController extends ChangeNotifier {
+     notifyListeners();
+   }
+ 
++  /// Keep the same world point at the center when docked chrome resizes us.
++  void preserveWorldCenterOnResize(Size previousSize, Size nextSize) {
++    bool valid(Size size) =>
++        size.width.isFinite &&
++        size.height.isFinite &&
++        size.width > 0 &&
++        size.height > 0;
++    if (!valid(previousSize) || !valid(nextSize) || previousSize == nextSize) {
++      return;
++    }
++    _translation +=
++        nextSize.center(Offset.zero) - previousSize.center(Offset.zero);
++    notifyListeners();
++  }
++
+   void reset({double scale = 1, Offset translation = Offset.zero}) {
+     final double nextScale = scale.clamp(minScale, maxScale).toDouble();
+     if (nextScale == _scale && translation == _translation) {
+diff --git a/packages/electrosim_canvas/test/viewport_controller_test.dart b/packages/electrosim_canvas/test/viewport_controller_test.dart
+index 11c3198..03f8a2c 100644
+--- a/packages/electrosim_canvas/test/viewport_controller_test.dart
++++ b/packages/electrosim_canvas/test/viewport_controller_test.dart
+@@ -1,3 +1,4 @@
++import 'dart:ui' show Size;
+ import 'package:electrosim_canvas/electrosim_canvas.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ 
+@@ -26,4 +27,25 @@ void main() {
+     expect(controller.scale, 2);
+     expect(controller.translation, const Offset(5, 7));
+   });
++  test('resize preserves world center without changing scale', () {
++    final c = ViewportController(scale: 1.5, translation: const Offset(70, 20));
++    addTearDown(c.dispose);
++    final before = c.screenToWorld(const Offset(500, 350));
++    var notifications = 0;
++    c.addListener(() => notifications++);
++    c.preserveWorldCenterOnResize(const Size(1000, 700), const Size(700, 700));
++    expect(
++      (c.screenToWorld(const Offset(350, 350)) - before).distance,
++      lessThan(1e-6),
++    );
++    expect(c.scale, 1.5);
++    expect(notifications, 1);
++    c.preserveWorldCenterOnResize(const Size(700, 700), const Size(700, 700));
++    c.preserveWorldCenterOnResize(Size.zero, const Size(800, 700));
++    c.preserveWorldCenterOnResize(
++      const Size(700, 700),
++      const Size(double.infinity, 700),
++    );
++    expect(notifications, 1);
++  });
+ }
+diff --git a/packages/electrosim_ui_kit/lib/electrosim_ui_kit.dart b/packages/electrosim_ui_kit/lib/electrosim_ui_kit.dart
+index 3319df1..ff9ea12 100644
+--- a/packages/electrosim_ui_kit/lib/electrosim_ui_kit.dart
++++ b/packages/electrosim_ui_kit/lib/electrosim_ui_kit.dart
+@@ -6,3 +6,4 @@ export 'src/responsive.dart';
+ export 'src/surface_components.dart';
+ export 'src/typography_tokens.dart';
+ export 'src/workspace_shell.dart';
++export 'src/workspace_layout_controller.dart';
+diff --git a/packages/electrosim_ui_kit/lib/src/design_tokens.dart b/packages/electrosim_ui_kit/lib/src/design_tokens.dart
+index 4630d41..9c96a33 100644
+--- a/packages/electrosim_ui_kit/lib/src/design_tokens.dart
++++ b/packages/electrosim_ui_kit/lib/src/design_tokens.dart
+@@ -1,6 +1,10 @@
+ import 'package:flutter/material.dart';
+ 
+ abstract final class ElectroSimColors {
++  static const Color workspaceHeader = Color(0xFF12243A);
++  static const Color workspaceOnHeader = Color(0xFFF8FAFC);
++  static const Color workspaceAccent = Color(0xFF32C6E7);
++  static const Color workspaceDivider = Color(0xFFDCE4ED);
+   static const Color primary = Color(0xFF174D89);
+   static const Color primaryStrong = Color(0xFF123B73);
+   static const Color onPrimary = Color(0xFFFFFFFF);
+diff --git a/packages/electrosim_ui_kit/lib/src/electrosim_theme.dart b/packages/electrosim_ui_kit/lib/src/electrosim_theme.dart
+index dd2b157..546fe64 100644
+--- a/packages/electrosim_ui_kit/lib/src/electrosim_theme.dart
++++ b/packages/electrosim_ui_kit/lib/src/electrosim_theme.dart
+@@ -81,6 +81,13 @@ abstract final class ElectroSimTheme {
+           ),
+         ),
+       ),
++      tabBarTheme: const TabBarThemeData(
++        labelColor: ElectroSimColors.primary,
++        unselectedLabelColor: ElectroSimColors.textSecondary,
++        indicatorColor: ElectroSimColors.primary,
++        dividerColor: ElectroSimColors.workspaceDivider,
++        indicatorSize: TabBarIndicatorSize.tab,
++      ),
+       focusColor: ElectroSimColors.focus.withValues(alpha: 0.18),
+     );
+   }
+diff --git a/packages/electrosim_ui_kit/lib/src/workspace_layout_controller.dart b/packages/electrosim_ui_kit/lib/src/workspace_layout_controller.dart
+new file mode 100644
+index 0000000..5784d64
+--- /dev/null
++++ b/packages/electrosim_ui_kit/lib/src/workspace_layout_controller.dart
+@@ -0,0 +1,82 @@
++import 'package:flutter/foundation.dart';
++
++import 'workspace_shell.dart' show ElectroSimWorkspacePanel;
++
++enum ElectroSimWorkspaceLayoutClass { compact, medium, expanded }
++
++ElectroSimWorkspaceLayoutClass classifyWorkspaceWidth(double width) {
++  if (width < 720) return ElectroSimWorkspaceLayoutClass.compact;
++  if (width < 1200) return ElectroSimWorkspaceLayoutClass.medium;
++  return ElectroSimWorkspaceLayoutClass.expanded;
++}
++
++/// Presentation preferences only; circuit geometry is never stored here.
++class WorkspaceLayoutController extends ChangeNotifier {
++  double _paletteWidth = 264;
++  double _contextWidth = 304;
++  bool _paletteVisible = true;
++  bool _contextVisible = true;
++
++  double get paletteWidth => _paletteWidth;
++  double get contextWidth => _contextWidth;
++  bool get paletteVisible => _paletteVisible;
++  bool get contextVisible => _contextVisible;
++
++  void setPaletteWidth(double value) {
++    if (!value.isFinite) return;
++    final next = value.clamp(220.0, 360.0).toDouble();
++    if (next == _paletteWidth) return;
++    _paletteWidth = next;
++    notifyListeners();
++  }
++
++  void setContextWidth(double value) {
++    if (!value.isFinite) return;
++    final next = value.clamp(280.0, 440.0).toDouble();
++    if (next == _contextWidth) return;
++    _contextWidth = next;
++    notifyListeners();
++  }
++
++  void setPanelVisible(ElectroSimWorkspacePanel panel, bool visible) {
++    switch (panel) {
++      case ElectroSimWorkspacePanel.palette:
++        if (_paletteVisible == visible) return;
++        _paletteVisible = visible;
++      case ElectroSimWorkspacePanel.context:
++        if (_contextVisible == visible) return;
++        _contextVisible = visible;
++      case ElectroSimWorkspacePanel.top:
++      case ElectroSimWorkspacePanel.status:
++        return;
++    }
++    notifyListeners();
++  }
++
++  Map<String, Object?> toJson() => {
++    'version': 1,
++    'paletteWidth': _paletteWidth,
++    'contextWidth': _contextWidth,
++    'paletteVisible': _paletteVisible,
++    'contextVisible': _contextVisible,
++  };
++
++  void restore(Map<String, Object?> json) {
++    final before = toJson();
++    final valid = json['version'] == 1;
++    double width(String key, double fallback, double min, double max) {
++      final raw = valid ? json[key] : null;
++      return raw is num && raw.isFinite
++          ? raw.toDouble().clamp(min, max).toDouble()
++          : fallback;
++    }
++
++    bool visible(String key) =>
++        valid && json[key] is bool ? json[key]! as bool : true;
++    _paletteWidth = width('paletteWidth', 264, 220, 360);
++    _contextWidth = width('contextWidth', 304, 280, 440);
++    _paletteVisible = visible('paletteVisible');
++    _contextVisible = visible('contextVisible');
++    if (!mapEquals(before, toJson())) notifyListeners();
++  }
++}
+diff --git a/packages/electrosim_ui_kit/lib/src/workspace_resize_handle.dart b/packages/electrosim_ui_kit/lib/src/workspace_resize_handle.dart
+new file mode 100644
+index 0000000..dc626dc
+--- /dev/null
++++ b/packages/electrosim_ui_kit/lib/src/workspace_resize_handle.dart
+@@ -0,0 +1,88 @@
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++
++/// A thin divider with a generous pointer surface and keyboard alternatives.
++class WorkspaceResizeHandle extends StatelessWidget {
++  const WorkspaceResizeHandle({
++    super.key,
++    required this.axis,
++    required this.onDelta,
++    required this.semanticLabel,
++    required this.enabled,
++  });
++  final Axis axis;
++  final ValueChanged<double> onDelta;
++  final String semanticLabel;
++  final bool enabled;
++
++  @override
++  Widget build(BuildContext context) {
++    final horizontal = axis == Axis.horizontal;
++    void delta(double value) {
++      if (enabled) onDelta(value);
++    }
++
++    return Semantics(
++      label: semanticLabel,
++      enabled: enabled,
++      onIncrease: enabled ? () => delta(8) : null,
++      onDecrease: enabled ? () => delta(-8) : null,
++      child: FocusableActionDetector(
++        enabled: enabled,
++        mouseCursor: enabled
++            ? (horizontal
++                  ? SystemMouseCursors.resizeLeftRight
++                  : SystemMouseCursors.resizeUpDown)
++            : SystemMouseCursors.basic,
++        shortcuts: {
++          SingleActivator(
++            horizontal
++                ? LogicalKeyboardKey.arrowRight
++                : LogicalKeyboardKey.arrowDown,
++          ): const _ResizeIntent(
++            8,
++          ),
++          SingleActivator(
++            horizontal
++                ? LogicalKeyboardKey.arrowLeft
++                : LogicalKeyboardKey.arrowUp,
++          ): const _ResizeIntent(
++            -8,
++          ),
++        },
++        actions: {
++          _ResizeIntent: CallbackAction<_ResizeIntent>(
++            onInvoke: (intent) {
++              delta(intent.delta);
++              return null;
++            },
++          ),
++        },
++        child: GestureDetector(
++          behavior: HitTestBehavior.translucent,
++          onHorizontalDragUpdate: enabled && horizontal
++              ? (details) => delta(details.delta.dx)
++              : null,
++          onVerticalDragUpdate: enabled && !horizontal
++              ? (details) => delta(details.delta.dy)
++              : null,
++          child: Center(
++            child: Container(
++              width: horizontal ? 2 : 28,
++              height: horizontal ? 28 : 2,
++              decoration: BoxDecoration(
++                color: const Color(0xFFB8C6D7),
++                borderRadius: BorderRadius.circular(2),
++              ),
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
++
++class _ResizeIntent extends Intent {
++  const _ResizeIntent(this.delta);
++  final double delta;
++}
+diff --git a/packages/electrosim_ui_kit/lib/src/workspace_shell.dart b/packages/electrosim_ui_kit/lib/src/workspace_shell.dart
+index 1add134..329cd15 100644
+--- a/packages/electrosim_ui_kit/lib/src/workspace_shell.dart
++++ b/packages/electrosim_ui_kit/lib/src/workspace_shell.dart
+@@ -1,9 +1,11 @@
+-import 'dart:async';
++import 'dart:math' as math;
+ 
+ import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
+ 
+ import 'design_tokens.dart';
+-import 'responsive.dart';
++import 'workspace_layout_controller.dart';
++import 'workspace_resize_handle.dart';
+ 
+ const Key electroSimCanvasRegionKey = Key('electrosim-canvas-region');
+ const Key electroSimPaletteRegionKey = Key('electrosim-palette-region');
+@@ -28,16 +30,7 @@ const Key electroSimMediumActionsKey = Key('electrosim-medium-actions');
+ 
+ enum ElectroSimWorkspacePanel { palette, context, top, status }
+ 
+-/// Workspace shell whose canvas always owns the full available surface.
+-///
+-/// Every auxiliary surface is an overlay:
+-/// - mouse/trackpad: entering an edge opens it; leaving schedules auto-close;
+-/// - touch: tapping the edge toggles it; tapping the canvas closes unpinned
+-///   panels;
+-/// - pin: keeps a panel open until explicitly unpinned.
+-///
+-/// Opening a panel never resizes the canvas, so component positions remain
+-/// stable and large visual components do not lose placement area.
++/// Docked engineering workspace. Chrome never obscures another panel's tabs.
+ class ElectroSimWorkspaceShell extends StatefulWidget {
+   const ElectroSimWorkspaceShell({
+     super.key,
+@@ -46,409 +39,458 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
+     required this.contextPanel,
+     required this.topBar,
+     required this.statusBar,
++    this.layoutController,
++    this.interactionLocked = false,
++    this.onBeforeLayoutChange,
++    this.onCanvasSizeChanged,
+   });
+-
+   final Widget canvas;
+   final Widget palette;
+   final Widget contextPanel;
+   final Widget topBar;
+   final Widget statusBar;
+-
++  final WorkspaceLayoutController? layoutController;
++  final bool interactionLocked;
++  final VoidCallback? onBeforeLayoutChange;
++  final ValueChanged<Size>? onCanvasSizeChanged;
+   @override
+   State<ElectroSimWorkspaceShell> createState() =>
+       _ElectroSimWorkspaceShellState();
+ }
+ 
+ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
+-  static const Duration _motionDuration = Duration(milliseconds: 180);
+-  static const Duration _closeDelay = Duration(milliseconds: 420);
+-
+-  final Set<ElectroSimWorkspacePanel> _open = <ElectroSimWorkspacePanel>{};
+-  final Set<ElectroSimWorkspacePanel> _pinned = <ElectroSimWorkspacePanel>{};
+-  final Map<ElectroSimWorkspacePanel, Timer> _closeTimers =
+-      <ElectroSimWorkspacePanel, Timer>{};
+-
+-  bool _isOpen(ElectroSimWorkspacePanel panel) =>
+-      _open.contains(panel) || _pinned.contains(panel);
++  late WorkspaceLayoutController _layout;
++  final _paletteFocus = FocusNode(debugLabel: 'workspace-palette-toggle');
++  final _contextFocus = FocusNode(debugLabel: 'workspace-context-toggle');
++  final _drawerFocus = FocusNode(debugLabel: 'workspace-drawer');
++  ElectroSimWorkspacePanel? _drawerPanel;
++  Size? _pendingSize;
++  Size? _reportedSize;
++  bool _sizeCallbackScheduled = false;
+ 
+-  void _cancelClose(ElectroSimWorkspacePanel panel) {
+-    _closeTimers.remove(panel)?.cancel();
+-  }
+-
+-  void _openPanel(ElectroSimWorkspacePanel panel) {
+-    _cancelClose(panel);
+-    if (_open.contains(panel)) return;
+-    setState(() => _open.add(panel));
+-  }
+-
+-  void _scheduleClose(ElectroSimWorkspacePanel panel) {
+-    _cancelClose(panel);
+-    if (_pinned.contains(panel)) return;
+-    _closeTimers[panel] = Timer(_closeDelay, () {
+-      if (!mounted || _pinned.contains(panel)) return;
+-      setState(() => _open.remove(panel));
+-    });
+-  }
+-
+-  void _togglePanel(ElectroSimWorkspacePanel panel) {
+-    _cancelClose(panel);
+-    setState(() {
+-      if (_isOpen(panel)) {
+-        if (!_pinned.contains(panel)) {
+-          _open.remove(panel);
+-        }
+-      } else {
+-        _open.add(panel);
+-      }
+-    });
++  @override
++  void initState() {
++    super.initState();
++    _layout = widget.layoutController ?? WorkspaceLayoutController();
++    _layout.addListener(_layoutChanged);
+   }
+ 
+-  void _togglePin(ElectroSimWorkspacePanel panel) {
+-    _cancelClose(panel);
+-    setState(() {
+-      if (_pinned.remove(panel)) {
+-        _open.add(panel);
+-      } else {
+-        _pinned.add(panel);
+-        _open.add(panel);
+-      }
+-    });
++  @override
++  void didUpdateWidget(covariant ElectroSimWorkspaceShell oldWidget) {
++    super.didUpdateWidget(oldWidget);
++    if (oldWidget.layoutController != widget.layoutController) {
++      _layout.removeListener(_layoutChanged);
++      if (oldWidget.layoutController == null) _layout.dispose();
++      _layout = widget.layoutController ?? WorkspaceLayoutController();
++      _layout.addListener(_layoutChanged);
++    }
+   }
+ 
+-  void _closeUnpinned() {
+-    for (final Timer timer in _closeTimers.values) {
+-      timer.cancel();
+-    }
+-    _closeTimers.clear();
+-    final Set<ElectroSimWorkspacePanel> keep = <ElectroSimWorkspacePanel>{
+-      ..._pinned,
+-    };
+-    if (_open.length == keep.length && _open.containsAll(keep)) return;
+-    setState(() {
+-      _open
+-        ..clear()
+-        ..addAll(keep);
+-    });
++  void _layoutChanged() {
++    if (mounted) setState(() {});
+   }
+ 
+   @override
+   void dispose() {
+-    for (final Timer timer in _closeTimers.values) {
+-      timer.cancel();
+-    }
++    _layout.removeListener(_layoutChanged);
++    if (widget.layoutController == null) _layout.dispose();
++    _paletteFocus.dispose();
++    _contextFocus.dispose();
++    _drawerFocus.dispose();
+     super.dispose();
+   }
+ 
+-  @override
+-  Widget build(BuildContext context) {
+-    return LayoutBuilder(
+-      builder: (BuildContext context, BoxConstraints constraints) {
+-        final ElectroSimWindowClass windowClass =
+-            ElectroSimBreakpoints.classify(constraints.maxWidth);
+-        final bool compact = windowClass == ElectroSimWindowClass.compact;
+-        final bool medium = windowClass == ElectroSimWindowClass.medium;
+-
+-        final double paletteWidth = compact
+-            ? constraints.maxWidth * .88
+-            : medium
+-            ? ElectroSimGeometry.mediumPanelWidth
+-            : ElectroSimGeometry.expandedPaletteWidth;
+-        final double contextWidth = compact
+-            ? constraints.maxWidth * .88
+-            : medium
+-            ? ElectroSimGeometry.mediumPanelWidth
+-            : ElectroSimGeometry.expandedContextWidth;
+-
+-        return Material(
+-          color: ElectroSimColors.surface,
+-          child: Stack(
+-            clipBehavior: Clip.hardEdge,
+-            children: <Widget>[
+-              Positioned.fill(
+-                key: electroSimCanvasRegionKey,
+-                child: Listener(
+-                  behavior: HitTestBehavior.translucent,
+-                  onPointerDown: (_) => _closeUnpinned(),
+-                  child: widget.canvas,
+-                ),
+-              ),
+-
+-              _edgeActivator(
+-                key: electroSimPaletteEdgeKey,
+-                panel: ElectroSimWorkspacePanel.palette,
+-                alignment: Alignment.centerLeft,
+-                tooltip: 'Afficher la palette',
+-                icon: Icons.grid_view_outlined,
+-              ),
+-              _edgeActivator(
+-                key: electroSimContextEdgeKey,
+-                panel: ElectroSimWorkspacePanel.context,
+-                alignment: Alignment.centerRight,
+-                tooltip: 'Afficher les propriétés',
+-                icon: Icons.tune,
+-              ),
+-              _edgeActivator(
+-                key: electroSimTopEdgeKey,
+-                panel: ElectroSimWorkspacePanel.top,
+-                alignment: Alignment.topCenter,
+-                tooltip: 'Afficher les commandes',
+-                icon: Icons.keyboard_arrow_down,
+-              ),
+-              _edgeActivator(
+-                key: electroSimStatusEdgeKey,
+-                panel: ElectroSimWorkspacePanel.status,
+-                alignment: Alignment.bottomCenter,
+-                tooltip: 'Afficher l’état',
+-                icon: Icons.keyboard_arrow_up,
+-              ),
+-
+-              _sideOverlay(
+-                panel: ElectroSimWorkspacePanel.palette,
+-                alignment: Alignment.centerLeft,
+-                width: paletteWidth,
+-                regionKey: electroSimPaletteRegionKey,
+-                pinKey: electroSimPalettePinKey,
+-                child: widget.palette,
+-              ),
+-              _sideOverlay(
+-                panel: ElectroSimWorkspacePanel.context,
+-                alignment: Alignment.centerRight,
+-                width: contextWidth,
+-                regionKey: electroSimContextRegionKey,
+-                pinKey: electroSimContextPinKey,
+-                child: widget.contextPanel,
+-              ),
+-              _horizontalOverlay(
+-                panel: ElectroSimWorkspacePanel.top,
+-                alignment: Alignment.topCenter,
+-                regionKey: electroSimTopRegionKey,
+-                pinKey: electroSimTopPinKey,
+-                child: widget.topBar,
+-              ),
+-              _horizontalOverlay(
+-                panel: ElectroSimWorkspacePanel.status,
+-                alignment: Alignment.bottomCenter,
+-                regionKey: electroSimStatusRegionKey,
+-                pinKey: electroSimStatusPinKey,
+-                child: widget.statusBar,
+-              ),
+-            ],
+-          ),
+-        );
+-      },
+-    );
++  Duration get _duration => MediaQuery.disableAnimationsOf(context)
++      ? Duration.zero
++      : const Duration(milliseconds: 200);
++
++  void _closeDrawer() {
++    final previous = _drawerPanel;
++    if (previous == null) return;
++    widget.onBeforeLayoutChange?.call();
++    setState(() => _drawerPanel = null);
++    (previous == ElectroSimWorkspacePanel.palette
++            ? _paletteFocus
++            : _contextFocus)
++        .requestFocus();
+   }
+ 
+-  Widget _edgeActivator({
+-    required Key key,
+-    required ElectroSimWorkspacePanel panel,
+-    required Alignment alignment,
+-    required String tooltip,
+-    required IconData icon,
+-  }) {
+-    final bool horizontal =
+-        panel == ElectroSimWorkspacePanel.top ||
+-        panel == ElectroSimWorkspacePanel.status;
+-    final bool open = _isOpen(panel);
++  void _toggle(ElectroSimWorkspacePanel panel, bool docked) {
++    if (widget.interactionLocked) return;
++    widget.onBeforeLayoutChange?.call();
++    if (docked) {
++      final visible = panel == ElectroSimWorkspacePanel.palette
++          ? _layout.paletteVisible
++          : _layout.contextVisible;
++      _layout.setPanelVisible(panel, !visible);
++    } else {
++      if (_drawerPanel == panel) {
++        _closeDrawer();
++        return;
++      }
++      setState(() => _drawerPanel = panel);
++      WidgetsBinding.instance.addPostFrameCallback((_) {
++        if (mounted && _drawerPanel == panel) _drawerFocus.requestFocus();
++      });
++    }
++  }
+ 
+-    final Widget visibleHandle = Container(
+-      width: horizontal ? 58 : 7,
+-      height: horizontal ? 7 : 58,
+-      decoration: BoxDecoration(
+-        color: open
+-            ? ElectroSimColors.primary.withValues(alpha: .38)
+-            : ElectroSimColors.surfaceElevated.withValues(alpha: .92),
+-        borderRadius: BorderRadius.circular(8),
+-        boxShadow: const <BoxShadow>[
+-          BoxShadow(blurRadius: 4, color: Color(0x22000000)),
+-        ],
+-      ),
+-      alignment: Alignment.center,
+-      child: open
+-          ? Icon(icon, size: 8, color: ElectroSimColors.textSecondary)
+-          : null,
+-    );
++  void _reportSize(Size size) {
++    _pendingSize = size;
++    if (_sizeCallbackScheduled || size == _reportedSize) return;
++    _sizeCallbackScheduled = true;
++    WidgetsBinding.instance.addPostFrameCallback((_) {
++      _sizeCallbackScheduled = false;
++      if (!mounted || _pendingSize == null || _pendingSize == _reportedSize) {
++        return;
++      }
++      _reportedSize = _pendingSize;
++      widget.onCanvasSizeChanged?.call(_reportedSize!);
++    });
++  }
+ 
+-    final Widget activationZone = MouseRegion(
+-      onEnter: (_) => _openPanel(panel),
+-      onExit: (_) => _scheduleClose(panel),
+-      child: Semantics(
+-        button: true,
+-        label: tooltip,
+-        child: Tooltip(
+-          message: tooltip,
+-          child: GestureDetector(
+-            key: key,
+-            behavior: HitTestBehavior.opaque,
+-            onTap: () => _togglePanel(panel),
+-            child: Center(child: visibleHandle),
++  Widget _canvas({bool blocked = false}) => LayoutBuilder(
++    builder: (context, constraints) {
++      _reportSize(constraints.biggest);
++      return SizedBox.expand(
++        key: electroSimCanvasRegionKey,
++        child: ExcludeFocus(
++          excluding: blocked,
++          child: ExcludeSemantics(
++            excluding: blocked,
++            child: IgnorePointer(
++              ignoring: blocked,
++              child: RepaintBoundary(child: widget.canvas),
++            ),
+           ),
+         ),
+-      ),
+-    );
+-
+-    const double activationExtent = 18;
+-    if (alignment == Alignment.centerLeft) {
+-      return Positioned(
+-        left: 0,
+-        top: 0,
+-        bottom: 0,
+-        width: activationExtent,
+-        child: activationZone,
+-      );
+-    }
+-    if (alignment == Alignment.centerRight) {
+-      return Positioned(
+-        right: 0,
+-        top: 0,
+-        bottom: 0,
+-        width: activationExtent,
+-        child: activationZone,
+       );
+-    }
+-    if (alignment == Alignment.topCenter) {
+-      return Positioned(
+-        left: 0,
+-        right: 0,
+-        top: 0,
+-        height: activationExtent,
+-        child: activationZone,
+-      );
+-    }
+-    return Positioned(
+-      left: 0,
+-      right: 0,
+-      bottom: 0,
+-      height: activationExtent,
+-      child: activationZone,
+-    );
+-  }
++    },
++  );
+ 
+-  Widget _sideOverlay({
+-    required ElectroSimWorkspacePanel panel,
+-    required Alignment alignment,
+-    required double width,
+-    required Key regionKey,
+-    required Key pinKey,
+-    required Widget child,
++  Widget _panel(
++    ElectroSimWorkspacePanel panel, {
++    required VoidCallback onClose,
+   }) {
+-    final bool open = _isOpen(panel);
+-    final bool left = alignment == Alignment.centerLeft;
+-    final Offset hiddenOffset = Offset(left ? -1.04 : 1.04, 0);
+-
+-    return Positioned(
+-      top: 0,
+-      bottom: 0,
+-      left: left ? 0 : null,
+-      right: left ? null : 0,
+-      width: width,
+-      child: IgnorePointer(
+-        ignoring: !open,
+-        child: AnimatedSlide(
+-          duration: _motionDuration,
+-          curve: Curves.easeOutCubic,
+-          offset: open ? Offset.zero : hiddenOffset,
+-          child: MouseRegion(
+-            onEnter: (_) => _openPanel(panel),
+-            onExit: (_) => _scheduleClose(panel),
+-            child: Material(
+-              key: regionKey,
+-              elevation: 14,
+-              color: ElectroSimColors.surfaceElevated,
+-              child: Stack(
+-                children: <Widget>[
+-                  Positioned.fill(child: child),
+-                  Positioned(
+-                    top: 4,
+-                    right: left ? 4 : null,
+-                    left: left ? null : 4,
+-                    child: _pinButton(panel: panel, key: pinKey, compact: true),
+-                  ),
+-                ],
++    final palette = panel == ElectroSimWorkspacePanel.palette;
++    return Material(
++      key: palette ? electroSimPaletteRegionKey : electroSimContextRegionKey,
++      color: ElectroSimColors.surface,
++      child: Column(
++        children: [
++          Container(
++            decoration: const BoxDecoration(
++              border: Border(
++                bottom: BorderSide(color: ElectroSimColors.workspaceDivider),
+               ),
+             ),
++            child: Row(
++              children: [
++                const SizedBox(width: 16),
++                Icon(
++                  palette ? Icons.grid_view_outlined : Icons.tune_outlined,
++                  size: 18,
++                  color: ElectroSimColors.primary,
++                ),
++                const SizedBox(width: 8),
++                Expanded(
++                  child: Text(
++                    palette ? 'Composants' : 'Inspecteur',
++                    style: Theme.of(context).textTheme.titleSmall,
++                  ),
++                ),
++                IconButton(
++                  key: palette
++                      ? electroSimPalettePinKey
++                      : electroSimContextPinKey,
++                  tooltip: palette
++                      ? 'Masquer les composants'
++                      : 'Masquer l’inspecteur',
++                  onPressed: widget.interactionLocked ? null : onClose,
++                  icon: const Icon(Icons.close, size: 20),
++                ),
++              ],
++            ),
+           ),
+-        ),
++          Expanded(child: palette ? widget.palette : widget.contextPanel),
++        ],
+       ),
+     );
+   }
+ 
+-  Widget _horizontalOverlay({
+-    required ElectroSimWorkspacePanel panel,
+-    required Alignment alignment,
+-    required Key regionKey,
+-    required Key pinKey,
+-    required Widget child,
+-  }) {
+-    final bool open = _isOpen(panel);
+-    final bool top = alignment == Alignment.topCenter;
+-    final Offset hiddenOffset = Offset(0, top ? -1.08 : 1.08);
+-
+-    return Align(
+-      alignment: alignment,
+-      child: IgnorePointer(
+-        ignoring: !open,
+-        child: AnimatedSlide(
+-          duration: _motionDuration,
+-          curve: Curves.easeOutCubic,
+-          offset: open ? Offset.zero : hiddenOffset,
+-          child: MouseRegion(
+-            onEnter: (_) => _openPanel(panel),
+-            onExit: (_) => _scheduleClose(panel),
+-            child: Material(
+-              key: regionKey,
+-              elevation: 14,
+-              color: ElectroSimColors.surfaceElevated,
+-              child: Column(
+-                mainAxisSize: MainAxisSize.min,
+-                children: <Widget>[
+-                  if (!top) _horizontalPinRail(panel: panel, pinKey: pinKey),
+-                  child,
+-                  if (top) _horizontalPinRail(panel: panel, pinKey: pinKey),
+-                ],
++  Widget _dock(ElectroSimWorkspacePanel panel, double width, bool visible) =>
++      AnimatedContainer(
++        duration: _duration,
++        curve: Curves.easeOutCubic,
++        width: visible ? width : 0,
++        child: ClipRect(
++          child: OverflowBox(
++            alignment: Alignment.centerLeft,
++            minWidth: width,
++            maxWidth: width,
++            child: IgnorePointer(
++              ignoring: !visible,
++              child: ExcludeSemantics(
++                excluding: !visible,
++                child: ExcludeFocus(
++                  excluding: !visible,
++                  child: _panel(panel, onClose: () => _toggle(panel, true)),
++                ),
+               ),
+             ),
+           ),
+         ),
+-      ),
+-    );
+-  }
++      );
+ 
+-  Widget _horizontalPinRail({
+-    required ElectroSimWorkspacePanel panel,
+-    required Key pinKey,
+-  }) {
+-    return SizedBox(
+-      height: 24,
+-      child: Align(
+-        alignment: Alignment.centerRight,
+-        child: Padding(
+-          padding: const EdgeInsets.only(right: 4),
+-          child: _pinButton(panel: panel, key: pinKey, compact: true),
++  Widget _switcher(bool docked, bool compact) {
++    Widget button(ElectroSimWorkspacePanel panel) {
++      final palette = panel == ElectroSimWorkspacePanel.palette;
++      final selected = docked
++          ? (palette ? _layout.paletteVisible : _layout.contextVisible)
++          : _drawerPanel == panel;
++      return IconButton(
++        key: palette ? electroSimPaletteEdgeKey : electroSimContextEdgeKey,
++        focusNode: palette ? _paletteFocus : _contextFocus,
++        tooltip: palette
++            ? 'Afficher ou masquer les composants'
++            : 'Afficher ou masquer les propriétés',
++        isSelected: selected,
++        onPressed: widget.interactionLocked
++            ? null
++            : () => _toggle(panel, docked),
++        icon: Icon(palette ? Icons.grid_view_outlined : Icons.tune_outlined),
++        style: IconButton.styleFrom(
++          backgroundColor: selected
++              ? ElectroSimColors.primary.withValues(alpha: .08)
++              : null,
++          foregroundColor: ElectroSimColors.primary,
++        ),
++      );
++    }
++
++    return DecoratedBox(
++      decoration: const BoxDecoration(
++        color: ElectroSimColors.surface,
++        border: Border(
++          bottom: BorderSide(color: ElectroSimColors.workspaceDivider),
++        ),
++      ),
++      child: Padding(
++        padding: const EdgeInsets.symmetric(horizontal: 8),
++        child: Row(
++          children: [
++            button(ElectroSimWorkspacePanel.palette),
++            if (!compact) const Text('Bibliothèque'),
++            const SizedBox(width: 8),
++            button(ElectroSimWorkspacePanel.context),
++            if (!compact) const Text('Propriétés et mesures'),
++            const Spacer(),
++            if (!compact)
++              Padding(
++                padding: const EdgeInsets.symmetric(horizontal: 12),
++                child: Text(
++                  'PLATINE',
++                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
++                    color: ElectroSimColors.textSecondary,
++                    letterSpacing: 1,
++                  ),
++                ),
++              ),
++          ],
+         ),
+       ),
+     );
+   }
+ 
+-  Widget _pinButton({
+-    required ElectroSimWorkspacePanel panel,
+-    required Key key,
+-    bool compact = false,
+-  }) {
+-    final bool pinned = _pinned.contains(panel);
+-    return IconButton(
+-      key: key,
+-      tooltip: pinned ? 'Désépingler' : 'Épingler',
+-      visualDensity: compact ? VisualDensity.compact : null,
+-      padding: compact ? const EdgeInsets.all(3) : null,
+-      constraints: compact
+-          ? const BoxConstraints.tightFor(width: 30, height: 30)
+-          : null,
+-      onPressed: () => _togglePin(panel),
+-      icon: Icon(
+-        pinned ? Icons.push_pin : Icons.push_pin_outlined,
+-        size: compact ? 17 : 19,
+-      ),
++  @override
++  Widget build(BuildContext context) {
++    return LayoutBuilder(
++      builder: (context, constraints) {
++        final kind = classifyWorkspaceWidth(constraints.maxWidth);
++        final compact = kind == ElectroSimWorkspaceLayoutClass.compact;
++        final requested =
++            (_layout.paletteVisible ? _layout.paletteWidth + 8 : 0) +
++            (_layout.contextVisible ? _layout.contextWidth + 8 : 0);
++        final docked =
++            kind == ElectroSimWorkspaceLayoutClass.expanded &&
++            constraints.maxWidth - requested >= 480;
++        final open = !docked && _drawerPanel != null;
++        return PopScope(
++          canPop: !open,
++          onPopInvokedWithResult: (didPop, result) {
++            if (!didPop && mounted) _closeDrawer();
++          },
++          child: Material(
++            color: ElectroSimColors.canvasSurface,
++            child: Column(
++              children: [
++                KeyedSubtree(key: electroSimTopRegionKey, child: widget.topBar),
++                _switcher(
++                  docked,
++                  compact || MediaQuery.textScalerOf(context).scale(14) > 18,
++                ),
++                Expanded(
++                  child: docked
++                      ? Stack(
++                          children: [
++                            Row(
++                              crossAxisAlignment: CrossAxisAlignment.stretch,
++                              children: [
++                                _dock(
++                                  ElectroSimWorkspacePanel.palette,
++                                  _layout.paletteWidth,
++                                  _layout.paletteVisible,
++                                ),
++                                if (_layout.paletteVisible)
++                                  const SizedBox(width: 8),
++                                Expanded(child: _canvas()),
++                                if (_layout.contextVisible)
++                                  const SizedBox(width: 8),
++                                _dock(
++                                  ElectroSimWorkspacePanel.context,
++                                  _layout.contextWidth,
++                                  _layout.contextVisible,
++                                ),
++                              ],
++                            ),
++                            if (_layout.paletteVisible)
++                              Positioned(
++                                left: _layout.paletteWidth - 20,
++                                top: 0,
++                                bottom: 0,
++                                width: 48,
++                                child: WorkspaceResizeHandle(
++                                  key: const Key('workspace-palette-resizer'),
++                                  axis: Axis.horizontal,
++                                  semanticLabel: 'Largeur du catalogue',
++                                  enabled: !widget.interactionLocked,
++                                  onDelta: (delta) {
++                                    widget.onBeforeLayoutChange?.call();
++                                    _layout.setPaletteWidth(
++                                      _layout.paletteWidth + delta,
++                                    );
++                                  },
++                                ),
++                              ),
++                            if (_layout.contextVisible)
++                              Positioned(
++                                right: _layout.contextWidth - 20,
++                                top: 0,
++                                bottom: 0,
++                                width: 48,
++                                child: WorkspaceResizeHandle(
++                                  key: const Key('workspace-context-resizer'),
++                                  axis: Axis.horizontal,
++                                  semanticLabel: 'Largeur de l’inspecteur',
++                                  enabled: !widget.interactionLocked,
++                                  onDelta: (delta) {
++                                    widget.onBeforeLayoutChange?.call();
++                                    _layout.setContextWidth(
++                                      _layout.contextWidth - delta,
++                                    );
++                                  },
++                                ),
++                              ),
++                          ],
++                        )
++                      : Stack(
++                          children: [
++                            Positioned.fill(child: _canvas(blocked: open)),
++                            if (open)
++                              Positioned.fill(
++                                child: ModalBarrier(
++                                  color: Colors.black.withValues(alpha: .14),
++                                  onDismiss: _closeDrawer,
++                                  semanticsLabel: 'Fermer le panneau',
++                                  barrierSemanticsDismissible: true,
++                                ),
++                              ),
++                            Positioned.fill(
++                              child: AnimatedSwitcher(
++                                duration: _duration,
++                                transitionBuilder: (child, animation) =>
++                                    AnimatedBuilder(
++                                      animation: animation,
++                                      child: child,
++                                      builder: (context, child) {
++                                        final closing =
++                                            animation.status ==
++                                            AnimationStatus.reverse;
++                                        return IgnorePointer(
++                                          ignoring: closing,
++                                          child: ExcludeSemantics(
++                                            excluding: closing,
++                                            child: FadeTransition(
++                                              opacity: animation,
++                                              child: SlideTransition(
++                                                position:
++                                                    Tween<Offset>(
++                                                      begin: const Offset(
++                                                        .06,
++                                                        0,
++                                                      ),
++                                                      end: Offset.zero,
++                                                    ).animate(
++                                                      CurvedAnimation(
++                                                        parent: animation,
++                                                        curve:
++                                                            Curves.easeOutCubic,
++                                                      ),
++                                                    ),
++                                                child: child,
++                                              ),
++                                            ),
++                                          ),
++                                        );
++                                      },
++                                    ),
++                                child: !open
++                                    ? const SizedBox.shrink(
++                                        key: Key('drawer-closed'),
++                                      )
++                                    : Align(
++                                        key: ValueKey(_drawerPanel),
++                                        alignment:
++                                            _drawerPanel ==
++                                                ElectroSimWorkspacePanel.palette
++                                            ? Alignment.centerLeft
++                                            : Alignment.centerRight,
++                                        child: SizedBox(
++                                          width: math.min(
++                                            constraints.maxWidth - 32,
++                                            compact ? 360 : 304,
++                                          ),
++                                          child: CallbackShortcuts(
++                                            bindings: {
++                                              const SingleActivator(
++                                                LogicalKeyboardKey.escape,
++                                              ): _closeDrawer,
++                                            },
++                                            child: Focus(
++                                              autofocus: true,
++                                              focusNode: _drawerFocus,
++                                              child: _panel(
++                                                _drawerPanel!,
++                                                onClose: _closeDrawer,
++                                              ),
++                                            ),
++                                          ),
++                                        ),
++                                      ),
++                              ),
++                            ),
++                          ],
++                        ),
++                ),
++                KeyedSubtree(
++                  key: electroSimStatusRegionKey,
++                  child: widget.statusBar,
++                ),
++              ],
++            ),
++          ),
++        );
++      },
+     );
+   }
+ }
+diff --git a/packages/electrosim_ui_kit/test/design_system_test.dart b/packages/electrosim_ui_kit/test/design_system_test.dart
+index 4cf5c51..b6b68ab 100644
+--- a/packages/electrosim_ui_kit/test/design_system_test.dart
++++ b/packages/electrosim_ui_kit/test/design_system_test.dart
+@@ -1,6 +1,4 @@
+ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+-import 'package:flutter/gestures.dart';
+-import 'package:flutter/material.dart';
+ import 'package:flutter_test/flutter_test.dart';
+ 
+ void main() {
+@@ -36,164 +34,4 @@ void main() {
+     expect(ElectroSimComponentTokens.quickPaletteItemCount, 5);
+     expect(ElectroSimComponentTokens.paletteExpansionLabel, 'Voir tous');
+   });
+-
+-  testWidgets('expanded shell gives the complete viewport to the canvas', (
+-    WidgetTester tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(1440, 900);
+-    tester.view.devicePixelRatio = 1;
+-    addTearDown(tester.view.resetPhysicalSize);
+-    addTearDown(tester.view.resetDevicePixelRatio);
+-
+-    await tester.pumpWidget(_harness());
+-    await tester.pumpAndSettle();
+-
+-    final Rect canvas = tester.getRect(find.byKey(electroSimCanvasRegionKey));
+-    expect(canvas, const Rect.fromLTWH(0, 0, 1440, 900));
+-
+-    final Rect palette = tester.getRect(find.byKey(electroSimPaletteRegionKey));
+-    final Rect context = tester.getRect(find.byKey(electroSimContextRegionKey));
+-    final Rect top = tester.getRect(find.byKey(electroSimTopRegionKey));
+-    final Rect status = tester.getRect(find.byKey(electroSimStatusRegionKey));
+-
+-    expect(palette.right, lessThanOrEqualTo(0));
+-    expect(context.left, greaterThanOrEqualTo(1440));
+-    expect(top.bottom, lessThanOrEqualTo(0));
+-    expect(status.top, greaterThanOrEqualTo(900));
+-  });
+-
+-  testWidgets('desktop hover opens and auto-closes the palette overlay', (
+-    WidgetTester tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(1440, 900);
+-    tester.view.devicePixelRatio = 1;
+-    addTearDown(tester.view.resetPhysicalSize);
+-    addTearDown(tester.view.resetDevicePixelRatio);
+-
+-    await tester.pumpWidget(_harness());
+-    await tester.pumpAndSettle();
+-
+-    final TestGesture mouse = await tester.createGesture(
+-      kind: PointerDeviceKind.mouse,
+-    );
+-    await mouse.addPointer(location: const Offset(700, 450));
+-    await tester.pump();
+-
+-    await mouse.moveTo(tester.getCenter(find.byKey(electroSimPaletteEdgeKey)));
+-    await tester.pumpAndSettle();
+-
+-    final Rect open = tester.getRect(find.byKey(electroSimPaletteRegionKey));
+-    expect(open.left, closeTo(0, .5));
+-    expect(open.width, ElectroSimGeometry.expandedPaletteWidth);
+-
+-    await mouse.moveTo(const Offset(700, 450));
+-    await tester.pump(const Duration(milliseconds: 500));
+-    await tester.pumpAndSettle();
+-
+-    final Rect closed = tester.getRect(find.byKey(electroSimPaletteRegionKey));
+-    expect(closed.right, lessThanOrEqualTo(0));
+-  });
+-
+-  testWidgets('touch edge opens a panel and canvas tap closes it', (
+-    WidgetTester tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(390, 844);
+-    tester.view.devicePixelRatio = 1;
+-    addTearDown(tester.view.resetPhysicalSize);
+-    addTearDown(tester.view.resetDevicePixelRatio);
+-
+-    await tester.pumpWidget(_harness());
+-    await tester.pumpAndSettle();
+-
+-    await tester.tap(find.byKey(electroSimContextEdgeKey));
+-    await tester.pumpAndSettle();
+-    final Rect open = tester.getRect(find.byKey(electroSimContextRegionKey));
+-    expect(open.right, closeTo(390, .5));
+-    expect(open.left, lessThan(390));
+-
+-    await tester.tapAt(const Offset(30, 420));
+-    await tester.pumpAndSettle();
+-    final Rect closed = tester.getRect(find.byKey(electroSimContextRegionKey));
+-    expect(closed.left, greaterThanOrEqualTo(390));
+-  });
+-
+-  testWidgets('pin keeps palette open after pointer leaves', (
+-    WidgetTester tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(1440, 900);
+-    tester.view.devicePixelRatio = 1;
+-    addTearDown(tester.view.resetPhysicalSize);
+-    addTearDown(tester.view.resetDevicePixelRatio);
+-
+-    await tester.pumpWidget(_harness());
+-    await tester.pumpAndSettle();
+-
+-    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+-    await tester.pumpAndSettle();
+-    await tester.tap(find.byKey(electroSimPalettePinKey));
+-    await tester.pumpAndSettle();
+-
+-    await tester.tapAt(const Offset(800, 450));
+-    await tester.pump(const Duration(milliseconds: 500));
+-    await tester.pumpAndSettle();
+-
+-    final Rect pinned = tester.getRect(find.byKey(electroSimPaletteRegionKey));
+-    expect(pinned.left, closeTo(0, .5));
+-
+-    await tester.tap(find.byKey(electroSimPalettePinKey));
+-    await tester.pumpAndSettle();
+-    await tester.tapAt(const Offset(800, 450));
+-    await tester.pumpAndSettle();
+-
+-    final Rect closed = tester.getRect(find.byKey(electroSimPaletteRegionKey));
+-    expect(closed.right, lessThanOrEqualTo(0));
+-  });
+-
+-  testWidgets('horizontal top and status surfaces also auto-hide', (
+-    WidgetTester tester,
+-  ) async {
+-    tester.view.physicalSize = const Size(820, 1180);
+-    tester.view.devicePixelRatio = 1;
+-    addTearDown(tester.view.resetPhysicalSize);
+-    addTearDown(tester.view.resetDevicePixelRatio);
+-
+-    await tester.pumpWidget(_harness());
+-    await tester.pumpAndSettle();
+-
+-    await tester.tap(find.byKey(electroSimTopEdgeKey));
+-    await tester.pumpAndSettle();
+-    expect(
+-      tester.getRect(find.byKey(electroSimTopRegionKey)).top,
+-      closeTo(0, .5),
+-    );
+-
+-    await tester.tapAt(const Offset(410, 590));
+-    await tester.pumpAndSettle();
+-    expect(
+-      tester.getRect(find.byKey(electroSimTopRegionKey)).bottom,
+-      lessThanOrEqualTo(0),
+-    );
+-
+-    await tester.tap(find.byKey(electroSimStatusEdgeKey));
+-    await tester.pumpAndSettle();
+-    expect(
+-      tester.getRect(find.byKey(electroSimStatusRegionKey)).bottom,
+-      closeTo(1180, .5),
+-    );
+-  });
+-}
+-
+-Widget _harness() {
+-  return MaterialApp(
+-    theme: ElectroSimTheme.light(),
+-    home: const Scaffold(
+-      body: ElectroSimWorkspaceShell(
+-        topBar: SizedBox(height: 56, child: Text('Top')),
+-        canvas: ColoredBox(color: Colors.white, child: Text('Canvas')),
+-        palette: Text('Palette content'),
+-        contextPanel: Text('Context content'),
+-        statusBar: SizedBox(height: 40, child: Text('Status')),
+-      ),
+-    ),
+-  );
+ }
+diff --git a/packages/electrosim_ui_kit/test/professional_workspace_shell_test.dart b/packages/electrosim_ui_kit/test/professional_workspace_shell_test.dart
+new file mode 100644
+index 0000000..1050821
+--- /dev/null
++++ b/packages/electrosim_ui_kit/test/professional_workspace_shell_test.dart
+@@ -0,0 +1,161 @@
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++Future<void> mount(
++  WidgetTester t,
++  Size size, {
++  WorkspaceLayoutController? controller,
++  bool reduce = false,
++  bool locked = false,
++}) async {
++  t.view.physicalSize = size;
++  t.view.devicePixelRatio = 1;
++  addTearDown(t.view.resetPhysicalSize);
++  addTearDown(t.view.resetDevicePixelRatio);
++  await t.pumpWidget(
++    MaterialApp(
++      home: MediaQuery(
++        data: MediaQueryData(size: size, disableAnimations: reduce),
++        child: Scaffold(
++          body: ElectroSimWorkspaceShell(
++            layoutController: controller,
++            interactionLocked: locked,
++            topBar: const SizedBox(height: 64, child: Text('Commandes')),
++            canvas: const ColoredBox(
++              color: Colors.white,
++              child: Text('Circuit'),
++            ),
++            palette: const Text('Catalogue disponible'),
++            contextPanel: const Text('Mesures disponibles'),
++            statusBar: const SizedBox(height: 40, child: Text('Arrêtée')),
++          ),
++        ),
++      ),
++    ),
++  );
++  await t.pumpAndSettle();
++}
++
++void main() {
++  testWidgets('desktop panels never overlap canvas or permanent command bars', (
++    t,
++  ) async {
++    await mount(t, const Size(1440, 900));
++    final canvas = t.getRect(find.byKey(electroSimCanvasRegionKey));
++    final palette = t.getRect(find.byKey(electroSimPaletteRegionKey));
++    final inspector = t.getRect(find.byKey(electroSimContextRegionKey));
++    final top = t.getRect(find.byKey(electroSimTopRegionKey));
++    final status = t.getRect(find.byKey(electroSimStatusRegionKey));
++    expect(canvas.overlaps(palette), isFalse);
++    expect(canvas.overlaps(inspector), isFalse);
++    expect(palette.overlaps(top), isFalse);
++    expect(inspector.overlaps(top), isFalse);
++    expect(inspector.overlaps(status), isFalse);
++    expect(find.text('Catalogue disponible').hitTestable(), findsOneWidget);
++    await t.pump(const Duration(milliseconds: 600));
++    expect(find.text('Catalogue disponible').hitTestable(), findsOneWidget);
++  });
++  testWidgets('separator resizes only its own dock', (t) async {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    await mount(t, const Size(1440, 900), controller: c);
++    await t.drag(
++      find.byKey(const Key('workspace-palette-resizer')),
++      const Offset(30, 0),
++    );
++    await t.pumpAndSettle();
++    expect(c.paletteWidth, closeTo(294, 1));
++    expect(c.contextWidth, 304);
++  });
++  for (final size in [const Size(390, 844), const Size(820, 1180)]) {
++    testWidgets(
++      'narrow $size exposes just one modal panel and Escape restores focus',
++      (t) async {
++        await mount(t, size);
++        await t.tap(find.byKey(electroSimPaletteEdgeKey));
++        await t.pumpAndSettle();
++        expect(find.text('Catalogue disponible').hitTestable(), findsOneWidget);
++        await t.tap(find.byKey(electroSimContextEdgeKey));
++        await t.pumpAndSettle();
++        expect(find.text('Catalogue disponible').hitTestable(), findsNothing);
++        expect(find.text('Mesures disponibles').hitTestable(), findsOneWidget);
++        await t.sendKeyEvent(LogicalKeyboardKey.escape);
++        await t.pumpAndSettle();
++        expect(find.text('Mesures disponibles').hitTestable(), findsNothing);
++        expect(
++          FocusManager.instance.primaryFocus?.debugLabel,
++          'workspace-context-toggle',
++        );
++        final semantics = t.ensureSemantics();
++        final targets = await androidTapTargetGuideline.evaluate(t);
++        expect(targets.passed, isTrue, reason: targets.reason);
++        final labels = await labeledTapTargetGuideline.evaluate(t);
++        expect(labels.passed, isTrue, reason: labels.reason);
++        semantics.dispose();
++      },
++    );
++  }
++  testWidgets('maximum widths fall back safely at 1200', (t) async {
++    final c = WorkspaceLayoutController()
++      ..setPaletteWidth(360)
++      ..setContextWidth(440);
++    addTearDown(c.dispose);
++    await mount(t, const Size(1200, 900), controller: c);
++    expect(
++      t.getRect(find.byKey(electroSimCanvasRegionKey)).width,
++      greaterThanOrEqualTo(480),
++    );
++    expect(
++      find.text('Catalogue disponible').hitTestable().evaluate().length +
++          find.text('Mesures disponibles').hitTestable().evaluate().length,
++      lessThanOrEqualTo(1),
++    );
++  });
++  testWidgets(
++    'reduced animations close instantly and disposed transitions are safe',
++    (t) async {
++      await mount(t, const Size(1440, 900), reduce: true);
++      await t.tap(find.byKey(electroSimPaletteEdgeKey));
++      await t.pump();
++      expect(find.text('Catalogue disponible').hitTestable(), findsNothing);
++      await t.pumpWidget(const SizedBox());
++      await t.pump(const Duration(milliseconds: 500));
++      expect(t.takeException(), isNull);
++    },
++  );
++  testWidgets('locked interaction prevents separator drag', (t) async {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    await mount(t, const Size(1440, 900), controller: c, locked: true);
++    await t.drag(
++      find.byKey(const Key('workspace-palette-resizer')),
++      const Offset(40, 0),
++    );
++    await t.pumpAndSettle();
++    expect(c.paletteWidth, 264);
++  });
++  testWidgets(
++    'closing drawer leaves no keyboard targets during its exit transition',
++    (t) async {
++      await mount(t, const Size(390, 844));
++      await t.tap(find.byKey(electroSimContextEdgeKey));
++      await t.pumpAndSettle();
++      await t.tap(find.byKey(electroSimContextPinKey));
++      await t.pump(const Duration(milliseconds: 20));
++      await t.sendKeyEvent(LogicalKeyboardKey.tab);
++      await t.pump();
++      var insideClosingPanel = false;
++      FocusManager.instance.primaryFocus?.context?.visitAncestorElements((
++        element,
++      ) {
++        if (element.widget.key == electroSimContextRegionKey)
++          insideClosingPanel = true;
++        return true;
++      });
++      expect(insideClosingPanel, isFalse);
++      await t.pumpAndSettle();
++    },
++  );
++}
+diff --git a/packages/electrosim_ui_kit/test/workspace_layout_controller_test.dart b/packages/electrosim_ui_kit/test/workspace_layout_controller_test.dart
+new file mode 100644
+index 0000000..5b43590
+--- /dev/null
++++ b/packages/electrosim_ui_kit/test/workspace_layout_controller_test.dart
+@@ -0,0 +1,87 @@
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter_test/flutter_test.dart';
++
++void main() {
++  test('workspace breakpoints leave the home responsive contract alone', () {
++    expect(
++      classifyWorkspaceWidth(719.9),
++      ElectroSimWorkspaceLayoutClass.compact,
++    );
++    expect(classifyWorkspaceWidth(720), ElectroSimWorkspaceLayoutClass.medium);
++    expect(
++      classifyWorkspaceWidth(1199.9),
++      ElectroSimWorkspaceLayoutClass.medium,
++    );
++    expect(
++      classifyWorkspaceWidth(1200),
++      ElectroSimWorkspaceLayoutClass.expanded,
++    );
++    expect(ElectroSimBreakpoints.classify(600), ElectroSimWindowClass.medium);
++  });
++  test('default layout and independent electrical colors', () {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    expect(c.paletteWidth, 264);
++    expect(c.contextWidth, 304);
++    expect(c.paletteVisible, isTrue);
++    expect(c.contextVisible, isTrue);
++    expect(ElectroSimColors.workspaceHeader, isNot(ElectroSimColors.phaseL1));
++  });
++  test('widths clamp and ignore nonfinite input', () {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    c.setPaletteWidth(999);
++    expect(c.paletteWidth, 360);
++    c.setPaletteWidth(-1);
++    expect(c.paletteWidth, 220);
++    c.setContextWidth(999);
++    expect(c.contextWidth, 440);
++    c.setContextWidth(-1);
++    expect(c.contextWidth, 280);
++    c.setContextWidth(double.nan);
++    c.setPaletteWidth(double.infinity);
++    expect(c.paletteWidth, 220);
++    expect(c.contextWidth, 280);
++  });
++  test('layout roundtrip and permanent command surfaces', () {
++    final c = WorkspaceLayoutController();
++    final restored = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    addTearDown(restored.dispose);
++    c.setPaletteWidth(300);
++    c.setPanelVisible(ElectroSimWorkspacePanel.palette, false);
++    c.setPanelVisible(ElectroSimWorkspacePanel.top, false);
++    restored.restore(c.toJson());
++    expect(restored.paletteWidth, 300);
++    expect(restored.paletteVisible, isFalse);
++    expect(restored.contextVisible, isTrue);
++    expect(restored.toJson(), c.toJson());
++  });
++  test('invalid preference fields recover to safe defaults', () {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    c.restore({
++      'version': 1,
++      'paletteWidth': 'large',
++      'contextWidth': double.nan,
++      'paletteVisible': 'yes',
++    });
++    expect(c.paletteWidth, 264);
++    expect(c.contextWidth, 304);
++    expect(c.paletteVisible, isTrue);
++    c.setPaletteWidth(360);
++    c.restore({'version': 999});
++    expect(c.paletteWidth, 264);
++  });
++  test('unchanged state does not issue redundant notifications', () {
++    final c = WorkspaceLayoutController();
++    addTearDown(c.dispose);
++    var notifications = 0;
++    c.addListener(() => notifications++);
++    c.setPaletteWidth(264);
++    c.setPanelVisible(ElectroSimWorkspacePanel.palette, true);
++    expect(notifications, 0);
++    c.setPaletteWidth(300);
++    expect(notifications, 1);
++  });
++}
+diff --git a/apps/electrosim/tool/capture_professional_workspace_test.dart b/apps/electrosim/tool/capture_professional_workspace_test.dart
+new file mode 100644
+index 0000000..9405e37
+--- /dev/null
++++ b/apps/electrosim/tool/capture_professional_workspace_test.dart
+@@ -0,0 +1,137 @@
++// Run from apps/electrosim:
++// ELECTROSIM_UI_CAPTURE_DIR=/path/to/output flutter test tool/capture_professional_workspace_test.dart
++// ELECTROSIM_FONT_DIR may override the Flutter material font directory.
++import 'dart:convert';
++import 'dart:io';
++import 'dart:ui' as ui;
++import 'package:electrosim/main.dart';
++import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter/rendering.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_test/flutter_test.dart';
++import '../test/support/regression_fixture.dart';
++
++void main() {
++  final output = Directory(
++    Platform.environment['ELECTROSIM_UI_CAPTURE_DIR'] ??
++        'build/professional-workspace-captures',
++  );
++  setUpAll(() async {
++    await output.create(recursive: true);
++    final fonts =
++        Platform.environment['ELECTROSIM_FONT_DIR'] ??
++        '${Platform.environment['FLUTTER_ROOT'] ?? '/workspace/toolchains/flutter'}/bin/cache/artifacts/material_fonts';
++    final loader = FontLoader('Roboto');
++    for (final name in [
++      'Roboto-Regular.ttf',
++      'Roboto-Medium.ttf',
++      'Roboto-Bold.ttf',
++    ]) {
++      loader.addFont(
++        Future.value(
++          ByteData.sublistView(await File('$fonts/$name').readAsBytes()),
++        ),
++      );
++    }
++    await loader.load();
++    await (FontLoader('MaterialIcons')..addFont(
++          Future.value(
++            ByteData.sublistView(
++              await File('$fonts/MaterialIcons-Regular.otf').readAsBytes(),
++            ),
++          ),
++        ))
++        .load();
++  });
++  for (final scene in [
++    ('desktop', const Size(1440, 900), 1.0),
++    ('desktop-measures', const Size(1440, 900), 1.0),
++    ('desktop-focus', const Size(1440, 900), 1.0),
++    ('phone', const Size(390, 844), 1.0),
++    ('phone-properties', const Size(390, 844), 1.0),
++    ('tablet-text200', const Size(1024, 768), 2.0),
++  ]) {
++    testWidgets('capture ${scene.$1}', (t) async {
++      t.view.physicalSize = scene.$2;
++      t.view.devicePixelRatio = 1;
++      addTearDown(t.view.resetPhysicalSize);
++      addTearDown(t.view.resetDevicePixelRatio);
++      final oldShadows = debugDisableShadows;
++      debugDisableShadows = false;
++      final semantics = t.ensureSemantics();
++      final key = GlobalKey();
++      try {
++        await t.pumpWidget(
++          RepaintBoundary(
++            key: key,
++            child: MaterialApp(
++              debugShowCheckedModeBanner: false,
++              theme: ElectroSimTheme.light(),
++              builder: (context, child) => MediaQuery(
++                data: MediaQuery.of(
++                  context,
++                ).copyWith(textScaler: TextScaler.linear(scene.$3)),
++                child: child!,
++              ),
++              home: F9WorkspaceDemoPage(
++                initialCircuit: buildRegressionFixtureCircuit(),
++                initialSelectedElementId: 'lamp-1',
++              ),
++            ),
++          ),
++        );
++        await t.pumpAndSettle();
++        final layout = t
++            .widget<ElectroSimWorkspaceShell>(
++              find.byType(ElectroSimWorkspaceShell),
++            )
++            .layoutController!;
++        if (scene.$1 == 'desktop-focus') {
++          layout.setPanelVisible(ElectroSimWorkspacePanel.palette, false);
++          layout.setPanelVisible(ElectroSimWorkspacePanel.context, false);
++          await t.pumpAndSettle();
++        }
++        if (scene.$1 == 'phone-properties' || scene.$1 == 'tablet-text200') {
++          await t.tap(find.byKey(electroSimContextEdgeKey));
++          await t.pumpAndSettle();
++        }
++        final tab = find.descendant(
++          of: find.byType(TabBar),
++          matching: find.text('Mesures'),
++        );
++        if (scene.$1 == 'desktop-measures') {
++          await t.tap(tab);
++          await t.pumpAndSettle();
++        }
++        final targetResult = await androidTapTargetGuideline.evaluate(t);
++        final labelResult = await labeledTapTargetGuideline.evaluate(t);
++        expect(t.takeException(), isNull);
++        final boundary =
++            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
++        await t.runAsync(() async {
++          final image = await boundary.toImage(pixelRatio: 1);
++          final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
++          await File(
++            '${output.path}/${scene.$1}.png',
++          ).writeAsBytes(bytes!.buffer.asUint8List());
++          image.dispose();
++          await File('${output.path}/${scene.$1}.json').writeAsString(
++            jsonEncode({
++              'scene': scene.$1,
++              'tapTargetsPassed': targetResult.passed,
++              'tapTargetsReason': targetResult.reason,
++              'labelsPassed': labelResult.passed,
++              'labelsReason': labelResult.reason,
++              'measureTabHittable': tab.hitTestable().evaluate().length,
++            }),
++          );
++        });
++        await t.pumpWidget(const SizedBox());
++      } finally {
++        semantics.dispose();
++        debugDisableShadows = oldShadows;
++      }
++    });
++  }
++}

@@ -61,6 +61,7 @@ void main() {
       loadResults: <PvLoadResult>[
         PvLoadResult(
           componentId: lamp.id,
+          resistanceOhm: 529,
           voltageRmsV: 230,
           currentRmsA: 100 / 230,
           activePowerW: 100,

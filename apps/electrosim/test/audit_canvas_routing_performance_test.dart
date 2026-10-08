@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:electrosim/runtime/electrosim_connection_router.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
@@ -47,7 +46,7 @@ void main() {
     final moved = base.moveElement('lamp-1', const Offset(600, 312));
     final worker = ElectroSimConnectionRouter();
     addTearDown(worker.dispose);
-    final CircuitVisualLayout? result = await tester.runAsync(
+    final CircuitVisualLayout? result = await tester.runAsync<CircuitVisualLayout?>(
       () => worker.routeChangedElement(
         circuit: circuit,
         layout: moved,

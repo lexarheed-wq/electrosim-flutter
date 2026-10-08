@@ -1,0 +1,41 @@
+name: AUDIT-STORAGE focused regression
+
+on:
+  push:
+    branches:
+      - fix/audit-storage-20261008
+    paths:
+      - 'packages/electrosim_storage/**'
+      - '.github/workflows/audit-storage-regressions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify toolchain
+        run: |
+          flutter --version
+          dart --version
+          git diff --check
+      - name: Resolve, analyze and test storage
+        working-directory: packages/electrosim_storage
+        run: |
+          dart pub get
+          dart format --output=none --set-exit-if-changed lib/src/local_storage_repository.dart test/audit_regression_storage_test.dart
+          dart analyze
+          dart test
+      - name: Architecture and contract guards
+        run: |
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py

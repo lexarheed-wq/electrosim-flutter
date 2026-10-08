@@ -3445,29 +3445,29 @@ class _WorkspaceTopBar extends StatelessWidget {
                   if (!compact)
                     PopupMenuButton<Duration>(
                       key: const Key('workspace-time-advance'),
-                    tooltip: 'Avancer le temps simulé',
-                    enabled: !simulationAdvancing,
-                    icon: const Icon(Icons.more_time_outlined),
-                    onSelected: onAdvanceSimulation,
-                    itemBuilder: (BuildContext context) =>
-                        const <PopupMenuEntry<Duration>>[
-                          PopupMenuItem<Duration>(
-                            key: Key('workspace-time-plus-minute'),
-                            value: Duration(minutes: 1),
-                            child: Text('Avancer de +1 min'),
-                          ),
-                          PopupMenuItem<Duration>(
-                            key: Key('workspace-time-plus-hour'),
-                            value: Duration(hours: 1),
-                            child: Text('Avancer de +1 h'),
-                          ),
-                          PopupMenuItem<Duration>(
-                            key: Key('workspace-time-plus-day'),
-                            value: Duration(hours: 24),
-                            child: Text('Avancer de +24 h'),
-                          ),
-                        ],
-                  ),
+                      tooltip: 'Avancer le temps simulé',
+                      enabled: !simulationAdvancing,
+                      icon: const Icon(Icons.more_time_outlined),
+                      onSelected: onAdvanceSimulation,
+                      itemBuilder: (BuildContext context) =>
+                          const <PopupMenuEntry<Duration>>[
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-minute'),
+                              value: Duration(minutes: 1),
+                              child: Text('Avancer de +1 min'),
+                            ),
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-hour'),
+                              value: Duration(hours: 1),
+                              child: Text('Avancer de +1 h'),
+                            ),
+                            PopupMenuItem<Duration>(
+                              key: Key('workspace-time-plus-day'),
+                              value: Duration(hours: 24),
+                              child: Text('Avancer de +24 h'),
+                            ),
+                          ],
+                    ),
                   IconButton(
                     key: const Key('workspace-rotate-action'),
                     tooltip: 'Rotation 90°',
@@ -3572,8 +3572,13 @@ class _WorkspaceTopBar extends StatelessWidget {
 }
 
 enum _WorkspaceSecondaryAction {
-  save, open, recenter, resetSimulation,
-  advanceMinute, advanceHour, advanceDay,
+  save,
+  open,
+  recenter,
+  resetSimulation,
+  advanceMinute,
+  advanceHour,
+  advanceDay,
 }
 
 class _DashboardDestination extends StatelessWidget {

@@ -164,7 +164,7 @@ jobs:
           printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
           printf '%s\n' "$architecture" > "$out/ARCHITECTURE.txt"
           flutter --version > "$out/FLUTTER_VERSION.txt"
-          dart --version 2> "$out/DART_VERSION.txt"
+          dart --version > "$out/DART_VERSION.txt" 2>&1
 
           cat > "$out/PHYSICAL_VALIDATION_REQUIRED.txt" <<'EOF'
           F18 physical validation required on target Mac Intel / Ventura 13.7
@@ -204,7 +204,12 @@ jobs:
 
           ditto -c -k --sequesterRsrc --keepParent "$app_path" \
             "$out/ElectroSim_F18_G12_${base_sha:0:12}_macOS_Intel.zip"
-          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+          (
+            cd "$out"
+            shasum -a 256 ElectroSim_F18_G12_${base_sha:0:12}_macOS_Intel.zip > SHA256.txt
+            shasum -a 256 -c SHA256.txt
+            test -s DART_VERSION.txt
+          )
 
       - name: Package exact source SHA
         shell: bash
@@ -217,7 +222,11 @@ jobs:
             --output="$out/ElectroSim_F18_G12_SOURCE_${base_sha:0:12}.zip" \
             HEAD
           printf '%s\n' "$base_sha" > "$out/BASE_COMMIT.txt"
-          shasum -a 256 "$out"/*.zip > "$out/SHA256.txt"
+          (
+            cd "$out"
+            shasum -a 256 ElectroSim_F18_G12_SOURCE_${base_sha:0:12}.zip > SHA256.txt
+            shasum -a 256 -c SHA256.txt
+          )
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1327,6 +1327,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       components: components,
       connections: _circuit.connections,
       sources: sources,
+      instruments: _circuit.instruments,
+      probes: _circuit.probes,
       settings: _circuit.settings,
       metadata: _circuit.metadata,
     );

@@ -57,3 +57,11 @@ final class TerminalId extends ValueId {
 final class ConnectionId extends ValueId {
   ConnectionId(super.value);
 }
+final class InstrumentId extends ValueId {
+  InstrumentId(super.value);
+}
+
+final class ProbeId extends ValueId {
+  ProbeId(super.value);
+}
+

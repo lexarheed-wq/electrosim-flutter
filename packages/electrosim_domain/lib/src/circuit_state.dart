@@ -5,6 +5,7 @@ import 'connection.dart';
 import 'domain_error.dart';
 import 'electrical_types.dart';
 import 'ids.dart';
+import 'instrument.dart';
 import 'json_support.dart';
 import 'source.dart';
 import 'terminal.dart';
@@ -17,11 +18,15 @@ final class CircuitState {
     List<ComponentInstance> components = const <ComponentInstance>[],
     List<Connection> connections = const <Connection>[],
     List<SourceInstance> sources = const <SourceInstance>[],
+    List<InstrumentInstance> instruments = const <InstrumentInstance>[],
+    List<ProbeConnection> probes = const <ProbeConnection>[],
     Map<String, Object?> settings = const <String, Object?>{},
     Map<String, Object?> metadata = const <String, Object?>{},
   }) : components = List<ComponentInstance>.unmodifiable(components),
        connections = List<Connection>.unmodifiable(connections),
        sources = List<SourceInstance>.unmodifiable(sources),
+       instruments = List<InstrumentInstance>.unmodifiable(instruments),
+       probes = List<ProbeConnection>.unmodifiable(probes),
        settings = freezeJsonMap(settings),
        metadata = freezeJsonMap(metadata) {
     if (revision < 0) {
@@ -69,6 +74,14 @@ final class CircuitState {
             (Object? value) => SourceInstance.fromJson(value! as JsonMap),
           )
           .toList(growable: false),
+      instruments: (json['instruments'] as List<Object?>? ?? const <Object?>[])
+          .map<InstrumentInstance>((Object? value) =>
+              InstrumentInstance.fromJson(value! as JsonMap))
+          .toList(growable: false),
+      probes: (json['probes'] as List<Object?>? ?? const <Object?>[])
+          .map<ProbeConnection>((Object? value) =>
+              ProbeConnection.fromJson(value! as JsonMap))
+          .toList(growable: false),
       settings: requireMap(json, 'settings'),
       metadata: requireMap(json, 'metadata'),
     );
@@ -93,6 +106,8 @@ final class CircuitState {
   final List<ComponentInstance> components;
   final List<Connection> connections;
   final List<SourceInstance> sources;
+  final List<InstrumentInstance> instruments;
+  final List<ProbeConnection> probes;
   final JsonMap settings;
   final JsonMap metadata;
 
@@ -110,6 +125,8 @@ final class CircuitState {
     'sources': sources
         .map<JsonMap>((SourceInstance item) => item.toJson())
         .toList(),
+    if (instruments.isNotEmpty) 'instruments': instruments.map<JsonMap>((item) => item.toJson()).toList(),
+    if (probes.isNotEmpty) 'probes': probes.map<JsonMap>((item) => item.toJson()).toList(),
     'settings': settings,
     'metadata': metadata,
   };
@@ -121,6 +138,10 @@ final class CircuitState {
     final Set<SourceId> sourceIds = <SourceId>{};
     final Set<ConnectionId> connectionIds = <ConnectionId>{};
     final Set<TerminalId> terminalIds = <TerminalId>{};
+    final Set<InstrumentId> instrumentIds = <InstrumentId>{};
+    final Set<ProbeId> probeIds = <ProbeId>{};
+    final Set<String> occupiedPorts = <String>{};
+
 
     for (final ComponentInstance component in components) {
       if (!componentIds.add(component.id)) {
@@ -160,6 +181,54 @@ final class CircuitState {
         );
       }
     }
+    for (final InstrumentInstance instrument in instruments) {
+      if (!instrumentIds.add(instrument.id)) {
+        _duplicate('instrument', instrument.id.value);
+      }
+      if (instrument.cutConnectionId != null &&
+          !connectionIds.contains(instrument.cutConnectionId)) {
+        throw DomainException(
+          code: DomainErrorCode.invalidValue,
+          message: 'Instrument cutConnectionId does not reference a circuit wire.',
+          context: <String, Object?>{'id': instrument.id.value},
+        );
+      }
+    }
+    for (final ProbeConnection probe in probes) {
+      if (!probeIds.add(probe.id)) {
+        _duplicate('probe', probe.id.value);
+      }
+      if (!instrumentIds.contains(probe.instrumentId)) {
+        throw DomainException(
+          code: DomainErrorCode.invalidValue,
+          message: 'Probe references an unknown physical instrument.',
+          context: <String, Object?>{'id': probe.id.value},
+        );
+      }
+      if (probe.terminalId != null && !terminalIds.contains(probe.terminalId)) {
+        throw DomainException(
+          code: DomainErrorCode.invalidTerminalReference,
+          message: 'Probe references an unknown terminal.',
+          context: <String, Object?>{'id': probe.id.value},
+        );
+      }
+      if (probe.connectionId != null &&
+          !connectionIds.contains(probe.connectionId)) {
+        throw DomainException(
+          code: DomainErrorCode.invalidValue,
+          message: 'Probe references an unknown wire.',
+          context: <String, Object?>{'id': probe.id.value},
+        );
+      }
+      final String occupied = '${probe.instrumentId.value}:${probe.port.name}';
+      if (!occupiedPorts.add(occupied)) {
+        throw DomainException(
+          code: DomainErrorCode.invalidValue,
+          message: 'Multiple probes occupy the same instrument port.',
+          context: <String, Object?>{'port': occupied},
+        );
+      }
+    }
   }
 
   Never _duplicate(String kind, String id) {
@@ -179,6 +248,8 @@ final class CircuitState {
       _listEquals(other.components, components) &&
       _listEquals(other.connections, connections) &&
       _listEquals(other.sources, sources) &&
+      _listEquals(other.instruments, instruments) &&
+      _listEquals(other.probes, probes) &&
       deepJsonEquals(other.settings, settings) &&
       deepJsonEquals(other.metadata, metadata);
 
@@ -190,6 +261,8 @@ final class CircuitState {
     Object.hashAll(components),
     Object.hashAll(connections),
     Object.hashAll(sources),
+    Object.hashAll(instruments),
+    Object.hashAll(probes),
     deepJsonHash(settings),
     deepJsonHash(metadata),
   );

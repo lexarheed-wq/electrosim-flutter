@@ -12,3 +12,4 @@ export 'src/ids.dart';
 export 'src/motor_three_phase_coupling.dart';
 export 'src/source.dart';
 export 'src/terminal.dart';
+export 'src/instrument.dart';

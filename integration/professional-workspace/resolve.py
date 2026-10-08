@@ -146,6 +146,12 @@ def main():
           '        if (element.widget.key == electroSimContextRegionKey)\n          insideClosingPanel = true;',
           '        if (element.widget.key == electroSimContextRegionKey) {\n          insideClosingPanel = true;\n        }')
     shelltest.write_text(t)
+    uitest=ROOT/'apps/electrosim/test/workspace_layout_preferences_ui_test.dart'
+    q=uitest.read_text()
+    q=rep(q,
+          '          if (editFirst)\n            await Future<void>.delayed(const Duration(milliseconds: 30));',
+          '          if (editFirst) {\n            await Future<void>.delayed(const Duration(milliseconds: 30));\n          }')
+    uitest.write_text(q)
     assert '<<<<<<<' not in MAIN.read_text()+SHELL.read_text()
     print('PROFESSIONAL_WORKSPACE_CONFLICTS_RESOLVED')
 if __name__ == '__main__':

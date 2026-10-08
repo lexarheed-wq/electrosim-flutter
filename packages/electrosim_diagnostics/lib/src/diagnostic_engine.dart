@@ -343,6 +343,8 @@ _MappedEvidence? _fromAc3Solver(Ac3SolverDiagnostic diagnostic) {
     Ac3DiagnosticCode.missingFrequency ||
     Ac3DiagnosticCode.invalidFrequency => EieAdviceCode.invalidFrequency,
     Ac3DiagnosticCode.phaseLoss => EieAdviceCode.phaseLoss,
+    Ac3DiagnosticCode.invalidMotorCoupling =>
+      EieAdviceCode.invalidMotorCoupling,
     _ => null,
   };
   final List<String> nodes = <String>[
@@ -461,6 +463,8 @@ String _title(EieAdviceCode code) => switch (code) {
   EieAdviceCode.receiverOverload => 'Récepteur en surcharge',
   EieAdviceCode.severeReceiverOverload => 'Surcharge sévère du récepteur',
   EieAdviceCode.phaseLoss => 'Perte de phase détectée',
+  EieAdviceCode.invalidMotorCoupling =>
+    'Couplage moteur triphasé incomplet ou invalide',
   EieAdviceCode.invalidFrequency => 'Fréquence AC invalide',
   EieAdviceCode.pvWrongElectricalMode => 'Mode électrique PV incohérent',
   EieAdviceCode.pvTopologyIdentityMismatch => 'Résultat PV hors révision',

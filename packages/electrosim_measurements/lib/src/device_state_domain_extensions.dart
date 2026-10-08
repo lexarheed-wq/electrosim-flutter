@@ -53,6 +53,28 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
         .where((Ac3BranchResult item) => _belongsTo(component.id, item.id))
         .toList(growable: false);
     if (branches.isEmpty) return _missingBranch(component);
+    if (component.modelType == 'motor_3p_6t') {
+      final MotorThreePhaseCouplingAssessment coupling =
+          MotorThreePhaseCouplingEvaluator.evaluate(circuit, component);
+      if (!coupling.isValid) {
+        return ComponentOperatingState(
+          componentId: component.id,
+          code: ComponentOperatingCode.faulted,
+          voltageV: null,
+          currentA: null,
+          powerW: null,
+          warnings: <OperatingWarning>[
+            OperatingWarning(
+              code: OperatingWarningCode.invalidMotorCoupling,
+              message: coupling.message,
+            ),
+          ],
+          evidenceIds: <String>[
+            for (final Ac3BranchResult branch in branches) 'branch:${branch.id}',
+          ],
+        );
+      }
+    }
     return _fromAcBranches(
       component: component,
       voltages: branches.map((Ac3BranchResult item) => item.voltage.magnitude),

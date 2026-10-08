@@ -21,6 +21,7 @@ enum EieAdviceCode {
   receiverOverload,
   severeReceiverOverload,
   phaseLoss,
+  invalidMotorCoupling,
   invalidFrequency,
   pvWrongElectricalMode,
   pvTopologyIdentityMismatch,

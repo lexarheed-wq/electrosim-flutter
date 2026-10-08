@@ -19,6 +19,7 @@ enum OperatingWarningCode {
   overVoltage,
   overCurrent,
   overPower,
+  invalidMotorCoupling,
 }
 
 final class OperatingWarning {

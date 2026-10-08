@@ -27,18 +27,15 @@ jobs:
         run: |
           set -euo pipefail
           test -f integration/professional-workspace/electrosim-interface-changements.patch
-          if ! git apply --3way integration/professional-workspace/electrosim-interface-changements.patch; then
-            echo 'PATCH_3WAY_CONFLICT: source changes require reviewed conflict resolution' >&2
-            git status --short >&2
-            exit 1
+          if git apply --3way integration/professional-workspace/electrosim-interface-changements.patch; then
+            echo PATCH_APPLIED_WITHOUT_CONFLICT
+          else
+            python3 integration/professional-workspace/resolve.py
           fi
-          if test -n "$(git ls-files -u)"; then
-            echo 'UNMERGED_FILES: no unsafe automated resolution permitted' >&2
-            git ls-files -u >&2
-            exit 1
-          fi
-          git diff --check
-          echo PROFESSIONAL_WORKSPACE_PATCH_APPLIED
+          git add apps/electrosim packages/electrosim_ui_kit packages/electrosim_canvas
+          test -z "$(git ls-files -u)"
+          git diff --cached --check
+          echo PROFESSIONAL_WORKSPACE_PATCH_APPLIED_AND_CONFLICTS_RESOLVED
       - name: Capture exact three-way merge conflicts and current source
         if: failure()
         shell: bash

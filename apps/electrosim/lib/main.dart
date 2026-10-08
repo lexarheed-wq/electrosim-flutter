@@ -2667,12 +2667,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         sizes.remove(selected);
       }
       _layout = CircuitVisualLayout(
-          elementPositions: _layout.elementPositions,
-          elementSizes: sizes,
-          wireRoutes: _layout.wireRoutes,
-          elementQuarterTurns: _layout.elementQuarterTurns,
-          defaultElementSize: _layout.defaultElementSize,
-        );
+        elementPositions: _layout.elementPositions,
+        elementSizes: sizes,
+        wireRoutes: _layout.wireRoutes,
+        elementQuarterTurns: _layout.elementQuarterTurns,
+        defaultElementSize: _layout.defaultElementSize,
+      );
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _simulation.updateCircuit(_circuit);
@@ -2731,15 +2731,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     String elementId,
   ) async {
     try {
-      final CircuitVisualLayout? routed =
-          await _connectionRouter.routeChangedElement(
+      final CircuitVisualLayout? routed = await _connectionRouter
+          .routeChangedElement(
+            circuit: circuit,
+            layout: provisional,
+            elementId: elementId,
+          );
+      if (!mounted ||
+          routed == null ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional))
+        return;
+      if (!F18WorkspaceWireSafety.isRenderable(
         circuit: circuit,
-        layout: provisional,
-        elementId: elementId,
-      );
-      if (!mounted || routed == null || !identical(_circuit, circuit) ||
-          !identical(_layout, provisional)) return;
-      if (!F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: routed)) {
+        layout: routed,
+      )) {
         setState(() {
           _layout = previous;
           _status = 'Rotation refusée : fils non routables.';
@@ -2751,7 +2757,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _status = 'Rotation 90° : $elementId';
       });
     } on Object catch (error) {
-      if (!mounted || !identical(_circuit,circuit) || !identical(_layout,provisional)) return;
+      if (!mounted ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional))
+        return;
       setState(() {
         _layout = previous;
         _status = 'Rotation annulée : $error';
@@ -2831,12 +2840,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _circuit = next;
         _layout = CircuitVisualLayout(
-            elementPositions: _layout.elementPositions,
-            elementSizes: _layout.elementSizes,
-            wireRoutes: routes,
-            elementQuarterTurns: _layout.elementQuarterTurns,
-            defaultElementSize: _layout.defaultElementSize,
-          );
+          elementPositions: _layout.elementPositions,
+          elementSizes: _layout.elementSizes,
+          wireRoutes: routes,
+          elementQuarterTurns: _layout.elementQuarterTurns,
+          defaultElementSize: _layout.defaultElementSize,
+        );
         _selected = null;
         _status = 'Suppression : fil — $selected';
       });
@@ -2885,12 +2894,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     setState(() {
       _circuit = next;
       _layout = CircuitVisualLayout(
-          elementPositions: positions,
-          elementSizes: sizes,
-          wireRoutes: routes,
-          elementQuarterTurns: rotations,
-          defaultElementSize: _layout.defaultElementSize,
-        );
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
+      );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
@@ -2981,12 +2990,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     setState(() {
       _circuit = next;
       _layout = CircuitVisualLayout(
-          elementPositions: positions,
-          elementSizes: sizes,
-          wireRoutes: routes,
-          elementQuarterTurns: rotations,
-          defaultElementSize: _layout.defaultElementSize,
-        );
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
+      );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
     });
@@ -3418,8 +3427,8 @@ class _WorkspaceTopBar extends StatelessWidget {
                     tooltip: simulationAdvancing
                         ? 'Annuler l’avance temporelle'
                         : simulationRunning
-                            ? 'Mettre la simulation en pause'
-                            : 'Démarrer la simulation',
+                        ? 'Mettre la simulation en pause'
+                        : 'Démarrer la simulation',
                     onPressed: simulationAdvancing
                         ? onCancelAdvance
                         : onToggleSimulation,
@@ -3427,8 +3436,8 @@ class _WorkspaceTopBar extends StatelessWidget {
                       simulationAdvancing
                           ? Icons.stop_circle_outlined
                           : simulationRunning
-                              ? Icons.pause_circle_outline
-                              : Icons.play_circle_outline,
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline,
                     ),
                   ),
                   PopupMenuButton<Duration>(

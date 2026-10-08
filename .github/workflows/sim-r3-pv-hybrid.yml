@@ -1,0 +1,34 @@
+name: SIM-R3 physical PV DC and AC shared bus
+
+on:
+  push:
+    branches:
+      - fix/sim-r3-pv-hybrid-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shared_bus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Core architecture
+        run: |
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+      - name: Analyze all photovoltaic models and physical regressions
+        working-directory: packages/electrosim_pv
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test

@@ -482,6 +482,7 @@ final class SolverPV {
         controllerParameters: controllerParameters!,
         batteryParameters: batteryParameters!,
         loadParameters: loadParameters,
+        dcLoadParameters: dcLoadParameters,
         diagnostics: diagnostics,
         irradianceWm2: irradianceWm2,
         cellTemperatureC: cellTemperatureC,
@@ -840,6 +841,7 @@ final class SolverPV {
     required _ControllerParameters controllerParameters,
     required _BatteryParameters batteryParameters,
     required List<_LoadParameters> loadParameters,
+    required List<_LoadParameters> dcLoadParameters,
     required List<PvSolverDiagnostic> diagnostics,
     required double irradianceWm2,
     required double cellTemperatureC,
@@ -954,31 +956,61 @@ final class SolverPV {
         ? 0.0
         : desiredAcPowerW / inverterParameters.efficiency;
 
-    final double pvToInverterW = math.min(
-      pvBusAvailablePowerW,
-      requiredDcPowerW,
+    // A real DC bus may supply both a DC receiver and an inverter.
+    // Priority is DC loads, then AC conversion, then battery charging.
+    // The shared battery current/energy budget is consumed exactly once.
+    final double dcConductance = dcLoadParameters.fold<double>(
+      0.0,
+      (double sum, _LoadParameters load) => sum + 1.0 / load.resistanceOhm,
     );
-    final double dcDeficitW = math.max(0.0, requiredDcPowerW - pvToInverterW);
-
+    final double requestedDcLoadW = busVoltageV * busVoltageV * dcConductance;
     final double availableBatteryEnergyWh = math.max(
       0.0,
       (initialSoc - batteryParameters.minSoc) * capacityWh,
     );
     double maxBatteryRawDischargeW =
         busVoltageV * batteryParameters.maxDischargeCurrentA;
-    if (elapsedHours > 0.0) {
+    if (availableBatteryEnergyWh <= options.numericTolerance) {
+      maxBatteryRawDischargeW = 0.0;
+    } else if (elapsedHours > 0.0) {
       maxBatteryRawDischargeW = math.min(
         maxBatteryRawDischargeW,
         availableBatteryEnergyWh / elapsedHours,
       );
     }
-    final double rawBatteryDischargeW = math.min(
-      maxBatteryRawDischargeW,
-      dcDeficitW / batteryParameters.dischargeEfficiency,
-    );
-    final double batteryBusDischargeW =
-        rawBatteryDischargeW * batteryParameters.dischargeEfficiency;
+    final double totalBatteryBusDischargeLimitW =
+        maxBatteryRawDischargeW * batteryParameters.dischargeEfficiency;
 
+    final double deliverableDcW = math.min(
+      requestedDcLoadW,
+      pvBusAvailablePowerW + totalBatteryBusDischargeLimitW,
+    );
+    final double dcBusLoadVoltageV = dcConductance <= options.numericTolerance
+        ? busVoltageV
+        : deliverableDcW + options.numericTolerance >= requestedDcLoadW
+            ? busVoltageV
+            : deliverableDcW <= options.numericTolerance
+                ? 0.0
+                : math.sqrt(deliverableDcW / dcConductance);
+    final double actualDcLoadW =
+        dcBusLoadVoltageV * dcBusLoadVoltageV * dcConductance;
+    final double actualPvToDcW = math.min(
+      pvBusAvailablePowerW,
+      actualDcLoadW,
+    );
+    final double dcBatteryBusDischargeW =
+        math.max(0.0, actualDcLoadW - actualPvToDcW);
+    final double pvAfterDcW =
+        math.max(0.0, pvBusAvailablePowerW - actualPvToDcW);
+    final double remainingBatteryBusBudgetW = math.max(
+      0.0,
+      totalBatteryBusDischargeLimitW - dcBatteryBusDischargeW,
+    );
+
+    final double pvToInverterW = math.min(pvAfterDcW, requiredDcPowerW);
+    final double dcDeficitW = math.max(0.0, requiredDcPowerW - pvToInverterW);
+    final double batteryBusDischargeW =
+        math.min(remainingBatteryBusBudgetW, dcDeficitW);
     final double inverterDcAvailableW = pvToInverterW + batteryBusDischargeW;
     final double availableAcPowerW =
         inverterDcAvailableW * inverterParameters.efficiency;
@@ -1017,10 +1049,10 @@ final class SolverPV {
         ? 0.0
         : outputPowerW / inverterParameters.efficiency;
     final double actualPvToInverterW = math.min(
-      pvBusAvailablePowerW,
+      pvAfterDcW,
       actualInverterDcW,
     );
-    final double actualBatteryBusDischargeW = math.max(
+    final double actualBatteryBusDischargeW = dcBatteryBusDischargeW + math.max(
       0.0,
       actualInverterDcW - actualPvToInverterW,
     );
@@ -1031,7 +1063,7 @@ final class SolverPV {
 
     final double pvBusSurplusW = math.max(
       0.0,
-      pvBusAvailablePowerW - actualPvToInverterW,
+      pvBusAvailablePowerW - actualPvToDcW - actualPvToInverterW,
     );
     final double batteryHeadroomWh = math.max(
       0.0,
@@ -1044,7 +1076,10 @@ final class SolverPV {
         batteryHeadroomWh / (elapsedHours * batteryParameters.chargeEfficiency),
       );
     }
-    final double batteryChargeInputW = math.min(pvBusSurplusW, maxChargeInputW);
+    final double batteryChargeInputW =
+        actualBatteryBusDischargeW > options.numericTolerance
+        ? 0.0
+        : math.min(pvBusSurplusW, maxChargeInputW);
     final double batteryStoredChargeW =
         batteryChargeInputW * batteryParameters.chargeEfficiency;
 
@@ -1084,7 +1119,8 @@ final class SolverPV {
       );
     }
 
-    final double pvBusUsedW = actualPvToInverterW + batteryChargeInputW;
+    final double pvBusUsedW =
+        actualPvToDcW + actualPvToInverterW + batteryChargeInputW;
     final double arrayDrawnPowerW = controllerOperational
         ? math.min(
             availablePowerW,
@@ -1117,6 +1153,15 @@ final class SolverPV {
           voltageRmsV: outputVoltageV,
           currentRmsA: outputVoltageV / load.resistanceOhm,
           activePowerW: outputVoltageV * outputVoltageV / load.resistanceOhm,
+        ),
+      for (final _LoadParameters load in dcLoadParameters)
+        PvLoadResult(
+          componentId: load.componentId,
+          resistanceOhm: load.resistanceOhm,
+          voltageRmsV: dcBusLoadVoltageV,
+          currentRmsA: dcBusLoadVoltageV / load.resistanceOhm,
+          activePowerW:
+              dcBusLoadVoltageV * dcBusLoadVoltageV / load.resistanceOhm,
         ),
     ];
 

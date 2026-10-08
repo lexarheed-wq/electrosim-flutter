@@ -556,6 +556,72 @@ void main() {
       },
     );
 
+    test('SIM-R3 mixed PV bus supplies DC 48V lamp and AC load together', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeDcLamp: true,
+        initialSoc: 0.50,
+        loadPowerAt230W: 1000.0,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit, topologyEngine.compile(circuit),
+        previousBatterySoc: 0.50,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      final PvLoadResult dc = result.load(ComponentId('storage-dc-lamp'));
+      final PvLoadResult ac = result.load(ComponentId('storage-load'));
+      expect(dc.voltageRmsV, closeTo(48.0, 1e-6));
+      expect(dc.activePowerW, closeTo(48.0, 1e-6));
+      expect(ac.voltageRmsV, closeTo(230.0, 1e-6));
+      expect(ac.activePowerW, closeTo(1000.0, 1e-4));
+      final double busPv = result.pvDrawnPowerW -
+          result.controllerConversionLossW;
+      final double powerAccounting = dc.activePowerW +
+          result.inverterOutputPowerW +
+          result.inverterConversionLossW -
+          result.batteryPowerW;
+      expect(busPv, closeTo(powerAccounting, 1e-5));
+      expect(result.batterySoc, greaterThan(0.50));
+    });
+
+    test('SIM-R3 mixed bus discharges one shared battery budget', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeDcLamp: true, irradianceWm2: 0.0,
+        initialSoc: 0.50, loadPowerAt230W: 1000.0,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit, topologyEngine.compile(circuit),
+        previousBatterySoc: 0.50,
+        elapsed: const Duration(hours: 1),
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.load(ComponentId('storage-dc-lamp')).activePowerW,
+          closeTo(48.0, 1e-6));
+      expect(result.load(ComponentId('storage-load')).activePowerW,
+          closeTo(1000.0, 1e-4));
+      expect(result.batterySoc, lessThan(0.50));
+      expect(result.batteryPowerW, closeTo(
+          48.0 + 1000.0 / 0.95, 1e-4));
+      expect(result.pvDrawnPowerW, closeTo(0.0, 1e-8));
+    });
+
+    test('SIM-R3 depleted battery cuts both DC and AC loads with no PV', () {
+      final CircuitState circuit = _pvStorageCircuit(
+        includeDcLamp: true, irradianceWm2: 0.0,
+        initialSoc: 0.10, loadPowerAt230W: 1000.0,
+      );
+      final PvSolveResult result = solver.solve(
+        circuit, topologyEngine.compile(circuit),
+        previousBatterySoc: 0.10,
+        elapsed: Duration.zero,
+      );
+      expect(result.status, PvSolveStatus.solved);
+      expect(result.load(ComponentId('storage-dc-lamp')).activePowerW, 0.0);
+      expect(result.load(ComponentId('storage-load')).activePowerW, 0.0);
+      expect(result.batterySoc, closeTo(0.10, 1e-8));
+      expect(result.batteryPowerW, closeTo(0.0, 1e-8));
+    });
+
     test('SIM-R3 PV-only DC bus powers 48V/48W lamp while charging surplus', () {
       final CircuitState circuit = _pvStorageCircuit(
         includeInverter: false,

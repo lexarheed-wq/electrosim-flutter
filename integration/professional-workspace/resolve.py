@@ -139,6 +139,13 @@ def main():
         if proof not in result: raise RuntimeError('lost G12RQ contract: '+proof)
     MAIN.write_text(result)
     SHELL.write_text(ui_shell)
+    # Preserve behavior while satisfying the repository's strict lint gate.
+    shelltest=ROOT/'packages/electrosim_ui_kit/test/professional_workspace_shell_test.dart'
+    t=shelltest.read_text()
+    t=rep(t,
+          '        if (element.widget.key == electroSimContextRegionKey)\n          insideClosingPanel = true;',
+          '        if (element.widget.key == electroSimContextRegionKey) {\n          insideClosingPanel = true;\n        }')
+    shelltest.write_text(t)
     assert '<<<<<<<' not in MAIN.read_text()+SHELL.read_text()
     print('PROFESSIONAL_WORKSPACE_CONFLICTS_RESOLVED')
 if __name__ == '__main__':

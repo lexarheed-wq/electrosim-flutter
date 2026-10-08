@@ -3,6 +3,31 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('wiring hover uses prepared terminal hit testing and isolated preview notifier', () {
+    final String source = File('lib/main.dart').readAsStringSync();
+    final int start = source.indexOf('void _updateWiringHover(');
+    final int end = source.indexOf('void _handleConnectionRequested(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final String method = source.substring(start, end);
+    expect(method, contains('hitTestTerminalPrepared'));
+    expect(method, contains('_preparedHitTestSession()'));
+    expect(method, contains('_wiringPointerWorld.value = worldPoint'));
+    expect(method, isNot(contains('CircuitGeometryIndex.build')));
+    expect(method, isNot(contains('_f9CanvasHit(localPosition)')));
+  });
+
+  test('full canvas hit testing reuses a prepared session', () {
+    final String source = File('lib/main.dart').readAsStringSync();
+    final int start = source.indexOf('CanvasHitResult _f9CanvasHit(');
+    final int end = source.indexOf('void _onCanvasPointerDown(', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final String method = source.substring(start, end);
+    expect(method, contains('hitTestPrepared'));
+    expect(method, contains('_preparedHitTestSession()'));
+  });
+
   test('pointer-move drag path never invokes geometry rebuild or global routing', () {
     final String source = File('lib/main.dart').readAsStringSync();
     final int moveStart = source.indexOf('void _commitElementMoveIfSafe(');

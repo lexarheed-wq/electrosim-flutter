@@ -26,11 +26,37 @@ final class CanvasHitResult {
   final ConnectionId? connectionId;
 }
 
+final class HitTestSession {
+  const HitTestSession({
+    required this.circuit,
+    required this.layout,
+    required this.geometry,
+  });
+
+  final CircuitState circuit;
+  final CircuitVisualLayout layout;
+  final CircuitGeometryIndex geometry;
+}
+
 final class HitTestEngine {
   const HitTestEngine({this.terminalRadius = 11, this.wireTolerance = 7});
 
   final double terminalRadius;
   final double wireTolerance;
+
+  HitTestSession prepare({
+    required CircuitState circuit,
+    required CircuitVisualLayout layout,
+    Map<String, Offset> previewPositions = const <String, Offset>{},
+  }) => HitTestSession(
+    circuit: circuit,
+    layout: layout,
+    geometry: CircuitGeometryIndex.build(
+      circuit,
+      layout,
+      previewPositions: previewPositions,
+    ),
+  );
 
   CanvasHitResult hitTest({
     required Offset worldPoint,
@@ -38,29 +64,58 @@ final class HitTestEngine {
     required CircuitVisualLayout layout,
     Map<String, Offset> previewPositions = const <String, Offset>{},
     double viewportScale = 1,
+  }) => hitTestPrepared(
+    worldPoint: worldPoint,
+    session: prepare(
+      circuit: circuit,
+      layout: layout,
+      previewPositions: previewPositions,
+    ),
+    viewportScale: viewportScale,
+  );
+
+  CanvasHitResult hitTestTerminalPrepared({
+    required Offset worldPoint,
+    required HitTestSession session,
+    double viewportScale = 1,
   }) {
     final double safeScale = viewportScale.isFinite && viewportScale > 0
         ? viewportScale
         : 1;
     final double terminalWorldRadius = terminalRadius / safeScale;
-    final double wireWorldTolerance = wireTolerance / safeScale;
-    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
-      circuit,
-      layout,
-      previewPositions: previewPositions,
-    );
-
     for (final MapEntry<TerminalId, Offset> entry
-        in geometry.terminalPositions.entries) {
+        in session.geometry.terminalPositions.entries) {
       if ((entry.value - worldPoint).distance <= terminalWorldRadius) {
         return CanvasHitResult(
           kind: CanvasHitKind.terminal,
           worldPosition: worldPoint,
-          elementId: geometry.terminalOwners[entry.key],
+          elementId: session.geometry.terminalOwners[entry.key],
           terminalId: entry.key,
         );
       }
     }
+    return CanvasHitResult.background(worldPoint);
+  }
+
+  CanvasHitResult hitTestPrepared({
+    required Offset worldPoint,
+    required HitTestSession session,
+    double viewportScale = 1,
+  }) {
+    final double safeScale = viewportScale.isFinite && viewportScale > 0
+        ? viewportScale
+        : 1;
+    final double wireWorldTolerance = wireTolerance / safeScale;
+    final CircuitState circuit = session.circuit;
+    final CircuitVisualLayout layout = session.layout;
+    final CircuitGeometryIndex geometry = session.geometry;
+
+    final CanvasHitResult terminal = hitTestTerminalPrepared(
+      worldPoint: worldPoint,
+      session: session,
+      viewportScale: viewportScale,
+    );
+    if (terminal.kind == CanvasHitKind.terminal) return terminal;
 
     for (final ComponentInstance component in circuit.components.reversed) {
       final Rect? rect = geometry.elementRects[component.id.value];
@@ -84,12 +139,9 @@ final class HitTestEngine {
     }
 
     for (final Connection connection in circuit.connections.reversed) {
-      final Offset? start =
-          geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
-      if (start == null || end == null) {
-        continue;
-      }
+      if (start == null || end == null) continue;
       final List<Offset> points = <Offset>[
         start,
         ...layout.routeFor(connection.id.value),
@@ -106,7 +158,6 @@ final class HitTestEngine {
         }
       }
     }
-
     return CanvasHitResult.background(worldPoint);
   }
 

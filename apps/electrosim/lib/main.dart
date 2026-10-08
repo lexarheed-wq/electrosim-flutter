@@ -519,6 +519,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
+  HitTestSession? _hitTestSession;
+  CircuitState? _hitTestSessionCircuit;
+  CircuitVisualLayout? _hitTestSessionLayout;
+  final ValueNotifier<Offset?> _wiringPointerWorld =
+      ValueNotifier<Offset?>(null);
   TerminalId? _wiringPendingTerminal;
   TerminalId? _wiringHoverTerminal;
   int? _activeCanvasPointer;
@@ -804,12 +809,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 _wiringPendingTerminal,
                                             hoverTerminalId:
                                                 _wiringHoverTerminal,
-                                            pointerWorldPosition:
-                                                _lastCanvasPointerLocal == null
-                                                ? null
-                                                : _viewport.screenToWorld(
-                                                    _lastCanvasPointerLocal!,
-                                                  ),
+                                            pointerWorldPositionListenable:
+                                                _wiringPointerWorld,
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
                                             runtimeSnapshot: _simulation.snapshot,
@@ -1096,6 +1097,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = null;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
+      _wiringPointerWorld.value = null;
       _status = 'Nouvelle platine ${_electricalModeLabel(mode)} prête.';
     });
     _simulation.updateCircuit(next);
@@ -1502,12 +1504,23 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return '$prefix multiple : $count éléments';
   }
 
-  CanvasHitResult _f9CanvasHit(Offset localPosition) => _hitTest.hitTest(
-    worldPoint: _viewport.screenToWorld(localPosition),
-    circuit: _circuit,
-    layout: _layout,
-    viewportScale: _viewport.scale,
-  );
+  HitTestSession _preparedHitTestSession() {
+    if (_hitTestSession == null ||
+        !identical(_hitTestSessionCircuit, _circuit) ||
+        !identical(_hitTestSessionLayout, _layout)) {
+      _hitTestSessionCircuit = _circuit;
+      _hitTestSessionLayout = _layout;
+      _hitTestSession = _hitTest.prepare(circuit: _circuit, layout: _layout);
+    }
+    return _hitTestSession!;
+  }
+
+  CanvasHitResult _f9CanvasHit(Offset localPosition) =>
+      _hitTest.hitTestPrepared(
+        worldPoint: _viewport.screenToWorld(localPosition),
+        session: _preparedHitTestSession(),
+        viewportScale: _viewport.scale,
+      );
 
   void _onCanvasPointerDown(PointerDownEvent event) {
     if (_activeCanvasPointer != null) {
@@ -1542,11 +1555,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         if (pending == null) {
           _wiringPendingTerminal = terminal;
           _wiringHoverTerminal = terminal;
+          _wiringPointerWorld.value = _viewport.screenToWorld(
+            event.localPosition,
+          );
           _status =
               'Câblage : borne ${terminal.value} sélectionnée. Choisissez une cible.';
         } else {
           _wiringPendingTerminal = null;
           _wiringHoverTerminal = null;
+          _wiringPointerWorld.value = null;
           _status = 'Câblage annulé : borne de départ désélectionnée.';
         }
       });
@@ -1612,6 +1629,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     final Offset? previous = _lastCanvasPointerLocal;
     _lastCanvasPointerLocal = event.localPosition;
+    if (_wiringPendingTerminal != null) {
+      _wiringPointerWorld.value = _viewport.screenToWorld(event.localPosition);
+    }
     if (previous != null && (event.localPosition - previous).distance > 0.1) {
       _directPointerMoved = true;
     }
@@ -1676,6 +1696,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _directDragSession = null;
     _dragPreviewLayout.value = null;
     _lastCanvasPointerLocal = null;
+    if (_wiringPendingTerminal == null) {
+      _wiringPointerWorld.value = null;
+    }
     _backgroundPanActive = false;
     _directPointerMoved = false;
     _selectionModifierAtPointerDown = false;
@@ -2006,16 +2029,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _updateWiringHover(Offset localPosition) {
-    if (_wiringPendingTerminal == null) {
-      return;
-    }
-    final CanvasHitResult hit = _f9CanvasHit(localPosition);
+    if (_wiringPendingTerminal == null) return;
+    final Offset worldPoint = _viewport.screenToWorld(localPosition);
+    _wiringPointerWorld.value = worldPoint;
+    final CanvasHitResult hit = _hitTest.hitTestTerminalPrepared(
+      worldPoint: worldPoint,
+      session: _preparedHitTestSession(),
+      viewportScale: _viewport.scale,
+    );
     final TerminalId? next = hit.kind == CanvasHitKind.terminal
         ? hit.terminalId
         : null;
-    if (next == _wiringHoverTerminal) {
-      return;
-    }
+    if (next == _wiringHoverTerminal) return;
     setState(() {
       _wiringHoverTerminal = next;
     });
@@ -2054,6 +2079,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _layout = nextLayout;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
+      _wiringPointerWorld.value = null;
       _status = routeRenderable
           ? decision.message
           : '${decision.message} Routage graphique provisoire.';
@@ -2120,6 +2146,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _canvasInteractionEpoch += 1;
       _wiringPendingTerminal = null;
       _wiringHoverTerminal = null;
+      _wiringPointerWorld.value = null;
       _clearDirectPointerState();
       _status = 'Interaction de câblage annulée (Échap).';
     });
@@ -2736,6 +2763,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final ElectroSimLanSyncClient? client = widget.syncClient;
     if (client != null) unawaited(client.close());
     _dragPreviewLayout.dispose();
+    _wiringPointerWorld.dispose();
     _viewport.dispose();
     if (_ownsTpController || client != null) {
       _tpController.dispose();

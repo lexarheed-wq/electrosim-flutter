@@ -5,6 +5,60 @@ import 'package:flutter_test/flutter_test.dart';
 import 'test_fixture.dart';
 
 void main() {
+  test('prepared hit-test session matches compatibility path', () {
+    final circuit = buildTestCircuit();
+    final layout = buildTestLayout();
+    const engine = HitTestEngine();
+    final HitTestSession session = engine.prepare(
+      circuit: circuit,
+      layout: layout,
+    );
+    for (final Offset point in <Offset>[
+      const Offset(320, 120),
+      const Offset(210, 80),
+      const Offset(20, 20),
+    ]) {
+      final CanvasHitResult legacy = engine.hitTest(
+        worldPoint: point,
+        circuit: circuit,
+        layout: layout,
+      );
+      final CanvasHitResult prepared = engine.hitTestPrepared(
+        worldPoint: point,
+        session: session,
+      );
+      expect(prepared.kind, legacy.kind);
+      expect(prepared.elementId, legacy.elementId);
+      expect(prepared.terminalId, legacy.terminalId);
+      expect(prepared.connectionId, legacy.connectionId);
+    }
+  });
+
+  test('terminal-only prepared path avoids unrelated component and wire hits', () {
+    final circuit = buildTestCircuit();
+    final layout = buildTestLayout();
+    const engine = HitTestEngine();
+    final HitTestSession session = engine.prepare(
+      circuit: circuit,
+      layout: layout,
+    );
+    final Offset terminal = session.geometry.terminalPositions.values.first;
+    expect(
+      engine.hitTestTerminalPrepared(
+        worldPoint: terminal,
+        session: session,
+      ).kind,
+      CanvasHitKind.terminal,
+    );
+    expect(
+      engine.hitTestTerminalPrepared(
+        worldPoint: const Offset(320, 120),
+        session: session,
+      ).kind,
+      CanvasHitKind.background,
+    );
+  });
+
   test('terminal hit has priority over its owning element', () {
     final circuit = buildTestCircuit();
     final layout = buildTestLayout();

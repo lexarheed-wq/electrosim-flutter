@@ -23,6 +23,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.pendingTerminalId,
     this.hoverTerminalId,
     this.pointerWorldPosition,
+    this.pointerWorldPositionListenable,
     this.wirePreviewPlanner,
     this.runtimeSnapshot,
     this.simulationRunning = false,
@@ -35,6 +36,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
   final Offset? pointerWorldPosition;
+  final ValueListenable<Offset?>? pointerWorldPositionListenable;
   final WirePreviewPlanner? wirePreviewPlanner;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
   final bool simulationRunning;
@@ -46,6 +48,8 @@ class F9CanvasVisualOverlay extends StatefulWidget {
 class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     with SingleTickerProviderStateMixin {
   final ValueNotifier<double> _motionSeconds = ValueNotifier<double>(0);
+  final ValueNotifier<Offset?> _fallbackPointerWorld =
+      ValueNotifier<Offset?>(null);
   late final Ticker _ticker;
   double _motionBaseSeconds = 0;
 
@@ -67,6 +71,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           _motionBaseSeconds +
           elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     });
+    _fallbackPointerWorld.value = widget.pointerWorldPosition;
     _syncMotion();
   }
 
@@ -89,6 +94,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       _cachedWirePreviewPlanner = null;
       _cachedWirePreviewSession = null;
       _cachedWiringDecisions = const <TerminalId, F9WiringDecision>{};
+    }
+    if (widget.pointerWorldPositionListenable == null &&
+        oldWidget.pointerWorldPosition != widget.pointerWorldPosition) {
+      _fallbackPointerWorld.value = widget.pointerWorldPosition;
     }
     _syncMotion();
   }
@@ -157,7 +166,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
   void _syncMotion() {
     final bool shouldRun =
-        widget.simulationRunning && (widget.runtimeSnapshot?.solved ?? false);
+        widget.simulationRunning &&
+        (widget.runtimeSnapshot?.solved ?? false) &&
+        widget.pendingTerminalId == null;
     if (shouldRun && !_ticker.isActive) {
       _motionBaseSeconds = _motionSeconds.value;
       _ticker.start();
@@ -199,21 +210,51 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                 ),
               ),
               ..._buildReferenceVisuals(geometry),
-              CustomPaint(
-                painter: _F9StaticOverlayPainter(
-                  circuit: widget.circuit,
-                  layout: widget.layout,
-                  viewport: widget.viewport,
-                  geometry: geometry,
-                  selectedElementIds: widget.selectedElementIds,
-                  pendingTerminalId: widget.pendingTerminalId,
-                  hoverTerminalId: widget.hoverTerminalId,
-                  pointerWorldPosition: widget.pointerWorldPosition,
-                  wirePreviewPlanner: widget.wirePreviewPlanner,
-                  wirePreviewSession: wirePreviewSession,
-                  wiringDecisions: wiringDecisions,
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: _F9StaticOverlayPainter(
+                    circuit: widget.circuit,
+                    layout: widget.layout,
+                    viewport: widget.viewport,
+                    geometry: geometry,
+                    selectedElementIds: widget.selectedElementIds,
+                    pendingTerminalId: widget.pendingTerminalId,
+                    hoverTerminalId: widget.hoverTerminalId,
+                    pointerWorldPosition: null,
+                    wirePreviewPlanner: widget.wirePreviewPlanner,
+                    wirePreviewSession: wirePreviewSession,
+                    wiringDecisions: wiringDecisions,
+                    paintStaticChrome: true,
+                    paintInteraction: false,
+                  ),
+                  size: Size.infinite,
                 ),
-                size: Size.infinite,
+              ),
+              ValueListenableBuilder<Offset?>(
+                valueListenable:
+                    widget.pointerWorldPositionListenable ??
+                    _fallbackPointerWorld,
+                builder: (BuildContext context, Offset? pointer, Widget? child) =>
+                    RepaintBoundary(
+                      child: CustomPaint(
+                        painter: _F9StaticOverlayPainter(
+                          circuit: widget.circuit,
+                          layout: widget.layout,
+                          viewport: widget.viewport,
+                          geometry: geometry,
+                          selectedElementIds: widget.selectedElementIds,
+                          pendingTerminalId: widget.pendingTerminalId,
+                          hoverTerminalId: widget.hoverTerminalId,
+                          pointerWorldPosition: pointer,
+                          wirePreviewPlanner: widget.wirePreviewPlanner,
+                          wirePreviewSession: wirePreviewSession,
+                          wiringDecisions: wiringDecisions,
+                          paintStaticChrome: false,
+                          paintInteraction: true,
+                        ),
+                        size: Size.infinite,
+                      ),
+                    ),
               ),
             ],
           );
@@ -221,6 +262,22 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       ),
     );
   }
+
+  @visibleForTesting
+  static bool requiresContinuousAnimation(String modelType) => switch (
+        modelType.toLowerCase()
+      ) {
+        'fan_dc' ||
+        'motor_dc' ||
+        'pv_array' ||
+        'pv_controller' ||
+        'pv_battery' ||
+        'pv_inverter' ||
+        'motor_3p_6t' ||
+        'catalog_motor_driven_2t' ||
+        'catalog_motor_driven_6t' => true,
+        _ => false,
+      };
 
   List<Widget> _buildReferenceVisuals(CircuitGeometryIndex geometry) {
     final List<Widget> widgets = <Widget>[];
@@ -285,7 +342,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   pressed: pressed,
                   actuated: actuated,
                   motionSeconds: _motionSeconds,
-                  animate: energized,
+                  animate: energized && requiresContinuousAnimation(renderedModelType),
                   showTerminals: true,
                   currentA: currentA,
                   voltageV: voltageV,
@@ -639,6 +696,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   void dispose() {
     _ticker.dispose();
     _motionSeconds.dispose();
+    _fallbackPointerWorld.dispose();
     super.dispose();
   }
 }
@@ -998,6 +1056,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
     required this.wirePreviewPlanner,
     required this.wirePreviewSession,
     required this.wiringDecisions,
+    this.paintStaticChrome = true,
+    this.paintInteraction = true,
   });
 
   final CircuitState circuit;
@@ -1011,10 +1071,17 @@ class _F9StaticOverlayPainter extends CustomPainter {
   final WirePreviewPlanner? wirePreviewPlanner;
   final WirePreviewSession? wirePreviewSession;
   final Map<TerminalId, F9WiringDecision> wiringDecisions;
+  final bool paintStaticChrome;
+  final bool paintInteraction;
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintSmartWirePreview(canvas);
+    if (paintInteraction) {
+      _paintSmartWirePreview(canvas);
+      _paintTerminals(canvas, geometry);
+      _paintWiringTargets(canvas, geometry);
+    }
+    if (!paintStaticChrome) return;
 
     for (final SourceInstance source in circuit.sources) {
       final Rect? rect = geometry.elementRects[source.id.value];
@@ -1046,8 +1113,6 @@ class _F9StaticOverlayPainter extends CustomPainter {
     }
 
     _paintSelection(canvas, geometry);
-    _paintTerminals(canvas, geometry);
-    _paintWiringTargets(canvas, geometry);
   }
 
   void _paintSelection(Canvas canvas, CircuitGeometryIndex geometry) {

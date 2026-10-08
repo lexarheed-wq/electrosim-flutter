@@ -2672,7 +2672,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           wireRoutes: _layout.wireRoutes,
           elementQuarterTurns: _layout.elementQuarterTurns,
           defaultElementSize: _layout.defaultElementSize,
-        ),;
+        );
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _simulation.updateCircuit(_circuit);
@@ -2836,7 +2836,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             wireRoutes: routes,
             elementQuarterTurns: _layout.elementQuarterTurns,
             defaultElementSize: _layout.defaultElementSize,
-          ),;
+          );
         _selected = null;
         _status = 'Suppression : fil — $selected';
       });
@@ -2890,7 +2890,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           wireRoutes: routes,
           elementQuarterTurns: rotations,
           defaultElementSize: _layout.defaultElementSize,
-        ),;
+        );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
@@ -2986,7 +2986,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           wireRoutes: routes,
           elementQuarterTurns: rotations,
           defaultElementSize: _layout.defaultElementSize,
-        ),;
+        );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
     });

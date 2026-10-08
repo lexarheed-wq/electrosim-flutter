@@ -320,10 +320,19 @@ class F18ComponentAssetVisual extends StatelessWidget {
         energized: energized,
         animationValue: animationValue,
         showTerminals: showTerminals,
-        currentA: currentA,
-        voltageV: voltageV,
+        currentA: physical == IndustrialDevice.supply
+            ? (energized ? currentA.abs() : 0)
+            : currentA,
+        voltageV: active ? voltageV.abs() : 0,
         ratedCurrentA: ratedCurrentA,
         domain: type == 'breaker_ac1' ? 'AC' : 'CC',
+        supplyMode: !active
+            ? SupplyMode.off
+            : !energized
+                ? SupplyMode.constantVoltage
+                : currentA.abs() >= currentLimitA * .98
+                    ? SupplyMode.constantCurrent
+                    : SupplyMode.constantVoltage,
       );
     }
 

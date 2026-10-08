@@ -27,7 +27,7 @@ void main() {
     );
   }
 
-  testWidgets('P1.4 motor animated shaft preserves solver current direction',
+  testWidgets('P1.4 motor animation follows signed solver current',
       (tester) async {
     final forward = await motorRotorAngle(tester, 1.0);
     final reverse = await motorRotorAngle(tester, -1.0);

@@ -1,10 +1,9 @@
 import 'dart:io';
 
 import 'package:electrosim/f18_component_asset_visual.dart';
+import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim/reference_components/reference_models.dart';
-import 'package:electrosim/reference_components/reference_widgets.dart';
-import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:flutter/material.dart';
@@ -74,13 +73,14 @@ void main() {
         );
         await tester.pump();
 
-        final ReferenceComponentView view = tester
-            .widget<ReferenceComponentView>(
-              find.byType(ReferenceComponentView),
+        final IndustrialPhysicalView view = tester
+            .widget<IndustrialPhysicalView>(
+              find.byType(IndustrialPhysicalView),
             );
-        expect(view.state.voltageV, closeTo(24, 1e-9));
-        expect(view.state.currentA, 0);
-        expect(view.state.supplyMode, SupplyMode.constantVoltage);
+        expect(view.device, IndustrialDevice.supply);
+        expect(view.voltageV, closeTo(24, 1e-9));
+        expect(view.currentA, 0);
+        expect(view.supplyMode, SupplyMode.constantVoltage);
       },
     );
 
@@ -103,13 +103,13 @@ void main() {
       );
       await tester.pump();
 
-      final ExtendedReferenceComponentView view = tester
-          .widget<ExtendedReferenceComponentView>(
-            find.byType(ExtendedReferenceComponentView),
+      final IndustrialPhysicalView view = tester
+          .widget<IndustrialPhysicalView>(
+            find.byType(IndustrialPhysicalView),
           );
-      expect(view.device, ExtendedReferenceDevice.motor);
-      expect(view.state.speedRpm, closeTo(3000, 1e-9));
-      expect(view.state.animationValue, .25);
+      expect(view.device, IndustrialDevice.motor);
+      expect(view.speedRpm, closeTo(3000, 1e-9));
+      expect(view.animationValue, .25);
     });
 
     testWidgets('fan receives live animation phase while energized', (
@@ -130,13 +130,13 @@ void main() {
         ),
       );
       await tester.pump();
-      final ExtendedReferenceComponentView view = tester
-          .widget<ExtendedReferenceComponentView>(
-            find.byType(ExtendedReferenceComponentView),
+      final IndustrialPhysicalView view = tester
+          .widget<IndustrialPhysicalView>(
+            find.byType(IndustrialPhysicalView),
           );
-      expect(view.device, ExtendedReferenceDevice.fan);
-      expect(view.state.speedFraction, closeTo(1, 1e-9));
-      expect(view.state.animationValue, .55);
+      expect(view.device, IndustrialDevice.fan);
+      expect(view.speedFraction, closeTo(1, 1e-9));
+      expect(view.animationValue, .55);
     });
 
     test('extended painter uses animationValue for rotating receivers', () {

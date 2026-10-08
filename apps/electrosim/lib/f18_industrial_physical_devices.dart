@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'reference_components/reference_models.dart';
 
 /// Genuine replacement artwork for the eight original educational devices.
 /// Does not introduce electrical ports or change their world coordinates.
@@ -69,6 +70,7 @@ class IndustrialPhysicalView extends StatelessWidget {
     this.voltageV = 0,
     this.ratedCurrentA = 0,
     this.domain = 'CC',
+    this.supplyMode = SupplyMode.off,
   });
 
   final IndustrialDevice device;
@@ -76,6 +78,13 @@ class IndustrialPhysicalView extends StatelessWidget {
   final bool showTerminals, closed, tripped, pressed, energized;
   final double animationValue, currentA, voltageV, ratedCurrentA;
   final String domain;
+  final SupplyMode supplyMode;
+
+  /// Legacy speed is a display-only normalized fraction, not a simulated RPM.
+  double get speedFraction => energized
+      ? (voltageV.abs() / 24).clamp(0.0, 1.0).toDouble()
+      : 0;
+  double get speedRpm => speedFraction * 3000 * (currentA < 0 ? -1 : 1);
 
   /// Rotational phase is strictly display-only; polarity is supplied by the
   /// solver. A reversed motor rotates in the opposite direction.
@@ -280,9 +289,15 @@ final class _IndustrialPainter extends CustomPainter {
     c.drawCircle(
       const Offset(39, 107),
       4,
-      Paint()..color = v.energized ? emerald : Colors.white24,
+      Paint()..color = v.supplyMode == SupplyMode.constantVoltage
+          ? emerald : Colors.white24,
     );
     label(c, 'CV', 48, 102, color: Colors.white, font: 7);
+    c.drawCircle(
+      const Offset(82, 107), 4,
+      Paint()..color = v.supplyMode == SupplyMode.constantCurrent
+          ? emerald : Colors.white24,
+    );
     label(c, 'CC', 91, 102, color: Colors.white, font: 7);
     label(c, '+', 40, 138, color: Colors.white, font: 10);
     label(c, '−', 93, 138, color: Colors.white, font: 10);
@@ -403,7 +418,9 @@ final class _IndustrialPainter extends CustomPainter {
     );
     c.save();
     c.translate(105, 99);
-    if (v.energized) c.rotate(v.animationValue * math.pi * 2);
+    if (v.energized && v.speedFraction > 1e-6) {
+      c.rotate(v.animationValue * math.pi * 2);
+    }
     for (var n = 0; n < 6; n++) {
       c.rotate(math.pi / 3);
       final blade = Path()
@@ -472,7 +489,8 @@ final class _IndustrialPainter extends CustomPainter {
     c.save();
     c.translate(115, 93);
     c.rotate(IndustrialPhysicalView.signedMotorPhaseAngle(
-      v.animationValue, v.currentA, energized: v.energized,
+      v.animationValue, v.currentA,
+      energized: v.energized && v.speedFraction > 1e-6,
     ));
     for (var n = 0; n < 3; n++) {
       c.rotate(math.pi * 2 / 3);
@@ -588,6 +606,7 @@ final class _IndustrialPainter extends CustomPainter {
         old.currentA != v.currentA ||
         old.voltageV != v.voltageV ||
         old.ratedCurrentA != v.ratedCurrentA ||
-        old.domain != v.domain;
+        old.domain != v.domain ||
+        old.supplyMode != v.supplyMode;
   }
 }

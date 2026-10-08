@@ -26,13 +26,21 @@ class ControlsConvergenceContractTest(unittest.TestCase):
         self.assertIn('contactorStates: coordinated.contactors', text)
 
     def test_push_buttons_have_momentary_semantics(self):
-        dc = (ROOT / 'packages/electrosim_solver_dc/lib/src/solver_dc.dart').read_text(encoding='utf-8')
-        ac1 = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac1.dart').read_text(encoding='utf-8')
-        ac3 = (ROOT / 'packages/electrosim_solver_ac/lib/src/solver_ac3.dart').read_text(encoding='utf-8')
-        for text in (dc, ac1, ac3):
-            self.assertIn("'push_button_no'", text)
-            self.assertIn("'push_button_nc'", text)
-            self.assertIn("controlState['pressed']", text)
+        physics = (ROOT / 'packages/electrosim_domain/lib/src/component_physics_contract.dart').read_text(encoding='utf-8')
+        self.assertIn("modelType: 'push_button_no'", physics)
+        self.assertIn("modelType: 'push_button_nc'", physics)
+        self.assertIn("controlLaw: ComponentControlLaw.momentaryNormallyOpen", physics)
+        self.assertIn("controlLaw: ComponentControlLaw.momentaryNormallyClosed", physics)
+        for path in (
+            'packages/electrosim_solver_dc/lib/src/solver_dc.dart',
+            'packages/electrosim_solver_ac/lib/src/solver_ac1.dart',
+            'packages/electrosim_solver_ac/lib/src/solver_ac3.dart',
+        ):
+            solver = (ROOT / path).read_text(encoding='utf-8')
+            self.assertIn('ComponentElectricalLaw.binarySwitch', solver)
+            self.assertIn('ComponentControlLaw.momentaryNormallyOpen', solver)
+            self.assertIn('ComponentControlLaw.momentaryNormallyClosed', solver)
+            self.assertIn("component.controlState['pressed']", solver)
 
 if __name__ == '__main__':
     unittest.main()

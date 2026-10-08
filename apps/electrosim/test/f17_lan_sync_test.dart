@@ -247,7 +247,11 @@ void main() {
       );
       addTearDown(legitimate.close);
       addTearDown(host.close);
-      await legitimate.connect(info.preferredEndpoint);
+      try {
+        await legitimate.connect(info.preferredEndpoint);
+      } on Object catch (error) {
+        fail('Legitimate LAN join failed: $error; client error: ${legitimate.lastError}');
+      }
       expect(legitimate.synchronized, isTrue);
 
       final Uri attack = info.preferredEndpoint.replace(

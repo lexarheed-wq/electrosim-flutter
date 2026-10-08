@@ -1,0 +1,37 @@
+name: G12-RQ compact golden review (no release)
+on:
+  push:
+    branches:
+      - fix/g12rq-post-audit-goldens-20261008
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Re-render updated compact golden references
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test --no-pub --update-goldens test/f9_goldens_test.dart
+          mkdir -p /tmp/g12-golden-review/before /tmp/g12-golden-review/after
+          cp test/goldens/f9_compact_*.png /tmp/g12-golden-review/after/
+          for f in test/goldens/f9_compact_*.png; do
+            git show HEAD:apps/electrosim/"$f" > "/tmp/g12-golden-review/before/$(basename "$f")"
+          done
+          git --no-pager diff --stat
+      - name: Publish before/after for human visual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: G12-compact-golden-visual-review
+          path: /tmp/g12-golden-review/
+          retention-days: 7

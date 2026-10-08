@@ -370,7 +370,9 @@ abstract final class CoreComponentPhysicsContracts {
   static ComponentPhysicsContract? resolve(String modelType) =>
       _byModelType[modelType];
 
-  static ComponentPhysicsContract resolveComponent(ComponentInstance component) =>
+  static ComponentPhysicsContract resolveComponent(
+    ComponentInstance component,
+  ) =>
       resolve(component.modelType) ??
       ComponentPhysicsContract(
         modelType: component.modelType,
@@ -418,16 +420,24 @@ final class ComponentOperatingEnvelope {
   final bool invalidMaxCurrent;
   final bool invalidMaxPower;
 
-  factory ComponentOperatingEnvelope.fromComponent(ComponentInstance component) {
+  factory ComponentOperatingEnvelope.fromComponent(
+    ComponentInstance component,
+  ) {
     final ReceiverNominalRating? nominal =
         ReceiverNominalRating.tryFromParameters(component.parameters);
     return ComponentOperatingEnvelope(
       nominalVoltageV: nominal?.voltageV,
       nominalCurrentA: nominal?.currentA,
       nominalPowerW: nominal?.powerW,
-      maxVoltageV: _positive(component.parameters[ComponentParameterKeys.maxVoltageV]),
-      maxCurrentA: _positive(component.parameters[ComponentParameterKeys.maxCurrentA]),
-      maxPowerW: _positive(component.parameters[ComponentParameterKeys.maxPowerW]),
+      maxVoltageV: _positive(
+        component.parameters[ComponentParameterKeys.maxVoltageV],
+      ),
+      maxCurrentA: _positive(
+        component.parameters[ComponentParameterKeys.maxCurrentA],
+      ),
+      maxPowerW: _positive(
+        component.parameters[ComponentParameterKeys.maxPowerW],
+      ),
       thermalWithstandSeconds: _positive(
         component.parameters[ComponentParameterKeys.thermalWithstandSeconds],
       ),

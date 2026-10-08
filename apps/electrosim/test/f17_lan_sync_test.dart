@@ -226,6 +226,83 @@ void main() {
       );
     });
 
+    test('G8-RQ identity cannot be stolen using only code and clientId',
+        () async {
+      final ElectroSimTpSessionController teacher =
+          ElectroSimTpSessionController();
+      teacher.createDraft();
+      teacher.publish();
+      final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
+        controller: teacher, sessionCode: 'LOCK99');
+      final ElectroSimLanHostInfo info = await host.start(
+        address: InternetAddress.loopbackIPv4);
+      addTearDown(host.close);
+
+      final Uri original = info.preferredEndpoint.replace(
+        queryParameters: const <String, String>{
+          'code': 'LOCK99', 'clientId': 'student-secure',
+        },
+      );
+      final WebSocket first = await WebSocket.connect(original.toString());
+      addTearDown(first.close);
+      final Completer<ElectroSimSyncEnvelope> snapshotOne =
+          Completer<ElectroSimSyncEnvelope>();
+      first.listen((dynamic data) {
+        if (data is! String) return;
+        final ElectroSimSyncEnvelope message =
+            ElectroSimSyncEnvelope.fromJsonString(data);
+        if (message.type == ElectroSimSyncMessageType.snapshot &&
+            !snapshotOne.isCompleted) {
+          snapshotOne.complete(message);
+        }
+      });
+      final ElectroSimSyncEnvelope initial = await snapshotOne.future.timeout(
+        const Duration(seconds: 3));
+      final String token = initial.payload['reconnectToken'] as String;
+      expect(token.length, greaterThan(30));
+
+      await expectLater(
+        WebSocket.connect(original.toString()),
+        throwsA(isA<WebSocketException>()),
+      );
+      final Uri wrongToken = original.replace(
+        queryParameters: <String, String>{
+          ...original.queryParameters,
+          'reconnectToken': 'invalid-individual-token',
+        },
+      );
+      await expectLater(
+        WebSocket.connect(wrongToken.toString()),
+        throwsA(isA<WebSocketException>()),
+      );
+      expect(host.connectedClientIds, <String>['student-secure']);
+
+      final Uri authorized = original.replace(
+        queryParameters: <String, String>{
+          ...original.queryParameters,
+          'reconnectToken': token,
+        },
+      );
+      final WebSocket replacement =
+          await WebSocket.connect(authorized.toString());
+      addTearDown(replacement.close);
+      final Completer<ElectroSimSyncEnvelope> snapshotTwo =
+          Completer<ElectroSimSyncEnvelope>();
+      replacement.listen((dynamic data) {
+        if (data is! String) return;
+        final ElectroSimSyncEnvelope message =
+            ElectroSimSyncEnvelope.fromJsonString(data);
+        if (message.type == ElectroSimSyncMessageType.snapshot &&
+            !snapshotTwo.isCompleted) {
+          snapshotTwo.complete(message);
+        }
+      });
+      final ElectroSimSyncEnvelope rejoined =
+          await snapshotTwo.future.timeout(const Duration(seconds: 3));
+      expect(rejoined.payload['reconnectToken'], token);
+      expect(host.connectedClientIds, <String>['student-secure']);
+    });
+
     test(
       'manual reconnect catches up to the latest authoritative teacher state',
       () async {

@@ -154,6 +154,9 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
 
   HttpServer? _server;
   final Map<String, WebSocket> _clients = <String, WebSocket>{};
+  // Individual random capability: a collective session code is not an identity.
+  final Map<String, String> _clientReconnectTokens = <String, String>{};
+  final Random _secureRandom = Random.secure();
   final Map<String, String> _clientDisplayNames = <String, String>{};
   final Map<String, DateTime> _studentLastActivityAtUtc = <String, DateTime>{};
   final Map<String, ElectroSimTpSessionController> _studentControllers =
@@ -428,6 +431,19 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
   }
 
+  String _newReconnectToken() => base64UrlEncode(
+    List<int>.generate(32, (_) => _secureRandom.nextInt(256)),
+  );
+
+  bool _tokenMatches(String expected, String? presented) {
+    if (presented == null || expected.length != presented.length) return false;
+    var differences = 0;
+    for (var index = 0; index < expected.length; index++) {
+      differences |= expected.codeUnitAt(index) ^ presented.codeUnitAt(index);
+    }
+    return differences == 0;
+  }
+
   Future<void> _handleRequest(HttpRequest request) async {
     if (request.method == 'GET' && request.uri.path.startsWith('/join/')) {
       final String requestedCode = request.uri.pathSegments.length >= 2
@@ -462,6 +478,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
     final String? code = request.uri.queryParameters['code'];
     final String? clientId = request.uri.queryParameters['clientId'];
+    final String? reconnectToken = request.uri.queryParameters['reconnectToken'];
     final String displayName = _safeDisplayName(
       request.uri.queryParameters['displayName'],
       fallback: clientId ?? 'Élève',
@@ -474,8 +491,16 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       return;
     }
 
-    final WebSocket socket = await WebSocketTransformer.upgrade(request);
     final String id = clientId!;
+    final String? issuedToken = _clientReconnectTokens[id];
+    if (issuedToken != null &&
+        !_tokenMatches(issuedToken, reconnectToken)) {
+      request.response.statusCode = HttpStatus.forbidden;
+      await request.response.close();
+      return;
+    }
+    final WebSocket socket = await WebSocketTransformer.upgrade(request);
+    _clientReconnectTokens.putIfAbsent(id, _newReconnectToken);
     _studentController(id);
     _clientDisplayNames[id] = displayName;
     _studentLastActivityAtUtc[id] = DateTime.now().toUtc();
@@ -578,6 +603,10 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     String source,
   ) async {
     try {
+      // A superseded socket may still have queued frames: never authorize it.
+      if (!identical(_clients[clientId], socket)) {
+        throw const FormatException('Socket no longer owns student identity.');
+      }
       final ElectroSimSyncEnvelope envelope =
           ElectroSimSyncEnvelope.fromJsonString(source);
       if (envelope.type != ElectroSimSyncMessageType.studentState) {
@@ -847,6 +876,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         sequence: _serverSequence++,
         payload: <String, Object?>{
           'state': source.toPersistenceJson(),
+          if (clientId != null)
+            'reconnectToken': _clientReconnectTokens[clientId],
           'session': <String, Object?>{
             'name': sessionName,
             'code': sessionCode,
@@ -887,6 +918,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     final List<WebSocket> sockets = _clients.values.toList(growable: false);
     _clients.clear();
     _clientDisplayNames.clear();
+    _clientReconnectTokens.clear();
     _studentLastActivityAtUtc.clear();
     for (final WebSocket socket in sockets) {
       await socket.close(
@@ -951,6 +983,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
   bool _manualDisconnect = false;
   ElectroSimLanSyncStatus _status = ElectroSimLanSyncStatus.disconnected;
   String? _lastError;
+  String? _reconnectToken;
 
   ElectroSimLanSyncStatus get status => _status;
   String? get lastError => _lastError;
@@ -1020,6 +1053,7 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
         ...target.queryParameters,
         'code': sessionCode,
         'clientId': clientId,
+        if (_reconnectToken != null) 'reconnectToken': _reconnectToken!,
         if (displayName != null && displayName!.trim().isNotEmpty)
           'displayName': displayName!.trim(),
       },
@@ -1062,6 +1096,11 @@ final class ElectroSimLanSyncClient extends ChangeNotifier {
 
       switch (envelope.type) {
         case ElectroSimSyncMessageType.snapshot:
+          final Object? issuedToken = envelope.payload['reconnectToken'];
+          if (issuedToken is! String || issuedToken.isEmpty) {
+            throw const FormatException('Missing student reconnect token.');
+          }
+          _reconnectToken = issuedToken;
           final Object? raw = envelope.payload['state'];
           if (raw is! Map<String, dynamic>) {
             throw const FormatException('Server snapshot is missing state.');

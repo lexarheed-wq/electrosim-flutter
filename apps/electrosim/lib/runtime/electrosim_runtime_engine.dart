@@ -957,10 +957,10 @@ final class ElectroSimRuntimeEngine {
       final double nominalV = param(
           ComponentParameterKeys.storageNominalVoltageV, 48.0);
       final double capacityAh = param(
-          ComponentParameterKeys.storageCapacityAh, 100.0);
+          'capacityAh', 100.0);
       final double capacityWh = nominalV * capacityAh;
       final double minSoc = param(ComponentParameterKeys.storageMinSoc, 0.0);
-      final double maxSoc = param(ComponentParameterKeys.storageMaxSoc, 1.0);
+      final double maxSoc = param('maxSoc', 1.0);
       final double soc = (previous[component.id] ??
           param(ComponentParameterKeys.storageInitialSoc, 1.0))
           .clamp(minSoc, maxSoc).toDouble();
@@ -970,9 +970,9 @@ final class ElectroSimRuntimeEngine {
           : null;
       final double branchPowerW = branch?.powerW ?? 0.0;
       final double chargeEff = param(
-          ComponentParameterKeys.storageChargeEfficiency, 0.95);
+          'chargeEfficiency', 0.95);
       final double dischargeEff = param(
-          ComponentParameterKeys.storageDischargeEfficiency, 0.95);
+          'dischargeEfficiency', 0.95);
       final double netStoredPowerW = branchPowerW >= 0.0
           ? branchPowerW * chargeEff
           : branchPowerW / dischargeEff;

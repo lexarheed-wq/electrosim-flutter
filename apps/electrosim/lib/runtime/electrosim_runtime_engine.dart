@@ -233,7 +233,7 @@ final class ElectroSimRuntimeSnapshot {
     Map<ComponentId, ComponentHealthState> states,
   ) => ElectroSimRuntimeSnapshot(
     circuit: circuit,
-    effectiveCircuit: solverCircuit,
+    effectiveCircuit: effectiveCircuit,
     topology: topology,
     diagnostics: diagnostics,
     solverKind: solverKind,

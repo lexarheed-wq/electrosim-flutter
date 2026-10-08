@@ -32,9 +32,16 @@ jobs:
       - name: Rebaseline palette golden images for intentional perspective change
         working-directory: apps/electrosim
         run: flutter test --no-pub --update-goldens test/f9_goldens_test.dart
-      - name: Complete app regression suite
+      - name: Confirm golden references reproducibly in isolation
         working-directory: apps/electrosim
-        run: flutter test --no-pub
+        run: flutter test --no-pub test/f9_goldens_test.dart
+      - name: Complete app behavioral regression suite
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find test -type f -name '*_test.dart' ! -name 'f9_goldens_test.dart' | sort)
+          flutter test --no-pub "${files[@]}"
       - name: Canvas and UI Kit regression
         shell: bash
         run: |

@@ -111,6 +111,17 @@ void main() {
       expect(socAfterMinute, greaterThan(0.10));
       await controller.advanceBy(const Duration(hours: 1));
       expect(controller.simulatedTime, const Duration(minutes: 61));
+      final double afterHour = controller.snapshot.dcBatterySocs[batteryId]!;
+      // The default battery is 100 Ah, not the 1 Ah scientific audit example.
+      // One hour cannot consume its entire reserve.
+      expect(afterHour, lessThan(socAfterMinute));
+      expect(afterHour, greaterThan(0.10));
+      await controller.advanceBy(const Duration(hours: 24));
+      expect(controller.simulatedTime, const Duration(minutes: 1501));
+      final double afterDay = controller.snapshot.dcBatterySocs[batteryId]!;
+      expect(afterDay, lessThan(afterHour));
+      controller.advance(const Duration(hours: 100));
+      controller.advance(const Duration(seconds: 1));
       expect(controller.snapshot.dcBatterySocs[batteryId], closeTo(0.10, 1e-7));
       final ComponentOperatingState depleted = controller.snapshot
           .componentOperatingState(ComponentId('lamp'))!;

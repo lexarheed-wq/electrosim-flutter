@@ -52,6 +52,7 @@ final class ElectroSimRuntimeSnapshot {
     this.ac3Result,
     this.pvResult,
     this.dcBatterySocs = const <ComponentId, double>{},
+    this.motorAngularSpeedsRadS = const <ComponentId, double>{},
     this.contactorStates = const <ComponentId, ContactorActuationState>{},
     this.controlIssues = const <ElectromechanicalControlIssue>[],
     this.protectionState,
@@ -78,6 +79,8 @@ final class ElectroSimRuntimeSnapshot {
 
   /// Physical state of autonomous DC batteries, not an invented PV reading.
   final Map<ComponentId, double> dcBatterySocs;
+  /// Rotor angular velocity obtained from the coupled electrical/mechanical step.
+  final Map<ComponentId, double> motorAngularSpeedsRadS;
   final Map<ComponentId, ContactorActuationState> contactorStates;
   final List<ElectromechanicalControlIssue> controlIssues;
   final ProtectionRuntimeState? protectionState;
@@ -269,6 +272,7 @@ final class ElectroSimRuntimeSnapshot {
     ac3Result: ac3Result,
     pvResult: pvResult,
     dcBatterySocs: dcBatterySocs,
+    motorAngularSpeedsRadS: motorAngularSpeedsRadS,
     contactorStates: contactorStates,
     controlIssues: controlIssues,
     protectionState: protectionState,
@@ -718,6 +722,8 @@ final class ElectroSimRuntimeEngine {
     double? previousPvBatterySoc,
     Map<ComponentId, double> previousDcBatterySocs =
         const <ComponentId, double>{},
+    Map<ComponentId, double> previousMotorAngularSpeedsRadS =
+        const <ComponentId, double>{},
   }) {
     if (elapsed.isNegative) {
       throw ArgumentError.value(
@@ -739,6 +745,7 @@ final class ElectroSimRuntimeEngine {
       previousContactorStates: previousContactorStates,
       previousPvBatterySoc: previousPvBatterySoc,
       previousDcBatterySocs: previousDcBatterySocs,
+      previousMotorAngularSpeedsRadS: previousMotorAngularSpeedsRadS,
       componentHealthStates: previousComponentHealthStates,
     );
 
@@ -781,6 +788,7 @@ final class ElectroSimRuntimeEngine {
           ? snapshot.pvResult!.batterySoc
           : previousPvBatterySoc,
       previousDcBatterySocs: snapshot.dcBatterySocs,
+      previousMotorAngularSpeedsRadS: snapshot.motorAngularSpeedsRadS,
       componentHealthStates: nextHealth,
     );
   }
@@ -793,13 +801,18 @@ final class ElectroSimRuntimeEngine {
     required Map<ComponentId, bool> previousContactorStates,
     required double? previousPvBatterySoc,
     required Map<ComponentId, double> previousDcBatterySocs,
+    required Map<ComponentId, double> previousMotorAngularSpeedsRadS,
     required Map<ComponentId, ComponentHealthState> componentHealthStates,
   }) {
     final CircuitState projected = _projectAutonomousStorageDc(
       effectiveCircuit,
     );
     final CircuitState solverCircuit = projected.mode == ElectricalMode.dc
-        ? _projectDcBatteryState(projected, previousDcBatterySocs)
+        ? _projectMotorDynamics(
+            _projectDcBatteryState(projected, previousDcBatterySocs),
+            previousMotorAngularSpeedsRadS,
+            elapsed,
+          )
         : projected;
     final TopologyGraph topology = topologyEngine.compile(solverCircuit);
     switch (solverCircuit.mode) {
@@ -830,6 +843,9 @@ final class ElectroSimRuntimeEngine {
             dc,
             previousDcBatterySocs,
             elapsed,
+          ),
+          motorAngularSpeedsRadS: _advanceDcMotorSpeeds(
+            solverCircuit, dc, previousMotorAngularSpeedsRadS, elapsed,
           ),
           contactorStates: coordinated.relays,
           controlIssues: coordinated.controlIssues,
@@ -973,6 +989,90 @@ final class ElectroSimRuntimeEngine {
       settings: circuit.settings,
       metadata: circuit.metadata,
     );
+  }
+
+  /// Physical rotor state is runtime data. Project parameters for one solver
+  /// revision without mutating the teacher's authored CircuitState.
+  CircuitState _projectMotorDynamics(
+    CircuitState circuit,
+    Map<ComponentId, double> previous,
+    Duration elapsed,
+  ) {
+    if (!circuit.components.any((c) => c.modelType == 'motor_dc')) {
+      return circuit;
+    }
+    final double seconds = elapsed.inMicroseconds / 1e6;
+    return CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision,
+      mode: circuit.mode,
+      sources: circuit.sources,
+      components: <ComponentInstance>[
+        for (final ComponentInstance c in circuit.components)
+          if (c.modelType == 'motor_dc')
+            ComponentInstance(
+              id: c.id,
+              modelType: c.modelType,
+              terminals: c.terminals,
+              condition: c.condition,
+              controlState: c.controlState,
+              parameters: <String, Object?>{
+                ...c.parameters,
+                ComponentParameterKeys.motorAngularSpeedRadS:
+                    previous[c.id] ??
+                    (c.parameters[ComponentParameterKeys.motorAngularSpeedRadS]
+                        as num?)?.toDouble() ?? 0.0,
+                ComponentParameterKeys.motorTimeStepSeconds: seconds,
+              },
+            )
+          else
+            c,
+      ],
+      connections: circuit.connections,
+      instruments: circuit.instruments,
+      probes: circuit.probes,
+      settings: circuit.settings,
+      metadata: circuit.metadata,
+    );
+  }
+
+  Map<ComponentId, double> _advanceDcMotorSpeeds(
+    CircuitState circuit,
+    DcSolveResult dc,
+    Map<ComponentId, double> previous,
+    Duration elapsed,
+  ) {
+    final double seconds = elapsed.inMicroseconds / 1e6;
+    final Map<String, DcBranchResult> branches = <String, DcBranchResult>{
+      if (dc.isSolved)
+        for (final DcBranchResult b in dc.branchResults) b.id: b,
+    };
+    final Map<ComponentId, double> speeds = <ComponentId, double>{};
+    for (final ComponentInstance motor in circuit.components) {
+      if (motor.modelType != 'motor_dc') continue;
+      double param(String key, double fallback) =>
+          (motor.parameters[key] as num?)?.toDouble() ?? fallback;
+      final double prior = previous[motor.id] ??
+          param(ComponentParameterKeys.motorAngularSpeedRadS, 0.0);
+      if (seconds <= 0.0 || !dc.isSolved) {
+        speeds[motor.id] = prior;
+        continue;
+      }
+      final double kt = param(ComponentParameterKeys.motorTorqueNmPerA, 0.1);
+      final double inertia = param(ComponentParameterKeys.motorInertiaKgM2, 0.01);
+      final double friction =
+          param(ComponentParameterKeys.motorFrictionNmPerRadS, 0.002);
+      final double load = param(ComponentParameterKeys.motorLoadTorqueNm, 0.0);
+      final double current =
+          branches['component:${motor.id.value}']?.currentA ?? 0.0;
+      final double inertiaOverTime = inertia / seconds;
+      final double denominator = inertiaOverTime + friction;
+      final double next =
+          (inertiaOverTime * prior + kt * current - load) / denominator;
+      // Never propagate NaN/Infinity into the next solver revision.
+      speeds[motor.id] = next.isFinite ? next : prior;
+    }
+    return Map<ComponentId, double>.unmodifiable(speeds);
   }
 
   Map<ComponentId, double> _advanceDcBatterySoc(

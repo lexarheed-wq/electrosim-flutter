@@ -521,8 +521,9 @@ final class ElectroSimRuntimeSnapshot {
 }
 
 final class _DcWireCurrentContext {
-  const _DcWireCurrentContext(this.byConnection);
+  const _DcWireCurrentContext(this.byConnection, this.connections);
   final Map<ConnectionId, ConnectionCurrentEvidence> byConnection;
+  final Map<ConnectionId, Connection> connections;
 }
 
 final class _WireNeighbor {
@@ -640,6 +641,9 @@ _DcWireCurrentContext _prepareDcWireCurrentContext(
   }
   return _DcWireCurrentContext(
     Map<ConnectionId, ConnectionCurrentEvidence>.unmodifiable(readings),
+    <ConnectionId, Connection>{
+      for (final Connection item in circuit.connections) item.id: item,
+    },
   );
 }
 
@@ -650,8 +654,23 @@ ConnectionCurrentEvidence _resolveDcConnectionCurrent({
   required Connection connection,
   required _DcWireCurrentContext context,
 }) {
-  return context.byConnection[connection.id] ??
-      const ConnectionCurrentEvidence.zero();
+  final ConnectionCurrentEvidence? evidence =
+      context.byConnection[connection.id];
+  final Connection? physical = context.connections[connection.id];
+  if (evidence == null || physical == null) {
+    return const ConnectionCurrentEvidence.zero();
+  }
+  if (physical.fromTerminalId == connection.fromTerminalId &&
+      physical.toTerminalId == connection.toTerminalId) return evidence;
+  if (physical.fromTerminalId == connection.toTerminalId &&
+      physical.toTerminalId == connection.fromTerminalId) {
+    return ConnectionCurrentEvidence(
+      signedCurrentA: -evidence.signedCurrentA,
+      directionKnown: evidence.directionKnown,
+      alternating: evidence.alternating,
+    );
+  }
+  return const ConnectionCurrentEvidence.zero();
 }
 
 final class ElectroSimRuntimeEngine {

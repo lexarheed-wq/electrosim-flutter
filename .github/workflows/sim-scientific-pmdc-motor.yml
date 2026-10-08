@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           git diff --check
           python3 tools/core_unify_architecture_guard.py
-          dart format packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_dc/lib/src/solver_dc.dart packages/electrosim_solver_dc/lib/src/dc_result.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/sim_scientific_pmdc_motor_test.dart
+          dart format packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_dc/lib/src/solver_dc.dart packages/electrosim_solver_dc/lib/src/dc_result.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart packages/electrosim_solver_ac/lib/src/solver_ac3.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/sim_scientific_pmdc_motor_test.dart
           git --no-pager diff
           git diff --exit-code
       - name: Core domain

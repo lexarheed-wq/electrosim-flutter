@@ -329,10 +329,10 @@ class F18ComponentAssetVisual extends StatelessWidget {
         supplyMode: !active
             ? SupplyMode.off
             : !energized
-                ? SupplyMode.constantVoltage
-                : currentA.abs() >= currentLimitA * .98
-                    ? SupplyMode.constantCurrent
-                    : SupplyMode.constantVoltage,
+            ? SupplyMode.constantVoltage
+            : currentA.abs() >= currentLimitA * .98
+            ? SupplyMode.constantCurrent
+            : SupplyMode.constantVoltage,
       );
     }
 

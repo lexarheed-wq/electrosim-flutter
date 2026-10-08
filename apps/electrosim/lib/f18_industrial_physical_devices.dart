@@ -81,9 +81,8 @@ class IndustrialPhysicalView extends StatelessWidget {
   final SupplyMode supplyMode;
 
   /// Legacy speed is a display-only normalized fraction, not a simulated RPM.
-  double get speedFraction => energized
-      ? (voltageV.abs() / 24).clamp(0.0, 1.0).toDouble()
-      : 0;
+  double get speedFraction =>
+      energized ? (voltageV.abs() / 24).clamp(0.0, 1.0).toDouble() : 0;
   double get speedRpm => speedFraction * 3000 * (currentA < 0 ? -1 : 1);
 
   /// Rotational phase is strictly display-only; polarity is supplied by the
@@ -289,14 +288,19 @@ final class _IndustrialPainter extends CustomPainter {
     c.drawCircle(
       const Offset(39, 107),
       4,
-      Paint()..color = v.supplyMode == SupplyMode.constantVoltage
-          ? emerald : Colors.white24,
+      Paint()
+        ..color = v.supplyMode == SupplyMode.constantVoltage
+            ? emerald
+            : Colors.white24,
     );
     label(c, 'CV', 48, 102, color: Colors.white, font: 7);
     c.drawCircle(
-      const Offset(82, 107), 4,
-      Paint()..color = v.supplyMode == SupplyMode.constantCurrent
-          ? emerald : Colors.white24,
+      const Offset(82, 107),
+      4,
+      Paint()
+        ..color = v.supplyMode == SupplyMode.constantCurrent
+            ? emerald
+            : Colors.white24,
     );
     label(c, 'CC', 91, 102, color: Colors.white, font: 7);
     label(c, '+', 40, 138, color: Colors.white, font: 10);
@@ -488,10 +492,13 @@ final class _IndustrialPainter extends CustomPainter {
     // Visible shaft rotation. Do not rotate the housing or terminal box.
     c.save();
     c.translate(115, 93);
-    c.rotate(IndustrialPhysicalView.signedMotorPhaseAngle(
-      v.animationValue, v.currentA,
-      energized: v.energized && v.speedFraction > 1e-6,
-    ));
+    c.rotate(
+      IndustrialPhysicalView.signedMotorPhaseAngle(
+        v.animationValue,
+        v.currentA,
+        energized: v.energized && v.speedFraction > 1e-6,
+      ),
+    );
     for (var n = 0; n < 3; n++) {
       c.rotate(math.pi * 2 / 3);
       c.drawRRect(

@@ -31,18 +31,15 @@ jobs:
           flutter test --no-pub test/g12rq_real_industrial_artwork_test.dart test/f18_industrial_dual_view_library_test.dart test/sim_r1_instrument_palette_discoverability_test.dart test/sim_r1_board_instrument_ui_test.dart
       - name: Rebaseline palette golden images for intentional perspective change
         working-directory: apps/electrosim
-        run: flutter test --no-pub --update-goldens test/f9_goldens_test.dart
+        run: flutter test --no-pub --update-goldens test/f9_goldens_test.dart test/g12rq_real_industrial_capture_test.dart
       - name: Confirm golden references reproducibly in isolation
         working-directory: apps/electrosim
-        run: flutter test --no-pub test/f9_goldens_test.dart
-      - name: Render eight genuinely new components in both views
-        working-directory: apps/electrosim
-        run: flutter test --no-pub test/g12rq_real_industrial_capture_test.dart
+        run: flutter test --no-pub test/f9_goldens_test.dart test/g12rq_real_industrial_capture_test.dart
       - name: Publish visual proof as image
         uses: actions/upload-artifact@v4
         with:
           name: ElectroSim-RealIndustrialEight-VisualProof
-          path: apps/electrosim/build/visual-proof/*.png
+          path: apps/electrosim/test/goldens/g12rq_real_industrial_set*.png
           retention-days: 14
           if-no-files-found: error
       - name: Canvas and UI Kit regression

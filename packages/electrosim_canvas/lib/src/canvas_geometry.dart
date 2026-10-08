@@ -431,6 +431,12 @@ final class CircuitGeometryIndex {
         component.terminals,
       );
     }
+    for (final InstrumentInstance instrument in circuit.instruments) {
+      // Instruments occupy actual canvas geometry but never create implicit
+      // electrical terminals or alter circuit-node connectivity.
+      indexElement(instrument.id.value, 'physical-instrument',
+          const <Terminal>[]);
+    }
     for (final Connection connection in circuit.connections) {
       if (!seenElementIds.add(connection.id.value)) {
         throw StateError(

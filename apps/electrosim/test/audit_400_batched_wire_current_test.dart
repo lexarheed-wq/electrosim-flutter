@@ -1,6 +1,7 @@
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 
 CircuitState _largeParallelCircuit(int count) {
   final Terminal positive = Terminal(id: TerminalId('source-p'), name: '+');
@@ -79,7 +80,7 @@ void main() {
         expect(evidence.magnitudeA, closeTo(0.001, 1e-6));
       }
       // Times are evidence, not a cross-platform release performance promise.
-      print(
+      debugPrint(
         'AUDIT400_BATCH firstUs=${first.elapsedMicroseconds} '
         'cachedUs=${cached.elapsedMicroseconds} wires=${measured.length}',
       );

@@ -373,8 +373,9 @@ _CompiledAc1Model _compileModel(
   for (final ComponentInstance component in components) {
     final ComponentPhysicsContract? physics =
         CoreComponentPhysicsContracts.resolve(component.modelType);
-    final ComponentModelContract? structural =
-        CoreComponentModelContracts.registry.resolve(component.modelType);
+    final ComponentModelContract? structural = CoreComponentModelContracts
+        .registry
+        .resolve(component.modelType);
     if (physics == null ||
         structural == null ||
         !structural.supportsMode(ElectricalMode.ac1) ||

@@ -82,7 +82,7 @@ void main() {
     final ElectroSimSimulationController controller =
         ElectroSimSimulationController(circuit: circuit);
     addTearDown(controller.dispose);
-    const ComponentId batteryId = ComponentId('battery');
+    final ComponentId batteryId = ComponentId('battery');
     final double initial = controller.snapshot.dcBatterySocs[batteryId]!;
     expect(initial, closeTo(0.60, 1e-8));
     controller.advance(const Duration(hours: 1));

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 abstract final class ElectroSimColors {
+  static const Color workspaceHeader = Color(0xFF12243A);
+  static const Color workspaceOnHeader = Color(0xFFF8FAFC);
+  static const Color workspaceAccent = Color(0xFF32C6E7);
+  static const Color workspaceDivider = Color(0xFFDCE4ED);
   static const Color primary = Color(0xFF174D89);
   static const Color primaryStrong = Color(0xFF123B73);
   static const Color onPrimary = Color(0xFFFFFFFF);

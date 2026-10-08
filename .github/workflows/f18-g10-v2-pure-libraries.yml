@@ -6,6 +6,7 @@ on:
     branches:
       - f18-g10-v2-pure-libraries-20261006
       - v2-post-mac-audit-fixes-20261005
+      - work/rq-closure-20261008
     paths:
       - 'packages/electrosim_scenarios/**'
       - 'tools/f18_g10_contract.py'

@@ -10,6 +10,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
+import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 
@@ -753,8 +754,14 @@ class _F9ReferenceAsset extends StatelessWidget {
   final double currentLimitA;
   final double resistanceOhm;
 
-  Widget _visual(double phase) => F18ComponentAssetVisual(
+  // Board camera is locked to zero yaw/pitch. The same canonical device
+  // painter continues to own all terminal and state geometry.
+  Widget _visual(double phase) => F18IndustrialDualView(
     modelType: modelType,
+    size: size,
+    presentation: F18IndustrialPresentation.boardFront,
+    child: F18ComponentAssetVisual(
+      modelType: modelType,
     variantKey: variantKey,
     size: size,
     active: active,
@@ -773,6 +780,7 @@ class _F9ReferenceAsset extends StatelessWidget {
     ratedPowerW: ratedPowerW,
     currentLimitA: currentLimitA,
     resistanceOhm: resistanceOhm,
+    ),
   );
 
   @override

@@ -376,11 +376,7 @@ final class SolverAC3 {
                         (PhaseTag phase) =>
                             lineCurrents[phase]?.magnitude ?? 0.0,
                       )
-                      .fold<double>(
-                        0.0,
-                        (double maximum, double value) =>
-                            math.max(maximum, value),
-                      ),
+                      .fold<double>(0.0, math.max),
                 );
 
     final List<Ac3PhaseOrderObservation> observations =
@@ -518,8 +514,9 @@ _CompiledAc3Model _compileModel(
 
     final ComponentPhysicsContract? physics =
         CoreComponentPhysicsContracts.resolve(component.modelType);
-    final ComponentModelContract? structural =
-        CoreComponentModelContracts.registry.resolve(component.modelType);
+    final ComponentModelContract? structural = CoreComponentModelContracts
+        .registry
+        .resolve(component.modelType);
     if (physics == null ||
         structural == null ||
         !structural.supportsMode(ElectricalMode.ac3) ||
@@ -774,6 +771,7 @@ _CompiledAc3Model _compileModel(
           ),
         );
       case ComponentElectricalLaw.feedThrough:
+      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1021,8 +1019,9 @@ bool _compileFeedThroughAc3({
   if (physics.electricalLaw != ComponentElectricalLaw.feedThrough) {
     return false;
   }
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedBranches = structural?.branches.length ?? branches.length;
   if (branches.length != expectedBranches) {
     diagnostics.add(
@@ -1069,8 +1068,9 @@ bool _compileMultipoleSwitchAc3({
       physics.controlLaw != ComponentControlLaw.maintainedSwitch) {
     return false;
   }
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPoles =
       structural?.branches
           .where(
@@ -1153,8 +1153,9 @@ bool _compileThreePhaseImpedanceDeviceAc3({
       physics.electricalLaw == ComponentElectricalLaw.loadDeltaThreePhase;
   if (!supported) return false;
 
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedBranches = structural?.branches.length ?? 3;
   if (branches.length != expectedBranches) {
     diagnostics.add(
@@ -1283,8 +1284,9 @@ bool _compileThreePoleProtectionAc3({
     return false;
   }
 
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPoles =
       structural?.branches
           .where(
@@ -1487,8 +1489,9 @@ bool _compileElectromechanicalAc3({
             branch.role == ElectricalBranchRole.powerPole,
       )
       .toList(growable: false);
-  final ComponentModelContract? structural =
-      CoreComponentModelContracts.registry.resolve(component.modelType);
+  final ComponentModelContract? structural = CoreComponentModelContracts
+      .registry
+      .resolve(component.modelType);
   final int expectedPowerPoles =
       structural?.branches
           .where(
@@ -1699,6 +1702,7 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1777,6 +1781,7 @@ Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -2073,12 +2078,8 @@ bool _balancedMagnitudes(List<AcComplex?> values, double relativeTolerance) {
       .cast<AcComplex>()
       .map((AcComplex value) => value.magnitude)
       .toList(growable: false);
-  final double maximum = magnitudes.reduce(
-    (double a, double b) => math.max(a, b),
-  );
-  final double minimum = magnitudes.reduce(
-    (double a, double b) => math.min(a, b),
-  );
+  final double maximum = magnitudes.reduce(math.max);
+  final double minimum = magnitudes.reduce(math.min);
   if (maximum <= 1e-15) {
     return true;
   }

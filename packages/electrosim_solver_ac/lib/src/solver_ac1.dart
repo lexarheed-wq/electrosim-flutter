@@ -373,8 +373,9 @@ _CompiledAc1Model _compileModel(
   for (final ComponentInstance component in components) {
     final ComponentPhysicsContract? physics =
         CoreComponentPhysicsContracts.resolve(component.modelType);
-    final ComponentModelContract? structural =
-        CoreComponentModelContracts.registry.resolve(component.modelType);
+    final ComponentModelContract? structural = CoreComponentModelContracts
+        .registry
+        .resolve(component.modelType);
     if (physics == null ||
         structural == null ||
         !structural.supportsMode(ElectricalMode.ac1) ||
@@ -624,6 +625,7 @@ _CompiledAc1Model _compileModel(
           'Feed-through components are handled before single-branch AC1 compilation.',
         );
       case ComponentElectricalLaw.diode:
+      case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
       case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1005,6 +1007,7 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:
@@ -1082,6 +1085,7 @@ Ac1BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
     case ComponentElectricalLaw.diode:
+    case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
     case ComponentElectricalLaw.loadWyeThreePhase:
     case ComponentElectricalLaw.loadDeltaThreePhase:

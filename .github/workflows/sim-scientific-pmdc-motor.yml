@@ -1,0 +1,54 @@
+name: SIM-SCI PMDC motor reduced-order scientific gate
+on:
+  push:
+    branches:
+      - sim/scientific-dc-motor-reduced-dynamics-20261008
+permissions:
+  contents: read
+jobs:
+  physical-motor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Canonical physical contracts and format gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/core_unify_architecture_guard.py
+          dart format packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_dc/lib/src/solver_dc.dart packages/electrosim_solver_dc/lib/src/dc_result.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart packages/electrosim_solver_ac/lib/src/solver_ac3.dart apps/electrosim/lib/runtime/electrosim_runtime_engine.dart apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/lib/main.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/test/sim_scientific_pmdc_motor_test.dart
+          git --no-pager diff
+          git diff --exit-code
+      - name: Core domain
+        working-directory: packages/electrosim_domain
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: DC solver analytical regression
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: AC1 compatibility
+        working-directory: packages/electrosim_solver_ac
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: PMDC physics and integrated simulation
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub test/sim_scientific_pmdc_motor_test.dart test/core_island01_autonomous_storage_test.dart test/core_unify_current_flow_test.dart test/connection_current_cache_test.dart
+      - name: Full Flutter application nonregression before merge
+        working-directory: apps/electrosim
+        run: flutter test --no-pub

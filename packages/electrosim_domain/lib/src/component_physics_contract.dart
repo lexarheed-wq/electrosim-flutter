@@ -8,6 +8,7 @@ import 'electrical_ratings.dart';
 /// from these semantics instead of scattering `modelType == ...` checks.
 enum ComponentElectricalLaw {
   resistive,
+  motorDc,
   capacitor,
   inductor,
   diode,
@@ -55,6 +56,17 @@ enum ComponentFunctionalRole {
 /// solvers. New physical keys must be added here before use elsewhere.
 abstract final class ComponentParameterKeys {
   static const String resistanceOhm = 'resistanceOhm';
+  // Reduced-order permanent-magnet DC motor model (SI units). The runtime
+  // advances rotor inertia and uses a back-EMF Norton companion in SolverDC.
+  // A motor without calibrated parameters is a pedagogical model, not a
+  // manufacturer performance promise.
+  static const String motorBackEmfVPerRadS = 'motorBackEmfVPerRadS';
+  static const String motorTorqueNmPerA = 'motorTorqueNmPerA';
+  static const String motorInertiaKgM2 = 'motorInertiaKgM2';
+  static const String motorFrictionNmPerRadS = 'motorFrictionNmPerRadS';
+  static const String motorLoadTorqueNm = 'motorLoadTorqueNm';
+  static const String motorAngularSpeedRadS = 'motorAngularSpeedRadS';
+  static const String motorTimeStepSeconds = 'motorTimeStepSeconds';
   static const String reactanceOhm = 'reactanceOhm';
   static const String capacitanceF = 'capacitanceF';
   static const String inductanceH = 'inductanceH';
@@ -144,7 +156,7 @@ abstract final class CoreComponentPhysicsContracts {
           ),
           'motor_dc': const ComponentPhysicsContract(
             modelType: 'motor_dc',
-            electricalLaw: ComponentElectricalLaw.resistive,
+            electricalLaw: ComponentElectricalLaw.motorDc,
             dynamicBehaviors: <ComponentDynamicBehavior>{
               ComponentDynamicBehavior.thermalStress,
               ComponentDynamicBehavior.rotational,
@@ -358,7 +370,9 @@ abstract final class CoreComponentPhysicsContracts {
   static ComponentPhysicsContract? resolve(String modelType) =>
       _byModelType[modelType];
 
-  static ComponentPhysicsContract resolveComponent(ComponentInstance component) =>
+  static ComponentPhysicsContract resolveComponent(
+    ComponentInstance component,
+  ) =>
       resolve(component.modelType) ??
       ComponentPhysicsContract(
         modelType: component.modelType,
@@ -406,16 +420,24 @@ final class ComponentOperatingEnvelope {
   final bool invalidMaxCurrent;
   final bool invalidMaxPower;
 
-  factory ComponentOperatingEnvelope.fromComponent(ComponentInstance component) {
+  factory ComponentOperatingEnvelope.fromComponent(
+    ComponentInstance component,
+  ) {
     final ReceiverNominalRating? nominal =
         ReceiverNominalRating.tryFromParameters(component.parameters);
     return ComponentOperatingEnvelope(
       nominalVoltageV: nominal?.voltageV,
       nominalCurrentA: nominal?.currentA,
       nominalPowerW: nominal?.powerW,
-      maxVoltageV: _positive(component.parameters[ComponentParameterKeys.maxVoltageV]),
-      maxCurrentA: _positive(component.parameters[ComponentParameterKeys.maxCurrentA]),
-      maxPowerW: _positive(component.parameters[ComponentParameterKeys.maxPowerW]),
+      maxVoltageV: _positive(
+        component.parameters[ComponentParameterKeys.maxVoltageV],
+      ),
+      maxCurrentA: _positive(
+        component.parameters[ComponentParameterKeys.maxCurrentA],
+      ),
+      maxPowerW: _positive(
+        component.parameters[ComponentParameterKeys.maxPowerW],
+      ),
       thermalWithstandSeconds: _positive(
         component.parameters[ComponentParameterKeys.thermalWithstandSeconds],
       ),

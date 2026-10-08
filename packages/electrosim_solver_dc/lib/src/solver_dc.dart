@@ -279,10 +279,14 @@ final class SolverDC {
       switch (element.kind) {
         case _ElementKind.resistor:
           current = voltage / element.value;
+        case _ElementKind.motor:
+          current = (voltage - element.motorBackEmfV!) / element.value;
         case _ElementKind.currentSource:
           current = element.value;
         case _ElementKind.idealVoltage:
-          current = element.redundant ? null : network.idealCurrentA(element.id);
+          current = element.redundant
+              ? null
+              : network.idealCurrentA(element.id);
         case _ElementKind.seriesVoltage:
           current = network.idealCurrentA(element.id);
       }
@@ -365,8 +369,8 @@ final class SolverDC {
               a.id.value.compareTo(b.id.value),
         );
     for (final ComponentInstance component in components) {
-      final ComponentPhysicsContract? physics = CoreComponentPhysicsContracts
-          .resolve(component.modelType);
+      final ComponentPhysicsContract? physics =
+          CoreComponentPhysicsContracts.resolve(component.modelType);
       final ComponentModelContract? structural = CoreComponentModelContracts
           .registry
           .resolve(component.modelType);
@@ -540,6 +544,92 @@ final class SolverDC {
               ),
             );
           }
+        case ComponentElectricalLaw.motorDc:
+          final Map<String, Object?> parameters = component.parameters;
+          double param(String key, double fallback) =>
+              (parameters[key] as num?)?.toDouble() ?? fallback;
+          final double resistance = param(
+            ComponentParameterKeys.resistanceOhm,
+            double.nan,
+          );
+          final double ke = param(
+            ComponentParameterKeys.motorBackEmfVPerRadS,
+            0.1,
+          );
+          final double kt = param(
+            ComponentParameterKeys.motorTorqueNmPerA,
+            0.1,
+          );
+          final double inertia = param(
+            ComponentParameterKeys.motorInertiaKgM2,
+            0.01,
+          );
+          final double friction = param(
+            ComponentParameterKeys.motorFrictionNmPerRadS,
+            0.002,
+          );
+          final double load = param(
+            ComponentParameterKeys.motorLoadTorqueNm,
+            0.0,
+          );
+          final double speed = param(
+            ComponentParameterKeys.motorAngularSpeedRadS,
+            0.0,
+          );
+          final double dt = param(
+            ComponentParameterKeys.motorTimeStepSeconds,
+            0.0,
+          );
+          if (![
+                resistance,
+                ke,
+                kt,
+                inertia,
+                friction,
+                load,
+                speed,
+                dt,
+              ].every((double value) => value.isFinite) ||
+              resistance <= 0.0 ||
+              ke < 0.0 ||
+              kt < 0.0 ||
+              inertia <= 0.0 ||
+              friction < 0.0 ||
+              dt < 0.0) {
+            diagnostics.add(
+              DcSolverDiagnostic(
+                code: DcDiagnosticCode.invalidParameter,
+                severity: DcDiagnosticSeverity.error,
+                message:
+                    'PMDC motor requires finite R > 0, Ke/Kt >= 0, '
+                    'J > 0, b >= 0 and dt >= 0 in SI units.',
+                componentId: component.id,
+              ),
+            );
+          } else {
+            // Backward Euler on J dω/dt = Kt I − bω − Tload,
+            // coupled algebraically to V = R I + Keω at the new step.
+            // This reduced-order model neglects armature inductance L.
+            final double mechanical = dt > 0.0
+                ? inertia / dt + friction
+                : double.infinity;
+            final double effectiveResistance = dt > 0.0
+                ? resistance + ke * kt / mechanical
+                : resistance;
+            final double effectiveEmf = dt > 0.0
+                ? ke * ((inertia / dt) * speed - load) / mechanical
+                : ke * speed;
+            active.add(
+              _Element.motor(
+                id: 'component:${component.id.value}',
+                modelType: component.modelType,
+                fromNodeId: fromNode,
+                toNodeId: toNode,
+                resistanceOhm: effectiveResistance,
+                backEmfV: effectiveEmf,
+              ),
+            );
+          }
         case ComponentElectricalLaw.resistive:
           final double? resistance = _positiveParameter(
             component.parameters,
@@ -573,8 +663,8 @@ final class SolverDC {
               component.parameters[ComponentParameterKeys.offResistanceOhm];
           final Object? rawBreakdown = component
               .parameters[ComponentParameterKeys.reverseBreakdownVoltageV];
-          final Object? rawSeriesResistance = component
-              .parameters[ComponentParameterKeys.seriesResistanceOhm];
+          final Object? rawSeriesResistance =
+              component.parameters[ComponentParameterKeys.seriesResistanceOhm];
           final double forwardVoltageV = rawForward == null
               ? 0.7
               : rawForward is num
@@ -628,7 +718,10 @@ final class SolverDC {
             );
           }
         case ComponentElectricalLaw.binarySwitch:
-          final bool? closed = _closedFromControlLaw(component, physics.controlLaw);
+          final bool? closed = _closedFromControlLaw(
+            component,
+            physics.controlLaw,
+          );
           if (closed == null) {
             diagnostics.add(
               DcSolverDiagnostic(
@@ -718,7 +811,9 @@ final class SolverDC {
             );
           }
         case ComponentElectricalLaw.feedThrough:
-          throw StateError('Feed-through components are handled before single-branch compilation.');
+          throw StateError(
+            'Feed-through components are handled before single-branch compilation.',
+          );
         case ComponentElectricalLaw.acImpedance:
         case ComponentElectricalLaw.motorThreePhase:
         case ComponentElectricalLaw.loadWyeThreePhase:
@@ -761,9 +856,10 @@ final class SolverDC {
                 ComponentParameterKeys.storageInternalResistanceOhm,
               ) ??
               0.05;
-          final double? maxDischargeCurrentA = component.parameters.containsKey(
-            ComponentParameterKeys.storageMaxDischargeCurrentA,
-          )
+          final double? maxDischargeCurrentA =
+              component.parameters.containsKey(
+                ComponentParameterKeys.storageMaxDischargeCurrentA,
+              )
               ? _positiveParameter(
                   component.parameters,
                   ComponentParameterKeys.storageMaxDischargeCurrentA,
@@ -1174,15 +1270,16 @@ final class SolverDC {
     double tolerance,
   ) {
     final List<_Element> ordered = List<_Element>.from(elements);
-    final List<_Element> ideals = ordered
-        .where(
-          (_Element element) =>
-              element.kind == _ElementKind.idealVoltage &&
-              !element.redundant &&
-              element.currentLimitA == null,
-        )
-        .toList(growable: false)
-      ..sort((_Element a, _Element b) => a.id.compareTo(b.id));
+    final List<_Element> ideals =
+        ordered
+            .where(
+              (_Element element) =>
+                  element.kind == _ElementKind.idealVoltage &&
+                  !element.redundant &&
+                  element.currentLimitA == null,
+            )
+            .toList(growable: false)
+          ..sort((_Element a, _Element b) => a.id.compareTo(b.id));
 
     final Map<String, List<_VoltageConstraintEdge>> graph =
         <String, List<_VoltageConstraintEdge>>{};
@@ -1244,12 +1341,12 @@ final class SolverDC {
     String to,
     double voltage,
   ) {
-    graph.putIfAbsent(from, () => <_VoltageConstraintEdge>[]).add(
-      _VoltageConstraintEdge(to, -voltage),
-    );
-    graph.putIfAbsent(to, () => <_VoltageConstraintEdge>[]).add(
-      _VoltageConstraintEdge(from, voltage),
-    );
+    graph
+        .putIfAbsent(from, () => <_VoltageConstraintEdge>[])
+        .add(_VoltageConstraintEdge(to, -voltage));
+    graph
+        .putIfAbsent(to, () => <_VoltageConstraintEdge>[])
+        .add(_VoltageConstraintEdge(from, voltage));
   }
 
   double? _impliedVoltageDifference(
@@ -1409,6 +1506,26 @@ final class SolverDC {
             element.toNodeId,
             1.0 / element.value,
           );
+        case _ElementKind.motor:
+          final double conductance = 1.0 / element.value;
+          _stampConductance(
+            matrix,
+            nodeIndex,
+            referenceNodeId,
+            element.fromNodeId,
+            element.toNodeId,
+            conductance,
+          );
+          // I(from→to) = (Vfrom−Vto−Ke×speed)/R. Negative Norton
+          // current is a counter-EMF source, not free generated energy.
+          _stampCurrentSource(
+            rhs,
+            nodeIndex,
+            referenceNodeId,
+            element.fromNodeId,
+            element.toNodeId,
+            -element.motorBackEmfV! * conductance,
+          );
         case _ElementKind.currentSource:
           _stampCurrentSource(
             rhs,
@@ -1500,7 +1617,6 @@ final class SolverDC {
   );
 }
 
-
 bool _isError(DcSolverDiagnostic diagnostic) =>
     diagnostic.severity == DcDiagnosticSeverity.error;
 
@@ -1580,7 +1696,6 @@ void _stampIdealVoltage(
   }
   rhs[sourceIndex] += voltage;
 }
-
 
 void _stampSeriesVoltage(
   List<List<double>> matrix,
@@ -1795,7 +1910,13 @@ double _limitedSourceCurrent(double voltageV, double currentLimitA) =>
 double _clean(double value, double tolerance) =>
     value.abs() <= tolerance ? 0.0 : value;
 
-enum _ElementKind { resistor, idealVoltage, seriesVoltage, currentSource }
+enum _ElementKind {
+  resistor,
+  motor,
+  idealVoltage,
+  seriesVoltage,
+  currentSource,
+}
 
 enum _DiodeMode { off, forward, reverseBreakdown }
 
@@ -1812,6 +1933,7 @@ final class _Element {
     this.currentLimitA,
     this.sourceId,
     this.seriesResistanceOhm,
+    this.motorBackEmfV,
     this.diodeForwardVoltageV,
     this.diodeOffResistanceOhm,
     this.diodeSeriesResistanceOhm,
@@ -1834,6 +1956,25 @@ final class _Element {
     toNodeId: toNodeId,
     value: resistanceOhm,
     redundant: false,
+  );
+
+  factory _Element.motor({
+    required String id,
+    required String modelType,
+    required String fromNodeId,
+    required String toNodeId,
+    required double resistanceOhm,
+    required double backEmfV,
+  }) => _Element._(
+    id: id,
+    modelType: modelType,
+    kind: _ElementKind.motor,
+    publicKind: DcBranchKind.motor,
+    fromNodeId: fromNodeId,
+    toNodeId: toNodeId,
+    value: resistanceOhm,
+    redundant: false,
+    motorBackEmfV: backEmfV,
   );
 
   factory _Element.currentSource({
@@ -1971,6 +2112,7 @@ final class _Element {
   final double? currentLimitA;
   final SourceId? sourceId;
   final double? seriesResistanceOhm;
+  final double? motorBackEmfV;
   final double? diodeForwardVoltageV;
   final double? diodeOffResistanceOhm;
   final double? diodeSeriesResistanceOhm;
@@ -2020,6 +2162,7 @@ final class _Element {
     currentLimitA: currentLimitA,
     sourceId: sourceId,
     seriesResistanceOhm: seriesResistanceOhm,
+    motorBackEmfV: motorBackEmfV,
     diodeForwardVoltageV: diodeForwardVoltageV,
     diodeOffResistanceOhm: diodeOffResistanceOhm,
     diodeSeriesResistanceOhm: diodeSeriesResistanceOhm,

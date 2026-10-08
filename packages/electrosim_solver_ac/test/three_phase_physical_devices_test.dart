@@ -47,6 +47,28 @@ void main() {
     expect(windingCurrents.every((double current) => current > 0), isTrue);
   });
 
+  test('incomplete star stays solvable but emits coupling warning', () {
+    final CircuitState base = _motorStarCircuit();
+    final CircuitState circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      sources: base.sources,
+      components: base.components,
+      connections: base.connections
+          .where((Connection item) => item.id.value != 'star2')
+          .toList(growable: false),
+      settings: base.settings,
+    );
+    final Ac3SolveResult result = solve(circuit);
+    expect(result.status, Ac3SolveStatus.solved);
+    final Ac3SolverDiagnostic diagnostic = result.diagnostics.firstWhere(
+      (Ac3SolverDiagnostic item) =>
+          item.code == Ac3DiagnosticCode.invalidMotorCoupling,
+    );
+    expect(diagnostic.severity, Ac3DiagnosticSeverity.warning);
+  });
+
   test('three-phase motor open condition creates an explicit floating island', () {
     final CircuitState base = _motorStarCircuit();
     final CircuitState circuit = _replaceOnlyComponent(

@@ -119,6 +119,48 @@ void main() {
     expect(report.status, DiagnosticReportStatus.insufficientEvidence);
     expect(report.advice, isEmpty);
   });
+
+  test('M9 invalid motor coupling becomes evidence-backed EIE advice', () {
+    final Ac3SolveResult simulation = Ac3SolveResult(
+      circuitId: circuitId,
+      circuitRevision: 1,
+      engineVersion: 'test',
+      status: Ac3SolveStatus.solved,
+      frequencyHz: 50.0,
+      referenceNodeId: 'n0',
+      nodeVoltages: const <String, AcComplex>{},
+      branchResults: const <Ac3BranchResult>[],
+      diagnostics: <Ac3SolverDiagnostic>[
+        Ac3SolverDiagnostic(
+          code: Ac3DiagnosticCode.invalidMotorCoupling,
+          severity: Ac3DiagnosticSeverity.warning,
+          message: 'Couplage moteur 3φ incomplet.',
+          componentId: ComponentId('m1'),
+        ),
+      ],
+      maxMatrixResidual: 0.0,
+      kclResiduals: const <String, double>{},
+      phaseVoltages: const <PhaseTag, AcComplex>{},
+      lineCurrents: const <PhaseTag, AcComplex>{},
+      lineToLineVoltages: const <String, AcComplex>{},
+      neutralCurrent: AcComplex.zero,
+      missingPhases: const <PhaseTag>[],
+      sourceSequence: Ac3PhaseSequence.positive,
+      voltageBalanced: true,
+      currentBalanced: true,
+      neutralConnected: false,
+      phaseOrderObservations: const <Ac3PhaseOrderObservation>[],
+    );
+    final DiagnosticReport report = const DiagnosticEngine().analyzeAc3(
+      topology: topology(mode: ElectricalMode.ac3),
+      simulation: simulation,
+    );
+    expect(
+      report.advice.map((EieAdvice item) => item.code),
+      contains(EieAdviceCode.invalidMotorCoupling),
+    );
+  });
+
 }
 
 DcSolveResult _dc(

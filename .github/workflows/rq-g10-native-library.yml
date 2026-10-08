@@ -1,0 +1,46 @@
+name: G10-RQ native V2 product library and privacy gate
+
+on:
+  push:
+    branches:
+      - fix/rq-g10-v2-native-20261008
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native_v2_contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Architecture and purity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 tools/f18_g10_contract.py
+          python3 tools/f18_g10b_contract.py
+          python3 tools/core_unify_architecture_guard.py
+      - name: Native scenario source and scientific/repair tests
+        working-directory: packages/electrosim_scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart analyze
+          dart test
+      - name: V2 library UI and privacy tests
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --no-pub test/f18_g10b_library_ui_test.dart
+          flutter test --no-pub test/f18_g10b_library_ui_test.dart

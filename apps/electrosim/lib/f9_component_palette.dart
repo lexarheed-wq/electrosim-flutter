@@ -2102,9 +2102,7 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     'Tous',
     ...f9PaletteCatalog
         .where(
-          (F9PaletteDefinition item) =>
-              item.supportsMode(widget.mode) &&
-              !item.searchOnlyModes.contains(widget.mode),
+          (F9PaletteDefinition item) => item.supportsMode(widget.mode),
         )
         .map((F9PaletteDefinition item) => item.category),
   }.toList(growable: false);
@@ -2126,7 +2124,13 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
     return f9PaletteCatalog
         .where((F9PaletteDefinition item) {
           if (!item.supportsMode(widget.mode)) return false;
-          if (q.isEmpty && item.searchOnlyModes.contains(widget.mode)) {
+          // Keep the five quick-launch items unchanged, but make physical
+          // instruments discoverable via “Voir tous” and the category picker.
+          // Search-only must never mean unavailable from the full library.
+          if (q.isEmpty &&
+              _category == 'Tous' &&
+              !_expanded &&
+              item.searchOnlyModes.contains(widget.mode)) {
             return false;
           }
           final bool categoryMatches =

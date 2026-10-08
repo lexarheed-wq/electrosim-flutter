@@ -79,6 +79,7 @@ final class ElectroSimRuntimeSnapshot {
 
   /// Physical state of autonomous DC batteries, not an invented PV reading.
   final Map<ComponentId, double> dcBatterySocs;
+
   /// Rotor angular velocity obtained from the coupled electrical/mechanical step.
   final Map<ComponentId, double> motorAngularSpeedsRadS;
   final Map<ComponentId, ContactorActuationState> contactorStates;
@@ -845,7 +846,10 @@ final class ElectroSimRuntimeEngine {
             elapsed,
           ),
           motorAngularSpeedsRadS: _advanceDcMotorSpeeds(
-            solverCircuit, dc, previousMotorAngularSpeedsRadS, elapsed,
+            solverCircuit,
+            dc,
+            previousMotorAngularSpeedsRadS,
+            elapsed,
           ),
           contactorStates: coordinated.relays,
           controlIssues: coordinated.controlIssues,
@@ -1021,7 +1025,9 @@ final class ElectroSimRuntimeEngine {
                 ComponentParameterKeys.motorAngularSpeedRadS:
                     previous[c.id] ??
                     (c.parameters[ComponentParameterKeys.motorAngularSpeedRadS]
-                        as num?)?.toDouble() ?? 0.0,
+                            as num?)
+                        ?.toDouble() ??
+                    0.0,
                 ComponentParameterKeys.motorTimeStepSeconds: seconds,
               },
             )
@@ -1052,16 +1058,22 @@ final class ElectroSimRuntimeEngine {
       if (motor.modelType != 'motor_dc') continue;
       double param(String key, double fallback) =>
           (motor.parameters[key] as num?)?.toDouble() ?? fallback;
-      final double prior = previous[motor.id] ??
+      final double prior =
+          previous[motor.id] ??
           param(ComponentParameterKeys.motorAngularSpeedRadS, 0.0);
       if (seconds <= 0.0 || !dc.isSolved) {
         speeds[motor.id] = prior;
         continue;
       }
       final double kt = param(ComponentParameterKeys.motorTorqueNmPerA, 0.1);
-      final double inertia = param(ComponentParameterKeys.motorInertiaKgM2, 0.01);
-      final double friction =
-          param(ComponentParameterKeys.motorFrictionNmPerRadS, 0.002);
+      final double inertia = param(
+        ComponentParameterKeys.motorInertiaKgM2,
+        0.01,
+      );
+      final double friction = param(
+        ComponentParameterKeys.motorFrictionNmPerRadS,
+        0.002,
+      );
       final double load = param(ComponentParameterKeys.motorLoadTorqueNm, 0.0);
       final double current =
           branches['component:${motor.id.value}']?.currentA ?? 0.0;

@@ -1,114 +1,172 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'storage_models.dart';
+
+/// An unreadable save is reported, not deleted or allowed to hide healthy saves.
+final class UnreadableSavedCircuit {
+  const UnreadableSavedCircuit({
+    required this.path,
+    required this.reason,
+  });
+
+  final String path;
+  final String reason;
+}
 
 final class LocalStorageRepository {
   LocalStorageRepository(Directory rootDirectory)
     : _rootDirectory = rootDirectory;
 
   final Directory _rootDirectory;
+  // Serialize operations even between repository instances in the same isolate.
+  static final Map<String, Future<void>> _directoryOperations =
+      <String, Future<void>>{};
+  bool _initialized = false;
+  int _nextTempId = 0;
+  List<UnreadableSavedCircuit> _unreadableSaves =
+      const <UnreadableSavedCircuit>[];
 
-  Future<void> initialize() async {
+  List<UnreadableSavedCircuit> get unreadableSaves => _unreadableSaves;
+
+  Future<T> _exclusive<T>(Future<T> Function() action) async {
+    final String path = _rootDirectory.absolute.path;
+    final Future<void> previous =
+        _directoryOperations[path] ?? Future<void>.value();
+    final Completer<void> completed = Completer<void>();
+    final Future<void> current = completed.future;
+    _directoryOperations[path] = current;
+    try {
+      await previous;
+      return await action();
+    } finally {
+      completed.complete();
+      if (identical(_directoryOperations[path], current)) {
+        _directoryOperations.remove(path);
+      }
+    }
+  }
+
+  Future<void> _initializeUnlocked() async {
     await _rootDirectory.create(recursive: true);
     await _recoverBackups();
     await _removeAbandonedTemps();
+    _initialized = true;
   }
 
-  Future<List<SavedCircuitSummary>> listSaves() async {
-    await initialize();
+  Future<void> _ensureInitializedUnlocked() async {
+    if (!_initialized) await _initializeUnlocked();
+  }
+
+  Future<void> initialize() async {
+    await _exclusive(_initializeUnlocked);
+  }
+
+  Future<List<SavedCircuitSummary>> listSaves() => _exclusive(() async {
+    await _ensureInitializedUnlocked();
     final List<SavedCircuitSummary> result = <SavedCircuitSummary>[];
+    final List<UnreadableSavedCircuit> unreadable = <UnreadableSavedCircuit>[];
     await for (final FileSystemEntity entity in _rootDirectory.list(
       followLinks: false,
     )) {
       if (entity is! File || !entity.path.endsWith('.electrosim.json')) {
         continue;
       }
-      final SavedCircuitDocument document = await _readDocument(entity);
-      result.add(
-        SavedCircuitSummary(
-          saveId: document.saveId,
-          title: document.title,
-          updatedAtUtc: document.updatedAtUtc,
-          circuitRevision: document.circuit.revision,
-        ),
-      );
+      try {
+        final SavedCircuitDocument document = await _readDocument(entity);
+        result.add(
+          SavedCircuitSummary(
+            saveId: document.saveId,
+            title: document.title,
+            updatedAtUtc: document.updatedAtUtc,
+            circuitRevision: document.circuit.revision,
+          ),
+        );
+      } on FileSystemException catch (error) {
+        unreadable.add(
+          UnreadableSavedCircuit(path: entity.path, reason: error.message),
+        );
+      }
     }
+    _unreadableSaves = List<UnreadableSavedCircuit>.unmodifiable(unreadable);
     result.sort(
       (SavedCircuitSummary a, SavedCircuitSummary b) =>
           b.updatedAtUtc.compareTo(a.updatedAtUtc),
     );
     return List<SavedCircuitSummary>.unmodifiable(result);
-  }
+  });
 
-  Future<SavedCircuitDocument> open(String saveId) async {
-    await initialize();
+  Future<SavedCircuitDocument> open(String saveId) => _exclusive(() async {
+    await _ensureInitializedUnlocked();
     final File file = _fileFor(saveId);
     if (!await file.exists()) {
       throw FileSystemException('Saved circuit not found.', file.path);
     }
     return _readDocument(file);
-  }
+  });
 
-  Future<void> save(SavedCircuitDocument document) async {
-    await initialize();
+  Future<void> save(SavedCircuitDocument document) => _exclusive(() async {
+    await _ensureInitializedUnlocked();
+    await _saveUnlocked(document);
+  });
+
+  Future<void> _saveUnlocked(SavedCircuitDocument document) async {
     _validateSaveId(document.saveId);
     final File target = _fileFor(document.saveId);
-    final File temp = File('${target.path}.tmp');
+    // Never silently overwrite malformed saves: require explicit recovery.
+    if (await target.exists()) await _readDocument(target);
+    final File temp = File(
+      '${target.path}.tmp-${DateTime.now().microsecondsSinceEpoch}-${_nextTempId++}',
+    );
     final File backup = File('${target.path}.bak');
+    bool movedOriginalToBackup = false;
 
-    await temp.writeAsString(document.toJsonString(), flush: true);
-    // Validate bytes before they can replace the current save.
-    SavedCircuitDocument.fromJsonString(await temp.readAsString());
-
-    if (await backup.exists()) {
-      await backup.delete();
-    }
-    if (await target.exists()) {
-      await target.rename(backup.path);
-    }
     try {
-      await temp.rename(target.path);
-      if (await backup.exists()) {
-        await backup.delete();
-      }
-    } catch (_) {
+      await temp.writeAsString(document.toJsonString(), flush: true);
+      SavedCircuitDocument.fromJsonString(await temp.readAsString());
+      if (await backup.exists()) await backup.delete();
       if (await target.exists()) {
-        await target.delete();
+        await target.rename(backup.path);
+        movedOriginalToBackup = true;
       }
-      if (await backup.exists()) {
+      await temp.rename(target.path);
+      if (await backup.exists()) await backup.delete();
+    } catch (_) {
+      // Keep the original if writing failed before the rename.
+      if (movedOriginalToBackup && await backup.exists()) {
+        if (await target.exists()) await target.delete();
         await backup.rename(target.path);
       }
-      if (await temp.exists()) {
-        await temp.delete();
-      }
       rethrow;
+    } finally {
+      if (await temp.exists()) await temp.delete();
     }
   }
 
-  Future<void> delete(String saveId) async {
-    await initialize();
+  Future<void> delete(String saveId) => _exclusive(() async {
+    await _ensureInitializedUnlocked();
     final File file = _fileFor(saveId);
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
+    if (await file.exists()) await file.delete();
+  });
 
   Future<String> exportJson(String saveId) async =>
       (await open(saveId)).toJsonString();
 
-  Future<void> importJson(String source, {bool overwrite = false}) async {
-    final SavedCircuitDocument document = SavedCircuitDocument.fromJsonString(
-      source,
-    );
-    final File target = _fileFor(document.saveId);
-    if (!overwrite && await target.exists()) {
-      throw FileSystemException(
-        'A save with this ID already exists.',
-        target.path,
-      );
-    }
-    await save(document);
-  }
+  Future<void> importJson(String source, {bool overwrite = false}) =>
+      _exclusive(() async {
+        await _ensureInitializedUnlocked();
+        final SavedCircuitDocument document = SavedCircuitDocument.fromJsonString(
+          source,
+        );
+        final File target = _fileFor(document.saveId);
+        if (!overwrite && await target.exists()) {
+          throw FileSystemException(
+            'A save with this ID already exists.',
+            target.path,
+          );
+        }
+        await _saveUnlocked(document);
+      });
 
   File _fileFor(String saveId) {
     _validateSaveId(saveId);
@@ -156,7 +214,9 @@ final class LocalStorageRepository {
     await for (final FileSystemEntity entity in _rootDirectory.list(
       followLinks: false,
     )) {
-      if (entity is File && entity.path.endsWith('.electrosim.json.tmp')) {
+      if (entity is File &&
+          (entity.path.endsWith('.electrosim.json.tmp') ||
+           entity.path.contains('.electrosim.json.tmp-'))) {
         await entity.delete();
       }
     }

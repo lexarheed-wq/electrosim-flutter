@@ -1603,6 +1603,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _dragPreviewLayout.value = null;
 
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
+      if (_connectSelectedInstrumentProbe(hit.terminalId!)) {
+        _clearDirectPointerState();
+        return;
+      }
       if (_studentTpReadOnly) {
         _setStatus('TP remis : câblage en lecture seule.');
         _clearDirectPointerState();
@@ -1665,6 +1669,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (hit.kind == CanvasHitKind.wire) {
       final String? id = hit.connectionId?.value;
       if (id == null) return;
+      if (_insertSelectedAmmeterOnWire(hit.connectionId!)) {
+        _clearDirectPointerState();
+        return;
+      }
       setState(() {
         _selection = _selection.select(
           id,
@@ -1685,6 +1693,140 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         });
       }
     }
+  }
+
+  bool _connectSelectedInstrumentProbe(TerminalId target) {
+    final String? selected = _selected;
+    if (selected == null) return false;
+    InstrumentInstance? meter;
+    for (final InstrumentInstance instrument in _circuit.instruments) {
+      if (instrument.id.value == selected) {
+        meter = instrument;
+        break;
+      }
+    }
+    if (meter == null || meter.kind != InstrumentKind.voltmeter) return false;
+    if (_studentTpReadOnly) {
+      _setStatus('TP remis : sondes en lecture seule.');
+      return true;
+    }
+    final List<ProbeConnection> existing = _circuit.probes
+        .where((item) => item.instrumentId == meter!.id)
+        .toList(growable: false);
+    final bool hasV = existing.any(
+      (item) => item.port == InstrumentPort.voltOhm);
+    final bool hasCom = existing.any(
+      (item) => item.port == InstrumentPort.common);
+    final InstrumentPort port =
+        hasV && !hasCom ? InstrumentPort.common : InstrumentPort.voltOhm;
+    final bool resetBoth = hasV && hasCom;
+    final ProbeConnection added = ProbeConnection(
+      id: ProbeId('${meter.id.value}-${port.name}'),
+      instrumentId: meter.id,
+      port: port,
+      terminalId: target,
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: _circuit.instruments,
+      probes: <ProbeConnection>[
+        for (final ProbeConnection item in _circuit.probes)
+          if (item.instrumentId != meter.id ||
+              (!resetBoth && item.port != port)) item,
+        added,
+      ],
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      _status = port == InstrumentPort.voltOhm
+          ? 'Sonde V/Ω : ${target.value}. Sélectionner une borne pour COM.'
+          : 'Sonde COM : ${target.value}. Mesure physique disponible.';
+    });
+    _simulation.updateCircuit(next);
+    return true;
+  }
+
+  bool _insertSelectedAmmeterOnWire(ConnectionId target) {
+    final String? selected = _selected;
+    if (selected == null) return false;
+    InstrumentInstance? meter;
+    for (final InstrumentInstance item in _circuit.instruments) {
+      if (item.id.value == selected) {
+        meter = item;
+        break;
+      }
+    }
+    if (meter == null || meter.kind != InstrumentKind.ammeter) return false;
+    if (_studentTpReadOnly) {
+      _setStatus('TP remis : ampèremètre en lecture seule.');
+      return true;
+    }
+    final Connection? wire = _circuit.connections
+        .where((item) => item.id == target).firstOrNull;
+    if (wire == null || !wire.enabled) return false;
+    final bool alreadyCut = _circuit.instruments.any(
+      (item) => item.id != meter!.id && item.cutConnectionId == target);
+    if (alreadyCut) {
+      _setStatus('Fil déjà instrumenté par un autre ampèremètre.');
+      return true;
+    }
+    final InstrumentInstance replacement = InstrumentInstance(
+      id: meter.id,
+      kind: meter.kind,
+      mode: meter.mode,
+      inputImpedanceOhm: meter.inputImpedanceOhm,
+      burdenResistanceOhm: meter.burdenResistanceOhm,
+      maximumVoltageV: meter.maximumVoltageV,
+      maximumCurrentA: meter.maximumCurrentA,
+      fuseRatingA: meter.fuseRatingA,
+      fuseBlown: meter.fuseBlown,
+      poweredOn: meter.poweredOn,
+      cutConnectionId: target,
+      settings: meter.settings,
+    );
+    final CircuitState next = CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components,
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: <InstrumentInstance>[
+        for (final InstrumentInstance item in _circuit.instruments)
+          if (item.id == meter.id) replacement else item,
+      ],
+      probes: <ProbeConnection>[
+        for (final ProbeConnection item in _circuit.probes)
+          if (item.instrumentId != meter.id) item,
+        ProbeConnection(
+          id: ProbeId('${meter.id.value}-amp'),
+          instrumentId: meter.id,
+          port: InstrumentPort.amp,
+          terminalId: wire.fromTerminalId,
+        ),
+        ProbeConnection(
+          id: ProbeId('${meter.id.value}-com'),
+          instrumentId: meter.id,
+          port: InstrumentPort.common,
+          terminalId: wire.toTerminalId,
+        ),
+      ],
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Ampèremètre inséré virtuellement en série sur ${target.value}.';
+    });
+    _simulation.updateCircuit(next);
+    return true;
   }
 
   void _onCanvasPointerMove(PointerMoveEvent event) {

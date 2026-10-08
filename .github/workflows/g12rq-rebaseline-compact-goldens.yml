@@ -4,7 +4,7 @@ on:
     branches:
       - fix/g12rq-post-audit-goldens-20261008
 permissions:
-  contents: read
+  contents: write
 jobs:
   review:
     runs-on: ubuntu-latest
@@ -35,3 +35,18 @@ jobs:
           name: G12-compact-golden-visual-review
           path: /tmp/g12-golden-review/
           retention-days: 7
+
+      - name: Compare refreshed captures using strict golden matcher
+        working-directory: apps/electrosim
+        run: flutter test --no-pub test/f9_goldens_test.dart
+      - name: Commit visually reviewed compact golden references
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "electrosim-g12-ci"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/test/goldens/f9_compact_*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "G12-RQ: rebaseline compact goldens after reviewed touch/overlay corrections"
+            git push origin HEAD:refs/heads/fix/g12rq-post-audit-goldens-20261008
+          fi

@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
+import 'cabinet_layout.dart';
+
 @immutable
 final class CircuitVisualLayout {
   CircuitVisualLayout({
@@ -10,7 +12,9 @@ final class CircuitVisualLayout {
     Map<String, List<Offset>> wireRoutes = const <String, List<Offset>>{},
     Map<String, int> elementQuarterTurns = const <String, int>{},
     this.defaultElementSize = const Size(104, 64),
-  }) : elementPositions = Map<String, Offset>.unmodifiable(elementPositions),
+    CabinetLayout? cabinetLayout,
+  }) : cabinetLayout = cabinetLayout ?? const CabinetLayout.empty(),
+       elementPositions = Map<String, Offset>.unmodifiable(elementPositions),
        elementSizes = Map<String, Size>.unmodifiable(elementSizes),
        wireRoutes = Map<String, List<Offset>>.unmodifiable(
          wireRoutes.map(
@@ -32,6 +36,7 @@ final class CircuitVisualLayout {
   final Map<String, List<Offset>> wireRoutes;
   final Map<String, int> elementQuarterTurns;
   final Size defaultElementSize;
+  final CabinetLayout cabinetLayout;
 
   Offset? positionOf(String elementId) => elementPositions[elementId];
 
@@ -50,6 +55,17 @@ final class CircuitVisualLayout {
   List<Offset> routeFor(String connectionId) =>
       wireRoutes[connectionId] ?? const <Offset>[];
 
+  /// Cabinet geometry is stored outside CircuitState and the topology.
+  CircuitVisualLayout withCabinetLayout(CabinetLayout next) =>
+      CircuitVisualLayout(
+        elementPositions: elementPositions,
+        elementSizes: elementSizes,
+        wireRoutes: wireRoutes,
+        elementQuarterTurns: elementQuarterTurns,
+        defaultElementSize: defaultElementSize,
+        cabinetLayout: next,
+      );
+
   CircuitVisualLayout moveElement(String elementId, Offset worldPosition) {
     final Map<String, Offset> next = <String, Offset>{...elementPositions};
     next[elementId] = worldPosition;
@@ -59,6 +75,7 @@ final class CircuitVisualLayout {
       wireRoutes: wireRoutes,
       elementQuarterTurns: elementQuarterTurns,
       defaultElementSize: defaultElementSize,
+      cabinetLayout: cabinetLayout,
     );
   }
 
@@ -79,6 +96,7 @@ final class CircuitVisualLayout {
       wireRoutes: wireRoutes,
       elementQuarterTurns: next,
       defaultElementSize: defaultElementSize,
+      cabinetLayout: cabinetLayout,
     );
   }
 

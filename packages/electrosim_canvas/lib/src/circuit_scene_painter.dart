@@ -8,6 +8,8 @@ import 'wire_preview_planner.dart';
 import 'wire_semantics.dart';
 import 'physical_wire_path.dart';
 import 'din_rail_visual.dart';
+import 'cabinet_layout.dart';
+import 'cabinet_fixture_painter.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -71,6 +73,12 @@ final class CircuitScenePainter extends CustomPainter {
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
     if (!paintElementChrome) {
+      paintCabinetFixtures(
+        canvas,
+        cabinet: layout.cabinetLayout,
+        worldToScreen: viewport.worldToScreen,
+        scale: viewport.scale,
+      );
       _paintDinSupports(canvas, geometry);
     }
     _paintWires(canvas, geometry);
@@ -153,7 +161,15 @@ final class CircuitScenePainter extends CustomPainter {
       final rect = geometryAtBuild.elementRects[component.id.value];
       if (rect != null && rows.contains(rect.center.dy)) mounts.add(rect);
     }
-    return layoutDinRails(mounts);
+    // Explicit authored DIN rails take priority; do not paint duplicate
+    // decorative rails across those physical cabinet fixtures.
+    final manualRails = layout.cabinetLayout.fixtures
+        .where((f) => f.kind == CabinetFixtureKind.dinRail)
+        .map((f) => f.bounds)
+        .toList();
+    return layoutDinRails(mounts)
+        .where((rail) => !manualRails.any((manual) => rail.overlaps(manual)))
+        .toList(growable: false);
   }
 
   void _paintDinSupports(Canvas canvas, CircuitGeometryIndex geometry) {
@@ -257,7 +273,9 @@ final class CircuitScenePainter extends CustomPainter {
       );
       final bool selected = selectedElementId == instrument.id.value;
       final RRect caseShape = RRect.fromRectAndRadius(
-        rect, Radius.circular(12 * viewport.scale));
+        rect,
+        Radius.circular(12 * viewport.scale),
+      );
       canvas.drawRRect(caseShape, Paint()..color = const Color(0xFF283748));
       canvas.drawRRect(
         caseShape,
@@ -276,7 +294,8 @@ final class CircuitScenePainter extends CustomPainter {
         RRect.fromRectAndRadius(display, Radius.circular(3 * viewport.scale)),
         Paint()..color = const Color(0xFFD5E5D6),
       );
-      final bool current = instrument.kind == InstrumentKind.ammeter ||
+      final bool current =
+          instrument.kind == InstrumentKind.ammeter ||
           instrument.mode == InstrumentMode.currentDc ||
           instrument.mode == InstrumentMode.currentAcRms;
       final String title = current ? 'A' : 'V';
@@ -292,18 +311,25 @@ final class CircuitScenePainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout(maxWidth: display.width);
-      label.paint(canvas, Offset(
-        display.center.dx - label.width / 2,
-        display.center.dy - label.height / 2,
-      ));
+      label.paint(
+        canvas,
+        Offset(
+          display.center.dx - label.width / 2,
+          display.center.dy - label.height / 2,
+        ),
+      );
       final double y = rect.bottom - rect.height * 0.20;
       final double radius = (4.5 * viewport.scale).clamp(2, 9).toDouble();
       canvas.drawCircle(
-        Offset(rect.left + rect.width * 0.28, y), radius,
-        Paint()..color = const Color(0xFFD12B3C));
+        Offset(rect.left + rect.width * 0.28, y),
+        radius,
+        Paint()..color = const Color(0xFFD12B3C),
+      );
       canvas.drawCircle(
-        Offset(rect.left + rect.width * 0.72, y), radius,
-        Paint()..color = const Color(0xFF15202D));
+        Offset(rect.left + rect.width * 0.72, y),
+        radius,
+        Paint()..color = const Color(0xFF15202D),
+      );
     }
   }
 

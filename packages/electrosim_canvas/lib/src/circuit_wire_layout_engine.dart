@@ -238,6 +238,7 @@ final class CircuitWireLayoutEngine {
         wireRoutes: nextRoutes,
         elementQuarterTurns: layout.elementQuarterTurns,
         defaultElementSize: layout.defaultElementSize,
+        cabinetLayout: layout.cabinetLayout,
       ),
       resolvedCount: resolvedCount,
       eligibleCount: eligibleCount,

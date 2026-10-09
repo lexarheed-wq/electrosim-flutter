@@ -6,7 +6,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 final class ElectroSimLayoutPersistence {
   const ElectroSimLayoutPersistence._();
 
-  static const int schemaVersion = 1;
+  static const int schemaVersion = 2;
 
   static Map<String, Object?> encode(
     CircuitVisualLayout layout,
@@ -29,6 +29,19 @@ final class ElectroSimLayoutPersistence {
       ),
     ),
     'quarterTurns': layout.elementQuarterTurns,
+    'cabinetFixtures': [
+      for (final fixture in layout.cabinetLayout.fixtures)
+        <String, Object?>{
+          'id': fixture.id,
+          'kind': fixture.kind.name,
+          'bounds': <double>[
+            fixture.bounds.left,
+            fixture.bounds.top,
+            fixture.bounds.width,
+            fixture.bounds.height,
+          ],
+        },
+    ],
     'defaultSize': <double>[
       layout.defaultElementSize.width,
       layout.defaultElementSize.height,
@@ -43,7 +56,12 @@ final class ElectroSimLayoutPersistence {
       throw const FormatException('Invalid saved visual layout.');
     }
     final Map<String, dynamic> data = Map<String, dynamic>.from(raw);
-    if (data['schemaVersion'] != schemaVersion) {
+    // Old V2 saves used schema 1, which contained no cabinet geometry.
+    // Keep them loadable without reinterpreting any electrical data.
+    final int? version = data['schemaVersion'] is int
+        ? data['schemaVersion'] as int
+        : null;
+    if (version != 1 && version != schemaVersion) {
       throw FormatException(
         'Unsupported layout schemaVersion: ${data['schemaVersion']}.',
       );
@@ -89,7 +107,59 @@ final class ElectroSimLayoutPersistence {
       turns[item.key] = item.value as int;
     }
 
+    final List<CabinetFixture> fixtures = <CabinetFixture>[];
+    if (version == 2) {
+      final Object? rawFixtures = data['cabinetFixtures'];
+      if (rawFixtures is! List) {
+        throw const FormatException('Invalid cabinetFixtures.');
+      }
+      for (final item in rawFixtures) {
+        if (item is! Map) {
+          throw const FormatException('Invalid cabinet fixture record.');
+        }
+        final fixture = Map<String, dynamic>.from(item);
+        final id = fixture['id'];
+        final kind = fixture['kind'];
+        final rawBounds = fixture['bounds'];
+        if (id is! String ||
+            id.trim().isEmpty ||
+            kind is! String ||
+            rawBounds is! List ||
+            rawBounds.length != 4 ||
+            rawBounds.any((value) => value is! num)) {
+          throw const FormatException('Malformed cabinet fixture.');
+        }
+        final values = rawBounds.cast<num>().map((v) => v.toDouble()).toList();
+        if (values.any((v) => !v.isFinite)) {
+          throw const FormatException('Non-finite cabinet geometry.');
+        }
+        final type = CabinetFixtureKind.values
+            .where((v) => v.name == kind)
+            .toList();
+        if (type.length != 1) {
+          throw FormatException('Unknown cabinet fixture type: $kind.');
+        }
+        try {
+          fixtures.add(
+            CabinetFixture(
+              id: id,
+              kind: type.single,
+              bounds: Rect.fromLTWH(values[0], values[1], values[2], values[3]),
+            ),
+          );
+        } on ArgumentError catch (error) {
+          throw FormatException('Invalid cabinet fixture $id: $error');
+        }
+      }
+    }
+    late final CabinetLayout cabinet;
+    try {
+      cabinet = CabinetLayout(fixtures);
+    } on ArgumentError catch (error) {
+      throw FormatException('Invalid cabinet layout: $error');
+    }
     return CircuitVisualLayout(
+      cabinetLayout: cabinet,
       elementPositions: positions,
       elementSizes: sizes,
       wireRoutes: routes,

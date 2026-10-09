@@ -280,6 +280,7 @@ final class ElectroSimInstrumentProjection {
       message: message,
     );
 
+    final circuit = snapshot.circuit;
     final mode = instrument.mode;
     final bool voltage = mode == InstrumentMode.voltageDc ||
         mode == InstrumentMode.voltageAcRms;

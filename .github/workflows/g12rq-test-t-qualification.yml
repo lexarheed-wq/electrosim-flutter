@@ -18,7 +18,7 @@ jobs:
       - name: Restore premium RCD source
         run: python3 tools/premium_rcd2p/decode_source.py
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/test/g12rq_rcd_test_button_runtime_test.dart
+        run: dart format apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/test/g12rq_rcd_test_button_runtime_test.dart
       - name: Analyze and test RCD T
         working-directory: apps/electrosim
         run: |

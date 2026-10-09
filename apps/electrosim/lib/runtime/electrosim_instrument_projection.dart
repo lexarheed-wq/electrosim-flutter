@@ -490,7 +490,10 @@ final class ElectroSimInstrumentProjection {
           'A and COM must terminate at opposite ends of the selected cut PV wire.');
       }
       final solved = PvSeriesBurdenProjection.solve(
-        snapshot: snapshot, wire: wire, meter: instrument,
+        snapshot: snapshot,
+        wire: wire,
+        meter: instrument,
+        engine: engine,
       );
       if (!solved.valid) {
         return invalid(PhysicalInstrumentStatus.unavailable,

@@ -27,7 +27,9 @@ final class ElectroSimStudentWebBundleLocator {
     return null;
   }
 
-  // A release must contain BOTH the entry document and its Dart JS payload.\n  // This guard is also exercised by packaging tests.\n  static bool isBundleValid(Directory directory) =>
+  // A release must contain BOTH the entry document and its Dart JS payload.
+  // This guard is also exercised by packaging tests.
+  static bool isBundleValid(Directory directory) =>
       directory.existsSync() &&
       File('${directory.path}/index.html').existsSync() &&
       File('${directory.path}/main.dart.js').existsSync();

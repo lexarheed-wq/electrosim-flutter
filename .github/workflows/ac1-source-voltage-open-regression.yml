@@ -1,0 +1,34 @@
+name: AC1 Source Voltage Open Circuit Regression
+on:
+  push:
+    branches:
+      - fix/ac1-source-voltage-open-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ac1-source-voltage-open-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Preserve versioned 3D painter
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Analyze and test source voltage independently of RCD state
+        working-directory: apps/electrosim
+        run: |
+          set -e
+          flutter pub get
+          dart format lib/f9_source_voltage_readout.dart lib/f9_component_visuals.dart test/ac1_source_voltage_open_rcd_regression_test.dart
+          flutter analyze
+          flutter test test/ac1_source_voltage_open_rcd_regression_test.dart
+          flutter test test/g12rq_rcd_test_button_runtime_test.dart
+          flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
+          flutter test test/ac1_palette_runtime_regression_test.dart

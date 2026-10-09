@@ -134,11 +134,13 @@ class _F18TeacherSessionCoordinatorPageState
           onBack: () => Navigator.of(setupContext).pop(),
           onOpenWorkshop: () => _openWorkspace(setupContext, workspace),
           onManageTp: () {
-            unawaited(_showManageSession(
-              draftMode: workspace == 'Câblage'
-                  ? TpMode.wiring
-                  : TpMode.troubleshooting,
-            ));
+            unawaited(
+              _showManageSession(
+                draftMode: workspace == 'Câblage'
+                    ? TpMode.wiring
+                    : TpMode.troubleshooting,
+              ),
+            );
           },
         ),
       ),
@@ -160,12 +162,14 @@ class _F18TeacherSessionCoordinatorPageState
             (Route<dynamic> route) => route.settings.name == 'teacher-session',
           ),
           (CircuitState circuit) {
-            unawaited(_showManageSession(
-              draftMode: workspace == 'Câblage'
-                  ? TpMode.wiring
-                  : TpMode.troubleshooting,
-              wiringReferenceCircuit: workspace == 'Câblage' ? circuit : null,
-            ));
+            unawaited(
+              _showManageSession(
+                draftMode: workspace == 'Câblage'
+                    ? TpMode.wiring
+                    : TpMode.troubleshooting,
+                wiringReferenceCircuit: workspace == 'Câblage' ? circuit : null,
+              ),
+            );
           },
         ),
       ),

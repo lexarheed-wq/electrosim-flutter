@@ -47,10 +47,17 @@ void main() {
     await tester.tap(find.byKey(const Key('activity-setup-publish-tp')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tp-wiring-reference-example')), findsOneWidget);
-    expect(find.byKey(const Key('tp-wiring-reference-required')), findsOneWidget);
     expect(
-      tester.widget<FilledButton>(find.byKey(const Key('tp-create-draft')))
+      find.byKey(const Key('tp-wiring-reference-example')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('tp-wiring-reference-required')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<FilledButton>(find.byKey(const Key('tp-create-draft')))
           .onPressed,
       isNull,
       reason: 'Do not publish an empty or implicit wiring reference.',
@@ -86,7 +93,10 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('activity-setup-publish-tp')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('tp-wiring-reference-example')), findsNothing);
+      expect(
+        find.byKey(const Key('tp-wiring-reference-example')),
+        findsNothing,
+      );
       await tester.tap(find.byKey(const Key('tp-create-draft')));
       await tester.pumpAndSettle();
       expect(find.text('Mode : Recherche de dérangement'), findsOneWidget);
@@ -97,38 +107,42 @@ void main() {
     },
   );
 
-  test('G5 wiring publication preserves reference, type and lifecycle on restore',
-      () {
-    final example = buildV2ProductExampleRepository().all.first;
-    final teacher = ElectroSimTpSessionController();
-    addTearDown(teacher.dispose);
-    teacher.createDraft(
-      mode: TpMode.wiring,
-      wiringReferenceCircuit: example.circuit,
-      activityTitle: 'TP de câblage — test',
-    );
-    teacher.publish();
-    final replica = teacher.createStudentReplica();
-    addTearDown(replica.dispose);
+  test(
+    'G5 wiring publication preserves reference, type and lifecycle on restore',
+    () {
+      final example = buildV2ProductExampleRepository().all.first;
+      final teacher = ElectroSimTpSessionController();
+      addTearDown(teacher.dispose);
+      teacher.createDraft(
+        mode: TpMode.wiring,
+        wiringReferenceCircuit: example.circuit,
+        activityTitle: 'TP de câblage — test',
+      );
+      teacher.publish();
+      final replica = teacher.createStudentReplica();
+      addTearDown(replica.dispose);
 
-    expect(replica.session!.definition.mode, TpMode.wiring);
-    expect(replica.session!.definition.title, 'TP de câblage — test');
-    expect(replica.session!.definition.referenceCircuit, example.circuit);
-    expect(replica.lifecycle, TpLifecycle.published);
-    expect(replica.toPersistenceJson()['mode'], 'wiring');
-    expect(teacher.toPersistenceJson()['mode'], 'wiring');
-  });
+      expect(replica.session!.definition.mode, TpMode.wiring);
+      expect(replica.session!.definition.title, 'TP de câblage — test');
+      expect(replica.session!.definition.referenceCircuit, example.circuit);
+      expect(replica.lifecycle, TpLifecycle.published);
+      expect(replica.toPersistenceJson()['mode'], 'wiring');
+      expect(teacher.toPersistenceJson()['mode'], 'wiring');
+    },
+  );
 
-  test('G5 empty wiring reference is rejected, legacy troubleshooting preserved',
-      () {
-    final controller = ElectroSimTpSessionController();
-    addTearDown(controller.dispose);
-    expect(
-      () => controller.createDraft(mode: TpMode.wiring),
-      throwsStateError,
-    );
-    expect(controller.session, isNull);
-    controller.createDraft();
-    expect(controller.session!.definition.mode, TpMode.troubleshooting);
-  });
+  test(
+    'G5 empty wiring reference is rejected, legacy troubleshooting preserved',
+    () {
+      final controller = ElectroSimTpSessionController();
+      addTearDown(controller.dispose);
+      expect(
+        () => controller.createDraft(mode: TpMode.wiring),
+        throwsStateError,
+      );
+      expect(controller.session, isNull);
+      controller.createDraft();
+      expect(controller.session!.definition.mode, TpMode.troubleshooting);
+    },
+  );
 }

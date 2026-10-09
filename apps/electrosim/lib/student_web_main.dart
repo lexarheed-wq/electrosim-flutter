@@ -316,8 +316,8 @@ class _StudentHubPage extends StatelessWidget {
                   key: const Key('student-web-tp-card'),
                   icon: Icons.assignment_outlined,
                   title: tpVisible
-                       ? controller.session!.definition.title
-                       : 'TP publié',
+                      ? controller.session!.definition.title
+                      : 'TP publié',
                   description: switch (tpLifecycle) {
                     TpLifecycle.published =>
                       'TP publié — en attente du démarrage par le professeur.',
@@ -337,9 +337,10 @@ class _StudentHubPage extends StatelessWidget {
                         child: product.F18WorkspacePage(
                           entryLabel: 'TP élève',
                           initialWorkspace:
-                              controller.session?.definition.mode == TpMode.wiring
-                                  ? 'Câblage'
-                                  : 'Recherche de dérangement',
+                              controller.session?.definition.mode ==
+                                  TpMode.wiring
+                              ? 'Câblage'
+                              : 'Recherche de dérangement',
                           role: F9UserRole.student,
                           initialCircuit: controller.studentCircuit,
                           tpSessionController: controller,

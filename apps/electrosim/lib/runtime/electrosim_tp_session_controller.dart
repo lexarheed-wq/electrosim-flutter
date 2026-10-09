@@ -237,8 +237,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       throw const FormatException('Unknown TP mode.');
     }
     final Object? savedActivityTitle = json['activityTitle'];
-    final String? activityTitle = savedActivityTitle is String &&
-            savedActivityTitle.trim().isNotEmpty
+    final String? activityTitle =
+        savedActivityTitle is String && savedActivityTitle.trim().isNotEmpty
         ? savedActivityTitle
         : null;
     CircuitState? referenceCircuit;

@@ -1033,8 +1033,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           : null,
                       onManageSession: widget.sessionNavigation
                           ? (widget.onSessionManageWithCircuit != null
-                              ? () => widget.onSessionManageWithCircuit!(_circuit)
-                              : (widget.onSessionManage ?? _showManageSession))
+                                ? () => widget.onSessionManageWithCircuit!(
+                                    _circuit,
+                                  )
+                                : (widget.onSessionManage ??
+                                      _showManageSession))
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
                       onSave: widget.persistenceController == null

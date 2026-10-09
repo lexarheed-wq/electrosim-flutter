@@ -262,7 +262,9 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
         const SizedBox(height: ElectroSimSpacing.sm),
         if (widget.draftMode == TpMode.wiring) ...<Widget>[
           if (_hasWiredReference(widget.wiringReferenceCircuit))
-            const Text('Montage de référence : circuit préparé dans l’atelier.'),
+            const Text(
+              'Montage de référence : circuit préparé dans l’atelier.',
+            ),
           DropdownButton<String>(
             key: const Key('tp-wiring-reference-example'),
             isExpanded: true,

@@ -687,6 +687,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   TerminalId? _wiringPendingTerminal;
   TerminalId? _wiringHoverTerminal;
   int? _activeCanvasPointer;
+  String? _selectedCabinetFixtureId;
+  String? _draggingCabinetFixtureId;
+  Offset? _cabinetPointerStart;
+  Rect? _cabinetDragInitialBounds;
+  bool _cabinetResizeActive = false;
+  CabinetPlacementMode _cabinetPlacementMode = CabinetPlacementMode.free;
   String? _directDragElementId;
   Offset? _directDragGrabDelta;
   CircuitVisualLayout? _directDragBaseLayout;
@@ -713,6 +719,59 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanHostInfo;
   late final ElectroSimSimulationController _simulation;
+
+  CabinetFixture? _cabinetFixtureAt(Offset local) {
+    final world = _viewport.screenToWorld(local);
+    for (final fixture in _layout.cabinetLayout.fixtures.reversed) {
+      if (fixture.bounds.inflate(8 / _viewport.scale).contains(world)) {
+        return fixture;
+      }
+    }
+    return null;
+  }
+
+  Map<String, Rect> _cabinetDeviceRects() =>
+      CircuitGeometryIndex.build(_circuit, _layout).elementRects;
+
+  bool _cabinetFixtureValid(CabinetFixture fixture) {
+    for (final other in _layout.cabinetLayout.fixtures) {
+      if (other.id == fixture.id || !fixture.bounds.overlaps(other.bounds)) {
+        continue;
+      }
+      if (other.kind != CabinetFixtureKind.dinRail &&
+          fixture.kind != CabinetFixtureKind.dinRail) {
+        return false;
+      }
+    }
+    if (fixture.kind != CabinetFixtureKind.dinRail) {
+      for (final rect in _cabinetDeviceRects().values) {
+        if (rect.overlaps(fixture.bounds)) return false;
+      }
+    }
+    return true;
+  }
+
+  void _finishCabinetDrag() {
+    final id = _draggingCabinetFixtureId;
+    final preview = _dragPreviewLayout.value;
+    if (id != null && preview != null) {
+      final fixture = preview.cabinetLayout.fixture(id);
+      if (fixture != null && _cabinetFixtureValid(fixture)) {
+        setState(() {
+          _layout = preview;
+          _selectedCabinetFixtureId = id;
+          _status = 'Élément d’armoire repositionné : $id';
+        });
+      } else {
+        _setStatus('Collision d’armoire : déplacement refusé.');
+      }
+    }
+    _dragPreviewLayout.value = null;
+    _draggingCabinetFixtureId = null;
+    _cabinetPointerStart = null;
+    _cabinetDragInitialBounds = null;
+    _cabinetResizeActive = false;
+  }
 
   bool get _studentTpReadOnly =>
       widget.role == F9UserRole.student && _tpController.readOnly;
@@ -827,7 +886,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected,
     );
     final bool canDeleteSelection =
-        _selectedIds.isNotEmpty && !_studentTpReadOnly;
+        (_selectedIds.isNotEmpty || _selectedCabinetFixtureId != null) &&
+        !_studentTpReadOnly;
     final bool canRotateSelection =
         _selectedIds.length == 1 &&
         selectedDetails != null &&
@@ -1093,6 +1153,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                   simulationRunning:
                                                       _simulation.running,
                                                 ),
+                                          ),
+                                          IgnorePointer(
+                                            child: CustomPaint(
+                                              painter: _CabinetSelectionPainter(
+                                                fixture: canvasLayout.cabinetLayout
+                                                    .fixture(_selectedCabinetFixtureId ?? ''),
+                                                viewport: _viewport,
+                                              ),
+                                              size: Size.infinite,
+                                            ),
                                           ),
                                           if (_circuit.instruments.isNotEmpty)
                                             AnimatedBuilder(
@@ -1966,6 +2036,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _directDragSession = null;
     _dragPreviewLayout.value = null;
 
+    // Electrical targets always take priority over cabinet furniture.
+    if (hit.kind == CanvasHitKind.background) {
+      final fixture = _cabinetFixtureAt(event.localPosition);
+      if (fixture != null) {
+        final world = _viewport.screenToWorld(event.localPosition);
+        final cornerDistance = (event.localPosition -
+            _viewport.worldToScreen(fixture.bounds.bottomRight)).distance;
+        setState(() {
+          _selected = null;
+          _selectedCabinetFixtureId = fixture.id;
+          _status = 'Armoire : ${fixture.id} sélectionné';
+        });
+        if (!_studentTpReadOnly) {
+          _draggingCabinetFixtureId = fixture.id;
+          _cabinetPointerStart = world;
+          _cabinetDragInitialBounds = fixture.bounds;
+          _cabinetResizeActive = cornerDistance <= 22;
+        }
+        return;
+      }
+    }
+    _selectedCabinetFixtureId = null;
+
     if (hit.kind == CanvasHitKind.terminal && hit.terminalId != null) {
       if (_connectSelectedInstrumentProbe(hit.terminalId!)) {
         _clearDirectPointerState();
@@ -2213,6 +2306,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _directPointerMoved = true;
     }
 
+    final String? fixtureId = _draggingCabinetFixtureId;
+    final Offset? initialPointer = _cabinetPointerStart;
+    final Rect? initialBounds = _cabinetDragInitialBounds;
+    if (fixtureId != null && initialPointer != null && initialBounds != null) {
+      final world = _viewport.screenToWorld(event.localPosition);
+      final delta = world - initialPointer;
+      final candidate = _cabinetResizeActive
+          ? Rect.fromLTWH(
+              initialBounds.left, initialBounds.top,
+              math.max(
+                _layout.cabinetLayout.fixture(fixtureId)!.kind ==
+                    CabinetFixtureKind.dinRail ? 60 : 24,
+                initialBounds.width + delta.dx),
+              math.max(
+                _layout.cabinetLayout.fixture(fixtureId)!.kind ==
+                    CabinetFixtureKind.dinRail ? 16 : 24,
+                initialBounds.height + delta.dy),
+            )
+          : initialBounds.shift(delta);
+      final updated = _layout.cabinetLayout
+          .replace(_layout.cabinetLayout.fixture(fixtureId)!
+              .withBounds(candidate));
+      _dragPreviewLayout.value = _layout.withCabinetLayout(updated);
+      return;
+    }
+
     final String? draggingId = _directDragElementId;
     final Offset? grabDelta = _directDragGrabDelta;
     if (draggingId != null && grabDelta != null) {
@@ -2234,6 +2353,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _onCanvasPointerUp(PointerUpEvent event) {
     if (_activeCanvasPointer != event.pointer) {
+      return;
+    }
+    if (_draggingCabinetFixtureId != null) {
+      _finishCabinetDrag();
+      _clearDirectPointerState();
       return;
     }
     final String? movedId = _directDragElementId;
@@ -2267,6 +2391,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _clearDirectPointerState() {
     _activeCanvasPointer = null;
+    _draggingCabinetFixtureId = null;
+    _cabinetPointerStart = null;
+    _cabinetDragInitialBounds = null;
+    _cabinetResizeActive = false;
     _directDragElementId = null;
     _directDragGrabDelta = null;
     _directDragBaseLayout = null;
@@ -3073,6 +3201,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _deleteSelectedElement() {
     if (_blockStudentTpMutation()) return;
+    if (_selectedCabinetFixtureId != null) {
+      final id = _selectedCabinetFixtureId!;
+      setState(() {
+        _layout = _layout.withCabinetLayout(
+          _layout.cabinetLayout.remove(id),
+        );
+        _selectedCabinetFixtureId = null;
+        _status = 'Élément d’armoire supprimé : $id';
+      });
+      return;
+    }
     if (_selectedIds.length > 1) {
       _deleteMultipleSelection();
       return;
@@ -3563,6 +3702,26 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     super.dispose();
   }
+}
+
+class _CabinetSelectionPainter extends CustomPainter {
+  const _CabinetSelectionPainter({required this.fixture, required this.viewport});
+  final CabinetFixture? fixture;
+  final ViewportController viewport;
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintCabinetSelection(
+      canvas,
+      fixture: fixture,
+      worldToScreen: viewport.worldToScreen,
+      scale: viewport.scale,
+    );
+  }
+  @override
+  bool shouldRepaint(_CabinetSelectionPainter old) =>
+      old.fixture != fixture || old.viewport != viewport ||
+      old.viewport.scale != viewport.scale ||
+      old.viewport.translation != viewport.translation;
 }
 
 class _WorkspaceTopBar extends StatelessWidget {

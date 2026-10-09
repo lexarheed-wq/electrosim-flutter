@@ -56,18 +56,10 @@ jobs:
           chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$chrome"
           "$chrome" --version > "$output/CHROMIUM_VERSION.txt"
-          for stage in overview resized integrated; do
-            timeout 90s "$chrome" \
-              --headless=new --no-sandbox --disable-dev-shm-usage \
-              --disable-background-networking --disable-default-apps \
-              --disable-extensions --disable-sync --no-first-run \
-              --hide-scrollbars --enable-unsafe-swiftshader \
-              --window-size=1550,1050 --virtual-time-budget=13000 \
-              --screenshot="$output/screenshots/P2_${stage}_real_flutter_chromium.png" \
-              "http://127.0.0.1:8767/?stage=$stage" \
-              > "$output/${stage}.log" 2>&1
-            test -s "$output/screenshots/P2_${stage}_real_flutter_chromium.png"
-          done
+          python3 -m pip install 'playwright==1.56.0'
+          python3 tools/p2_capture_compiled_workspace.py \
+            --chrome "$chrome" \
+            --output "$output/screenshots"
           python3 - <<'PY'
           import glob, os, struct
           for name in glob.glob('audit/postv2-p2/chromium/screenshots/*.png'):
@@ -92,6 +84,7 @@ jobs:
           } > "$output/PROOF_REPORT.md"
           echo P2_CHROMIUM_REAL_FLUTTER_PASS
       - name: Upload Chromium screenshots, browser metadata, and report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ElectroSim-P2-Real-Flutter-Chromium-Evidence

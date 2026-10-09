@@ -276,7 +276,7 @@ class F9HomePage extends StatelessWidget {
                     ElectroSimTpSessionController controller,
                     String workspace,
                     VoidCallback onDashboard,
-                    VoidCallback onManageSession,
+                    ValueChanged<CircuitState> onManageSession,
                   ) => F18WorkspacePage(
                     entryLabel: 'Session active',
                     initialWorkspace: workspace,
@@ -284,7 +284,7 @@ class F9HomePage extends StatelessWidget {
                     tpSessionController: controller,
                     persistenceController: persistenceController,
                     onSessionDashboard: onDashboard,
-                    onSessionManage: onManageSession,
+                    onSessionManageWithCircuit: onManageSession,
                   ),
             ),
       ),
@@ -452,6 +452,7 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.syncClient,
     super.onSessionDashboard,
     super.onSessionManage,
+    super.onSessionManageWithCircuit,
     super.onExitWorkspace,
   });
 }
@@ -472,6 +473,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.syncClient,
     this.onSessionDashboard,
     this.onSessionManage,
+    this.onSessionManageWithCircuit,
     this.onExitWorkspace,
   });
 
@@ -488,6 +490,7 @@ class F18WorkspacePage extends StatefulWidget {
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
   final VoidCallback? onSessionManage;
+  final ValueChanged<CircuitState>? onSessionManageWithCircuit;
   final VoidCallback? onExitWorkspace;
 
   @override
@@ -872,7 +875,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         tp.lifecycle != TpLifecycle.draft &&
         tp.lifecycle != TpLifecycle.published) {
       _circuit = tp.studentCircuit;
-      _workspace = 'Recherche de dérangement';
+      _workspace = tp.definition.mode == TpMode.wiring
+          ? 'Câblage'
+          : 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
     if (widget.initialCabinetLayout != null) {
@@ -1027,7 +1032,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           ? (widget.onSessionDashboard ?? _showDashboard)
                           : null,
                       onManageSession: widget.sessionNavigation
-                          ? (widget.onSessionManage ?? _showManageSession)
+                          ? (widget.onSessionManageWithCircuit != null
+                              ? () => widget.onSessionManageWithCircuit!(_circuit)
+                              : (widget.onSessionManage ?? _showManageSession))
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
                       onSave: widget.persistenceController == null
@@ -1450,7 +1457,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             session.studentCircuit.revision != _circuit.revision)) {
       _circuit = session.studentCircuit;
       _layout = _layoutForCircuit(_circuit);
-      _workspace = 'Recherche de dérangement';
+      _workspace = session.definition.mode == TpMode.wiring
+          ? 'Câblage'
+          : 'Recherche de dérangement';
       _selected = null;
       circuitChanged = true;
     }
@@ -1487,7 +1496,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             _circuit = session.studentCircuit;
             _layout = _layoutForCircuit(_circuit);
             _selected = null;
-            _workspace = 'Recherche de dérangement';
+            _workspace = session.definition.mode == TpMode.wiring
+                ? 'Câblage'
+                : 'Recherche de dérangement';
             _status = 'TP commencé — montage élève chargé.';
           });
           _simulation.updateCircuit(_circuit);

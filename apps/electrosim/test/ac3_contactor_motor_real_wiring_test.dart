@@ -9,7 +9,7 @@ void main() {
 
     expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
     expect(snapshot.solved, isTrue,
-        reason: 'A connected source/contactor/star-motor circuit must solve');
+        reason: 'A connected source/contactor/star-motor circuit must solve. Diagnostics: $diagnostic');
     expect(snapshot.controlIssues, isEmpty);
     expect(snapshot.contactorActuated(ComponentId('k1')), isTrue);
     final coil = snapshot.contactorStates[ComponentId('k1')]!;
@@ -32,7 +32,7 @@ void main() {
     final circuit = _assembly(coilWired: false);
     final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
     expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
-    expect(snapshot.solved, isTrue);
+    expect(snapshot.solved, isTrue, reason: 'Released AC3 circuit: $diagnostic');
     expect(snapshot.contactorActuated(ComponentId('k1')), isFalse);
     for (final String pole in ['L1', 'L2', 'L3']) {
       final branch = snapshot.ac3.branch('component:k1:power:$pole');

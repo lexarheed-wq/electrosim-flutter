@@ -590,13 +590,35 @@ class _DisjoncteurPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
     const verrou = Color(0xFFE4C231);
+    // Yellow U-shaped top release tabs: both uprights and bridging lip.
     for (final x in [-8.3, 8.3]) {
-      scene.box(x, -44.5, 4.3, 3.8, 26.4, 9, verrou, radius: .75, bevel: .32);
-      scene.box(x, -45.8, 2.2, 1.4, 27.5, 4.5,
-          const Color(0xFFF9DE3C), radius: .3);
+      scene.box(x - 2.75, -44.7, 1.65, 4.4, 20.5, 4.2,
+          verrou, radius: .48, bevel: .28);
+      scene.box(x + 2.75, -44.7, 1.65, 4.4, 20.5, 4.2,
+          verrou, radius: .48, bevel: .28);
+      scene.box(x, -46.85, 7.1, 1.65, 21.5, 3.3,
+          const Color(0xFFFFD51B), radius: .65, bevel: .28);
     }
     scene.box(-12, 43.5, 7, 2.2, -22, 9, verrou);
     scene.box(0, 0, 36, 85, 34, 68, _Scene.blanc, radius: 1, bevel: .65);
+    // Right side shell relief is drawn on the side plane with real occlusion:
+    // panel seams, mounting sockets and stepped injection-moulded shoulders.
+    // None of this touches front-face hit regions or electrical geometry.
+    final sidePlates = <_Face>[
+      const _Face([
+        _V(18.25, -34, -27), _V(18.25, -1, -27),
+        _V(18.25, -1, 3), _V(18.25, -34, 3),
+      ], Color(0xFFF2F3F0)),
+      const _Face([
+        _V(18.26, 1, -26), _V(18.26, 31, -26),
+        _V(18.26, 31, -1), _V(18.26, 1, -1),
+      ], Color(0xFFE3E5E2)),
+      const _Face([
+        _V(18.27, 10, 2), _V(18.27, 22, 2),
+        _V(18.27, 22, 24), _V(18.27, 10, 24),
+      ], Color(0xFFE8EAE7)),
+    ];
+    scene.faces(sidePlates);
     // Mechanical slots and mould separation lines are drawn on the visible
     // right flank, without changing the canonical frontal terminal offsets.
     for (final y in [-30.0, -16.0, 3.0, 29.0]) {
@@ -615,13 +637,19 @@ class _DisjoncteurPainter extends CustomPainter {
         const Color(0xFFE0E7E0),
       ], side: true);
     }
-    scene.box(0, -30, 35.5, 24, 35.2, 3, _Scene.blanc, radius: .8, bevel: .3);
+    scene.box(0, -30, 35.5, 24, 35.2, 3, _Scene.blanc, radius: 1.35, bevel: .7);
+    // Upper terminal housing extends beyond the printed facade and leaves
+    // a lower moulding step just above the label face.
+    scene.box(0, -18.4, 35.7, 1.1, 36.5, 1.2,
+        const Color(0xFFE1E5E1), radius: .25, bevel: .18);
     // Front-visible yellow release catches in both camera projections.
     for (final x in [-8.3, 8.3]) {
       scene.box(x, -43.2, 3.4, 2.7, 35.5, 2.1,
           const Color(0xFFF0C31A), radius: .5, bevel: .28);
     }
-    scene.box(0, 34.8, 35.5, 14, 35.2, 3, _Scene.blanc, radius: .7, bevel: .3);
+    scene.box(0, 34.8, 35.5, 14, 35.2, 3, _Scene.blanc, radius: 1.15, bevel: .55);
+    scene.box(0, 42.05, 35.4, .85, 35.5, 1,
+        const Color(0xFFD7DBD7), radius: .2, bevel: .12);
     for (final x in [-8.3, 8.3]) {
       scene.box(x, -41.3, 10, 2.2, 26, 9, const Color(0xFFC4CAC4), radius: .5);
       scene.box(
@@ -664,7 +692,9 @@ class _DisjoncteurPainter extends CustomPainter {
     scene.text('N', -13.2, 40.4, 35.5, 2.8, weight: FontWeight.w700);
     scene.text('1', 9, -37.2, 35.5, 2.5);
     scene.text('2', 9, 40.4, 35.5, 2.5);
-    scene.box(0, -6, 35, 28, 40, 6, _Scene.blanc, radius: .45, bevel: .45);
+    scene.box(0, -6, 35, 28, 40, 6, _Scene.blanc, radius: 1.25, bevel: .65);
+    scene.box(0, -19.3, 35.4, 1.5, 39.6, 3.4,
+        const Color(0xFFF0F2EE), radius: .45, bevel: .24);
     scene.box(
       0,
       -15,
@@ -682,7 +712,7 @@ class _DisjoncteurPainter extends CustomPainter {
       -11.7,
       40.4,
       2.75,
-      color: _Scene.accent,
+      color: const Color(0xFF252D36),
       weight: FontWeight.w800,
     );
     scene.text(
@@ -700,14 +730,29 @@ class _DisjoncteurPainter extends CustomPainter {
         -14,
         -.4,
         40.4,
-        2.9,
-        weight: FontWeight.w800,
+        2.45,
+        weight: FontWeight.w700,
       );
     }
     if (widget.estDifferentiel && widget.sensibiliteMA != null) {
-      scene.text('Sensibilité : ${_nombre(widget.sensibiliteMA)} mA', -14, 3.0, 40.4, 2.2);
+      scene.text('Sensibilité : ${_nombre(widget.sensibiliteMA)} mA',
+          -14, 3.0, 40.4, 1.95);
     }
     if (widget.estDifferentiel) {
+      // Tiny differential symbol belongs on the rigid face, not an overlay.
+      // Simplified paired poles and test circuit on the right of text.
+      for (final dx in [8.0, 12.0]) {
+        scene.line(_V(dx, -.3, 40.65), _V(dx, 6.6, 40.65),
+            const Color(0xFF2D3339), .18);
+        scene.disc(_V(dx, 6.6, 40.7), .22,
+            [const Color(0xFF202831), const Color(0xFF202831)]);
+      }
+      scene.line(const _V(7.3, 2.7, 40.69),
+          const _V(12.8, 3.9, 40.69),
+          const Color(0xFF2D3339), .2);
+      scene.line(const _V(8, 5.25, 40.69),
+          const _V(12, 5.25, 40.69),
+          const Color(0xFF2D3339), .16);
       scene.box(
         10.5,
         -10.6,

@@ -1,0 +1,14 @@
+name: electrosim_schematic
+description: Deterministic read-only multifilar projection of ElectroSim's canonical circuit and topology.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_topology:
+    path: ../electrosim_topology
+dev_dependencies:
+  test: ^1.26.3
+  coverage: ^1.15.1

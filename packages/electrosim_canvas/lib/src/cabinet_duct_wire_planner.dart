@@ -15,7 +15,9 @@ abstract final class CabinetDuctWirePlanner {
     required CabinetLayout cabinet,
   }) {
     if (!start.dx.isFinite || !start.dy.isFinite ||
-        !end.dx.isFinite || !end.dy.isFinite) return null;
+        !end.dx.isFinite || !end.dy.isFinite) {
+      return null;
+    }
 
     List<Offset>? best;
     double bestScore = double.infinity;
@@ -87,7 +89,9 @@ abstract final class CabinetDuctWirePlanner {
   static bool _isOrthogonal(List<Offset> points) {
     for (var i = 1; i < points.length; i++) {
       if (points[i].dx != points[i-1].dx &&
-          points[i].dy != points[i-1].dy) return false;
+          points[i].dy != points[i-1].dy) {
+        return false;
+      }
     }
     return true;
   }

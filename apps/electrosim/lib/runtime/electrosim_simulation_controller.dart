@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:electrosim_controls/electrosim_controls.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_protection/electrosim_protection.dart';
 import 'package:flutter/foundation.dart';
 
 import 'electrosim_runtime_engine.dart';
@@ -167,6 +168,75 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     _simulatedTime = Duration.zero;
     _snapshot = _runtimeEngine.evaluate(_circuit);
     notifyListeners();
+  }
+
+  /// Simulates the RCD internal test resistor. Unlike opening the handle, this
+  /// updates the authoritative protection state and re-solves both poles.
+  /// Returns false if the device is not closed or AC input is not energised.
+  bool testResidualDevice(ComponentId componentId) {
+    ComponentInstance? device;
+    for (final ComponentInstance component in _circuit.components) {
+      if (component.id == componentId) {
+        device = component;
+        break;
+      }
+    }
+    if (device == null ||
+        device.modelType != 'rcd_2p_ac1' ||
+        device.controlState['closed'] != true ||
+        _snapshot.protectionTripped(componentId)) {
+      return false;
+    }
+    final result = _snapshot.ac1Result;
+    if (result == null || !result.isSolved || device.terminals.length != 4) {
+      return false;
+    }
+    final topology = _snapshot.topology;
+    final neutralNode = topology.terminalToNode[device.terminals[0].id];
+    final lineNode = topology.terminalToNode[device.terminals[1].id];
+    if (neutralNode == null || lineNode == null) return false;
+    final neutralV = result.nodeVoltages[neutralNode];
+    final lineV = result.nodeVoltages[lineNode];
+    if (neutralV == null || lineV == null ||
+        !(lineV - neutralV).magnitude.isFinite ||
+        (lineV - neutralV).magnitude < 1.0) {
+      return false;
+    }
+
+    final previous = _snapshot.protectionState ??
+        ProtectionRuntimeState.empty();
+    final threshold = device.parameters[
+      ComponentParameterKeys.residualTripCurrentA
+    ];
+    final sensitivity = threshold is num && threshold > 0
+        ? threshold.toDouble()
+        : 0.03;
+    final tested = ProtectionRuntimeState(
+      devices: <ComponentId, ProtectionDeviceState>{
+        ...previous.devices,
+        componentId: ProtectionDeviceState(
+          componentId: componentId,
+          exposure: const ProtectionExposureState.zero(),
+          tripped: true,
+          tripCause: ProtectionTripCause.residualCurrent,
+          lastObservedCurrentA: sensitivity * 5,
+        ),
+      },
+    );
+    _operationRevision++;
+    _fastForwarding = false;
+    _snapshot = _runtimeEngine.advance(
+      _circuit,
+      elapsed: Duration.zero,
+      previousProtectionState: tested,
+      previousContactorStates: _currentContactorStates(),
+      previousComponentHealthStates: _snapshot.componentHealthStates,
+      previousPvBatterySoc: _currentPvBatterySoc(),
+      previousDcBatterySocs: _snapshot.dcBatterySocs,
+      previousMotorAngularSpeedsRadS: _snapshot.motorAngularSpeedsRadS,
+    );
+    notifyListeners();
+    return _snapshot.protectionTripped(componentId);
   }
 
   /// Rearms one protection device without resetting unrelated dynamic state.

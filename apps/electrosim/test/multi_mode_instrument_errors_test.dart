@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim/runtime/electrosim_instrument_projection.dart';
 import 'package:electrosim/f9_source_voltage_readout.dart';
@@ -202,6 +203,45 @@ void main() {
           1e-6));
     expect(read.result?.reading?.value,
         lessThan(snapshot.pv.inverterOutputCurrentRmsA));
+  });
+
+  test('power-limited PV inverter re-solves series AC burden rather than applying a fixed V', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('limited-pv-ac'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'),
+      burdenResistanceOhm: 1.0,
+      maximumCurrentA: 20,
+      fuseRatingA: 20,
+    );
+    final initial = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('amp'), instrumentId: meter.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+        port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+    ]);
+    final circuit = CircuitState(
+      circuitId: initial.circuitId,
+      revision: initial.revision,
+      mode: initial.mode,
+      sources: initial.sources,
+      components: initial.components,
+      connections: initial.connections,
+      instruments: initial.instruments,
+      probes: initial.probes,
+      settings: {...initial.settings, 'irradianceWm2': 200.0},
+    );
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    expect(snapshot.pv.inverterState.name, 'powerLimited');
+    final result = projection.read(snapshot: snapshot, instrument: meter);
+    expect(result.status, PhysicalInstrumentStatus.valid,
+      reason: result.message);
+    final basePower = snapshot.pv.inverterOutputPowerW;
+    final loadResistance = snapshot.pv.loadResults.single.resistanceOhm;
+    final expectedCurrent = math.sqrt(basePower / (loadResistance + 1.0));
+    expect(result.result?.reading?.value, closeTo(expectedCurrent, 1e-6));
   });
 
   test('PV disconnected voltmeter/ammeter show wiring required, not N/A', () {

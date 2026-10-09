@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
@@ -222,7 +221,7 @@ class _F18TeacherSessionCoordinatorPageState
     // Do not advertise a joinable QR code if the Mac release does not
     // actually contain the student application. Otherwise GET /join/<code>
     // responds 503 while the teacher sees a misleading "server ready".
-    final Directory? studentWebRoot = ElectroSimStudentWebBundleLocator.resolve();
+    final studentWebRoot = ElectroSimStudentWebBundleLocator.resolve();
     if (studentWebRoot == null) {
       throw StateError(
         'Client Web élève absent du candidat Mac. '

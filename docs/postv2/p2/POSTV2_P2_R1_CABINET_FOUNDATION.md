@@ -23,11 +23,15 @@ Introduire un modèle d'implantation indépendant du schéma électrique :
 `CircuitVisualLayout` conserve les fixtures lors des opérations.
 `CircuitScenePainter` peint les fixtures sur sa couche arrière.
 `ElectroSimLayoutPersistence` sérialise et valide les données d'armoire.
+Le menu « Plus d'actions » permet d'ajouter un rail DIN, une goulotte et
+une zone de borniers. Les créations sont enregistrées par Undo/Redo et
+conservent `CircuitState` inchangé.
 
 ## Reste à réaliser pour la fermeture P2
 
-- Contrôles UI pour créer/sélectionner/déplacer/redimensionner les rails,
-  goulottes et zones physiques depuis le poste enseignant ;
+- Contrôles UI pour sélectionner, déplacer, redimensionner et supprimer
+  individuellement les rails, goulottes et zones physiques ; l'ajout
+  initial par menu est disponible dès R1 ;
 - placement assisté DIN connecté à l'interaction de déplacement des composants ;
 - implantation des vrais borniers et routage de câbles à l'intérieur des goulottes ;
 - validation anti-collision dans le flux utilisateur ;

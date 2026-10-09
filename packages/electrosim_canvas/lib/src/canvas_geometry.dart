@@ -5,6 +5,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'circuit_visual_layout.dart';
 import 'motor_terminal_geometry.dart';
+import 'premium_rcd2p_terminal_geometry.dart';
 
 /// Presentation-only terminal anchors for component drawings.
 ///
@@ -31,6 +32,8 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.20, h * 0.29375),
         Offset(w * 0.1714285714, h * 0.29375),
       ],
+      // 2-pole premium breaker: four screws match Disjoncteur3D precisely.
+      'rcd_2p_ac1' => PremiumRcd2pTerminalGeometry.offsets(size),
       // breaker 72x160 -> (36,23) / (36,137)
       'breaker_dc' ||
       'breaker_ac1' ||

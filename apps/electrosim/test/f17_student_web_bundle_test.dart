@@ -5,8 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('F17 teacher must not advertise an incomplete student Web client', () {
-    final Directory root =
-        Directory.systemTemp.createTempSync('electrosim-f17-web-test-');
+    final root = Directory.systemTemp.createTempSync('f17-web-');
     addTearDown(() => root.deleteSync(recursive: true));
 
     expect(ElectroSimStudentWebBundleLocator.isBundleValid(root), isFalse);

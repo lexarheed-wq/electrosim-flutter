@@ -2363,8 +2363,11 @@ class _PaletteDraggableTile extends StatelessWidget {
           child: Row(
             children: <Widget>[
               SizedBox(
-                width: 48,
-                height: 56,
+                // The premium 2P body is tall; 48x56 made its controls
+                // indistinguishable despite the detailed native painter.
+                // Other palette entries retain their compact dimensions.
+                width: definition.modelType == 'rcd_2p_ac1' ? 72 : 48,
+                height: definition.modelType == 'rcd_2p_ac1' ? 108 : 56,
                 child: FittedBox(
                   fit: BoxFit.contain,
                   child: F9ComponentPreview(
@@ -2559,12 +2562,15 @@ class F9ComponentPreview extends StatelessWidget {
               : F18ComponentIdentityMetrics.dragSize);
 
     if (definition.modelType == 'rcd_2p_ac1') {
-      // The premium painter already performs physical 3D projection:
-      // never stack F18IndustrialDualView's generic perspective over it.
+      // Use a dedicated high-detail preview scale. Only the display widget
+      // is enlarged; neither Canvas geometry nor electrical ports change.
+      final Size rcdSize = compact
+          ? const Size(66, 107)
+          : const Size(112, 182);
       return Disjoncteur3D(
         key: Key('component-identity-preview-${definition.keyName}'),
-        width: visualSize.width,
-        height: visualSize.height,
+        width: rcdSize.width,
+        height: rcdSize.height,
         vue: VueDisjoncteur.palette,
         etat: EtatDisjoncteur.ouvert,
         calibreA: 16,

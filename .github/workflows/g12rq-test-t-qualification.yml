@@ -5,7 +5,7 @@ on:
       - fix/g12rq-test-t-engine-20261009
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   runtime-regression:
     runs-on: ubuntu-latest
@@ -30,3 +30,35 @@ jobs:
         run: |
           python3 tools/core_unify_architecture_guard.py
           python3 tools/postv2_p1_contract.py
+  visual-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore exact native Dart painter
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Generate genuine Flutter screenshot (palette and frontal board)
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter test --update-goldens test/g12rq_premium_rcd2p_visual_test.dart
+          test -s test/goldens/g12rq_premium_rcd2p_palette_board.png
+      - name: Publish exact Flutter screenshot for review
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          if ! git diff --cached --quiet; then
+            git commit -m "proof(g12rq): real Flutter visual iteration 1 [skip ci]"
+            git push origin HEAD:fix/g12rq-test-t-engine-20261009
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: G12RQ-Flutter-real-visual-proof
+          path: apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          retention-days: 14

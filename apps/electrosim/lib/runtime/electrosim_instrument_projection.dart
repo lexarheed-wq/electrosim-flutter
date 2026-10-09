@@ -426,6 +426,23 @@ final class ElectroSimInstrumentProjection {
             }
           }
         }
+        if (value == null && pv.batteryPresent &&
+            mode == InstrumentMode.currentDc &&
+            pv.batteryVoltageV > 0) {
+          // Only a cable physically terminating on the battery port can
+          // report battery charge/discharge current; do not map an unrelated
+          // conductor on the same common bus to battery current.
+          for (final battery in circuit.components.where(
+              (c) => c.modelType == 'pv_battery')) {
+            if (battery.terminals.any((t) =>
+                t.id == cable.fromTerminalId ||
+                t.id == cable.toTerminalId)) {
+              value = (pv.batteryPowerW / pv.batteryVoltageV).abs();
+              evidence = 'pv-battery:${battery.id.value}';
+              break;
+            }
+          }
+        }
         if (value == null || evidence == null) {
           return invalid(PhysicalInstrumentStatus.invalidWiring,
             'No solved PV cable current is available at the clamp position.');

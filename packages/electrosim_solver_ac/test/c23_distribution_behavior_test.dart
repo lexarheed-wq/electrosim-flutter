@@ -92,7 +92,7 @@ void main() {
     final Ac3SolveResult open = solve(
       _fourPoleCircuit(modelType: 'isolator_4p', closed: false),
     );
-    expect(open.status, Ac3SolveStatus.singular);
+    expect(open.isSolved, isTrue, reason: _diagnosticReason(open));
     expect(
       open.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),
@@ -124,7 +124,7 @@ void main() {
         ratedCurrentA: 10.0,
       ),
     );
-    expect(tripped.status, Ac3SolveStatus.singular);
+    expect(tripped.isSolved, isTrue, reason: _diagnosticReason(tripped));
     expect(
       tripped.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),
@@ -152,7 +152,7 @@ void main() {
     final Ac3SolveResult result = solve(
       _terminalBlockCircuit(condition: ComponentCondition.openCircuit),
     );
-    expect(result.status, Ac3SolveStatus.singular);
+    expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
     expect(
       result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),

@@ -29,6 +29,25 @@ def main() -> None:
     if text.count(old) != 1:
         raise SystemExit("PREMIUM_GEOMETRY_LITERAL_MISMATCH")
     text = text.replace(old, new)
+    # The app routes double clicks through the central Canvas controller.
+    # Its hit zones must use the same frontal projection as this painter.
+    hit_regions = """  static bool hitsLever(Size size, Offset point) {
+    return _Projection(size, 0, 0)
+        .rect(-17, 5, 34, 30, 51)
+        .contains(point);
+  }
+
+  static bool hitsTestButton(Size size, Offset point) {
+    return _Projection(size, 0, 0)
+        .rect(5.5, -14.5, 10, 8, 41)
+        .contains(point);
+  }
+
+"""
+    region_anchor = "  static Map<BorneDisjoncteur, Offset> positionsBornes("
+    if text.count(region_anchor) != 1:
+        raise SystemExit("PREMIUM_HIT_REGION_ANCHOR_MISMATCH")
+    text = text.replace(region_anchor, hit_regions + region_anchor)
     for marker in (
         "class Disjoncteur3D extends StatefulWidget",
         "enum VueDisjoncteur",

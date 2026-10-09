@@ -1,0 +1,65 @@
+name: Pre-PV Series Multimode Mac Candidate
+on:
+  push:
+    branches:
+      - candidate/multimode-mac-pre-pv-series-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pre-pv-series-mac-candidate
+  cancel-in-progress: false
+jobs:
+  validate-and-build:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate, build and archive Mac candidate from pinned source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          repo_root="$(pwd)"
+          python3 tools/premium_rcd2p/decode_source.py
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) root="${output#F17_RUNNER_PATH=}" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR $output"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/multi_mode_instrument_errors_test.dart
+          flutter test test/pv_battery_physical_instruments_test.dart
+          flutter test test/ac3_floating_islands_instruments_test.dart
+          flutter test test/ac3_contactor_motor_real_wiring_test.dart
+          flutter test test/sim_r1_physical_instrument_projection_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$bin"
+          result="$repo_root/pre-pv-series-candidate"
+          mkdir -p "$result"
+          file "$bin" | tee "$result/ARCHITECTURE.txt"
+          grep -qi x86_64 "$result/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$result/BUILD_SHA.txt"
+          printf '%s\n' '11df65cbad5093cbcdd501e039de6be618eea5ca' > "$result/VERIFIED_CODE_BASE_SHA.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$result/ElectroSim_Multimode_PrePVSeries_macOS.zip"
+          (cd "$result" && shasum -a 256 *.zip > SHA256.txt)
+          (cd "$result" && unzip -t *.zip | tail -1)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Multimode-PrePVSeries-Mac
+          path: pre-pv-series-candidate/
+          retention-days: 14
+          if-no-files-found: error

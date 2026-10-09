@@ -44,10 +44,12 @@ def main() -> None:
   }
 
 """
-    region_anchor = "  static Map<BorneDisjoncteur, Offset> positionsBornes("
+    region_anchor = "Map<BorneDisjoncteur, Offset> positionsBornes"
     if text.count(region_anchor) != 1:
         raise SystemExit("PREMIUM_HIT_REGION_ANCHOR_MISMATCH")
-    text = text.replace(region_anchor, hit_regions + region_anchor)
+    anchor_index = text.index(region_anchor)
+    line_start = text.rfind("\\n", 0, anchor_index) + 1
+    text = text[:line_start] + hit_regions + text[line_start:]
     for marker in (
         "class Disjoncteur3D extends StatefulWidget",
         "enum VueDisjoncteur",

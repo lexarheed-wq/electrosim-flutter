@@ -93,6 +93,10 @@ void main() {
       _fourPoleCircuit(modelType: 'isolator_4p', closed: false),
     );
     expect(open.isSolved, isTrue, reason: _diagnosticReason(open));
+    for (final pole in <String>['L1', 'L2', 'L3', 'N']) {
+      expect(open.branch('component:q1:power:$pole').current?.magnitude ?? 0,
+          closeTo(0, 1e-9));
+    }
     expect(
       open.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),
@@ -125,6 +129,10 @@ void main() {
       ),
     );
     expect(tripped.isSolved, isTrue, reason: _diagnosticReason(tripped));
+    for (final pole in <String>['L1', 'L2', 'L3', 'N']) {
+      expect(tripped.branch('component:q1:power:$pole').current?.magnitude ?? 0,
+          closeTo(0, 1e-9));
+    }
     expect(
       tripped.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),
@@ -153,6 +161,8 @@ void main() {
       _terminalBlockCircuit(condition: ComponentCondition.openCircuit),
     );
     expect(result.isSolved, isTrue, reason: _diagnosticReason(result));
+    expect(result.branchResults.where((b) => b.modelType == 'terminal_block_5')
+        .every((b) => (b.current?.magnitude ?? 0) <= 1e-9), isTrue);
     expect(
       result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),

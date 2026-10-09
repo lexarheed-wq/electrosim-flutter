@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
@@ -218,11 +219,22 @@ class _F18TeacherSessionCoordinatorPageState
       return existingInfo;
     }
 
+    // Do not advertise a joinable QR code if the Mac release does not
+    // actually contain the student application. Otherwise GET /join/<code>
+    // responds 503 while the teacher sees a misleading "server ready".
+    final Directory? studentWebRoot = ElectroSimStudentWebBundleLocator.resolve();
+    if (studentWebRoot == null) {
+      throw StateError(
+        'Client Web élève absent du candidat Mac. '
+        'Le QR code est désactivé ; reconstruisez avec le bundle Web '
+        '(index.html et main.dart.js).',
+      );
+    }
     final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
       controller: _controller,
       sessionCode: widget.sessionCode,
       sessionName: widget.sessionName,
-      studentWebRoot: ElectroSimStudentWebBundleLocator.resolve(),
+      studentWebRoot: studentWebRoot,
     );
     try {
       final ElectroSimLanHostInfo info = await host.start();

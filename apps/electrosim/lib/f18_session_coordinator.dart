@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +22,7 @@ typedef F18SessionWorkspaceBuilder =
       ElectroSimTpSessionController controller,
       String workspace,
       VoidCallback onDashboard,
-      VoidCallback onManageSession,
+      ValueChanged<CircuitState> onManageSession,
     );
 
 class F18TeacherSessionCoordinatorPage extends StatefulWidget {
@@ -131,6 +133,13 @@ class _F18TeacherSessionCoordinatorPageState
           parentLabel: 'tableau de bord',
           onBack: () => Navigator.of(setupContext).pop(),
           onOpenWorkshop: () => _openWorkspace(setupContext, workspace),
+          onManageTp: () {
+            unawaited(_showManageSession(
+              draftMode: workspace == 'Câblage'
+                  ? TpMode.wiring
+                  : TpMode.troubleshooting,
+            ));
+          },
         ),
       ),
     );
@@ -150,8 +159,13 @@ class _F18TeacherSessionCoordinatorPageState
           () => Navigator.of(routeContext).popUntil(
             (Route<dynamic> route) => route.settings.name == 'teacher-session',
           ),
-          () {
-            unawaited(_showManageSession());
+          (CircuitState circuit) {
+            unawaited(_showManageSession(
+              draftMode: workspace == 'Câblage'
+                  ? TpMode.wiring
+                  : TpMode.troubleshooting,
+              wiringReferenceCircuit: workspace == 'Câblage' ? circuit : null,
+            ));
           },
         ),
       ),
@@ -169,7 +183,10 @@ class _F18TeacherSessionCoordinatorPageState
     );
   }
 
-  Future<void> _showManageSession() async {
+  Future<void> _showManageSession({
+    TpMode draftMode = TpMode.troubleshooting,
+    CircuitState? wiringReferenceCircuit,
+  }) async {
     if (!mounted) {
       return;
     }
@@ -178,6 +195,8 @@ class _F18TeacherSessionCoordinatorPageState
       builder: (BuildContext dialogContext) => F17TpSessionDialog(
         controller: _controller,
         role: F9UserRole.teacher,
+        draftMode: draftMode,
+        wiringReferenceCircuit: wiringReferenceCircuit,
         initialLanHostInfo: _lanInfo,
         onEnableLanSharing: _enableLanSharing,
         onStudentStarted: (_) {},

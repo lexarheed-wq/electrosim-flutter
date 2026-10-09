@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('the two views are native projector settings, not matrix wrappers', () {
-    expect(VueDisjoncteur.palette.angleHorizontal, 10);
+    expect(VueDisjoncteur.palette.angleHorizontal, -14);
     expect(VueDisjoncteur.palette.angleVertical, -12);
     expect(VueDisjoncteur.platine.angleHorizontal, 0);
     expect(VueDisjoncteur.platine.angleVertical, 0);

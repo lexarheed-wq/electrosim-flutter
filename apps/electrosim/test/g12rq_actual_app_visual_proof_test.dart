@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
@@ -6,6 +8,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('G5 proof uses the actual palette and board widgets', (tester) async {
+    // Render readable typography in test mode, as in the G5 native showcase.
+    final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    if (font.existsSync()) {
+      final bytes = font.readAsBytesSync();
+      await (FontLoader('Roboto')
+        ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
+    }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -20,7 +29,9 @@ void main() {
           backgroundColor: const Color(0xFFEDF1F4),
           body: RepaintBoundary(
             key: const Key('g5-actual-widgets-proof'),
-            child: Center(
+            child: ColoredBox(
+              color: const Color(0xFFEDF1F4),
+              child: Center(
               child: Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 alignment: WrapAlignment.center,
@@ -52,6 +63,7 @@ void main() {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),

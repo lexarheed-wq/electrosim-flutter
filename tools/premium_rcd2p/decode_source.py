@@ -63,6 +63,27 @@ def main() -> None:
     for prohibited in ("scene.text('Schneider'", "scene.text('Acti9'", "scene.text('iDD40K'"):
         if prohibited in text:
             raise SystemExit(f"PREMIUM_COMMERCIAL_MARKING_FOUND: {prohibited}")
+    # G5 painter is now versioned as first-class source. Never silently
+    # replace the repository's qualified visual work with the old transport
+    # payload during CI or the macOS packaging step.
+    if TARGET.exists():
+        committed = TARGET.read_text(encoding="utf-8")
+        for marker in (
+            "class Disjoncteur3D extends StatefulWidget",
+            "enum VueDisjoncteur",
+            "class _Projection",
+            "class _Scene",
+            "class _DisjoncteurPainter",
+            "Map<BorneDisjoncteur, Offset> positionsBornes",
+            "static bool hitsTestButton",
+        ):
+            if marker not in committed:
+                raise SystemExit(f"COMMITTED_PREMIUM_SOURCE_INCOMPLETE: {marker}")
+        for prohibited in ("scene.text('Schneider'", "scene.text('Acti9'"):
+            if prohibited in committed:
+                raise SystemExit(f"COMMITTED_PREMIUM_COMMERCIAL_MARKING_FOUND: {prohibited}")
+        print(f"PREMIUM_DART_SOURCE_PRESERVED path={TARGET.relative_to(ROOT)}")
+        return
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     TARGET.write_text(text, encoding='utf-8')
     print(f"PREMIUM_DART_SOURCE_PASS path={TARGET.relative_to(ROOT)} bytes={len(source)} sha256={actual}")

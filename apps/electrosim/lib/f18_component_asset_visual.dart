@@ -319,7 +319,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
         vue: VueDisjoncteur.platine,
         etat: tripped
             ? EtatDisjoncteur.declenche
-            : closed == false ? EtatDisjoncteur.ouvert : EtatDisjoncteur.ferme,
+            : closed == false
+            ? EtatDisjoncteur.ouvert
+            : EtatDisjoncteur.ferme,
         calibreA: ratedCurrentA > 0 ? ratedCurrentA : null,
         sensibiliteMA: residualTripCurrentA > 0
             ? residualTripCurrentA * 1000

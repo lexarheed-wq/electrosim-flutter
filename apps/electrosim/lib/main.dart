@@ -3585,11 +3585,13 @@ class _WorkspaceTopBar extends StatelessWidget {
             message: simulationAdvancing
                 ? 'Annuler l’avance temporelle'
                 : simulationRunning
-                    ? 'Mettre la simulation en pause'
-                    : 'Démarrer la simulation',
+                ? 'Mettre la simulation en pause'
+                : 'Démarrer la simulation',
             child: FilledButton.icon(
               key: const Key('workspace-simulation-toggle'),
-              onPressed: simulationAdvancing ? onCancelAdvance : onToggleSimulation,
+              onPressed: simulationAdvancing
+                  ? onCancelAdvance
+                  : onToggleSimulation,
               style: FilledButton.styleFrom(
                 backgroundColor: simulationRunning
                     ? ElectroSimColors.primary
@@ -3597,10 +3599,20 @@ class _WorkspaceTopBar extends StatelessWidget {
                 foregroundColor: Colors.white,
                 minimumSize: const Size(0, 48),
               ),
-              icon: Icon(simulationAdvancing
-                  ? Icons.stop_circle_outlined
-                  : simulationRunning ? Icons.pause : Icons.play_arrow),
-              label: Text(simulationAdvancing ? 'Stop' : simulationRunning ? 'Pause' : 'Lancer'),
+              icon: Icon(
+                simulationAdvancing
+                    ? Icons.stop_circle_outlined
+                    : simulationRunning
+                    ? Icons.pause
+                    : Icons.play_arrow,
+              ),
+              label: Text(
+                simulationAdvancing
+                    ? 'Stop'
+                    : simulationRunning
+                    ? 'Pause'
+                    : 'Lancer',
+              ),
             ),
           ),
           _moreMenu(),
@@ -3835,7 +3847,8 @@ class _WorkspaceTopBar extends StatelessWidget {
         enabled: onRedo != null,
         child: const Text('Rétablir · ⌘⇧Z / Ctrl+Y'),
       ),
-      if (MediaQuery.sizeOf(context).width < 720 && !simulationAdvancing) ...const [
+      if (MediaQuery.sizeOf(context).width < 720 &&
+          !simulationAdvancing) ...const [
         PopupMenuItem(
           key: Key('workspace-time-plus-minute'),
           value: _WorkspaceSecondaryAction.advanceMinute,
@@ -3894,7 +3907,17 @@ class _WorkspaceTopBar extends StatelessWidget {
   );
 }
 
-enum _WorkspaceSecondaryAction { undo, redo, save, open, recenter, resetSimulation, advanceMinute, advanceHour, advanceDay }
+enum _WorkspaceSecondaryAction {
+  undo,
+  redo,
+  save,
+  open,
+  recenter,
+  resetSimulation,
+  advanceMinute,
+  advanceHour,
+  advanceDay,
+}
 
 class _DashboardDestination extends StatelessWidget {
   const _DashboardDestination({

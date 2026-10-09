@@ -483,7 +483,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
         residualTripCurrentA:
-            (component.parameters[ComponentParameterKeys.residualTripCurrentA] as num?)?.toDouble() ?? 0,
+            (component.parameters[ComponentParameterKeys.residualTripCurrentA]
+                    as num?)
+                ?.toDouble() ??
+            0,
         healthState:
             runtime?.componentHealthState(component.id) ??
             const ComponentHealthState.normal(),

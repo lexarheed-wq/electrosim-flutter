@@ -1452,18 +1452,30 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['N entrée', 'L entrée', 'N sortie', 'L sortie'],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('N entrée',
+      F9PaletteTerminalSpec(
+        'N entrée',
         role: TerminalRole.neutral,
-        phase: PhaseTag.neutral, idSuffix: 'n_in'),
-      F9PaletteTerminalSpec('L entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec(
+        'L entrée',
         role: TerminalRole.lineL1,
-        phase: PhaseTag.l1, idSuffix: 'l_in'),
-      F9PaletteTerminalSpec('N sortie',
+        phase: PhaseTag.l1,
+        idSuffix: 'l_in',
+      ),
+      F9PaletteTerminalSpec(
+        'N sortie',
         role: TerminalRole.neutral,
-        phase: PhaseTag.neutral, idSuffix: 'n_out'),
-      F9PaletteTerminalSpec('L sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+      F9PaletteTerminalSpec(
+        'L sortie',
         role: TerminalRole.loadT1,
-        phase: PhaseTag.l1, idSuffix: 'l_out'),
+        phase: PhaseTag.l1,
+        idSuffix: 'l_out',
+      ),
     ],
     defaultParameters: <String, Object?>{
       ProtectionRating.ratedCurrentKey: 16.0,

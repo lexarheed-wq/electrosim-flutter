@@ -38,7 +38,9 @@ abstract final class PremiumRcd2pTerminalGeometry {
       (size.height - (maxY - minY) * scale) / 2 - minY * scale,
     );
     Offset project(double x, double y) =>
-        origin + raw(x, y, 36.6) * scale - Offset(size.width/2, size.height/2);
+        origin +
+        raw(x, y, 36.6) * scale -
+        Offset(size.width / 2, size.height / 2);
     // Index order is the canonical electrical order:
     // N input, L input, N output, L output.
     return <Offset>[

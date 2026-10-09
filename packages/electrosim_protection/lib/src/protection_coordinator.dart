@@ -451,37 +451,42 @@ final class ProtectionCoordinator {
 
       if (component.modelType == 'rcd_2p_ac1') {
         final double? residual = residualFor?.call(component);
-        final Object? raw = component.parameters[
-          ComponentParameterKeys.residualTripCurrentA];
+        final Object? raw =
+            component.parameters[ComponentParameterKeys.residualTripCurrentA];
         final double? sensitivity = raw is num ? raw.toDouble() : null;
-        if (residual == null || sensitivity == null ||
-            !sensitivity.isFinite || sensitivity <= 0) {
+        if (residual == null ||
+            sensitivity == null ||
+            !sensitivity.isFinite ||
+            sensitivity <= 0) {
           next[component.id] = prior;
           continue;
         }
         final double ratio = residual / sensitivity;
         final double responseSeconds = ratio >= 5 ? 0.04 : 0.30;
-        final double priorSeconds = prior.exposure.exposure > 0 &&
+        final double priorSeconds =
+            prior.exposure.exposure > 0 &&
                 prior.exposure.tripTimeSeconds.isFinite
             ? prior.exposure.exposure * prior.exposure.tripTimeSeconds
             : 0.0;
         final double heldSeconds = ratio >= 1
             ? priorSeconds + elapsed.inMicroseconds / 1000000.0
             : 0.0;
-        final bool tripped = ratio >= 1 &&
-            heldSeconds + 1e-12 >= responseSeconds;
+        final bool tripped =
+            ratio >= 1 && heldSeconds + 1e-12 >= responseSeconds;
         next[component.id] = ProtectionDeviceState(
           componentId: component.id,
           exposure: ProtectionExposureState(
-            exposure: tripped ? 1.0 :
-                (heldSeconds / responseSeconds).clamp(0.0, 1.0),
+            exposure: tripped
+                ? 1.0
+                : (heldSeconds / responseSeconds).clamp(0.0, 1.0),
             ratio: ratio,
             tripTimeSeconds: responseSeconds,
             zone: ProtectionZone.normal,
           ),
           tripped: tripped,
-          tripCause: tripped ? ProtectionTripCause.residualCurrent :
-              ProtectionTripCause.none,
+          tripCause: tripped
+              ? ProtectionTripCause.residualCurrent
+              : ProtectionTripCause.none,
           lastObservedCurrentA: residual,
         );
         continue;

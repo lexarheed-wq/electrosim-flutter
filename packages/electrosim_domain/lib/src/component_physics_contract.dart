@@ -56,6 +56,7 @@ enum ComponentFunctionalRole {
 /// solvers. New physical keys must be added here before use elsewhere.
 abstract final class ComponentParameterKeys {
   static const String resistanceOhm = 'resistanceOhm';
+
   /// Rated operating residual current for a 2P RCCB, in amperes.
   static const String residualTripCurrentA = 'residualTripCurrentA';
   // Reduced-order permanent-magnet DC motor model (SI units). The runtime

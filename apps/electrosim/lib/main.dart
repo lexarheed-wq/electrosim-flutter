@@ -545,6 +545,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   // P2 cabinet fixtures belong to visual layout, never to electrical
   // CircuitState. Edits are undoable through the existing history.
+  void _routeWiresViaCabinetDucts() {
+    if (_blockStudentTpMutation()) return;
+    if (!_layout.cabinetLayout.fixtures.any(
+        (f) => f.kind == CabinetFixtureKind.wireDuct)) {
+      _setStatus('Ajoutez une goulotte avant de router les fils.');
+      return;
+    }
+    final geometry = CircuitGeometryIndex.build(_circuit, _layout);
+    final routes = <String, List<Offset>>{..._layout.wireRoutes};
+    var changed = 0;
+    for (final connection in _circuit.connections) {
+      final a = geometry.terminalPositions[connection.fromTerminalId];
+      final b = geometry.terminalPositions[connection.toTerminalId];
+      if (a == null || b == null) continue;
+      final route = CabinetDuctWirePlanner.route(
+          start: a, end: b, cabinet: _layout.cabinetLayout);
+      if (route == null) continue;
+      routes[connection.id.value] = route;
+      changed++;
+    }
+    if (changed == 0) {
+      _setStatus('Aucun fil admissible à router dans les goulottes.');
+      return;
+    }
+    final candidate = CircuitVisualLayout(
+      elementPositions: _layout.elementPositions,
+      elementSizes: _layout.elementSizes,
+      wireRoutes: routes,
+      elementQuarterTurns: _layout.elementQuarterTurns,
+      defaultElementSize: _layout.defaultElementSize,
+      cabinetLayout: _layout.cabinetLayout,
+    );
+    if (!F18WorkspaceWireSafety.isRenderable(
+      circuit: _circuit, layout: candidate)) {
+      _setStatus('Routage conservé : une goulotte ferait traverser '
+          'un composant ou créerait une trajectoire illisible.');
+      return;
+    }
+    setState(() {
+      _layout = candidate;
+      _status = 'Câbles routés orthogonalement en goulottes : $changed';
+    });
+  }
+
   void _toggleCabinetSnap() {
     setState(() {
       _cabinetPlacementMode =
@@ -984,6 +1028,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           : () => _addCabinetFixture(CabinetFixtureKind.terminalZone),
                       onToggleCabinetSnap: _studentTpReadOnly
                           ? null : _toggleCabinetSnap,
+                      onRouteCabinetWires: _studentTpReadOnly
+                          ? null : _routeWiresViaCabinetDucts,
                       cabinetSnapEnabled:
                           _cabinetPlacementMode == CabinetPlacementMode.assistedDin,
                       electricalMode: _circuit.mode,
@@ -3791,6 +3837,7 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.onAddWireDuct,
     this.onAddTerminalZone,
     this.onToggleCabinetSnap,
+    this.onRouteCabinetWires,
     this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
@@ -3821,6 +3868,7 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onAddWireDuct;
   final VoidCallback? onAddTerminalZone;
   final VoidCallback? onToggleCabinetSnap;
+  final VoidCallback? onRouteCabinetWires;
   final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
@@ -4158,6 +4206,8 @@ class _WorkspaceTopBar extends StatelessWidget {
           onAddTerminalZone?.call();
         case _WorkspaceSecondaryAction.toggleDinSnap:
           onToggleCabinetSnap?.call();
+        case _WorkspaceSecondaryAction.routeCabinetWires:
+          onRouteCabinetWires?.call();
         case _WorkspaceSecondaryAction.resetSimulation:
           onResetSimulation();
       }
@@ -4243,6 +4293,16 @@ class _WorkspaceTopBar extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
+      if (onRouteCabinetWires != null)
+        const PopupMenuItem(
+          key: Key('workspace-route-wiring-duct'),
+          value: _WorkspaceSecondaryAction.routeCabinetWires,
+          child: ListTile(
+            leading: Icon(Icons.cable_outlined),
+            title: Text('Armoire : router les fils en goulottes'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
       if (onToggleCabinetSnap != null)
         PopupMenuItem(
           key: const Key('workspace-toggle-din-snap'),
@@ -4288,6 +4348,7 @@ enum _WorkspaceSecondaryAction {
   addWireDuct,
   addTerminalZone,
   toggleDinSnap,
+  routeCabinetWires,
   resetSimulation,
   advanceMinute,
   advanceHour,

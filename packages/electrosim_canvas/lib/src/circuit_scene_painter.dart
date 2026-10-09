@@ -8,6 +8,8 @@ import 'wire_preview_planner.dart';
 import 'wire_semantics.dart';
 import 'physical_wire_path.dart';
 import 'din_rail_visual.dart';
+import 'cabinet_layout.dart';
+import 'cabinet_fixture_painter.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -71,6 +73,12 @@ final class CircuitScenePainter extends CustomPainter {
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
     if (!paintElementChrome) {
+      paintCabinetFixtures(
+        canvas,
+        cabinet: layout.cabinetLayout,
+        worldToScreen: viewport.worldToScreen,
+        scale: viewport.scale,
+      );
       _paintDinSupports(canvas, geometry);
     }
     _paintWires(canvas, geometry);
@@ -153,7 +161,15 @@ final class CircuitScenePainter extends CustomPainter {
       final rect = geometryAtBuild.elementRects[component.id.value];
       if (rect != null && rows.contains(rect.center.dy)) mounts.add(rect);
     }
-    return layoutDinRails(mounts);
+    // Explicit authored DIN rails take priority; do not paint duplicate
+    // decorative rails across those physical cabinet fixtures.
+    final manualRails = layout.cabinetLayout.fixtures
+        .where((f) => f.kind == CabinetFixtureKind.dinRail)
+        .map((f) => f.bounds)
+        .toList();
+    return layoutDinRails(mounts)
+        .where((rail) => !manualRails.any((manual) => rail.overlaps(manual)))
+        .toList(growable: false);
   }
 
   void _paintDinSupports(Canvas canvas, CircuitGeometryIndex geometry) {

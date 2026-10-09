@@ -45,8 +45,10 @@ import 'runtime/workspace_layout_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final physicalTextures = Disjoncteur3D.prechargerTextures();
   final ElectroSimPersistenceController persistenceController =
       await ElectroSimPersistenceController.createDefault();
+  await physicalTextures;
   runApp(ElectroSimApp(persistenceController: persistenceController));
 }
 

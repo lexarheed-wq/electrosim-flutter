@@ -25,9 +25,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(home: app.F9WorkspaceDemoPage(
-          initialCircuit: buildRegressionFixtureCircuit(),
-        )),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: buildRegressionFixtureCircuit(),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       await _openContext(tester);
@@ -54,9 +56,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: app.F9WorkspaceDemoPage(
-          initialCircuit: buildRegressionFixtureCircuit(),
-          initialSelectedElementId: 'switch-1',
-        ),
+            initialCircuit: buildRegressionFixtureCircuit(),
+            initialSelectedElementId: 'switch-1',
+          ),
         ),
       );
       await tester.pumpAndSettle();

@@ -115,7 +115,9 @@ final class ElectroSimPersistenceController {
       title: document.title,
       circuit: document.circuit,
       workspace: workspace,
-      visualLayout: ElectroSimLayoutPersistence.decode(document.appState['visualLayout']),
+      visualLayout: ElectroSimLayoutPersistence.decode(
+        document.appState['visualLayout'],
+      ),
       updatedAtUtc: document.updatedAtUtc,
     );
   }

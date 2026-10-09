@@ -29,40 +29,45 @@ void main() {
   const ElectroSimInstrumentProjection projection =
       ElectroSimInstrumentProjection();
 
-  test('SIM-R1 loaded voltmeter measures DC without changing authored wires', () {
-    final InstrumentInstance voltmeter = InstrumentInstance(
-      id: InstrumentId('meter-v'),
-      kind: InstrumentKind.voltmeter,
-      mode: InstrumentMode.voltageDc,
-      inputImpedanceOhm: 10000000,
-    );
-    final CircuitState circuit = withMeter(
-      instrument: voltmeter,
-      probes: <ProbeConnection>[
-        ProbeConnection(
-          id: ProbeId('probe-positive'),
-          instrumentId: voltmeter.id,
-          port: InstrumentPort.voltOhm,
-          terminalId: TerminalId('lamp-in'),
-        ),
-        ProbeConnection(
-          id: ProbeId('probe-common'),
-          instrumentId: voltmeter.id,
-          port: InstrumentPort.common,
-          terminalId: TerminalId('lamp-out'),
-        ),
-      ],
-    );
-    final String original = circuit.toJsonString();
-    final ElectroSimRuntimeSnapshot baseline = engine.evaluate(circuit);
-    final PhysicalInstrumentReading result = projection.read(
-      snapshot: baseline, instrument: voltmeter);
-    expect(baseline.solved, isTrue);
-    expect(result.status, PhysicalInstrumentStatus.valid);
-    expect(result.result?.reading?.value, closeTo(24.0, 0.03));
-    expect(circuit.toJsonString(), original);
-    expect(circuit.connections, hasLength(3));
-  });
+  test(
+    'SIM-R1 loaded voltmeter measures DC without changing authored wires',
+    () {
+      final InstrumentInstance voltmeter = InstrumentInstance(
+        id: InstrumentId('meter-v'),
+        kind: InstrumentKind.voltmeter,
+        mode: InstrumentMode.voltageDc,
+        inputImpedanceOhm: 10000000,
+      );
+      final CircuitState circuit = withMeter(
+        instrument: voltmeter,
+        probes: <ProbeConnection>[
+          ProbeConnection(
+            id: ProbeId('probe-positive'),
+            instrumentId: voltmeter.id,
+            port: InstrumentPort.voltOhm,
+            terminalId: TerminalId('lamp-in'),
+          ),
+          ProbeConnection(
+            id: ProbeId('probe-common'),
+            instrumentId: voltmeter.id,
+            port: InstrumentPort.common,
+            terminalId: TerminalId('lamp-out'),
+          ),
+        ],
+      );
+      final String original = circuit.toJsonString();
+      final ElectroSimRuntimeSnapshot baseline = engine.evaluate(circuit);
+      final PhysicalInstrumentReading result = projection.read(
+        snapshot: baseline,
+        instrument: voltmeter,
+      );
+      expect(baseline.solved, isTrue);
+      expect(result.status, PhysicalInstrumentStatus.valid);
+      expect(result.result?.reading?.value, closeTo(24.0, 0.03));
+      expect(circuit.toJsonString(), original);
+      expect(circuit.connections, hasLength(3));
+    },
+  );
 
   test('SIM-R1 inline ammeter inserts burden, not a fake parallel short', () {
     final InstrumentInstance meter = InstrumentInstance(
@@ -90,7 +95,9 @@ void main() {
       ],
     );
     final PhysicalInstrumentReading result = projection.read(
-      snapshot: engine.evaluate(circuit), instrument: meter);
+      snapshot: engine.evaluate(circuit),
+      instrument: meter,
+    );
     expect(result.status, PhysicalInstrumentStatus.valid);
     expect(result.result?.reading?.value, closeTo(1.0, 0.005));
     expect(circuit.connections, hasLength(3));
@@ -114,7 +121,9 @@ void main() {
       ],
     );
     final PhysicalInstrumentReading result = projection.read(
-      snapshot: engine.evaluate(circuit), instrument: meter);
+      snapshot: engine.evaluate(circuit),
+      instrument: meter,
+    );
     expect(result.status, PhysicalInstrumentStatus.invalidWiring);
     expect(result.result, isNull);
   });
@@ -128,7 +137,9 @@ void main() {
     );
     final CircuitState circuit = withMeter(instrument: meter, probes: []);
     final PhysicalInstrumentReading result = projection.read(
-      snapshot: engine.evaluate(circuit), instrument: meter);
+      snapshot: engine.evaluate(circuit),
+      instrument: meter,
+    );
     expect(result.status, PhysicalInstrumentStatus.blownFuse);
     expect(result.result, isNull);
   });

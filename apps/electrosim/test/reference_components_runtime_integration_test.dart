@@ -103,10 +103,9 @@ void main() {
       );
       await tester.pump();
 
-      final IndustrialPhysicalView view = tester
-          .widget<IndustrialPhysicalView>(
-            find.byType(IndustrialPhysicalView),
-          );
+      final IndustrialPhysicalView view = tester.widget<IndustrialPhysicalView>(
+        find.byType(IndustrialPhysicalView),
+      );
       expect(view.device, IndustrialDevice.motor);
       expect(view.speedRpm, closeTo(3000, 1e-9));
       expect(view.animationValue, .25);
@@ -130,10 +129,9 @@ void main() {
         ),
       );
       await tester.pump();
-      final IndustrialPhysicalView view = tester
-          .widget<IndustrialPhysicalView>(
-            find.byType(IndustrialPhysicalView),
-          );
+      final IndustrialPhysicalView view = tester.widget<IndustrialPhysicalView>(
+        find.byType(IndustrialPhysicalView),
+      );
       expect(view.device, IndustrialDevice.fan);
       expect(view.speedFraction, closeTo(1, 1e-9));
       expect(view.animationValue, .55);

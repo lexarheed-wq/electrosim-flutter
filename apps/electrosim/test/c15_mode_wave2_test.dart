@@ -236,9 +236,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
-      initialCircuit: buildRegressionFixtureCircuit(),
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await _openTop(tester);
 
@@ -281,9 +285,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(home: app.F9WorkspaceDemoPage(
-      initialCircuit: buildRegressionFixtureCircuit(),
-    )),
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            initialCircuit: buildRegressionFixtureCircuit(),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       await _openTop(tester);
@@ -345,9 +351,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(MaterialApp(home: app.F9WorkspaceDemoPage(
-      initialCircuit: buildRegressionFixtureCircuit(),
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialCircuit: buildRegressionFixtureCircuit(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await _openPalette(tester);
 

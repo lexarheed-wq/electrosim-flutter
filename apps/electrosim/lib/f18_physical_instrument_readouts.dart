@@ -27,8 +27,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         width: base.width * viewport.scale,
         height: base.height * viewport.scale,
       );
-      if (rect.right < 0 || rect.bottom < 0 ||
-          rect.left > size.width || rect.top > size.height) {
+      if (rect.right < 0 ||
+          rect.bottom < 0 ||
+          rect.left > size.width ||
+          rect.top > size.height) {
         continue;
       }
       final Rect display = Rect.fromLTWH(
@@ -38,10 +40,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         rect.height * 0.38,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          display,
-          Radius.circular(3 * viewport.scale),
-        ),
+        RRect.fromRectAndRadius(display, Radius.circular(3 * viewport.scale)),
         Paint()..color = const Color(0xFFD5E5D6),
       );
       final TextPainter text = TextPainter(

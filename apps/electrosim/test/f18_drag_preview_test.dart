@@ -187,5 +187,4 @@ void main() {
           '200-element pointer-move preview must leave headroom inside a 16.67 ms frame',
     );
   });
-
 }

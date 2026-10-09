@@ -478,7 +478,8 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     }
     final String? code = request.uri.queryParameters['code'];
     final String? clientId = request.uri.queryParameters['clientId'];
-    final String? reconnectToken = request.uri.queryParameters['reconnectToken'];
+    final String? reconnectToken =
+        request.uri.queryParameters['reconnectToken'];
     final String displayName = _safeDisplayName(
       request.uri.queryParameters['displayName'],
       fallback: clientId ?? 'Élève',
@@ -493,8 +494,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
 
     final String id = clientId!;
     final String? issuedToken = _clientReconnectTokens[id];
-    if (issuedToken != null &&
-        !_tokenMatches(issuedToken, reconnectToken)) {
+    if (issuedToken != null && !_tokenMatches(issuedToken, reconnectToken)) {
       request.response.statusCode = HttpStatus.forbidden;
       await request.response.close();
       return;

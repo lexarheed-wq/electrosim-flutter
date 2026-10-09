@@ -198,17 +198,17 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     if (neutralNode == null || lineNode == null) return false;
     final neutralV = result.nodeVoltages[neutralNode];
     final lineV = result.nodeVoltages[lineNode];
-    if (neutralV == null || lineV == null ||
+    if (neutralV == null ||
+        lineV == null ||
         !(lineV - neutralV).magnitude.isFinite ||
         (lineV - neutralV).magnitude < 1.0) {
       return false;
     }
 
-    final previous = _snapshot.protectionState ??
-        ProtectionRuntimeState.empty();
-    final threshold = device.parameters[
-      ComponentParameterKeys.residualTripCurrentA
-    ];
+    final previous =
+        _snapshot.protectionState ?? ProtectionRuntimeState.empty();
+    final threshold =
+        device.parameters[ComponentParameterKeys.residualTripCurrentA];
     final sensitivity = threshold is num && threshold > 0
         ? threshold.toDouble()
         : 0.03;

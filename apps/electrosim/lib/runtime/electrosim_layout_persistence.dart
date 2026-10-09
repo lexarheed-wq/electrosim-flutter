@@ -8,33 +8,32 @@ final class ElectroSimLayoutPersistence {
 
   static const int schemaVersion = 1;
 
-  static Map<String, Object?> encode(CircuitVisualLayout layout) =>
-      <String, Object?>{
-        'schemaVersion': schemaVersion,
-        'positions': layout.elementPositions.map(
-          (String id, Offset value) =>
-              MapEntry<String, Object?>(id, <double>[value.dx, value.dy]),
-        ),
-        'sizes': layout.elementSizes.map(
-          (String id, Size value) => MapEntry<String, Object?>(
-            id,
-            <double>[value.width, value.height],
-          ),
-        ),
-        'routes': layout.wireRoutes.map(
-          (String id, List<Offset> points) => MapEntry<String, Object?>(
-            id,
-            points
-                .map((Offset point) => <double>[point.dx, point.dy])
-                .toList(growable: false),
-          ),
-        ),
-        'quarterTurns': layout.elementQuarterTurns,
-        'defaultSize': <double>[
-          layout.defaultElementSize.width,
-          layout.defaultElementSize.height,
-        ],
-      };
+  static Map<String, Object?> encode(
+    CircuitVisualLayout layout,
+  ) => <String, Object?>{
+    'schemaVersion': schemaVersion,
+    'positions': layout.elementPositions.map(
+      (String id, Offset value) =>
+          MapEntry<String, Object?>(id, <double>[value.dx, value.dy]),
+    ),
+    'sizes': layout.elementSizes.map(
+      (String id, Size value) =>
+          MapEntry<String, Object?>(id, <double>[value.width, value.height]),
+    ),
+    'routes': layout.wireRoutes.map(
+      (String id, List<Offset> points) => MapEntry<String, Object?>(
+        id,
+        points
+            .map((Offset point) => <double>[point.dx, point.dy])
+            .toList(growable: false),
+      ),
+    ),
+    'quarterTurns': layout.elementQuarterTurns,
+    'defaultSize': <double>[
+      layout.defaultElementSize.width,
+      layout.defaultElementSize.height,
+    ],
+  };
 
   /// Null means a legacy save without geometry: the caller may auto-layout.
   /// Malformed geometry is an error, never silently replaced by a new layout.
@@ -50,20 +49,26 @@ final class ElectroSimLayoutPersistence {
       );
     }
     final Map<String, Offset> positions = <String, Offset>{};
-    for (final MapEntry<String, dynamic> item
-        in _map(data['positions'], 'positions').entries) {
+    for (final MapEntry<String, dynamic> item in _map(
+      data['positions'],
+      'positions',
+    ).entries) {
       positions[item.key] = _point(item.value, 'positions.${item.key}');
     }
 
     final Map<String, Size> sizes = <String, Size>{};
-    for (final MapEntry<String, dynamic> item
-        in _map(data['sizes'], 'sizes').entries) {
+    for (final MapEntry<String, dynamic> item in _map(
+      data['sizes'],
+      'sizes',
+    ).entries) {
       sizes[item.key] = _size(item.value, 'sizes.${item.key}');
     }
 
     final Map<String, List<Offset>> routes = <String, List<Offset>>{};
-    for (final MapEntry<String, dynamic> item
-        in _map(data['routes'], 'routes').entries) {
+    for (final MapEntry<String, dynamic> item in _map(
+      data['routes'],
+      'routes',
+    ).entries) {
       final Object? rawPoints = item.value;
       if (rawPoints is! List) {
         throw FormatException('Invalid route for ${item.key}.');
@@ -74,8 +79,10 @@ final class ElectroSimLayoutPersistence {
     }
 
     final Map<String, int> turns = <String, int>{};
-    for (final MapEntry<String, dynamic> item
-        in _map(data['quarterTurns'], 'quarterTurns').entries) {
+    for (final MapEntry<String, dynamic> item in _map(
+      data['quarterTurns'],
+      'quarterTurns',
+    ).entries) {
       if (item.value is! int || item.value < 0 || item.value > 3) {
         throw FormatException('Invalid rotation for ${item.key}.');
       }
@@ -101,8 +108,7 @@ final class ElectroSimLayoutPersistence {
   }
 
   static List<double> _pair(Object? raw, String field) {
-    if (raw is! List || raw.length != 2 ||
-        raw[0] is! num || raw[1] is! num) {
+    if (raw is! List || raw.length != 2 || raw[0] is! num || raw[1] is! num) {
       throw FormatException('Invalid layout coordinates at $field.');
     }
     final double x = (raw[0] as num).toDouble();

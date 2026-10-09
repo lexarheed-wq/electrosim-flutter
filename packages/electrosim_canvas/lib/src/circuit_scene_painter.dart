@@ -112,6 +112,7 @@ final class CircuitScenePainter extends CustomPainter {
     const mountedTypes = <String>{
       'breaker_dc',
       'breaker_ac1',
+      'rcd_2p_ac1',
       'breaker',
       'breaker_3p',
       'breaker_4p',

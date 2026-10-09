@@ -2564,9 +2564,7 @@ class F9ComponentPreview extends StatelessWidget {
     if (definition.modelType == 'rcd_2p_ac1') {
       // Use a dedicated high-detail preview scale. Only the display widget
       // is enlarged; neither Canvas geometry nor electrical ports change.
-      final Size rcdSize = compact
-          ? const Size(66, 107)
-          : const Size(112, 182);
+      final Size rcdSize = compact ? const Size(66, 107) : const Size(112, 182);
       return Disjoncteur3D(
         key: Key('component-identity-preview-${definition.keyName}'),
         width: rcdSize.width,

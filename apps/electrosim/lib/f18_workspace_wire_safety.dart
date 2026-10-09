@@ -26,11 +26,7 @@ abstract final class F18WorkspaceWireSafety {
       if (start == null || end == null || start == end) return false;
       try {
         OrthogonalWirePath(
-          points: <Offset>[
-            start,
-            ...layout.routeFor(connection.id.value),
-            end,
-          ],
+          points: <Offset>[start, ...layout.routeFor(connection.id.value), end],
         );
       } on ArgumentError {
         return false;

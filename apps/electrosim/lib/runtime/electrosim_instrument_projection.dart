@@ -57,7 +57,10 @@ final class ElectroSimInstrumentProjection {
       return error(PhysicalInstrumentStatus.off, 'Instrument switched off.');
     }
     if (instrument.fuseBlown) {
-      return error(PhysicalInstrumentStatus.blownFuse, 'Instrument fuse blown.');
+      return error(
+        PhysicalInstrumentStatus.blownFuse,
+        'Instrument fuse blown.',
+      );
     }
     final CircuitState circuit = snapshot.circuit;
     if (!circuit.instruments.any((item) => item.id == instrument.id)) {
@@ -159,14 +162,17 @@ final class ElectroSimInstrumentProjection {
           );
         }
         final Connection? cable = circuit.connections
-            .where((item) => item.id == target).firstOrNull;
+            .where((item) => item.id == target)
+            .firstOrNull;
         if (cable == null || !cable.enabled) {
           return error(
             PhysicalInstrumentStatus.invalidWiring,
             'Clamped conductor is absent or disabled.',
           );
         }
-        final double reading = snapshot.connectionCurrentEvidence(cable).magnitudeA;
+        final double reading = snapshot
+            .connectionCurrentEvidence(cable)
+            .magnitudeA;
         if (!reading.isFinite) {
           return error(
             PhysicalInstrumentStatus.unavailable,
@@ -204,7 +210,8 @@ final class ElectroSimInstrumentProjection {
         );
       }
       final Connection? original = circuit.connections
-          .where((item) => item.id == cut).firstOrNull;
+          .where((item) => item.id == cut)
+          .firstOrNull;
       if (original == null || !original.enabled) {
         return error(
           PhysicalInstrumentStatus.invalidWiring,
@@ -269,10 +276,12 @@ final class ElectroSimInstrumentProjection {
       suffix++;
     } while (circuit.components.any((c) => c.id.value == marker) ||
         circuit.connections.any((c) => c.id.value.startsWith(marker)) ||
-        circuit.components.any((c) =>
-            c.terminals.any((t) => t.id.value.startsWith(marker))) ||
-        circuit.sources.any((s) =>
-            s.terminals.any((t) => t.id.value.startsWith(marker))));
+        circuit.components.any(
+          (c) => c.terminals.any((t) => t.id.value.startsWith(marker)),
+        ) ||
+        circuit.sources.any(
+          (s) => s.terminals.any((t) => t.id.value.startsWith(marker)),
+        ));
     final TerminalId a = TerminalId('$marker-a');
     final TerminalId b = TerminalId('$marker-b');
     final ComponentInstance burden = ComponentInstance(
@@ -308,7 +317,9 @@ final class ElectroSimInstrumentProjection {
       metadata: circuit.metadata,
     );
     return _ProjectionWiring(
-      circuit: loaded, first: a, second: b,
+      circuit: loaded,
+      first: a,
+      second: b,
       branchId: 'component:$marker',
     );
   }

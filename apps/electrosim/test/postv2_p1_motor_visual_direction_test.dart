@@ -5,38 +5,42 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Future<double> motorRotorAngle(WidgetTester tester, double currentA) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Center(
-        child: F18ComponentAssetVisual(
-          modelType: 'motor_dc',
-          size: const Size(230, 190),
-          energized: true,
-          currentA: currentA,
-          voltageV: currentA < 0 ? -24 : 24,
-          animationValue: .25,
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: F18ComponentAssetVisual(
+            modelType: 'motor_dc',
+            size: const Size(230, 190),
+            energized: true,
+            currentA: currentA,
+            voltageV: currentA < 0 ? -24 : 24,
+            animationValue: .25,
+          ),
         ),
       ),
-    ));
+    );
     final view = tester.widget<IndustrialPhysicalView>(
       find.byType(IndustrialPhysicalView),
     );
     expect(view.device, IndustrialDevice.motor);
     expect(view.currentA, currentA);
     return IndustrialPhysicalView.signedMotorPhaseAngle(
-      view.animationValue, view.currentA, energized: view.energized,
+      view.animationValue,
+      view.currentA,
+      energized: view.energized,
     );
   }
 
-  testWidgets('P1.4 motor animation follows signed solver current',
-      (tester) async {
+  testWidgets('P1.4 motor animation follows signed solver current', (
+    tester,
+  ) async {
     final forward = await motorRotorAngle(tester, 1.0);
     final reverse = await motorRotorAngle(tester, -1.0);
     expect(forward, greaterThan(0));
     expect(reverse, lessThan(0));
     expect(forward.abs(), closeTo(reverse.abs(), 1e-12));
     expect(
-      IndustrialPhysicalView.signedMotorPhaseAngle(
-        .25, 1, energized: false),
+      IndustrialPhysicalView.signedMotorPhaseAngle(.25, 1, energized: false),
       0,
     );
   });

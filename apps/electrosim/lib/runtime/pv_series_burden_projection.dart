@@ -45,10 +45,15 @@ abstract final class PvSeriesBurdenProjection {
     final circuit = snapshot.circuit;
     // The original wire is cut by this measurement. A second parallel path
     // bypassing either device port makes this 1-D branch model inapplicable.
-    bool singleWire(TerminalId terminal) => circuit.connections.where(
-      (c) => c.enabled &&
-          (c.fromTerminalId == terminal || c.toTerminalId == terminal),
-    ).length == 1;
+    bool singleWire(TerminalId terminal) =>
+        circuit.connections
+            .where(
+              (c) =>
+                  c.enabled &&
+                  (c.fromTerminalId == terminal || c.toTerminalId == terminal),
+            )
+            .length ==
+        1;
 
     final burdenOhm = meter.burdenResistanceOhm;
     if (!burdenOhm.isFinite || burdenOhm <= 0) {
@@ -79,10 +84,12 @@ abstract final class PvSeriesBurdenProjection {
     // P_load = I*(V_source - I*R_burden), P_loss = I^2*R_burden.
     if (meter.mode == InstrumentMode.currentDc) {
       for (final source in circuit.sources.where(
-          (s) => s.enabled && s.modelType == 'pv_array')) {
+        (s) => s.enabled && s.modelType == 'pv_array',
+      )) {
         for (final terminal in source.terminals.where(
-            (t) => t.phase == PhaseTag.dcPositive ||
-                t.phase == PhaseTag.dcNegative)) {
+          (t) =>
+              t.phase == PhaseTag.dcPositive || t.phase == PhaseTag.dcNegative,
+        )) {
           if (!_touches(wire, terminal.id) || !singleWire(terminal.id)) {
             continue;
           }
@@ -97,23 +104,28 @@ abstract final class PvSeriesBurdenProjection {
       }
       if (pv.batteryPresent) {
         for (final battery in circuit.components.where(
-            (c) => c.modelType == 'pv_battery')) {
+          (c) => c.modelType == 'pv_battery',
+        )) {
           for (final terminal in battery.terminals.where(
-              (t) => t.phase == PhaseTag.dcPositive ||
-                  t.phase == PhaseTag.dcNegative)) {
+            (t) =>
+                t.phase == PhaseTag.dcPositive ||
+                t.phase == PhaseTag.dcNegative,
+          )) {
             if (!_touches(wire, terminal.id) || !singleWire(terminal.id)) {
               continue;
             }
             final power = pv.batteryPowerW.abs();
-            final Object? maxI = battery.parameters[
-                pv.batteryPowerW >= 0
-                    ? 'maxDischargeCurrentA' : 'maxChargeCurrentA'];
+            final Object? maxI =
+                battery.parameters[pv.batteryPowerW >= 0
+                    ? 'maxDischargeCurrentA'
+                    : 'maxChargeCurrentA'];
             return _constantPowerBranch(
               sourceVoltageV: pv.batteryVoltageV,
               loadPowerW: power,
               burdenOhm: burdenOhm,
               maximumAvailableCurrentA: maxI is num
-                  ? maxI.toDouble() : double.infinity,
+                  ? maxI.toDouble()
+                  : double.infinity,
               evidence: 'pv-battery:${battery.id.value}',
             );
           }
@@ -122,15 +134,18 @@ abstract final class PvSeriesBurdenProjection {
       // Inverter DC feed current is not necessarily equal to the total PV
       // array current in storage architectures; use inverter power evidence.
       for (final inverter in circuit.components.where(
-          (c) => c.modelType == 'pv_inverter')) {
+        (c) => c.modelType == 'pv_inverter',
+      )) {
         for (final terminal in inverter.terminals.where(
-            (t) => t.phase == PhaseTag.dcPositive ||
-                t.phase == PhaseTag.dcNegative)) {
+          (t) =>
+              t.phase == PhaseTag.dcPositive || t.phase == PhaseTag.dcNegative,
+        )) {
           if (!_touches(wire, terminal.id) || !singleWire(terminal.id)) {
             continue;
           }
           final busVoltage = pv.batteryPresent
-              ? pv.batteryVoltageV : pv.pvOperatingVoltageV;
+              ? pv.batteryVoltageV
+              : pv.pvOperatingVoltageV;
           final dcPower = pv.inverterEfficiency > 0
               ? pv.inverterOutputPowerW / pv.inverterEfficiency
               : 0.0;
@@ -150,21 +165,28 @@ abstract final class PvSeriesBurdenProjection {
     // returning the unloaded aggregate inverter current.
     if (meter.mode == InstrumentMode.currentAcRms) {
       for (final inverter in circuit.components.where(
-          (c) => c.modelType == 'pv_inverter')) {
+        (c) => c.modelType == 'pv_inverter',
+      )) {
         for (final terminal in inverter.terminals.where(
-            (t) => t.phase == PhaseTag.l1 ||
-                t.phase == PhaseTag.neutral)) {
+          (t) => t.phase == PhaseTag.l1 || t.phase == PhaseTag.neutral,
+        )) {
           if (!_touches(wire, terminal.id) || !singleWire(terminal.id)) {
             continue;
           }
           final receiverTerminal = wire.fromTerminalId == terminal.id
-              ? wire.toTerminalId : wire.fromTerminalId;
-          final receivers = circuit.components.where((c) =>
-              c.terminals.any((t) => t.id == receiverTerminal) &&
-              pv.loadResults.any((load) => load.componentId == c.id)).toList();
+              ? wire.toTerminalId
+              : wire.fromTerminalId;
+          final receivers = circuit.components
+              .where(
+                (c) =>
+                    c.terminals.any((t) => t.id == receiverTerminal) &&
+                    pv.loadResults.any((load) => load.componentId == c.id),
+              )
+              .toList();
           if (receivers.length != 1) {
             return const PvSeriesBurdenResult(
-              issue: 'PV AC series meter must feed one physically '
+              issue:
+                  'PV AC series meter must feed one physically '
                   'identified resistive receiver.',
             );
           }
@@ -212,13 +234,17 @@ abstract final class PvSeriesBurdenProjection {
             );
           }
           final updated = solved.pvResult!.load(receiver.id);
-          return _result(updated.currentRmsA.abs(), burdenOhm,
-              'pv-inverter-ac:${inverter.id.value}:load:${receiver.id.value}');
+          return _result(
+            updated.currentRmsA.abs(),
+            burdenOhm,
+            'pv-inverter-ac:${inverter.id.value}:load:${receiver.id.value}',
+          );
         }
       }
     }
     return const PvSeriesBurdenResult(
-      issue: 'Series PV measurement is not mapped to a unique array, '
+      issue:
+          'Series PV measurement is not mapped to a unique array, '
           'battery, inverter input, or inverter output conductor.',
     );
   }
@@ -233,8 +259,10 @@ abstract final class PvSeriesBurdenProjection {
     required double maximumAvailableCurrentA,
     required String evidence,
   }) {
-    if (!sourceVoltageV.isFinite || !loadPowerW.isFinite ||
-        sourceVoltageV <= 0 || loadPowerW < 0) {
+    if (!sourceVoltageV.isFinite ||
+        !loadPowerW.isFinite ||
+        sourceVoltageV <= 0 ||
+        loadPowerW < 0) {
       return const PvSeriesBurdenResult(
         issue: 'PV bus voltage or power is not valid.',
       );
@@ -242,15 +270,14 @@ abstract final class PvSeriesBurdenProjection {
     if (loadPowerW == 0) return _result(0, burdenOhm, evidence);
     // Stable low-current solution of R I^2 - V I + P = 0, expressed
     // without catastrophic cancellation near zero meter burden.
-    final discriminant = sourceVoltageV * sourceVoltageV -
-        4 * burdenOhm * loadPowerW;
+    final discriminant =
+        sourceVoltageV * sourceVoltageV - 4 * burdenOhm * loadPowerW;
     if (!discriminant.isFinite || discriminant < 0) {
       return const PvSeriesBurdenResult(
         issue: 'Meter burden exceeds the available PV bus power margin.',
       );
     }
-    final i = 2 * loadPowerW /
-        (sourceVoltageV + math.sqrt(discriminant));
+    final i = 2 * loadPowerW / (sourceVoltageV + math.sqrt(discriminant));
     if (!i.isFinite || i < 0) {
       return const PvSeriesBurdenResult(
         issue: 'No finite PV series current solution.',
@@ -263,7 +290,10 @@ abstract final class PvSeriesBurdenProjection {
   }
 
   static PvSeriesBurdenResult _result(
-      double currentA, double burdenOhm, String evidence) {
+    double currentA,
+    double burdenOhm,
+    String evidence,
+  ) {
     if (!currentA.isFinite || currentA < 0) {
       return const PvSeriesBurdenResult(
         issue: 'Nonfinite series ammeter current.',

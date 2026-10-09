@@ -46,14 +46,14 @@ void main() {
     );
     expect(
       F9SourceVoltageReadout.voltageV(
-        snapshot, disabled, simulationRunning: true,
+        snapshot,
+        disabled,
+        simulationRunning: true,
       ),
       0,
     );
     expect(
-      F9SourceVoltageReadout.voltageV(
-        null, source, simulationRunning: true,
-      ),
+      F9SourceVoltageReadout.voltageV(null, source, simulationRunning: true),
       0,
     );
     final currentSource = SourceInstance(
@@ -64,18 +64,17 @@ void main() {
     );
     expect(
       F9SourceVoltageReadout.voltageV(
-        snapshot, currentSource, simulationRunning: true,
+        snapshot,
+        currentSource,
+        simulationRunning: true,
       ),
       0,
     );
   });
 }
 
-Terminal _terminal(String id, PhaseTag phase) => Terminal(
-  id: TerminalId(id),
-  name: id,
-  phase: phase,
-);
+Terminal _terminal(String id, PhaseTag phase) =>
+    Terminal(id: TerminalId(id), name: id, phase: phase);
 
 Connection _wire(String id, String from, String to) => Connection(
   id: ConnectionId(id),
@@ -112,10 +111,7 @@ CircuitState _circuit({required bool rcdClosed}) => CircuitState(
         ProtectionRating.ratedCurrentKey: 16.0,
         ComponentParameterKeys.residualTripCurrentA: 0.03,
       },
-      controlState: <String, Object?>{
-        'closed': rcdClosed,
-        'tripped': false,
-      },
+      controlState: <String, Object?>{'closed': rcdClosed, 'tripped': false},
     ),
     ComponentInstance(
       id: ComponentId('load'),

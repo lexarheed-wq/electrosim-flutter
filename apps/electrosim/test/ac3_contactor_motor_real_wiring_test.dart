@@ -3,42 +3,58 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('AC3 400/230 V energizes 230 V coil, closes 3 poles and feeds star motor', () {
-    final circuit = _assembly(coilWired: true);
-    final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
+  test(
+    'AC3 400/230 V energizes 230 V coil, closes 3 poles and feeds star motor',
+    () {
+      final circuit = _assembly(coilWired: true);
+      final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
 
-    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
-    expect(snapshot.solved, isTrue,
-        reason: 'A connected source/contactor/star-motor circuit must solve. Diagnostics: ${snapshot.ac3Result?.diagnostics.map((d) => d.message).join(" | ") ?? "AC3 result missing"}');
-    expect(snapshot.controlIssues, isEmpty);
-    expect(snapshot.contactorActuated(ComponentId('k1')), isTrue);
-    final coil = snapshot.contactorStates[ComponentId('k1')]!;
-    expect(coil.coilVoltageV, closeTo(230, 1e-5));
-    for (final String pole in ['L1', 'L2', 'L3']) {
-      final current = snapshot.ac3.branch('component:k1:power:$pole').current;
-      expect(current, isNotNull);
-      expect(current!.magnitude, greaterThan(0.01));
-    }
-    final motor = snapshot.ac3.branchResults
-        .where((b) => b.id.startsWith('component:motor:')).toList();
-    expect(motor, hasLength(3));
-    for (final branch in motor) {
-      expect(branch.current, isNotNull);
-      expect(branch.current!.magnitude, greaterThan(0.01));
-    }
-  });
+      expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
+      expect(
+        snapshot.solved,
+        isTrue,
+        reason:
+            'A connected source/contactor/star-motor circuit must solve. Diagnostics: ${snapshot.ac3Result?.diagnostics.map((d) => d.message).join(" | ") ?? "AC3 result missing"}',
+      );
+      expect(snapshot.controlIssues, isEmpty);
+      expect(snapshot.contactorActuated(ComponentId('k1')), isTrue);
+      final coil = snapshot.contactorStates[ComponentId('k1')]!;
+      expect(coil.coilVoltageV, closeTo(230, 1e-5));
+      for (final String pole in ['L1', 'L2', 'L3']) {
+        final current = snapshot.ac3.branch('component:k1:power:$pole').current;
+        expect(current, isNotNull);
+        expect(current!.magnitude, greaterThan(0.01));
+      }
+      final motor = snapshot.ac3.branchResults
+          .where((b) => b.id.startsWith('component:motor:'))
+          .toList();
+      expect(motor, hasLength(3));
+      for (final branch in motor) {
+        expect(branch.current, isNotNull);
+        expect(branch.current!.magnitude, greaterThan(0.01));
+      }
+    },
+  );
 
-  test('without coil supply contactor stays released and motor remains isolated', () {
-    final circuit = _assembly(coilWired: false);
-    final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
-    expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
-    expect(snapshot.solved, isTrue, reason: 'Released AC3 circuit: ${snapshot.ac3Result?.diagnostics.map((d) => d.message).join(" | ") ?? "AC3 result missing"}');
-    expect(snapshot.contactorActuated(ComponentId('k1')), isFalse);
-    for (final String pole in ['L1', 'L2', 'L3']) {
-      final branch = snapshot.ac3.branch('component:k1:power:$pole');
-      expect(branch.current?.magnitude ?? 0, closeTo(0, 1e-7));
-    }
-  });
+  test(
+    'without coil supply contactor stays released and motor remains isolated',
+    () {
+      final circuit = _assembly(coilWired: false);
+      final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
+      expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac3);
+      expect(
+        snapshot.solved,
+        isTrue,
+        reason:
+            'Released AC3 circuit: ${snapshot.ac3Result?.diagnostics.map((d) => d.message).join(" | ") ?? "AC3 result missing"}',
+      );
+      expect(snapshot.contactorActuated(ComponentId('k1')), isFalse);
+      for (final String pole in ['L1', 'L2', 'L3']) {
+        final branch = snapshot.ac3.branch('component:k1:power:$pole');
+        expect(branch.current?.magnitude ?? 0, closeTo(0, 1e-7));
+      }
+    },
+  );
 }
 
 CircuitState _assembly({required bool coilWired}) {
@@ -57,7 +73,9 @@ CircuitState _assembly({required bool coilWired}) {
     wires.add(_w('coil-l', 'grid-l1', 'k1-a1'));
   }
   return CircuitState(
-    circuitId: CircuitId(coilWired ? 'ac3-contactor-motor-on' : 'ac3-contactor-motor-off'),
+    circuitId: CircuitId(
+      coilWired ? 'ac3-contactor-motor-on' : 'ac3-contactor-motor-off',
+    ),
     revision: 0,
     mode: ElectricalMode.ac3,
     sources: [
@@ -113,6 +131,7 @@ CircuitState _assembly({required bool coilWired}) {
     settings: const {'frequencyHz': 50.0},
   );
 }
+
 Terminal _t(String id, String label, PhaseTag phase, TerminalRole role) =>
     Terminal(id: TerminalId(id), name: label, phase: phase, role: role);
 Connection _w(String id, String start, String end) => Connection(

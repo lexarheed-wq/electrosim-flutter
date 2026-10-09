@@ -282,50 +282,63 @@ final class ElectroSimInstrumentProjection {
 
     final circuit = snapshot.circuit;
     final mode = instrument.mode;
-    final bool voltage = mode == InstrumentMode.voltageDc ||
-        mode == InstrumentMode.voltageAcRms;
-    final bool current = mode == InstrumentMode.currentDc ||
-        mode == InstrumentMode.currentAcRms;
+    final bool voltage =
+        mode == InstrumentMode.voltageDc || mode == InstrumentMode.voltageAcRms;
+    final bool current =
+        mode == InstrumentMode.currentDc || mode == InstrumentMode.currentAcRms;
 
     if (voltage) {
       final first = probe(InstrumentPort.voltOhm)?.terminalId;
       final second = probe(InstrumentPort.common)?.terminalId;
       if (first == null || second == null || first == second) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
-          'Connect V/Ω and COM to two distinct PV terminals.');
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Connect V/Ω and COM to two distinct PV terminals.',
+        );
       }
       final pv = snapshot.pvResult;
       if (pv == null || !pv.isSolved) {
-        return invalid(PhysicalInstrumentStatus.unavailable,
-          'PV source or topology is not solved; voltage cannot be measured.');
+        return invalid(
+          PhysicalInstrumentStatus.unavailable,
+          'PV source or topology is not solved; voltage cannot be measured.',
+        );
       }
       final nodes = snapshot.topology.terminalToNode;
       final firstNode = nodes[first];
       final secondNode = nodes[second];
-      if (firstNode == null || secondNode == null ||
-          firstNode == secondNode) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
-          'PV voltage probes must reach distinct connected nodes.');
+      if (firstNode == null || secondNode == null || firstNode == secondNode) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'PV voltage probes must reach distinct connected nodes.',
+        );
       }
       final circuit = snapshot.circuit;
       double? reading;
       String? evidence;
-      bool matchesPair(List<Terminal> terminals, PhaseTag positive,
-          PhaseTag negative) {
+      bool matchesPair(
+        List<Terminal> terminals,
+        PhaseTag positive,
+        PhaseTag negative,
+      ) {
         final p = terminals.where((t) => t.phase == positive).toList();
         final n = terminals.where((t) => t.phase == negative).toList();
         if (p.length != 1 || n.length != 1) return false;
         final pNode = nodes[p.single.id];
         final nNode = nodes[n.single.id];
-        return pNode != null && nNode != null &&
+        return pNode != null &&
+            nNode != null &&
             ((firstNode == pNode && secondNode == nNode) ||
-             (firstNode == nNode && secondNode == pNode));
+                (firstNode == nNode && secondNode == pNode));
       }
+
       if (mode == InstrumentMode.voltageDc) {
         for (final source in circuit.sources) {
           if (source.modelType == 'pv_array' &&
-              matchesPair(source.terminals,
-                  PhaseTag.dcPositive, PhaseTag.dcNegative)) {
+              matchesPair(
+                source.terminals,
+                PhaseTag.dcPositive,
+                PhaseTag.dcNegative,
+              )) {
             reading = pv.pvOperatingVoltageV;
             evidence = 'pv-array:${source.id.value}';
             break;
@@ -334,8 +347,11 @@ final class ElectroSimInstrumentProjection {
         if (reading == null && pv.batteryPresent) {
           for (final component in circuit.components) {
             if (component.modelType == 'pv_battery' &&
-                matchesPair(component.terminals,
-                    PhaseTag.dcPositive, PhaseTag.dcNegative)) {
+                matchesPair(
+                  component.terminals,
+                  PhaseTag.dcPositive,
+                  PhaseTag.dcNegative,
+                )) {
               reading = pv.batteryVoltageV;
               evidence = 'pv-battery:${component.id.value}';
               break;
@@ -345,8 +361,7 @@ final class ElectroSimInstrumentProjection {
       } else {
         for (final component in circuit.components) {
           if (component.modelType == 'pv_inverter' &&
-              matchesPair(component.terminals,
-                  PhaseTag.l1, PhaseTag.neutral)) {
+              matchesPair(component.terminals, PhaseTag.l1, PhaseTag.neutral)) {
             reading = pv.inverterOutputVoltageRmsV;
             evidence = 'pv-inverter:${component.id.value}';
             break;
@@ -354,20 +369,25 @@ final class ElectroSimInstrumentProjection {
         }
       }
       if (reading == null || evidence == null || !reading.isFinite) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
           'PV measurement terminals do not correspond to a solved DC bus '
-          'or inverter AC output for the selected function.');
+          'or inverter AC output for the selected function.',
+        );
       }
       if (reading.abs() > instrument.maximumVoltageV) {
-        return invalid(PhysicalInstrumentStatus.overRange,
-          'PV voltage exceeds the voltmeter range.');
+        return invalid(
+          PhysicalInstrumentStatus.overRange,
+          'PV voltage exceeds the voltmeter range.',
+        );
       }
       return PhysicalInstrumentReading(
         instrumentId: instrument.id,
         status: PhysicalInstrumentStatus.valid,
         result: MeasurementResult.valid(
           kind: mode == InstrumentMode.voltageDc
-              ? MeasurementKind.voltageDc : MeasurementKind.voltageAcRms,
+              ? MeasurementKind.voltageDc
+              : MeasurementKind.voltageAcRms,
           value: reading.abs(),
           unit: ElectricalUnit.volt,
           evidenceIds: [evidence],
@@ -378,20 +398,27 @@ final class ElectroSimInstrumentProjection {
       if (instrument.kind == InstrumentKind.clampAmmeter) {
         final wireId = probe(InstrumentPort.clamp)?.connectionId;
         if (wireId == null) {
-          return invalid(PhysicalInstrumentStatus.invalidWiring,
-            'Place the PV current clamp on an existing conductor.');
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Place the PV current clamp on an existing conductor.',
+          );
         }
         final circuit = snapshot.circuit;
         final wires = circuit.connections
-            .where((c) => c.id == wireId && c.enabled).toList();
+            .where((c) => c.id == wireId && c.enabled)
+            .toList();
         if (wires.length != 1) {
-          return invalid(PhysicalInstrumentStatus.invalidWiring,
-            'Clamped PV conductor is missing or disabled.');
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Clamped PV conductor is missing or disabled.',
+          );
         }
         final pv = snapshot.pvResult;
         if (pv == null || !pv.isSolved) {
-          return invalid(PhysicalInstrumentStatus.unavailable,
-            'PV solver has no valid current evidence.');
+          return invalid(
+            PhysicalInstrumentStatus.unavailable,
+            'PV solver has no valid current evidence.',
+          );
         }
         final cable = wires.single;
         // Only known PV source-side and inverter output buses are supported.
@@ -400,16 +427,20 @@ final class ElectroSimInstrumentProjection {
         final endpoint = nodes[cable.fromTerminalId];
         final endpoint2 = nodes[cable.toTerminalId];
         if (endpoint == null || endpoint2 == null || endpoint != endpoint2) {
-          return invalid(PhysicalInstrumentStatus.invalidWiring,
-            'PV clamp cable does not belong to a connected bus.');
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'PV clamp cable does not belong to a connected bus.',
+          );
         }
         double? value;
         String? evidence;
         if (mode == InstrumentMode.currentDc) {
           for (final source in circuit.sources.where(
-              (s) => s.modelType == 'pv_array')) {
+            (s) => s.modelType == 'pv_array',
+          )) {
             final sourceNodes = source.terminals
-                .map((t) => nodes[t.id]).toSet();
+                .map((t) => nodes[t.id])
+                .toSet();
             if (sourceNodes.contains(endpoint)) {
               value = pv.pvDrawnCurrentA.abs();
               evidence = 'pv-array:${source.id.value}';
@@ -418,9 +449,11 @@ final class ElectroSimInstrumentProjection {
           }
         } else {
           for (final component in circuit.components.where(
-              (c) => c.modelType == 'pv_inverter')) {
-            final terminals = component.terminals
-                .where((t) => t.phase == PhaseTag.l1 || t.phase == PhaseTag.neutral);
+            (c) => c.modelType == 'pv_inverter',
+          )) {
+            final terminals = component.terminals.where(
+              (t) => t.phase == PhaseTag.l1 || t.phase == PhaseTag.neutral,
+            );
             if (terminals.any((t) => nodes[t.id] == endpoint)) {
               value = pv.inverterOutputCurrentRmsA.abs();
               evidence = 'pv-inverter:${component.id.value}';
@@ -428,17 +461,19 @@ final class ElectroSimInstrumentProjection {
             }
           }
         }
-        if (value == null && pv.batteryPresent &&
+        if (value == null &&
+            pv.batteryPresent &&
             mode == InstrumentMode.currentDc &&
             pv.batteryVoltageV > 0) {
           // Only a cable physically terminating on the battery port can
           // report battery charge/discharge current; do not map an unrelated
           // conductor on the same common bus to battery current.
           for (final battery in circuit.components.where(
-              (c) => c.modelType == 'pv_battery')) {
-            if (battery.terminals.any((t) =>
-                t.id == cable.fromTerminalId ||
-                t.id == cable.toTerminalId)) {
+            (c) => c.modelType == 'pv_battery',
+          )) {
+            if (battery.terminals.any(
+              (t) => t.id == cable.fromTerminalId || t.id == cable.toTerminalId,
+            )) {
               value = (pv.batteryPowerW / pv.batteryVoltageV).abs();
               evidence = 'pv-battery:${battery.id.value}';
               break;
@@ -446,19 +481,24 @@ final class ElectroSimInstrumentProjection {
           }
         }
         if (value == null || evidence == null) {
-          return invalid(PhysicalInstrumentStatus.invalidWiring,
-            'No solved PV cable current is available at the clamp position.');
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'No solved PV cable current is available at the clamp position.',
+          );
         }
         if (value > instrument.maximumCurrentA) {
-          return invalid(PhysicalInstrumentStatus.overRange,
-            'PV current exceeds the clamp range.');
+          return invalid(
+            PhysicalInstrumentStatus.overRange,
+            'PV current exceeds the clamp range.',
+          );
         }
         return PhysicalInstrumentReading(
           instrumentId: instrument.id,
           status: PhysicalInstrumentStatus.valid,
           result: MeasurementResult.valid(
             kind: mode == InstrumentMode.currentDc
-                ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+                ? MeasurementKind.currentDc
+                : MeasurementKind.currentAcRms,
             value: value,
             unit: ElectricalUnit.ampere,
             evidenceIds: [evidence, 'wire:${wireId.value}'],
@@ -469,15 +509,19 @@ final class ElectroSimInstrumentProjection {
       final ampTerminal = probe(InstrumentPort.amp)?.terminalId;
       final commonTerminal = probe(InstrumentPort.common)?.terminalId;
       if (cut == null || ampTerminal == null || commonTerminal == null) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
-          'Insert the PV ammeter in series using A and COM.');
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Insert the PV ammeter in series using A and COM.',
+        );
       }
-      final connections = circuit.connections.where(
-        (connection) => connection.id == cut && connection.enabled,
-      ).toList();
+      final connections = circuit.connections
+          .where((connection) => connection.id == cut && connection.enabled)
+          .toList();
       if (connections.length != 1) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
-          'The PV wire to be opened is missing or disabled.');
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'The PV wire to be opened is missing or disabled.',
+        );
       }
       final wire = connections.single;
       final correctOrientation =
@@ -486,8 +530,10 @@ final class ElectroSimInstrumentProjection {
           (ampTerminal == wire.toTerminalId &&
               commonTerminal == wire.fromTerminalId);
       if (!correctOrientation) {
-        return invalid(PhysicalInstrumentStatus.invalidWiring,
-          'A and COM must terminate at opposite ends of the selected cut PV wire.');
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must terminate at opposite ends of the selected cut PV wire.',
+        );
       }
       final solved = PvSeriesBurdenProjection.solve(
         snapshot: snapshot,
@@ -496,24 +542,31 @@ final class ElectroSimInstrumentProjection {
         engine: engine,
       );
       if (!solved.valid) {
-        return invalid(PhysicalInstrumentStatus.unavailable,
-          solved.issue ?? 'PV series meter has no physically supported branch.');
+        return invalid(
+          PhysicalInstrumentStatus.unavailable,
+          solved.issue ?? 'PV series meter has no physically supported branch.',
+        );
       }
       final currentA = solved.currentA!;
       if (currentA > instrument.fuseRatingA) {
-        return invalid(PhysicalInstrumentStatus.blownFuse,
-          'PV series current exceeds the meter fuse rating.');
+        return invalid(
+          PhysicalInstrumentStatus.blownFuse,
+          'PV series current exceeds the meter fuse rating.',
+        );
       }
       if (currentA > instrument.maximumCurrentA) {
-        return invalid(PhysicalInstrumentStatus.overRange,
-          'PV series current exceeds the selected ammeter range.');
+        return invalid(
+          PhysicalInstrumentStatus.overRange,
+          'PV series current exceeds the selected ammeter range.',
+        );
       }
       return PhysicalInstrumentReading(
         instrumentId: instrument.id,
         status: PhysicalInstrumentStatus.valid,
         result: MeasurementResult.valid(
           kind: mode == InstrumentMode.currentDc
-              ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+              ? MeasurementKind.currentDc
+              : MeasurementKind.currentAcRms,
           value: currentA,
           unit: ElectricalUnit.ampere,
           evidenceIds: [
@@ -526,8 +579,10 @@ final class ElectroSimInstrumentProjection {
         ),
       );
     }
-    return invalid(PhysicalInstrumentStatus.unsupportedMode,
-      'Selected PV instrument function is not supported.');
+    return invalid(
+      PhysicalInstrumentStatus.unsupportedMode,
+      'Selected PV instrument function is not supported.',
+    );
   }
 
   _ProjectionWiring _projectionWiring(

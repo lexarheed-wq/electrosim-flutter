@@ -47,9 +47,7 @@ abstract final class F9SourceVoltageReadout {
         runtime.solverKind == ElectroSimRuntimeSolverKind.ac1 &&
         source.modelType == 'ac_voltage_source') {
       final Object? configured = source.parameters['voltageRmsV'];
-      if (configured is num &&
-          configured.isFinite &&
-          configured >= 0) {
+      if (configured is num && configured.isFinite && configured >= 0) {
         return configured.toDouble();
       }
     }

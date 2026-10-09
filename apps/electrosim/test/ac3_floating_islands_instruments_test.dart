@@ -10,45 +10,59 @@ void main() {
   test('adding a completely unconnected AC3 resistor never disables source', () {
     final circuit = _fixture(extraFloatingLoad: true);
     final baseline = engine.evaluate(circuit);
-    expect(baseline.solved, isTrue,
-        reason: '${baseline.ac3Result?.diagnostics.map((d) => d.message).join(" | ")}');
-    expect(baseline.ac3.phaseVoltage(PhaseTag.l1)?.magnitude,
-        closeTo(230, 1e-6));
-    expect(baseline.ac3.phaseVoltage(PhaseTag.l2)?.magnitude,
-        closeTo(230, 1e-6));
+    expect(
+      baseline.solved,
+      isTrue,
+      reason:
+          '${baseline.ac3Result?.diagnostics.map((d) => d.message).join(" | ")}',
+    );
+    expect(
+      baseline.ac3.phaseVoltage(PhaseTag.l1)?.magnitude,
+      closeTo(230, 1e-6),
+    );
+    expect(
+      baseline.ac3.phaseVoltage(PhaseTag.l2)?.magnitude,
+      closeTo(230, 1e-6),
+    );
   });
 
-  test('physical AC3 voltmeter reads 230 V across source with detached load', () {
-    final meter = InstrumentInstance(
-      id: InstrumentId('v'),
-      kind: InstrumentKind.voltmeter,
-      mode: InstrumentMode.voltageAcRms,
-    );
-    final circuit = _fixture(
-      extraFloatingLoad: true,
-      instruments: [meter],
-      probes: [
-        ProbeConnection(
-          id: ProbeId('v-probe'),
-          instrumentId: meter.id,
-          port: InstrumentPort.voltOhm,
-          terminalId: TerminalId('grid-l1'),
-        ),
-        ProbeConnection(
-          id: ProbeId('com-probe'),
-          instrumentId: meter.id,
-          port: InstrumentPort.common,
-          terminalId: TerminalId('grid-n'),
-        ),
-      ],
-    );
-    final snapshot = engine.evaluate(circuit);
-    expect(snapshot.solved, isTrue);
-    final measured = projection.read(snapshot: snapshot, instrument: meter);
-    expect(measured.status, PhysicalInstrumentStatus.valid,
-        reason: measured.message);
-    expect(measured.result?.reading?.value, closeTo(230.0, .01));
-  });
+  test(
+    'physical AC3 voltmeter reads 230 V across source with detached load',
+    () {
+      final meter = InstrumentInstance(
+        id: InstrumentId('v'),
+        kind: InstrumentKind.voltmeter,
+        mode: InstrumentMode.voltageAcRms,
+      );
+      final circuit = _fixture(
+        extraFloatingLoad: true,
+        instruments: [meter],
+        probes: [
+          ProbeConnection(
+            id: ProbeId('v-probe'),
+            instrumentId: meter.id,
+            port: InstrumentPort.voltOhm,
+            terminalId: TerminalId('grid-l1'),
+          ),
+          ProbeConnection(
+            id: ProbeId('com-probe'),
+            instrumentId: meter.id,
+            port: InstrumentPort.common,
+            terminalId: TerminalId('grid-n'),
+          ),
+        ],
+      );
+      final snapshot = engine.evaluate(circuit);
+      expect(snapshot.solved, isTrue);
+      final measured = projection.read(snapshot: snapshot, instrument: meter);
+      expect(
+        measured.status,
+        PhysicalInstrumentStatus.valid,
+        reason: measured.message,
+      );
+      expect(measured.result?.reading?.value, closeTo(230.0, .01));
+    },
+  );
 
   test('AC3 clamp ammeter measures source feeder without ERR', () {
     final clamp = InstrumentInstance(
@@ -71,8 +85,11 @@ void main() {
     final snapshot = engine.evaluate(circuit);
     expect(snapshot.solved, isTrue);
     final measured = projection.read(snapshot: snapshot, instrument: clamp);
-    expect(measured.status, PhysicalInstrumentStatus.valid,
-        reason: measured.message);
+    expect(
+      measured.status,
+      PhysicalInstrumentStatus.valid,
+      reason: measured.message,
+    );
     expect(measured.result?.reading?.value, greaterThan(0.01));
   });
 
@@ -105,8 +122,11 @@ void main() {
     final snapshot = engine.evaluate(circuit);
     expect(snapshot.solved, isTrue);
     final measured = projection.read(snapshot: snapshot, instrument: meter);
-    expect(measured.status, PhysicalInstrumentStatus.valid,
-        reason: measured.message);
+    expect(
+      measured.status,
+      PhysicalInstrumentStatus.valid,
+      reason: measured.message,
+    );
     expect(measured.result?.reading?.value, closeTo(10.0, .1));
   });
 }
@@ -166,8 +186,12 @@ CircuitState _fixture({
   settings: const {'frequencyHz': 50.0},
 );
 
-Terminal _terminal(String id, String label, PhaseTag phase, TerminalRole role) =>
-    Terminal(id: TerminalId(id), name: label, phase: phase, role: role);
+Terminal _terminal(
+  String id,
+  String label,
+  PhaseTag phase,
+  TerminalRole role,
+) => Terminal(id: TerminalId(id), name: label, phase: phase, role: role);
 Connection _wire(String id, String from, String to) => Connection(
   id: ConnectionId(id),
   fromTerminalId: TerminalId(from),

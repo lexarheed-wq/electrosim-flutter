@@ -56,6 +56,8 @@ enum ComponentFunctionalRole {
 /// solvers. New physical keys must be added here before use elsewhere.
 abstract final class ComponentParameterKeys {
   static const String resistanceOhm = 'resistanceOhm';
+  /// Rated operating residual current for a 2P RCCB, in amperes.
+  static const String residualTripCurrentA = 'residualTripCurrentA';
   // Reduced-order permanent-magnet DC motor model (SI units). The runtime
   // advances rotor inertia and uses a back-EMF Norton companion in SolverDC.
   // A motor without calibrated parameters is a pedagogical model, not a
@@ -243,6 +245,14 @@ abstract final class CoreComponentPhysicsContracts {
           ),
           'fuse_dc': const ComponentPhysicsContract(
             modelType: 'fuse_dc',
+            electricalLaw: ComponentElectricalLaw.protectionSwitch,
+            controlLaw: ComponentControlLaw.protection,
+            dynamicBehaviors: <ComponentDynamicBehavior>{
+              ComponentDynamicBehavior.protectiveTrip,
+            },
+          ),
+          'rcd_2p_ac1': const ComponentPhysicsContract(
+            modelType: 'rcd_2p_ac1',
             electricalLaw: ComponentElectricalLaw.protectionSwitch,
             controlLaw: ComponentControlLaw.protection,
             dynamicBehaviors: <ComponentDynamicBehavior>{

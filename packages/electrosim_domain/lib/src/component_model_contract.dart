@@ -749,6 +749,31 @@ final class CoreComponentModelContracts {
         ),
       ],
     ),
+    // 2-pole residual-current device (RCCB): independent N/L branches.
+    // Terminal index contract: 0=N in, 1=L in, 2=N out, 3=L out.
+    // This is not an alias of the single-pole breaker_ac1 model.
+    ComponentModelContract(
+      modelType: 'rcd_2p_ac1',
+      family: ComponentFamily.protection,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'power:N',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 2,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'power:L',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.powerPole,
+          poleIndex: 1,
+        ),
+      ],
+    ),
     ComponentModelContract(
       modelType: 'breaker_ac1',
       family: ComponentFamily.protection,

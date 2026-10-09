@@ -10,6 +10,7 @@ enum ProtectionTripCause {
   preexisting,
   magneticInstantaneous,
   timeCurrent,
+  residualCurrent,
 }
 
 enum ProtectionCoordinationIssueCode { solveFailed, missingBranchCurrent }
@@ -292,6 +293,8 @@ final class ProtectionCoordinator {
       elapsed: elapsed,
       currentFor: (ComponentInstance component) =>
           _ac1ProtectionCurrent(component, result, issues),
+      residualFor: (ComponentInstance component) =>
+          _ac1ResidualCurrent(component, result, issues),
     );
 
     if (_tripSetChanged(baseline, next)) {
@@ -418,6 +421,7 @@ final class ProtectionCoordinator {
     required ProtectionRuntimeState previous,
     required Duration elapsed,
     required double? Function(ComponentInstance component) currentFor,
+    double? Function(ComponentInstance component)? residualFor,
   }) {
     final Map<ComponentId, ProtectionDeviceState> next =
         <ComponentId, ProtectionDeviceState>{};
@@ -442,6 +446,41 @@ final class ProtectionCoordinator {
       final double? currentA = currentFor(component);
       if (currentA == null) {
         next[component.id] = prior;
+        continue;
+      }
+
+      if (component.modelType == 'rcd_2p_ac1') {
+        final double? residual = residualFor?.call(component);
+        final Object? raw = component.parameters[
+          ComponentParameterKeys.residualTripCurrentA];
+        final double? sensitivity = raw is num ? raw.toDouble() : null;
+        if (residual == null || sensitivity == null ||
+            !sensitivity.isFinite || sensitivity <= 0) {
+          next[component.id] = prior;
+          continue;
+        }
+        final double ratio = residual / sensitivity;
+        final double responseSeconds = ratio >= 5 ? 0.04 : 0.30;
+        final double heldSeconds = ratio >= 1
+            ? prior.exposure.exposure * prior.exposure.tripTimeSeconds +
+                elapsed.inMicroseconds / 1000000.0
+            : 0.0;
+        final bool tripped = ratio >= 1 &&
+            heldSeconds + 1e-12 >= responseSeconds;
+        next[component.id] = ProtectionDeviceState(
+          componentId: component.id,
+          exposure: ProtectionExposureState(
+            exposure: tripped ? 1.0 :
+                (heldSeconds / responseSeconds).clamp(0.0, 1.0),
+            ratio: ratio,
+            tripTimeSeconds: responseSeconds,
+            zone: ProtectionZone.normal,
+          ),
+          tripped: tripped,
+          tripCause: tripped ? ProtectionTripCause.residualCurrent :
+              ProtectionTripCause.none,
+          lastObservedCurrentA: residual,
+        );
         continue;
       }
 
@@ -571,6 +610,31 @@ final class ProtectionCoordinator {
     return current?.abs();
   }
 
+  /// Adds signed *phasor* branch currents. Balanced L/N currents cancel;
+  /// summing their magnitudes instead would trip every healthy circuit.
+  double? _ac1ResidualCurrent(
+    ComponentInstance component,
+    Ac1SolveResult result,
+    List<ProtectionCoordinationIssue> issues,
+  ) {
+    if (component.modelType != 'rcd_2p_ac1') return null;
+    AcComplex? neutral;
+    AcComplex? line;
+    for (final Ac1BranchResult branch in result.branchResults) {
+      if (branch.id == 'component:${component.id.value}:power:N') {
+        neutral = branch.current;
+      }
+      if (branch.id == 'component:${component.id.value}:power:L') {
+        line = branch.current;
+      }
+    }
+    if (neutral == null || line == null) {
+      issues.add(_missingCurrent(component));
+      return null;
+    }
+    return (neutral + line).magnitude;
+  }
+
   double? _ac1ProtectionCurrent(
     ComponentInstance component,
     Ac1SolveResult result,
@@ -656,6 +720,7 @@ final class ProtectionCoordinator {
     'breaker_dc' ||
     'fuse_dc' ||
     'breaker_ac1' ||
+    'rcd_2p_ac1' ||
     'fuse_ac1' ||
     'breaker_3p' ||
     'breaker_4p' ||

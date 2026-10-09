@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - fix/f17-student-teacher-lan-mac-20261009
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
   workflow_dispatch:
 permissions:
   contents: read

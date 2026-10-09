@@ -80,6 +80,17 @@ abstract final class _Rcd2pMeshFactory {
         _Rcd2pMaterials.polymer.base, radius: 1.55, bevel: 1.2);
 
     // Raised flanks and mould separation lines. z denotes front depth.
+    // Stepped mechanical mounting panel as an eight-vertex real polygon on
+    // the X-positive side. Its contour follows the shoulders and recesses
+    // instead of overlaying a flat rectangular sticker.
+    scene.faces([
+      const _Face([
+        _V(18.37, -27, -28), _V(18.37, 31, -28),
+        _V(18.37, 31, -8), _V(18.37, 17, -8),
+        _V(18.37, 17, 11), _V(18.37, -9, 11),
+        _V(18.37, -9, 2), _V(18.37, -27, 2),
+      ], Color(0xFFE9EBE8)),
+    ]);
     scene.faces([
       rightPanel(-39.8, -21, -30, 27,
           const Color(0xFFEAEBE8), x: 18.18),
@@ -98,6 +109,17 @@ abstract final class _Rcd2pMeshFactory {
     scene.line(const _V(0, 27, 34.25),
         const _V(0, 42, 34.25), const Color(0xFFAAB0AB), .16);
 
+    // Clipped edges and a recessed DIN release seat on the side.
+    for (final y in [-32.0, 24.0]) {
+      scene.box(17.9, y, 1.45, 4.6, -21, 8.5,
+          const Color(0xFFD4DAD5), radius: .65, bevel: .28);
+    }
+    scene.line(const _V(18.43, -9, 11.3),
+        const _V(18.43, 17, 11.3),
+        const Color(0xFFADB5AE), .23);
+    scene.line(const _V(18.43, 17, -8),
+        const _V(18.43, 31, -8),
+        const Color(0xFFB0B8B1), .23);
     // Vent slots and small lateral fastener wells in the right-side mesh.
     for (final y in [-30.0, -16.0, 3.0, 29.0]) {
       scene.disc(_V(18.35, y, -9), 1.45, [

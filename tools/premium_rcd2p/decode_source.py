@@ -48,7 +48,7 @@ def main() -> None:
     if text.count(region_anchor) != 1:
         raise SystemExit("PREMIUM_HIT_REGION_ANCHOR_MISMATCH")
     anchor_index = text.index(region_anchor)
-    line_start = text.rfind("\\n", 0, anchor_index) + 1
+    line_start = text.rfind(chr(10), 0, anchor_index) + 1
     text = text[:line_start] + hit_regions + text[line_start:]
     for marker in (
         "class Disjoncteur3D extends StatefulWidget",

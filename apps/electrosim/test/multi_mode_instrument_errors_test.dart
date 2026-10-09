@@ -244,6 +244,113 @@ void main() {
     expect(result.result?.reading?.value, closeTo(expectedCurrent, 1e-6));
   });
 
+  test('PV DC parallel mesh splits measured current by physical cable resistance', () {
+    final a = InstrumentInstance(id: InstrumentId('dc-mesh'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      burdenResistanceOhm: .05, maximumCurrentA: 30, fuseRatingA: 30);
+    final base = _pvCircuit(loadPowerAt230W: 2000);
+    final circuit = _pvMesh(base, instrument: a, measured: 'dc-pos',
+        primaryResistance: .05, parallelResistance: .10,
+        parallelId: 'dc-pos-extra',
+        parallelFrom: 'pv-pos', parallelTo: 'inv-dc-pos',
+        probes: [
+          ProbeConnection(id: ProbeId('dc-mesh-a'), instrumentId: a.id,
+            port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+          ProbeConnection(id: ProbeId('dc-mesh-com'), instrumentId: a.id,
+            port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+        ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: a);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    final current = measured.result!.reading!.value;
+    // The tested path is 0.05 wire + 0.05 meter, while the bypass is 0.10.
+    // Both paths must carry half of the physical PV DC input current.
+    final voltage = snapshot.pv.pvOperatingVoltageV;
+    final power = snapshot.pv.pvDrawnPowerW;
+    final totalCurrent = (voltage -
+        math.sqrt(voltage * voltage - 4 * .05 * power)) / (.10);
+    expect(current, closeTo(totalCurrent / 2, 1e-5));
+    expect(current, greaterThan(0));
+    expect(current, lessThan(snapshot.pv.pvDrawnCurrentA));
+  });
+
+  test('PV AC meshed conductors with two loads obey Kirchhoff current split', () {
+    final meter = InstrumentInstance(id: InstrumentId('ac-mesh'),
+      kind: InstrumentKind.ammeter, mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'), burdenResistanceOhm: .05,
+      maximumCurrentA: 20, fuseRatingA: 20);
+    final base = _pvCircuit(loadPowerAt230W: 700);
+    final secondLoad = ComponentInstance(
+      id: ComponentId('load-second'), modelType: 'pv_resistive_load',
+      terminals: [
+        Terminal(id: TerminalId('load-second-l'), name: 'L',
+          phase: PhaseTag.l1, role: TerminalRole.line),
+        Terminal(id: TerminalId('load-second-n'), name: 'N',
+          phase: PhaseTag.neutral, role: TerminalRole.neutral),
+      ],
+      parameters: const {'resistanceOhm': 110.0},
+    );
+    final circuit = _pvMesh(base, instrument: meter, measured: 'ac-l',
+      primaryResistance: .05, parallelResistance: .10,
+      parallelId: 'ac-l-extra',
+      parallelFrom: 'inv-l', parallelTo: 'load-l',
+      extraComponents: [secondLoad],
+      extraWires: [
+        Connection(id: ConnectionId('second-l'),
+          fromTerminalId: TerminalId('load-l'),
+          toTerminalId: TerminalId('load-second-l')),
+        Connection(id: ConnectionId('second-n'),
+          fromTerminalId: TerminalId('inv-n'),
+          toTerminalId: TerminalId('load-second-n')),
+      ],
+      probes: [
+        ProbeConnection(id: ProbeId('ac-mesh-a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+        ProbeConnection(id: ProbeId('ac-mesh-com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+      ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: meter);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    final voltage = snapshot.pv.inverterOutputVoltageRmsV;
+    final r1 = snapshot.pv.load(ComponentId('load')).resistanceOhm;
+    final r2 = snapshot.pv.load(ComponentId('load-second')).resistanceOhm;
+    final equivalentLoadR = r1 * r2 / (r1 + r2);
+    final currentTotal = voltage / (equivalentLoadR + .05);
+    // Equal 0.10-ohm parallel paths: 50/50 total outgoing current.
+    expect(measured.result!.reading!.value,
+      closeTo(currentTotal / 2, 1e-4));
+  });
+
+  test('PV ideal bypass carries all current, metered parallel path reads zero', () {
+    final a = InstrumentInstance(id: InstrumentId('dc-bypass'),
+      kind: InstrumentKind.ammeter, mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'), burdenResistanceOhm: .01);
+    final base = _pvCircuit();
+    final circuit = _pvMesh(base, instrument: a, measured: 'dc-pos',
+      primaryResistance: 0, parallelResistance: 0,
+      parallelId: 'dc-ideal-bypass',
+      parallelFrom: 'pv-pos', parallelTo: 'inv-dc-pos',
+      probes: [
+        ProbeConnection(id: ProbeId('a'), instrumentId: a.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+        ProbeConnection(id: ProbeId('com'), instrumentId: a.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+      ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: a);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    expect(measured.result!.reading!.value, closeTo(0, 1e-8));
+  });
+
   test('PV disconnected voltmeter/ammeter show wiring required, not N/A', () {
     final v = InstrumentInstance(id: InstrumentId('v'),
       kind: InstrumentKind.voltmeter, mode: InstrumentMode.voltageDc);
@@ -501,5 +608,40 @@ CircuitState _pvCircuit({
       'irradianceWm2': 1000.0,
       'cellTemperatureC': 25.0,
     },
+  );
+}
+
+CircuitState _pvMesh(
+  CircuitState base, {
+  required InstrumentInstance instrument,
+  required String measured,
+  required double primaryResistance,
+  required double parallelResistance,
+  required String parallelId,
+  required String parallelFrom,
+  required String parallelTo,
+  List<ProbeConnection> probes = const [],
+  List<ComponentInstance> extraComponents = const [],
+  List<Connection> extraWires = const [],
+}) {
+  return CircuitState(
+    circuitId: base.circuitId, revision: base.revision, mode: base.mode,
+    sources: base.sources,
+    components: [...base.components, ...extraComponents],
+    connections: [
+      for (final w in base.connections)
+        if (w.id.value == measured)
+          Connection(id: w.id, fromTerminalId: w.fromTerminalId,
+            toTerminalId: w.toTerminalId, phase: w.phase,
+            metadata: {'resistanceOhm': primaryResistance})
+        else w,
+      Connection(id: ConnectionId(parallelId),
+        fromTerminalId: TerminalId(parallelFrom),
+        toTerminalId: TerminalId(parallelTo),
+        metadata: {'resistanceOhm': parallelResistance}),
+      ...extraWires,
+    ],
+    instruments: [instrument], probes: probes,
+    settings: base.settings,
   );
 }

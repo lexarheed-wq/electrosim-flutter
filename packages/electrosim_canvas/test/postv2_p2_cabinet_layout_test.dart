@@ -149,4 +149,34 @@ void main() {
       rail, const Offset(10, 10), const Rect.fromLTWH(0, 0, 100, 100),
     ), throwsArgumentError);
   });
+  test('P2 orthogonal duct routing traverses centerline and preserves endpoints', () {
+    final cabinet = CabinetLayout([
+      CabinetFixture(id: 'duct', kind: CabinetFixtureKind.wireDuct,
+          bounds: const Rect.fromLTWH(100, 180, 450, 42)),
+    ]);
+    final route = CabinetDuctWirePlanner.route(
+      start: const Offset(150, 85),
+      end: const Offset(480, 410),
+      cabinet: cabinet,
+    )!;
+    final all = [
+      const Offset(150, 85), ...route, const Offset(480, 410),
+    ];
+    expect(route, contains(const Offset(150, 201)));
+    expect(route, contains(const Offset(480, 201)));
+    for (var i = 1; i < all.length; i++) {
+      expect(all[i].dx == all[i-1].dx ||
+             all[i].dy == all[i-1].dy, isTrue);
+    }
+  });
+
+  test('P2 duct routing falls back safely when there is no cable duct', () {
+    expect(CabinetDuctWirePlanner.route(
+      start: const Offset(0, 0),
+      end: const Offset(100, 100),
+      cabinet: const CabinetLayout.empty(),
+    ), isNull);
+  });
+
+
 }

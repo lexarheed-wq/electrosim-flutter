@@ -10,13 +10,16 @@ void main() {
   setUpAll(() async {
     expect(await Disjoncteur3D.prechargerTextures(), isTrue);
   });
-  testWidgets('G5 proof uses the actual palette and board widgets', (tester) async {
+  testWidgets('G5 proof uses the actual palette and board widgets', (
+    tester,
+  ) async {
     // Render readable typography in test mode, as in the G5 native showcase.
     final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
     if (font.existsSync()) {
       final bytes = font.readAsBytesSync();
-      await (FontLoader('Roboto')
-        ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
+      await (FontLoader(
+        'Roboto',
+      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
     }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;
@@ -35,55 +38,56 @@ void main() {
             child: ColoredBox(
               color: const Color(0xFFEDF1F4),
               child: Center(
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                alignment: WrapAlignment.center,
-                spacing: 62,
-                runSpacing: 32,
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('CARTE PALETTE'),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: 72,
-                        height: 108,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: F9ComponentPreview(
-                            definition: definition, compact: true,
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.center,
+                  spacing: 62,
+                  runSpacing: 32,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('CARTE PALETTE'),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: 72,
+                          height: 108,
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: F9ComponentPreview(
+                              definition: definition,
+                              compact: true,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('GLISSER SUR PLATINE'),
-                      const SizedBox(height: 12),
-                      F9ComponentPreview(definition: definition),
-                    ],
-                  ),
-                  const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('PLATINE ELECTROSIM'),
-                      SizedBox(height: 12),
-                      F18ComponentAssetVisual(
-                        modelType: 'rcd_2p_ac1',
-                        size: Size(160, 260),
-                        closed: false,
-                        ratedCurrentA: 16,
-                        residualTripCurrentA: 0.03,
-                        showTerminals: false,
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('GLISSER SUR PLATINE'),
+                        const SizedBox(height: 12),
+                        F9ComponentPreview(definition: definition),
+                      ],
+                    ),
+                    const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('PLATINE ELECTROSIM'),
+                        SizedBox(height: 12),
+                        F18ComponentAssetVisual(
+                          modelType: 'rcd_2p_ac1',
+                          size: Size(160, 260),
+                          closed: false,
+                          ratedCurrentA: 16,
+                          residualTripCurrentA: 0.03,
+                          showTerminals: false,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
           ),
         ),
@@ -91,9 +95,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final views = tester.widgetList<Disjoncteur3D>(
-      find.byType(Disjoncteur3D),
-    ).toList();
+    final views = tester
+        .widgetList<Disjoncteur3D>(find.byType(Disjoncteur3D))
+        .toList();
     expect(views, hasLength(3));
     expect(views[0].vue, VueDisjoncteur.palette);
     expect(views[1].vue, VueDisjoncteur.palette);

@@ -15,9 +15,9 @@ void main() {
     final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
     if (font.existsSync()) {
       final bytes = font.readAsBytesSync();
-      await (FontLoader('Roboto')
-            ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
-          .load();
+      await (FontLoader(
+        'Roboto',
+      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
     }
     tester.view.physicalSize = const Size(1000, 600);
     tester.view.devicePixelRatio = 1;
@@ -30,39 +30,41 @@ void main() {
       EtatDisjoncteur.declenche,
     ];
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        backgroundColor: const Color(0xFFE9EDF1),
-        body: RepaintBoundary(
-          key: const Key('g5-industrial-state-proof'),
-          child: ColoredBox(
-            color: const Color(0xFFE9EDF1),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (final state in layout)
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(state.name.toUpperCase()),
-                      const SizedBox(height: 8),
-                      Disjoncteur3D(
-                        key: Key('industrial-${state.name}'),
-                        width: 190,
-                        height: 310,
-                        vue: VueDisjoncteur.platine,
-                        etat: state,
-                        calibreA: 16,
-                        sensibiliteMA: 30,
-                      ),
-                    ],
-                  ),
-              ],
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          backgroundColor: const Color(0xFFE9EDF1),
+          body: RepaintBoundary(
+            key: const Key('g5-industrial-state-proof'),
+            child: ColoredBox(
+              color: const Color(0xFFE9EDF1),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (final state in layout)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(state.name.toUpperCase()),
+                        const SizedBox(height: 8),
+                        Disjoncteur3D(
+                          key: Key('industrial-${state.name}'),
+                          width: 190,
+                          height: 310,
+                          vue: VueDisjoncteur.platine,
+                          etat: state,
+                          calibreA: 16,
+                          sensibiliteMA: 30,
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     expect(find.byType(Disjoncteur3D), findsNWidgets(3));
 

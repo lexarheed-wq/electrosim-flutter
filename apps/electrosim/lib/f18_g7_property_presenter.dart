@@ -52,24 +52,9 @@ abstract final class F18G7PropertyPresenter {
           .componentOperatingState(ComponentId(details.id));
       if (state != null) {
         runtimeStateLabel = _operatingStateLabel(state.code);
-        _addRuntimeQuantity(
-          runtimeValues,
-          'Tension',
-          state.voltageV,
-          'V',
-        );
-        _addRuntimeQuantity(
-          runtimeValues,
-          'Courant',
-          state.currentA,
-          'A',
-        );
-        _addRuntimeQuantity(
-          runtimeValues,
-          'Puissance',
-          state.powerW,
-          'W',
-        );
+        _addRuntimeQuantity(runtimeValues, 'Tension', state.voltageV, 'V');
+        _addRuntimeQuantity(runtimeValues, 'Courant', state.currentA, 'A');
+        _addRuntimeQuantity(runtimeValues, 'Puissance', state.powerW, 'W');
         evidenceIds.addAll(state.evidenceIds);
         for (final OperatingWarning warning in state.warnings) {
           runtimeValues.add(
@@ -81,16 +66,16 @@ abstract final class F18G7PropertyPresenter {
         }
       }
       if (runtimeSnapshot.solved) {
-        final ComponentHealthState health = runtimeSnapshot.componentHealthState(
-          ComponentId(details.id),
-        );
+        final ComponentHealthState health = runtimeSnapshot
+            .componentHealthState(ComponentId(details.id));
         runtimeValues.add(
           F18G7PropertyRow(label: 'Santé', value: _healthLabel(health.code)),
         );
         runtimeValues.add(
           F18G7PropertyRow(
             label: 'Dommage thermique',
-            value: '${(health.thermalExposure * 100).clamp(0, 100).toStringAsFixed(0)} %',
+            value:
+                '${(health.thermalExposure * 100).clamp(0, 100).toStringAsFixed(0)} %',
           ),
         );
         if (health.stressRatio > 0) {

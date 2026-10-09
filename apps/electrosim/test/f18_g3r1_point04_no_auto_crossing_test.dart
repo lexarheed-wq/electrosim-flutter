@@ -19,52 +19,65 @@ void main() {
     final String source = File('lib/main.dart').readAsStringSync();
     expect(
       source,
-      isNot(contains(
-        'Connexion refusée : aucun routage automatique sans croisement',
-      )),
+      isNot(
+        contains(
+          'Connexion refusée : aucun routage automatique sans croisement',
+        ),
+      ),
     );
     expect(source, contains('F18WorkspaceWireSafety.isRenderable'));
   });
 
-  test('different-net orthogonal crossing remains renderable as non-junction', () {
-    final Terminal a = _terminal('a');
-    final Terminal b = _terminal('b');
-    final Terminal c = _terminal('c');
-    final Terminal d = _terminal('d');
+  test(
+    'different-net orthogonal crossing remains renderable as non-junction',
+    () {
+      final Terminal a = _terminal('a');
+      final Terminal b = _terminal('b');
+      final Terminal c = _terminal('c');
+      final Terminal d = _terminal('d');
 
-    final CircuitState circuit = CircuitState(
-      circuitId: CircuitId('crossing'),
-      revision: 1,
-      mode: ElectricalMode.dc,
-      components: <ComponentInstance>[
-        _component('A', a),
-        _component('B', b),
-        _component('C', c),
-        _component('D', d),
-      ],
-      connections: <Connection>[
-        Connection(id: ConnectionId('h'), fromTerminalId: a.id, toTerminalId: b.id),
-        Connection(id: ConnectionId('v'), fromTerminalId: c.id, toTerminalId: d.id),
-      ],
-    );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('crossing'),
+        revision: 1,
+        mode: ElectricalMode.dc,
+        components: <ComponentInstance>[
+          _component('A', a),
+          _component('B', b),
+          _component('C', c),
+          _component('D', d),
+        ],
+        connections: <Connection>[
+          Connection(
+            id: ConnectionId('h'),
+            fromTerminalId: a.id,
+            toTerminalId: b.id,
+          ),
+          Connection(
+            id: ConnectionId('v'),
+            fromTerminalId: c.id,
+            toTerminalId: d.id,
+          ),
+        ],
+      );
 
-    final CircuitVisualLayout layout = CircuitVisualLayout(
-      elementPositions: const <String, Offset>{
-        'A': Offset(48, 240),
-        'B': Offset(528, 240),
-        'C': Offset(288, 48),
-        'D': Offset(288, 432),
-      },
-    );
+      final CircuitVisualLayout layout = CircuitVisualLayout(
+        elementPositions: const <String, Offset>{
+          'A': Offset(48, 240),
+          'B': Offset(528, 240),
+          'C': Offset(288, 48),
+          'D': Offset(288, 432),
+        },
+      );
 
-    expect(
-      F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: layout),
-      isTrue,
-    );
-    final WireSemantics semantics = const WireSemanticsAnalyzer().analyze(
-      circuit: circuit,
-      layout: layout,
-    );
-    expect(semantics.nonJunctionCrossings, isNotEmpty);
-  });
+      expect(
+        F18WorkspaceWireSafety.isRenderable(circuit: circuit, layout: layout),
+        isTrue,
+      );
+      final WireSemantics semantics = const WireSemanticsAnalyzer().analyze(
+        circuit: circuit,
+        layout: layout,
+      );
+      expect(semantics.nonJunctionCrossings, isNotEmpty);
+    },
+  );
 }

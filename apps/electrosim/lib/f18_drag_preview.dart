@@ -30,10 +30,7 @@ final class F18DragSession {
       );
     }
 
-    final Set<TerminalId> movingTerminals = _terminalIdsFor(
-      circuit,
-      elementId,
-    );
+    final Set<TerminalId> movingTerminals = _terminalIdsFor(circuit, elementId);
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
       circuit,
       baseLayout,
@@ -91,8 +88,7 @@ final class F18DragSession {
           ? wire.baseStart + delta
           : wire.baseStart;
       final Offset end = wire.endMoves ? wire.baseEnd + delta : wire.baseEnd;
-      routes[wire.connectionId] =
-          start.dx == end.dx || start.dy == end.dy
+      routes[wire.connectionId] = start.dx == end.dx || start.dy == end.dy
           ? const <Offset>[]
           : <Offset>[Offset(end.dx, start.dy)];
     }

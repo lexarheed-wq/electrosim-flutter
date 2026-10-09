@@ -92,3 +92,5 @@ Vérifications après ce correctif : 89 tests Canvas, 8 tests de capture/intégr
 Suite complète relancée après le correctif DIN : **365 tests application et 89 tests Canvas réussis**, analyse statique complète de l'application sans anomalie, guards d'architecture et contrat Python réussis. Le décodeur de transport préserve le renderer Dart versionné.
 
 Le workflow G5 est étendu aux PR vers la branche G5. Il vérifie les deux suites avant de générer les preuves réelles. Une PR ne peut pas pousser de nouvelles références visuelles sur la branche cible. Le packaging macOS reste disponible après push G5 et par déclenchement manuel, utilise le SHA testé et contrôle aussi le décodage et le fallback des textures.
+
+Les contrôles historiques F0/F1 imposent également `dart format lib test`. Le formateur Dart 3.10.9 a été appliqué aux 32 fichiers signalés. Cette correction de formatage est isolée dans un commit distinct ; une revue des tokens n'a identifié aucun changement de comportement.

@@ -63,8 +63,10 @@ final class ElectroSimConnectionRouter {
     required String elementId,
   }) {
     if (_disposed) return Future<CircuitVisualLayout?>.value(null);
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(circuit, layout);
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      layout,
+    );
     final Rect? obstacle = geometry.elementRects[elementId]?.inflate(28);
     final List<ConnectionId> affected = <ConnectionId>[];
     for (final Connection wire in circuit.connections) {
@@ -83,9 +85,10 @@ final class ElectroSimConnectionRouter {
         end,
       ];
       for (var i = 1; i < path.length; i++) {
-        if (Rect.fromPoints(path[i - 1], path[i])
-            .inflate(1)
-            .overlaps(obstacle)) {
+        if (Rect.fromPoints(
+          path[i - 1],
+          path[i],
+        ).inflate(1).overlaps(obstacle)) {
           affected.add(wire.id);
           break;
         }

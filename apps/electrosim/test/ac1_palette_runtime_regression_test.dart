@@ -5,29 +5,24 @@ import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  F9PaletteDefinition definition(String key) =>
-      f9PaletteCatalog.firstWhere((F9PaletteDefinition item) => item.keyName == key);
+  F9PaletteDefinition definition(String key) => f9PaletteCatalog.firstWhere(
+    (F9PaletteDefinition item) => item.keyName == key,
+  );
 
-  test('AC1 palette uses canonical breaker calibre and dedicated 230 V lamp', () {
-    final F9PaletteDefinition breaker = definition('breaker-ac1');
-    final F9PaletteDefinition lamp = definition('lamp-ac1-230v');
+  test(
+    'AC1 palette uses canonical breaker calibre and dedicated 230 V lamp',
+    () {
+      final F9PaletteDefinition breaker = definition('breaker-ac1');
+      final F9PaletteDefinition lamp = definition('lamp-ac1-230v');
 
-    expect(
-      breaker.defaultParameters[ProtectionRating.ratedCurrentKey],
-      10.0,
-    );
-    expect(breaker.defaultParameters.containsKey('ratedCurrentA'), isFalse);
-    expect(lamp.supportsMode(ElectricalMode.ac1), isTrue);
-    expect(definition('lamp').supportsMode(ElectricalMode.ac1), isFalse);
-    expect(
-      lamp.defaultParameters[ReceiverNominalRating.voltageKey],
-      230.0,
-    );
-    expect(
-      lamp.defaultParameters[ReceiverNominalRating.powerKey],
-      100.0,
-    );
-  });
+      expect(breaker.defaultParameters[ProtectionRating.ratedCurrentKey], 10.0);
+      expect(breaker.defaultParameters.containsKey('ratedCurrentA'), isFalse);
+      expect(lamp.supportsMode(ElectricalMode.ac1), isTrue);
+      expect(definition('lamp').supportsMode(ElectricalMode.ac1), isFalse);
+      expect(lamp.defaultParameters[ReceiverNominalRating.voltageKey], 230.0);
+      expect(lamp.defaultParameters[ReceiverNominalRating.powerKey], 100.0);
+    },
+  );
 
   test('AC1 source-breaker-lamp circuit resolves with physical values', () {
     final F9PaletteDefinition breaker = definition('breaker-ac1');
@@ -103,13 +98,14 @@ void main() {
       settings: const <String, Object?>{'frequencyHz': 50.0},
     );
 
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
 
     expect(snapshot.solverKind, ElectroSimRuntimeSolverKind.ac1);
     expect(snapshot.solved, isTrue);
-    final ComponentOperatingState lampState =
-        snapshot.componentOperatingState(ComponentId('lamp'))!;
+    final ComponentOperatingState lampState = snapshot.componentOperatingState(
+      ComponentId('lamp'),
+    )!;
     expect(lampState.voltageV, closeTo(230.0, 1e-6));
     expect(lampState.currentA, closeTo(230.0 / 529.0, 1e-6));
     expect(lampState.powerW, closeTo(100.0, 0.2));

@@ -252,8 +252,14 @@ abstract final class PvNodalWireSolver {
     }
     final solved = circuitNetwork.currentSolve(currents);
     if (solved == null) return null;
+    final battery = batteries.single;
+    final batteryWire = battery.terminals.any((t) =>
+        t.id == cutWire.fromTerminalId || t.id == cutWire.toTerminalId);
+    final evidence = batteryWire
+        ? 'pv-nodal-storage-kcl:pv-battery:${battery.id.value}'
+        : 'pv-nodal-storage-kcl';
     final reading = circuitNetwork.reading(
-        solved, 1.0, cutWire, burdenOhm, 'pv-nodal-storage-kcl');
+        solved, 1.0, cutWire, burdenOhm, evidence);
     if (reading == null) return null;
     // This is a fixed operating-point projection of aggregate PV power.
     // Significant additional meter power would alter the controller/battery

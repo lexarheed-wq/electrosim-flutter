@@ -304,6 +304,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double ratedPowerW,
       required double currentLimitA,
       required double resistanceOhm,
+      double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
     }) {
       final String renderedModelType = visualModelType ?? modelType;
@@ -357,6 +358,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   ratedPowerW: ratedPowerW,
                   currentLimitA: currentLimitA,
                   resistanceOhm: resistanceOhm,
+                  residualTripCurrentA: residualTripCurrentA,
                 ),
               ),
             ),
@@ -480,6 +482,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         currentLimitA: 2,
         resistanceOhm:
             (component.parameters['resistanceOhm'] as num?)?.toDouble() ?? 0,
+        residualTripCurrentA:
+            (component.parameters[ComponentParameterKeys.residualTripCurrentA] as num?)?.toDouble() ?? 0,
         healthState:
             runtime?.componentHealthState(component.id) ??
             const ComponentHealthState.normal(),
@@ -731,6 +735,7 @@ class _F9ReferenceAsset extends StatelessWidget {
     this.ratedPowerW = 10,
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
+    this.residualTripCurrentA = 0,
   });
 
   final String modelType;
@@ -753,6 +758,7 @@ class _F9ReferenceAsset extends StatelessWidget {
   final double ratedPowerW;
   final double currentLimitA;
   final double resistanceOhm;
+  final double residualTripCurrentA;
 
   // Board camera is locked to zero yaw/pitch. The same canonical device
   // painter continues to own all terminal and state geometry.
@@ -780,6 +786,7 @@ class _F9ReferenceAsset extends StatelessWidget {
       ratedPowerW: ratedPowerW,
       currentLimitA: currentLimitA,
       resistanceOhm: resistanceOhm,
+      residualTripCurrentA: residualTripCurrentA,
     ),
   );
 

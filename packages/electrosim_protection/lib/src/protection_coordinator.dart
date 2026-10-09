@@ -487,15 +487,18 @@ final class ProtectionCoordinator {
         continue;
       }
 
+      // Past the RCCB-specific branch, all remaining protection devices
+      // require a resolved single/maximum branch current.
+      final double protectionCurrent = currentA!;
       ProtectionExposureState exposure = dynamics.advance(
         component: component,
-        currentA: currentA,
+        currentA: protectionCurrent,
         elapsed: elapsed,
         previous: prior.exposure,
       );
       final bool instantaneous = dynamics.shouldOpenInstantaneously(
         component,
-        currentA,
+        protectionCurrent,
       );
       if (instantaneous && exposure.exposure < 1.0) {
         exposure = ProtectionExposureState(
@@ -515,7 +518,7 @@ final class ProtectionCoordinator {
             : tripped
             ? ProtectionTripCause.timeCurrent
             : ProtectionTripCause.none,
-        lastObservedCurrentA: currentA.abs(),
+        lastObservedCurrentA: protectionCurrent.abs(),
       );
     }
 

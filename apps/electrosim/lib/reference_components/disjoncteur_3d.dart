@@ -52,6 +52,20 @@ class Disjoncteur3D extends StatefulWidget {
   final String? marque;
   final String? gamme;
   final String? reference;
+  /// Exact native frontal control region used by the existing Canvas
+  /// double-click router. Board geometry is never transformed by the palette
+  /// perspective camera.
+  static bool hitsLever(Size size, Offset localPoint) {
+    final projection = _Projection(size, 0, 0);
+    return projection.rect(-17, 5, 34, 30, 51).contains(localPoint);
+  }
+
+  /// TEST must remain independent from a mechanical lever command.
+  static bool hitsTestButton(Size size, Offset localPoint) {
+    final projection = _Projection(size, 0, 0);
+    return projection.rect(5.5, -14.5, 10, 8, 41).contains(localPoint);
+  }
+
   static Map<BorneDisjoncteur, Offset> positionsBornes(
     Size size, {
     VueDisjoncteur vue = VueDisjoncteur.platine,

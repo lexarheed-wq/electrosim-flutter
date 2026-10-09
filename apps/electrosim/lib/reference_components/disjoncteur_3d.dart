@@ -7,7 +7,7 @@ import 'package:flutter/semantics.dart';
 enum EtatDisjoncteur { ouvert, ferme, declenche }
 
 enum VueDisjoncteur {
-  palette(10.0, -12.0),
+  palette(-14.0, -12.0),
   platine(0.0, 0.0);
 
   const VueDisjoncteur(this.angleHorizontal, this.angleVertical);
@@ -520,33 +520,30 @@ class _Scene {
   }
 
   void screw(_V at) {
-    disc(_V(at.x, at.y, 35.3), 4, [const Color(0xFFAFB9B4), blanc, gris]);
-    disc(_V(at.x, at.y, 35.4), 3.5, [
-      const Color(0xFF181D1D),
-      const Color(0xFF7B8580),
+    // Nested rings: white countersink, deep graphite well, dark steel
+    // crosshead. Dark cores retain contrast at compact palette scales.
+    disc(_V(at.x, at.y, at.z - 1.3), 4.7, [
+      const Color(0xFFF9F9F7), const Color(0xFFA8ACAE),
+      const Color(0xFF5E666B),
     ]);
-    disc(_V(at.x, at.y, 36), 2.95, [
-      const Color(0xFFF0F2EF),
-      const Color(0xFF8F9C95),
-      const Color(0xFF45504D),
+    disc(_V(at.x, at.y, at.z - .5), 3.75, [
+      const Color(0xFF060708), const Color(0xFF292D30),
     ]);
-    disc(at, 2.5, [
-      const Color(0xFFE6EFEB),
-      const Color(0xFF809087),
-      const Color(0xFFC1CDC7),
-      const Color(0xFF55645F),
+    disc(_V(at.x, at.y, at.z - .1), 2.78, [
+      const Color(0xFF333B40), const Color(0xFF090C10),
+      const Color(0xFF555B60),
     ]);
-    final angle = at.y < 0 ? .55 : -.35;
-    for (final length in [2.05, 1.5]) {
-      final a = angle + (length == 1.5 ? math.pi / 2 : 0);
-      final dx = math.cos(a) * length;
-      final dy = math.sin(a) * length;
-      line(
-        _V(at.x - dx, at.y - dy, at.z + .03),
-        _V(at.x + dx, at.y + dy, at.z + .03),
-        graphite,
-        .5,
-      );
+    final crossAngle = at.y < 0 ? math.pi / 4 : -math.pi / 4;
+    for (final extra in [0.0, math.pi / 2]) {
+      final theta = crossAngle + extra;
+      final dx = math.cos(theta) * 2.15;
+      final dy = math.sin(theta) * 2.15;
+      line(_V(at.x - dx, at.y - dy, at.z + .15),
+          _V(at.x + dx, at.y + dy, at.z + .15),
+          const Color(0xFFB8BCC0), .65);
+      line(_V(at.x - dx * .7, at.y - dy * .7, at.z + .19),
+          _V(at.x + dx * .7, at.y + dy * .7, at.z + .19),
+          const Color(0xFF252C32), .24);
     }
   }
 }
@@ -601,6 +598,18 @@ class _DisjoncteurPainter extends CustomPainter {
     }
     scene.box(-12, 43.5, 7, 2.2, -22, 9, verrou);
     scene.box(0, 0, 36, 85, 34, 68, _Scene.blanc, radius: 1, bevel: .65);
+    // Mechanical slots and mould separation lines are drawn on the visible
+    // right flank, without changing the canonical frontal terminal offsets.
+    for (final y in [-30.0, -16.0, 3.0, 29.0]) {
+      scene.disc(_V(18.12, y, -9.0), 1.9, [
+        const Color(0xFF50575A), const Color(0xFFBDC3C3),
+        const Color(0xFFE8E9E6),
+      ], side: true);
+    }
+    scene.line(const _V(18.14, -30, -28),
+        const _V(18.14, 34, -28), const Color(0xFF9EA4A2), .12);
+    scene.line(const _V(18.14, 17, -26),
+        const _V(18.14, 17, 10), const Color(0xFFACB1AE), .14);
     for (final y in [-32.0, -20.0, -5.0, 10.0, 25.0, 36.0]) {
       scene.disc(_V(-18.06, y, -16), 1.55, [
         const Color(0xFF929E97),
@@ -608,6 +617,11 @@ class _DisjoncteurPainter extends CustomPainter {
       ], side: true);
     }
     scene.box(0, -30, 35.5, 24, 35.2, 3, _Scene.blanc, radius: .8, bevel: .3);
+    // Front-visible yellow release catches in both camera projections.
+    for (final x in [-8.3, 8.3]) {
+      scene.box(x, -43.2, 3.4, 2.7, 35.5, 2.1,
+          const Color(0xFFF0C31A), radius: .5, bevel: .28);
+    }
     scene.box(0, 34.8, 35.5, 14, 35.2, 3, _Scene.blanc, radius: .7, bevel: .3);
     for (final x in [-8.3, 8.3]) {
       scene.box(x, -41.3, 10, 2.2, 26, 9, const Color(0xFFC4CAC4), radius: .5);

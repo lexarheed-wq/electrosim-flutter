@@ -10,6 +10,7 @@ import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_industrial_physical_devices.dart';
 import 'reference_components/reference_models.dart';
+import 'reference_components/disjoncteur_3d.dart';
 import 'reference_components/reference_widgets.dart';
 import 'reference_components/reference_widgets_extended.dart';
 
@@ -27,6 +28,7 @@ abstract final class F18ReferenceComponentVisuals {
     'lamp',
     'breaker_dc',
     'breaker_ac1',
+    'rcd_2p_ac1',
     'breaker',
     'push_button_no',
     'resistor',
@@ -112,6 +114,7 @@ abstract final class F18ReferenceComponentMetrics {
     'switch' || 'switch_spst' => const Size(90, 140),
     'lamp' => const Size(130, 160),
     'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
+    'rcd_2p_ac1' => const Size(160, 260),
     'push_button_no' => const Size(90, 140),
     'resistor' => const Size(280, 110),
     'push_button_nc' => const Size(90, 140),
@@ -280,6 +283,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.ratedPowerW = 10,
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
+    this.residualTripCurrentA = 0,
   });
 
   final String modelType;
@@ -301,10 +305,32 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final double ratedPowerW;
   final double currentLimitA;
   final double resistanceOhm;
+  final double residualTripCurrentA;
 
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (type == 'rcd_2p_ac1') {
+      // Genuine 3D painter, directly in frontal camera on the physical board.
+      // Unlike the 1P breaker, this device really has four canonical ports.
+      return Disjoncteur3D(
+        width: size.width,
+        height: size.height,
+        vue: VueDisjoncteur.platine,
+        etat: tripped
+            ? EtatDisjoncteur.declenche
+            : closed == false ? EtatDisjoncteur.ouvert : EtatDisjoncteur.ferme,
+        calibreA: ratedCurrentA > 0 ? ratedCurrentA : null,
+        sensibiliteMA: residualTripCurrentA > 0
+            ? residualTripCurrentA * 1000
+            : null,
+        afficherBornes: showTerminals,
+        // Canvas owns hit-testing and invokes the single model controller.
+        onCommande: null,
+        onTest: null,
+        onBorne: null,
+      );
+    }
 
     // Genuine replacement industrial drawings. Never wrap the old drawing
     // and call it a replacement: these eight are new canonical silhouettes

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
+import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
 
@@ -1443,6 +1444,35 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'R + jX — AC1/AC3',
   ),
   F9PaletteDefinition(
+    keyName: 'rcd-2p-ac1',
+    title: 'Différentiel 2P AC',
+    category: 'Protection',
+    modelType: 'rcd_2p_ac1',
+    icon: Icons.electrical_services_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['N entrée', 'L entrée', 'N sortie', 'L sortie'],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec('N entrée',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral, idSuffix: 'n_in'),
+      F9PaletteTerminalSpec('L entrée',
+        role: TerminalRole.lineL1,
+        phase: PhaseTag.l1, idSuffix: 'l_in'),
+      F9PaletteTerminalSpec('N sortie',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral, idSuffix: 'n_out'),
+      F9PaletteTerminalSpec('L sortie',
+        role: TerminalRole.loadT1,
+        phase: PhaseTag.l1, idSuffix: 'l_out'),
+    ],
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 16.0,
+      ComponentParameterKeys.residualTripCurrentA: 0.03,
+    },
+    defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
+    subtitle: 'Protection différentielle à 4 bornes · IΔn 30 mA',
+  ),
+  F9PaletteDefinition(
     keyName: 'breaker-ac1',
     title: 'Disjoncteur AC 1φ',
     category: 'Protection',
@@ -2515,6 +2545,20 @@ class F9ComponentPreview extends StatelessWidget {
         : (compact
               ? F18ComponentIdentityMetrics.paletteSize
               : F18ComponentIdentityMetrics.dragSize);
+
+    if (definition.modelType == 'rcd_2p_ac1') {
+      // The premium painter already performs physical 3D projection:
+      // never stack F18IndustrialDualView's generic perspective over it.
+      return Disjoncteur3D(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        vue: VueDisjoncteur.palette,
+        etat: EtatDisjoncteur.ouvert,
+        calibreA: 16,
+        sensibiliteMA: 30,
+      );
+    }
 
     final Widget canonicalArtwork =
         definition.kind == F9PaletteElementKind.instrument

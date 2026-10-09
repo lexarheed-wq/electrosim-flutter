@@ -28,6 +28,7 @@ import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
 import 'reference_components/reference_widgets.dart';
+import 'reference_components/disjoncteur_3d.dart';
 import 'f9_ui_context.dart';
 import 'f9_context_panels.dart';
 import 'f9_component_visuals.dart';
@@ -2234,6 +2235,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       baseSize.height / 2 + unrotatedDelta.dy,
     );
 
+    if (modelType == 'rcd_2p_ac1') {
+      return Disjoncteur3D.hitsLever(baseSize, local)
+          ? (id: id, modelType: modelType)
+          : null;
+    }
+
     final ReferenceDevice? device =
         F18ReferenceComponentVisuals.uploadedDeviceFor(modelType);
     if (device == ReferenceDevice.breaker ||
@@ -2308,6 +2315,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'push_button_nc' ||
         'breaker_dc' ||
         'breaker_ac1' ||
+        'rcd_2p_ac1' ||
         'breaker' ||
         'breaker_3p' ||
         'breaker_4p' ||
@@ -2362,6 +2370,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final bool isProtectionReset =
         type == 'breaker_dc' ||
         type == 'breaker_ac1' ||
+        type == 'rcd_2p_ac1' ||
         type == 'breaker' ||
         type == 'breaker_3p' ||
         type == 'breaker_4p' ||

@@ -1,0 +1,109 @@
+name: G12RQ premium 2P RCD Canvas Mac Intel
+on:
+  push:
+    branches: [feat/g12rq-rcd2p-canvas-g3-20261009]
+permissions:
+  contents: write
+concurrency:
+  group: g12rq-premium-rcd2p-canvas
+  cancel-in-progress: true
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/g12rq-rcd2p-canvas-g3-20261009
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Restore authenticated premium source and format changed Dart files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/premium_rcd2p/decode_source.py
+          dart format apps/electrosim/lib/reference_components/disjoncteur_3d.dart apps/electrosim/lib/f18_component_asset_visual.dart apps/electrosim/lib/f9_component_palette.dart apps/electrosim/lib/f9_component_visuals.dart apps/electrosim/lib/main.dart apps/electrosim/test/g12rq_rcd_2p_canvas_integration_test.dart packages/electrosim_canvas/lib/src/premium_rcd2p_terminal_geometry.dart packages/electrosim_canvas/lib/src/canvas_geometry.dart packages/electrosim_domain/lib/src/component_model_contract.dart packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart packages/electrosim_protection/lib/src/protection_coordinator.dart packages/electrosim_protection/test/g12rq_rcd_2p_residual_test.dart
+      - name: App diagnostics and RCCB presentation checks
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test --no-pub test/g12rq_rcd_2p_canvas_integration_test.dart test/g12rq_premium_rcd2p_visual_test.dart test/sim_r1_instrument_palette_discoverability_test.dart test/sim_r1_board_instrument_ui_test.dart
+      - name: Canvas and physics regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for p in electrosim_canvas electrosim_domain electrosim_topology electrosim_solver_ac electrosim_protection; do
+            (cd "packages/$p" && flutter pub get && flutter analyze && flutter test)
+          done
+      - name: Architecture and source guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          git diff --check
+      - name: Save verified Dart formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/lib packages/electrosim_canvas/lib/src packages/electrosim_domain/lib/src packages/electrosim_solver_ac/lib/src packages/electrosim_protection/lib/src
+          git add apps/electrosim/test/g12rq_rcd_2p_canvas_integration_test.dart
+          git add packages/electrosim_protection/test/g12rq_rcd_2p_residual_test.dart
+          if ! git diff --staged --quiet; then
+            git commit -m "style(rcd): verified premium 2P and Canvas Dart formatting [skip ci]"
+            git push origin HEAD:feat/g12rq-rcd2p-canvas-g3-20261009
+          fi
+  macos-intel:
+    needs: qualify
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/g12rq-rcd2p-canvas-g3-20261009
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build native Mac with RCCB 2P
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) root="${output#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR $output"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$bin"
+          result="$base/rcd2p-premium-macos"
+          mkdir -p "$result"
+          file "$bin" | tee "$result/ARCH.txt"
+          grep -qi x86_64 "$result/ARCH.txt"
+          git -C "$base" rev-parse HEAD > "$result/SOURCE_SHA.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$result/ElectroSim_G12RQ_RCD2P_Premium_macOS_Intel.zip"
+          (cd "$result" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G12RQ-Premium-2P-RCD-macOS-Intel
+          path: rcd2p-premium-macos/
+          retention-days: 14
+          if-no-files-found: error

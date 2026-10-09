@@ -10,6 +10,7 @@ import 'physical_wire_path.dart';
 import 'din_rail_visual.dart';
 import 'cabinet_layout.dart';
 import 'cabinet_fixture_painter.dart';
+import 'metal_mounting_plate.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -54,6 +55,17 @@ final class CircuitScenePainter extends CustomPainter {
   final CircuitGeometryIndex geometryAtBuild;
   final WireSemantics? semanticsAtBuild;
   late final List<Rect> dinSupportsAtBuild = _buildDinSupports();
+  late final Rect mountingPlateBoundsAtBuild = mountingPlateBounds([
+    ...geometryAtBuild.elementRects.values,
+    ...layout.cabinetLayout.fixtures.map((fixture) => fixture.bounds),
+  ]);
+
+  Rect get _plateScreenBounds => Rect.fromLTWH(
+    viewport.worldToScreen(mountingPlateBoundsAtBuild.topLeft).dx,
+    viewport.worldToScreen(mountingPlateBoundsAtBuild.topLeft).dy,
+    mountingPlateBoundsAtBuild.width * viewport.scale,
+    mountingPlateBoundsAtBuild.height * viewport.scale,
+  );
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -67,8 +79,17 @@ final class CircuitScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = boardColor);
-    _paintGrid(canvas, size);
+    if (paintElementChrome) {
+      canvas.drawRect(Offset.zero & size, Paint()..color = boardColor);
+      _paintGrid(canvas, size);
+    } else {
+      paintMetalMountingPlate(
+        canvas,
+        viewportSize: size,
+        screenBounds: _plateScreenBounds,
+        scale: viewport.scale,
+      );
+    }
 
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
@@ -381,7 +402,13 @@ final class CircuitScenePainter extends CustomPainter {
       canvas.drawCircle(
         viewport.worldToScreen(crossing.point),
         radius,
-        Paint()..color = boardColor,
+        paintElementChrome
+            ? (Paint()..color = boardColor)
+            : _plateScreenBounds.contains(
+                viewport.worldToScreen(crossing.point),
+              )
+            ? mountingPlateSurfacePaint(_plateScreenBounds)
+            : (Paint()..color = metalWorkspaceColor),
       );
     }
   }

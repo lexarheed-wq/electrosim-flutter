@@ -328,7 +328,7 @@ void main() {
         settings: base.settings,
       );
       final Ac1SolveResult result = solve(circuit);
-      expect(result.status, Ac1SolveStatus.singular);
+      expect(result.isSolved, isTrue);
       expect(
         result.diagnostics.map((Ac1SolverDiagnostic d) => d.code),
         contains(Ac1DiagnosticCode.floatingElectricalIsland),

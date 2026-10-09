@@ -86,3 +86,9 @@ Le dessin des rails DIN était déjà présent dans la base G5 `150f0bd`. Le typ
 Le correctif ajoute ce type au mécanisme existant. Aucun déplacement du composant, des vis, des bornes ou des fils n'est introduit. Un appareil tourné conserve la règle existante d'absence de support horizontal. Le test de régression échouait avec zéro support avant la correction, puis contrôle un support visible et centré après celle-ci.
 
 Vérifications après ce correctif : 89 tests Canvas, 8 tests de capture/intégration/Test T et 11 tests de références visuelles de l'application réussis. Analyse statique des fichiers concernés sans anomalie. La capture actuelle inclut le rail de production ; le test de capture exige aussi un support réellement présent dans le peintre de la platine.
+
+## Qualification avant intégration GitHub
+
+Suite complète relancée après le correctif DIN : **365 tests application et 89 tests Canvas réussis**, analyse statique complète de l'application sans anomalie, guards d'architecture et contrat Python réussis. Le décodeur de transport préserve le renderer Dart versionné.
+
+Le workflow G5 est étendu aux PR vers la branche G5. Il vérifie les deux suites avant de générer les preuves réelles. Une PR ne peut pas pousser de nouvelles références visuelles sur la branche cible. Le packaging macOS reste disponible après push G5 et par déclenchement manuel, utilise le SHA testé et contrôle aussi le décodage et le fallback des textures.

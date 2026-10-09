@@ -80,7 +80,7 @@ jobs:
           {
             echo '# P2 Chromium — real Flutter workspace evidence'
             echo
-            echo "Commit: `$GITHUB_SHA`"
+            printf 'Commit: %s\n' "$GITHUB_SHA"
             echo 'Browser:'
             cat "$output/CHROMIUM_VERSION.txt"
             echo

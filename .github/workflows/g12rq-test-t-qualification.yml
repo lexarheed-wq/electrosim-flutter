@@ -4,6 +4,9 @@ on:
     branches:
       - fix/g12rq-test-t-engine-20261009
   workflow_dispatch:
+concurrency:
+  group: g12rq-test-t-g5-qualification
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:

@@ -1,0 +1,32 @@
+name: G12RQ Test T Qualification
+on:
+  push:
+    branches:
+      - fix/g12rq-test-t-engine-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore premium RCD source
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed apps/electrosim/lib/runtime/electrosim_simulation_controller.dart apps/electrosim/test/g12rq_rcd_test_button_runtime_test.dart
+      - name: Analyze and test RCD T
+        working-directory: apps/electrosim
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test test/g12rq_rcd_test_button_runtime_test.dart
+          flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
+      - name: Architecture checks
+        run: |
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py

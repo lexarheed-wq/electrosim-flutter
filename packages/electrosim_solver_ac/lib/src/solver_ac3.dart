@@ -678,15 +678,25 @@ _CompiledAc3Model _compileModel(
             ),
           );
         } else if (closed) {
+          // Momentary pushbuttons are mechanical control contacts and
+          // conduct through their on-resistance. Maintained ideal switches
+          // preserve their existing exact constraint model.
+          final bool isMomentary =
+              physics.controlLaw == ComponentControlLaw.momentaryNormallyOpen ||
+              physics.controlLaw == ComponentControlLaw.momentaryNormallyClosed;
           elements.add(
             _Ac3Element(
               id: 'component:${component.id.value}',
               modelType: component.modelType,
-              kind: _Ac3ElementKind.impedance,
+              kind: isMomentary
+                  ? _Ac3ElementKind.impedance
+                  : _Ac3ElementKind.idealVoltage,
               branchKind: Ac3BranchKind.idealSwitch,
               fromNodeId: fromNode,
               toNodeId: toNode,
-              value: const AcComplex(_ac3ControlContactOnResistanceOhm, 0),
+              value: isMomentary
+                  ? const AcComplex(_ac3ControlContactOnResistanceOhm, 0)
+                  : AcComplex.zero,
               phase: phase,
             ),
           );

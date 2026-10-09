@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:electrosim_controls/electrosim_controls.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_measurements/electrosim_measurements.dart';
 import 'package:electrosim_protection/electrosim_protection.dart';
 import 'package:flutter/foundation.dart';
 

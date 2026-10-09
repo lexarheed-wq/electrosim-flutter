@@ -100,27 +100,29 @@ final class SolverAC1 {
       referenceNodeId,
       compiled.activeElements,
     );
+    // An unconnected receiver can have its own floating potential without
+    // making the source or the other islands electrically unsolvable.
+    // Choose a mathematical gauge per *conductive* island only: no fake
+    // neutral/earth connection or resistance is inserted.
+    final Set<String> referenceNodes = _selectIslandReferencesAc1(
+      participatingNodes,
+      referenceNodeId,
+      compiled.activeElements,
+    );
     if (floatingNodes.isNotEmpty) {
       diagnostics.add(
         Ac1SolverDiagnostic(
           code: Ac1DiagnosticCode.floatingElectricalIsland,
-          severity: Ac1DiagnosticSeverity.error,
-          message: 'Electrical island is not connected to the reference node.',
+          severity: Ac1DiagnosticSeverity.warning,
+          message: 'Detached AC1 islands are independently referenced.',
           nodeIds: floatingNodes,
         ),
-      );
-      return _failure(
-        circuit,
-        Ac1SolveStatus.singular,
-        diagnostics,
-        frequencyHz: frequencyHz,
-        referenceNodeId: referenceNodeId,
       );
     }
 
     final List<String> unknownNodes =
         participatingNodes
-            .where((String nodeId) => nodeId != referenceNodeId)
+            .where((String nodeId) => !referenceNodes.contains(nodeId))
             .toList(growable: false)
           ..sort();
     final Map<String, int> nodeIndex = <String, int>{
@@ -228,7 +230,7 @@ final class SolverAC1 {
 
     final Map<String, AcComplex> nodeVoltages = <String, AcComplex>{
       for (final TopologyNode node in topology.nodes) node.id: AcComplex.zero,
-      referenceNodeId: AcComplex.zero,
+      for (final String node in referenceNodes) node: AcComplex.zero,
     };
     for (final MapEntry<String, int> entry in nodeIndex.entries) {
       nodeVoltages[entry.key] = solution[entry.value];
@@ -1210,6 +1212,43 @@ List<String> _findFloatingNodes(
           .toList(growable: false)
         ..sort();
   return result;
+}
+
+/// Choose one voltage gauge per island linked by active elements.
+/// Open contacts cannot propagate potentials between islands.
+Set<String> _selectIslandReferencesAc1(
+  Iterable<String> nodes,
+  String preferredReference,
+  Iterable<_Ac1Element> elements,
+) {
+  final ordered = nodes.toList()..sort();
+  final adjacency = <String, Set<String>>{
+    for (final node in ordered) node: <String>{},
+  };
+  for (final element in elements) {
+    if (element.isOpen || element.fromNodeId == element.toNodeId) continue;
+    adjacency[element.fromNodeId]!.add(element.toNodeId);
+    adjacency[element.toNodeId]!.add(element.fromNodeId);
+  }
+  final references = <String>{};
+  final visited = <String>{};
+  for (final seed in <String>[
+    preferredReference,
+    for (final node in ordered)
+      if (node != preferredReference) node,
+  ]) {
+    if (visited.contains(seed)) continue;
+    references.add(seed);
+    final pending = <String>[seed];
+    visited.add(seed);
+    for (var index = 0; index < pending.length; index++) {
+      final node = pending[index];
+      for (final next in (adjacency[node]!.toList()..sort())) {
+        if (visited.add(next)) pending.add(next);
+      }
+    }
+  }
+  return references;
 }
 
 void _stampAdmittance(

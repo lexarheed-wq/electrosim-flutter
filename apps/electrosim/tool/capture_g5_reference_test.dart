@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:electrosim/main.dart';
+import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:electrosim/f18_premium_rcd2p_showcase.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
@@ -109,6 +110,12 @@ void main() {
     final widgets = t.widgetList<Disjoncteur3D>(find.byType(Disjoncteur3D));
     expect(widgets.any((w) => w.vue == VueDisjoncteur.palette), isTrue);
     expect(widgets.any((w) => w.vue == VueDisjoncteur.platine), isTrue);
+    final scenes = t
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .map((paint) => paint.painter)
+        .whereType<CircuitScenePainter>();
+    expect(scenes.single.paintElementChrome, isFalse);
+    expect(scenes.single.dinSupportsAtBuild, hasLength(1));
     expect(t.takeException(), isNull);
     await save(t, key, 'electrosim-palette-platine');
     await t.pumpWidget(const SizedBox());

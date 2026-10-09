@@ -54,7 +54,7 @@ Le résultat est un rendu de produit détaillé, pas une identité photographiqu
 
 ## Vérifications exécutées
 
-- Suite application : 364 tests réussis.
+- Suite application avant le correctif DIN ci-dessous : 364 tests réussis.
 - Test ajouté après cette suite : 1 test de fallback réussi (365 tests validés au total).
 - Dix tests ciblés : captures, vis sous les quatre ancres dans trois tailles/deux orientations, fermeture du flanc, intégration Canvas et Test alimenté/non alimenté.
 - Analyse statique des sources modifiées et nouveaux tests : aucune anomalie.
@@ -78,3 +78,11 @@ blender -b --factory-startup -t 4 --python tools/render_g5_physical.py
 ```
 
 La version Blender utilisée ici ne fournit pas OpenImageDenoise ; le générateur utilise donc 64 échantillons sans débruitage externe. Les PNG sont des sorties directes du calcul 3D.
+
+## Correctif d'intégration DIN
+
+Le dessin des rails DIN était déjà présent dans la base G5 `150f0bd`. Le type `rcd_2p_ac1` manquait toutefois dans la liste des appareils montés sur rail. La première capture, qui contenait uniquement ce composant, ne produisait donc aucun rail.
+
+Le correctif ajoute ce type au mécanisme existant. Aucun déplacement du composant, des vis, des bornes ou des fils n'est introduit. Un appareil tourné conserve la règle existante d'absence de support horizontal. Le test de régression échouait avec zéro support avant la correction, puis contrôle un support visible et centré après celle-ci.
+
+Vérifications après ce correctif : 89 tests Canvas, 8 tests de capture/intégration/Test T et 11 tests de références visuelles de l'application réussis. Analyse statique des fichiers concernés sans anomalie. La capture actuelle inclut le rail de production ; le test de capture exige aussi un support réellement présent dans le peintre de la platine.

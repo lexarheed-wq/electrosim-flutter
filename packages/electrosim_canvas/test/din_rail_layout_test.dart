@@ -4,6 +4,48 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('the 2P RCD gets a visible DIN support without moving its geometry', () {
+    final viewport = ViewportController();
+    addTearDown(viewport.dispose);
+    final circuit = CircuitState(
+      circuitId: CircuitId('rcd-support'),
+      revision: 0,
+      mode: ElectricalMode.ac1,
+      components: [
+        ComponentInstance(
+          id: ComponentId('Q1'),
+          modelType: 'rcd_2p_ac1',
+          terminals: [],
+        ),
+      ],
+    );
+    final layout = CircuitVisualLayout(
+      elementPositions: const {'Q1': Offset(140, 165)},
+      elementSizes: const {'Q1': Size(160, 260)},
+    );
+    final geometry = CircuitGeometryIndex.build(circuit, layout);
+    final painter = CircuitScenePainter(
+      circuit: circuit,
+      layout: layout,
+      viewport: viewport,
+      paintElementChrome: false,
+    );
+    expect(painter.dinSupportsAtBuild, hasLength(1));
+    final rail = painter.dinSupportsAtBuild.single;
+    final body = geometry.elementRects['Q1']!;
+    expect(rail.center, body.center);
+    expect(rail.left, lessThan(body.left));
+    expect(rail.right, greaterThan(body.right));
+    expect(painter.geometryAtBuild.elementRects, geometry.elementRects);
+    final rotated = CircuitScenePainter(
+      circuit: circuit,
+      layout: layout.rotateElement('Q1'),
+      viewport: viewport,
+      paintElementChrome: false,
+    );
+    expect(rotated.dinSupportsAtBuild, isEmpty);
+  });
+
   test(
     'an aligned thermal relay and panel adapters share the lower support',
     () {

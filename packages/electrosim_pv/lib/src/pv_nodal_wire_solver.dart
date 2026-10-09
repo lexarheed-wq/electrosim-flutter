@@ -252,7 +252,6 @@ abstract final class PvNodalWireSolver {
     }
     final solved = circuitNetwork.currentSolve(currents);
     if (solved == null) return null;
-    final battery = batteries.single;
     final batteryWire = battery.terminals.any((t) =>
         t.id == cutWire.fromTerminalId || t.id == cutWire.toTerminalId);
     final evidence = batteryWire

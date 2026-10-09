@@ -138,9 +138,13 @@ abstract final class CabinetPlacementPlanner {
       double nearest = double.infinity;
       for (final fixture in cabinet.fixtures) {
         if (fixture.kind != CabinetFixtureKind.dinRail ||
-            deviceSize.width > fixture.bounds.width) continue;
+            deviceSize.width > fixture.bounds.width) {
+          continue;
+        }
         final distance = (center.dy - fixture.bounds.center.dy).abs();
-        if (distance > snapDistance || distance >= nearest) continue;
+        if (distance > snapDistance || distance >= nearest) {
+          continue;
+        }
         nearest = distance;
         center = Offset(
           center.dx.clamp(

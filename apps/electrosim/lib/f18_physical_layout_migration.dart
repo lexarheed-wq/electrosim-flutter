@@ -27,5 +27,6 @@ CircuitVisualLayout migrateIndustrialPhysicalLayout(
     elementSizes: sizes,
     elementQuarterTurns: layout.elementQuarterTurns,
     defaultElementSize: layout.defaultElementSize,
+    cabinetLayout: layout.cabinetLayout,
   );
 }

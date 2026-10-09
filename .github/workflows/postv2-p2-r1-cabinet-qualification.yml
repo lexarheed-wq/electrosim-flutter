@@ -1,0 +1,54 @@
+name: Post-V2 P2 R1 Cabinet Geometry Qualification
+on:
+  push:
+    branches:
+      - feat/postv2-p2-cabinet-layout-r1-20261009
+      - feat/g5-p2-industrial-integration-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: postv2-p2-r1-cabinet-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  geometry-app-and-p1-nonregression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Preserve versioned G5 industrial painter
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Canvas geometry, DIN fixtures and electrical isolation
+        working-directory: packages/electrosim_canvas
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format lib/src/cabinet_layout.dart lib/src/cabinet_fixture_painter.dart lib/src/circuit_visual_layout.dart lib/src/circuit_scene_painter.dart lib/src/circuit_wire_layout_engine.dart lib/electrosim_canvas.dart test/postv2_p2_cabinet_layout_test.dart
+          flutter analyze
+          flutter test --concurrency=1
+      - name: App layout migration and complete workspace regression
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format lib/runtime/electrosim_layout_persistence.dart test/postv2_p2_layout_persistence_test.dart
+          flutter analyze
+          flutter test --concurrency=1
+      - name: Preserve P1 authority, PV, AC3 and engine invariants
+        run: |
+          set -euo pipefail
+          python3 tools/core_unify_architecture_guard.py
+          python3 tools/postv2_p1_contract.py
+          cd packages/electrosim_solver_dc
+          dart pub get
+          dart test
+          cd ../electrosim_solver_ac
+          dart pub get
+          dart test
+          cd ../electrosim_pv
+          dart pub get
+          dart test

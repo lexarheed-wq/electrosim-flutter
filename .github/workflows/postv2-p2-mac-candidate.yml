@@ -1,0 +1,66 @@
+name: Post-V2 P2 Mac Intel Candidate
+on:
+  push:
+    branches:
+      - feat/postv2-p2-cabinet-layout-r1-20261009
+      - feat/g5-p2-industrial-integration-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: postv2-p2-mac-candidate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos-intel-candidate:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate and build exact P2 source on macOS Intel
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          base="$(pwd)"
+          python3 tools/premium_rcd2p/decode_source.py
+          runner="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$runner" in
+            F17_RUNNER_PATH=*) root="${runner#F17_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $runner"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/postv2_p2_cabinet_editor_test.dart
+          flutter test test/postv2_p2_cabinet_workspace_test.dart
+          flutter test test/postv2_p2_layout_persistence_test.dart
+          flutter test test/ac3_motor_self_hold_start_stop_test.dart
+          flutter test test/g5_industrial_asset_fallback_test.dart test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_physical_layout_migration_test.dart test/g5_p2_layout_preservation_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          output="$base/p2-cabinet-macOS"
+          mkdir -p "$output"
+          file "$executable" | tee "$output/ARCHITECTURE.txt"
+          grep -qi x86_64 "$output/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
+          printf '%s\n' 'P2 cabinet layout — physical Mac acceptance pending user validation.' > "$output/READ_ME_FIRST.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_P2_Cabinet_Mac_Intel.zip"
+          (cd "$output" && shasum -a 256 ElectroSim_P2_Cabinet_Mac_Intel.zip > SHA256.txt)
+          (cd "$output" && unzip -t ElectroSim_P2_Cabinet_Mac_Intel.zip | tail -1)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-P2-Cabinet-Mac-Intel
+          path: p2-cabinet-macOS/
+          retention-days: 14
+          if-no-files-found: error

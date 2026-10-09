@@ -165,12 +165,27 @@ void main() {
         child: MaterialApp(
           theme: ElectroSimTheme.light(),
           debugShowCheckedModeBanner: false,
-          home: F9WorkspaceDemoPage(initialCircuit: circuit),
+          home: F9WorkspaceDemoPage(
+            initialCircuit: circuit,
+            initialCabinetLayout: CabinetLayout([
+              CabinetFixture(
+                id: 'DIN-INTEGRATION',
+                kind: CabinetFixtureKind.dinRail,
+                bounds: const Rect.fromLTWH(846, 175, 240, 34),
+              ),
+              CabinetFixture(
+                id: 'DUCT-INTEGRATION',
+                kind: CabinetFixtureKind.wireDuct,
+                bounds: const Rect.fromLTWH(48, 560, 1200, 42),
+              ),
+            ]),
+          ),
         ),
       ),
     );
     await t.pumpAndSettle();
     final canvas = t.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.layout.cabinetLayout.fixtures, hasLength(2));
     final rects = [
       for (var j = 0; j < types.length; j++)
         Rect.fromCenter(
@@ -190,6 +205,7 @@ void main() {
     );
     expect(t.takeException(), isNull);
     await save(t, key, 'electrosim-echelle-moteur-protection-lampe');
+    await save(t, key, 'electrosim-g5-p2-rails-goulotte');
     await t.pumpWidget(const SizedBox());
   });
   testWidgets('complete catalogue appearance inventory', (t) async {

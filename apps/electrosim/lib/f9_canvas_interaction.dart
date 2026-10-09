@@ -50,6 +50,8 @@ final class F9OrthogonalRouter {
       elementSizes: layout.elementSizes,
       wireRoutes: routes,
       defaultElementSize: layout.defaultElementSize,
+      elementQuarterTurns: layout.elementQuarterTurns,
+      cabinetLayout: layout.cabinetLayout,
     );
   }
 

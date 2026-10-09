@@ -350,7 +350,7 @@ void main() {
         settings: base.settings,
       );
       final Ac3SolveResult result = solve(circuit);
-      expect(result.status, Ac3SolveStatus.singular);
+      expect(result.isSolved, isTrue);
       expect(
         result.diagnostics.map(
           (Ac3SolverDiagnostic diagnostic) => diagnostic.code,

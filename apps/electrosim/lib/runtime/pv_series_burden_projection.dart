@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_pv/electrosim_pv.dart';
 
 import 'electrosim_runtime_engine.dart';
 
@@ -52,6 +53,25 @@ abstract final class PvSeriesBurdenProjection {
     final burdenOhm = meter.burdenResistanceOhm;
     if (!burdenOhm.isFinite || burdenOhm <= 0) {
       return const PvSeriesBurdenResult(issue: 'Invalid ammeter burden.');
+    }
+    // Rebuild the actual conductor network when the PV circuit contains
+    // parallel cables, mesh branches or several AC resistive receivers.
+    // This KCL/MNA-like solve owns the selected burden edge; the previous
+    // single-device projection remains as the compatibility fallback for
+    // special aggregate PV storage models without resolvable nodal laws.
+    final nodal = PvNodalWireSolver.solve(
+      circuit: circuit,
+      pv: pv,
+      cutWire: wire,
+      burdenOhm: burdenOhm,
+    );
+    if (nodal != null) {
+      return PvSeriesBurdenResult(
+        currentA: nodal.currentA,
+        voltageDropV: nodal.voltageDropV,
+        lossW: nodal.lossW,
+        evidence: nodal.evidence,
+      );
     }
 
     // The PV array is a controlled voltage/power source in SolverPV. Its DC

@@ -1,0 +1,73 @@
+name: F17 Teacher Student LAN Mac Repair
+on:
+  push:
+    branches:
+      - fix/f17-student-teacher-lan-mac-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: f17-student-teacher-mac
+  cancel-in-progress: true
+jobs:
+  macos-intel-lan-candidate:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build and verify teacher + student application from same SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          base="$(pwd)"
+          python3 tools/premium_rcd2p/decode_source.py
+          prepared="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$prepared" in
+            F17_RUNNER_PATH=*) root="${prepared#F17_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $prepared"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/f17_student_web_bundle_test.dart
+          flutter test test/ac3_motor_self_hold_start_stop_test.dart
+          # Native F17 release scripts create only a macOS runner. The QR
+          # requires a second, actual Flutter Web build in the SAME worktree.
+          flutter create --platforms=web --project-name electrosim .
+          flutter pub get
+          flutter build web --release --target lib/student_web_main.dart --pwa-strategy=none
+          test -s build/web/index.html
+          test -s build/web/main.dart.js
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          web_dest="$app/Contents/Resources/electrosim_student_web"
+          mkdir -p "$web_dest"
+          cp -R build/web/. "$web_dest/"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$app"
+          output="$base/f17-classroom-macOS"
+          mkdir -p "$output"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          file "$executable" | tee "$output/ARCHITECTURE.txt"
+          grep -qi x86_64 "$output/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
+          printf '%s\n' 'F17 classroom candidate; QR student Web bundle packaged; real-device LAN acceptance pending.' > "$output/READ_ME_FIRST.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_F17_Classroom_Mac_Intel.zip"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$output/ElectroSim_F17_Classroom_Mac_Intel.zip"
+          (cd "$output" && shasum -a 256 ElectroSim_F17_Classroom_Mac_Intel.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-F17-Teacher-Student-Mac-Intel
+          path: f17-classroom-macOS/
+          retention-days: 14
+          if-no-files-found: error

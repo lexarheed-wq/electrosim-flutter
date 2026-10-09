@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'f18_industrial_physical_plate.dart';
 
 /// The same component artwork is used in both locations. Only its *camera*
 /// changes: palette items have a shallow product perspective; the board stays
@@ -96,6 +97,10 @@ class F18IndustrialDualView extends StatelessWidget {
       // No transform whatsoever: identical board pixels, hit regions and
       // terminal coordinates, including quarter-turn rotations.
       return child;
+    }
+
+    if (F18PhysicalPlateAssets.ready(modelType)) {
+      return F18PhysicalPresentationScope(child: child);
     }
 
     final family = F18IndustrialIdentity.familyOf(modelType);

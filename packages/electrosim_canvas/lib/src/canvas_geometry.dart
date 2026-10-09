@@ -48,7 +48,7 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.1555555556, h * 0.35),
         Offset(w * 0.1555555556, h * 0.35),
       ],
-      // lamp 130x160 -> (40,139) / (90,139)
+      // A60 lamp + holder 130x260 -> (40,225.875) / (90,225.875)
       'lamp' => <Offset>[
         Offset(w * -0.1923076923, h * 0.36875),
         Offset(w * 0.1923076923, h * 0.36875),

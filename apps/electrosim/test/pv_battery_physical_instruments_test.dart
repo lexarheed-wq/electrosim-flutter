@@ -17,8 +17,7 @@ void main() {
       maximumCurrentA: 100,
       fuseRatingA: 100,
     );
-    final base = _pvStorageCircuit(
-      irradianceWm2: 100, loadPowerAt230W: 2000);
+    final base = _pvStorageCircuit(irradianceWm2: 100, loadPowerAt230W: 2000);
     final circuit = CircuitState(
       circuitId: base.circuitId,
       revision: base.revision,
@@ -28,12 +27,15 @@ void main() {
       connections: [
         for (final wire in base.connections)
           if (wire.id.value == 'storage-battery-pos-wire')
-            Connection(id: wire.id,
+            Connection(
+              id: wire.id,
               fromTerminalId: wire.fromTerminalId,
               toTerminalId: wire.toTerminalId,
               phase: wire.phase,
-              metadata: const {'resistanceOhm': .02})
-          else wire,
+              metadata: const {'resistanceOhm': .02},
+            )
+          else
+            wire,
         Connection(
           id: ConnectionId('parallel-battery-bus'),
           fromTerminalId: TerminalId('storage-battery-pos'),
@@ -44,12 +46,18 @@ void main() {
       ],
       instruments: [meter],
       probes: [
-        ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+        ProbeConnection(
+          id: ProbeId('a'),
+          instrumentId: meter.id,
           port: InstrumentPort.amp,
-          terminalId: TerminalId('storage-battery-pos')),
-        ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+          terminalId: TerminalId('storage-battery-pos'),
+        ),
+        ProbeConnection(
+          id: ProbeId('com'),
+          instrumentId: meter.id,
           port: InstrumentPort.common,
-          terminalId: TerminalId('storage-inv-dc-pos')),
+          terminalId: TerminalId('storage-inv-dc-pos'),
+        ),
       ],
       settings: base.settings,
     );
@@ -57,15 +65,22 @@ void main() {
     expect(snapshot.solved, isTrue);
     expect(snapshot.pv.batteryPowerW, greaterThan(0));
     final measured = projection.read(snapshot: snapshot, instrument: meter);
-    expect(measured.status, PhysicalInstrumentStatus.valid,
-      reason: measured.message);
-    final expectedBatteryI = snapshot.pv.batteryPowerW /
-        snapshot.pv.batteryVoltageV;
+    expect(
+      measured.status,
+      PhysicalInstrumentStatus.valid,
+      reason: measured.message,
+    );
+    final expectedBatteryI =
+        snapshot.pv.batteryPowerW / snapshot.pv.batteryVoltageV;
     // Two paths are both .04 ohm: battery port current must split 50/50.
-    expect(measured.result!.reading!.value,
-        closeTo(expectedBatteryI / 2, 1e-4));
-    expect(measured.result!.evidenceIds.join(','),
-      contains('pv-nodal-storage-kcl'));
+    expect(
+      measured.result!.reading!.value,
+      closeTo(expectedBatteryI / 2, 1e-4),
+    );
+    expect(
+      measured.result!.evidenceIds.join(','),
+      contains('pv-nodal-storage-kcl'),
+    );
   });
 
   test('PV battery charge cable uses physical series meter burden', () {
@@ -78,21 +93,33 @@ void main() {
       maximumCurrentA: 100,
       fuseRatingA: 100,
     );
-    final circuit = _withMeter(_pvStorageCircuit(
-        loadPowerAt230W: 1000, irradianceWm2: 1000), meter, [
-      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
-        port: InstrumentPort.amp,
-        terminalId: TerminalId('storage-battery-pos')),
-      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
-        port: InstrumentPort.common,
-        terminalId: TerminalId('storage-inv-dc-pos')),
-    ]);
+    final circuit = _withMeter(
+      _pvStorageCircuit(loadPowerAt230W: 1000, irradianceWm2: 1000),
+      meter,
+      [
+        ProbeConnection(
+          id: ProbeId('a'),
+          instrumentId: meter.id,
+          port: InstrumentPort.amp,
+          terminalId: TerminalId('storage-battery-pos'),
+        ),
+        ProbeConnection(
+          id: ProbeId('com'),
+          instrumentId: meter.id,
+          port: InstrumentPort.common,
+          terminalId: TerminalId('storage-inv-dc-pos'),
+        ),
+      ],
+    );
     final snapshot = engine.evaluate(circuit);
     expect(snapshot.solved, isTrue);
     expect(snapshot.pv.batteryPowerW, lessThan(0));
     final measure = projection.read(snapshot: snapshot, instrument: meter);
-    expect(measure.status, PhysicalInstrumentStatus.valid,
-        reason: measure.message);
+    expect(
+      measure.status,
+      PhysicalInstrumentStatus.valid,
+      reason: measure.message,
+    );
     expect(measure.result!.reading!.value, greaterThan(0));
     expect(measure.result!.evidenceIds.join(','), contains('pv-battery'));
   });
@@ -107,51 +134,80 @@ void main() {
       maximumCurrentA: 100,
       fuseRatingA: 100,
     );
-    final circuit = _withMeter(_pvStorageCircuit(
-        loadPowerAt230W: 2000, irradianceWm2: 100), meter, [
-      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
-        port: InstrumentPort.amp,
-        terminalId: TerminalId('storage-battery-pos')),
-      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
-        port: InstrumentPort.common,
-        terminalId: TerminalId('storage-inv-dc-pos')),
-    ]);
+    final circuit = _withMeter(
+      _pvStorageCircuit(loadPowerAt230W: 2000, irradianceWm2: 100),
+      meter,
+      [
+        ProbeConnection(
+          id: ProbeId('a'),
+          instrumentId: meter.id,
+          port: InstrumentPort.amp,
+          terminalId: TerminalId('storage-battery-pos'),
+        ),
+        ProbeConnection(
+          id: ProbeId('com'),
+          instrumentId: meter.id,
+          port: InstrumentPort.common,
+          terminalId: TerminalId('storage-inv-dc-pos'),
+        ),
+      ],
+    );
     final snapshot = engine.evaluate(circuit);
     expect(snapshot.solved, isTrue);
     expect(snapshot.pv.batteryPowerW, greaterThan(0));
     final measured = projection.read(snapshot: snapshot, instrument: meter);
-    expect(measured.status, PhysicalInstrumentStatus.valid,
-        reason: measured.message);
+    expect(
+      measured.status,
+      PhysicalInstrumentStatus.valid,
+      reason: measured.message,
+    );
     expect(measured.result?.reading?.value, greaterThan(0));
     // Measurement is calculated against a temporary series burden and does
     // not mutate stored PV battery power or the user's authored circuit.
-    expect(snapshot.circuit.connections, contains(
-        predicate<Connection>((c) =>
-          c.id == ConnectionId('storage-battery-pos-wire'))));
+    expect(
+      snapshot.circuit.connections,
+      contains(
+        predicate<Connection>(
+          (c) => c.id == ConnectionId('storage-battery-pos-wire'),
+        ),
+      ),
+    );
     expect(snapshot.pv.batteryPowerW, greaterThan(0));
   });
 
-  test('PV battery DC voltmeter reads solved storage voltage at battery terminals', () {
-    final meter = InstrumentInstance(
-      id: InstrumentId('battery-volt'),
-      kind: InstrumentKind.voltmeter,
-      mode: InstrumentMode.voltageDc,
-    );
-    final circuit = _withMeter(_pvStorageCircuit(), meter, [
-      ProbeConnection(id: ProbeId('pv-bat-plus'), instrumentId: meter.id,
+  test(
+    'PV battery DC voltmeter reads solved storage voltage at battery terminals',
+    () {
+      final meter = InstrumentInstance(
+        id: InstrumentId('battery-volt'),
+        kind: InstrumentKind.voltmeter,
+        mode: InstrumentMode.voltageDc,
+      );
+      final circuit = _withMeter(_pvStorageCircuit(), meter, [
+        ProbeConnection(
+          id: ProbeId('pv-bat-plus'),
+          instrumentId: meter.id,
           port: InstrumentPort.voltOhm,
-          terminalId: TerminalId('storage-battery-pos')),
-      ProbeConnection(id: ProbeId('pv-bat-minus'), instrumentId: meter.id,
+          terminalId: TerminalId('storage-battery-pos'),
+        ),
+        ProbeConnection(
+          id: ProbeId('pv-bat-minus'),
+          instrumentId: meter.id,
           port: InstrumentPort.common,
-          terminalId: TerminalId('storage-battery-neg')),
-    ]);
-    final snapshot = engine.evaluate(circuit);
-    expect(snapshot.solved, isTrue);
-    expect(snapshot.pv.batteryPresent, isTrue);
-    final read = projection.read(snapshot: snapshot, instrument: meter);
-    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
-    expect(read.result?.reading?.value, closeTo(snapshot.pv.batteryVoltageV, 1e-5));
-  });
+          terminalId: TerminalId('storage-battery-neg'),
+        ),
+      ]);
+      final snapshot = engine.evaluate(circuit);
+      expect(snapshot.solved, isTrue);
+      expect(snapshot.pv.batteryPresent, isTrue);
+      final read = projection.read(snapshot: snapshot, instrument: meter);
+      expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+      expect(
+        read.result?.reading?.value,
+        closeTo(snapshot.pv.batteryVoltageV, 1e-5),
+      );
+    },
+  );
 
   test('PV clamp reads battery terminal current from solved battery power', () {
     final meter = InstrumentInstance(
@@ -161,22 +217,32 @@ void main() {
       maximumCurrentA: 100,
     );
     final circuit = _withMeter(_pvStorageCircuit(), meter, [
-      ProbeConnection(id: ProbeId('pv-bat-cable'), instrumentId: meter.id,
+      ProbeConnection(
+        id: ProbeId('pv-bat-cable'),
+        instrumentId: meter.id,
         port: InstrumentPort.clamp,
-        connectionId: ConnectionId('storage-battery-pos-wire')),
+        connectionId: ConnectionId('storage-battery-pos-wire'),
+      ),
     ]);
     final snapshot = engine.evaluate(circuit);
     expect(snapshot.solved, isTrue);
     final read = projection.read(snapshot: snapshot, instrument: meter);
     expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
-    expect(read.result?.reading?.value,
-        closeTo((snapshot.pv.batteryPowerW / snapshot.pv.batteryVoltageV).abs(),
-            1e-5));
+    expect(
+      read.result?.reading?.value,
+      closeTo(
+        (snapshot.pv.batteryPowerW / snapshot.pv.batteryVoltageV).abs(),
+        1e-5,
+      ),
+    );
   });
 }
 
-CircuitState _withMeter(CircuitState base, InstrumentInstance meter,
-    List<ProbeConnection> probes) => CircuitState(
+CircuitState _withMeter(
+  CircuitState base,
+  InstrumentInstance meter,
+  List<ProbeConnection> probes,
+) => CircuitState(
   circuitId: base.circuitId,
   revision: base.revision,
   mode: base.mode,
@@ -418,7 +484,9 @@ CircuitState _pvStorageCircuit({
         PhaseTag.dcNegative,
       ),
     ],
-    if (includeBattery && includeInverter && !disconnectInverterDc) ...<Connection>[
+    if (includeBattery &&
+        includeInverter &&
+        !disconnectInverterDc) ...<Connection>[
       _wire(
         'storage-battery-pos-wire',
         'storage-battery-pos',
@@ -433,15 +501,28 @@ CircuitState _pvStorageCircuit({
       ),
     ],
     if (includeDcLamp) ...<Connection>[
-      _wire('storage-dc-load-pos', 'storage-dc-lamp-plus',
-        'storage-controller-bus-pos', PhaseTag.dcPositive),
-      _wire('storage-dc-load-neg', 'storage-dc-lamp-minus',
-        'storage-controller-bus-neg', PhaseTag.dcNegative),
+      _wire(
+        'storage-dc-load-pos',
+        'storage-dc-lamp-plus',
+        'storage-controller-bus-pos',
+        PhaseTag.dcPositive,
+      ),
+      _wire(
+        'storage-dc-load-neg',
+        'storage-dc-lamp-minus',
+        'storage-controller-bus-neg',
+        PhaseTag.dcNegative,
+      ),
     ],
     if (includeInverter)
       _wire('storage-ac-l', 'storage-inv-l', 'storage-load-l', PhaseTag.l1),
     if (includeInverter)
-      _wire('storage-ac-n', 'storage-inv-n', 'storage-load-n', PhaseTag.neutral),
+      _wire(
+        'storage-ac-n',
+        'storage-inv-n',
+        'storage-load-n',
+        PhaseTag.neutral,
+      ),
   ];
 
   return CircuitState(

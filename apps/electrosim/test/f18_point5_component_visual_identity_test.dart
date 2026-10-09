@@ -168,28 +168,31 @@ void main() {
       }
     });
 
-    test('uploaded V2 five keep their exact native production sizes', () {
-      expect(
-        F18ReferenceComponentMetrics.boardSizeFor('dc_voltage_source'),
-        const Size(140, 160),
-      );
-      expect(
-        F18ReferenceComponentMetrics.boardSizeFor('breaker_dc'),
-        const Size(72, 160),
-      );
-      expect(
-        F18ReferenceComponentMetrics.boardSizeFor('switch'),
-        const Size(90, 140),
-      );
-      expect(
-        F18ReferenceComponentMetrics.boardSizeFor('push_button_no'),
-        const Size(90, 140),
-      );
-      expect(
-        F18ReferenceComponentMetrics.boardSizeFor('lamp'),
-        const Size(130, 160),
-      );
-    });
+    test(
+      'production sizes preserve controls and use the tall A60 lamp envelope',
+      () {
+        expect(
+          F18ReferenceComponentMetrics.boardSizeFor('dc_voltage_source'),
+          const Size(140, 160),
+        );
+        expect(
+          F18ReferenceComponentMetrics.boardSizeFor('breaker_dc'),
+          const Size(72, 160),
+        );
+        expect(
+          F18ReferenceComponentMetrics.boardSizeFor('switch'),
+          const Size(90, 140),
+        );
+        expect(
+          F18ReferenceComponentMetrics.boardSizeFor('push_button_no'),
+          const Size(90, 140),
+        );
+        expect(
+          F18ReferenceComponentMetrics.boardSizeFor('lamp'),
+          const Size(130, 260),
+        );
+      },
+    );
 
     test('uploaded V2 physical anchors match the exact Dart geometry', () {
       void expectOffset(

@@ -15,8 +15,10 @@ import 'f17_tp_session_dialog.dart';
 import 'f17_tp_supervision_panel.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
+import 'f18_industrial_physical_plate.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
+import 'f18_physical_layout_migration.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
@@ -46,9 +48,11 @@ import 'runtime/workspace_layout_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final physicalTextures = Disjoncteur3D.prechargerTextures();
+  final industrialTextures = F18PhysicalPlateAssets.preload();
   final ElectroSimPersistenceController persistenceController =
       await ElectroSimPersistenceController.createDefault();
   await physicalTextures;
+  await industrialTextures;
   runApp(ElectroSimApp(persistenceController: persistenceController));
 }
 
@@ -1155,7 +1159,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _circuit = restored.circuit;
         _workspace = restored.workspace;
         _selected = null;
-        _layout = restored.visualLayout ?? _layoutForCircuit(_circuit);
+        final savedLayout = restored.visualLayout;
+        final migrated = savedLayout == null
+            ? null
+            : migrateIndustrialPhysicalLayout(_circuit, savedLayout);
+        _layout = migrated == null
+            ? _layoutForCircuit(_circuit)
+            : identical(migrated, savedLayout)
+            ? migrated
+            : _routeWithG2A(_circuit, migrated);
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
       });
@@ -3272,16 +3284,29 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
       ),
     ];
-    for (var index = 0; index < elements.length; index++) {
-      final int column = index % 3;
-      final int row = index ~/ 3;
-      final (String id, String modelType) = elements[index];
-      positions[id] = Offset(144 + (column * 240.0), 192 + (row * 192.0));
-      if (modelType == 'physical-instrument') {
-        sizes[id] = const Size(112, 152);
-      } else if (F18ReferenceComponentVisuals.supports(modelType)) {
-        sizes[id] = F18ReferenceComponentMetrics.boardSizeFor(modelType);
+    double rowTop = 96;
+    for (var start = 0; start < elements.length; start += 3) {
+      final row = elements.skip(start).take(3).toList();
+      double left = 48;
+      double rowHeight = 192;
+      for (final (id, modelType) in row) {
+        final size = modelType == 'physical-instrument'
+            ? const Size(112, 152)
+            : F18ReferenceComponentVisuals.supports(modelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(modelType)
+            : const Size(104, 64);
+        if (modelType == 'physical-instrument' ||
+            F18ReferenceComponentVisuals.supports(modelType)) {
+          sizes[id] = size;
+        }
+        positions[id] = Offset(
+          left + math.max(96, size.width / 2),
+          rowTop + math.max(96, size.height / 2),
+        );
+        left += math.max(240, size.width + 48);
+        rowHeight = math.max(rowHeight, size.height + 48);
       }
+      rowTop += rowHeight;
     }
 
     final CircuitVisualLayout base = CircuitVisualLayout(

@@ -22,7 +22,7 @@ final class F17ThreePhaseState {
 
 abstract final class F17ThreePhaseGeometry {
   static Size boardSizeFor(F17ThreePhaseDevice device) => switch (device) {
-    F17ThreePhaseDevice.motor6t => const Size(260, 240),
+    F17ThreePhaseDevice.motor6t => SixTerminalMotorGeometry.boardSize,
     F17ThreePhaseDevice.wyeLoad => const Size(210, 200),
     F17ThreePhaseDevice.deltaLoad => const Size(210, 200),
   };
@@ -174,12 +174,9 @@ final class _P {
   };
 
   void motor6t() {
-    final shell = Rect.fromLTWH(
-      rect.left + w * .17,
-      rect.top + h * .37,
-      w * .65,
-      h * .43,
-    );
+    final shell = SixTerminalMotorGeometry.bodyRect(
+      rect.size,
+    ).shift(rect.topLeft);
     final body = RRect.fromRectAndRadius(shell, Radius.circular(h * .10));
     canvas.drawRRect(
       body.shift(Offset(0, h * .018)),
@@ -290,12 +287,9 @@ final class _P {
       );
     }
     // Open terminal box, shared exactly with interactive canvas anchors.
-    final box = Rect.fromLTWH(
-      rect.left + w * .22,
-      rect.top + h * .055,
-      w * .56,
-      h * .32,
-    );
+    final box = SixTerminalMotorGeometry.terminalBoxRect(
+      rect.size,
+    ).shift(rect.topLeft);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         box.shift(Offset(0, h * .015)),
@@ -317,8 +311,8 @@ final class _P {
       terminal(c + terminals[i], labels[i], const Color(0xFFB69A5C));
     }
     final plate = Rect.fromLTWH(
-      shell.left + w * .16,
-      shell.top + h * .055,
+      shell.left + w * .39,
+      shell.top + h * .09,
       w * .26,
       h * .065,
     );

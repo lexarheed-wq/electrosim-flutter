@@ -68,6 +68,7 @@ jobs:
           flutter test --update-goldens test/g12rq_actual_app_visual_proof_test.dart
           flutter test --update-goldens test/g5_industrial_states_visual_test.dart
           flutter test --no-pub tool/capture_g5_reference_test.dart
+          flutter test --no-pub tool/capture_g5_industrial_test.dart
           test -s test/goldens/g12rq_premium_rcd2p_palette_board.png
           test -s test/goldens/g12rq_actual_widgets_palette_board.png
           test -s test/goldens/g5_industrial_off_on_trip.png
@@ -93,6 +94,7 @@ jobs:
             apps/electrosim/test/goldens/g12rq_actual_widgets_palette_board.png
             apps/electrosim/test/goldens/g5_industrial_off_on_trip.png
             apps/electrosim/build/g5-reference-proof/
+            apps/electrosim/build/g5-industrial-proof/
           retention-days: 14
   macos-intel:
     if: github.event_name != 'pull_request'
@@ -127,6 +129,7 @@ jobs:
           flutter test test/g12rq_rcd_test_button_runtime_test.dart
           flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
           flutter test test/g5_physical_housing_assets_test.dart test/g5_native_housing_fallback_test.dart
+          flutter test test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_industrial_asset_fallback_test.dart test/g5_physical_layout_migration_test.dart
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"

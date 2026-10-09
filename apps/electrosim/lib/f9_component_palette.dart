@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
+import 'f18_industrial_physical_plate.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2365,9 +2366,17 @@ class _PaletteDraggableTile extends StatelessWidget {
               SizedBox(
                 // The premium 2P body is tall; 48x56 made its controls
                 // indistinguishable despite the detailed native painter.
-                // Other palette entries retain their compact dimensions.
-                width: definition.modelType == 'rcd_2p_ac1' ? 72 : 48,
-                height: definition.modelType == 'rcd_2p_ac1' ? 108 : 56,
+                // Physical housings need enough pixels to show their moulding.
+                width:
+                    definition.modelType == 'rcd_2p_ac1' ||
+                        F18PhysicalPlateAssets.ready(definition.modelType)
+                    ? 72
+                    : 48,
+                height: definition.modelType == 'rcd_2p_ac1'
+                    ? 108
+                    : F18PhysicalPlateAssets.ready(definition.modelType)
+                    ? 96
+                    : 56,
                 child: FittedBox(
                   fit: BoxFit.contain,
                   child: F9ComponentPreview(
@@ -2386,7 +2395,10 @@ class _PaletteDraggableTile extends StatelessWidget {
                       child: Text(
                         definition.title,
                         maxLines:
-                            MediaQuery.textScalerOf(context).scale(14) > 18
+                            MediaQuery.textScalerOf(context).scale(14) > 18 ||
+                                F18PhysicalPlateAssets.ready(
+                                  definition.modelType,
+                                )
                             ? 2
                             : 1,
                         overflow: TextOverflow.ellipsis,
@@ -2547,7 +2559,7 @@ class F9ComponentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Size visualSize = definition.kind == F9PaletteElementKind.instrument
+    Size visualSize = definition.kind == F9PaletteElementKind.instrument
         ? (compact ? const Size(72, 94) : const Size(112, 152))
         : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
         ? (compact
@@ -2560,6 +2572,18 @@ class F9ComponentPreview extends StatelessWidget {
         : (compact
               ? F18ComponentIdentityMetrics.paletteSize
               : F18ComponentIdentityMetrics.dragSize);
+
+    if (F18PhysicalPlateAssets.ready(definition.renderedModelType)) {
+      final design = F18ReferenceComponentMetrics.boardSizeFor(
+        definition.renderedModelType,
+      );
+      final bounds = compact ? const Size(96, 107) : const Size(160, 182);
+      final scale = (bounds.width / design.width).clamp(
+        0.0,
+        bounds.height / design.height,
+      );
+      visualSize = Size(design.width * scale, design.height * scale);
+    }
 
     if (definition.modelType == 'rcd_2p_ac1') {
       // Use a dedicated high-detail preview scale. Only the display widget

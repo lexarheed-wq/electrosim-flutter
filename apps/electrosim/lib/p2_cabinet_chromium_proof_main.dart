@@ -32,7 +32,7 @@ void main() {
     CabinetFixture(
       id: 'DUCT-V-02',
       kind: d,
-      bounds: const Rect.fromLTWH(655, 110, 45, 320),
+      bounds: const Rect.fromLTWH(790, 110, 45, 320),
     ),
     CabinetFixture(
       id: 'TERMINAL-ZONE-01',

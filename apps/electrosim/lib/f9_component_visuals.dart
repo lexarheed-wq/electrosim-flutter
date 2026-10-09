@@ -12,6 +12,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
+import 'f9_source_voltage_readout.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 
 class F9CanvasVisualOverlay extends StatefulWidget {
@@ -374,10 +375,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         source.id,
         source.modelType,
       );
-      final double voltageV = _sourceVoltageV(
+      final double voltageV = F9SourceVoltageReadout.voltageV(
         runtime,
-        source.id,
-        source.modelType,
+        source,
+        simulationRunning: widget.simulationRunning,
       );
       addVisual(
         elementId: source.id.value,
@@ -605,50 +606,6 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     final pv = runtime.pvResult;
     if (pv != null && pv.isSolved && modelType == 'pv_array') {
       return pv.pvDrawnCurrentA;
-    }
-    return 0;
-  }
-
-  static double _sourceVoltageV(
-    ElectroSimRuntimeSnapshot? runtime,
-    SourceId id,
-    String modelType,
-  ) {
-    if (runtime == null) return 0;
-    final String target = 'source:${id.value}';
-    final dc = runtime.dcResult;
-    if (dc != null && dc.isSolved) {
-      for (final branch in dc.branchResults) {
-        if (branch.id == target && branch.voltageV.isFinite) {
-          return branch.voltageV.abs();
-        }
-      }
-    }
-    final ac1 = runtime.ac1Result;
-    if (ac1 != null && ac1.isSolved) {
-      double value = 0;
-      for (final branch in ac1.branchResults) {
-        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
-        if (branch.voltage.magnitude.isFinite) {
-          value = math.max(value, branch.voltage.magnitude);
-        }
-      }
-      if (value > 0) return value;
-    }
-    final ac3 = runtime.ac3Result;
-    if (ac3 != null && ac3.isSolved) {
-      double value = 0;
-      for (final branch in ac3.branchResults) {
-        if (branch.id != target && !branch.id.startsWith('$target:')) continue;
-        if (branch.voltage.magnitude.isFinite) {
-          value = math.max(value, branch.voltage.magnitude);
-        }
-      }
-      if (value > 0) return value;
-    }
-    final pv = runtime.pvResult;
-    if (pv != null && pv.isSolved && modelType == 'pv_array') {
-      return pv.pvOperatingVoltageV;
     }
     return 0;
   }

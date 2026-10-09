@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - fix/g5-teacher-tp-publication-navigation-20261009
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
   workflow_dispatch:
 permissions:
   contents: write
@@ -15,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
           persist-credentials: true
       - uses: subosito/flutter-action@v2
         with:

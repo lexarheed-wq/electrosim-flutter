@@ -351,6 +351,8 @@ void main() {
       );
       final Ac3SolveResult result = solve(circuit);
       expect(result.isSolved, isTrue);
+      expect(result.branch('component:island').current?.magnitude ?? 0,
+          closeTo(0, 1e-9));
       expect(
         result.diagnostics.map(
           (Ac3SolverDiagnostic diagnostic) => diagnostic.code,

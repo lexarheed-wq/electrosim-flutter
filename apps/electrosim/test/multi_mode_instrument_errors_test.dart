@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim/runtime/electrosim_instrument_projection.dart';
 import 'package:electrosim/f9_source_voltage_readout.dart';
@@ -77,6 +78,277 @@ void main() {
     expect(read.status, PhysicalInstrumentStatus.valid,
         reason: read.message);
     expect(read.result?.reading?.value, closeTo(5.0, 0.01));
+  });
+
+  test('PV DC series ammeter inserts 0.01-ohm burden in source cable', () {
+    final a = InstrumentInstance(
+      id: InstrumentId('dc-series'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      burdenResistanceOhm: 0.01,
+    );
+    final circuit = _pvWithMeters([a], [
+      ProbeConnection(id: ProbeId('series-a'), instrumentId: a.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('series-com'), instrumentId: a.id,
+        port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: a);
+    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+    expect(read.result?.reading?.value,
+        greaterThanOrEqualTo(snapshot.pv.pvDrawnCurrentA));
+    expect(read.result?.reading?.value, lessThan(10));
+    expect(read.result?.evidenceIds.join(' '), contains('meter-loss-w:'));
+  });
+
+  test('PV DC ammeter burden changes current and enforces power limit', () {
+    InstrumentInstance amp(double burdenOhm, String id) =>
+        InstrumentInstance(
+          id: InstrumentId(id),
+          kind: InstrumentKind.ammeter,
+          mode: InstrumentMode.currentDc,
+          cutConnectionId: ConnectionId('dc-pos'),
+          burdenResistanceOhm: burdenOhm,
+          maximumCurrentA: 50,
+          fuseRatingA: 50,
+        );
+    double read(double burdenOhm) {
+      final meter = amp(burdenOhm, 'a');
+      final circuit = _pvWithMeters([meter], [
+        ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+        ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+      ]);
+      final result = projection.read(
+        snapshot: engine.evaluate(circuit), instrument: meter);
+      expect(result.status, PhysicalInstrumentStatus.valid,
+          reason: result.message);
+      return result.result!.reading!.value;
+    }
+    expect(read(2), greaterThan(read(.01)));
+
+    final meter = amp(1000, 'excessive');
+    final circuit = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+        port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    final excessive = projection.read(
+        snapshot: engine.evaluate(circuit), instrument: meter);
+    expect(excessive.status, PhysicalInstrumentStatus.unavailable);
+  });
+
+  test('PV series ammeter refuses wrong lead placement or blown fuse', () {
+    final wrong = InstrumentInstance(
+      id: InstrumentId('wrong'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+    );
+    final wrongCircuit = _pvWithMeters([wrong], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: wrong.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-neg')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: wrong.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    expect(projection.read(
+        snapshot: engine.evaluate(wrongCircuit), instrument: wrong).status,
+        PhysicalInstrumentStatus.invalidWiring);
+
+    final fused = InstrumentInstance(
+      id: InstrumentId('fused'), kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      fuseRatingA: 1, maximumCurrentA: 10,
+    );
+    final fusedCircuit = _pvWithMeters([fused], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: fused.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: fused.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    expect(projection.read(
+        snapshot: engine.evaluate(fusedCircuit), instrument: fused).status,
+        PhysicalInstrumentStatus.blownFuse);
+  });
+
+  test('PV inverter AC series ammeter models load plus burden', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('pv-ac-series'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'),
+      burdenResistanceOhm: 1.0,
+      maximumCurrentA: 20,
+      fuseRatingA: 20,
+    );
+    final circuit = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+    ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: meter);
+    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+    final rLoad = snapshot.pv.loadResults.single.resistanceOhm;
+    expect(read.result?.reading?.value,
+        closeTo(snapshot.pv.inverterOutputVoltageRmsV / (rLoad + 1.0),
+          1e-6));
+    expect(read.result?.reading?.value,
+        lessThan(snapshot.pv.inverterOutputCurrentRmsA));
+  });
+
+  test('power-limited PV inverter re-solves series AC burden rather than applying a fixed V', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('limited-pv-ac'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'),
+      burdenResistanceOhm: 1.0,
+      maximumCurrentA: 20,
+      fuseRatingA: 20,
+    );
+    final initial = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('amp'), instrumentId: meter.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+        port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+    ]);
+    final circuit = CircuitState(
+      circuitId: initial.circuitId,
+      revision: initial.revision,
+      mode: initial.mode,
+      sources: initial.sources,
+      components: initial.components,
+      connections: initial.connections,
+      instruments: initial.instruments,
+      probes: initial.probes,
+      settings: {...initial.settings, 'irradianceWm2': 200.0},
+    );
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    expect(snapshot.pv.inverterState.name, 'powerLimited');
+    final result = projection.read(snapshot: snapshot, instrument: meter);
+    expect(result.status, PhysicalInstrumentStatus.valid,
+      reason: result.message);
+    final basePower = snapshot.pv.inverterOutputPowerW;
+    final loadResistance = snapshot.pv.loadResults.single.resistanceOhm;
+    final expectedCurrent = math.sqrt(basePower / (loadResistance + 1.0));
+    expect(result.result?.reading?.value, closeTo(expectedCurrent, 1e-6));
+  });
+
+  test('PV DC parallel mesh splits measured current by physical cable resistance', () {
+    final a = InstrumentInstance(id: InstrumentId('dc-mesh'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      burdenResistanceOhm: .05, maximumCurrentA: 30, fuseRatingA: 30);
+    final base = _pvCircuit(loadPowerAt230W: 2000);
+    final circuit = _pvMesh(base, instrument: a, measured: 'dc-pos',
+        primaryResistance: .05, parallelResistance: .10,
+        parallelId: 'dc-pos-extra',
+        parallelFrom: 'pv-pos', parallelTo: 'inv-dc-pos',
+        probes: [
+          ProbeConnection(id: ProbeId('dc-mesh-a'), instrumentId: a.id,
+            port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+          ProbeConnection(id: ProbeId('dc-mesh-com'), instrumentId: a.id,
+            port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+        ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: a);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    final current = measured.result!.reading!.value;
+    // The tested path is 0.05 wire + 0.05 meter, while the bypass is 0.10.
+    // Both paths must carry half of the physical PV DC input current.
+    final voltage = snapshot.pv.pvOperatingVoltageV;
+    final power = snapshot.pv.pvDrawnPowerW;
+    final totalCurrent = (voltage -
+        math.sqrt(voltage * voltage - 4 * .05 * power)) / (.10);
+    expect(current, closeTo(totalCurrent / 2, 1e-5));
+    expect(current, greaterThan(0));
+    expect(current, lessThan(snapshot.pv.pvDrawnCurrentA));
+  });
+
+  test('PV AC meshed conductors with two loads obey Kirchhoff current split', () {
+    final meter = InstrumentInstance(id: InstrumentId('ac-mesh'),
+      kind: InstrumentKind.ammeter, mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'), burdenResistanceOhm: .05,
+      maximumCurrentA: 20, fuseRatingA: 20);
+    final base = _pvCircuit(loadPowerAt230W: 700);
+    final secondLoad = ComponentInstance(
+      id: ComponentId('load-second'), modelType: 'pv_resistive_load',
+      terminals: [
+        Terminal(id: TerminalId('load-second-l'), name: 'L',
+          phase: PhaseTag.l1, role: TerminalRole.line),
+        Terminal(id: TerminalId('load-second-n'), name: 'N',
+          phase: PhaseTag.neutral, role: TerminalRole.neutral),
+      ],
+      parameters: const {'resistanceOhm': 110.0},
+    );
+    final circuit = _pvMesh(base, instrument: meter, measured: 'ac-l',
+      primaryResistance: .05, parallelResistance: .10,
+      parallelId: 'ac-l-extra',
+      parallelFrom: 'inv-l', parallelTo: 'load-l',
+      extraComponents: [secondLoad],
+      extraWires: [
+        Connection(id: ConnectionId('second-l'),
+          fromTerminalId: TerminalId('load-l'),
+          toTerminalId: TerminalId('load-second-l')),
+        Connection(id: ConnectionId('second-n'),
+          fromTerminalId: TerminalId('inv-n'),
+          toTerminalId: TerminalId('load-second-n')),
+      ],
+      probes: [
+        ProbeConnection(id: ProbeId('ac-mesh-a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+        ProbeConnection(id: ProbeId('ac-mesh-com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+      ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: meter);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    final voltage = snapshot.pv.inverterOutputVoltageRmsV;
+    final r1 = snapshot.pv.load(ComponentId('load')).resistanceOhm;
+    final r2 = snapshot.pv.load(ComponentId('load-second')).resistanceOhm;
+    final equivalentLoadR = r1 * r2 / (r1 + r2);
+    final currentTotal = voltage / (equivalentLoadR + .05);
+    // Equal 0.10-ohm parallel paths: 50/50 total outgoing current.
+    expect(measured.result!.reading!.value,
+      closeTo(currentTotal / 2, 1e-4));
+  });
+
+  test('PV ideal bypass carries all current, metered parallel path reads zero', () {
+    final a = InstrumentInstance(id: InstrumentId('dc-bypass'),
+      kind: InstrumentKind.ammeter, mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'), burdenResistanceOhm: .01);
+    final base = _pvCircuit();
+    final circuit = _pvMesh(base, instrument: a, measured: 'dc-pos',
+      primaryResistance: 0, parallelResistance: 0,
+      parallelId: 'dc-ideal-bypass',
+      parallelFrom: 'pv-pos', parallelTo: 'inv-dc-pos',
+      probes: [
+        ProbeConnection(id: ProbeId('a'), instrumentId: a.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+        ProbeConnection(id: ProbeId('com'), instrumentId: a.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+      ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final measured = projection.read(snapshot: snapshot, instrument: a);
+    expect(measured.status, PhysicalInstrumentStatus.valid,
+      reason: measured.message);
+    expect(measured.result!.reading!.value, closeTo(0, 1e-8));
   });
 
   test('PV disconnected voltmeter/ammeter show wiring required, not N/A', () {
@@ -336,5 +608,40 @@ CircuitState _pvCircuit({
       'irradianceWm2': 1000.0,
       'cellTemperatureC': 25.0,
     },
+  );
+}
+
+CircuitState _pvMesh(
+  CircuitState base, {
+  required InstrumentInstance instrument,
+  required String measured,
+  required double primaryResistance,
+  required double parallelResistance,
+  required String parallelId,
+  required String parallelFrom,
+  required String parallelTo,
+  List<ProbeConnection> probes = const [],
+  List<ComponentInstance> extraComponents = const [],
+  List<Connection> extraWires = const [],
+}) {
+  return CircuitState(
+    circuitId: base.circuitId, revision: base.revision, mode: base.mode,
+    sources: base.sources,
+    components: [...base.components, ...extraComponents],
+    connections: [
+      for (final w in base.connections)
+        if (w.id.value == measured)
+          Connection(id: w.id, fromTerminalId: w.fromTerminalId,
+            toTerminalId: w.toTerminalId, phase: w.phase,
+            metadata: {'resistanceOhm': primaryResistance})
+        else w,
+      Connection(id: ConnectionId(parallelId),
+        fromTerminalId: TerminalId(parallelFrom),
+        toTerminalId: TerminalId(parallelTo),
+        metadata: {'resistanceOhm': parallelResistance}),
+      ...extraWires,
+    ],
+    instruments: [instrument], probes: probes,
+    settings: base.settings,
   );
 }

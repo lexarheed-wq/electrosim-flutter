@@ -2,6 +2,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 
 import 'electrosim_runtime_engine.dart';
+import 'pv_series_burden_projection.dart';
 
 enum PhysicalInstrumentStatus {
   valid,
@@ -279,6 +280,7 @@ final class ElectroSimInstrumentProjection {
       message: message,
     );
 
+    final circuit = snapshot.circuit;
     final mode = instrument.mode;
     final bool voltage = mode == InstrumentMode.voltageDc ||
         mode == InstrumentMode.voltageAcRms;
@@ -463,16 +465,66 @@ final class ElectroSimInstrumentProjection {
           ),
         );
       }
-      if (instrument.cutConnectionId == null ||
-          probe(InstrumentPort.amp) == null ||
-          probe(InstrumentPort.common) == null) {
+      final cut = instrument.cutConnectionId;
+      final ampTerminal = probe(InstrumentPort.amp)?.terminalId;
+      final commonTerminal = probe(InstrumentPort.common)?.terminalId;
+      if (cut == null || ampTerminal == null || commonTerminal == null) {
         return invalid(PhysicalInstrumentStatus.invalidWiring,
           'Insert the PV ammeter in series using A and COM.');
       }
-      // The aggregate PV model has no nodal series-burden representation.
-      // Report this limitation; NEVER substitute a guessed bus current.
-      return invalid(PhysicalInstrumentStatus.unsupportedMode,
-        'PV series ammeter requires a burden-aware nodal PV solver.');
+      final connections = circuit.connections.where(
+        (connection) => connection.id == cut && connection.enabled,
+      ).toList();
+      if (connections.length != 1) {
+        return invalid(PhysicalInstrumentStatus.invalidWiring,
+          'The PV wire to be opened is missing or disabled.');
+      }
+      final wire = connections.single;
+      final correctOrientation =
+          (ampTerminal == wire.fromTerminalId &&
+              commonTerminal == wire.toTerminalId) ||
+          (ampTerminal == wire.toTerminalId &&
+              commonTerminal == wire.fromTerminalId);
+      if (!correctOrientation) {
+        return invalid(PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must terminate at opposite ends of the selected cut PV wire.');
+      }
+      final solved = PvSeriesBurdenProjection.solve(
+        snapshot: snapshot,
+        wire: wire,
+        meter: instrument,
+        engine: engine,
+      );
+      if (!solved.valid) {
+        return invalid(PhysicalInstrumentStatus.unavailable,
+          solved.issue ?? 'PV series meter has no physically supported branch.');
+      }
+      final currentA = solved.currentA!;
+      if (currentA > instrument.fuseRatingA) {
+        return invalid(PhysicalInstrumentStatus.blownFuse,
+          'PV series current exceeds the meter fuse rating.');
+      }
+      if (currentA > instrument.maximumCurrentA) {
+        return invalid(PhysicalInstrumentStatus.overRange,
+          'PV series current exceeds the selected ammeter range.');
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: MeasurementResult.valid(
+          kind: mode == InstrumentMode.currentDc
+              ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+          value: currentA,
+          unit: ElectricalUnit.ampere,
+          evidenceIds: [
+            solved.evidence,
+            'wire:${wire.id.value}',
+            'burden-ohm:${instrument.burdenResistanceOhm}',
+            'meter-loss-w:${solved.lossW}',
+            'meter-drop-v:${solved.voltageDropV}',
+          ],
+        ),
+      );
     }
     return invalid(PhysicalInstrumentStatus.unsupportedMode,
       'Selected PV instrument function is not supported.');

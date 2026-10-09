@@ -508,7 +508,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ) =>
       mapEquals(before.elementPositions, after.elementPositions) &&
       mapEquals(before.elementSizes, after.elementSizes) &&
-      mapEquals(before.elementQuarterTurns, after.elementQuarterTurns);
+      mapEquals(before.elementQuarterTurns, after.elementQuarterTurns) &&
+      _sameCabinetGeometry(before.cabinetLayout, after.cabinetLayout);
+
+  bool _sameCabinetGeometry(CabinetLayout a, CabinetLayout b) {
+    if (a.fixtures.length != b.fixtures.length) return false;
+    for (var index = 0; index < a.fixtures.length; index++) {
+      final first = a.fixtures[index];
+      final second = b.fixtures[index];
+      if (first.id != second.id || first.kind != second.kind ||
+          first.bounds != second.bounds) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @override
   void setState(VoidCallback fn) {
@@ -527,6 +541,51 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
       _redoHistory.clear();
     }
+  }
+
+  // P2 cabinet fixtures belong to visual layout, never to electrical
+  // CircuitState. Edits are undoable through the existing history.
+  void _addCabinetFixture(CabinetFixtureKind kind) {
+    if (_blockStudentTpMutation()) return;
+    final size = switch (kind) {
+      CabinetFixtureKind.dinRail => const Size(460, 34),
+      CabinetFixtureKind.wireDuct => const Size(460, 42),
+      CabinetFixtureKind.terminalZone => const Size(260, 58),
+    };
+    final canvasSize = _canvasViewportSize();
+    final center = _viewport.screenToWorld(
+      Offset(canvasSize.width / 2, canvasSize.height / 2),
+    );
+    final dy = switch (kind) {
+      CabinetFixtureKind.dinRail => -110.0,
+      CabinetFixtureKind.wireDuct => 130.0,
+      CabinetFixtureKind.terminalZone => 220.0,
+    };
+    final count = _layout.cabinetLayout.fixtures
+        .where((fixture) => fixture.kind == kind).length;
+    final id = 'cabinet-${kind.name}-${count + 1}';
+    var nextId = id;
+    var ordinal = count + 1;
+    while (_layout.cabinetLayout.fixture(nextId) != null) {
+      nextId = 'cabinet-${kind.name}-${++ordinal}';
+    }
+    final position = center + Offset(0, dy + 58 * count);
+    final fixture = CabinetFixture(
+      id: nextId,
+      kind: kind,
+      bounds: Rect.fromCenter(center: position,
+        width: size.width, height: size.height),
+    );
+    setState(() {
+      _layout = _layout.withCabinetLayout(
+        _layout.cabinetLayout.add(fixture),
+      );
+      _status = switch (kind) {
+        CabinetFixtureKind.dinRail => 'Rail DIN ajouté à la platine',
+        CabinetFixtureKind.wireDuct => 'Goulotte de câblage ajoutée',
+        CabinetFixtureKind.terminalZone => 'Zone de borniers ajoutée',
+      };
+    });
   }
 
   void _undoEdit() {
@@ -841,6 +900,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           ? _deleteSelectedElement
                           : null,
                       onRecenter: _fitCircuitToViewport,
+                      onAddDinRail: _studentTpReadOnly
+                          ? null
+                          : () => _addCabinetFixture(CabinetFixtureKind.dinRail),
+                      onAddWireDuct: _studentTpReadOnly
+                          ? null
+                          : () => _addCabinetFixture(CabinetFixtureKind.wireDuct),
+                      onAddTerminalZone: _studentTpReadOnly
+                          ? null
+                          : () => _addCabinetFixture(CabinetFixtureKind.terminalZone),
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       simulationRunning: _simulation.running,
@@ -3511,6 +3579,9 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onRotateSelected,
     required this.onDeleteSelected,
     required this.onRecenter,
+    this.onAddDinRail,
+    this.onAddWireDuct,
+    this.onAddTerminalZone,
     required this.electricalMode,
     required this.onSelectElectricalMode,
     required this.simulationRunning,
@@ -3536,6 +3607,9 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onRotateSelected;
   final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
+  final VoidCallback? onAddDinRail;
+  final VoidCallback? onAddWireDuct;
+  final VoidCallback? onAddTerminalZone;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
   final bool simulationRunning;
@@ -3864,6 +3938,12 @@ class _WorkspaceTopBar extends StatelessWidget {
           onOpen?.call();
         case _WorkspaceSecondaryAction.recenter:
           onRecenter();
+        case _WorkspaceSecondaryAction.addDinRail:
+          onAddDinRail?.call();
+        case _WorkspaceSecondaryAction.addWireDuct:
+          onAddWireDuct?.call();
+        case _WorkspaceSecondaryAction.addTerminalZone:
+          onAddTerminalZone?.call();
         case _WorkspaceSecondaryAction.resetSimulation:
           onResetSimulation();
       }
@@ -3919,6 +3999,36 @@ class _WorkspaceTopBar extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
+      if (onAddDinRail != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-din-rail'),
+          value: _WorkspaceSecondaryAction.addDinRail,
+          child: ListTile(
+            leading: Icon(Icons.view_stream_outlined),
+            title: Text('Armoire : ajouter un rail DIN'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onAddWireDuct != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-wire-duct'),
+          value: _WorkspaceSecondaryAction.addWireDuct,
+          child: ListTile(
+            leading: Icon(Icons.table_rows_outlined),
+            title: Text('Armoire : ajouter une goulotte'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onAddTerminalZone != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-terminal-zone'),
+          value: _WorkspaceSecondaryAction.addTerminalZone,
+          child: ListTile(
+            leading: Icon(Icons.grid_on_outlined),
+            title: Text('Armoire : zone de borniers'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
       const PopupMenuItem(
         key: Key('workspace-reset-simulation-action'),
         value: _WorkspaceSecondaryAction.resetSimulation,
@@ -3947,6 +4057,9 @@ enum _WorkspaceSecondaryAction {
   save,
   open,
   recenter,
+  addDinRail,
+  addWireDuct,
+  addTerminalZone,
   resetSimulation,
   advanceMinute,
   advanceHour,

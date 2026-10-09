@@ -75,3 +75,53 @@ jobs:
             apps/electrosim/test/goldens/g12rq_actual_widgets_palette_board.png
             apps/electrosim/test/goldens/g5_industrial_off_on_trip.png
           retention-days: 14
+  macos-intel:
+    needs: [runtime-regression, visual-evidence]
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Never silently build a newer branch head than the tested commit.
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Build genuine industrial G5 macOS x86_64 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(pwd)"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 tools/premium_rcd2p/decode_source.py
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) root="${output#F17_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR $output"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test test/g12rq_rcd_test_button_runtime_test.dart
+          flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$bin"
+          result="$base/g5-industrial-macos"
+          mkdir -p "$result"
+          file "$bin" | tee "$result/ARCH.txt"
+          grep -qi x86_64 "$result/ARCH.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$result/SOURCE_SHA.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$result/ElectroSim_G5_Industrial_macOS_Intel.zip"
+          (cd "$result" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G5-Industrial-macOS-Intel
+          path: g5-industrial-macos/
+          retention-days: 14
+          if-no-files-found: error

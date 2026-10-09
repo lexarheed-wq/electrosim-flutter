@@ -90,6 +90,7 @@ abstract final class PvNodalWireSolver {
       final receiver = models.single;
       final a = _port(receiver.terminals, PhaseTag.l1);
       final b = _port(receiver.terminals, PhaseTag.neutral);
+      if (a == null && b == null) continue; // DC loads belong to another island.
       if (a == null || b == null ||
           !network.addResistance(a, b, result.resistanceOhm)) return null;
     }
@@ -127,8 +128,12 @@ abstract final class PvNodalWireSolver {
     final inverters = circuit.components.where(
       (c) => c.modelType == 'pv_inverter',
     ).toList();
-    if (arrays.length != 1 || inverters.length != 1 ||
-        pv.controllerPresent || pv.batteryPresent) return null;
+    if (pv.controllerPresent || pv.batteryPresent) {
+      return _solveStorageDc(
+        circuit, pv, cutWire, burdenOhm, terminals,
+      );
+    }
+    if (arrays.length != 1 || inverters.length != 1) return null;
 
     final sourceP = _port(arrays.single.terminals, PhaseTag.dcPositive);
     final sourceN = _port(arrays.single.terminals, PhaseTag.dcNegative);
@@ -162,6 +167,101 @@ abstract final class PvNodalWireSolver {
         current > pv.pvAvailableCurrentA + 1e-6) return null;
     return network.reading(solution, current, cutWire, burdenOhm,
       'pv-nodal-dc-power');
+  }
+
+  /// KCL current distribution for converter/storage PV topologies.
+  /// Port currents are derived from the PV solver's energy balance, not
+  /// inferred from a nearby conductor. A port-island with unmatched current
+  /// or an excessively large meter loss is rejected instead of faked.
+  static PvNodalWireReading? _solveStorageDc(
+    CircuitState circuit, PvSolveResult pv,
+    Connection cutWire, double burdenOhm,
+    Map<TerminalId, Terminal> terminals,
+  ) {
+    if (!pv.batteryPresent || !pv.controllerPresent ||
+        pv.batteryVoltageV <= 0 || pv.pvOperatingVoltageV <= 0) return null;
+    final arrays = circuit.sources.where(
+      (s) => s.enabled && s.modelType == 'pv_array',
+    ).toList();
+    final controllers = circuit.components.where(
+      (c) => c.modelType == 'pv_controller',
+    ).toList();
+    final batteries = circuit.components.where(
+      (c) => c.modelType == 'pv_battery',
+    ).toList();
+    final inverters = circuit.components.where(
+      (c) => c.modelType == 'pv_inverter',
+    ).toList();
+    if (arrays.length != 1 || controllers.length != 1 ||
+        batteries.length != 1 || inverters.length > 1) return null;
+    final circuitNetwork = _WireNetwork(
+      circuit, cutWire, burdenOhm, terminals,
+      const {PhaseTag.dcPositive, PhaseTag.dcNegative},
+    );
+    if (!circuitNetwork.valid) return null;
+    final currents = <TerminalId, double>{};
+    void pair(TerminalId? p, TerminalId? n, double amps) {
+      if (p == null || n == null) return;
+      currents.update(p, (v) => v + amps, ifAbsent: () => amps);
+      currents.update(n, (v) => v - amps, ifAbsent: () => -amps);
+    }
+    final source = arrays.single;
+    final ip = pv.pvDrawnCurrentA;
+    pair(_port(source.terminals, PhaseTag.dcPositive),
+        _port(source.terminals, PhaseTag.dcNegative), ip);
+    final controller = controllers.single;
+    TerminalId? cPort(String group, PhaseTag phase) {
+      final found = controller.terminals.where((t) =>
+          t.phase == phase && t.name.toUpperCase().startsWith(group)).toList();
+      return found.length == 1 ? found.single.id : null;
+    }
+    final cp = cPort('PV', PhaseTag.dcPositive);
+    final cn = cPort('PV', PhaseTag.dcNegative);
+    final bp = cPort('BAT', PhaseTag.dcPositive);
+    final bn = cPort('BAT', PhaseTag.dcNegative);
+    if ([cp, cn, bp, bn].any((x) => x == null)) return null;
+    pair(cp, cn, -ip);
+    final controllerBusPower =
+        pv.pvDrawnPowerW - pv.controllerConversionLossW;
+    pair(bp, bn, controllerBusPower / pv.batteryVoltageV);
+    final battery = batteries.single;
+    pair(_port(battery.terminals, PhaseTag.dcPositive),
+        _port(battery.terminals, PhaseTag.dcNegative),
+        pv.batteryPowerW / pv.batteryVoltageV);
+    if (inverters.isNotEmpty) {
+      final inverter = inverters.single;
+      if (pv.inverterEfficiency <= 0 &&
+          pv.inverterOutputPowerW > 1e-8) return null;
+      final inverterPower = pv.inverterEfficiency > 0
+          ? pv.inverterOutputPowerW / pv.inverterEfficiency : 0.0;
+      pair(_port(inverter.terminals, PhaseTag.dcPositive),
+          _port(inverter.terminals, PhaseTag.dcNegative),
+          -inverterPower / pv.batteryVoltageV);
+    }
+    for (final load in pv.loadResults) {
+      final models = circuit.components.where(
+        (c) => c.id == load.componentId,
+      ).toList();
+      if (models.length != 1) return null;
+      final component = models.single;
+      final p = _port(component.terminals, PhaseTag.dcPositive);
+      final n = _port(component.terminals, PhaseTag.dcNegative);
+      if (p == null && n == null) continue;
+      if (p == null || n == null) return null;
+      pair(p, n, -load.currentRmsA);
+    }
+    final solved = circuitNetwork.currentSolve(currents);
+    if (solved == null) return null;
+    final reading = circuitNetwork.reading(
+        solved, 1.0, cutWire, burdenOhm, 'pv-nodal-storage-kcl');
+    if (reading == null) return null;
+    // This is a fixed operating-point projection of aggregate PV power.
+    // Significant additional meter power would alter the controller/battery
+    // operating point and must not be displayed as an exact measurement.
+    final energyScale = math.max(
+      1.0, pv.pvDrawnPowerW + math.max(0, pv.batteryPowerW));
+    if (reading.lossW > energyScale * 0.02) return null;
+    return reading;
   }
 
   static TerminalId? _port(List<Terminal> terminals, PhaseTag phase) {

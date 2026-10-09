@@ -336,7 +336,7 @@ class _Scene {
       if (p.view(face.normal).z <= 0) continue;
       final shape = p.polygon(face.points);
       final light =
-          .76 + .24 * math.max(0, face.normal.dot(const _V(-.65, -.8, 1).unit));
+          .72 + .27 * math.max(0, face.normal.dot(const _V(-.65, -.8, 1).unit));
       final bounds = shape.getBounds();
       if (bounds.isEmpty) continue;
       canvas.drawPath(
@@ -346,9 +346,11 @@ class _Scene {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
+              shade(face.color, light + .10),
               shade(face.color, light + .035),
-              shade(face.color, light - .035),
+              shade(face.color, light - .085),
             ],
+            stops: const [0, .35, 1],
           ).createShader(bounds),
       );
       canvas.drawPath(
@@ -470,11 +472,13 @@ class _Scene {
     Color color = const Color(0xFF34403B),
     FontWeight weight = FontWeight.w500,
     bool center = false,
+    _V Function(_V)? transform,
   }) {
     if (value.isEmpty) return;
-    final a = p.project(_V(x, y, z));
-    final b = p.project(_V(x + 1, y, z));
-    final c = p.project(_V(x, y + 1, z));
+    _V map(_V point) => transform == null ? point : transform(point);
+    final a = p.project(map(_V(x, y, z)));
+    final b = p.project(map(_V(x + 1, y, z)));
+    final c = p.project(map(_V(x, y + 1, z)));
     canvas.save();
     canvas.translate(a.dx, a.dy);
     canvas.transform(
@@ -600,7 +604,8 @@ class _DisjoncteurPainter extends CustomPainter {
           const Color(0xFFFFD51B), radius: .65, bevel: .28);
     }
     scene.box(-12, 43.5, 7, 2.2, -22, 9, verrou);
-    scene.box(0, 0, 36, 85, 34, 68, _Scene.blanc, radius: 1, bevel: .65);
+    scene.box(0, 0, 36, 85, 34, 68, _Scene.blanc,
+        radius: 1.8, bevel: .95);
     // Right side shell relief is drawn on the side plane with real occlusion:
     // panel seams, mounting sockets and stepped injection-moulded shoulders.
     // None of this touches front-face hit regions or electrical geometry.
@@ -688,6 +693,10 @@ class _DisjoncteurPainter extends CustomPainter {
     for (final borne in _bornes.values) {
       scene.screw(borne);
     }
+    scene.line(const _V(0, -40.8, 35.66),
+        const _V(0, -20.0, 35.66), const Color(0xFFBEC4BF), .15);
+    scene.line(const _V(0, 28.1, 35.66),
+        const _V(0, 41.7, 35.66), const Color(0xFFBEC4BF), .15);
     scene.text('N', -13.2, -37.2, 35.5, 2.8, weight: FontWeight.w700);
     scene.text('N', -13.2, 40.4, 35.5, 2.8, weight: FontWeight.w700);
     scene.text('1', 9, -37.2, 35.5, 2.5);
@@ -870,7 +879,8 @@ class _DisjoncteurPainter extends CustomPainter {
         widget.etat == EtatDisjoncteur.ferme ? 'I · ON'
             : widget.etat == EtatDisjoncteur.declenche ? 'TRIP' : 'O · OFF',
         x - 4.0, 14.5, 49.0, 1.55,
-        color: const Color(0xFFF8FCF8), weight: FontWeight.w700);
+        color: const Color(0xFFF8FCF8), weight: FontWeight.w700,
+        transform: rotate);
     }
     final voyant = switch (widget.etat) {
       EtatDisjoncteur.declenche => const Color(0xFFE2A642),

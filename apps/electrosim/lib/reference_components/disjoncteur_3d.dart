@@ -323,8 +323,8 @@ class _Scene {
   final _Projection p;
   static const blanc = Color(0xFFFAFBF7);
   static const gris = Color(0xFFC6CDC8);
-  static const graphite = Color(0xFF242A2D);
-  static const accent = Color(0xFF295C54);
+  static const graphite = Color(0xFF25292D);
+  static const accent = Color(0xFF098D43);
   Color shade(Color c, double factor) => Color.fromARGB(
     255,
     (c.r * 255 * factor).round().clamp(0, 255).toInt(),
@@ -594,9 +594,11 @@ class _DisjoncteurPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
     const verrou = Color(0xFFE4C231);
-    scene.box(-13, -44, 2.4, 2.4, -10, 17, verrou);
-    scene.box(-2, -44, 2.4, 2.4, -10, 17, verrou);
-    scene.box(-7.5, -44, 13.4, 2.4, -24, 3, verrou);
+    for (final x in [-8.3, 8.3]) {
+      scene.box(x, -44.5, 4.3, 3.8, 26.4, 9, verrou, radius: .75, bevel: .32);
+      scene.box(x, -45.8, 2.2, 1.4, 27.5, 4.5,
+          const Color(0xFFF9DE3C), radius: .3);
+    }
     scene.box(-12, 43.5, 7, 2.2, -22, 9, verrou);
     scene.box(0, 0, 36, 85, 34, 68, _Scene.blanc, radius: 1, bevel: .65);
     for (final y in [-32.0, -20.0, -5.0, 10.0, 25.0, 36.0]) {
@@ -678,10 +680,10 @@ class _DisjoncteurPainter extends CustomPainter {
       2.15,
       weight: FontWeight.w700,
     );
-    scene.text('2P', -14, -4.6, 40.4, 2.55, weight: FontWeight.w700);
+    scene.text('Type : 2P', -14, -4.6, 40.4, 2.35, weight: FontWeight.w600);
     if (widget.calibreA != null) {
       scene.text(
-        '${_nombre(widget.calibreA)} A',
+        'Calibre : ${_nombre(widget.calibreA)} A',
         -14,
         -.4,
         40.4,
@@ -690,7 +692,7 @@ class _DisjoncteurPainter extends CustomPainter {
       );
     }
     if (widget.estDifferentiel && widget.sensibiliteMA != null) {
-      scene.text('${_nombre(widget.sensibiliteMA)} mA', -14, 3.0, 40.4, 2.35);
+      scene.text('Sensibilité : ${_nombre(widget.sensibiliteMA)} mA', -14, 3.0, 40.4, 2.2);
     }
     if (widget.estDifferentiel) {
       scene.box(
@@ -700,7 +702,7 @@ class _DisjoncteurPainter extends CustomPainter {
         6.4,
         40.7,
         1,
-        const Color(0xFFBBC5C0),
+        const Color(0xFF555B61),
         radius: .35,
       );
       scene.box(
@@ -710,7 +712,7 @@ class _DisjoncteurPainter extends CustomPainter {
         4.9,
         testEnfonce ? 40.8 : 41.5,
         .9,
-        _Scene.blanc,
+        const Color(0xFF9BA0A6),
         radius: .25,
       );
       scene.text(
@@ -723,6 +725,8 @@ class _DisjoncteurPainter extends CustomPainter {
         weight: FontWeight.w700,
         center: true,
       );
+      scene.text('Test', 7.8, -5.3, 40.55, 1.8,
+          color: _Scene.graphite, weight: FontWeight.w500);
     }
     scene.line(
       const _V(-16, 7.1, 40.1),
@@ -786,27 +790,29 @@ class _DisjoncteurPainter extends CustomPainter {
       );
     }
 
+    // Independent matte-black rockers linked by one mechanical bridge.
     for (final x in [-8.3, 8.3]) {
-      scene.box(
-        x,
-        19.8,
-        10.7,
-        17,
-        45.8,
-        4.5,
-        _Scene.blanc,
-        radius: 2.8,
-        bevel: .6,
-        transform: rotate,
-      );
-      for (final y in [13.8, 25.2]) {
-        scene.line(
-          rotate(_V(x - 4.1, y, 45.9)),
-          rotate(_V(x + 4.1, y, 45.9)),
-          const Color(0xFFACB8AF),
-          .18,
-        );
-      }
+      scene.box(x, 19.8, 10.8, 17.8, 46.6, 5.2,
+          const Color(0xFF1C2125), radius: 2.25, bevel: .75,
+          transform: rotate);
+      scene.box(x, 14.5, 9.3, 5.4, 48.25, .9,
+          widget.etat == EtatDisjoncteur.declenche
+              ? const Color(0xFFC08A25)
+              : widget.etat == EtatDisjoncteur.ferme
+                  ? const Color(0xFFBA3F37)
+                  : const Color(0xFF08A15A),
+          radius: .4, bevel: .2, transform: rotate);
+      scene.line(rotate(_V(x - 3.7, 21.8, 47.0)),
+          rotate(_V(x + 3.7, 21.8, 47.0)),
+          const Color(0xFF343C40), .28);
+      scene.line(rotate(_V(x - 3.7, 24.2, 47.0)),
+          rotate(_V(x + 3.7, 24.2, 47.0)),
+          const Color(0xFF343C40), .22);
+      scene.text(
+        widget.etat == EtatDisjoncteur.ferme ? 'I · ON'
+            : widget.etat == EtatDisjoncteur.declenche ? 'TRIP' : 'O · OFF',
+        x - 4.0, 14.5, 49.0, 1.55,
+        color: const Color(0xFFF8FCF8), weight: FontWeight.w700);
     }
     final voyant = switch (widget.etat) {
       EtatDisjoncteur.declenche => const Color(0xFFE2A642),
@@ -828,19 +834,19 @@ class _DisjoncteurPainter extends CustomPainter {
     scene.box(
       0,
       26.1,
-      28.7,
+      30.2,
+      2.5,
+      48.4,
       2.3,
-      47.1,
-      2.3,
-      const Color(0xFF888F88),
+      const Color(0xFF454A4F),
       radius: .35,
       transform: rotate,
     );
     scene.box(
-      -4.3,
+      0,
       26,
-      21,
-      6.1,
+      30,
+      6.3,
       50,
       4.8,
       _Scene.graphite,
@@ -850,8 +856,8 @@ class _DisjoncteurPainter extends CustomPainter {
     );
     for (final y in [24.3, 25.1, 25.9, 26.7, 27.5]) {
       scene.line(
-        rotate(_V(-13.7, y, 50.06)),
-        rotate(_V(5.1, y, 50.06)),
+        rotate(_V(-14.0, y, 50.06)),
+        rotate(_V(14.0, y, 50.06)),
         const Color(0xFF4C5550),
         .12,
       );

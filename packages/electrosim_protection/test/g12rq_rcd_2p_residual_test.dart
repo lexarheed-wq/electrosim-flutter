@@ -14,7 +14,12 @@ void main() {
     expect(c.branches.map((e) => e.id), <String>['power:N', 'power:L']);
     expect(c.branches.map((e) => e.fromTerminalIndex), <int>[0, 1]);
     expect(c.branches.map((e) => e.toTerminalIndex), <int>[2, 3]);
-    expect(CoreComponentModelContracts.registry.resolve('breaker_ac1')!.terminalCount, 2);
+    expect(
+      CoreComponentModelContracts.registry
+          .resolve('breaker_ac1')!
+          .terminalCount,
+      2,
+    );
   });
 
   test('healthy 5 A L-N circuit has zero residual and stays engaged', () {
@@ -41,8 +46,10 @@ void main() {
     );
     expect(t0.result.isSolved, isTrue);
     expect(t0.state.isTripped(ComponentId('rcd')), isFalse);
-    expect(t0.state[ComponentId('rcd')]!.lastObservedCurrentA,
-        greaterThan(.03));
+    expect(
+      t0.state[ComponentId('rcd')]!.lastObservedCurrentA,
+      greaterThan(.03),
+    );
     final t1 = coordinator.advanceAc1(
       circuit: circuit,
       topology: topology.compile(circuit),
@@ -50,15 +57,23 @@ void main() {
       previous: t0.state,
     );
     expect(t1.state.isTripped(ComponentId('rcd')), isTrue);
-    expect(t1.state[ComponentId('rcd')]!.tripCause,
-        ProtectionTripCause.residualCurrent);
+    expect(
+      t1.state[ComponentId('rcd')]!.tripCause,
+      ProtectionTripCause.residualCurrent,
+    );
     expect(t1.result.isSolved, isTrue);
-    expect(t1.result.branch('component:rcd:power:N').current!.magnitude,
-        closeTo(0, 1e-10));
-    expect(t1.result.branch('component:rcd:power:L').current!.magnitude,
-        closeTo(0, 1e-10));
-    expect(t1.state.reset(ComponentId('rcd')).isTripped(ComponentId('rcd')),
-        isFalse);
+    expect(
+      t1.result.branch('component:rcd:power:N').current!.magnitude,
+      closeTo(0, 1e-10),
+    );
+    expect(
+      t1.result.branch('component:rcd:power:L').current!.magnitude,
+      closeTo(0, 1e-10),
+    );
+    expect(
+      t1.state.reset(ComponentId('rcd')).isTripped(ComponentId('rcd')),
+      isFalse,
+    );
   });
 }
 
@@ -66,7 +81,8 @@ Terminal _terminal(String id, String name, PhaseTag phase) =>
     Terminal(id: TerminalId(id), name: name, phase: phase);
 
 Connection _wire(String id, String a, String b) => Connection(
-  id: ConnectionId(id), fromTerminalId: TerminalId(a),
+  id: ConnectionId(id),
+  fromTerminalId: TerminalId(a),
   toTerminalId: TerminalId(b),
 );
 

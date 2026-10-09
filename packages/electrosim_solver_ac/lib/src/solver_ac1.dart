@@ -444,41 +444,55 @@ _CompiledAc1Model _compileModel(
     // collapse the neutral and line into one solver branch.
     if (component.modelType == 'rcd_2p_ac1') {
       final double? rated = _positiveParameter(
-        component.parameters, ProtectionRating.ratedCurrentKey);
+        component.parameters,
+        ProtectionRating.ratedCurrentKey,
+      );
       final double? sensitivity = _positiveParameter(
-        component.parameters, ComponentParameterKeys.residualTripCurrentA);
+        component.parameters,
+        ComponentParameterKeys.residualTripCurrentA,
+      );
       final bool validControls =
           (component.controlState['closed'] == null ||
               component.controlState['closed'] is bool) &&
           (component.controlState['tripped'] == null ||
               component.controlState['tripped'] is bool);
-      if (topologyBranches.length != 2 || rated == null ||
-          sensitivity == null || !validControls) {
-        diagnostics.add(Ac1SolverDiagnostic(
-          code: Ac1DiagnosticCode.invalidParameter,
-          severity: Ac1DiagnosticSeverity.error,
-          message: 'RCCB 2P requires two poles, ratedCurrentA > 0, '
-              'residualTripCurrentA > 0 and boolean control flags.',
-          componentId: component.id,
-        ));
+      if (topologyBranches.length != 2 ||
+          rated == null ||
+          sensitivity == null ||
+          !validControls) {
+        diagnostics.add(
+          Ac1SolverDiagnostic(
+            code: Ac1DiagnosticCode.invalidParameter,
+            severity: Ac1DiagnosticSeverity.error,
+            message:
+                'RCCB 2P requires two poles, ratedCurrentA > 0, '
+                'residualTripCurrentA > 0 and boolean control flags.',
+            componentId: component.id,
+          ),
+        );
         continue;
       }
-      final bool closed = component.controlState['closed'] != false &&
+      final bool closed =
+          component.controlState['closed'] != false &&
           component.controlState['tripped'] != true &&
           component.condition == ComponentCondition.normal;
       for (final TopologyBranch branch in topologyBranches) {
-        elements.add(_Ac1Element(
-          id: 'component:${component.id.value}:${branch.branchId}',
-          modelType: component.modelType,
-          kind: closed ? _Ac1ElementKind.idealVoltage :
-              _Ac1ElementKind.impedance,
-          branchKind: closed ? Ac1BranchKind.idealProtection :
-              Ac1BranchKind.openCircuit,
-          fromNodeId: branch.fromNodeId,
-          toNodeId: branch.toNodeId,
-          value: closed ? AcComplex.zero : const AcComplex(1e300, 0),
-          isOpen: !closed,
-        ));
+        elements.add(
+          _Ac1Element(
+            id: 'component:${component.id.value}:${branch.branchId}',
+            modelType: component.modelType,
+            kind: closed
+                ? _Ac1ElementKind.idealVoltage
+                : _Ac1ElementKind.impedance,
+            branchKind: closed
+                ? Ac1BranchKind.idealProtection
+                : Ac1BranchKind.openCircuit,
+            fromNodeId: branch.fromNodeId,
+            toNodeId: branch.toNodeId,
+            value: closed ? AcComplex.zero : const AcComplex(1e300, 0),
+            isOpen: !closed,
+          ),
+        );
       }
       continue;
     }

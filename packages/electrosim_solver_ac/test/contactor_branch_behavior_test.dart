@@ -227,7 +227,7 @@ void main() {
       expect(noActuatedResult.isSolved, isTrue);
       expect(
         noActuatedResult.branch('component:r1').current!.magnitude,
-        closeTo(5.0, 1e-8),
+        closeTo(230.0 / (46.0 + 0.001), 1e-8),
       );
 
       final CircuitState ncReleased = _ac3AuxCircuit(
@@ -241,7 +241,7 @@ void main() {
       expect(ncReleasedResult.isSolved, isTrue);
       expect(
         ncReleasedResult.branch('component:r1').current!.magnitude,
-        closeTo(5.0, 1e-8),
+        closeTo(230.0 / (46.0 + 0.001), 1e-8),
       );
 
       final CircuitState ncActuated = _ac3AuxCircuit(

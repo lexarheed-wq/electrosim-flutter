@@ -171,7 +171,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Simulates the RCD internal test resistor. Unlike opening the handle, this
+  /// Models the RCD internal test current from the solved input voltage.\n  /// Unlike opening the handle, this
   /// updates the authoritative protection state and re-solves both poles.
   /// Returns false if the device is not closed or AC input is not energised.
   bool testResidualDevice(ComponentId componentId) {
@@ -212,6 +212,14 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     final sensitivity = threshold is num && threshold > 0
         ? threshold.toDouble()
         : 0.03;
+    // The internal test path is calibrated to approximately 5 IΔn at
+    // nominal 230 V. Use the actual solved L-N supply voltage; do not
+    // fabricate a fixed residual current independent of the supply.
+    final testResistanceOhm = 230.0 / (5.0 * sensitivity);
+    final testCurrentA = (lineV - neutralV).magnitude / testResistanceOhm;
+    if (!testCurrentA.isFinite || testCurrentA < sensitivity) {
+      return false;
+    }
     final tested = ProtectionRuntimeState(
       devices: <ComponentId, ProtectionDeviceState>{
         ...previous.devices,
@@ -220,7 +228,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
           exposure: const ProtectionExposureState.zero(),
           tripped: true,
           tripCause: ProtectionTripCause.residualCurrent,
-          lastObservedCurrentA: sensitivity * 5,
+          lastObservedCurrentA: testCurrentA,
         ),
       },
     );

@@ -37,7 +37,7 @@ void main() {
     final t0 = coordinator.advanceAc1(
       circuit: circuit,
       topology: topology.compile(circuit),
-      elapsed: const Duration(milliseconds: 100),
+      elapsed: const Duration(milliseconds: 10),
     );
     expect(t0.result.isSolved, isTrue);
     expect(t0.state.isTripped(ComponentId('rcd')), isFalse);
@@ -46,7 +46,7 @@ void main() {
     final t1 = coordinator.advanceAc1(
       circuit: circuit,
       topology: topology.compile(circuit),
-      elapsed: const Duration(milliseconds: 300),
+      elapsed: const Duration(milliseconds: 40),
       previous: t0.state,
     );
     expect(t1.state.isTripped(ComponentId('rcd')), isTrue);

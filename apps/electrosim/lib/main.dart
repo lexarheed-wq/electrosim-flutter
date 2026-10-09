@@ -635,6 +635,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       bounds: Rect.fromCenter(center: position,
         width: size.width, height: size.height),
     );
+    if (!_cabinetFixtureValid(fixture)) {
+      _setStatus('Emplacement occupé : déplacez les autres équipements '
+          'avant d’ajouter cet élément d’armoire.');
+      return;
+    }
     setState(() {
       _layout = _layout.withCabinetLayout(
         _layout.cabinetLayout.add(fixture),
@@ -798,10 +803,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       if (other.id == fixture.id || !fixture.bounds.overlaps(other.bounds)) {
         continue;
       }
-      if (other.kind != CabinetFixtureKind.dinRail &&
-          fixture.kind != CabinetFixtureKind.dinRail) {
-        return false;
-      }
+      // Cabinet furniture (rail/duct/terminal zone) cannot silently
+      // overlap other furniture. A rail may, however, sit behind a device.
+      return false;
     }
     if (fixture.kind != CabinetFixtureKind.dinRail) {
       for (final rect in _cabinetDeviceRects().values) {

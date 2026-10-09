@@ -32,6 +32,7 @@ abstract final class PvSeriesBurdenProjection {
     required ElectroSimRuntimeSnapshot snapshot,
     required Connection wire,
     required InstrumentInstance meter,
+    ElectroSimRuntimeEngine engine = const ElectroSimRuntimeEngine(),
   }) {
     final pv = snapshot.pvResult;
     if (pv == null || !pv.isSolved) {
@@ -136,21 +137,63 @@ abstract final class PvSeriesBurdenProjection {
           if (!_touches(wire, terminal.id) || !singleWire(terminal.id)) {
             continue;
           }
-          if (pv.loadResults.length != 1) {
+          final receiverTerminal = wire.fromTerminalId == terminal.id
+              ? wire.toTerminalId : wire.fromTerminalId;
+          final receivers = circuit.components.where((c) =>
+              c.terminals.any((t) => t.id == receiverTerminal) &&
+              pv.loadResults.any((load) => load.componentId == c.id)).toList();
+          if (receivers.length != 1) {
             return const PvSeriesBurdenResult(
-              issue: 'PV AC series ammeter requires an unambiguous single load.',
+              issue: 'PV AC series meter must feed one physically '
+                  'identified resistive receiver.',
             );
           }
-          final load = pv.loadResults.single;
+          final receiver = receivers.single;
+          final load = pv.load(receiver.id);
           if (!(load.resistanceOhm.isFinite && load.resistanceOhm > 0)) {
             return const PvSeriesBurdenResult(
               issue: 'PV AC receiver impedance is unavailable.',
             );
           }
-          final v = pv.inverterOutputVoltageRmsV;
-          final i = v / (load.resistanceOhm + burdenOhm);
-          return _result(i, burdenOhm,
-              'pv-inverter-ac:${inverter.id.value}');
+          final withBurden = ComponentInstance(
+            id: receiver.id,
+            modelType: receiver.modelType,
+            terminals: receiver.terminals,
+            condition: receiver.condition,
+            controlState: receiver.controlState,
+            parameters: {
+              ...receiver.parameters,
+              'resistanceOhm': load.resistanceOhm + burdenOhm,
+            },
+          );
+          // Re-evaluate the actual PV solver, including any inverter power
+          // limitation, with the meter burden added to the load resistance.
+          // The authored circuit is untouched, and inverter output power,
+          // voltage and current are recomputed instead of guessed.
+          final loaded = CircuitState(
+            circuitId: circuit.circuitId,
+            revision: circuit.revision,
+            mode: circuit.mode,
+            sources: circuit.sources,
+            components: [
+              for (final c in circuit.components)
+                if (c.id == receiver.id) withBurden else c,
+            ],
+            connections: circuit.connections,
+            instruments: circuit.instruments,
+            probes: circuit.probes,
+            settings: circuit.settings,
+            metadata: circuit.metadata,
+          );
+          final solved = engine.evaluate(loaded);
+          if (solved.pvResult == null || !solved.pvResult!.isSolved) {
+            return const PvSeriesBurdenResult(
+              issue: 'PV inverter output with ammeter burden is unsolved.',
+            );
+          }
+          final updated = solved.pvResult!.load(receiver.id);
+          return _result(updated.currentRmsA.abs(), burdenOhm,
+              'pv-inverter-ac:${inverter.id.value}:load:${receiver.id.value}');
         }
       }
     }

@@ -18,9 +18,7 @@ abstract final class PremiumRcd2pTerminalGeometry {
     final bounds = <Offset>[
       for (final x in [-18.5, 18.5])
         for (final y in [-43.0, 43.0])
-          for (final z in [-34.0, 36.0]) raw(x, y, z),
-      for (final x in [-17.0, 17.0])
-        for (final y in [4.0, 33.0]) raw(x, y, 55.0),
+          for (final z in [-34.0, 56.0]) raw(x, y, z),
       raw(-15, -46, -28),
       raw(0, -46, -10),
     ];

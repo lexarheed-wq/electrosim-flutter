@@ -273,7 +273,9 @@ final class CircuitScenePainter extends CustomPainter {
       );
       final bool selected = selectedElementId == instrument.id.value;
       final RRect caseShape = RRect.fromRectAndRadius(
-        rect, Radius.circular(12 * viewport.scale));
+        rect,
+        Radius.circular(12 * viewport.scale),
+      );
       canvas.drawRRect(caseShape, Paint()..color = const Color(0xFF283748));
       canvas.drawRRect(
         caseShape,
@@ -292,7 +294,8 @@ final class CircuitScenePainter extends CustomPainter {
         RRect.fromRectAndRadius(display, Radius.circular(3 * viewport.scale)),
         Paint()..color = const Color(0xFFD5E5D6),
       );
-      final bool current = instrument.kind == InstrumentKind.ammeter ||
+      final bool current =
+          instrument.kind == InstrumentKind.ammeter ||
           instrument.mode == InstrumentMode.currentDc ||
           instrument.mode == InstrumentMode.currentAcRms;
       final String title = current ? 'A' : 'V';
@@ -308,18 +311,25 @@ final class CircuitScenePainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout(maxWidth: display.width);
-      label.paint(canvas, Offset(
-        display.center.dx - label.width / 2,
-        display.center.dy - label.height / 2,
-      ));
+      label.paint(
+        canvas,
+        Offset(
+          display.center.dx - label.width / 2,
+          display.center.dy - label.height / 2,
+        ),
+      );
       final double y = rect.bottom - rect.height * 0.20;
       final double radius = (4.5 * viewport.scale).clamp(2, 9).toDouble();
       canvas.drawCircle(
-        Offset(rect.left + rect.width * 0.28, y), radius,
-        Paint()..color = const Color(0xFFD12B3C));
+        Offset(rect.left + rect.width * 0.28, y),
+        radius,
+        Paint()..color = const Color(0xFFD12B3C),
+      );
       canvas.drawCircle(
-        Offset(rect.left + rect.width * 0.72, y), radius,
-        Paint()..color = const Color(0xFF15202D));
+        Offset(rect.left + rect.width * 0.72, y),
+        radius,
+        Paint()..color = const Color(0xFF15202D),
+      );
     }
   }
 

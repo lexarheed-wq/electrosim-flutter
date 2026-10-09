@@ -121,8 +121,11 @@ final class ElectroSimLayoutPersistence {
         final id = fixture['id'];
         final kind = fixture['kind'];
         final rawBounds = fixture['bounds'];
-        if (id is! String || id.trim().isEmpty || kind is! String ||
-            rawBounds is! List || rawBounds.length != 4 ||
+        if (id is! String ||
+            id.trim().isEmpty ||
+            kind is! String ||
+            rawBounds is! List ||
+            rawBounds.length != 4 ||
             rawBounds.any((value) => value is! num)) {
           throw const FormatException('Malformed cabinet fixture.');
         }
@@ -130,20 +133,20 @@ final class ElectroSimLayoutPersistence {
         if (values.any((v) => !v.isFinite)) {
           throw const FormatException('Non-finite cabinet geometry.');
         }
-        final type = CabinetFixtureKind.values.where(
-          (v) => v.name == kind,
-        ).toList();
+        final type = CabinetFixtureKind.values
+            .where((v) => v.name == kind)
+            .toList();
         if (type.length != 1) {
           throw FormatException('Unknown cabinet fixture type: $kind.');
         }
         try {
-          fixtures.add(CabinetFixture(
-            id: id,
-            kind: type.single,
-            bounds: Rect.fromLTWH(
-              values[0], values[1], values[2], values[3],
+          fixtures.add(
+            CabinetFixture(
+              id: id,
+              kind: type.single,
+              bounds: Rect.fromLTWH(values[0], values[1], values[2], values[3]),
             ),
-          ));
+          );
         } on ArgumentError catch (error) {
           throw FormatException('Invalid cabinet fixture $id: $error');
         }

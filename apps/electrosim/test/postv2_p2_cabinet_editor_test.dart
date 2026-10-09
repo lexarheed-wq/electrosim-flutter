@@ -29,8 +29,9 @@ Future<void> _prepare(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('P2 user drags, resizes and deletes a physical DIN rail',
-      (tester) async {
+  testWidgets('P2 user drags, resizes and deletes a physical DIN rail', (
+    tester,
+  ) async {
     await _prepare(tester);
     final before = _canvas(tester).circuit;
     await _menu(tester, 'workspace-add-din-rail');
@@ -56,8 +57,9 @@ void main() {
     expect(_canvas(tester).circuit, before);
   });
 
-  testWidgets('P2 placement DIN assisté activates via workspace More menu',
-      (tester) async {
+  testWidgets('P2 placement DIN assisté activates via workspace More menu', (
+    tester,
+  ) async {
     await _prepare(tester);
     await _menu(tester, 'workspace-add-din-rail');
     await _menu(tester, 'workspace-toggle-din-snap');
@@ -71,12 +73,15 @@ void main() {
     expect(find.text('Placement DIN assisté : désactivé'), findsOneWidget);
   });
 
-  testWidgets('P2 wiring route remains available without source or load',
-      (tester) async {
+  testWidgets('P2 wiring route remains available without source or load', (
+    tester,
+  ) async {
     await _prepare(tester);
     await _menu(tester, 'workspace-add-wire-duct');
     await _menu(tester, 'workspace-route-wiring-duct');
-    expect(_canvas(tester).layout.cabinetLayout.fixtures.single.kind,
-        CabinetFixtureKind.wireDuct);
+    expect(
+      _canvas(tester).layout.cabinetLayout.fixtures.single.kind,
+      CabinetFixtureKind.wireDuct,
+    );
   });
 }

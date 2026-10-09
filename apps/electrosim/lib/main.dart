@@ -519,7 +519,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     for (var index = 0; index < a.fixtures.length; index++) {
       final first = a.fixtures[index];
       final second = b.fixtures[index];
-      if (first.id != second.id || first.kind != second.kind ||
+      if (first.id != second.id ||
+          first.kind != second.kind ||
           first.bounds != second.bounds) {
         return false;
       }
@@ -551,7 +552,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void _routeWiresViaCabinetDucts() {
     if (_blockStudentTpMutation()) return;
     if (!_layout.cabinetLayout.fixtures.any(
-        (f) => f.kind == CabinetFixtureKind.wireDuct)) {
+      (f) => f.kind == CabinetFixtureKind.wireDuct,
+    )) {
       _setStatus('Ajoutez une goulotte avant de router les fils.');
       return;
     }
@@ -563,7 +565,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final b = geometry.terminalPositions[connection.toTerminalId];
       if (a == null || b == null) continue;
       final route = CabinetDuctWirePlanner.route(
-          start: a, end: b, cabinet: _layout.cabinetLayout);
+        start: a,
+        end: b,
+        cabinet: _layout.cabinetLayout,
+      );
       if (route == null) continue;
       routes[connection.id.value] = route;
       changed++;
@@ -581,9 +586,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       cabinetLayout: _layout.cabinetLayout,
     );
     if (!F18WorkspaceWireSafety.isRenderable(
-      circuit: _circuit, layout: candidate)) {
-      _setStatus('Routage conservé : une goulotte ferait traverser '
-          'un composant ou créerait une trajectoire illisible.');
+      circuit: _circuit,
+      layout: candidate,
+    )) {
+      _setStatus(
+        'Routage conservé : une goulotte ferait traverser '
+        'un composant ou créerait une trajectoire illisible.',
+      );
       return;
     }
     setState(() {
@@ -594,10 +603,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _toggleCabinetSnap() {
     setState(() {
-      _cabinetPlacementMode =
-          _cabinetPlacementMode == CabinetPlacementMode.free
-              ? CabinetPlacementMode.assistedDin
-              : CabinetPlacementMode.free;
+      _cabinetPlacementMode = _cabinetPlacementMode == CabinetPlacementMode.free
+          ? CabinetPlacementMode.assistedDin
+          : CabinetPlacementMode.free;
       _status = _cabinetPlacementMode == CabinetPlacementMode.assistedDin
           ? 'Placement assisté sur rail DIN activé'
           : 'Placement libre activé';
@@ -621,7 +629,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       CabinetFixtureKind.terminalZone => 220.0,
     };
     final count = _layout.cabinetLayout.fixtures
-        .where((fixture) => fixture.kind == kind).length;
+        .where((fixture) => fixture.kind == kind)
+        .length;
     final id = 'cabinet-${kind.name}-${count + 1}';
     var nextId = id;
     var ordinal = count + 1;
@@ -632,18 +641,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final fixture = CabinetFixture(
       id: nextId,
       kind: kind,
-      bounds: Rect.fromCenter(center: position,
-        width: size.width, height: size.height),
+      bounds: Rect.fromCenter(
+        center: position,
+        width: size.width,
+        height: size.height,
+      ),
     );
     if (!_cabinetFixtureValid(fixture)) {
-      _setStatus('Emplacement occupé : déplacez les autres équipements '
-          'avant d’ajouter cet élément d’armoire.');
+      _setStatus(
+        'Emplacement occupé : déplacez les autres équipements '
+        'avant d’ajouter cet élément d’armoire.',
+      );
       return;
     }
     setState(() {
-      _layout = _layout.withCabinetLayout(
-        _layout.cabinetLayout.add(fixture),
-      );
+      _layout = _layout.withCabinetLayout(_layout.cabinetLayout.add(fixture));
       _status = switch (kind) {
         CabinetFixtureKind.dinRail => 'Rail DIN ajouté à la platine',
         CabinetFixtureKind.wireDuct => 'Goulotte de câblage ajoutée',
@@ -1029,19 +1041,26 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       onRecenter: _fitCircuitToViewport,
                       onAddDinRail: _studentTpReadOnly
                           ? null
-                          : () => _addCabinetFixture(CabinetFixtureKind.dinRail),
+                          : () =>
+                                _addCabinetFixture(CabinetFixtureKind.dinRail),
                       onAddWireDuct: _studentTpReadOnly
                           ? null
-                          : () => _addCabinetFixture(CabinetFixtureKind.wireDuct),
+                          : () =>
+                                _addCabinetFixture(CabinetFixtureKind.wireDuct),
                       onAddTerminalZone: _studentTpReadOnly
                           ? null
-                          : () => _addCabinetFixture(CabinetFixtureKind.terminalZone),
+                          : () => _addCabinetFixture(
+                              CabinetFixtureKind.terminalZone,
+                            ),
                       onToggleCabinetSnap: _studentTpReadOnly
-                          ? null : _toggleCabinetSnap,
+                          ? null
+                          : _toggleCabinetSnap,
                       onRouteCabinetWires: _studentTpReadOnly
-                          ? null : _routeWiresViaCabinetDucts,
+                          ? null
+                          : _routeWiresViaCabinetDucts,
                       cabinetSnapEnabled:
-                          _cabinetPlacementMode == CabinetPlacementMode.assistedDin,
+                          _cabinetPlacementMode ==
+                          CabinetPlacementMode.assistedDin,
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       simulationRunning: _simulation.running,
@@ -1230,8 +1249,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                           IgnorePointer(
                                             child: CustomPaint(
                                               painter: _CabinetSelectionPainter(
-                                                fixture: canvasLayout.cabinetLayout
-                                                    .fixture(_selectedCabinetFixtureId ?? ''),
+                                                fixture: canvasLayout
+                                                    .cabinetLayout
+                                                    .fixture(
+                                                      _selectedCabinetFixtureId ??
+                                                          '',
+                                                    ),
                                                 viewport: _viewport,
                                               ),
                                               size: Size.infinite,
@@ -1794,7 +1817,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: moved.wireRoutes,
         elementQuarterTurns: moved.elementQuarterTurns,
         defaultElementSize: moved.defaultElementSize,
-      cabinetLayout: moved.cabinetLayout,
+        cabinetLayout: moved.cabinetLayout,
       );
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
@@ -1909,7 +1932,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: moved.wireRoutes,
         elementQuarterTurns: moved.elementQuarterTurns,
         defaultElementSize: moved.defaultElementSize,
-      cabinetLayout: moved.cabinetLayout,
+        cabinetLayout: moved.cabinetLayout,
       );
       _selected = elementId;
       _status = current
@@ -2114,8 +2137,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final fixture = _cabinetFixtureAt(event.localPosition);
       if (fixture != null) {
         final world = _viewport.screenToWorld(event.localPosition);
-        final cornerDistance = (event.localPosition -
-            _viewport.worldToScreen(fixture.bounds.bottomRight)).distance;
+        final cornerDistance =
+            (event.localPosition -
+                    _viewport.worldToScreen(fixture.bounds.bottomRight))
+                .distance;
         setState(() {
           _selected = null;
           _selectedCabinetFixtureId = fixture.id;
@@ -2387,20 +2412,27 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final delta = world - initialPointer;
       final candidate = _cabinetResizeActive
           ? Rect.fromLTWH(
-              initialBounds.left, initialBounds.top,
+              initialBounds.left,
+              initialBounds.top,
               math.max(
                 _layout.cabinetLayout.fixture(fixtureId)!.kind ==
-                    CabinetFixtureKind.dinRail ? 60 : 24,
-                initialBounds.width + delta.dx),
+                        CabinetFixtureKind.dinRail
+                    ? 60
+                    : 24,
+                initialBounds.width + delta.dx,
+              ),
               math.max(
                 _layout.cabinetLayout.fixture(fixtureId)!.kind ==
-                    CabinetFixtureKind.dinRail ? 16 : 24,
-                initialBounds.height + delta.dy),
+                        CabinetFixtureKind.dinRail
+                    ? 16
+                    : 24,
+                initialBounds.height + delta.dy,
+              ),
             )
           : initialBounds.shift(delta);
-      final updated = _layout.cabinetLayout
-          .replace(_layout.cabinetLayout.fixture(fixtureId)!
-              .withBounds(candidate));
+      final updated = _layout.cabinetLayout.replace(
+        _layout.cabinetLayout.fixture(fixtureId)!.withBounds(candidate),
+      );
       _dragPreviewLayout.value = _layout.withCabinetLayout(updated);
       return;
     }
@@ -2992,14 +3024,22 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     var preview = _dragPreviewLayout.value ?? _layout;
     final CircuitState circuit = _circuit;
-    final component = circuit.components.where(
-      (c) => c.id.value == elementId,
-    ).firstOrNull;
+    final component = circuit.components
+        .where((c) => c.id.value == elementId)
+        .firstOrNull;
     final dinTypes = <String>{
-      'breaker_dc', 'breaker_ac1', 'rcd_2p_ac1',
-      'breaker', 'breaker_3p', 'breaker_4p',
-      'contactor_ac1', 'contactor_3p', 'relay_coil',
-      'isolator_3p', 'isolator_4p', 'terminal_block_5',
+      'breaker_dc',
+      'breaker_ac1',
+      'rcd_2p_ac1',
+      'breaker',
+      'breaker_3p',
+      'breaker_4p',
+      'contactor_ac1',
+      'contactor_3p',
+      'relay_coil',
+      'isolator_3p',
+      'isolator_4p',
+      'terminal_block_5',
       'thermal_overload_3p',
     };
     final position = preview.positionOf(elementId);
@@ -3014,11 +3054,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             if (entry.key != elementId) entry.key: entry.value,
         },
         mode: _cabinetPlacementMode,
-        dinMountable: component != null && dinTypes.contains(component.modelType),
+        dinMountable:
+            component != null && dinTypes.contains(component.modelType),
       );
       if (!planned.isValid) {
-        _setStatus('Encombrement : ${planned.intersectingIds.join(", ")}. '
-            'Déplacement du composant refusé.');
+        _setStatus(
+          'Encombrement : ${planned.intersectingIds.join(", ")}. '
+          'Déplacement du composant refusé.',
+        );
         _dragPreviewLayout.value = null;
         return;
       }
@@ -3205,7 +3248,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: _layout.wireRoutes,
         elementQuarterTurns: _layout.elementQuarterTurns,
         defaultElementSize: _layout.defaultElementSize,
-      cabinetLayout: _layout.cabinetLayout,
+        cabinetLayout: _layout.cabinetLayout,
       );
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
@@ -3309,9 +3352,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (_selectedCabinetFixtureId != null) {
       final id = _selectedCabinetFixtureId!;
       setState(() {
-        _layout = _layout.withCabinetLayout(
-          _layout.cabinetLayout.remove(id),
-        );
+        _layout = _layout.withCabinetLayout(_layout.cabinetLayout.remove(id));
         _selectedCabinetFixtureId = null;
         _status = 'Élément d’armoire supprimé : $id';
       });
@@ -3356,7 +3397,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           elementQuarterTurns: <String, int>{...old.elementQuarterTurns}
             ..remove(selected),
           defaultElementSize: old.defaultElementSize,
-        cabinetLayout: old.cabinetLayout,
+          cabinetLayout: old.cabinetLayout,
         );
         _selected = null;
         _status = 'Instrument physique supprimé : $selected';
@@ -3393,7 +3434,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           wireRoutes: routes,
           elementQuarterTurns: _layout.elementQuarterTurns,
           defaultElementSize: _layout.defaultElementSize,
-        cabinetLayout: _layout.cabinetLayout,
+          cabinetLayout: _layout.cabinetLayout,
         );
         _selected = null;
         _status = 'Suppression : fil — $selected';
@@ -3448,7 +3489,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
-      cabinetLayout: _layout.cabinetLayout,
+        cabinetLayout: _layout.cabinetLayout,
       );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
@@ -3545,7 +3586,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
-      cabinetLayout: _layout.cabinetLayout,
+        cabinetLayout: _layout.cabinetLayout,
       );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
@@ -3655,7 +3696,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       elementSizes: base.elementSizes,
       elementQuarterTurns: base.elementQuarterTurns,
       defaultElementSize: base.defaultElementSize,
-    cabinetLayout: base.cabinetLayout,
+      cabinetLayout: base.cabinetLayout,
     );
   }
 
@@ -3770,7 +3811,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       wireRoutes: routes,
       elementQuarterTurns: routed.elementQuarterTurns,
       defaultElementSize: routed.defaultElementSize,
-    cabinetLayout: routed.cabinetLayout,
+      cabinetLayout: routed.cabinetLayout,
     );
   }
 
@@ -3810,7 +3851,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 }
 
 class _CabinetSelectionPainter extends CustomPainter {
-  const _CabinetSelectionPainter({required this.fixture, required this.viewport});
+  const _CabinetSelectionPainter({
+    required this.fixture,
+    required this.viewport,
+  });
   final CabinetFixture? fixture;
   final ViewportController viewport;
   @override
@@ -3822,9 +3866,11 @@ class _CabinetSelectionPainter extends CustomPainter {
       scale: viewport.scale,
     );
   }
+
   @override
   bool shouldRepaint(_CabinetSelectionPainter old) =>
-      old.fixture != fixture || old.viewport != viewport ||
+      old.fixture != fixture ||
+      old.viewport != viewport ||
       old.viewport.scale != viewport.scale ||
       old.viewport.translation != viewport.translation;
 }
@@ -4318,11 +4364,16 @@ class _WorkspaceTopBar extends StatelessWidget {
           key: const Key('workspace-toggle-din-snap'),
           value: _WorkspaceSecondaryAction.toggleDinSnap,
           child: ListTile(
-            leading: Icon(cabinetSnapEnabled
-                ? Icons.check_box : Icons.check_box_outline_blank),
-            title: Text(cabinetSnapEnabled
-                ? 'Placement DIN assisté : activé'
-                : 'Placement DIN assisté : désactivé'),
+            leading: Icon(
+              cabinetSnapEnabled
+                  ? Icons.check_box
+                  : Icons.check_box_outline_blank,
+            ),
+            title: Text(
+              cabinetSnapEnabled
+                  ? 'Placement DIN assisté : activé'
+                  : 'Placement DIN assisté : désactivé',
+            ),
             contentPadding: EdgeInsets.zero,
           ),
         ),

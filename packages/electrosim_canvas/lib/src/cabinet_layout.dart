@@ -11,16 +11,17 @@ enum CabinetPlacementMode { free, assistedDin }
 
 @immutable
 final class CabinetFixture {
-  CabinetFixture({
-    required this.id,
-    required this.kind,
-    required this.bounds,
-  }) {
-    if (id.trim().isEmpty || !bounds.left.isFinite ||
-        !bounds.top.isFinite || !bounds.width.isFinite ||
-        !bounds.height.isFinite || bounds.width <= 0 ||
+  CabinetFixture({required this.id, required this.kind, required this.bounds}) {
+    if (id.trim().isEmpty ||
+        !bounds.left.isFinite ||
+        !bounds.top.isFinite ||
+        !bounds.width.isFinite ||
+        !bounds.height.isFinite ||
+        bounds.width <= 0 ||
         bounds.height <= 0) {
-      throw ArgumentError('Cabinet fixture requires a valid id and finite positive rectangle.');
+      throw ArgumentError(
+        'Cabinet fixture requires a valid id and finite positive rectangle.',
+      );
     }
     if (kind == CabinetFixtureKind.dinRail &&
         (bounds.width < 60 || bounds.height < 16)) {
@@ -45,7 +46,7 @@ final class CabinetLayout {
   const CabinetLayout.empty() : fixtures = const <CabinetFixture>[];
 
   CabinetLayout(Iterable<CabinetFixture> fixtures)
-      : fixtures = List<CabinetFixture>.unmodifiable(fixtures) {
+    : fixtures = List<CabinetFixture>.unmodifiable(fixtures) {
     final ids = <String>{};
     for (final fixture in this.fixtures) {
       if (!ids.add(fixture.id)) {
@@ -126,10 +127,14 @@ abstract final class CabinetPlacementPlanner {
     bool dinMountable = false,
     double snapDistance = 32,
   }) {
-    if (!deviceSize.width.isFinite || !deviceSize.height.isFinite ||
-        deviceSize.width <= 0 || deviceSize.height <= 0 ||
-        !proposedCenter.dx.isFinite || !proposedCenter.dy.isFinite ||
-        !snapDistance.isFinite || snapDistance < 0) {
+    if (!deviceSize.width.isFinite ||
+        !deviceSize.height.isFinite ||
+        deviceSize.width <= 0 ||
+        deviceSize.height <= 0 ||
+        !proposedCenter.dx.isFinite ||
+        !proposedCenter.dy.isFinite ||
+        !snapDistance.isFinite ||
+        snapDistance < 0) {
       throw ArgumentError('Invalid device geometry or snap tolerance.');
     }
     Offset center = proposedCenter;
@@ -147,17 +152,21 @@ abstract final class CabinetPlacementPlanner {
         }
         nearest = distance;
         center = Offset(
-          center.dx.clamp(
-            fixture.bounds.left + deviceSize.width / 2,
-            fixture.bounds.right - deviceSize.width / 2,
-          ).toDouble(),
+          center.dx
+              .clamp(
+                fixture.bounds.left + deviceSize.width / 2,
+                fixture.bounds.right - deviceSize.width / 2,
+              )
+              .toDouble(),
           fixture.bounds.center.dy,
         );
         snapped = true;
       }
     }
     final rectangle = Rect.fromCenter(
-      center: center, width: deviceSize.width, height: deviceSize.height,
+      center: center,
+      width: deviceSize.width,
+      height: deviceSize.height,
     );
     final collisions = <String>[];
     for (final fixture in cabinet.fixtures) {
@@ -184,17 +193,23 @@ abstract final class CabinetPlacementPlanner {
   /// Finite, bounded world-coordinate clamp for fixtures. Used for moving a
   /// support without moving any wired device or mutating the circuit.
   static Offset boundedTopLeft(
-    CabinetFixture fixture, Offset proposed, Rect workspace,
+    CabinetFixture fixture,
+    Offset proposed,
+    Rect workspace,
   ) {
     if (workspace.width < fixture.bounds.width ||
         workspace.height < fixture.bounds.height) {
       throw ArgumentError('Fixture is larger than cabinet workspace.');
     }
     return Offset(
-      math.max(workspace.left, math.min(
-        proposed.dx, workspace.right - fixture.bounds.width)),
-      math.max(workspace.top, math.min(
-        proposed.dy, workspace.bottom - fixture.bounds.height)),
+      math.max(
+        workspace.left,
+        math.min(proposed.dx, workspace.right - fixture.bounds.width),
+      ),
+      math.max(
+        workspace.top,
+        math.min(proposed.dy, workspace.bottom - fixture.bounds.height),
+      ),
     );
   }
 }

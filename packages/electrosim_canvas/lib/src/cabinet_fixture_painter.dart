@@ -48,10 +48,18 @@ void _paintDuct(Canvas canvas, Rect rect, double scale) {
   final step = 13.0 * scale;
   for (var distance = step; distance < span - step; distance += step) {
     final slot = horizontal
-        ? Rect.fromLTWH(rect.left + distance, rect.top + 3 * scale,
-            4 * scale, (rect.height - 6 * scale).clamp(0, double.infinity).toDouble())
-        : Rect.fromLTWH(rect.left + 3 * scale, rect.top + distance,
-            (rect.width - 6 * scale).clamp(0, double.infinity).toDouble(), 4 * scale);
+        ? Rect.fromLTWH(
+            rect.left + distance,
+            rect.top + 3 * scale,
+            4 * scale,
+            (rect.height - 6 * scale).clamp(0, double.infinity).toDouble(),
+          )
+        : Rect.fromLTWH(
+            rect.left + 3 * scale,
+            rect.top + distance,
+            (rect.width - 6 * scale).clamp(0, double.infinity).toDouble(),
+            4 * scale,
+          );
     canvas.drawRRect(
       RRect.fromRectAndRadius(slot, Radius.circular(1.2 * scale)),
       Paint()..color = const Color(0xFF98A6B2),
@@ -90,8 +98,9 @@ void paintCabinetSelection(
 }) {
   if (fixture == null) return;
   final topLeft = worldToScreen(fixture.bounds.topLeft);
-  final bounds = topLeft & Size(fixture.bounds.width * scale,
-      fixture.bounds.height * scale);
+  final bounds =
+      topLeft &
+      Size(fixture.bounds.width * scale, fixture.bounds.height * scale);
   canvas.drawRect(
     bounds.inflate(2),
     Paint()
@@ -101,8 +110,11 @@ void paintCabinetSelection(
   );
   final handleSize = 12.0;
   canvas.drawRect(
-    Rect.fromCenter(center: bounds.bottomRight,
-      width: handleSize, height: handleSize),
+    Rect.fromCenter(
+      center: bounds.bottomRight,
+      width: handleSize,
+      height: handleSize,
+    ),
     Paint()..color = const Color(0xFF2563EB),
   );
 }

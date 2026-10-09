@@ -14,8 +14,10 @@ abstract final class CabinetDuctWirePlanner {
     required Offset end,
     required CabinetLayout cabinet,
   }) {
-    if (!start.dx.isFinite || !start.dy.isFinite ||
-        !end.dx.isFinite || !end.dy.isFinite) {
+    if (!start.dx.isFinite ||
+        !start.dy.isFinite ||
+        !end.dx.isFinite ||
+        !end.dy.isFinite) {
       return null;
     }
 
@@ -55,8 +57,9 @@ abstract final class CabinetDuctWirePlanner {
       if (cleaned.length < 3 || !_isOrthogonal(cleaned)) continue;
       var score = 0.0;
       for (var i = 1; i < cleaned.length; i++) {
-        score += (cleaned[i].dx - cleaned[i-1].dx).abs() +
-            (cleaned[i].dy - cleaned[i-1].dy).abs();
+        score +=
+            (cleaned[i].dx - cleaned[i - 1].dx).abs() +
+            (cleaned[i].dy - cleaned[i - 1].dy).abs();
       }
       if (score < bestScore) {
         bestScore = score;
@@ -75,8 +78,7 @@ abstract final class CabinetDuctWirePlanner {
         final a = output[output.length - 3];
         final b = output[output.length - 2];
         final c = output.last;
-        if ((a.dx == b.dx && b.dx == c.dx) ||
-            (a.dy == b.dy && b.dy == c.dy)) {
+        if ((a.dx == b.dx && b.dx == c.dx) || (a.dy == b.dy && b.dy == c.dy)) {
           output.removeAt(output.length - 2);
         } else {
           break;
@@ -88,8 +90,8 @@ abstract final class CabinetDuctWirePlanner {
 
   static bool _isOrthogonal(List<Offset> points) {
     for (var i = 1; i < points.length; i++) {
-      if (points[i].dx != points[i-1].dx &&
-          points[i].dy != points[i-1].dy) {
+      if (points[i].dx != points[i - 1].dx &&
+          points[i].dy != points[i - 1].dy) {
         return false;
       }
     }

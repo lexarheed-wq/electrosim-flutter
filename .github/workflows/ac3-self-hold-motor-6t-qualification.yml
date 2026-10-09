@@ -1,0 +1,48 @@
+name: AC3 Motor Self-Hold Real Circuit
+on:
+  push:
+    branches:
+      - test/ac3-self-hold-motor-6t-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ac3-motor-self-hold-qualification
+  cancel-in-progress: true
+jobs:
+  motor-self-hold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore versioned visual component painter
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: AC3 self-hold, motor and control engine qualification
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format test/ac3_motor_self_hold_start_stop_test.dart
+          flutter analyze
+          flutter test test/ac3_motor_self_hold_start_stop_test.dart
+          flutter test test/ac3_contactor_motor_real_wiring_test.dart
+          flutter test test/controls_runtime_integration_test.dart
+      - name: Core electromechanical NO/NC self-hold and AC3 checks
+        working-directory: packages/electrosim_controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart test
+      - name: AC3 solver regression
+        working-directory: packages/electrosim_solver_ac
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart pub get
+          dart test

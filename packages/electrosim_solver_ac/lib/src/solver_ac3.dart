@@ -678,15 +678,25 @@ _CompiledAc3Model _compileModel(
             ),
           );
         } else if (closed) {
+          // Momentary pushbuttons are mechanical control contacts and
+          // conduct through their on-resistance. Maintained ideal switches
+          // preserve their existing exact constraint model.
+          final bool isMomentary =
+              physics.controlLaw == ComponentControlLaw.momentaryNormallyOpen ||
+              physics.controlLaw == ComponentControlLaw.momentaryNormallyClosed;
           elements.add(
             _Ac3Element(
               id: 'component:${component.id.value}',
               modelType: component.modelType,
-              kind: _Ac3ElementKind.idealVoltage,
+              kind: isMomentary
+                  ? _Ac3ElementKind.impedance
+                  : _Ac3ElementKind.idealVoltage,
               branchKind: Ac3BranchKind.idealSwitch,
               fromNodeId: fromNode,
               toNodeId: toNode,
-              value: AcComplex.zero,
+              value: isMomentary
+                  ? const AcComplex(_ac3ControlContactOnResistanceOhm, 0)
+                  : AcComplex.zero,
               phase: phase,
             ),
           );
@@ -1469,11 +1479,13 @@ bool _compileElectromechanicalAc3({
       _Ac3Element(
         id: _componentBranchElementIdAc3(component, branch, branches.length),
         modelType: component.modelType,
-        kind: closed ? _Ac3ElementKind.idealVoltage : _Ac3ElementKind.impedance,
+        kind: _Ac3ElementKind.impedance,
         branchKind: Ac3BranchKind.contactorContact,
         fromNodeId: branch.fromNodeId,
         toNodeId: branch.toNodeId,
-        value: closed ? AcComplex.zero : const AcComplex(1e300, 0.0),
+        value: closed
+            ? const AcComplex(_ac3ControlContactOnResistanceOhm, 0)
+            : const AcComplex(1e300, 0.0),
         isOpen: !closed,
         phase: _phaseForBranch(component, branch),
       ),
@@ -2166,6 +2178,12 @@ Ac3SolveResult _failure(
   neutralConnected: false,
   phaseOrderObservations: const <Ac3PhaseOrderObservation>[],
 );
+
+/// Mechanical control contacts are not perfect superconducting wires.
+/// A 1 mΩ default breaks redundant ideal-voltage loops (START in parallel
+/// with the NO holding contact) and yields meaningful branch currents.
+/// Power-pole and source models are intentionally unchanged.
+const double _ac3ControlContactOnResistanceOhm = 0.001;
 
 enum _Ac3ElementKind { impedance, currentSource, idealVoltage }
 

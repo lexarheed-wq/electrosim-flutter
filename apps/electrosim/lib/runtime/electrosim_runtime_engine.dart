@@ -901,6 +901,7 @@ final class ElectroSimRuntimeEngine {
               previous: previousProtectionState,
               solver: solverAC3,
               controlsEngine: electromechanicalControlEngine,
+              previousContactorStates: previousContactorStates,
             );
         final Ac3SolveResult ac3 = coordinated.result;
         final DiagnosticReport diagnostics = diagnosticEngine.analyzeAc3(

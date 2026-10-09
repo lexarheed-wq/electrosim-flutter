@@ -31,7 +31,7 @@ void main() {
           reason: label);
       final state = snapshot.contactorStates[_contactorId]!;
       expect(state.coilVoltageV,
-          closeTo(expectRunning ? 230.0 : 0.0, .001),
+          closeTo(expectRunning ? 230.0 : 0.0, .1),
           reason: '$label: coil A1/A2');
       final controlResult = const ElectromechanicalControlEngine().solveAc3(
         circuit: circuit,

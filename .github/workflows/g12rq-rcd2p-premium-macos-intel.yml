@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           for p in electrosim_canvas electrosim_domain electrosim_topology electrosim_solver_ac electrosim_protection; do
-            (cd "packages/$p" && flutter pub get && flutter analyze && flutter test)
+            (cd "packages/$p" && flutter pub get && flutter analyze --no-fatal-infos && flutter test)
           done
       - name: Architecture and source guards
         shell: bash

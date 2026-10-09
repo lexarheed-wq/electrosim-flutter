@@ -440,6 +440,7 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.sessionNavigation = false,
     super.initialSelectedElementId,
     super.initialCircuit,
+    super.initialCabinetLayout,
     super.role = F9UserRole.teacher,
     super.tpSessionController,
     super.persistenceController,
@@ -459,6 +460,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.sessionNavigation = false,
     this.initialSelectedElementId,
     this.initialCircuit,
+    this.initialCabinetLayout,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
@@ -474,6 +476,7 @@ class F18WorkspacePage extends StatefulWidget {
   final bool sessionNavigation;
   final String? initialSelectedElementId;
   final CircuitState? initialCircuit;
+  final CabinetLayout? initialCabinetLayout;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
@@ -852,6 +855,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _workspace = 'Recherche de dérangement';
     }
     _layout = _layoutForCircuit(_circuit);
+    if (widget.initialCabinetLayout != null) {
+      _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
+    }
     _simulation = ElectroSimSimulationController(circuit: _circuit);
     _workspaceLayout.addListener(_scheduleLayoutSave);
     unawaited(_restoreWorkspaceLayout());

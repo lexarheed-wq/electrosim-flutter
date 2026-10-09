@@ -1583,6 +1583,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: moved.wireRoutes,
         elementQuarterTurns: moved.elementQuarterTurns,
         defaultElementSize: moved.defaultElementSize,
+      cabinetLayout: moved.cabinetLayout,
       );
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
@@ -1697,6 +1698,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: moved.wireRoutes,
         elementQuarterTurns: moved.elementQuarterTurns,
         defaultElementSize: moved.defaultElementSize,
+      cabinetLayout: moved.cabinetLayout,
       );
       _selected = elementId;
       _status = current
@@ -2902,6 +2904,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: _layout.wireRoutes,
         elementQuarterTurns: _layout.elementQuarterTurns,
         defaultElementSize: _layout.defaultElementSize,
+      cabinetLayout: _layout.cabinetLayout,
       );
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
@@ -3041,6 +3044,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           elementQuarterTurns: <String, int>{...old.elementQuarterTurns}
             ..remove(selected),
           defaultElementSize: old.defaultElementSize,
+        cabinetLayout: old.cabinetLayout,
         );
         _selected = null;
         _status = 'Instrument physique supprimé : $selected';
@@ -3077,6 +3081,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           wireRoutes: routes,
           elementQuarterTurns: _layout.elementQuarterTurns,
           defaultElementSize: _layout.defaultElementSize,
+        cabinetLayout: _layout.cabinetLayout,
         );
         _selected = null;
         _status = 'Suppression : fil — $selected';
@@ -3131,6 +3136,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
+      cabinetLayout: _layout.cabinetLayout,
       );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
@@ -3227,6 +3233,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
+      cabinetLayout: _layout.cabinetLayout,
       );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
@@ -3336,6 +3343,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       elementSizes: base.elementSizes,
       elementQuarterTurns: base.elementQuarterTurns,
       defaultElementSize: base.defaultElementSize,
+    cabinetLayout: base.cabinetLayout,
     );
   }
 
@@ -3450,6 +3458,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       wireRoutes: routes,
       elementQuarterTurns: routed.elementQuarterTurns,
       defaultElementSize: routed.defaultElementSize,
+    cabinetLayout: routed.cabinetLayout,
     );
   }
 

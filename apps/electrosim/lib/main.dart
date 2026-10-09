@@ -613,6 +613,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   String _status = 'ElectroSim F18 — espace de travail prêt';
   bool _saveInProgress = false;
   CircuitState? _meterReadoutCacheCircuit;
+  ElectroSimRuntimeSnapshot? _meterReadoutCacheSnapshot;
   int? _meterReadoutCacheSecond;
   Map<String, String> _meterReadoutCache = const <String, String>{};
   late String _workspace;
@@ -1595,11 +1596,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Map<String, String> _physicalMeterReadouts() {
     if (_circuit.instruments.isEmpty) return const <String, String>{};
     final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
+    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
+    // A new solver snapshot at the same displayed second must invalidate
+    // stale ERR readings after wiring, protection, or contactor transitions.
     if (identical(_meterReadoutCacheCircuit, _circuit) &&
+        identical(_meterReadoutCacheSnapshot, snapshot) &&
         _meterReadoutCacheSecond == second) {
       return _meterReadoutCache;
     }
-    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
     const ElectroSimInstrumentProjection projection =
         ElectroSimInstrumentProjection();
     final Map<String, String> results = <String, String>{};
@@ -1627,6 +1631,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
     }
     _meterReadoutCacheCircuit = _circuit;
+    _meterReadoutCacheSnapshot = snapshot;
     _meterReadoutCacheSecond = second;
     _meterReadoutCache = Map<String, String>.unmodifiable(results);
     return _meterReadoutCache;

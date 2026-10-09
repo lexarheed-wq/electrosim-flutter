@@ -545,6 +545,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   // P2 cabinet fixtures belong to visual layout, never to electrical
   // CircuitState. Edits are undoable through the existing history.
+  void _toggleCabinetSnap() {
+    setState(() {
+      _cabinetPlacementMode =
+          _cabinetPlacementMode == CabinetPlacementMode.free
+              ? CabinetPlacementMode.assistedDin
+              : CabinetPlacementMode.free;
+      _status = _cabinetPlacementMode == CabinetPlacementMode.assistedDin
+          ? 'Placement assisté sur rail DIN activé'
+          : 'Placement libre activé';
+    });
+  }
+
   void _addCabinetFixture(CabinetFixtureKind kind) {
     if (_blockStudentTpMutation()) return;
     final size = switch (kind) {
@@ -613,6 +625,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _wiringPendingTerminal = null;
         _wiringHoverTerminal = null;
         _dragPreviewLayout.value = null;
+        _selectedCabinetFixtureId = null;
       });
     } finally {
       _restoringHistory = false;
@@ -969,6 +982,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       onAddTerminalZone: _studentTpReadOnly
                           ? null
                           : () => _addCabinetFixture(CabinetFixtureKind.terminalZone),
+                      onToggleCabinetSnap: _studentTpReadOnly
+                          ? null : _toggleCabinetSnap,
+                      cabinetSnapEnabled:
+                          _cabinetPlacementMode == CabinetPlacementMode.assistedDin,
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       simulationRunning: _simulation.running,
@@ -2917,8 +2934,40 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitVisualLayout? base = _directDragBaseLayout;
     if (base == null) return;
 
-    final CircuitVisualLayout preview = _dragPreviewLayout.value ?? _layout;
+    var preview = _dragPreviewLayout.value ?? _layout;
     final CircuitState circuit = _circuit;
+    final component = circuit.components.where(
+      (c) => c.id.value == elementId,
+    ).firstOrNull;
+    final dinTypes = <String>{
+      'breaker_dc', 'breaker_ac1', 'rcd_2p_ac1',
+      'breaker', 'breaker_3p', 'breaker_4p',
+      'contactor_ac1', 'contactor_3p', 'relay_coil',
+      'isolator_3p', 'isolator_4p', 'terminal_block_5',
+      'thermal_overload_3p',
+    };
+    final position = preview.positionOf(elementId);
+    if (position != null && _layout.cabinetLayout.fixtures.isNotEmpty) {
+      final planned = CabinetPlacementPlanner.plan(
+        cabinet: _layout.cabinetLayout,
+        elementId: elementId,
+        deviceSize: _layout.sizeOf(elementId),
+        proposedCenter: position,
+        existingDevices: {
+          for (final entry in _cabinetDeviceRects().entries)
+            if (entry.key != elementId) entry.key: entry.value,
+        },
+        mode: _cabinetPlacementMode,
+        dinMountable: component != null && dinTypes.contains(component.modelType),
+      );
+      if (!planned.isValid) {
+        _setStatus('Encombrement : ${planned.intersectingIds.join(", ")}. '
+            'Déplacement du composant refusé.');
+        _dragPreviewLayout.value = null;
+        return;
+      }
+      preview = preview.moveElement(elementId, planned.position);
+    }
     setState(() {
       _layout = preview;
       _status =
@@ -3741,6 +3790,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.onAddDinRail,
     this.onAddWireDuct,
     this.onAddTerminalZone,
+    this.onToggleCabinetSnap,
+    this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
     required this.simulationRunning,
@@ -3769,6 +3820,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onAddDinRail;
   final VoidCallback? onAddWireDuct;
   final VoidCallback? onAddTerminalZone;
+  final VoidCallback? onToggleCabinetSnap;
+  final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
   final bool simulationRunning;
@@ -4103,6 +4156,8 @@ class _WorkspaceTopBar extends StatelessWidget {
           onAddWireDuct?.call();
         case _WorkspaceSecondaryAction.addTerminalZone:
           onAddTerminalZone?.call();
+        case _WorkspaceSecondaryAction.toggleDinSnap:
+          onToggleCabinetSnap?.call();
         case _WorkspaceSecondaryAction.resetSimulation:
           onResetSimulation();
       }
@@ -4188,6 +4243,19 @@ class _WorkspaceTopBar extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
+      if (onToggleCabinetSnap != null)
+        PopupMenuItem(
+          key: const Key('workspace-toggle-din-snap'),
+          value: _WorkspaceSecondaryAction.toggleDinSnap,
+          child: ListTile(
+            leading: Icon(cabinetSnapEnabled
+                ? Icons.check_box : Icons.check_box_outline_blank),
+            title: Text(cabinetSnapEnabled
+                ? 'Placement DIN assisté : activé'
+                : 'Placement DIN assisté : désactivé'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
       const PopupMenuItem(
         key: Key('workspace-reset-simulation-action'),
         value: _WorkspaceSecondaryAction.resetSimulation,
@@ -4219,6 +4287,7 @@ enum _WorkspaceSecondaryAction {
   addDinRail,
   addWireDuct,
   addTerminalZone,
+  toggleDinSnap,
   resetSimulation,
   advanceMinute,
   advanceHour,

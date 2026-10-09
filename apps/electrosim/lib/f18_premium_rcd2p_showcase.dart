@@ -22,7 +22,7 @@ class F18PremiumRcd2pShowcase extends StatelessWidget {
             alignment: WrapAlignment.center,
             children: const [
               _RcdViewPanel(
-                title: 'PALETTE · PERSPECTIVE 10° / −12°',
+                title: 'PALETTE · PERSPECTIVE −14° / −12°',
                 vue: VueDisjoncteur.palette,
               ),
               _RcdViewPanel(

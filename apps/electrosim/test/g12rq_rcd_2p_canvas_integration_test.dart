@@ -77,6 +77,8 @@ void main() {
     expect(widget.vue, VueDisjoncteur.palette);
     expect(widget.calibreA, 16);
     expect(widget.sensibiliteMA, 30);
+    expect(widget.width, greaterThanOrEqualTo(100));
+    expect(widget.height, greaterThanOrEqualTo(175));
     expect(tester.takeException(), isNull);
   });
 

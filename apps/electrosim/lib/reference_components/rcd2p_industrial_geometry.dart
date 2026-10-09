@@ -3,8 +3,6 @@ part of 'disjoncteur_3d.dart';
 /// Industrial polymer, steel and marking finish shared by palette and board.
 /// These are appearance parameters only. Electrical terminal positions,
 /// runtime states and click regions remain in disjoncteur_3d.dart.
-enum _Rcd2pFinish { polymer, recess, steel, graphite, yellow, print }
-
 final class _Rcd2pMaterial {
   const _Rcd2pMaterial({
     required this.base,

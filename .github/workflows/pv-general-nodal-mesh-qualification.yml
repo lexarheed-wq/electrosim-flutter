@@ -1,0 +1,55 @@
+name: PV Generalized Nodal Mesh Qualification
+on:
+  push:
+    branches:
+      - fix/pv-generalized-nodal-mesh-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pv-general-nodal-mesh
+  cancel-in-progress: true
+jobs:
+  pv-mesh-multimode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore canonical premium UI painter
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Physical mesh current tests with actual instruments
+        working-directory: apps/electrosim
+        run: |
+          set -e
+          flutter pub get
+          dart format lib/runtime/pv_series_burden_projection.dart test/multi_mode_instrument_errors_test.dart
+          flutter analyze
+          flutter test test/multi_mode_instrument_errors_test.dart
+          flutter test test/pv_battery_physical_instruments_test.dart
+          flutter test test/ac3_floating_islands_instruments_test.dart
+          flutter test test/sim_r1_physical_instrument_projection_test.dart
+          flutter test test/ac3_contactor_motor_real_wiring_test.dart
+      - name: Complete PV solver qualification
+        working-directory: packages/electrosim_pv
+        run: |
+          set -e
+          flutter pub get
+          dart format lib/src/pv_nodal_wire_solver.dart lib/electrosim_pv.dart
+          flutter analyze
+          flutter test
+      - name: AC/DC solver nonregression
+        working-directory: packages/electrosim_solver_ac
+        run: |
+          set -e
+          flutter pub get
+          flutter test
+      - name: DC solver nonregression
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          set -e
+          flutter pub get
+          flutter test

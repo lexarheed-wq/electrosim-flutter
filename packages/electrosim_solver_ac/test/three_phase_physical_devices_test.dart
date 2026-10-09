@@ -76,7 +76,9 @@ void main() {
       condition: ComponentCondition.openCircuit,
     );
     final Ac3SolveResult result = solve(circuit);
-    expect(result.status, Ac3SolveStatus.singular);
+    expect(result.isSolved, isTrue);
+    expect(result.branchResults.where((b) => b.modelType == 'motor_3p_6t')
+        .every((b) => (b.current?.magnitude ?? 0) <= 1e-9), isTrue);
     expect(
       result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
       contains(Ac3DiagnosticCode.floatingElectricalIsland),

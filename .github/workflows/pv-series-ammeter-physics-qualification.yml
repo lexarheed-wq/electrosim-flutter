@@ -1,0 +1,52 @@
+name: PV Series Ammeter Physical Burden Qualification
+on:
+  push:
+    branches:
+      - fix/pv-physical-series-ammeter-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pv-series-burden-physics
+  cancel-in-progress: true
+jobs:
+  pv-series-physical-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore premium painter without changing physics
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Physical series amp and multimode regression
+        working-directory: apps/electrosim
+        run: |
+          set -e
+          flutter pub get
+          dart format lib/runtime/pv_series_burden_projection.dart lib/runtime/electrosim_instrument_projection.dart test/multi_mode_instrument_errors_test.dart test/pv_battery_physical_instruments_test.dart
+          flutter analyze
+          flutter test test/multi_mode_instrument_errors_test.dart
+          flutter test test/pv_battery_physical_instruments_test.dart
+          flutter test test/ac3_floating_islands_instruments_test.dart
+          flutter test test/ac3_contactor_motor_real_wiring_test.dart
+          flutter test test/sim_r1_physical_instrument_projection_test.dart
+          flutter test test/ac1_source_voltage_open_rcd_regression_test.dart
+          flutter test test/f17_pv_energy_runtime_test.dart
+      - name: PV solver safety
+        working-directory: packages/electrosim_pv
+        run: |
+          flutter pub get
+          flutter test
+      - name: AC solver safety
+        working-directory: packages/electrosim_solver_ac
+        run: |
+          flutter pub get
+          flutter test
+      - name: DC solver safety
+        working-directory: packages/electrosim_solver_dc
+        run: |
+          flutter pub get
+          flutter test

@@ -114,30 +114,32 @@ final class SolverAC3 {
       referenceNodeId,
       compiled.activeElements,
     );
+    // An opened contactor, unplugged receiver, or incomplete wiring must
+    // not make the energized network singular. Fix one gauge per independent
+    // conductive island; this is mathematical referencing, not a physical
+    // wire or shunt to neutral.
+    final Set<String> referenceNodes = _selectIslandReferencesAc3(
+      topology.nodes.map((TopologyNode node) => node.id),
+      referenceNodeId,
+      compiled.activeElements,
+    );
     if (floatingNodes.isNotEmpty) {
       diagnostics.add(
         Ac3SolverDiagnostic(
           code: Ac3DiagnosticCode.floatingElectricalIsland,
-          severity: Ac3DiagnosticSeverity.error,
+          severity: Ac3DiagnosticSeverity.warning,
           message:
-              'Electrical island is not connected to the AC3 reference node.',
+              'Detached AC3 electrical islands are referenced independently; '
+              'the energized network remains solvable.',
           nodeIds: floatingNodes,
         ),
-      );
-      return _failure(
-        circuit,
-        Ac3SolveStatus.singular,
-        diagnostics,
-        frequencyHz: frequencyHz,
-        referenceNodeId: referenceNodeId,
-        missingPhases: missingPhases,
       );
     }
 
     final List<String> unknownNodes =
         topology.nodes
             .map((TopologyNode node) => node.id)
-            .where((String nodeId) => nodeId != referenceNodeId)
+            .where((String nodeId) => !referenceNodes.contains(nodeId))
             .toList(growable: false)
           ..sort();
     final Map<String, int> nodeIndex = <String, int>{
@@ -245,7 +247,7 @@ final class SolverAC3 {
     }
 
     final Map<String, AcComplex> nodeVoltages = <String, AcComplex>{
-      referenceNodeId: AcComplex.zero,
+      for (final String node in referenceNodes) node: AcComplex.zero,
     };
     for (final MapEntry<String, int> entry in nodeIndex.entries) {
       nodeVoltages[entry.key] = solution[entry.value];
@@ -1882,6 +1884,51 @@ List<String> _findFloatingNodes(
           .toList(growable: false)
         ..sort();
   return result;
+}
+
+/// Return exactly one nodal gauge for each electrically connected AC3
+/// island, including isolated terminal nodes. Open poles do not connect
+/// islands. The source neutral is preferred only for its own island.
+///
+/// This does NOT create electrical connections or merge voltages between
+/// different islands; it only removes the unconstrained common-mode degrees
+/// of freedom that otherwise make the global MNA matrix singular.
+Set<String> _selectIslandReferencesAc3(
+  Iterable<String> allNodes,
+  String preferredReference,
+  Iterable<_Ac3Element> elements,
+) {
+  final List<String> orderedNodes = allNodes.toList()..sort();
+  final Map<String, Set<String>> neighbours = <String, Set<String>>{
+    for (final node in orderedNodes) node: <String>{},
+  };
+  for (final element in elements) {
+    if (element.isOpen || element.fromNodeId == element.toNodeId) continue;
+    neighbours[element.fromNodeId]!.add(element.toNodeId);
+    neighbours[element.toNodeId]!.add(element.fromNodeId);
+  }
+
+  final Set<String> references = <String>{};
+  final Set<String> visited = <String>{};
+  final List<String> seeds = <String>[
+    preferredReference,
+    for (final node in orderedNodes)
+      if (node != preferredReference) node,
+  ];
+  for (final seed in seeds) {
+    if (visited.contains(seed)) continue;
+    references.add(seed);
+    final pending = <String>[seed];
+    visited.add(seed);
+    for (var index = 0; index < pending.length; index++) {
+      final node = pending[index];
+      final neighbors = neighbours[node]!.toList()..sort();
+      for (final next in neighbors) {
+        if (visited.add(next)) pending.add(next);
+      }
+    }
+  }
+  return references;
 }
 
 void _stampAdmittance(

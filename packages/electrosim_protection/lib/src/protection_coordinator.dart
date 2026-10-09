@@ -461,9 +461,12 @@ final class ProtectionCoordinator {
         }
         final double ratio = residual / sensitivity;
         final double responseSeconds = ratio >= 5 ? 0.04 : 0.30;
+        final double priorSeconds = prior.exposure.exposure > 0 &&
+                prior.exposure.tripTimeSeconds.isFinite
+            ? prior.exposure.exposure * prior.exposure.tripTimeSeconds
+            : 0.0;
         final double heldSeconds = ratio >= 1
-            ? prior.exposure.exposure * prior.exposure.tripTimeSeconds +
-                elapsed.inMicroseconds / 1000000.0
+            ? priorSeconds + elapsed.inMicroseconds / 1000000.0
             : 0.0;
         final bool tripped = ratio >= 1 &&
             heldSeconds + 1e-12 >= responseSeconds;

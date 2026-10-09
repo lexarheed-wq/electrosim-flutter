@@ -48,7 +48,9 @@ jobs:
         run: |
           flutter pub get
           flutter test --update-goldens test/g12rq_premium_rcd2p_visual_test.dart
+          flutter test --update-goldens test/g12rq_actual_app_visual_proof_test.dart
           test -s test/goldens/g12rq_premium_rcd2p_palette_board.png
+          test -s test/goldens/g12rq_actual_widgets_palette_board.png
       - name: Publish exact Flutter screenshot for review
         shell: bash
         run: |
@@ -56,6 +58,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          git add apps/electrosim/test/goldens/g12rq_actual_widgets_palette_board.png
           if ! git diff --cached --quiet; then
             git commit -m "proof(g12rq): real Flutter visual iteration 1 [skip ci]"
             git push origin HEAD:fix/g12rq-test-t-engine-20261009
@@ -63,5 +66,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: G12RQ-Flutter-real-visual-proof
-          path: apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+          path: |
+            apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
+            apps/electrosim/test/goldens/g12rq_actual_widgets_palette_board.png
           retention-days: 14

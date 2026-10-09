@@ -322,7 +322,6 @@ class _Scene {
   final Canvas canvas;
   final _Projection p;
   static const blanc = Color(0xFFFAFBF7);
-  static const gris = Color(0xFFC6CDC8);
   static const graphite = Color(0xFF25292D);
   static const accent = Color(0xFF098D43);
   Color shade(Color c, double factor) => Color.fromARGB(

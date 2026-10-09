@@ -444,7 +444,7 @@ final class ProtectionCoordinator {
       }
 
       final double? currentA = currentFor(component);
-      if (currentA == null) {
+      if (currentA == null && component.modelType != 'rcd_2p_ac1') {
         next[component.id] = prior;
         continue;
       }

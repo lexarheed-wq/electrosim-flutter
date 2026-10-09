@@ -14,4 +14,6 @@ export 'src/wire_preview_planner.dart';
 export 'src/wire_semantics.dart';
 export 'src/physical_wire_path.dart';
 export 'src/din_rail_visual.dart';
+export 'src/cabinet_layout.dart';
+export 'src/cabinet_fixture_painter.dart';
 export 'src/motor_terminal_geometry.dart';

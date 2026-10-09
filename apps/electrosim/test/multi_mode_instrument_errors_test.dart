@@ -49,6 +49,36 @@ void main() {
     expect(measurement.result?.reading?.value, closeTo(230, .05));
   });
 
+  test('AC1 physical series ammeter remains valid with a floating component', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('ammeter'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('line'),
+      burdenResistanceOhm: .01,
+    );
+    final circuit = _ac1(
+      connectedLoad: true,
+      instruments: [meter],
+      probes: [
+        ProbeConnection(
+          id: ProbeId('a-plus'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('l'),
+        ),
+        ProbeConnection(
+          id: ProbeId('a-com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('load-a'),
+        ),
+      ],
+    );
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: meter);
+    expect(read.status, PhysicalInstrumentStatus.valid,
+        reason: read.message);
+    expect(read.result?.reading?.value, closeTo(5.0, 0.01));
+  });
+
   test('PV disconnected voltmeter/ammeter show wiring required, not N/A', () {
     final v = InstrumentInstance(id: InstrumentId('v'),
       kind: InstrumentKind.voltmeter, mode: InstrumentMode.voltageDc);
@@ -77,6 +107,29 @@ void main() {
     final read = projection.read(snapshot: snapshot, instrument: v);
     expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
     expect(read.result?.reading?.value, closeTo(400, 1e-6));
+  });
+
+  test('PV inverter AC output voltmeter reads solved RMS voltage', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('pv-ac-voltmeter'),
+      kind: InstrumentKind.voltmeter,
+      mode: InstrumentMode.voltageAcRms,
+    );
+    final circuit = _pvWithMeters([meter], [
+      ProbeConnection(
+        id: ProbeId('inv-v'), instrumentId: meter.id,
+        port: InstrumentPort.voltOhm, terminalId: TerminalId('inv-l'),
+      ),
+      ProbeConnection(
+        id: ProbeId('inv-com'), instrumentId: meter.id,
+        port: InstrumentPort.common, terminalId: TerminalId('inv-n'),
+      ),
+    ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: meter);
+    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+    expect(read.result?.reading?.value, closeTo(230, 1e-6));
   });
 
   test('PV clamp reads solved source line current, not arbitrary cable', () {

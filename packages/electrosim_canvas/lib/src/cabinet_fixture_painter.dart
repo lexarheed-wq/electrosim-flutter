@@ -81,3 +81,28 @@ void _paintTerminalZone(Canvas canvas, Rect rect, double scale) {
     paint,
   );
 }
+
+void paintCabinetSelection(
+  Canvas canvas, {
+  required CabinetFixture? fixture,
+  required Offset Function(Offset) worldToScreen,
+  required double scale,
+}) {
+  if (fixture == null) return;
+  final topLeft = worldToScreen(fixture.bounds.topLeft);
+  final bounds = topLeft & Size(fixture.bounds.width * scale,
+      fixture.bounds.height * scale);
+  canvas.drawRect(
+    bounds.inflate(2),
+    Paint()
+      ..color = const Color(0xFF2563EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2,
+  );
+  final handleSize = 12.0;
+  canvas.drawRect(
+    Rect.fromCenter(center: bounds.bottomRight,
+      width: handleSize, height: handleSize),
+    Paint()..color = const Color(0xFF2563EB),
+  );
+}

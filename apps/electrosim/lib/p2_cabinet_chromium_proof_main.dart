@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';

@@ -1,0 +1,206 @@
+{
+  "breaker1-front": [
+    23.2,
+    85.2,
+    25.6,
+    42.0
+  ],
+  "breaker1-palette": [
+    14.8,
+    87.6,
+    21.2,
+    36.4
+  ],
+  "button-no-front": [
+    19.2,
+    26.4,
+    51.2,
+    50.8
+  ],
+  "button-no-palette": [
+    16.8,
+    42.4,
+    37.6,
+    39.2
+  ],
+  "button-nc-front": [
+    19.2,
+    26.4,
+    51.2,
+    50.8
+  ],
+  "button-nc-palette": [
+    16.8,
+    42.4,
+    37.6,
+    39.2
+  ],
+  "breaker3-front": [
+    26.0,
+    95.6,
+    68.0,
+    47.6
+  ],
+  "breaker3-palette": [
+    23.6,
+    96.4,
+    51.6,
+    43.6
+  ],
+  "isolator3-front": [
+    31.2,
+    122.4,
+    137.6,
+    60.4
+  ],
+  "isolator3-palette": [
+    38.8,
+    119.6,
+    100.4,
+    59.6
+  ],
+  "isolator4-front": [
+    36.0,
+    122.4,
+    168.0,
+    60.4
+  ],
+  "isolator4-palette": [
+    48.0,
+    118.4,
+    122.0,
+    62.0
+  ],
+  "breaker4-front": [
+    21.2,
+    98.4,
+    101.2,
+    48.8
+  ],
+  "breaker4-palette": [
+    23.6,
+    97.2,
+    75.6,
+    48.0
+  ],
+  "breaker1-on-front": [
+    23.2,
+    86.0,
+    25.6,
+    35.6
+  ],
+  "breaker1-trip-front": [
+    23.2,
+    84.4,
+    25.6,
+    40.0
+  ],
+  "breaker1-on-palette": [
+    11.6,
+    87.2,
+    27.6,
+    32.0
+  ],
+  "breaker1-trip-palette": [
+    12.8,
+    87.6,
+    24.8,
+    34.0
+  ],
+  "breaker3-on-front": [
+    26.0,
+    97.2,
+    68.0,
+    39.6
+  ],
+  "breaker3-trip-front": [
+    26.0,
+    95.2,
+    68.0,
+    44.8
+  ],
+  "breaker3-on-palette": [
+    20.0,
+    96.0,
+    59.2,
+    39.2
+  ],
+  "breaker3-trip-palette": [
+    21.2,
+    96.0,
+    56.4,
+    42.0
+  ],
+  "isolator3-on-front": [
+    31.2,
+    125.6,
+    137.6,
+    48.4
+  ],
+  "isolator3-trip-front": [
+    31.2,
+    122.4,
+    137.6,
+    56.8
+  ],
+  "isolator3-on-palette": [
+    34.0,
+    120.0,
+    109.6,
+    53.6
+  ],
+  "isolator3-trip-palette": [
+    36.0,
+    119.6,
+    105.2,
+    57.6
+  ],
+  "isolator4-on-front": [
+    36.0,
+    125.6,
+    168.0,
+    48.4
+  ],
+  "isolator4-trip-front": [
+    36.0,
+    122.4,
+    168.0,
+    56.8
+  ],
+  "isolator4-on-palette": [
+    42.8,
+    118.4,
+    132.0,
+    56.4
+  ],
+  "isolator4-trip-palette": [
+    44.8,
+    118.0,
+    127.6,
+    60.4
+  ],
+  "breaker4-on-front": [
+    21.2,
+    100.0,
+    101.2,
+    40.4
+  ],
+  "breaker4-trip-front": [
+    21.2,
+    98.0,
+    101.2,
+    45.6
+  ],
+  "breaker4-on-palette": [
+    20.0,
+    97.2,
+    83.2,
+    42.8
+  ],
+  "breaker4-trip-palette": [
+    21.6,
+    97.2,
+    79.6,
+    45.6
+  ]
+}

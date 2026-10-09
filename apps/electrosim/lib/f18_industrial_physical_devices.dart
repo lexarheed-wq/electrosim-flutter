@@ -578,7 +578,18 @@ final class _IndustrialPainter extends CustomPainter {
       (size.width - base.width * k) / 2,
       (size.height - base.height * k) / 2,
     );
-    canvas.scale(k);
+    if (v.device == IndustrialDevice.lamp) {
+      // The physical A60 + holder footprint is taller than the legacy
+      // fallback artwork. Stretch its normalized coordinates so the two
+      // screw centres still coincide with the Canvas terminal contract.
+      canvas.translate(
+        -(size.width - base.width * k) / 2,
+        -(size.height - base.height * k) / 2,
+      );
+      canvas.scale(size.width / base.width, size.height / base.height);
+    } else {
+      canvas.scale(k);
+    }
     switch (v.device) {
       case IndustrialDevice.supply:
         supply(canvas);

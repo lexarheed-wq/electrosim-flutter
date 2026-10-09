@@ -18,6 +18,21 @@ void main() {
     }
   });
 
+  test(
+    'industrial motor has a larger physical footprint than protection and lamp',
+    () {
+      final motor = F18ReferenceComponentMetrics.boardSizeFor('motor_3p_6t');
+      for (final type in ['breaker_ac1', 'breaker_3p', 'lamp']) {
+        final other = F18ReferenceComponentMetrics.boardSizeFor(type);
+        expect(motor.width, greaterThan(other.width * 3), reason: type);
+        expect(motor.height, greaterThan(other.height * 1.5), reason: type);
+      }
+    },
+  );
+  test('A60 lamp and holder preserve a tall physical envelope', () {
+    final lamp = F18ReferenceComponentMetrics.boardSizeFor('lamp');
+    expect(lamp.height / lamp.width, greaterThan(1.85));
+  });
   test('all six motor studs coincide with their interactive anchors', () {
     final size = F18ReferenceComponentMetrics.boardSizeFor('motor_3p_6t');
     final studs = SixTerminalMotorGeometry.offsets(size);

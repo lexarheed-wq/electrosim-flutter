@@ -9,6 +9,7 @@ import 'f20_catalog_components.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_industrial_physical_devices.dart';
+import 'f18_industrial_physical_plate.dart';
 import 'reference_components/reference_models.dart';
 import 'reference_components/disjoncteur_3d.dart';
 import 'reference_components/reference_widgets.dart';
@@ -112,7 +113,7 @@ abstract final class F18ReferenceComponentMetrics {
       .toLowerCase()) {
     'dc_voltage_source' || 'voltage_source' => const Size(140, 160),
     'switch' || 'switch_spst' => const Size(90, 140),
-    'lamp' => const Size(130, 160),
+    'lamp' => const Size(130, 260),
     'breaker_dc' || 'breaker_ac1' || 'breaker' => const Size(72, 160),
     'rcd_2p_ac1' => const Size(160, 260),
     'push_button_no' => const Size(90, 140),
@@ -310,6 +311,26 @@ class F18ComponentAssetVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (F18PhysicalPlateAssets.ready(type)) {
+      return F18IndustrialPhysicalPlate(
+        modelType: type,
+        size: size,
+        perspective: F18PhysicalPresentationScope.perspectiveOf(context),
+        closed: closed ?? true,
+        tripped: tripped,
+        pressed: pressed,
+        energized: energized,
+        actuated: actuated,
+        active: active,
+        showTerminals: showTerminals,
+        phase: animationValue,
+        currentA: currentA,
+        voltageV: voltageV,
+        ratedCurrentA: ratedCurrentA,
+        currentLimitA: currentLimitA,
+        variantKey: variantKey,
+      );
+    }
     if (type == 'rcd_2p_ac1') {
       // Genuine 3D painter, directly in frontal camera on the physical board.
       // Unlike the 1P breaker, this device really has four canonical ports.

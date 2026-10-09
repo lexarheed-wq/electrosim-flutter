@@ -137,7 +137,7 @@ CircuitState _selfHoldAssembly({
           _t('grid-l3', 'L3', PhaseTag.l3, TerminalRole.phaseL3),
           _t('grid-n', 'N', PhaseTag.neutral, TerminalRole.neutral),
         ],
-        parameters: const {'phaseVoltageRmsV': phaseVoltageV},
+        parameters: {'phaseVoltageRmsV': phaseVoltageV},
       ),
     ],
     components: [

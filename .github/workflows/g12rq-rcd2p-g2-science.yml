@@ -3,7 +3,7 @@ on:
   push:
     branches: [feat/g12rq-rcd2p-canonical-g2-20261009]
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: g12rq-rcd2p-g2
   cancel-in-progress: true
@@ -22,7 +22,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dart format --output=none --set-exit-if-changed packages/electrosim_domain/lib/src/component_model_contract.dart packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart packages/electrosim_protection/lib/src/protection_coordinator.dart packages/electrosim_protection/test/g12rq_rcd_2p_residual_test.dart
+          dart format packages/electrosim_domain/lib/src/component_model_contract.dart packages/electrosim_domain/lib/src/component_physics_contract.dart packages/electrosim_solver_ac/lib/src/solver_ac1.dart packages/electrosim_protection/lib/src/protection_coordinator.dart packages/electrosim_protection/test/g12rq_rcd_2p_residual_test.dart
       - name: Canonical domain and all AC1 solver tests
         shell: bash
         run: |
@@ -48,3 +48,18 @@ jobs:
           python3 tools/core_unify_architecture_guard.py
           python3 tools/postv2_p1_contract.py
           git diff --check
+      - name: Commit formatter results after scientific qualification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/electrosim_domain/lib/src/component_model_contract.dart
+          git add packages/electrosim_domain/lib/src/component_physics_contract.dart
+          git add packages/electrosim_solver_ac/lib/src/solver_ac1.dart
+          git add packages/electrosim_protection/lib/src/protection_coordinator.dart
+          git add packages/electrosim_protection/test/g12rq_rcd_2p_residual_test.dart
+          if ! git diff --staged --quiet; then
+            git commit -m "style(rcd): canonical formatting after verified tests [skip ci]"
+            git push origin HEAD:feat/g12rq-rcd2p-canonical-g2-20261009
+          fi

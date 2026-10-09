@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'f17_tp_session_dialog.dart';

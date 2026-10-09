@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(() async {
+    expect(await Disjoncteur3D.prechargerTextures(), isTrue);
+  });
   testWidgets('G5 proof uses the actual palette and board widgets', (tester) async {
     // Render readable typography in test mode, as in the G5 native showcase.
     final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');

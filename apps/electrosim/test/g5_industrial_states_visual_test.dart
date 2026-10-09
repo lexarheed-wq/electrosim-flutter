@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(() async {
+    expect(await Disjoncteur3D.prechargerTextures(), isTrue);
+  });
   testWidgets('G5 OFF ON TRIP: same industrial assembly, same four ports', (
     tester,
   ) async {

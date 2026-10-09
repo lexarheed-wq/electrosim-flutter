@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
-/// Non-simulable presentation of the exact premium two-pole RCD painter.
-///
-/// The CORE-UNIFY domain does not currently assert a validated 2P RCD model:
-/// no terminal, contact, residual-current trip, or TEST interaction is faked.
-/// This visual preview must never be routed from breaker_dc/breaker_ac1.
+/// Isolated presentation of the production two-pole RCD renderer.
+/// Commands are deliberately disabled in this detail view. The working
+/// palette/board integration is provided by the qualified rcd_2p_ac1 model.
 class F18PremiumRcd2pShowcase extends StatelessWidget {
   const F18PremiumRcd2pShowcase({super.key});
 
@@ -73,7 +71,7 @@ class _RcdViewPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'APERÇU VISUEL · NON SIMULABLE',
+          'DÉTAIL DU RENDU · COMMANDES NON ACTIVÉES',
           style: TextStyle(fontSize: 10, color: Color(0xFF5A6872)),
         ),
       ],

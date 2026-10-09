@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:electrosim/f9_component_palette.dart';
+import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:electrosim/reference_components/reference_widgets_extended.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -27,6 +28,18 @@ void main() {
           if (item.kind == F9PaletteElementKind.instrument) {
             expect(find.byType(F18PhysicalInstrumentPreview), findsOneWidget);
             expect(find.byType(F18ComponentAssetVisual), findsNothing);
+            expect(tester.takeException(), isNull);
+            continue;
+          }
+          if (item.modelType == 'rcd_2p_ac1') {
+            final native = tester.widget<Disjoncteur3D>(
+              find.byType(Disjoncteur3D),
+            );
+            expect(native.vue, VueDisjoncteur.palette);
+            expect(native.width, 66);
+            expect(native.height, 107);
+            expect(native.onCommande, isNull);
+            expect(native.onTest, isNull);
             expect(tester.takeException(), isNull);
             continue;
           }
@@ -121,12 +134,18 @@ void main() {
           await tester.pump();
 
           if (IndustrialDeviceContract.resolve(modelType) != null) {
-            expect(find.byType(IndustrialPhysicalView), findsOneWidget,
-                reason: modelType);
+            expect(
+              find.byType(IndustrialPhysicalView),
+              findsOneWidget,
+              reason: modelType,
+            );
             expect(find.byType(ExtendedReferenceComponentView), findsNothing);
           } else {
-            expect(find.byType(ExtendedReferenceComponentView), findsOneWidget,
-                reason: modelType);
+            expect(
+              find.byType(ExtendedReferenceComponentView),
+              findsOneWidget,
+              reason: modelType,
+            );
           }
           expect(tester.takeException(), isNull, reason: modelType);
         }

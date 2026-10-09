@@ -41,7 +41,24 @@ void main() {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('PALETTE ELECTROSIM'),
+                      const Text('CARTE PALETTE'),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: 72,
+                        height: 108,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: F9ComponentPreview(
+                            definition: definition, compact: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('GLISSER SUR PLATINE'),
                       const SizedBox(height: 12),
                       F9ComponentPreview(definition: definition),
                     ],
@@ -74,11 +91,15 @@ void main() {
     final views = tester.widgetList<Disjoncteur3D>(
       find.byType(Disjoncteur3D),
     ).toList();
-    expect(views, hasLength(2));
+    expect(views, hasLength(3));
     expect(views[0].vue, VueDisjoncteur.palette);
-    expect(views[1].vue, VueDisjoncteur.platine);
-    expect(views[0].calibreA, 16);
-    expect(views[1].sensibiliteMA, 30);
+    expect(views[1].vue, VueDisjoncteur.palette);
+    expect(views[2].vue, VueDisjoncteur.platine);
+    expect(views[0].width, 66);
+    expect(views[0].height, 107);
+    expect(views[1].width, 112);
+    expect(views[1].height, 182);
+    expect(views[2].sensibiliteMA, 30);
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-actual-widgets-proof')),

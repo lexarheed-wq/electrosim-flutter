@@ -26,7 +26,7 @@ void main() {
 
   test('unpowered RCD test T cannot invent a trip', () {
     final circuit = _circuit(powered: false);
-    final simulation = ElectroSimSimulationController(circuit: unpowered);
+    final simulation = ElectroSimSimulationController(circuit: circuit);
     addTearDown(simulation.dispose);
     expect(simulation.testResidualDevice(ComponentId('rcd')), isFalse);
     expect(simulation.snapshot.protectionTripped(ComponentId('rcd')), isFalse);
@@ -86,7 +86,7 @@ CircuitState _circuit({bool powered = true}) => CircuitState(
         _terminal('vl', PhaseTag.l1),
         _terminal('vn', PhaseTag.neutral),
       ],
-      parameters: const <String, Object?>{'voltageRmsV': powered ? 230.0 : 0.0},
+      parameters: <String, Object?>{'voltageRmsV': powered ? 230.0 : 0.0},
     ),
   ],
   settings: const <String, Object?>{'frequencyHz': 50.0},

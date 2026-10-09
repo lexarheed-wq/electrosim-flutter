@@ -2236,6 +2236,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
 
     if (modelType == 'rcd_2p_ac1') {
+      if (Disjoncteur3D.hitsTestButton(baseSize, local)) {
+        return (id: id, modelType: 'rcd_2p_ac1:test');
+      }
       return Disjoncteur3D.hitsLever(baseSize, local)
           ? (id: id, modelType: modelType)
           : null;
@@ -2328,6 +2331,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void _actuateDirectCanvasControl(String elementId, String modelType) {
     if (_blockStudentTpMutation()) return;
     final String type = modelType.toLowerCase();
+
+    if (type == 'rcd_2p_ac1:test') {
+      final bool tripped = _simulation.testResidualDevice(
+        ComponentId(elementId),
+      );
+      setState(() {
+        _selected = elementId;
+        _status = tripped
+            ? 'Test T : $elementId — déclenchement différentiel'
+            : 'Test T indisponible : appareil ouvert, déclenché ou non alimenté';
+      });
+      return;
+    }
 
     if (type == 'push_button_no' || type == 'push_button_nc') {
       _momentaryReleaseTimers.remove(elementId)?.cancel();

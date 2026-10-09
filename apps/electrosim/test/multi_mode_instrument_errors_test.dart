@@ -79,6 +79,131 @@ void main() {
     expect(read.result?.reading?.value, closeTo(5.0, 0.01));
   });
 
+  test('PV DC series ammeter inserts 0.01-ohm burden in source cable', () {
+    final a = InstrumentInstance(
+      id: InstrumentId('dc-series'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      burdenResistanceOhm: 0.01,
+    );
+    final circuit = _pvWithMeters([a], [
+      ProbeConnection(id: ProbeId('series-a'), instrumentId: a.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('series-com'), instrumentId: a.id,
+        port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: a);
+    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+    expect(read.result?.reading?.value,
+        greaterThanOrEqualTo(snapshot.pv.pvDrawnCurrentA));
+    expect(read.result?.reading?.value, lessThan(10));
+    expect(read.result?.evidenceIds.join(' '), contains('meter-loss-w:'));
+  });
+
+  test('PV DC ammeter burden changes current and enforces power limit', () {
+    InstrumentInstance amp(double burdenOhm, String id) =>
+        InstrumentInstance(
+          id: InstrumentId(id),
+          kind: InstrumentKind.ammeter,
+          mode: InstrumentMode.currentDc,
+          cutConnectionId: ConnectionId('dc-pos'),
+          burdenResistanceOhm: burdenOhm,
+          maximumCurrentA: 50,
+          fuseRatingA: 50,
+        );
+    double read(double burdenOhm) {
+      final meter = amp(burdenOhm, 'a');
+      final circuit = _pvWithMeters([meter], [
+        ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+        ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+      ]);
+      final result = projection.read(
+        snapshot: engine.evaluate(circuit), instrument: meter);
+      expect(result.status, PhysicalInstrumentStatus.valid,
+          reason: result.message);
+      return result.result!.reading!.value;
+    }
+    expect(read(2), greaterThan(read(.01)));
+
+    final meter = amp(1000, 'excessive');
+    final circuit = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+        port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+        port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    final excessive = projection.read(
+        snapshot: engine.evaluate(circuit), instrument: meter);
+    expect(excessive.status, PhysicalInstrumentStatus.unavailable);
+  });
+
+  test('PV series ammeter refuses wrong lead placement or blown fuse', () {
+    final wrong = InstrumentInstance(
+      id: InstrumentId('wrong'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+    );
+    final wrongCircuit = _pvWithMeters([wrong], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: wrong.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-neg')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: wrong.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    expect(projection.read(
+        snapshot: engine.evaluate(wrongCircuit), instrument: wrong).status,
+        PhysicalInstrumentStatus.invalidWiring);
+
+    final fused = InstrumentInstance(
+      id: InstrumentId('fused'), kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      cutConnectionId: ConnectionId('dc-pos'),
+      fuseRatingA: 1, maximumCurrentA: 10,
+    );
+    final fusedCircuit = _pvWithMeters([fused], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: fused.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('pv-pos')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: fused.id,
+          port: InstrumentPort.common, terminalId: TerminalId('inv-dc-pos')),
+    ]);
+    expect(projection.read(
+        snapshot: engine.evaluate(fusedCircuit), instrument: fused).status,
+        PhysicalInstrumentStatus.blownFuse);
+  });
+
+  test('PV inverter AC series ammeter models load plus burden', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('pv-ac-series'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      cutConnectionId: ConnectionId('ac-l'),
+      burdenResistanceOhm: 1.0,
+      maximumCurrentA: 20,
+      fuseRatingA: 20,
+    );
+    final circuit = _pvWithMeters([meter], [
+      ProbeConnection(id: ProbeId('a'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: TerminalId('inv-l')),
+      ProbeConnection(id: ProbeId('com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: TerminalId('load-l')),
+    ]);
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    final read = projection.read(snapshot: snapshot, instrument: meter);
+    expect(read.status, PhysicalInstrumentStatus.valid, reason: read.message);
+    final rLoad = snapshot.pv.loadResults.single.resistanceOhm;
+    expect(read.result?.reading?.value,
+        closeTo(snapshot.pv.inverterOutputVoltageRmsV / (rLoad + 1.0),
+          1e-6));
+    expect(read.result?.reading?.value,
+        lessThan(snapshot.pv.inverterOutputCurrentRmsA));
+  });
+
   test('PV disconnected voltmeter/ammeter show wiring required, not N/A', () {
     final v = InstrumentInstance(id: InstrumentId('v'),
       kind: InstrumentKind.voltmeter, mode: InstrumentMode.voltageDc);

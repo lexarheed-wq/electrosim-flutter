@@ -1,5 +1,7 @@
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_controls/electrosim_controls.dart';
+import 'package:electrosim_topology/electrosim_topology.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _engine = ElectroSimRuntimeEngine();
@@ -31,10 +33,20 @@ void main() {
       expect(state.coilVoltageV,
           closeTo(expectRunning ? 230.0 : 0.0, .001),
           reason: '$label: coil A1/A2');
-      expect(snapshot.effectiveCircuit.components
-          .singleWhere((c) => c.id == ComponentId('aux'))
-          .controlState['actuated'], expectRunning,
-          reason: '$label: auxiliary 13/14');
+      final controlResult = const ElectromechanicalControlEngine().solveAc3(
+        circuit: circuit,
+        topology: const TopologyEngine().compile(circuit),
+        previousStates: {_contactorId: priorClosed},
+      );
+      expect(controlResult.converged, isTrue, reason: label);
+      expect(controlResult.issues, isEmpty, reason: label);
+      expect(
+        controlResult.effectiveCircuit.components
+            .singleWhere((c) => c.id == ComponentId('aux'))
+            .controlState['actuated'],
+        expectRunning,
+        reason: '$label: auxiliary 13/14',
+      );
       for (final pole in ['L1','L2','L3']) {
         final amps = snapshot.ac3
             .branch('component:k1:power:$pole').current?.magnitude ?? 0.0;

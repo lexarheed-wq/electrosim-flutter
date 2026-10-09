@@ -1,0 +1,102 @@
+name: Post-V2 P2 Real Chromium Proof
+on:
+  push:
+    branches:
+      - feat/postv2-p2-cabinet-layout-r1-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: postv2-p2-chromium
+  cancel-in-progress: true
+jobs:
+  real-product-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Verify actual cabinet interaction test
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter test test/postv2_p2_cabinet_editor_test.dart
+          flutter test test/postv2_p2_cabinet_workspace_test.dart
+          flutter test test/postv2_p2_layout_persistence_test.dart
+      - name: Build genuine Flutter workspace for Chromium
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ../../tools/premium_rcd2p/decode_source.py
+          flutter create --platforms=web --project-name electrosim . >/dev/null
+          flutter build web --release -t lib/p2_cabinet_chromium_proof_main.dart
+          mkdir -p ../../audit/postv2-p2/chromium/web
+          cp -R build/web/. ../../audit/postv2-p2/chromium/web/
+      - name: Render actual Flutter product UI under headless Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=./audit/postv2-p2/chromium
+          mkdir -p "$output/screenshots"
+          python3 -m http.server 8767 --directory "$output/web" > "$output/server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..75}; do
+            if curl -fsS http://127.0.0.1:8767/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          chrome="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$chrome"
+          "$chrome" --version > "$output/CHROMIUM_VERSION.txt"
+          for stage in overview resized; do
+            timeout 90s "$chrome" \
+              --headless=new --no-sandbox --disable-dev-shm-usage \
+              --disable-background-networking --disable-default-apps \
+              --disable-extensions --disable-sync --no-first-run \
+              --hide-scrollbars --enable-unsafe-swiftshader \
+              --window-size=1550,1050 --virtual-time-budget=13000 \
+              --screenshot="$output/screenshots/P2_${stage}_real_flutter_chromium.png" \
+              "http://127.0.0.1:8767/?stage=$stage" \
+              > "$output/${stage}.log" 2>&1
+            test -s "$output/screenshots/P2_${stage}_real_flutter_chromium.png"
+          done
+          python3 - <<'PY'
+          import glob, os, struct
+          for name in glob.glob('audit/postv2-p2/chromium/screenshots/*.png'):
+              with open(name, 'rb') as f: h = f.read(24)
+              assert h[:8] == b'\x89PNG\r\n\x1a\n'
+              width, height = struct.unpack('>II',h[16:24])
+              assert width >= 1500 and height >= 900,(name,width,height)
+              assert os.path.getsize(name) > 40_000,(name,os.path.getsize(name))
+              print('P2_CHROMIUM_SCREENSHOT_VALID',name,width,height,os.path.getsize(name))
+          PY
+          {
+            echo '# P2 Chromium — real Flutter workspace evidence'
+            echo
+            echo "Commit: `$GITHUB_SHA`"
+            echo 'Browser:'
+            cat "$output/CHROMIUM_VERSION.txt"
+            echo
+            echo 'Screenshots taken from the compiled production F18 workspace; only initial furniture differs between the two scenarios.'
+            echo 'These images are renderer evidence. Pointer interaction tests are run separately above.'
+            echo
+            sha256sum "$output"/screenshots/*.png
+          } > "$output/PROOF_REPORT.md"
+          echo P2_CHROMIUM_REAL_FLUTTER_PASS
+      - name: Upload Chromium screenshots, browser metadata, and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-P2-Real-Flutter-Chromium-Evidence
+          path: |
+            audit/postv2-p2/chromium/screenshots/
+            audit/postv2-p2/chromium/CHROMIUM_VERSION.txt
+            audit/postv2-p2/chromium/PROOF_REPORT.md
+          retention-days: 30
+          if-no-files-found: error

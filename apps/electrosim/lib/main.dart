@@ -1597,11 +1597,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (_circuit.instruments.isEmpty) return const <String, String>{};
     final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
     final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
-    // A new solver snapshot at the same displayed second must invalidate
-    // stale ERR readings after wiring, protection, or contactor transitions.
+    // The authored circuit identity invalidates cache on wiring edits.
+    // Recalculate immediately if solve status changes (ERR -> valid) while
+    // retaining one-second throttling during steady-state simulation; each
+    // physical probe may require a separate expensive solver projection.
     if (identical(_meterReadoutCacheCircuit, _circuit) &&
-        identical(_meterReadoutCacheSnapshot, snapshot) &&
-        _meterReadoutCacheSecond == second) {
+        _meterReadoutCacheSecond == second &&
+        (_meterReadoutCacheSnapshot?.solved == snapshot.solved)) {
       return _meterReadoutCache;
     }
     const ElectroSimInstrumentProjection projection =

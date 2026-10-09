@@ -54,6 +54,10 @@ jobs:
           mkdir -p "$web_dest"
           cp -R build/web/. "$web_dest/"
           python3 "$base/tools/f17_validate_student_mac_bundle.py" "$app"
+          # Flutter signs the native app during build; adding Web resources
+          # afterwards changes the sealed bundle. Re-sign and verify it.
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
           output="$base/f17-classroom-macOS"
           mkdir -p "$output"
           executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"

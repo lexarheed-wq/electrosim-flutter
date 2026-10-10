@@ -9,6 +9,10 @@ dependencies:
     sdk: flutter
   electrosim_domain:
     path: ../../packages/electrosim_domain
+  electrosim_multiphysics:
+    path: ../../packages/electrosim_multiphysics
+  electrosim_pneumatic_domain:
+    path: ../../packages/electrosim_pneumatic_domain
   electrosim_controls:
     path: ../../packages/electrosim_controls
   electrosim_protection:

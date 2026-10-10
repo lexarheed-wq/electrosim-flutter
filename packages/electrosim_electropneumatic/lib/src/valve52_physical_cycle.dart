@@ -1,7 +1,6 @@
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 
 import 'coupled_clock.dart';
-import 'dc_coil_meter.dart';
 import 'solenoid_actuator.dart';
 
 /// Concrete adapter: a single accepted physical cylinder snapshot and a
@@ -31,17 +30,24 @@ final class Valve52PhysicalCycle {
         valveMemory: valveMemory,
         solveElectrical: solveElectrical,
         airTime: (MovingCylinderSnapshot s) => s.timeS,
-        cylinderPosition: endSensor == null ? null : (MovingCylinderSnapshot s) => s.positionM,
+        cylinderPosition: endSensor == null
+            ? null
+            : (MovingCylinderSnapshot s) => s.positionM,
         positionSensor: endSensor,
         maxStepS: maxStepS,
-        advanceAir: (MovingCylinderSnapshot before, double dt, ValveSpoolSide spool) {
-          final MovingDoubleActingAirCylinder routed = routing.connect(
-            cylinder: cylinder,
-            snapshot: before,
-            energized: spool == ValveSpoolSide.coilSide,
-          );
-          return routed.advance(before, durationS: dt, stopAtFirstImpact: true);
-        },
+        advanceAir:
+            (MovingCylinderSnapshot before, double dt, ValveSpoolSide spool) {
+              final MovingDoubleActingAirCylinder routed = routing.connect(
+                cylinder: cylinder,
+                snapshot: before,
+                energized: spool == ValveSpoolSide.coilSide,
+              );
+              return routed.advance(
+                before,
+                durationS: dt,
+                stopAtFirstImpact: true,
+              );
+            },
       );
 
   CoupledRuntimeSnapshot<MovingCylinderSnapshot> initial() =>

@@ -35,6 +35,11 @@ jobs:
           flutter pub get
           flutter analyze
           flutter test --no-pub --concurrency=1
+      - name: Validate TP engine topology, scoring and lifecycle
+        working-directory: packages/electrosim_tp
+        run: |
+          dart pub get
+          dart test
       - name: Verify Canvas and DIN support regressions
         working-directory: packages/electrosim_canvas
         run: |

@@ -26,6 +26,7 @@ final class ProtectionProfile {
   final ProtectionTripCurve curve;
   final double magneticLowMultiple;
   final double magneticHighMultiple;
+
   /// Educational IEC 60947-4-1 trip-class envelope, not a manufacturer curve.
   final String thermalTripClass;
 }
@@ -142,8 +143,12 @@ final class ProtectionDynamicsEngine {
       // These time anchors are deliberately representative, not a claim to
       // reproduce any manufacturer's measured bimetal or motor thermal model.
       // Class 10 remains the backward-compatible default for old circuits.
-      final (double at15, double at2, double at4, double at72) =
-          switch (profile.thermalTripClass) {
+      final (
+        double at15,
+        double at2,
+        double at4,
+        double at72,
+      ) = switch (profile.thermalTripClass) {
         '10A' => (90.0, 60.0, 10.0, 5.0),
         '20' => (360.0, 240.0, 40.0, 16.0),
         '30' => (600.0, 360.0, 60.0, 24.0),

@@ -157,7 +157,7 @@ void main() {
       fromTerminalId: originalWire.fromTerminalId,
       toTerminalId: originalWire.toTerminalId,
       conductorType: originalWire.conductorType,
-      phase: PhaseTag.neutral,
+      phase: PhaseTag.l1,
       enabled: originalWire.enabled,
       metadata: originalWire.metadata,
     );

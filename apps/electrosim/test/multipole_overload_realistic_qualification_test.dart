@@ -259,8 +259,9 @@ void main() {
           d.solved &&
           ia.every((x) => x > 0 && x.isFinite) &&
           ib.every((x) => x > 0 && x.isFinite) &&
-          ratio > 2.9 &&
-          ratio < 3.1;
+          // A star winding receives 230 V and a delta winding 400 V.
+          // Winding-current ratio is sqrt(3); the LINE-current ratio is 3.
+          (ratio - 3.0 / 3.0 * 1.7320508075688772).abs() < 0.01;
       record('motor6-windings', key, pass, {
         'starWindingA': ia,
         'deltaWindingA': ib,
@@ -308,6 +309,10 @@ void main() {
         'tripTwoHoursAt2x': trip,
         'normalSolved': regular.solved,
         'overloadSolved': heavy.solved,
+        'normalDiagnostics': regular.ac3Result?.diagnostics.map((d) => d.message).toList(),
+        'heavyDiagnostics': heavy.ac3Result?.diagnostics.map((d) => d.message).toList(),
+        'normalProtectionIssues': regular.protectionIssues.map((d) => d.message).toList(),
+        'heavyProtectionIssues': heavy.protectionIssues.map((d) => d.message).toList(),
       });
       expect(pass, isTrue);
     });

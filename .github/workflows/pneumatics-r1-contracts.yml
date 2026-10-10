@@ -1,0 +1,65 @@
+name: PNEU-R1 — Pure Dart Port Contracts
+on:
+  push:
+    branches:
+      - feat/pneumatics-r1-domain-20261010
+  pull_request:
+    branches:
+      - docs/pneumatic-r0-baseline-20261010
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r1-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pneumatic-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Verify source provenance and no Flutter imports in pure domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r1
+          {
+            echo "head_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            flutter --version
+            dart --version 2>&1
+          } | tee build/pneumatics-r1/PROVENANCE.txt
+          if grep -R -n "package:flutter/" packages/electrosim_pneumatic_domain/lib; then
+            echo "Pure-Dart pneumatic domain may not import Flutter"
+            exit 1
+          fi
+      - name: Analyze and test physical contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_domain
+            dart pub get
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r1/PNEU_R1_CONTRACTS.log
+      - name: Verify original electrical domains unchanged by extensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/core_unify_architecture_guard.py 2>&1 | tee build/pneumatics-r1/architecture.log
+          python3 tools/postv2_p1_contract.py 2>&1 | tee build/pneumatics-r1/legacy-contracts.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r1-contracts-${{ github.sha }}
+          path: build/pneumatics-r1/
+          if-no-files-found: warn
+          retention-days: 21

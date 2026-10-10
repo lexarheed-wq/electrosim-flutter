@@ -361,8 +361,10 @@ void main() {
               ...?snapshot.ac1Result?.kclResiduals.values,
               ...?snapshot.ac3Result?.kclResiduals.values,
             ];
-            if (<double>[...nodeVoltages, ...residuals]
-                .any((n) => !n.isFinite)) {
+            if (<double>[
+              ...nodeVoltages,
+              ...residuals,
+            ].any((n) => !n.isFinite)) {
               violations.add('${item.keyName}/${mode.name}: nonfinite');
             }
             _result('inventory', item.keyName, 'OBSERVED', {

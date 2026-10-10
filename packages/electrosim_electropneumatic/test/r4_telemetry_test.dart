@@ -23,10 +23,7 @@ void main() {
       physical: CoupledRuntimeSnapshot<MovingCylinderSnapshot>(
         timeS: state.timeS,
         air: state,
-        coil: const Solenoid24vSnapshot(
-          energized: false,
-          measuredVoltageV: 0,
-        ),
+        coil: const Solenoid24vSnapshot(energized: false, measuredVoltageV: 0),
         spool: ValveSpoolSide.springSide,
         endContactActuated: false,
         electricalSolves: 0,
@@ -42,17 +39,23 @@ void main() {
     expect(sample.pressureBAbsPa, closeTo(101325, 1e-8));
     expect(sample.pressureAGaugeBar, closeTo(6, 1e-10));
     expect(sample.positionMm, closeTo(20, 1e-12));
-    expect(sample.forceN, closeTo(
-      cylinder.geometry.theoreticalForceN(
-        pressureAAbsPa: 701325,
-        pressureBAbsPa: 101325,
-      ), 1e-8,
-    ));
+    expect(
+      sample.forceN,
+      closeTo(
+        cylinder.geometry.theoreticalForceN(
+          pressureAAbsPa: 701325,
+          pressureBAbsPa: 101325,
+        ),
+        1e-8,
+      ),
+    );
     expect(sample.massResidualKg.abs(), lessThan(1e-12));
   });
 
   test('R4: telemetry history bounds memory and rejects time reversal', () {
-    final PneumaticTelemetrySeries series = PneumaticTelemetrySeries(capacity: 2);
+    final PneumaticTelemetrySeries series = PneumaticTelemetrySeries(
+      capacity: 2,
+    );
     PneumaticCylinderTelemetry sample(double t) => PneumaticCylinderTelemetry(
       timeS: t,
       pressureAAbsPa: 101325,

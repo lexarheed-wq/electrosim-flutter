@@ -1,8 +1,5 @@
 name: PNEU-R0 — Electrical Reference (non-mutating)
 on:
-  push:
-    branches:
-      - docs/pneumatic-r0-baseline-20261010
   pull_request:
     branches:
       - feat/g5-industrial-geometry-20261009
@@ -141,16 +138,23 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/premium_rcd2p/decode_source.py
-          cd apps/electrosim
-          flutter pub get
+          root="$PWD"
+          output="$(bash tools/f15_prepare_runner.sh web)"
+          case "$output" in
+            F15_RUNNER_PATH=*) runner="${output#F15_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F15_RUNNER_PROTOCOL: $output"; exit 69 ;;
+          esac
+          cd "$runner/apps/electrosim"
           flutter build web --release --target lib/main.dart --no-wasm-dry-run
           echo "$GITHUB_SHA" > build/web/PNEU_R0_SOURCE_SHA.txt
+          mkdir -p "$root/build/pneumatics-r0-production-web"
+          cp -R build/web/. "$root/build/pneumatics-r0-production-web/"
       - name: Check source immutability
         run: git diff --exit-code
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: pneumatics-r0-web-build-${{ github.sha }}
-          path: apps/electrosim/build/web/
+          path: build/pneumatics-r0-production-web/
           retention-days: 14
           if-no-files-found: error

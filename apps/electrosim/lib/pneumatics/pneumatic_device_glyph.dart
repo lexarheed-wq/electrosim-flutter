@@ -51,7 +51,8 @@ class _GlyphPainter extends CustomPainter {
     final double scale = (size.width / 110 < size.height / 42
             ? size.width / 110
             : size.height / 42)
-        .clamp(.1, 2.0);
+        .clamp(.1, 2.0)
+        .toDouble();
     canvas.scale(scale);
     switch (kind) {
       case PneumaticDeviceKind.valve32:

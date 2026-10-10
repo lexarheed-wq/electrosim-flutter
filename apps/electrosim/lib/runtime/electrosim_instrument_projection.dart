@@ -63,7 +63,17 @@ final class ElectroSimInstrumentProjection {
         'Instrument fuse blown.',
       );
     }
-    final CircuitState circuit = snapshot.circuit;
+    // The PV runtime can legitimately solve an autonomous battery as a
+    // DC island, without any array or inverter. Instruments must use the
+    // effective solver topology (DC) rather than the originally selected PV
+    // workspace mode; otherwise live battery voltage/current reads N/A.
+    final CircuitState circuit =
+        snapshot.circuit.mode == ElectricalMode.pv &&
+                snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
+                snapshot.dcResult != null &&
+                snapshot.pvResult == null
+            ? snapshot.effectiveCircuit
+            : snapshot.circuit;
     if (!circuit.instruments.any((item) => item.id == instrument.id)) {
       return error(
         PhysicalInstrumentStatus.invalidWiring,
@@ -217,6 +227,19 @@ final class ElectroSimInstrumentProjection {
         return error(
           PhysicalInstrumentStatus.invalidWiring,
           'Series connection is absent or disabled.',
+        );
+      }
+      final TerminalId? amp = probe(InstrumentPort.amp)?.terminalId;
+      final TerminalId? common = probe(InstrumentPort.common)?.terminalId;
+      final bool isAcrossCut =
+          (amp == original.fromTerminalId &&
+              common == original.toTerminalId) ||
+          (amp == original.toTerminalId &&
+              common == original.fromTerminalId);
+      if (!isAcrossCut) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must connect to opposite ends of the opened series wire.',
         );
       }
       // The original wire is opened in the temporary projection. A real

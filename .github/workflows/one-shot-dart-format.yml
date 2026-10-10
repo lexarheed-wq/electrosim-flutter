@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - migration-c15-full-parity
-      - feat/postv2-p3-schematic-svg-r2-20261010
     paths:
       - ".github/workflows/one-shot-dart-format.yml"
 
@@ -31,14 +30,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$GITHUB_REF_NAME" = "feat/postv2-p3-schematic-svg-r2-20261010" ]; then
-            dart format apps/electrosim/lib/industrial_schematic_svg_export.dart apps/electrosim/test/postv2_p3_svg_export_test.dart
-          else
-            mapfile -d '' files < <(
-              find apps/electrosim packages tools -type f -name '*.dart' -not -path '*/.dart_tool/*' -print0
-            )
-            dart format "${files[@]}"
-          fi
+          mapfile -d '' files < <(
+            find apps/electrosim packages tools               -type f -name '*.dart'               -not -path '*/.dart_tool/*'               -print0
+          )
+          dart format "${files[@]}"
           git status --short
 
       - name: Commit normalization
@@ -47,11 +42,7 @@ jobs:
           set -euo pipefail
           git config user.name "ElectroSim CI"
           git config user.email "actions@users.noreply.github.com"
-          if [ "$GITHUB_REF_NAME" = "feat/postv2-p3-schematic-svg-r2-20261010" ]; then
-            git add apps/electrosim/lib/industrial_schematic_svg_export.dart apps/electrosim/test/postv2_p3_svg_export_test.dart
-          else
-            git add apps/electrosim packages tools
-          fi
+          git add apps/electrosim packages tools
           if git diff --cached --quiet; then
             echo "DART_FORMAT_ALREADY_CLEAN"
             exit 0

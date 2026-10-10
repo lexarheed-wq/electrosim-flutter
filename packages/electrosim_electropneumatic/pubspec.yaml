@@ -1,0 +1,21 @@
+name: electrosim_electropneumatic
+description: Pure Dart 24 V DC electropneumatic measured-voltage event contracts and clock.
+version: 0.1.0
+publish_to: "none"
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+dependencies:
+  electrosim_domain:
+    path: ../electrosim_domain
+  electrosim_multiphysics:
+    path: ../electrosim_multiphysics
+  electrosim_pneumatic_domain:
+    path: ../electrosim_pneumatic_domain
+  electrosim_pneumatic_solver:
+    path: ../electrosim_pneumatic_solver
+  electrosim_solver_dc:
+    path: ../electrosim_solver_dc
+dev_dependencies:
+  electrosim_topology:
+    path: ../electrosim_topology
+  test: ^1.26.3

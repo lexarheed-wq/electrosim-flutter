@@ -50,15 +50,37 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     return replica;
   }
 
-  TpSession createDraft() {
+  /// A session can hold one active teacher activity. The selected dashboard
+  /// workspace decides the TP mode; the electrical engine is unchanged.
+  TpSession createDraft({
+    TpMode mode = TpMode.troubleshooting,
+    CircuitState? wiringReferenceCircuit,
+    String? activityTitle,
+  }) {
     if (_session != null) {
       throw StateError('A TP session already exists.');
     }
-    final definition = TpDefinition.troubleshooting(
-      id: tpId,
-      title: title,
-      scenarioId: _scenarioId,
-    );
+    if (mode == TpMode.wiring &&
+        (wiringReferenceCircuit == null ||
+            wiringReferenceCircuit.sources.isEmpty ||
+            wiringReferenceCircuit.components.isEmpty ||
+            wiringReferenceCircuit.connections.isEmpty)) {
+      throw StateError(
+        'Préparez un montage de référence câblé ou choisissez un schéma V2.',
+      );
+    }
+    final TpDefinition definition = switch (mode) {
+      TpMode.wiring => TpDefinition.wiring(
+        id: tpId,
+        title: activityTitle ?? 'TP de câblage',
+        referenceCircuit: wiringReferenceCircuit!,
+      ),
+      TpMode.troubleshooting => TpDefinition.troubleshooting(
+        id: tpId,
+        title: activityTitle ?? title,
+        scenarioId: _scenarioId,
+      ),
+    };
     _session = _engine.createDraft(definition);
     notifyListeners();
     return _session!;
@@ -161,6 +183,10 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       'tpId': tpIdValue,
       'title': title,
       'scenarioId': _scenarioId.value,
+      'mode': current.definition.mode.name,
+      'activityTitle': current.definition.title,
+      if (current.definition.mode == TpMode.wiring)
+        'referenceCircuit': current.definition.referenceCircuit!.toJson(),
       'lifecycle': current.lifecycle.name,
       'studentCircuit': current.studentCircuit.toJson(),
       'diagnosticEntries': current.diagnosticSheet.entries
@@ -200,7 +226,35 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
           throw FormatException('Unknown TP lifecycle: $lifecycleRaw'),
     );
 
-    createDraft();
+    // Legacy F17 snapshots have no mode: they are troubleshooting TPs.
+    final Object? savedMode = json['mode'];
+    final TpMode mode = savedMode == 'wiring'
+        ? TpMode.wiring
+        : TpMode.troubleshooting;
+    if (savedMode != null &&
+        savedMode != TpMode.wiring.name &&
+        savedMode != TpMode.troubleshooting.name) {
+      throw const FormatException('Unknown TP mode.');
+    }
+    final Object? savedActivityTitle = json['activityTitle'];
+    final String? activityTitle =
+        savedActivityTitle is String && savedActivityTitle.trim().isNotEmpty
+        ? savedActivityTitle
+        : null;
+    CircuitState? referenceCircuit;
+    if (mode == TpMode.wiring) {
+      final Object? referenceRaw =
+          json['referenceCircuit'] ?? json['studentCircuit'];
+      if (referenceRaw is! Map<String, dynamic>) {
+        throw const FormatException('Wiring TP reference circuit is missing.');
+      }
+      referenceCircuit = CircuitState.fromJson(referenceRaw);
+    }
+    createDraft(
+      mode: mode,
+      wiringReferenceCircuit: referenceCircuit,
+      activityTitle: activityTitle,
+    );
     if (lifecycle == TpLifecycle.draft) {
       return;
     }

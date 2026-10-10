@@ -1,3 +1,5 @@
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,8 @@ class F17TpSessionDialog extends StatefulWidget {
     required this.controller,
     required this.role,
     required this.onStudentStarted,
+    this.draftMode = TpMode.troubleshooting,
+    this.wiringReferenceCircuit,
     this.onEnableLanSharing,
     this.initialLanHostInfo,
     this.onCloseClassroomSession,
@@ -20,6 +24,8 @@ class F17TpSessionDialog extends StatefulWidget {
   final ElectroSimTpSessionController controller;
   final F9UserRole role;
   final ValueChanged<TpSession> onStudentStarted;
+  final TpMode draftMode;
+  final CircuitState? wiringReferenceCircuit;
   final Future<ElectroSimLanHostInfo> Function()? onEnableLanSharing;
   final ElectroSimLanHostInfo? initialLanHostInfo;
   final VoidCallback? onCloseClassroomSession;
@@ -33,6 +39,25 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
   ElectroSimLanHostInfo? _lanInfo;
   String? _lanError;
   bool _startingLan = false;
+  String? _selectedWiringExampleId;
+  late final List<ExampleDefinition> _wiringExamples =
+      buildV2ProductExampleRepository().all;
+
+  bool _hasWiredReference(CircuitState? circuit) =>
+      circuit != null &&
+      circuit.sources.isNotEmpty &&
+      circuit.components.isNotEmpty &&
+      circuit.connections.isNotEmpty;
+
+  ExampleDefinition? get _selectedWiringExample {
+    for (final ExampleDefinition example in _wiringExamples) {
+      if (example.id.value == _selectedWiringExampleId) return example;
+    }
+    return null;
+  }
+
+  CircuitState? get _wiringReference =>
+      _selectedWiringExample?.circuit ?? widget.wiringReferenceCircuit;
 
   @override
   void initState() {
@@ -98,6 +123,16 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                 if (_teacher && widget.onEnableLanSharing != null) ...<Widget>[
                   _networkSharingSection(context),
                   const SizedBox(height: ElectroSimSpacing.md),
+                ],
+                if (_teacher &&
+                    current != null &&
+                    current.definition.mode != widget.draftMode) ...<Widget>[
+                  const Text(
+                    'Une activité d’un autre type est déjà présente dans '
+                    'cette session. Terminez ou supprimez-la avant de '
+                    'créer un nouveau TP.',
+                  ),
+                  const SizedBox(height: ElectroSimSpacing.sm),
                 ],
                 if (_teacher) ..._teacherActions(current),
                 if (!_teacher) ..._studentActions(current),
@@ -214,10 +249,72 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
 
   List<Widget> _teacherActions(TpSession? session) {
     if (session == null) {
+      final CircuitState? reference = _wiringReference;
+      final bool needsReference =
+          widget.draftMode == TpMode.wiring && !_hasWiredReference(reference);
       return <Widget>[
+        Text(
+          widget.draftMode == TpMode.wiring
+              ? 'Créer un TP de câblage'
+              : 'Créer un TP de recherche de dérangement',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        if (widget.draftMode == TpMode.wiring) ...<Widget>[
+          if (_hasWiredReference(widget.wiringReferenceCircuit))
+            const Text(
+              'Montage de référence : circuit préparé dans l’atelier.',
+            ),
+          DropdownButton<String>(
+            key: const Key('tp-wiring-reference-example'),
+            isExpanded: true,
+            value: _selectedWiringExampleId,
+            hint: const Text('Ou choisir un schéma sain natif V2'),
+            items: <DropdownMenuItem<String>>[
+              for (final ExampleDefinition example in _wiringExamples)
+                DropdownMenuItem<String>(
+                  value: example.id.value,
+                  child: Text(example.title),
+                ),
+            ],
+            onChanged: (String? id) {
+              setState(() {
+                _selectedWiringExampleId = id;
+              });
+            },
+          ),
+          if (needsReference)
+            const Text(
+              'Choisissez un schéma V2 ou préparez votre montage '
+              'dans l’atelier avant la publication.',
+              key: Key('tp-wiring-reference-required'),
+            ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ] else ...<Widget>[
+          const Text(
+            'Le TP utilisera le scénario de panne configuré '
+            'pour cette session.',
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ],
         FilledButton.icon(
           key: const Key('tp-create-draft'),
-          onPressed: () => widget.controller.createDraft(),
+          onPressed: needsReference
+              ? null
+              : () {
+                  final ExampleDefinition? example = _selectedWiringExample;
+                  try {
+                    widget.controller.createDraft(
+                      mode: widget.draftMode,
+                      wiringReferenceCircuit: reference,
+                      activityTitle: example == null
+                          ? null
+                          : 'TP de câblage — ${example.title}',
+                    );
+                  } on Object catch (error) {
+                    _showError('Création du TP impossible : $error');
+                  }
+                },
           icon: const Icon(Icons.add_task_outlined),
           label: const Text('Créer le TP'),
         ),

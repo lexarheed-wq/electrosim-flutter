@@ -30,6 +30,10 @@ void main() {
       expect(student.session!.studentCircuit.components, isEmpty);
       expect(student.session!.studentCircuit.connections, isEmpty);
       expect(student.lifecycle, TpLifecycle.published);
+      // The browser must be able to send its own state without the private
+      // reference that was deliberately omitted from the teacher snapshot.
+      expect(student.toStudentPersistenceJson(), publicState);
+      expect(teacher.toPersistenceJson()['referenceCircuit'], circuit.toJson());
     },
   );
 

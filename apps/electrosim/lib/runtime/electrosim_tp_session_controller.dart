@@ -252,7 +252,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
           current.definition.faultScenarioId?.value ?? _scenarioId.value,
       'mode': current.definition.mode.name,
       'activityTitle': current.definition.title,
-      if (current.definition.mode == TpMode.wiring)
+      if (current.definition.mode == TpMode.wiring &&
+          current.definition.referenceCircuit != null)
         'referenceCircuit': current.definition.referenceCircuit!.toJson(),
       'lifecycle': current.lifecycle.name,
       'studentCircuit': current.studentCircuit.toJson(),

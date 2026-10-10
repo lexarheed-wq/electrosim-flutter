@@ -25,13 +25,15 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     required this.sessionCode,
     required this.displayName,
     required this.endpoint,
-  }) : clientId = _generateClientId();
+  }) {
+    _restoreIdentity();
+  }
 
   final ElectroSimTpSessionController controller;
   final String sessionCode;
   final String displayName;
   final Uri endpoint;
-  final String clientId;
+  late final String clientId;
 
   static const int maxAutomaticReconnects = 5;
   html.WebSocket? _socket;
@@ -50,6 +52,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   bool _applyingRemote = false;
   bool _explicitlyClosed = false;
   bool _teacherEnded = false;
+  bool _replaced = false;
   bool _disposed = false;
   bool _listeningToController = false;
   int _clientSequence = 0;
@@ -59,6 +62,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   String? get lastError => _lastError;
   String get sessionName => _sessionName;
   bool get sessionStarted => _sessionStarted;
+  bool get replaced => _replaced;
   bool get simulatorEnabled => _simulatorEnabled;
   bool get sessionUsable => _status == ElectroSimBrowserSessionStatus.connected;
 
@@ -101,8 +105,16 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         _handleMessage(event.data as String);
       }
     });
-    _closeSubscription = socket.onClose.listen((html.CloseEvent _) {
+    _closeSubscription = socket.onClose.listen((html.CloseEvent event) {
       if (!identical(_socket, socket) || _disposed) return;
+      if (event.reason == 'Replaced by a newer connection.') {
+        _replaced = true;
+        _explicitlyClosed = true;
+        _reconnectTimer?.cancel();
+        _reconnectTimer = null;
+        _setStatus(ElectroSimBrowserSessionStatus.ended);
+        return;
+      }
       if (!first.isCompleted) {
         first.completeError(
           StateError('Connexion interrompue avant la synchronisation.'),
@@ -115,7 +127,12 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
       }
     });
     _errorSubscription = socket.onError.listen((html.Event _) {
-      if (!identical(_socket, socket) || _disposed) return;
+      if (!identical(_socket, socket) ||
+          _disposed ||
+          _explicitlyClosed ||
+          _teacherEnded) {
+        return;
+      }
       _lastError = 'Connexion au professeur interrompue.';
       _setStatus(ElectroSimBrowserSessionStatus.failed);
       _scheduleReconnect();
@@ -197,6 +214,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         final Object? tokenRaw = payloadRaw['reconnectToken'];
         if (tokenRaw is String && tokenRaw.isNotEmpty) {
           _reconnectToken = tokenRaw;
+          _persistIdentity();
         }
         final Object? sessionRaw = payloadRaw['session'];
         if (sessionRaw is Map<String, dynamic>) {
@@ -253,13 +271,15 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     }
     final html.WebSocket? socket = _socket;
     if (socket == null || socket.readyState != html.WebSocket.OPEN) return;
+    final sequence = _clientSequence++;
+    _persistIdentity();
     socket.send(
       jsonEncode(<String, Object?>{
         'schemaVersion': 1,
         'type': 'studentState',
         'sessionCode': sessionCode,
         'senderId': clientId,
-        'sequence': _clientSequence++,
+        'sequence': sequence,
         'payload': <String, Object?>{
           'state': controller.toStudentPersistenceJson(),
         },
@@ -315,6 +335,44 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     }
     unawaited(_detachSocket());
     super.dispose();
+  }
+
+  String get _identityKey =>
+      'electrosim.student.v1.${endpoint.host}:${endpoint.port}.$sessionCode.${base64Url.encode(utf8.encode(displayName.trim().toLowerCase()))}';
+
+  void _restoreIdentity() {
+    String? restoredId;
+    try {
+      final source = html.window.localStorage[_identityKey];
+      if (source != null) {
+        final saved = jsonDecode(source);
+        if (saved is Map<String, dynamic> &&
+            saved['clientId'] is String &&
+            saved['reconnectToken'] is String &&
+            (saved['reconnectToken'] as String).isNotEmpty &&
+            saved['nextSequence'] is int &&
+            (saved['nextSequence'] as int) >= 0) {
+          restoredId = saved['clientId'] as String;
+          _reconnectToken = saved['reconnectToken'] as String;
+          _clientSequence = saved['nextSequence'] as int;
+        }
+      }
+    } on Object {
+      // Browsers that prohibit storage still support in-page reconnects.
+    }
+    clientId = restoredId ?? _generateClientId();
+  }
+
+  void _persistIdentity() {
+    try {
+      html.window.localStorage[_identityKey] = jsonEncode(<String, Object?>{
+        'clientId': clientId,
+        'reconnectToken': _reconnectToken,
+        'nextSequence': _clientSequence,
+      });
+    } on Object {
+      // The authoritative TP stays on the teacher host, never in this record.
+    }
   }
 
   static String _generateClientId() {

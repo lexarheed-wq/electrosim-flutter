@@ -55,6 +55,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.layoutPreferences,
     this.syncClient,
     this.onSessionDashboard,
+    this.onSessionHome,
     this.onSessionManage,
     this.onSessionManageWithCircuit,
     this.onExitWorkspace,
@@ -72,6 +73,7 @@ class F18WorkspacePage extends StatefulWidget {
   final WorkspaceLayoutPreferences? layoutPreferences;
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
+  final VoidCallback? onSessionHome;
   final VoidCallback? onSessionManage;
   final ValueChanged<CircuitState>? onSessionManageWithCircuit;
   final VoidCallback? onExitWorkspace;
@@ -652,6 +654,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
     _simulation = ElectroSimSimulationController(circuit: _circuit);
+    if (widget.role == F9UserRole.student) {
+      _tpController.addListener(_onStudentTpChanged);
+    }
     _workspaceLayout.addListener(_scheduleLayoutSave);
     unawaited(_restoreWorkspaceLayout());
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -804,9 +809,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       entryLabel: widget.entryLabel,
                       workspace: _workspace,
                       sessionNavigation: widget.sessionNavigation,
-                      onHome: () => Navigator.of(
-                        context,
-                      ).popUntil((Route<dynamic> route) => route.isFirst),
+                      onHome:
+                          widget.onSessionHome ??
+                          () => Navigator.of(context).popUntil(
+                            (Route<dynamic> route) =>
+                                route.isFirst ||
+                                route.settings.name == 'session-home',
+                          ),
                       onDashboard: widget.sessionNavigation
                           ? (widget.onSessionDashboard ?? _showDashboard)
                           : null,
@@ -1252,6 +1261,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       await host.close();
       rethrow;
     }
+  }
+
+  void _onStudentTpChanged() {
+    if (!mounted) return;
+    final session = _tpController.session;
+    if (session != null &&
+        session.lifecycle != TpLifecycle.draft &&
+        session.lifecycle != TpLifecycle.published &&
+        (session.studentCircuit.circuitId != _circuit.circuitId ||
+            session.studentCircuit.revision != _circuit.revision)) {
+      _circuit = session.studentCircuit;
+      _layout = _layoutForCircuit(_circuit);
+      _simulation.updateCircuit(_circuit);
+    }
+    setState(() {});
   }
 
   void _onLanSyncChanged() {
@@ -3730,6 +3754,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void dispose() {
     _layoutSaveTimer?.cancel();
     _workspaceLayout.removeListener(_scheduleLayoutSave);
+    _tpController.removeListener(_onStudentTpChanged);
     if (_layoutEdited && _layoutPreferences != null) {
       unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
     }

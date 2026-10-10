@@ -45,15 +45,37 @@ class ElectroSimApp extends StatelessWidget {
   }
 }
 
-class F9HomePage extends StatelessWidget {
-  const F9HomePage({super.key, this.persistenceController});
+class F9HomePage extends StatefulWidget {
+  const F9HomePage({
+    super.key,
+    this.persistenceController,
+    this.onResumeSession,
+  });
 
   final ElectroSimPersistenceController? persistenceController;
 
+  final VoidCallback? onResumeSession;
+  @override
+  State<F9HomePage> createState() => _F9HomePageState();
+}
+
+class _F9HomePageState extends State<F9HomePage> {
+  Route<void>? _activeSessionRoute;
+  bool _creatingSession = false;
+  ElectroSimPersistenceController? get persistenceController =>
+      widget.persistenceController;
   @override
   Widget build(BuildContext context) {
     return F18HomeSurface(
-      onCreateSession: () => _openSessionShell(context, persistenceController),
+      activeSession:
+          widget.onResumeSession != null || _activeSessionRoute != null,
+      onCreateSession: () {
+        if (widget.onResumeSession != null) {
+          widget.onResumeSession!();
+        } else {
+          _openSessionShell(context, persistenceController);
+        }
+      },
       onMaintenance: () =>
           _openMaintenanceCenter(context, persistenceController),
       onDesign: () => _openDesignCenter(context, persistenceController),
@@ -118,9 +140,10 @@ class F9HomePage extends StatelessWidget {
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: 'design-center'),
         builder: (BuildContext routeContext) => F18DesignCenterPage(
-          onHome: () => Navigator.of(
-            routeContext,
-          ).popUntil((Route<dynamic> route) => route.isFirst),
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) =>
+                route.isFirst || route.settings.name == 'session-home',
+          ),
           onWiring: () => _openWorkspace(
             routeContext,
             'Centre de conception',
@@ -157,9 +180,10 @@ class F9HomePage extends StatelessWidget {
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: 'maintenance-center'),
         builder: (BuildContext routeContext) => F18MaintenanceCenterPage(
-          onHome: () => Navigator.of(
-            routeContext,
-          ).popUntil((Route<dynamic> route) => route.isFirst),
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) =>
+                route.isFirst || route.settings.name == 'session-home',
+          ),
           onTroubleshooting: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(
@@ -223,43 +247,72 @@ class F9HomePage extends StatelessWidget {
     );
   }
 
-  static Future<void> _openSessionShell(
+  Future<void> _openSessionShell(
     BuildContext context,
     ElectroSimPersistenceController? persistenceController,
   ) async {
+    if (_activeSessionRoute != null) {
+      Navigator.of(
+        context,
+      ).popUntil((route) => identical(route, _activeSessionRoute));
+      return;
+    }
+    if (_creatingSession) return;
+    _creatingSession = true;
     final F18SessionCreationDraft? draft =
         await showDialog<F18SessionCreationDraft>(
           context: context,
           builder: (BuildContext dialogContext) =>
               const F18CreateSessionDialog(),
         );
+    _creatingSession = false;
     if (draft == null || !context.mounted) return;
 
     final String sessionCode = ElectroSimLanSyncHost.generateSessionCode();
+    final route = MaterialPageRoute<void>(
+      settings: const RouteSettings(name: 'teacher-session'),
+      builder: (BuildContext routeContext) => F18TeacherSessionCoordinatorPage(
+        sessionName: draft.name,
+        sessionCode: sessionCode,
+        onHome: () => _showActiveSessionHome(context),
+        workspaceBuilder:
+            (
+              BuildContext workspaceContext,
+              ElectroSimTpSessionController controller,
+              String workspace,
+              VoidCallback onDashboard,
+              ValueChanged<CircuitState> onManageSession,
+            ) => F18WorkspacePage(
+              entryLabel: 'Session active',
+              initialWorkspace: workspace,
+              sessionNavigation: true,
+              tpSessionController: controller,
+              persistenceController: persistenceController,
+              onSessionHome: () => _showActiveSessionHome(workspaceContext),
+              onSessionDashboard: onDashboard,
+              onSessionManageWithCircuit: onManageSession,
+            ),
+      ),
+    );
+    setState(() => _activeSessionRoute = route);
+    await Navigator.of(context).push(route);
+    if (mounted) setState(() => _activeSessionRoute = null);
+  }
+
+  void _showActiveSessionHome(BuildContext context) {
+    final current = ModalRoute.of(context);
+    final returnRoute = current != null && !current.isFirst
+        ? current
+        : _activeSessionRoute;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        settings: const RouteSettings(name: 'teacher-session'),
-        builder: (BuildContext routeContext) =>
-            F18TeacherSessionCoordinatorPage(
-              sessionName: draft.name,
-              sessionCode: sessionCode,
-              workspaceBuilder:
-                  (
-                    BuildContext workspaceContext,
-                    ElectroSimTpSessionController controller,
-                    String workspace,
-                    VoidCallback onDashboard,
-                    ValueChanged<CircuitState> onManageSession,
-                  ) => F18WorkspacePage(
-                    entryLabel: 'Session active',
-                    initialWorkspace: workspace,
-                    sessionNavigation: true,
-                    tpSessionController: controller,
-                    persistenceController: persistenceController,
-                    onSessionDashboard: onDashboard,
-                    onSessionManageWithCircuit: onManageSession,
-                  ),
-            ),
+        settings: const RouteSettings(name: 'session-home'),
+        builder: (_) => F9HomePage(
+          persistenceController: persistenceController,
+          onResumeSession: () => Navigator.of(
+            context,
+          ).popUntil((route) => identical(route, returnRoute)),
+        ),
       ),
     );
   }

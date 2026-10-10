@@ -71,8 +71,7 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
   @override
   void didUpdateWidget(covariant F9ContextPanels oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.showEie != widget.showEie ||
-        oldWidget.showDiagnostic != widget.showDiagnostic) {
+    if (_controller.length != _tabCount) {
       final int previousIndex = _controller.index
           .clamp(0, _tabCount - 1)
           .toInt();

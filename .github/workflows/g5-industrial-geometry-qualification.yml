@@ -51,6 +51,48 @@ jobs:
         run: |
           python3 tools/core_unify_architecture_guard.py
           python3 tools/postv2_p1_contract.py
+  tp-browser-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real browser and QR decoder
+        run: |
+          python -m pip install -r tools/e2e/requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Build production student Web client and run teacher/student journey
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$PWD"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          output="$(bash tools/f15_prepare_runner.sh web)"
+          case "$output" in
+            F15_RUNNER_PATH=*) runner="${output#F15_RUNNER_PATH=}" ;;
+            *) echo "RUNNER_PATH_PROTOCOL_ERROR: $output"; exit 69 ;;
+          esac
+          cd "$runner/apps/electrosim"
+          flutter build web --release --target lib/student_web_main.dart --no-wasm-dry-run
+          cd "$base/apps/electrosim"
+          flutter pub get
+          export ELECTROSIM_STUDENT_WEB_ROOT="$runner/apps/electrosim/build/web"
+          flutter test --no-pub test/tp_real_browser_journey_test.dart --reporter expanded
+          printf '%s\n' "$GITHUB_SHA" > build/tp-browser-proof/SOURCE_SHA.txt
+          (cd build/tp-browser-proof && sha256sum troubleshooting/*.png wiring/*.png > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: G5-TP-real-browser-journey
+          path: apps/electrosim/build/tp-browser-proof/
+          if-no-files-found: error
+          retention-days: 14
   visual-evidence:
     needs: runtime-regression
     runs-on: ubuntu-latest
@@ -98,7 +140,7 @@ jobs:
           retention-days: 14
   macos-intel:
     if: github.event_name != 'pull_request'
-    needs: [runtime-regression, visual-evidence]
+    needs: [runtime-regression, visual-evidence, tp-browser-journey]
     runs-on: macos-15-intel
     timeout-minutes: 120
     steps:

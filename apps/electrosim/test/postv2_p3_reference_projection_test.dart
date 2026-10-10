@@ -2,7 +2,6 @@ import 'package:electrosim/industrial_schematic_references.dart';
 import 'package:electrosim/industrial_workspace_representation.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/industrial_fixture.dart';
@@ -52,7 +51,7 @@ void main() {
     ComponentInstance item(String id, String reference) => ComponentInstance(
       id: ComponentId(id),
       modelType: 'resistor',
-      terminals: [terminal(id + '-1'), terminal(id + '-2')],
+      terminals: [terminal('$id-1'), terminal('$id-2')],
       parameters: {'industrialReference': reference},
     );
     final circuit = CircuitState(

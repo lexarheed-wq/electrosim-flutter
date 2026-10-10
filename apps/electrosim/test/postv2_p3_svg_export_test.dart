@@ -2,7 +2,6 @@ import 'package:electrosim/industrial_schematic_svg_export.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/widgets.dart';
 
 import 'support/regression_fixture.dart';
 

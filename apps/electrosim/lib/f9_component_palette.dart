@@ -1043,7 +1043,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'powerTemperatureCoefficientPerC': -0.004,
       'voltageTemperatureCoefficientPerC': -0.003,
     },
-    visualVariant: 'pv-array',
+    visualVariant: 'pv-array-360v',
     displayLabel: 'Champ PV 360 V',
     subtitle: '360 V MPP · 10 A · uniquement vers MPPT adapté (pas PWM/48 V)',
   ),

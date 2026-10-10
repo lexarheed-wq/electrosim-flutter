@@ -171,10 +171,11 @@ void main() {
     final refs = IndustrialSchematicReferences.build(circuit);
     expect(refs.controllingLabelFor('aux'), 'KA1');
     expect(refs.contactsFor('k1'), ['aux']);
-    expect(IndustrialSchematicReferences.normallyClosed('relay_contact_nc'),
-        isTrue);
+    expect(
+      IndustrialSchematicReferences.normallyClosed('relay_contact_nc'),
+      isTrue,
+    );
     expect(refs.issues, isEmpty);
     expect(circuit.toJsonString(), original);
   });
-
 }

@@ -119,7 +119,8 @@ final class IndustrialSchematicReferences {
 
       // Match the canonical control engine: relay and contactor links share
       // the same physical coil reference, never a diagram-only surrogate.
-      final target = item.parameters['linkedRelayId'] ??
+      final target =
+          item.parameters['linkedRelayId'] ??
           item.parameters['linkedContactorId'];
       if (target is! String || target.trim().isEmpty) {
         issues.add(

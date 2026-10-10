@@ -2790,9 +2790,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ),
     ];
     final Map<String, Object?> replacementParameters = <String, Object?>{
-      ...(replacement.defaultParameters.isNotEmpty
-          ? replacement.defaultParameters
-          : _defaultParametersFor(replacement.keyName)),
+      ...replacement.defaultParameters,
       if (replacement.visualModelType != null)
         '_visualModelType': replacement.visualModelType!,
       if (replacement.visualVariant != null)
@@ -2805,9 +2803,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       selected,
       modelType: replacement.modelType,
       parameters: replacementParameters,
-      controlState: replacement.defaultControlState.isNotEmpty
-          ? replacement.defaultControlState
-          : _defaultControlStateFor(replacement.keyName),
+      controlState: replacement.defaultControlState,
       replacementTerminals: replacementTerminals,
     );
     setState(() {

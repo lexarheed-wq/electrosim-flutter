@@ -176,5 +176,71 @@ void main() {
       result.colors[original.connections[1].id.value],
       IndustrialConductorColor.unspecified,
     );
+  });  test('P4 manually locked terminal is stable after device rename', () {
+    final first = IndustrialMarkingRegistry.setReference(
+      fixture(),
+      kind: IndustrialMarkingKind.terminal,
+      id: 'k1-a1',
+      reference: 'X7:01',
+      teacherAuthorized: true,
+      locked: true,
+    );
+    final renamed = IndustrialMarkingRegistry.setReference(
+      first,
+      kind: IndustrialMarkingKind.device,
+      id: 'k1',
+      reference: 'KM7',
+      teacherAuthorized: true,
+    );
+    final marks = IndustrialMarkingRegistry.inspect(renamed);
+    expect(marks.terminals['k1-a1'], 'X7:01');
+    expect(marks.locks['terminal:k1-a1'], isTrue);
+    expect(marks.terminals['k1-a2'], 'KM7:A2');
+    expect(marks.devices['aux'], 'KM7:13-14');
+    expect(IndustrialMarkingRegistry.materialize(renamed).connections,
+        renamed.connections);
   });
+
+  test('P4 marks fresh devices and conductors without renumbering existing', () {
+    final initial = IndustrialMarkingRegistry.materialize(fixture());
+    final old = IndustrialMarkingRegistry.inspect(initial);
+    final extra = ComponentInstance(
+      id: ComponentId('aaa-motor'),
+      modelType: 'motor_3p_6t',
+      terminals: [
+        Terminal(id: TerminalId('new-u'), name: 'U1'),
+        Terminal(id: TerminalId('new-v'), name: 'V1'),
+      ],
+    );
+    final joined = Connection(
+      id: ConnectionId('000-new-wire'),
+      fromTerminalId: TerminalId('grid-l1'),
+      toTerminalId: TerminalId('new-u'),
+      phase: PhaseTag.l1,
+    );
+    final amended = CircuitState(
+      circuitId: initial.circuitId,
+      revision: initial.revision + 1,
+      mode: initial.mode,
+      components: [extra, ...initial.components],
+      sources: initial.sources,
+      connections: [joined, ...initial.connections],
+      settings: initial.settings,
+      metadata: initial.metadata,
+    );
+    final persisted = IndustrialMarkingRegistry.materialize(amended);
+    final current = IndustrialMarkingRegistry.inspect(persisted);
+    expect(current.devices['aaa-motor'], 'M2');
+    expect(current.conductors['000-new-wire'], '016');
+    expect(current.colors['000-new-wire'], IndustrialConductorColor.brown);
+    for (final key in old.devices.keys) {
+      expect(current.devices[key], old.devices[key], reason: key);
+    }
+    for (final key in old.conductors.keys) {
+      expect(current.conductors[key], old.conductors[key], reason: key);
+    }
+    expect(identical(IndustrialMarkingRegistry.materialize(persisted), persisted),
+        isTrue);
+  });
+
 }

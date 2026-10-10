@@ -352,13 +352,16 @@ void main() {
                     ],
             );
             final snapshot = _runtime.evaluate(circuit);
-            final residuals = <double>[
+            final nodeVoltages = <double>[
               ...?snapshot.dcResult?.nodeVoltages.values,
+            ];
+            final residuals = <double>[
               ...?snapshot.dcResult?.kclResiduals.values,
               ...?snapshot.ac1Result?.kclResiduals.values,
               ...?snapshot.ac3Result?.kclResiduals.values,
             ];
-            if (residuals.any((n) => !n.isFinite)) {
+            if (<double>[...nodeVoltages, ...residuals]
+                .any((n) => !n.isFinite)) {
               violations.add('${item.keyName}/${mode.name}: nonfinite');
             }
             _result('inventory', item.keyName, 'OBSERVED', {
@@ -367,7 +370,8 @@ void main() {
               'mode': mode.name,
               'solved': snapshot.solved,
               'diagnostics': snapshot.diagnostics.advice.length,
-              'maxResidual': _maxResidual(residuals),
+              'maxKclResidual': _maxResidual(residuals),
+              'maxNodeVoltageMagnitudeV': _maxResidual(nodeVoltages),
               'note':
                   'Isolated/open-circuit probe; unsolved is not by itself a defect.',
             });

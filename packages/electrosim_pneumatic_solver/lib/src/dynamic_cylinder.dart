@@ -87,8 +87,7 @@ final class MovingCylinderSnapshot {
   final List<CylinderStopEvent> stopEvents;
 
   double get gasMassKg => massAKg + massBKg;
-  double get externalMassAddedKg =>
-      externalMassAddedAKg + externalMassAddedBKg;
+  double get externalMassAddedKg => externalMassAddedAKg + externalMassAddedBKg;
 }
 
 /// A conservative, isothermal, lumped two-chamber cylinder with a moving
@@ -203,16 +202,17 @@ final class MovingDoubleActingAirCylinder {
       s.gasMassKg - initialSnapshot.gasMassKg - s.externalMassAddedKg;
 
   double mechanicalResultantN(MovingCylinderSnapshot s) {
-    final double drive = geometry.theoreticalForceN(
-      pressureAAbsPa: pressureAAbsPa(s),
-      pressureBAbsPa: pressureBAbsPa(s),
-    ) - mechanics.externalLoadN;
+    final double drive =
+        geometry.theoreticalForceN(
+          pressureAAbsPa: pressureAAbsPa(s),
+          pressureBAbsPa: pressureBAbsPa(s),
+        ) -
+        mechanics.externalLoadN;
     final double v = s.velocityMPerS;
     final double viscous = mechanics.viscousNsPerM * v;
     if (v.abs() <= 1e-12) {
       if (drive.abs() <= mechanics.staticBreakawayFrictionN) return 0;
-      return drive -
-          mechanics.coulombFrictionN * (drive.isNegative ? -1 : 1);
+      return drive - mechanics.coulombFrictionN * (drive.isNegative ? -1 : 1);
     }
     return drive -
         viscous -
@@ -279,8 +279,7 @@ final class MovingDoubleActingAirCylinder {
     requirePositiveFinite(maxStepS, 'maxStepS');
     _validatePosition(before.positionM);
     if (maxSubsteps <= 0 ||
-        before.timeS + durationS == before.timeS &&
-            durationS > 0) {
+        before.timeS + durationS == before.timeS && durationS > 0) {
       throw const PneumaticPhysicsException(
         'invalid_cylinder_step',
         'Cylinder step budget or timeline is invalid.',
@@ -296,8 +295,9 @@ final class MovingDoubleActingAirCylinder {
     double addedA = before.externalMassAddedAKg;
     double addedB = before.externalMassAddedBKg;
     int count = 0;
-    final List<CylinderStopEvent> events =
-        List<CylinderStopEvent>.from(before.stopEvents);
+    final List<CylinderStopEvent> events = List<CylinderStopEvent>.from(
+      before.stopEvents,
+    );
     final double tolerance = durationS * 1e-13;
 
     while (end - now > tolerance) {
@@ -349,13 +349,7 @@ final class MovingDoubleActingAirCylinder {
         final double stopX = stop == CylinderStop.retracted
             ? 0
             : geometry.strokeM;
-        dt = _impactTime(
-          x: x,
-          v: v,
-          a: acceleration,
-          dt: dt,
-          stop: stopX,
-        );
+        dt = _impactTime(x: x, v: v, a: acceleration, dt: dt, stop: stopX);
         if (dt <= 0 || now + dt == now) {
           throw const PneumaticPhysicsException(
             'impact_time_underflow',
@@ -366,10 +360,7 @@ final class MovingDoubleActingAirCylinder {
 
       final double nextA = mA + qA * dt;
       final double nextB = mB + qB * dt;
-      if (!nextA.isFinite ||
-          !nextB.isFinite ||
-          nextA <= 0 ||
-          nextB <= 0) {
+      if (!nextA.isFinite || !nextB.isFinite || nextA <= 0 || nextB <= 0) {
         throw const PneumaticPhysicsException(
           'invalid_chamber_mass',
           'A dynamic step tried to create an invalid gas mass.',
@@ -395,8 +386,7 @@ final class MovingDoubleActingAirCylinder {
     }
 
     // Avoid displaying a floating-point remnant as a physical time drift.
-    final double acceptedTime =
-        (end - now).abs() <= tolerance ? end : now;
+    final double acceptedTime = (end - now).abs() <= tolerance ? end : now;
     return MovingCylinderSnapshot(
       timeS: acceptedTime,
       positionM: x,

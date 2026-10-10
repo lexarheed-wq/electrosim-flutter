@@ -217,9 +217,7 @@ final class IndustrialMarkingRegistry {
         final candidate = devices[link]! + ':' + portNames;
         var label = candidate;
         var n = 2;
-        final ownPrevious = _reference(
-          _map(deviceData[item.id])['reference'],
-        );
+        final ownPrevious = _reference(_map(deviceData[item.id])['reference']);
         while ((reserved.contains(label.toUpperCase()) &&
                 label != ownPrevious) ||
             used.containsKey(label.toUpperCase())) {

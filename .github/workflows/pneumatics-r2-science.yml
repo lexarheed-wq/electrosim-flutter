@@ -50,7 +50,9 @@ jobs:
           (
             cd packages/electrosim_pneumatic_solver
             dart pub get
-            dart format --output=none --set-exit-if-changed lib test
+            dart format lib test
+            git diff -- lib test | tee ../../build/pneumatics-r2/FORMAT_PATCH.diff
+            git diff --exit-code -- lib test
             dart analyze
             dart test --reporter expanded
           ) 2>&1 | tee build/pneumatics-r2/R2_PHYSICS.log

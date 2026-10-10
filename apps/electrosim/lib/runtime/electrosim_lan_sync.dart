@@ -665,7 +665,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     if (state['hasSession'] != true) {
       throw const FormatException('Student state has no TP session.');
     }
-    if (state['tpId'] != controller.tpIdValue ||
+    if (state['tpId'] != controller.tpId.value ||
         state['title'] != controller.title) {
       throw const FormatException('Student TP identity mismatch.');
     }

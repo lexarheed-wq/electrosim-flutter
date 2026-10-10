@@ -120,6 +120,11 @@ void main() {
     final refs = IndustrialMarkingRegistry.inspect(board.circuit);
     expect(refs.terminals['lamp-in'], 'X1:01');
     expect(refs.locks['terminal:lamp-in'], isTrue);
+    final exported = IndustrialSchematicSvgExport.render(
+      board.circuit, board.layout,
+    );
+    expect(exported, contains('data-reference="X1:01"'));
+    expect(exported, contains('X1:01</text>'));
     expect(refs.devices['lamp-1'], 'H1');
     expect(board.circuit.components, original.components);
     expect(board.circuit.connections, original.connections);

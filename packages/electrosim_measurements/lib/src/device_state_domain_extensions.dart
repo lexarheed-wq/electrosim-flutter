@@ -70,7 +70,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
             ),
           ],
           evidenceIds: <String>[
-            for (final Ac3BranchResult branch in branches) 'branch:${branch.id}',
+            for (final Ac3BranchResult branch in branches)
+              'branch:${branch.id}',
           ],
         );
       }
@@ -88,8 +89,7 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
     // links are star or delta. A 230Δ/400Y motor on a 400 V line must NOT
     // be treated as nominal in delta. Compare actual solved RMS winding
     // voltages to the winding's delta nameplate value.
-    final Object? rawWindingRating =
-        component.parameters['ratedDeltaVoltageV'];
+    final Object? rawWindingRating = component.parameters['ratedDeltaVoltageV'];
     if (rawWindingRating is! num ||
         !rawWindingRating.toDouble().isFinite ||
         rawWindingRating.toDouble() <= 0) {
@@ -100,8 +100,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       0,
       (double maximum, Ac3BranchResult branch) =>
           branch.voltage.magnitude > maximum
-              ? branch.voltage.magnitude
-              : maximum,
+          ? branch.voltage.magnitude
+          : maximum,
     );
     if (!maxWindingV.isFinite || maxWindingV <= ratedWindingV * 1.10) {
       return operating;
@@ -462,7 +462,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       warnings.add(
         OperatingWarning(
           code: OperatingWarningCode.invalidNominalLimit,
-          message: 'La limite de $label doit être finie et strictement positive.',
+          message:
+              'La limite de $label doit être finie et strictement positive.',
         ),
       );
       return;
@@ -472,7 +473,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       warnings.add(
         OperatingWarning(
           code: OperatingWarningCode.invalidNominalLimit,
-          message: 'La limite de $label doit être finie et strictement positive.',
+          message:
+              'La limite de $label doit être finie et strictement positive.',
         ),
       );
       return;
@@ -481,7 +483,8 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       warnings.add(
         OperatingWarning(
           code: overCode,
-          message: 'La $label calculée dépasse l’enveloppe physique admissible.',
+          message:
+              'La $label calculée dépasse l’enveloppe physique admissible.',
         ),
       );
     }

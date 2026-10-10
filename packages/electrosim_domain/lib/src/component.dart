@@ -15,7 +15,9 @@ final class ComponentInstance {
     Map<String, Object?> controlState = const <String, Object?>{},
   }) : modelType = _validateModelType(modelType),
        terminals = List<Terminal>.unmodifiable(terminals),
-       parameters = freezeJsonMap(_normalizeLegacyProtectionRating(modelType, parameters)),
+       parameters = freezeJsonMap(
+         _normalizeLegacyProtectionRating(modelType, parameters),
+       ),
        controlState = freezeJsonMap(controlState) {
     final Set<TerminalId> ids = <TerminalId>{};
     for (final Terminal terminal in this.terminals) {
@@ -61,13 +63,13 @@ final class ComponentInstance {
     String modelType,
     Map<String, Object?> parameters,
   ) {
-    if ((modelType != 'breaker_4p' &&
-            modelType != 'thermal_overload_3p') ||
+    if ((modelType != 'breaker_4p' && modelType != 'thermal_overload_3p') ||
         parameters.containsKey(ProtectionRating.ratedCurrentKey)) {
       return parameters;
     }
     final Object? legacy = parameters['ratedCurrentA'];
-    if (legacy is! num || !legacy.toDouble().isFinite ||
+    if (legacy is! num ||
+        !legacy.toDouble().isFinite ||
         legacy.toDouble() <= 0) {
       return parameters;
     }

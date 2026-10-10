@@ -1998,7 +1998,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         idSuffix: 'n-out',
       ),
     ],
-    defaultParameters: <String, Object?>{ProtectionRating.ratedCurrentKey: 16.0},
+    defaultParameters: <String, Object?>{
+      ProtectionRating.ratedCurrentKey: 16.0,
+    },
     defaultControlState: <String, Object?>{'closed': true, 'tripped': false},
     subtitle: 'Protection L1/L2/L3/N',
   ),

@@ -145,27 +145,30 @@ double rms(ElectroSimRuntimeSnapshot result, String id) =>
     result.ac3.branch(id).current?.magnitude ?? double.nan;
 
 void main() {
-  test('LEGACY: 4P and thermal relay saved ratings migrate to canonical key', () {
-    for (final key in <String>['breaker-4p', 'thermal-overload-3p']) {
-      final original = instance(preset(key));
-      final json = original.toJson();
-      json['parameters'] = <String, Object?>{'ratedCurrentA': 12.5};
-      final loaded = ComponentInstance.fromJson(json);
-      expect(loaded.parameters[ProtectionRating.ratedCurrentKey], 12.5);
-      expect(loaded.parameters.containsKey('ratedCurrentA'), isFalse);
-      final canonicalJson = original.toJson();
-      canonicalJson['parameters'] = <String, Object?>{
-        ProtectionRating.ratedCurrentKey: 8.0,
-        'ratedCurrentA': 12.5,
-      };
-      final canonical = ComponentInstance.fromJson(canonicalJson);
-      expect(canonical.parameters[ProtectionRating.ratedCurrentKey], 8.0);
-      record('legacy-migration', key, true, {
-        'legacyA': 12.5,
-        'canonicalTakesPrecedenceA': 8.0,
-      });
-    }
-  });
+  test(
+    'LEGACY: 4P and thermal relay saved ratings migrate to canonical key',
+    () {
+      for (final key in <String>['breaker-4p', 'thermal-overload-3p']) {
+        final original = instance(preset(key));
+        final json = original.toJson();
+        json['parameters'] = <String, Object?>{'ratedCurrentA': 12.5};
+        final loaded = ComponentInstance.fromJson(json);
+        expect(loaded.parameters[ProtectionRating.ratedCurrentKey], 12.5);
+        expect(loaded.parameters.containsKey('ratedCurrentA'), isFalse);
+        final canonicalJson = original.toJson();
+        canonicalJson['parameters'] = <String, Object?>{
+          ProtectionRating.ratedCurrentKey: 8.0,
+          'ratedCurrentA': 12.5,
+        };
+        final canonical = ComponentInstance.fromJson(canonicalJson);
+        expect(canonical.parameters[ProtectionRating.ratedCurrentKey], 8.0);
+        record('legacy-migration', key, true, {
+          'legacyA': 12.5,
+          'canonicalTakesPrecedenceA': 8.0,
+        });
+      }
+    },
+  );
 
   test('MULTIPOLE catalogue contractual enumeration', () {
     var count = 0;
@@ -278,14 +281,17 @@ void main() {
       final ratio = ib.first / ia.first;
       final starHealth = y.componentOperatingState(ComponentId('device'));
       final deltaHealth = d.componentOperatingState(ComponentId('device'));
-      final ratedDelta =
-          preset(key).defaultParameters['ratedDeltaVoltageV'];
-      final starOvervoltage = starHealth?.warnings.any(
+      final ratedDelta = preset(key).defaultParameters['ratedDeltaVoltageV'];
+      final starOvervoltage =
+          starHealth?.warnings.any(
             (w) => w.code == OperatingWarningCode.overVoltage,
-          ) ?? false;
-      final deltaOvervoltage = deltaHealth?.warnings.any(
+          ) ??
+          false;
+      final deltaOvervoltage =
+          deltaHealth?.warnings.any(
             (w) => w.code == OperatingWarningCode.overVoltage,
-          ) ?? false;
+          ) ??
+          false;
       // The 230Δ/400Y catalogue motor is rated for 230V per winding.
       // On a 400V line a delta connection must produce an overload warning.
       if (ratedDelta is num) {
@@ -330,7 +336,9 @@ void main() {
         poles(
           key,
           230 / rated,
-          parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: rated},
+          parameters: <String, Object?>{
+            ProtectionRating.ratedCurrentKey: rated,
+          },
         ),
         elapsed: const Duration(hours: 1),
       );
@@ -338,7 +346,9 @@ void main() {
         poles(
           key,
           230 / (2 * rated),
-          parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: rated},
+          parameters: <String, Object?>{
+            ProtectionRating.ratedCurrentKey: rated,
+          },
         ),
         elapsed: const Duration(hours: 2),
       );
@@ -351,10 +361,18 @@ void main() {
         'tripTwoHoursAt2x': trip,
         'normalSolved': regular.solved,
         'overloadSolved': heavy.solved,
-        'normalDiagnostics': regular.ac3Result?.diagnostics.map((d) => d.message).toList(),
-        'heavyDiagnostics': heavy.ac3Result?.diagnostics.map((d) => d.message).toList(),
-        'normalProtectionIssues': regular.protectionIssues.map((d) => d.message).toList(),
-        'heavyProtectionIssues': heavy.protectionIssues.map((d) => d.message).toList(),
+        'normalDiagnostics': regular.ac3Result?.diagnostics
+            .map((d) => d.message)
+            .toList(),
+        'heavyDiagnostics': heavy.ac3Result?.diagnostics
+            .map((d) => d.message)
+            .toList(),
+        'normalProtectionIssues': regular.protectionIssues
+            .map((d) => d.message)
+            .toList(),
+        'heavyProtectionIssues': heavy.protectionIssues
+            .map((d) => d.message)
+            .toList(),
       });
       expect(pass, isTrue);
     });

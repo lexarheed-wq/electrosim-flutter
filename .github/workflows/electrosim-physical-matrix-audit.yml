@@ -30,7 +30,7 @@ jobs:
           set -uo pipefail
           mkdir -p physical-evidence
           cd apps/electrosim
-          flutter test --no-pub --concurrency=1 -r expanded test/physical_matrix_qualification_test.dart test/physical_families_instruments_dynamics_qualification_test.dart > ../../physical-evidence/test_output.log 2>&1
+          flutter test --no-pub --concurrency=1 -r expanded test/physical_matrix_qualification_test.dart test/physical_families_instruments_dynamics_qualification_test.dart test/ac3_contactor_motor_real_wiring_test.dart test/pv_battery_physical_instruments_test.dart test/g5_audit_observed_pv_instrument_regression_test.dart > ../../physical-evidence/test_output.log 2>&1
           status=$?
           cd ../..
           python3 tools/physical_audit_report.py physical-evidence/test_output.log physical-evidence "${{ github.event.pull_request.head.sha || github.sha }}"

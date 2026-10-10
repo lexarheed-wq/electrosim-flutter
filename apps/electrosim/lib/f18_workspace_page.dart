@@ -59,6 +59,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.layoutPreferences,
     this.syncClient,
     this.onSessionDashboard,
+    this.onSessionHome,
     this.onSessionManage,
     this.onSessionManageWithCircuit,
     this.onExitWorkspace,
@@ -76,6 +77,7 @@ class F18WorkspacePage extends StatefulWidget {
   final WorkspaceLayoutPreferences? layoutPreferences;
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
+  final VoidCallback? onSessionHome;
   final VoidCallback? onSessionManage;
   final ValueChanged<CircuitState>? onSessionManageWithCircuit;
   final VoidCallback? onExitWorkspace;
@@ -528,6 +530,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
+  bool _soundEnabled = true;
   final ElectroSimConnectionRouter _connectionRouter =
       ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
@@ -694,6 +697,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
     _simulation = ElectroSimSimulationController(circuit: _circuit);
+    if (widget.role == F9UserRole.student) {
+      _tpController.addListener(_onStudentTpChanged);
+    }
     _workspaceLayout.addListener(_scheduleLayoutSave);
     unawaited(_restoreWorkspaceLayout());
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -846,9 +852,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       entryLabel: widget.entryLabel,
                       workspace: _workspace,
                       sessionNavigation: widget.sessionNavigation,
-                      onHome: () => Navigator.of(
-                        context,
-                      ).popUntil((Route<dynamic> route) => route.isFirst),
+                      onHome:
+                          widget.onSessionHome ??
+                          () => Navigator.of(context).popUntil(
+                            (Route<dynamic> route) =>
+                                route.isFirst ||
+                                route.settings.name == 'session-home',
+                          ),
                       onDashboard: widget.sessionNavigation
                           ? (widget.onSessionDashboard ?? _showDashboard)
                           : null,
@@ -908,6 +918,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           CabinetPlacementMode.assistedDin,
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
+                      soundEnabled: _soundEnabled,
+                      onToggleSound: () =>
+                          setState(() => _soundEnabled = !_soundEnabled),
                       simulationRunning: _simulation.running,
                       simulatedTime: _simulation.simulatedTime,
                       onToggleSimulation: _simulation.toggle,
@@ -1093,6 +1106,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                         _g2aWirePreviewPlanner,
                                                     runtimeSnapshot:
                                                         _simulation.snapshot,
+                                                    soundEnabled: _soundEnabled,
                                                     simulationRunning:
                                                         _simulation.running,
                                                   ),
@@ -1298,6 +1312,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       await host.close();
       rethrow;
     }
+  }
+
+  void _onStudentTpChanged() {
+    if (!mounted) return;
+    final session = _tpController.session;
+    if (session != null &&
+        session.lifecycle != TpLifecycle.draft &&
+        session.lifecycle != TpLifecycle.published &&
+        (session.studentCircuit.circuitId != _circuit.circuitId ||
+            session.studentCircuit.revision != _circuit.revision)) {
+      _circuit = session.studentCircuit;
+      _layout = _layoutForCircuit(_circuit);
+      _simulation.updateCircuit(_circuit);
+    }
+    setState(() {});
   }
 
   void _onLanSyncChanged() {
@@ -3776,6 +3805,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void dispose() {
     _layoutSaveTimer?.cancel();
     _workspaceLayout.removeListener(_scheduleLayoutSave);
+    _tpController.removeListener(_onStudentTpChanged);
     if (_layoutEdited && _layoutPreferences != null) {
       unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
     }
@@ -3854,6 +3884,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
+    this.soundEnabled = true,
+    this.onToggleSound,
     required this.simulationRunning,
     required this.simulatedTime,
     required this.onToggleSimulation,
@@ -3890,6 +3922,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
+  final bool soundEnabled;
+  final VoidCallback? onToggleSound;
   final bool simulationRunning;
   final Duration simulatedTime;
   final VoidCallback onToggleSimulation;
@@ -4218,6 +4252,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     icon: const Icon(Icons.more_horiz),
     onSelected: (action) {
       switch (action) {
+        case _WorkspaceSecondaryAction.toggleSound:
+          onToggleSound?.call();
         case _WorkspaceSecondaryAction.undo:
           onUndo?.call();
         case _WorkspaceSecondaryAction.redo:
@@ -4257,6 +4293,25 @@ class _WorkspaceTopBar extends StatelessWidget {
       }
     },
     itemBuilder: (context) => [
+      const PopupMenuItem(
+        key: Key('workspace-recenter-action'),
+        value: _WorkspaceSecondaryAction.recenter,
+        child: ListTile(
+          leading: Icon(Icons.center_focus_strong),
+          title: Text('Recentrer la platine'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      if (onToggleSound != null)
+        PopupMenuItem(
+          key: const Key('workspace-sound-action'),
+          value: _WorkspaceSecondaryAction.toggleSound,
+          child: Text(
+            soundEnabled
+                ? 'Couper les sons des composants'
+                : 'Activer les sons des composants',
+          ),
+        ),
       PopupMenuItem(
         key: const Key('workspace-undo-action'),
         value: _WorkspaceSecondaryAction.undo,
@@ -4268,15 +4323,6 @@ class _WorkspaceTopBar extends StatelessWidget {
         value: _WorkspaceSecondaryAction.redo,
         enabled: onRedo != null,
         child: const Text('Rétablir · ⌘⇧Z / Ctrl+Y'),
-      ),
-      const PopupMenuItem(
-        key: Key('workspace-recenter-action'),
-        value: _WorkspaceSecondaryAction.recenter,
-        child: ListTile(
-          leading: Icon(Icons.center_focus_strong),
-          title: Text('Recentrer la platine'),
-          contentPadding: EdgeInsets.zero,
-        ),
       ),
       if (MediaQuery.sizeOf(context).width < 720 &&
           !simulationAdvancing) ...const [
@@ -4420,6 +4466,7 @@ class _WorkspaceTopBar extends StatelessWidget {
 }
 
 enum _WorkspaceSecondaryAction {
+  toggleSound,
   undo,
   redo,
   save,

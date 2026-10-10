@@ -20,6 +20,37 @@ Future<void> _ensureContextOpen(WidgetTester tester) async {
 
 void main() {
   testWidgets(
+    'student workspace locks diagnostic controls immediately after submission',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final controller = ElectroSimTpSessionController();
+      controller.createDraft();
+      controller.publish();
+      controller.startStudent();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F9WorkspaceDemoPage(
+            role: F9UserRole.student,
+            tpSessionController: controller,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _ensureContextOpen(tester);
+      await tester.tap(find.byKey(const Key('diagnostic-tab')));
+      await tester.pumpAndSettle();
+      controller.submitStudent();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('diagnostic-save')), findsNothing);
+      expect(find.byKey(const Key('diagnostic-tab')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'F17-R7 diagnostic answers are persisted in TpEngine student payload only',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1440, 900);

@@ -73,27 +73,47 @@ void main() {
       ('push_button_no', 'bouton'),
       ('motor_3p_6t', 'moteur'),
       ('lamp', 'lampe'),
+      ('fuse_dc', 'fusible'),
+      ('contactor_aux_no', 'auxiliaire'),
+      ('contactor_aux_nc', 'auxiliaire'),
+      ('relay_coil', 'bobine'),
+      ('terminal_block_5', 'bornier'),
+      ('motor_dc', 'moteur cc'),
+      ('fan_dc', 'ventilateur'),
+      ('buzzer', 'buzzer'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
+      final mode =
+          [
+            'fuse_dc',
+            'relay_coil',
+            'motor_dc',
+            'fan_dc',
+            'buzzer',
+          ].contains(entry.$1)
+          ? ElectricalMode.dc
+          : ElectricalMode.ac3;
+      final paletteDef = f9PaletteCatalog.firstWhere(
+        (d) => d.modelType == entry.$1 && d.supportsMode(mode),
+      );
       final circuit = CircuitState(
         circuitId: CircuitId('physical-${entry.$1}'),
         revision: 0,
-        mode: ElectricalMode.ac3,
+        mode: mode,
         components: [
           ComponentInstance(
             id: ComponentId('Q1'),
             modelType: entry.$1,
             terminals: List.generate(
               def.terminalCount,
-              (i) => Terminal(id: TerminalId('Q1-$i'), name: '${i + 1}'),
+              (i) => Terminal(
+                id: TerminalId('Q1-$i'),
+                name: paletteDef.terminalLabels[i],
+              ),
             ),
-            parameters: {ProtectionRating.ratedCurrentKey: 16.0},
-            controlState: const {
-              'closed': false,
-              'tripped': false,
-              'pressed': false,
-            },
+            parameters: paletteDef.defaultParameters,
+            controlState: paletteDef.defaultControlState,
           ),
         ],
       );
@@ -106,6 +126,36 @@ void main() {
             home: F9WorkspaceDemoPage(
               initialCircuit: circuit,
               initialSelectedElementId: 'Q1',
+              initialCabinetLayout:
+                  [
+                    'fuse_dc',
+                    'contactor_aux_no',
+                    'contactor_aux_nc',
+                    'relay_coil',
+                    'terminal_block_5',
+                  ].contains(entry.$1)
+                  ? CabinetLayout([
+                      CabinetFixture(
+                        id: 'DIN-NEW-INDUSTRIAL',
+                        kind: CabinetFixtureKind.dinRail,
+                        bounds: Rect.fromLTWH(
+                          28,
+                          96 +
+                              (F18ReferenceComponentMetrics.boardSizeFor(
+                                        entry.$1,
+                                      ).height /
+                                      2)
+                                  .clamp(96, double.infinity) -
+                              17,
+                          F18ReferenceComponentMetrics.boardSizeFor(
+                                entry.$1,
+                              ).width +
+                              160,
+                          34,
+                        ),
+                      ),
+                    ])
+                  : null,
             ),
           ),
         ),
@@ -165,12 +215,27 @@ void main() {
         child: MaterialApp(
           theme: ElectroSimTheme.light(),
           debugShowCheckedModeBanner: false,
-          home: F9WorkspaceDemoPage(initialCircuit: circuit),
+          home: F9WorkspaceDemoPage(
+            initialCircuit: circuit,
+            initialCabinetLayout: CabinetLayout([
+              CabinetFixture(
+                id: 'DIN-INTEGRATION',
+                kind: CabinetFixtureKind.dinRail,
+                bounds: const Rect.fromLTWH(846, 175, 240, 34),
+              ),
+              CabinetFixture(
+                id: 'DUCT-INTEGRATION',
+                kind: CabinetFixtureKind.wireDuct,
+                bounds: const Rect.fromLTWH(48, 560, 1200, 42),
+              ),
+            ]),
+          ),
         ),
       ),
     );
     await t.pumpAndSettle();
     final canvas = t.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    expect(canvas.layout.cabinetLayout.fixtures, hasLength(2));
     final rects = [
       for (var j = 0; j < types.length; j++)
         Rect.fromCenter(
@@ -190,6 +255,7 @@ void main() {
     );
     expect(t.takeException(), isNull);
     await save(t, key, 'electrosim-echelle-moteur-protection-lampe');
+    await save(t, key, 'electrosim-g5-p2-rails-goulotte');
     await t.pumpWidget(const SizedBox());
   });
   testWidgets('complete catalogue appearance inventory', (t) async {
@@ -350,8 +416,17 @@ void main() {
       'motor_3p_6t',
       'isolator_3p',
       'isolator_4p',
+      'lamp',
+      'fuse_dc',
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'relay_coil',
+      'terminal_block_5',
+      'motor_dc',
+      'fan_dc',
+      'buzzer',
     ];
-    for (var page = 0; page < 2; page++) {
+    for (var page = 0; page < (types.length / 9).ceil(); page++) {
       final key = GlobalKey();
       await t.pumpWidget(
         RepaintBoundary(

@@ -32,12 +32,14 @@ class F18TeacherSessionCoordinatorPage extends StatefulWidget {
     required this.sessionName,
     required this.sessionCode,
     this.controller,
+    this.onHome,
   });
 
   final F18SessionWorkspaceBuilder workspaceBuilder;
   final String sessionName;
   final String sessionCode;
   final ElectroSimTpSessionController? controller;
+  final VoidCallback? onHome;
 
   @override
   State<F18TeacherSessionCoordinatorPage> createState() =>
@@ -51,6 +53,7 @@ class _F18TeacherSessionCoordinatorPageState
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanInfo;
   bool _waitingRoom = true;
+  bool _classroomEnded = false;
   String? _waitingRoomNetworkStatus;
 
   @override
@@ -66,7 +69,15 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope<void>(
+    canPop: _classroomEnded || widget.onHome == null,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _goHome();
+    },
+    child: _buildSession(context),
+  );
+
+  Widget _buildSession(BuildContext context) {
     if (_waitingRoom) {
       final ElectroSimLanSyncHost? host = _lanHost;
       return F18SessionWaitingRoomPage(
@@ -108,6 +119,10 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   void _goHome() {
+    if (widget.onHome != null) {
+      widget.onHome!();
+      return;
+    }
     Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
   }
 
@@ -210,8 +225,9 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   void _closeClassroomSession() {
+    _classroomEnded = true;
     _lanHost?.closeClassroomSession();
-    _goHome();
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> _enableWaitingRoomSharing() async {

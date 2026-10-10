@@ -157,6 +157,132 @@ CircuitState _ac3BalancedStar() => CircuitState(
   ],
 );
 
+CircuitState _ac1Reactive(String model, String key, double value) {
+  final base = _ac1Resistive();
+  return CircuitState(
+    circuitId: CircuitId('reactive-$model'),
+    revision: 1,
+    mode: ElectricalMode.ac1,
+    settings: base.settings,
+    sources: base.sources,
+    connections: base.connections,
+    components: <ComponentInstance>[
+      ComponentInstance(
+        id: ComponentId('load'),
+        modelType: model,
+        terminals: <Terminal>[_pin('load-a'), _pin('load-b')],
+        parameters: <String, Object?>{key: value},
+      ),
+    ],
+  );
+}
+
+CircuitState _dcBatteryCircuit(ElectricalMode mode) => CircuitState(
+  circuitId: CircuitId('battery-alone-${mode.name}'),
+  revision: 1,
+  mode: mode,
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('battery'),
+      modelType: 'pv_battery',
+      terminals: <Terminal>[
+        _pin('battery-plus', name: '+', phase: PhaseTag.dcPositive),
+        _pin('battery-minus', name: '-', phase: PhaseTag.dcNegative),
+      ],
+      parameters: const <String, Object?>{
+        'nominalVoltageV': 48.0,
+        'internalResistanceOhm': 0.08,
+        'capacityAh': 100.0,
+        'initialSoc': 0.60,
+        'minSoc': 0.10,
+        'maxSoc': 0.95,
+        'maxDischargeCurrentA': 60.0,
+        'maxChargeCurrentA': 30.0,
+        'chargeEfficiency': 0.95,
+        'dischargeEfficiency': 0.95,
+      },
+    ),
+    _resistor('load', 48.0),
+  ],
+  connections: <Connection>[
+    _wire('battery-feed', 'battery-plus', 'load-a'),
+    _wire('battery-return', 'load-b', 'battery-minus'),
+  ],
+);
+
+CircuitState _pvInverterCircuit() => CircuitState(
+  circuitId: CircuitId('pv-array-inverter-load'),
+  revision: 1,
+  mode: ElectricalMode.pv,
+  sources: <SourceInstance>[
+    SourceInstance(
+      id: SourceId('array'),
+      modelType: 'pv_array',
+      terminals: <Terminal>[
+        _pin('array-plus', phase: PhaseTag.dcPositive),
+        _pin('array-minus', phase: PhaseTag.dcNegative),
+      ],
+      parameters: const <String, Object?>{
+        'mppVoltageV': 48.0,
+        'mppCurrentA': 30.0,
+        'powerTemperatureCoefficientPerC': -0.004,
+        'voltageTemperatureCoefficientPerC': -0.003,
+      },
+    ),
+  ],
+  components: <ComponentInstance>[
+    ComponentInstance(
+      id: ComponentId('inverter'),
+      modelType: 'pv_inverter',
+      terminals: <Terminal>[
+        _pin('inv-plus', phase: PhaseTag.dcPositive),
+        _pin('inv-minus', phase: PhaseTag.dcNegative),
+        _pin('inv-l', phase: PhaseTag.l1),
+        _pin('inv-n', phase: PhaseTag.neutral),
+      ],
+      parameters: const <String, Object?>{
+        'minDcVoltageV': 40.0,
+        'maxDcVoltageV': 60.0,
+        'nominalAcVoltageV': 230.0,
+        'ratedAcPowerW': 3000.0,
+        'efficiency': 0.96,
+      },
+    ),
+    ComponentInstance(
+      id: ComponentId('load'),
+      modelType: 'pv_resistive_load',
+      terminals: <Terminal>[
+        _pin('load-l', phase: PhaseTag.l1),
+        _pin('load-n', phase: PhaseTag.neutral),
+      ],
+      parameters: const <String, Object?>{'resistanceOhm': 52.9},
+    ),
+  ],
+  connections: <Connection>[
+    _wire('pv-pos', 'array-plus', 'inv-plus'),
+    _wire('pv-neg', 'array-minus', 'inv-minus'),
+    _wire('ac-l', 'inv-l', 'load-l'),
+    _wire('ac-n', 'inv-n', 'load-n'),
+  ],
+);
+
+CircuitState _ac3UnbalancedStar() {
+  final base = _ac3BalancedStar();
+  return CircuitState(
+    circuitId: CircuitId('audit-ac3-unbalanced-star'),
+    revision: 1,
+    mode: base.mode,
+    sources: base.sources,
+    settings: base.settings,
+    connections: base.connections,
+    components: <ComponentInstance>[
+      for (final component in base.components)
+        if (component.id.value == 'c') _resistor('c', 1058.0)
+        else component,
+    ],
+  );
+}
+
 double _maxResidual(Iterable<double> values) =>
     values.fold<double>(0, (a, b) => math.max(a, b.abs()));
 

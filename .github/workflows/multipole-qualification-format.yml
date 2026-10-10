@@ -1,0 +1,34 @@
+name: Multipole Qualification Formatter
+on:
+  pull_request:
+    branches: [feat/g5-industrial-geometry-20261009]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.head_ref == 'qualification/g5-multipole-overload-physics-20261010'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Canonical format
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
+          git diff --check
+          git add apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style(physics): canonical multipole test formatting"
+            git fetch origin qualification/g5-multipole-overload-physics-20261010
+            git rebase FETCH_HEAD
+            git push origin HEAD:qualification/g5-multipole-overload-physics-20261010
+          fi

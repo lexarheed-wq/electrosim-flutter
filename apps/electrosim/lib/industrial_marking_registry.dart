@@ -217,7 +217,11 @@ final class IndustrialMarkingRegistry {
         final candidate = devices[link]! + ':' + portNames;
         var label = candidate;
         var n = 2;
-        while (reserved.contains(label.toUpperCase()) ||
+        final ownPrevious = _reference(
+          _map(deviceData[item.id])['reference'],
+        );
+        while ((reserved.contains(label.toUpperCase()) &&
+                label != ownPrevious) ||
             used.containsKey(label.toUpperCase())) {
           label = candidate + '-' + n.toString();
           n++;

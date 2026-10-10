@@ -6,3 +6,5 @@ export 'src/cylinder_physics.dart';
 export 'src/canonical_network.dart';
 export 'src/open_boundary.dart';
 export 'src/dynamic_cylinder.dart';
+
+export 'src/valve52_cylinder_routing.dart';

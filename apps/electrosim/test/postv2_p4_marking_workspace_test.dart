@@ -40,6 +40,8 @@ void main() {
     final svg = IndustrialSchematicSvgExport.render(updated, board.layout);
     expect(svg, contains('data-reference="H1"'));
     expect(svg, contains('data-wire-label='));
+    expect(svg, contains('data-color-hint="red"'));
+    expect(svg, contains('stroke="#C73830"'));
     expect(tester.takeException(), isNull);
   });
 

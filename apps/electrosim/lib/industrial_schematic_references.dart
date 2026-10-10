@@ -117,7 +117,11 @@ final class IndustrialSchematicReferences {
           type.startsWith('relay_contact_');
       if (!isAuxiliary) continue;
 
-      final target = item.parameters['linkedContactorId'];
+      // Match the canonical control engine: relay and contactor links share
+      // the same physical coil reference, never a diagram-only surrogate.
+      final target =
+          item.parameters['linkedRelayId'] ??
+          item.parameters['linkedContactorId'];
       if (target is! String || target.trim().isEmpty) {
         issues.add(
           SchematicReferenceIssue(

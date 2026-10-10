@@ -1,11 +1,13 @@
 // Shared electrical workspace for desktop and browser frontends.
 // The student browser must import this module, never the Mac application entrypoint.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,8 @@ import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
 import 'industrial_workspace_representation.dart';
+import 'industrial_schematic_svg_export.dart';
+import 'industrial_schematic_pdf_export.dart';
 import 'industrial_cabinet_workspace.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
@@ -125,6 +129,44 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _viewport.reset(scale: saved.$1, translation: saved.$2);
     }
     _scheduleLayoutSave();
+  }
+
+  Future<void> _exportSchematic({required bool pdf}) async {
+    // Native save locations are supported on macOS, Windows and Linux.
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android) {
+      _setStatus('Export schéma : sélectionner la version de bureau.');
+      return;
+    }
+    final kind = pdf ? 'PDF' : 'SVG';
+    final extension = pdf ? 'pdf' : 'svg';
+    final circuit = _circuit;
+    final layout = _layout;
+    final fileId = circuit.circuitId.value.replaceAll(
+      RegExp(r'[^a-zA-Z0-9_-]'),
+      '_',
+    );
+    final filename = 'ElectroSim_${fileId}_schema.$extension';
+    try {
+      final destination = await getSaveLocation(suggestedName: filename);
+      if (destination == null) return;
+      final Uint8List bytes = pdf
+          ? await IndustrialSchematicPdfExport.render(circuit, layout)
+          : Uint8List.fromList(
+              utf8.encode(IndustrialSchematicSvgExport.render(circuit, layout)),
+            );
+      await XFile.fromData(
+        bytes,
+        mimeType: pdf ? 'application/pdf' : 'image/svg+xml',
+        name: filename,
+      ).saveTo(destination.path);
+      if (!mounted) return;
+      _setStatus('Schéma $kind exporté : ${destination.path}');
+    } on Object catch (error) {
+      if (!mounted) return;
+      _setStatus('Échec de l’export $kind : $error');
+    }
   }
 
   static const int _maxHistoryEntries = 64;
@@ -829,6 +871,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       _showManageSession))
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
+                      onExportSchematicSvg: () =>
+                          unawaited(_exportSchematic(pdf: false)),
+                      onExportSchematicPdf: () =>
+                          unawaited(_exportSchematic(pdf: true)),
                       onSave: widget.persistenceController == null
                           ? null
                           : _saveWorkspace,
@@ -3821,6 +3867,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onExitWorkspace,
     required this.onSave,
     required this.onOpen,
+    this.onExportSchematicSvg,
+    this.onExportSchematicPdf,
     required this.onRotateSelected,
     required this.onDeleteSelected,
     required this.onRecenter,
@@ -3858,6 +3906,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onExitWorkspace;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
+  final VoidCallback? onExportSchematicSvg;
+  final VoidCallback? onExportSchematicPdf;
   final VoidCallback? onRotateSelected;
   final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
@@ -4218,6 +4268,10 @@ class _WorkspaceTopBar extends StatelessWidget {
           onSave?.call();
         case _WorkspaceSecondaryAction.open:
           onOpen?.call();
+        case _WorkspaceSecondaryAction.exportSchematicSvg:
+          onExportSchematicSvg?.call();
+        case _WorkspaceSecondaryAction.exportSchematicPdf:
+          onExportSchematicPdf?.call();
         case _WorkspaceSecondaryAction.recenter:
           onRecenter();
         case _WorkspaceSecondaryAction.addDinRail:
@@ -4305,6 +4359,26 @@ class _WorkspaceTopBar extends StatelessWidget {
           child: ListTile(
             leading: Icon(Icons.restore_outlined),
             title: Text('Reprendre'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onExportSchematicSvg != null)
+        const PopupMenuItem(
+          key: Key('workspace-export-schematic-svg'),
+          value: _WorkspaceSecondaryAction.exportSchematicSvg,
+          child: ListTile(
+            leading: Icon(Icons.code_outlined),
+            title: Text('Schéma : exporter en SVG'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onExportSchematicPdf != null)
+        const PopupMenuItem(
+          key: Key('workspace-export-schematic-pdf'),
+          value: _WorkspaceSecondaryAction.exportSchematicPdf,
+          child: ListTile(
+            leading: Icon(Icons.picture_as_pdf_outlined),
+            title: Text('Schéma : exporter en PDF'),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -4397,6 +4471,8 @@ enum _WorkspaceSecondaryAction {
   redo,
   save,
   open,
+  exportSchematicSvg,
+  exportSchematicPdf,
   recenter,
   addDinRail,
   addWireDuct,

@@ -34,7 +34,15 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 
 cd "$ROOT/apps/electrosim"
 run_step "f0-flutter-pub-get" flutter pub get
-run_step "f0-dart-format" dart format --output=none --set-exit-if-changed lib test
+echo "=== f0-dart-format ==="
+if ! dart format --output=none --set-exit-if-changed lib test; then
+  echo "=== F1 FORMAT PATCH (uncommitted, CI still fails) ==="
+  dart format lib test
+  git diff -- lib test
+  echo "=== END F1 FORMAT PATCH ==="
+  exit 1
+fi
+steps+=("f0-dart-format")
 run_step "f0-flutter-analyze" flutter analyze
 run_step "f0-flutter-test" flutter test
 

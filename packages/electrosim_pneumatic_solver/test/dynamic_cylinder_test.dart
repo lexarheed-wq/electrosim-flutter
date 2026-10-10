@@ -81,6 +81,37 @@ void main() {
       expect(held.stopEvents, hasLength(1));
     });
 
+    test('CPL-pre: first physical stop event interrupts gas step', () {
+      final MovingDoubleActingAirCylinder sim =
+          MovingDoubleActingAirCylinder.fromPressure(
+            geometry: geometry(deadVolume: .01),
+            mechanics: mechanics(loadN: -200),
+            initialPositionM: 0,
+            initialPressureAAbsPa: 101325,
+            initialPressureBAbsPa: 101325,
+          );
+      final MovingCylinderSnapshot impact = sim.advance(
+        sim.initialSnapshot,
+        durationS: .07,
+        stopAtFirstImpact: true,
+      );
+      expect(impact.timeS, lessThan(.07));
+      expect(impact.stopEvents, hasLength(1));
+      expect(impact.timeS, closeTo(impact.stopEvents.single.timeS, 1e-13));
+      expect(impact.positionM, closeTo(.1, 1e-10));
+      expect(impact.velocityMPerS, 0);
+      final MovingCylinderSnapshot resumed = sim.advance(
+        impact,
+        durationS: .07 - impact.timeS,
+        stopAtFirstImpact: true,
+      );
+      expect(resumed.timeS, closeTo(.07, 1e-12));
+      expect(resumed.positionM, closeTo(.1, 1e-10));
+      expect(resumed.stopEvents, hasLength(1));
+      expect(sim.massResidualKg(resumed).abs(), lessThan(1e-12));
+      expect(sim.initialSnapshot.stopEvents, isEmpty);
+    });
+
     test(
       'PHY-06: opening A and venting B conserves the external mass ledger',
       () {

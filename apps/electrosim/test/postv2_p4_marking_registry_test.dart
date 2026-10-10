@@ -152,7 +152,7 @@ void main() {
   test('P4 wire colors use explicit phase only, never inferred position', () {
     final original = fixture();
     final originalWire = original.connections.first;
-    final neutral = Connection(
+    final l1Wire = Connection(
       id: originalWire.id,
       fromTerminalId: originalWire.fromTerminalId,
       toTerminalId: originalWire.toTerminalId,
@@ -167,11 +167,11 @@ void main() {
       mode: original.mode,
       sources: original.sources,
       components: original.components,
-      connections: [neutral, ...original.connections.skip(1)],
+      connections: [l1Wire, ...original.connections.skip(1)],
       settings: original.settings,
     );
     final result = IndustrialMarkingRegistry.inspect(tagged);
-    expect(result.colors[neutral.id.value], IndustrialConductorColor.blue);
+    expect(result.colors[l1Wire.id.value], IndustrialConductorColor.brown);
     expect(
       result.colors[original.connections[1].id.value],
       IndustrialConductorColor.unspecified,

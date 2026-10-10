@@ -60,7 +60,7 @@ final class PneumaticTelemetrySeries {
 
   void record(PneumaticCylinderTelemetry sample) {
     if (!sample.timeS.isFinite ||
-        ( _samples.isNotEmpty && sample.timeS < _samples.last.timeS)) {
+        (_samples.isNotEmpty && sample.timeS < _samples.last.timeS)) {
       throw const ElectropneumaticRuntimeException(
         'nonmonotonic_telemetry',
         'Only chronological accepted physical states can enter charts.',

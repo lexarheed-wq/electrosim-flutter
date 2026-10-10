@@ -231,7 +231,7 @@ void main() {
             'kind': item.kind.name,
             'mode': mode.name,
             'solved': snapshot.solved,
-            'diagnostics': snapshot.diagnostics.issues.length,
+            'diagnostics': snapshot.diagnostics.advice.length,
             'maxResidual': _maxResidual(residuals),
             'note': 'Isolated/open-circuit probe; unsolved is not by itself a defect.',
           });
@@ -391,7 +391,7 @@ void main() {
             snap.solved ? 'PASS' : 'UNRESOLVED', {
           'mode': example.circuit.mode.name,
           'solved': snap.solved,
-          'diagnosticCount': snap.diagnostics.issues.length,
+          'diagnosticCount': snap.diagnostics.advice.length,
         });
         if (!snap.solved) exceptions.add(example.id.value);
       } catch (error) {
@@ -405,7 +405,7 @@ void main() {
         _result('v2-fault', example.id.value, 'OBSERVED', {
           'mode': example.faultyCircuit.mode.name,
           'solved': snap.solved,
-          'diagnosticCount': snap.diagnostics.issues.length,
+          'diagnosticCount': snap.diagnostics.advice.length,
         });
       } catch (error) {
         exceptions.add(example.id.value);

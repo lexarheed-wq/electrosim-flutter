@@ -297,13 +297,21 @@ abstract final class IndustrialSchematicSvgExport {
           '<line x1="${_n(anchor.dx)}" y1="${_n(anchor.dy)}" '
           'x2="${_n(edgeX)}" y2="${_n(edgeY)}"/>',
         );
+        final terminalRef = marks?.terminals[ports[i].id.value];
+        final simpleRef = '${refs.labelOf(id)}:${ports[i].name}';
+        final displayedTerminal = terminalRef != null &&
+                terminalRef != simpleRef
+            ? terminalRef
+            : ports[i].name;
         svg.writeln(
           '<circle data-terminal-id="${_xml(ports[i].id.value)}" '
+          '${terminalRef == null ? '' : 'data-reference="${_xml(terminalRef)}" '}'
           'cx="${_n(anchor.dx)}" cy="${_n(anchor.dy)}" r="3" fill="white"/>',
         );
         svg.writeln(
           '<text x="${_n(anchor.dx + 7)}" y="${_n(anchor.dy - 9)}" '
-          'stroke="none" fill="black" font-size="9">${_xml(ports[i].name)}</text>',
+          'stroke="none" fill="black" font-size="9">'
+          '${_xml(displayedTerminal)}</text>',
         );
       }
       svg.writeln(

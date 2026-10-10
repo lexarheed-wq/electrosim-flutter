@@ -32,8 +32,9 @@ final class Valve52FaultProfile {
     required ValveSpoolSide commandedSpool,
     required bool supplyEnabled,
   }) {
-    final Valve52CylinderRouting upstream =
-        Valve52AirIsolation(routing: routing).withSupplyEnabled(supplyEnabled);
+    final Valve52CylinderRouting upstream = Valve52AirIsolation(
+      routing: routing,
+    ).withSupplyEnabled(supplyEnabled);
     PneumaticPressureBoundary close(PneumaticPressureBoundary input) =>
         PneumaticPressureBoundary(
           id: input.id,
@@ -46,10 +47,8 @@ final class Valve52FaultProfile {
     final Valve52CylinderRouting faulted = Valve52CylinderRouting(
       supplyA: upstream.supplyA,
       supplyB: upstream.supplyB,
-      exhaustA:
-          blockedExhaustR ? close(upstream.exhaustA) : upstream.exhaustA,
-      exhaustB:
-          blockedExhaustS ? close(upstream.exhaustB) : upstream.exhaustB,
+      exhaustA: blockedExhaustR ? close(upstream.exhaustA) : upstream.exhaustA,
+      exhaustB: blockedExhaustS ? close(upstream.exhaustB) : upstream.exhaustB,
     );
     final MovingDoubleActingAirCylinder base = faulted.connect(
       cylinder: cylinder,

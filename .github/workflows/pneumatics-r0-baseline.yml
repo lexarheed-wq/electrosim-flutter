@@ -62,6 +62,17 @@ jobs:
             (cd "packages/$pkg" && dart pub get && dart test) 2>&1 | tee "build/pneumatics-r0/$pkg.log"
             echo "::endgroup::"
           done
+      - name: R0 DC 30/100/200/400 fixture smoke and source-current validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_solver_dc
+            dart run tool/pneumatics_r0_baseline.dart \
+              --warmup-seconds 0 --measure-seconds 1 --repeats 1 \
+              --out-dir ../../build/pneumatics-r0/dc-fixture-smoke
+          )
+          test -s build/pneumatics-r0/dc-fixture-smoke/SUMMARY.json
       - name: Reject unexpected edits to tracked sources and goldens
         run: git diff --exit-code
       - uses: actions/upload-artifact@v4

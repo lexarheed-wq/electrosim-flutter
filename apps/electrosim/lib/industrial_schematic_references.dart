@@ -91,7 +91,7 @@ final class IndustrialSchematicReferences {
           SchematicReferenceIssue(
             kind: SchematicReferenceIssueKind.duplicateReference,
             elementId: id,
-            details: 'Reference shared with ' + first + ': ' + value,
+            details: 'Reference shared with $first: $value',
           ),
         );
       }
@@ -134,7 +134,7 @@ final class IndustrialSchematicReferences {
           SchematicReferenceIssue(
             kind: SchematicReferenceIssueKind.unknownLinkedCoil,
             elementId: item.id.value,
-            details: 'Unknown coil device: ' + target,
+            details: 'Unknown coil device: $target',
           ),
         );
         continue;
@@ -146,7 +146,7 @@ final class IndustrialSchematicReferences {
           SchematicReferenceIssue(
             kind: SchematicReferenceIssueKind.invalidLinkedCoil,
             elementId: item.id.value,
-            details: 'Linked device is not a contactor: ' + target,
+            details: 'Linked device is not a contactor: $target',
           ),
         );
         continue;

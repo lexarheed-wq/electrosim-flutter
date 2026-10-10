@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'f18_industrial_physical_plate.dart';
+import 'f18_component_type_profile.dart';
 
 /// The same component artwork is used in both locations. Only its *camera*
 /// changes: palette items have a shallow product perspective; the board stays
@@ -22,40 +23,13 @@ enum F18IndustrialFamily {
 
 abstract final class F18IndustrialIdentity {
   static F18IndustrialFamily familyOf(String modelType) {
-    final type = modelType.toLowerCase();
-    if (type.startsWith('physical_') ||
-        type.contains('voltmeter') ||
-        type.contains('ammeter')) {
-      return F18IndustrialFamily.instrument;
-    }
-    if (type.contains('breaker') ||
-        type.contains('fuse') ||
-        type.contains('isolator') ||
-        type.contains('thermal_overload') ||
-        type.contains('terminal_block')) {
-      return F18IndustrialFamily.modularProtection;
-    }
-    if (type.contains('contactor') ||
-        type.contains('relay') ||
-        type.contains('switch') ||
-        type.contains('push_button')) {
-      return F18IndustrialFamily.switching;
-    }
-    if (type.contains('motor') ||
-        type.contains('fan') ||
-        type.contains('generator')) {
-      return F18IndustrialFamily.drive;
-    }
-    if (type.startsWith('pv_')) return F18IndustrialFamily.solar;
-    if (type.contains('source') ||
-        type.contains('battery') ||
-        type.contains('controller') ||
-        type.contains('inverter') ||
-        type.contains('appliance') ||
-        type.contains('sensor') ||
-        type.contains('actuator')) {
-      return F18IndustrialFamily.enclosure;
-    }
+    final F18ComponentTypeProfile profile = F18ComponentTypeProfile(modelType);
+    if (profile.measurementHardware) return F18IndustrialFamily.instrument;
+    if (profile.protectiveHardware) return F18IndustrialFamily.modularProtection;
+    if (profile.switchingHardware) return F18IndustrialFamily.switching;
+    if (profile.rotatingHardware) return F18IndustrialFamily.drive;
+    if (profile.pvHardware) return F18IndustrialFamily.solar;
+    if (profile.boxedHardware) return F18IndustrialFamily.enclosure;
     return F18IndustrialFamily.passive;
   }
 }

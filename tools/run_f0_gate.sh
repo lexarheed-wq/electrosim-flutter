@@ -49,15 +49,7 @@ run_step(){ local name="$1"; shift; echo "=== $name ==="; "$@"; steps+=("$name")
 # Mac, R6 reached Dart successfully but dart format ran before pub get, which
 # caused package-resolution warnings and exposed an unformatted F0 source file.
 run_step "flutter-pub-get" flutter pub get
-echo "=== dart-format ==="
-if ! dart format --output=none --set-exit-if-changed lib test; then
-  echo "=== F0 FORMAT PATCH (CI remains failed) ==="
-  dart format lib test
-  git diff -- lib test
-  echo "=== END F0 FORMAT PATCH ==="
-  exit 1
-fi
-steps+=("dart-format")
+run_step "dart-format" dart format --output=none --set-exit-if-changed lib test
 cd "$ROOT"
 run_step "f0-refresh-manifest" python3 "$ROOT/tools/generate_f0_manifest.py"
 run_step "f0-verify-refreshed-manifest" python3 "$ROOT/tools/verify_f0_manifest.py"

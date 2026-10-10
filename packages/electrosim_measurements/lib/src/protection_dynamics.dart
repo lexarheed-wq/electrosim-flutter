@@ -19,12 +19,15 @@ final class ProtectionProfile {
     required this.curve,
     required this.magneticLowMultiple,
     required this.magneticHighMultiple,
+    this.thermalTripClass = '10',
   });
 
   final ProtectionCurveFamily family;
   final ProtectionTripCurve curve;
   final double magneticLowMultiple;
   final double magneticHighMultiple;
+  /// Educational IEC 60947-4-1 trip-class envelope, not a manufacturer curve.
+  final String thermalTripClass;
 }
 
 final class ProtectionExposureState {
@@ -59,11 +62,19 @@ final class ProtectionDynamicsEngine {
   ProtectionProfile profile(ComponentInstance component) {
     final String model = component.modelType.toLowerCase();
     if (model.contains('thermal_overload')) {
-      return const ProtectionProfile(
+      final Object? rawClass = component.parameters['tripClass'];
+      final String requested = switch (rawClass) {
+        String raw => raw.trim().toUpperCase(),
+        num raw => raw.toInt().toString(),
+        _ => '10',
+      };
+      const Set<String> supported = <String>{'10A', '10', '20', '30'};
+      return ProtectionProfile(
         family: ProtectionCurveFamily.thermal,
         curve: ProtectionTripCurve.thermal,
         magneticLowMultiple: double.infinity,
         magneticHighMultiple: double.infinity,
+        thermalTripClass: supported.contains(requested) ? requested : '10',
       );
     }
     if (model.contains('fuse')) {
@@ -127,13 +138,24 @@ final class ProtectionDynamicsEngine {
   double tripTimeForRatio(ProtectionProfile profile, double rawRatio) {
     final double ratio = math.max(0.0, rawRatio.isFinite ? rawRatio : 0.0);
     if (profile.curve == ProtectionTripCurve.thermal) {
+      // IEC 60947-4-1 conventional cold and warm envelope points.
+      // These time anchors are deliberately representative, not a claim to
+      // reproduce any manufacturer's measured bimetal or motor thermal model.
+      // Class 10 remains the backward-compatible default for old circuits.
+      final (double at15, double at2, double at4, double at72) =
+          switch (profile.thermalTripClass) {
+        '10A' => (90.0, 60.0, 10.0, 5.0),
+        '20' => (360.0, 240.0, 40.0, 16.0),
+        '30' => (600.0, 360.0, 60.0, 24.0),
+        _ => (180.0, 120.0, 20.0, 8.0),
+      };
       if (ratio < 1.05) return double.infinity;
-      if (ratio < 1.2) return _logInterp(ratio, 1.05, 14400, 1.2, 7200);
-      if (ratio < 1.5) return _logInterp(ratio, 1.2, 7200, 1.5, 600);
-      if (ratio < 2) return _logInterp(ratio, 1.5, 600, 2, 120);
-      if (ratio < 4) return _logInterp(ratio, 2, 120, 4, 20);
-      if (ratio < 7.2) return _logInterp(ratio, 4, 20, 7.2, 8);
-      return math.max(2.0, 8.0 * (7.2 / math.max(7.2, ratio)));
+      if (ratio < 1.2) return _logInterp(ratio, 1.05, 14400, 1.2, 6000);
+      if (ratio < 1.5) return _logInterp(ratio, 1.2, 6000, 1.5, at15);
+      if (ratio < 2) return _logInterp(ratio, 1.5, at15, 2, at2);
+      if (ratio < 4) return _logInterp(ratio, 2, at2, 4, at4);
+      if (ratio < 7.2) return _logInterp(ratio, 4, at4, 7.2, at72);
+      return math.max(2.0, at72 * (7.2 / math.max(7.2, ratio)));
     }
     if (profile.curve == ProtectionTripCurve.fuse) {
       if (ratio < 1.10) return double.infinity;

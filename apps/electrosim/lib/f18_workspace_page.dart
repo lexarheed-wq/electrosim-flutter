@@ -1457,12 +1457,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         instrument: item,
       );
       final double? value = reading.result?.reading?.value;
-      if (reading.status == PhysicalInstrumentStatus.valid && value != null) {
-        final bool current =
-            item.mode == InstrumentMode.currentDc ||
-            item.mode == InstrumentMode.currentAcRms;
-        results[item.id.value] =
-            '${value.toStringAsFixed(2)} ${current ? 'A' : 'V'}';
+      final String? textValue = reading.result?.displayText;
+      if (reading.status == PhysicalInstrumentStatus.valid &&
+          textValue != null) {
+        results[item.id.value] = textValue;
+      } else if (reading.status == PhysicalInstrumentStatus.valid &&
+          value != null) {
+        final String unit = switch (item.mode) {
+          InstrumentMode.currentDc || InstrumentMode.currentAcRms => 'A',
+          InstrumentMode.frequency => 'Hz',
+          InstrumentMode.resistance => 'Ω',
+          _ => 'V',
+        };
+        results[item.id.value] = '${value.toStringAsFixed(2)} $unit';
       } else {
         results[item.id.value] = switch (reading.status) {
           PhysicalInstrumentStatus.off => 'OFF',
@@ -1501,15 +1508,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     Offset worldPosition,
   ) {
     final bool current = definition.keyName == 'instrument-ammeter';
+    final bool frequency = definition.keyName == 'instrument-frequency';
+    final bool phaseSequence =
+        definition.keyName == 'instrument-phase-sequence';
     final String elementId = _allocateElementId(definition.keyName);
     final bool dc =
         _circuit.mode == ElectricalMode.dc ||
         _circuit.mode == ElectricalMode.pv;
     final InstrumentInstance instrument = InstrumentInstance(
       id: InstrumentId(elementId),
-      kind: current ? InstrumentKind.ammeter : InstrumentKind.voltmeter,
+      kind: current
+          ? InstrumentKind.ammeter
+          : frequency
+          ? InstrumentKind.frequencyMeter
+          : phaseSequence
+          ? InstrumentKind.phaseSequenceTester
+          : InstrumentKind.voltmeter,
       mode: current
           ? (dc ? InstrumentMode.currentDc : InstrumentMode.currentAcRms)
+          : frequency
+          ? InstrumentMode.frequency
+          : phaseSequence
+          ? InstrumentMode.phaseSequence
           : (dc ? InstrumentMode.voltageDc : InstrumentMode.voltageAcRms),
     );
     final CircuitState next = CircuitState(
@@ -1544,6 +1564,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = elementId;
       _status = current
           ? 'Ampèremètre physique ajouté : sélectionnez un fil pour l’insérer en série.'
+          : frequency
+          ? 'Fréquencemètre : choisissez deux bornes sous tension AC pour V/Ω et COM.'
+          : phaseSequence
+          ? 'Ordre des phases : sélectionnez trois bornes L1, L2 et L3 successivement.'
           : 'Voltmètre physique ajouté : sélectionnez V puis COM sur deux bornes.';
     });
     _simulation.updateCircuit(next);
@@ -1867,7 +1891,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         break;
       }
     }
-    if (meter == null || meter.kind != InstrumentKind.voltmeter) return false;
+    if (meter == null ||
+        (meter.kind != InstrumentKind.voltmeter &&
+            meter.kind != InstrumentKind.frequencyMeter &&
+            meter.kind != InstrumentKind.phaseSequenceTester)) {
+      return false;
+    }
     if (_studentTpReadOnly) {
       _setStatus('TP remis : sondes en lecture seule.');
       return true;
@@ -1875,16 +1904,25 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final List<ProbeConnection> existing = _circuit.probes
         .where((item) => item.instrumentId == meter!.id)
         .toList(growable: false);
-    final bool hasV = existing.any(
-      (item) => item.port == InstrumentPort.voltOhm,
+    final bool three = meter.mode == InstrumentMode.phaseSequence;
+    final List<InstrumentPort> ports = three
+        ? <InstrumentPort>[
+            InstrumentPort.phase1,
+            InstrumentPort.phase2,
+            InstrumentPort.phase3,
+          ]
+        : <InstrumentPort>[
+            InstrumentPort.voltOhm,
+            InstrumentPort.common,
+          ];
+    final bool resetAll = ports.every(
+      (port) => existing.any((probe) => probe.port == port),
     );
-    final bool hasCom = existing.any(
-      (item) => item.port == InstrumentPort.common,
-    );
-    final InstrumentPort port = hasV && !hasCom
-        ? InstrumentPort.common
-        : InstrumentPort.voltOhm;
-    final bool resetBoth = hasV && hasCom;
+    final InstrumentPort port = resetAll
+        ? ports.first
+        : ports.firstWhere(
+            (port) => !existing.any((probe) => probe.port == port),
+          );
     final ProbeConnection added = ProbeConnection(
       id: ProbeId('${meter.id.value}-${port.name}'),
       instrumentId: meter.id,
@@ -1902,7 +1940,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       probes: <ProbeConnection>[
         for (final ProbeConnection item in _circuit.probes)
           if (item.instrumentId != meter.id ||
-              (!resetBoth && item.port != port))
+              (!resetAll && item.port != port))
             item,
         added,
       ],
@@ -1911,7 +1949,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     setState(() {
       _circuit = next;
-      _status = port == InstrumentPort.voltOhm
+      _status = three
+          ? 'Sonde ${port.name} : ${target.value}. '
+                'Complétez L1, L2 et L3 pour obtenir l’ordre des phases.'
+          : port == InstrumentPort.voltOhm
           ? 'Sonde V/Ω : ${target.value}. Sélectionner une borne pour COM.'
           : 'Sonde COM : ${target.value}. Mesure physique disponible.';
     });

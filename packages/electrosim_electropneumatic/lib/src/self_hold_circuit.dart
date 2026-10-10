@@ -62,12 +62,10 @@ final class SelfHold24vElectricalCycle {
     this.maxIterations = 12,
   }) : relayDrive = Solenoid24vDynamics(
          relayCalibration ??
-             Solenoid24vCalibration(
-               pickupDelayS: 0,
-               releaseDelayS: 0,
-             ),
+             Solenoid24vCalibration(pickupDelayS: 0, releaseDelayS: 0),
        ) {
-    if (maxIterations <= 0 || project.electricalCircuit.mode != ElectricalMode.dc) {
+    if (maxIterations <= 0 ||
+        project.electricalCircuit.mode != ElectricalMode.dc) {
       throw const ElectropneumaticRuntimeException(
         'invalid_self_hold_options',
         'Self holding control must use a bounded DC circuit.',
@@ -138,8 +136,7 @@ final class SelfHold24vElectricalCycle {
             condition: c.condition,
             controlState: <String, Object?>{
               ...c.controlState,
-              if (c.id.value == binding.startComponentId)
-                'closed': pressed,
+              if (c.id.value == binding.startComponentId) 'closed': pressed,
               if (c.id.value == binding.holdContactComponentId)
                 'actuated': holding,
               if (c.id.value == binding.endStopComponentId)
@@ -163,15 +160,14 @@ final class SelfHold24vElectricalCycle {
     );
   }
 
-  MultiphysicsProject _projectAt(CircuitState circuit) =>
-      MultiphysicsProject(
-        electricalCircuit: circuit,
-        pneumaticNetwork: project.pneumaticNetwork,
-        devices: project.devices,
-        links: project.links,
-        physicalLayout: project.physicalLayout,
-        schematicLayout: project.schematicLayout,
-      );
+  MultiphysicsProject _projectAt(CircuitState circuit) => MultiphysicsProject(
+    electricalCircuit: circuit,
+    pneumaticNetwork: project.pneumaticNetwork,
+    devices: project.devices,
+    links: project.links,
+    physicalLayout: project.physicalLayout,
+    schematicLayout: project.schematicLayout,
+  );
 
   SelfHold24vSnapshot settle({
     required double timeS,

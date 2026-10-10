@@ -102,6 +102,46 @@ void main() {
       isNot(equals(await pixels(t, 'thermal_overload_3p'))),
     );
   });
+  testWidgets('new industrial families retain live electrical indications', (
+    t,
+  ) async {
+    for (final type in [
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'relay_contact_no',
+      'relay_contact_nc',
+    ]) {
+      expect(
+        await pixels(t, type, actuated: false),
+        isNot(equals(await pixels(t, type, actuated: true))),
+        reason: type,
+      );
+    }
+    expect(
+      await pixels(t, 'relay_coil', energized: true),
+      isNot(equals(await pixels(t, 'relay_coil'))),
+    );
+    for (final type in ['fuse_dc', 'fuse_ac1', 'fuse']) {
+      expect(
+        await pixels(t, type, tripped: true),
+        isNot(equals(await pixels(t, type))),
+        reason: type,
+      );
+    }
+    for (final type in [
+      'fuse_dc',
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'relay_coil',
+      'terminal_block_5',
+    ]) {
+      expect(
+        await pixels(t, type, perspective: true),
+        isNot(equals(await pixels(t, type))),
+        reason: type,
+      );
+    }
+  });
   testWidgets('incandescent filament brightness follows voltage', (t) async {
     final off = await pixels(t, 'lamp', voltageV: 0);
     final six = await pixels(t, 'lamp', energized: true, voltageV: 6);
@@ -144,7 +184,16 @@ void main() {
   testWidgets('animation phase does not repaint stationary industrial parts', (
     t,
   ) async {
-    for (final type in ['breaker_3p', 'contactor_3p', 'push_button_no']) {
+    for (final type in [
+      'breaker_3p',
+      'contactor_3p',
+      'push_button_no',
+      'fuse_dc',
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'relay_coil',
+      'terminal_block_5',
+    ]) {
       await pixels(t, type, phase: 0);
       final finder = find.descendant(
         of: find.byType(F18IndustrialPhysicalPlate),

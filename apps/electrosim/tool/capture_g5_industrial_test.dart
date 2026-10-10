@@ -73,27 +73,37 @@ void main() {
       ('push_button_no', 'bouton'),
       ('motor_3p_6t', 'moteur'),
       ('lamp', 'lampe'),
+      ('fuse_dc', 'fusible'),
+      ('contactor_aux_no', 'auxiliaire'),
+      ('contactor_aux_nc', 'auxiliaire'),
+      ('relay_coil', 'bobine'),
+      ('terminal_block_5', 'bornier'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
+      final mode = ['fuse_dc', 'relay_coil'].contains(entry.$1)
+          ? ElectricalMode.dc
+          : ElectricalMode.ac3;
+      final paletteDef = f9PaletteCatalog.firstWhere(
+        (d) => d.modelType == entry.$1 && d.supportsMode(mode),
+      );
       final circuit = CircuitState(
         circuitId: CircuitId('physical-${entry.$1}'),
         revision: 0,
-        mode: ElectricalMode.ac3,
+        mode: mode,
         components: [
           ComponentInstance(
             id: ComponentId('Q1'),
             modelType: entry.$1,
             terminals: List.generate(
               def.terminalCount,
-              (i) => Terminal(id: TerminalId('Q1-$i'), name: '${i + 1}'),
+              (i) => Terminal(
+                id: TerminalId('Q1-$i'),
+                name: paletteDef.terminalLabels[i],
+              ),
             ),
-            parameters: {ProtectionRating.ratedCurrentKey: 16.0},
-            controlState: const {
-              'closed': false,
-              'tripped': false,
-              'pressed': false,
-            },
+            parameters: paletteDef.defaultParameters,
+            controlState: paletteDef.defaultControlState,
           ),
         ],
       );
@@ -106,6 +116,36 @@ void main() {
             home: F9WorkspaceDemoPage(
               initialCircuit: circuit,
               initialSelectedElementId: 'Q1',
+              initialCabinetLayout:
+                  [
+                    'fuse_dc',
+                    'contactor_aux_no',
+                    'contactor_aux_nc',
+                    'relay_coil',
+                    'terminal_block_5',
+                  ].contains(entry.$1)
+                  ? CabinetLayout([
+                      CabinetFixture(
+                        id: 'DIN-NEW-INDUSTRIAL',
+                        kind: CabinetFixtureKind.dinRail,
+                        bounds: Rect.fromLTWH(
+                          28,
+                          96 +
+                              (F18ReferenceComponentMetrics.boardSizeFor(
+                                        entry.$1,
+                                      ).height /
+                                      2)
+                                  .clamp(96, double.infinity) -
+                              17,
+                          F18ReferenceComponentMetrics.boardSizeFor(
+                                entry.$1,
+                              ).width +
+                              160,
+                          34,
+                        ),
+                      ),
+                    ])
+                  : null,
             ),
           ),
         ),
@@ -366,8 +406,14 @@ void main() {
       'motor_3p_6t',
       'isolator_3p',
       'isolator_4p',
+      'lamp',
+      'fuse_dc',
+      'contactor_aux_no',
+      'contactor_aux_nc',
+      'relay_coil',
+      'terminal_block_5',
     ];
-    for (var page = 0; page < 2; page++) {
+    for (var page = 0; page < (types.length / 9).ceil(); page++) {
       final key = GlobalKey();
       await t.pumpWidget(
         RepaintBoundary(

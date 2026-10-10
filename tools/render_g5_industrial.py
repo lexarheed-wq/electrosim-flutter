@@ -64,6 +64,12 @@ glass.node_tree.nodes['Principled BSDF'].inputs['Transmission Weight'].default_v
 glass.node_tree.nodes['Principled BSDF'].inputs['IOR'].default_value=1.46
 porcelain=mat('glazed porcelain',(.84,.83,.79),rough=.16,grain=0)
 
+amber=mat('transparent amber relay cover',(.94,.76,.40),rough=.045,grain=0)
+amber.node_tree.nodes['Principled BSDF'].inputs['Transmission Weight'].default_value=1
+amber.node_tree.nodes['Principled BSDF'].inputs['IOR'].default_value=1.49
+terminal_gray=mat('terminal insulating polyamide',(.46,.49,.46),rough=.38)
+pe_green=mat('PE insulating polyamide',(.04,.37,.08),rough=.4)
+
 def finish(o, name, material, bevel=0):
     o.name=name;o.data.materials.append(material)
     if bevel:
@@ -213,9 +219,82 @@ def controls(name,M):
     else:return False
     return True
 
+def fuse_holder(W,H,ports):
+    # Horizontal presentation retains the existing two electrical anchors.
+    body=round_housing(W/2,H/2,W*.91,H*.74,24,45,black,2)
+    for x,y in ports:
+        cut(body,cyl('terminal pocket tool',x,y,28,H*.084,15,well))
+        for yy in [H*.16,H*.84]:
+            box('wire entry mouth',x,yy,W*.075,H*.07,12,12,well,.5)
+    round_housing(W*.5,H*.5,W*.55,H*.66,31,9,well,2)
+    round_housing(W*.5,H*.5,W*.51,H*.60,34,12,white,2)
+    for yy in [H*.25,H*.75]:
+        box('carrier moulded return',W*.5,yy,W*.48,H*.025,35,3,rear,.5)
+    round_housing(W*.73,H*.5,W*.035,H*.42,39,7,white,1)
+    box('carrier grip inset',W*.73,H*.5,W*.016,H*.22,39.3,.5,well,.3)
+    for x in [W*.21,W*.80]:cyl('carrier hinge',x,H*.5,27,H*.032,5,steel)
+    for yy in [H*.16,H*.84]:box('rear mould parting line',W*.5,yy,W*.86,.7,24.2,.3,well,.1)
+    box('DIN retaining foot',W*.5,H*.89,W*.24,H*.045,-10,9,rear,.5)
+
+def auxiliary(W,H,ports):
+    body=round_housing(W/2,H/2,W*.74,H*.96,27,43,black,1.4)
+    for x,y in ports:
+        cut(body,cyl('auxiliary terminal pocket',x,y,31,W*.060,14,well))
+        for xx in [W*.22,W*.78]:box('terminal entry cheek',xx,y,W*.05,H*.09,28,7,black,.5)
+    box('identification band',W*.5,H*.34,W*.67,H*.047,27.2,.3,green,.1)
+    box('channel legend',W*.47,H*.56,W*.44,H*.28,27.6,.4,black,.2)
+    box('actuator inspection well',W*.73,H*.55,W*.085,H*.22,28.5,4,well,.5)
+    for yy in [H*.42,H*.67]:box('moulded actuator edge',W*.73,yy,W*.10,H*.012,29,2,rear,.2)
+    for xx in [W*.14,W*.86]:box('clip-on retaining jaw',xx,H*.72,W*.07,H*.16,1,12,black,.6)
+    for xx in [W*.30,W*.70]:box('rear locating guide',xx,H*.08,W*.065,H*.09,-8,8,black,.4)
+
+def relay_coil(W,H,ports):
+    round_housing(W/2,H*.88,W*.86,H*.16,27,40,black,1.5)
+    for x,y in ports:round_housing(x,y,W*.20,H*.14,33,16,black,1)
+    round_housing(W/2,H*.49,W*.71,H*.75,-3,12,black,1)
+    for xx in [W*.12,W*.88]:box('socket retaining latch',xx,H*.5,W*.045,H*.61,4,12,black,.5)
+    lathe('steel magnetic core',W*.37,13,[(H*.18,11),(H*.68,11)],steel)
+    for yy in [H*.20,H*.66]:lathe('winding bobbin flange',W*.37,13,[(yy-2,22),(yy+2,22)],black)
+    winding=[]
+    for i in range(961):
+        t=i/960;a=t*80*math.tau
+        winding.append((W*.37+19*math.cos(a),-(H*.22+H*.42*t),13+19*math.sin(a)))
+    wire('continuous enamelled copper winding',winding,.85,copper)
+    box('steel relay armature',W*.67,H*.40,W*.08,H*.43,19,5,steel,.4)
+    box('magnetic return bridge',W*.58,H*.24,W*.23,H*.035,24,4,steel,.4)
+    for yy in [H*.40,H*.57]:
+        box('internal spring support',W*.66,yy,W*.12,H*.014,28,1.3,brass,.2)
+        cyl('silver contact rivet',W*.68,yy,29.5,2.2,1.5,chrome)
+    cover=round_housing(W*.5,H*.45,W*.74,H*.78,42,58,amber,1.3)
+    cut(cover,round_housing(W*.5,H*.45,W*.74-3,H*.78-3,40.5,59,well,.8))
+    for yy in [H*.08,H*.81]:box('transparent cover rim',W*.5,yy,W*.73,H*.02,43,5,amber,.5)
+    box('relay identification strip',W*.5,H*.74,W*.60,H*.065,43,.3,white,.3)
+
+def terminal_bank(W,H,ports):
+    pitch=ports[1][0]-ports[0][0]
+    box('insulating mounting base',W/2,H/2,W*.92,H*.94,-7,13,black,.7)
+    for i in range(5):
+        x=ports[i][0];material=pe_green if i==4 else terminal_gray
+        yz=[(H*.03,-10),(H*.03,28),(H*.24,28),(H*.30,20),(H*.70,20),(H*.76,28),(H*.97,28),(H*.97,-10),(H*.61,-10),(H*.59,2),(H*.41,2),(H*.39,-10)]
+        body=profile('independent terminal block',yz,x-pitch*.46,x+pitch*.46,material,.8)
+        for xx,yy in [ports[i],ports[i+5]]:
+            cut(body,cyl('terminal screw pocket',xx,yy,31,min(W,H)*.038*1.48,15,well))
+            box('wire entry mouth',xx,yy+(-1 if yy<H/2 else 1)*H*.039,pitch*.64,H*.035,10,8,well,.4)
+        for yy in [H*.27,H*.73]:box('moulded shoulder',x,yy,pitch*.76,H*.035,23,4,material,.4)
+        box('individual number marker',x,H*.5,pitch*.80,H*.12,21.5,1.5,white,.4)
+        box('empty bridge channel',x,H*.36,pitch*.56,H*.026,23,3,well,.2)
+        if i==4:
+            for yy in [H*.24,H*.76]:box('PE yellow moulding',x,yy,pitch*.86,H*.044,29,1.5,yellow,.3)
+    for x in [ports[0][0]-pitch*.57,ports[4][0]+pitch*.57]:
+        box('terminal bank end plate',x,H*.5,pitch*.15,H*.98,29,38,rear,.6)
+
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
-    if name.startswith('breaker') or name.startswith('isolator'):
+    if name=='fuse-holder':fuse_holder(W,H,ports)
+    elif name in ['auxiliary-no','auxiliary-nc']:auxiliary(W,H,ports)
+    elif name=='coil':relay_coil(W,H,ports)
+    elif name=='terminal5':terminal_bank(W,H,ports)
+    elif name.startswith('breaker') or name.startswith('isolator'):
         poles=len(ports)//2;din(W,H,ports,poles)
     elif name.startswith('contactor') or name=='overload':
         overload=name=='overload'
@@ -372,13 +451,6 @@ def build(name,M):
         for x in [W*.12,W*.88]:
             for y in [H*.11,H*.82]:screw(x,y,3,22)
         round_housing(cx,H*.89,W*.32,H*.095,23,6,white,1)
-    elif name=='coil':
-        round_housing(cx,cy,W*.7,H*.86,18,35,black,3)
-        for x in [W*.25,W*.75]:round_housing(x,H*.43,W*.10,H*.6,26,10,steel,1)
-        for x in range(int(W*.28),int(W*.72),4):
-            box('copper winding turn',x,H*.44,2.8,H*.49,27,14,copper,1)
-        round_housing(cx,H*.43,W*.10,H*.59,30,9,steel,1)
-        round_housing(cx,H*.88,W*.64,H*.10,24,7,white,2)
     elif name=='supply':
         round_housing(cx,cy,W*.89,H*.91,21,38,black,3)
         round_housing(cx,H*.36,W*.76,H*.44,24,3,chrome,2)
@@ -386,16 +458,11 @@ def build(name,M):
         for x in [W*.12,W*.88]:
             for y in [H*.095,H*.90]:screw(x,y,2.2,23)
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
-    elif name=='terminal5':
-        round_housing(cx,cy,W*.87,H*.95,12,15,rear,2)
-        for i in range(5):
-            x=ports[i][0]
-            round_housing(x,cy,W*.14,H*.9,23,20,white,1.5)
-            for y in [H*.20,H*.80]:round_housing(x,y,W*.08,H*.14,24,4,black,1)
     for j,(x,y) in enumerate(ports):
         if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name=='overload'
-        screw(x,y,min(W,H)*.038,34 if dark_rim else 29,black if dark_rim else white)
+        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc']
+        rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
+        screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
 
 def area(name,loc,power,size):
     data=bpy.data.lights.new(name,'AREA');data.energy=power;data.size=size;data.shape='DISK'

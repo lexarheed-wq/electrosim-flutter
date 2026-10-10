@@ -22,6 +22,15 @@ abstract final class F18PhysicalPlateAssets {
     'isolator_4p': 'isolator4',
     'breaker_4p': 'breaker4',
     'lamp': 'lamp',
+    'fuse_dc': 'fuse-holder',
+    'fuse_ac1': 'fuse-holder',
+    'fuse': 'fuse-holder',
+    'contactor_aux_no': 'auxiliary-no',
+    'relay_contact_no': 'auxiliary-no',
+    'contactor_aux_nc': 'auxiliary-nc',
+    'relay_contact_nc': 'auxiliary-nc',
+    'relay_coil': 'coil',
+    'terminal_block_5': 'terminal5',
   };
   static final _images = <String, ui.Image>{};
   static final _geometry = <String, Map<String, dynamic>>{};
@@ -180,18 +189,31 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
         'button-nc' => 'Bouton-poussoir normalement fermé',
         'motor3' => 'Moteur triphasé',
         'lamp' => 'Lampe à incandescence',
+        'fuse-holder' => 'Porte-fusible',
+        'auxiliary-no' => 'Contact auxiliaire normalement ouvert',
+        'auxiliary-nc' => 'Contact auxiliaire normalement fermé',
+        'coil' => 'Bobine de relais sur socle',
+        'terminal5' => 'Bornier à cinq voies indépendantes',
         _ => modelType,
       };
   String get accessibleState {
     final shape = F18PhysicalPlateAssets.models[modelType.toLowerCase()] ?? '';
     if (shape.startsWith('button-')) return pressed ? 'appuyé' : 'relâché';
     if (shape.startsWith('contactor')) return actuated ? 'attiré' : 'au repos';
+    if (shape.startsWith('auxiliary-')) {
+      final contactClosed = shape == 'auxiliary-nc' ? !actuated : actuated;
+      return contactClosed ? 'fermé' : 'ouvert';
+    }
     if (shape == 'lamp') return energized ? 'allumée' : 'éteinte';
     if (shape == 'motor3') {
       return energized ? 'alimenté' : 'au repos';
     }
     if (shape == 'supply') return active ? 'actif' : 'arrêté';
     if (shape == 'terminal5') return 'bornier de connexion';
+    if (shape == 'coil') return energized || actuated ? 'excité' : 'au repos';
+    if (shape == 'fuse-holder') {
+      return tripped ? 'fusible fondu' : 'fusible intact';
+    }
     if (shape == 'overload') return tripped ? 'déclenché' : 'au repos';
     return tripped
         ? 'déclenché'
@@ -488,6 +510,66 @@ final class _PhysicalPlatePainter extends CustomPainter {
       return;
     }
     switch (name) {
+      case 'fuse-holder':
+        text(
+          c,
+          'PORTE-FUSIBLE',
+          Offset(w * .49, h * .40),
+          z: 35,
+          font: h * .075,
+        );
+        text(
+          c,
+          v.tripped ? 'FUSIBLE FONDU' : 'FUSIBLE INTACT',
+          Offset(w * .49, h * .60),
+          z: 35,
+          font: h * .064,
+          color: v.tripped ? const Color(0xFFBA2424) : graphite,
+        );
+      case 'auxiliary-no':
+      case 'auxiliary-nc':
+        final contactClosed = name == 'auxiliary-nc' ? !v.actuated : v.actuated;
+        text(
+          c,
+          name == 'auxiliary-no' ? 'NO' : 'NC',
+          Offset(w * .46, h * .50),
+          z: 28,
+          font: w * .13,
+          color: Colors.white,
+        );
+        text(
+          c,
+          contactClosed ? 'FERMÉ' : 'OUVERT',
+          Offset(w * .46, h * .60),
+          z: 28,
+          font: w * .060,
+          color: Colors.white,
+        );
+        c.drawLine(
+          project(Offset(w * .73, h * (contactClosed ? .50 : .60)), z: 29),
+          project(Offset(w * .73, h * (contactClosed ? .54 : .64)), z: 29),
+          Paint()
+            ..color = const Color(0xFFDCE0D7)
+            ..strokeWidth = w * .04,
+        );
+      case 'coil':
+        text(
+          c,
+          v.energized || v.actuated ? 'BOBINE · EXCITÉE' : 'BOBINE · AU REPOS',
+          Offset(w * .50, h * .74),
+          z: 44,
+          font: w * .048,
+        );
+      case 'terminal5':
+        for (var i = 0; i < 5; i++) {
+          text(
+            c,
+            i == 4 ? 'PE' : '${i + 1}',
+            Offset(ports[i].dx, h * .50),
+            z: 22,
+            font: h * .055,
+          );
+        }
       case 'button-no':
       case 'button-nc':
         final nc = name == 'button-nc';
@@ -606,6 +688,10 @@ final class _PhysicalPlatePainter extends CustomPainter {
     final labels = switch (name) {
       'supply' => ['+', '−'],
       'coil' => ['A1', 'A2'],
+      'fuse-holder' => ['1', '2'],
+      'auxiliary-no' => ['13', '14'],
+      'auxiliary-nc' => ['21', '22'],
+      'terminal5' => ['1', '2', '3', '4', 'PE', '1', '2', '3', '4', 'PE'],
       'motor3' => ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
       'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
       'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
@@ -638,6 +724,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
         color:
             name.startsWith('contactor') ||
                 name == 'overload' ||
+                name == 'coil' ||
+                name == 'fuse-holder' ||
+                name.startsWith('auxiliary-') ||
                 name == 'motor3'
             ? Colors.white
             : graphite,

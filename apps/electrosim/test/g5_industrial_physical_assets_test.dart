@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:electrosim/f18_component_asset_visual.dart';
+import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,6 +20,11 @@ const industrialModels = <String, (String, int)>{
   'isolator_4p': ('isolator4', 8),
   'breaker_4p': ('breaker4', 8),
   'lamp': ('lamp', 2),
+  'fuse_dc': ('fuse-holder', 2),
+  'contactor_aux_no': ('auxiliary-no', 2),
+  'contactor_aux_nc': ('auxiliary-nc', 2),
+  'relay_coil': ('coil', 2),
+  'terminal_block_5': ('terminal5', 10),
 };
 
 void main() {
@@ -55,6 +61,32 @@ void main() {
       reason:
           'Baked housing coordinates must still match the current Canvas contract',
     );
+    for (final alias in F18PhysicalPlateAssets.models.entries) {
+      final canonical = manifest[alias.value]! as Map<String, Object>;
+      final size = F18ReferenceComponentMetrics.boardSizeFor(alias.key);
+      expect([size.width, size.height], canonical['size'], reason: alias.key);
+      final ports = canonical['ports']! as List<List<double>>;
+      for (var i = 0; i < ports.length; i++) {
+        final actual =
+            size.center(Offset.zero) +
+            TerminalVisualProfile.terminalOffset(
+              modelType: alias.key,
+              size: size,
+              index: i,
+              count: ports.length,
+            );
+        expect(
+          actual.dx,
+          closeTo(ports[i][0], .001),
+          reason: '${alias.key} port $i x',
+        );
+        expect(
+          actual.dy,
+          closeTo(ports[i][1], .001),
+          reason: '${alias.key} port $i y',
+        );
+      }
+    }
     for (final entry in industrialModels.entries) {
       final size = F18ReferenceComponentMetrics.boardSizeFor(entry.key);
       for (final view in ['front', 'palette']) {

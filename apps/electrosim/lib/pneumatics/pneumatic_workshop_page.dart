@@ -140,6 +140,23 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     );
   }
 
+  Future<void> _importClipboard() async {
+    try {
+      final ClipboardData? clipboard = await Clipboard.getData('text/plain');
+      if (!mounted) return;
+      _edit(
+        () => PneumaticWorkshopState(
+          project: MultiphysicsProject.fromJsonString(clipboard?.text ?? ''),
+        ),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Projet importé refusé : $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool plate = _state.view == PneumaticWorkshopView.physical;
@@ -162,6 +179,28 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             onPressed: _redo.isEmpty ? null : () => _history(false),
             icon: const Icon(Icons.redo),
             tooltip: 'Rétablir',
+          ),
+          PopupMenuButton<String>(
+            key: const Key('air-hoses'),
+            tooltip: 'Supprimer un tuyau',
+            enabled: _state.project.pneumaticNetwork.pipes.isNotEmpty,
+            onSelected: (String id) =>
+                _edit(() => _state.disconnect(id)),
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              for (final PneumaticPipe pipe
+                  in _state.project.pneumaticNetwork.pipes)
+                PopupMenuItem<String>(
+                  value: pipe.id,
+                  child: Text('Supprimer ' + pipe.id),
+                ),
+            ],
+            icon: const Icon(Icons.alt_route),
+          ),
+          IconButton(
+            key: const Key('air-import'),
+            onPressed: _importClipboard,
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Importer un projet multiphysique depuis le presse-papiers',
           ),
           IconButton(
             key: const Key('air-export'),

@@ -1,5 +1,6 @@
 import 'package:electrosim/main.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';

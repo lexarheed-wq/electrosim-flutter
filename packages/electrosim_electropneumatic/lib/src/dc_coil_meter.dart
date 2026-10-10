@@ -40,11 +40,13 @@ abstract final class DcCoilMeter {
     required DcSolveResult result,
   }) {
     if (link.role != ElectropneumaticLinkRole.solenoidCoil ||
-        !project.links.any((ElectropneumaticLink item) =>
-            item.id == link.id &&
-            item.electricalComponentId == link.electricalComponentId &&
-            item.pneumaticDeviceId == link.pneumaticDeviceId &&
-            item.role == link.role)) {
+        !project.links.any(
+          (ElectropneumaticLink item) =>
+              item.id == link.id &&
+              item.electricalComponentId == link.electricalComponentId &&
+              item.pneumaticDeviceId == link.pneumaticDeviceId &&
+              item.role == link.role,
+        )) {
       throw const ElectropneumaticRuntimeException(
         'invalid_coil_link',
         'Coil measurement must reference an explicit existing solenoid link.',

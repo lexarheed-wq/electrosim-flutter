@@ -2,6 +2,7 @@ import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 
 import 'coupled_clock.dart';
 import 'solenoid_actuator.dart';
+import 'valve52_air_isolation.dart';
 
 /// Concrete adapter: a single accepted physical cylinder snapshot and a
 /// single clock are shared by the DC control and the pneumatic solver.
@@ -23,6 +24,10 @@ final class Valve52PhysicalCycle {
   final SingleCoilValveMemory valveMemory;
   final PositionEndContact? endSensor;
   final double maxStepS;
+  bool _supplyEnabled = true;
+
+  /// Closing the upstream valve preserves chamber mass and does not vent air.
+  void setAirSupply(bool enabled) => _supplyEnabled = enabled;
 
   late final ElectropneumaticEventClock<MovingCylinderSnapshot> _clock =
       ElectropneumaticEventClock<MovingCylinderSnapshot>(
@@ -37,7 +42,10 @@ final class Valve52PhysicalCycle {
         maxStepS: maxStepS,
         advanceAir:
             (MovingCylinderSnapshot before, double dt, ValveSpoolSide spool) {
-              final MovingDoubleActingAirCylinder routed = routing.connect(
+              final MovingDoubleActingAirCylinder routed =
+                  Valve52AirIsolation(routing: routing)
+                      .withSupplyEnabled(_supplyEnabled)
+                      .connect(
                 cylinder: cylinder,
                 snapshot: before,
                 energized: spool == ValveSpoolSide.coilSide,

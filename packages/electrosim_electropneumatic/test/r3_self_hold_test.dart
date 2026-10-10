@@ -265,17 +265,10 @@ void main() {
 
     test('DC project source and relay source circuits never mutate', () {
       final SelfHold24vElectricalCycle controller = bench();
-      final String unchanged =
-          controller.project.electricalCircuit.toJsonString();
-      controller.settle(
-        timeS: .1,
-        startPressed: true,
-        endStopActuated: false,
-      );
-      expect(
-        controller.project.electricalCircuit.toJsonString(),
-        unchanged,
-      );
+      final String unchanged = controller.project.electricalCircuit
+          .toJsonString();
+      controller.settle(timeS: .1, startPressed: true, endStopActuated: false);
+      expect(controller.project.electricalCircuit.toJsonString(), unchanged);
     });
   });
 }

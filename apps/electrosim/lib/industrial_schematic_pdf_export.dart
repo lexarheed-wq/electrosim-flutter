@@ -14,7 +14,30 @@ abstract final class IndustrialSchematicPdfExport {
     CircuitState circuit,
     CircuitVisualLayout authoredPlate,
   ) async {
-    final svg = IndustrialSchematicSvgExport.render(circuit, authoredPlate);
+    // The built-in PDF Helvetica fonts accept Latin-1, unlike the SVG canvas
+    // renderer. Preserve ASCII/Latin-1 text and explicitly transliterate
+    // widely-used electrical glyphs for the PDF only. Never silently replace
+    // unknown user-defined references with missing-glyph squares.
+    final rawSvg = IndustrialSchematicSvgExport.render(circuit, authoredPlate);
+    final svg = rawSvg
+        .replaceAll('−', '-')
+        .replaceAll('↔', 'Lien:')
+        .replaceAll('→', 'vers')
+        .replaceAll('←', 'depuis')
+        .replaceAll('Ω', 'Ohm')
+        .replaceAll('θ', 'theta')
+        .replaceAll('Δ', 'Delta')
+        .replaceAll('φ', 'phi')
+        .replaceAll('π', 'pi');
+    final nonLatin = svg.runes.where((point) => point > 255).toList();
+    if (nonLatin.isNotEmpty) {
+      throw StateError(
+        'Export PDF non disponible : police Unicode requise pour le '
+        'caractère U+${nonLatin.first.toRadixString(16).toUpperCase()}. '
+        'Exporter le SVG pour conserver le texte original.',
+      );
+    }
+
     final doc = pw.Document(
       title: 'ElectroSim - schema electrique',
       author: 'ElectroSim',

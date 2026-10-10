@@ -232,10 +232,7 @@ final class IndustrialMarkingRegistry {
       } else {
         if (link is String) {
           issues.add(
-            IndustrialMarkingIssue(
-              item.id,
-              'Unknown controlling coil: $link',
-            ),
+            IndustrialMarkingIssue(item.id, 'Unknown controlling coil: $link'),
           );
         }
         assign(item);

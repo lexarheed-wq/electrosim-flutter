@@ -204,6 +204,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.toggle_on_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['1', '2'],
+    defaultControlState: <String, Object?>{'closed': false},
     subtitle: 'Contact 2 bornes',
   ),
   F9PaletteDefinition(
@@ -305,6 +306,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.radio_button_checked,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['13', '14'],
+    defaultControlState: <String, Object?>{'pressed': false},
     subtitle: 'Commande momentanée',
   ),
   F9PaletteDefinition(
@@ -315,6 +317,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.radio_button_unchecked,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['21', '22'],
+    defaultControlState: <String, Object?>{'pressed': false},
     subtitle: 'Arrêt momentanée NC',
   ),
   F9PaletteDefinition(
@@ -325,6 +328,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.volume_up_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 48.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 0.5,
+      ReceiverNominalRating.powerKey: 12.0,
+    },
     subtitle: 'Avertisseur CC',
   ),
   F9PaletteDefinition(
@@ -456,6 +465,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.air,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 12.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 2.0,
+      ReceiverNominalRating.powerKey: 48.0,
+    },
     subtitle: 'Actionneur rotatif',
   ),
   F9PaletteDefinition(

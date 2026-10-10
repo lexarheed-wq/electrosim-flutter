@@ -299,8 +299,8 @@ abstract final class IndustrialSchematicSvgExport {
         );
         final terminalRef = marks?.terminals[ports[i].id.value];
         final simpleRef = '${refs.labelOf(id)}:${ports[i].name}';
-        final displayedTerminal = terminalRef != null &&
-                terminalRef != simpleRef
+        final displayedTerminal =
+            terminalRef != null && terminalRef != simpleRef
             ? terminalRef
             : ports[i].name;
         svg.writeln(

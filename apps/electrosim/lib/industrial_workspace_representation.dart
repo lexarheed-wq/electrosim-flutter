@@ -269,9 +269,10 @@ class IndustrialSchematicPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final references = IndustrialSchematicReferences.build(circuit);
-    final industrial = circuit.metadata.containsKey(
-      IndustrialMarkingRegistry.metadataKey,
-    ) ? IndustrialMarkingRegistry.inspect(circuit) : null;
+    final industrial =
+        circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+        ? IndustrialMarkingRegistry.inspect(circuit)
+        : null;
     canvas.save();
     canvas.translate(viewport.translation.dx, viewport.translation.dy);
     canvas.scale(viewport.scale);
@@ -331,7 +332,8 @@ class IndustrialSchematicPainter extends CustomPainter {
         label(
           canvas,
           fullRef != null && fullRef != defaultRef
-              ? fullRef : terminals[i].name,
+              ? fullRef
+              : terminals[i].name,
           a + Offset(a.dy == 0 ? 0 : 8, a.dy == 0 ? -9 : -a.dy.sign * 9),
           size: 9,
         );

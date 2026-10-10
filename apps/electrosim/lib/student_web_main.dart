@@ -7,7 +7,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f9_ui_context.dart';
-import 'main.dart' as product;
+import 'f18_workspace_page.dart';
 import 'runtime/electrosim_student_web_sync.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
@@ -302,7 +302,7 @@ class _StudentHubPage extends StatelessWidget {
                     MaterialPageRoute<void>(
                       builder: (BuildContext context) => _StudentSessionGuard(
                         bridge: bridge,
-                        child: product.F18WorkspacePage(
+                        child: F18WorkspacePage(
                           entryLabel: 'Session élève',
                           initialWorkspace: 'Câblage',
                           role: F9UserRole.student,
@@ -334,7 +334,7 @@ class _StudentHubPage extends StatelessWidget {
                     MaterialPageRoute<void>(
                       builder: (BuildContext context) => _StudentSessionGuard(
                         bridge: bridge,
-                        child: product.F18WorkspacePage(
+                        child: F18WorkspacePage(
                           entryLabel: 'TP élève',
                           initialWorkspace:
                               controller.session?.definition.mode ==

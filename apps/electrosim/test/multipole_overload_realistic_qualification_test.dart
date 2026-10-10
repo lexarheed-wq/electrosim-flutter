@@ -10,7 +10,12 @@ import 'package:flutter_test/flutter_test.dart';
 const engine = ElectroSimRuntimeEngine();
 const dynamics = ProtectionDynamicsEngine();
 
-void record(String family, String caseName, bool pass, Map<String, Object?> data) {
+void record(
+  String family,
+  String caseName,
+  bool pass,
+  Map<String, Object?> data,
+) {
   final String payload = jsonEncode(<String, Object?>{
     'family': family,
     'case': caseName,
@@ -20,7 +25,11 @@ void record(String family, String caseName, bool pass, Map<String, Object?> data
   stdout.writeln('PHYSICS_AUDIT_JSON:$payload');
 }
 
-void inventoryEvidence(String key, String verdict, Map<String, Object?> properties) {
+void inventoryEvidence(
+  String key,
+  String verdict,
+  Map<String, Object?> properties,
+) {
   final String payload = jsonEncode(<String, Object?>{
     'family': 'overload-rating-inventory',
     'case': key,
@@ -29,6 +38,7 @@ void inventoryEvidence(String key, String verdict, Map<String, Object?> properti
   });
   stdout.writeln('PHYSICS_AUDIT_JSON:$payload');
 }
+
 Terminal terminal(String id, PhaseTag phase) =>
     Terminal(id: TerminalId(id), name: id, phase: phase);
 Connection join(String id, String a, String b) => Connection(
@@ -106,9 +116,7 @@ CircuitState poles(
     wires.add(join('coilN', 'sn', 'dev-7'));
   }
   return CircuitState(
-    circuitId: CircuitId(
-      'qualified-$key-$resistance-$coil',
-    ),
+    circuitId: CircuitId('qualified-$key-$resistance-$coil'),
     revision: 1,
     mode: ElectricalMode.ac3,
     sources: <SourceInstance>[supply()],
@@ -172,49 +180,61 @@ void main() {
     },
   );
 
-  test('OVERLOAD-COVERAGE: inventory EVERY catalogue receiver and protection rating', () {
-    var total = 0;
-    var withRatedEnvelope = 0;
-    var lackingRatings = 0;
-    for (final entry in f9PaletteCatalog) {
-      if (entry.kind != F9PaletteElementKind.component) {
-        continue;
+  test(
+    'OVERLOAD-COVERAGE: inventory EVERY catalogue receiver and protection rating',
+    () {
+      var total = 0;
+      var withRatedEnvelope = 0;
+      var lackingRatings = 0;
+      for (final entry in f9PaletteCatalog) {
+        if (entry.kind != F9PaletteElementKind.component) {
+          continue;
+        }
+        total++;
+        final params = entry.defaultParameters;
+        final bool protection = params.containsKey(
+          ProtectionRating.ratedCurrentKey,
+        );
+        final bool nominal =
+            params.containsKey(ReceiverNominalRating.currentKey) ||
+            params.containsKey(ReceiverNominalRating.voltageKey) ||
+            params.containsKey(ReceiverNominalRating.powerKey);
+        final bool motorNameplate =
+            params.containsKey('ratedDeltaVoltageV') ||
+            params.containsKey('ratedStarVoltageV') ||
+            params.containsKey('ratedPowerW');
+        final bool ratings = protection || nominal || motorNameplate;
+        if (ratings) {
+          withRatedEnvelope++;
+        } else {
+          lackingRatings++;
+        }
+        inventoryEvidence(
+          entry.keyName,
+          ratings ? 'NAMEPLATE_ONLY' : 'DATA_GAP',
+          {
+            'model': entry.modelType,
+            'terminalCount': entry.terminalCount,
+            'modeNames': entry.supportedModes.map((mode) => mode.name).toList(),
+            'canonicalProtectionRatedA':
+                params[ProtectionRating.ratedCurrentKey],
+            'receiverNominalCurrentA': params[ReceiverNominalRating.currentKey],
+            'motorRatedDeltaV': params['ratedDeltaVoltageV'],
+            'thermalWithstandSeconds':
+                params[ComponentParameterKeys.thermalWithstandSeconds],
+            'manufacturerSpecificCurveQualified': false,
+          },
+        );
       }
-      total++;
-      final params = entry.defaultParameters;
-      final bool protection = params.containsKey(ProtectionRating.ratedCurrentKey);
-      final bool nominal = params.containsKey(ReceiverNominalRating.currentKey) ||
-          params.containsKey(ReceiverNominalRating.voltageKey) ||
-          params.containsKey(ReceiverNominalRating.powerKey);
-      final bool motorNameplate = params.containsKey('ratedDeltaVoltageV') ||
-          params.containsKey('ratedStarVoltageV') ||
-          params.containsKey('ratedPowerW');
-      final bool ratings = protection || nominal || motorNameplate;
-      if (ratings) {
-        withRatedEnvelope++;
-      } else {
-        lackingRatings++;
-      }
-      inventoryEvidence(entry.keyName, ratings ? 'NAMEPLATE_ONLY' : 'DATA_GAP', {
-        'model': entry.modelType,
-        'terminalCount': entry.terminalCount,
-        'modeNames': entry.supportedModes.map((mode) => mode.name).toList(),
-        'canonicalProtectionRatedA': params[ProtectionRating.ratedCurrentKey],
-        'receiverNominalCurrentA': params[ReceiverNominalRating.currentKey],
-        'motorRatedDeltaV': params['ratedDeltaVoltageV'],
-        'thermalWithstandSeconds':
-            params[ComponentParameterKeys.thermalWithstandSeconds],
-        'manufacturerSpecificCurveQualified': false,
+      inventoryEvidence('all-palette-components', 'MEASURED', {
+        'totalComponentVariants': total,
+        'variantsWithSomeRatedData': withRatedEnvelope,
+        'variantsMissingRatedEnvelope': lackingRatings,
+        'warning': 'Rating availability does not certify overload performance.',
       });
-    }
-    inventoryEvidence('all-palette-components', 'MEASURED', {
-      'totalComponentVariants': total,
-      'variantsWithSomeRatedData': withRatedEnvelope,
-      'variantsMissingRatedEnvelope': lackingRatings,
-      'warning': 'Rating availability does not certify overload performance.',
-    });
-    expect(total, greaterThanOrEqualTo(35));
-  });
+      expect(total, greaterThanOrEqualTo(35));
+    },
+  );
   test('MULTIPOLE catalogue contractual enumeration', () {
     var count = 0;
     final missing = <String>[];
@@ -288,12 +308,8 @@ void main() {
   test('CONTACTOR: all 3 poles release when coil is disconnected', () {
     final on = engine.evaluate(poles('contactor-3p', 46));
     final off = engine.evaluate(poles('contactor-3p', 46, coil: false));
-    final a = <double>[
-      for (var i = 0; i < 3; i++) rms(on, 'component:r$i'),
-    ];
-    final b = <double>[
-      for (var i = 0; i < 3; i++) rms(off, 'component:r$i'),
-    ];
+    final a = <double>[for (var i = 0; i < 3; i++) rms(on, 'component:r$i')];
+    final b = <double>[for (var i = 0; i < 3; i++) rms(off, 'component:r$i')];
     final pass =
         on.solved &&
         off.solved &&
@@ -430,8 +446,7 @@ void main() {
         id: ComponentId('curve'),
         modelType: 'breaker_3p',
         terminals: <Terminal>[
-          for (var i = 0; i < 6; i++)
-            terminal('c$i', PhaseTag.none),
+          for (var i = 0; i < 6; i++) terminal('c$i', PhaseTag.none),
         ],
         parameters: <String, Object?>{
           ProtectionRating.ratedCurrentKey: 10.0,
@@ -464,8 +479,7 @@ void main() {
       id: ComponentId('ol'),
       modelType: 'thermal_overload_3p',
       terminals: <Terminal>[
-        for (var i = 0; i < 6; i++)
-          terminal('ol$i', PhaseTag.none),
+        for (var i = 0; i < 6; i++) terminal('ol$i', PhaseTag.none),
       ],
       parameters: <String, Object?>{
         ProtectionRating.ratedCurrentKey: 5.0,

@@ -1,0 +1,47 @@
+name: Web Consolidation Canonical Format
+on:
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: web-consolidation-format
+  cancel-in-progress: false
+jobs:
+  format-dart:
+    if: github.head_ref == 'refactor/g5-student-web-shared-workspace-20261010'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Canonical Dart formatter
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format \
+            apps/electrosim/lib/main.dart \
+            apps/electrosim/lib/f18_workspace_page.dart \
+            apps/electrosim/lib/runtime/electrosim_student_web_sync.dart \
+            apps/electrosim/lib/student_web_main.dart \
+            apps/electrosim/test/web_client_isolation_contract_test.dart
+          git diff --check
+          git add -- \
+            apps/electrosim/lib/main.dart \
+            apps/electrosim/lib/f18_workspace_page.dart \
+            apps/electrosim/lib/runtime/electrosim_student_web_sync.dart \
+            apps/electrosim/lib/student_web_main.dart \
+            apps/electrosim/test/web_client_isolation_contract_test.dart
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style(web): canonical Dart formatting"
+            git push origin "HEAD:refactor/g5-student-web-shared-workspace-20261010"
+          fi

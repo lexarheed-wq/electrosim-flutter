@@ -58,3 +58,7 @@ Student visual geometry is stored separately from electrical state, under the
 student identity, TP ID and circuit ID. It is restored only at the matching
 authoritative circuit revision. A new TP cannot inherit an earlier activity's
 layout. No teacher reference or assessment truth is stored in this geometry record.
+
+Widget regressions also verify the actual rendered asset keeps its full unrotated
+size at 90 and 270 degrees. Rotation swaps layout constraints as well as painting,
+so the component screws stay aligned with the canvas terminal geometry.

@@ -178,15 +178,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final next = IndustrialMarkingRegistry.materialize(_circuit);
     final plan = IndustrialMarkingRegistry.inspect(next);
     final message =
-        'Repérage : ' +
-        plan.devices.length.toString() +
-        ' appareils, ' +
-        plan.conductors.length.toString() +
-        ' conducteurs, ' +
-        plan.terminals.length.toString() +
-        ' bornes. ' +
-        plan.issues.length.toString() +
-        ' anomalie(s).';
+        'Repérage : ${plan.devices.length} appareils, '
+        '${plan.conductors.length} conducteurs, '
+        '${plan.terminals.length} bornes. '
+        '${plan.issues.length} anomalie(s).';
     if (identical(next, _circuit)) {
       _setStatus(message);
       return;
@@ -221,7 +216,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final editor = TextEditingController(
       text: plan.referenceOf(kind, selected),
     );
-    var locked = plan.locks[kind.name + ':' + selected] ?? false;
+    var locked = plan.locks['${kind.name}:$selected'] ?? false;
     final answer = await showDialog<(String, bool)>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -273,11 +268,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _circuit = next;
         _status =
-            'Repère enregistré : ' +
-            answer.$1 +
-            '. ' +
-            issues.length.toString() +
-            ' anomalie(s) de repérage.';
+            'Repère enregistré : ${answer.$1}. '
+            '${issues.length} anomalie(s) de repérage.';
       });
       _simulation.updateCircuit(next);
     } on Object catch (error) {

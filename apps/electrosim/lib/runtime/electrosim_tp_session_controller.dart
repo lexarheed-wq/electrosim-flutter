@@ -306,9 +306,13 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       return;
     }
     final Object? recoveredId = json['tpId'];
-    if (recoveredId is! String ||
-        (recoveredId != tpIdValue &&
-            !RegExp('^${RegExp.escape(tpIdValue)}-[0-9]{3,7}
+    final bool permittedId = recoveredId is String &&
+        (recoveredId == tpIdValue ||
+            (recoveredId.startsWith('$tpIdValue-') &&
+                RegExp(r'^[0-9]{3,7}$').hasMatch(
+                  recoveredId.substring(tpIdValue.length + 1),
+                )));
+    if (!permittedId || json['title'] != title) {
       throw const FormatException(
         'Saved TP identity does not match this controller.',
       );

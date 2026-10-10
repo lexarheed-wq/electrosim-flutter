@@ -41,7 +41,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   void initState() {
     super.initState();
     _state = PneumaticWorkshopState(
-      project: widget.initialProject ??
+      project:
+          widget.initialProject ??
           MultiphysicsProject(
             electricalCircuit: CircuitState(
               circuitId: CircuitId('r4-air-workshop'),
@@ -62,9 +63,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         _firstPort = null;
       });
     } on Object catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Raccordement refusé : $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Raccordement refusé : $error')));
     }
   }
 
@@ -96,8 +97,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             role: name == 'P'
                 ? PneumaticPortRole.supply
                 : name == 'R' || name == 'S'
-                    ? PneumaticPortRole.exhaust
-                    : PneumaticPortRole.work,
+                ? PneumaticPortRole.exhaust
+                : PneumaticPortRole.work,
           ),
       ],
     );
@@ -151,17 +152,18 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       );
     } on Object catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Projet importé refusé : $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Projet importé refusé : $error')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bool plate = _state.view == PneumaticWorkshopView.physical;
-    final Map<String, PhysicalViewPose> poses =
-        plate ? _state.project.physicalLayout : _state.project.schematicLayout;
+    final Map<String, PhysicalViewPose> poses = plate
+        ? _state.project.physicalLayout
+        : _state.project.schematicLayout;
     final PneumaticDevice? selected = _selected();
     return Scaffold(
       key: const Key('pneumatic-r4-workshop'),
@@ -184,8 +186,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             key: const Key('air-hoses'),
             tooltip: 'Supprimer un tuyau',
             enabled: _state.project.pneumaticNetwork.pipes.isNotEmpty,
-            onSelected: (String id) =>
-                _edit(() => _state.disconnect(id)),
+            onSelected: (String id) => _edit(() => _state.disconnect(id)),
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               for (final PneumaticPipe pipe
                   in _state.project.pneumaticNetwork.pipes)
@@ -200,7 +201,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             key: const Key('air-import'),
             onPressed: _importClipboard,
             icon: const Icon(Icons.file_download_outlined),
-            tooltip: 'Importer un projet multiphysique depuis le presse-papiers',
+            tooltip:
+                'Importer un projet multiphysique depuis le presse-papiers',
           ),
           IconButton(
             key: const Key('air-export'),

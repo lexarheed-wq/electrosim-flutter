@@ -52,6 +52,10 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
 
   TpId get tpId => TpId(tpIdValue);
 
+  String get defaultFaultScenarioId => _scenarioId.value;
+  List<FaultScenarioDefinition> get availableFaultScenarios =>
+      _faultScenarios.all;
+
   TpSession? _session;
   TpSession? get session => _session;
 

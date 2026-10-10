@@ -2,7 +2,7 @@ import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 
 import 'coupled_clock.dart';
 import 'solenoid_actuator.dart';
-import 'valve52_air_isolation.dart';
+import 'valve52_fault_profile.dart';
 
 /// Concrete adapter: a single accepted physical cylinder snapshot and a
 /// single clock are shared by the DC control and the pneumatic solver.
@@ -15,6 +15,7 @@ final class Valve52PhysicalCycle {
     required this.valveMemory,
     this.endSensor,
     this.maxStepS = .001,
+    this.faults = const Valve52FaultProfile(),
   });
 
   final MovingDoubleActingAirCylinder cylinder;
@@ -24,6 +25,11 @@ final class Valve52PhysicalCycle {
   final SingleCoilValveMemory valveMemory;
   final PositionEndContact? endSensor;
   final double maxStepS;
+  final Valve52FaultProfile faults;
+
+  /// Actual mechanical spool can differ from the electrical command when jammed.
+  ValveSpoolSide effectiveSpool(ValveSpoolSide commanded) =>
+      faults.effectiveSpool(commanded);
   bool _supplyEnabled = true;
 
   /// Closing the upstream valve preserves chamber mass and does not vent air.
@@ -42,14 +48,13 @@ final class Valve52PhysicalCycle {
         maxStepS: maxStepS,
         advanceAir:
             (MovingCylinderSnapshot before, double dt, ValveSpoolSide spool) {
-              final MovingDoubleActingAirCylinder routed =
-                  Valve52AirIsolation(routing: routing)
-                      .withSupplyEnabled(_supplyEnabled)
-                      .connect(
-                        cylinder: cylinder,
-                        snapshot: before,
-                        energized: spool == ValveSpoolSide.coilSide,
-                      );
+              final MovingDoubleActingAirCylinder routed = faults.connect(
+                cylinder: cylinder,
+                snapshot: before,
+                routing: routing,
+                commandedSpool: spool,
+                supplyEnabled: _supplyEnabled,
+              );
               return routed.advance(
                 before,
                 durationS: dt,

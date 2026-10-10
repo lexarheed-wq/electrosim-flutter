@@ -10,7 +10,7 @@ void main() {
   test(
     'insertion and pointer-up never invoke global routing synchronously',
     () {
-      final String source = File('lib/main.dart').readAsStringSync();
+      final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
       final int moveStart = source.indexOf('void _commitElementMoveIfSafe(');
       final int moveEnd = source.indexOf(
         'void _cancelCanvasInteraction(',

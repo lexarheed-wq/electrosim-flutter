@@ -24,6 +24,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
                  : 'FAULT-DC-003'),
        ) {
     _engine = _buildEngine();
+    _activeTpIdValue = tpIdValue;
   }
 
   /// Product TP flows use native V2 faults; legacy fixtures need explicit injection.
@@ -32,6 +33,18 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   final String title;
   final FaultScenarioId _scenarioId;
   late TpEngine _engine;
+  late String _activeTpIdValue;
+  int _nextActivityOrdinal = 1;
+  final List<Map<String, Object?>> _teacherArchive = <Map<String, Object?>>[];
+
+  /// Completed activities remain available for independent teacher review.
+  List<Map<String, Object?>> get teacherArchive =>
+      List<Map<String, Object?>>.unmodifiable(_teacherArchive);
+
+  void deleteArchivedActivity(String id) {
+    _teacherArchive.removeWhere((entry) => entry['tpId'] == id);
+    notifyListeners();
+  }
 
   TpEngine _buildEngine() => TpEngine(
     faultScenarios: _faultScenarios,
@@ -50,7 +63,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     };
   }
 
-  TpId get tpId => TpId(tpIdValue);
+  TpId get tpId => TpId(_activeTpIdValue);
 
   String get defaultFaultScenarioId => _scenarioId.value;
   List<FaultScenarioDefinition> get availableFaultScenarios =>
@@ -91,6 +104,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   }) {
     if (_session != null) {
       throw StateError('A TP session already exists.');
+    }
+    if (_nextActivityOrdinal > 1) {
+      _activeTpIdValue = '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
     }
     if (mode == TpMode.wiring &&
         (wiringReferenceCircuit == null &&
@@ -196,6 +212,11 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
         'Active, submitted or evaluated TP must be closed before deletion.',
       );
     }
+    if (current.lifecycle == TpLifecycle.closed) {
+      _teacherArchive.add(toPersistenceJson());
+    }
+    _nextActivityOrdinal++;
+    _activeTpIdValue = '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
     _engine = _buildEngine();
     _session = null;
     notifyListeners();
@@ -213,11 +234,17 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   Map<String, Object?> toPersistenceJson() {
     final TpSession? current = _session;
     if (current == null) {
-      return const <String, Object?>{'hasSession': false};
+      return <String, Object?>{
+        'hasSession': false,
+        'nextActivityOrdinal': _nextActivityOrdinal,
+        'archive': _teacherArchive,
+      };
     }
     return <String, Object?>{
+      'nextActivityOrdinal': _nextActivityOrdinal,
+      'archive': _teacherArchive,
       'hasSession': true,
-      'tpId': tpIdValue,
+      'tpId': _activeTpIdValue,
       'title': title,
       'scenarioId': current.definition.faultScenarioId?.value ??
           _scenarioId.value,
@@ -239,6 +266,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   Map<String, Object?> toStudentPersistenceJson() {
     final json = <String, Object?>{...toPersistenceJson()};
     json.remove('referenceCircuit');
+    json.remove('archive');
+    json.remove('nextActivityOrdinal');
     if (_session?.lifecycle != TpLifecycle.evaluated &&
         _session?.lifecycle != TpLifecycle.closed) {
       json.remove('teacherScore');
@@ -253,12 +282,144 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   void restoreFromPersistenceJson(Map<String, Object?> json) {
     _engine = _buildEngine();
     _session = null;
-
+    _teacherArchive.clear();
+    final Object? archiveRaw = json['archive'];
+    if (archiveRaw is List) {
+      for (final Object? entry in archiveRaw) {
+        if (entry is Map<String, dynamic> &&
+            entry['tpId'] is String &&
+            entry['lifecycle'] == TpLifecycle.closed.name) {
+          _teacherArchive.add(<String, Object?>{...entry});
+        }
+      }
+    }
+    final Object? ordinalRaw = json['nextActivityOrdinal'];
+    if (ordinalRaw is int && ordinalRaw >= 1 && ordinalRaw <= 1000000) {
+      _nextActivityOrdinal = ordinalRaw;
+    }
+    _activeTpIdValue = tpIdValue;
     if (json['hasSession'] != true) {
       notifyListeners();
       return;
     }
-    if (json['tpId'] != tpIdValue || json['title'] != title) {
+    final Object? recoveredId = json['tpId'];
+    if (recoveredId is! String ||
+        (recoveredId != tpIdValue &&
+            !RegExp('^${RegExp.escape(tpIdValue)}-[0-9]{3,7}
+      throw const FormatException(
+        'Saved TP identity does not match this controller.',
+      );
+    }
+
+    _activeTpIdValue = recoveredId;
+
+    final Object? selectedScenarioRaw = json['scenarioId'];
+    if (selectedScenarioRaw is! String ||
+        !_faultScenarios.all.any((scenario) =>
+            scenario.id.value == selectedScenarioRaw)) {
+      throw const FormatException('Unknown or missing TP scenario.');
+    }
+
+    final Object? lifecycleRaw = json['lifecycle'];
+    if (lifecycleRaw is! String) {
+      throw const FormatException('Saved TP lifecycle is missing.');
+    }
+    final TpLifecycle lifecycle = TpLifecycle.values.firstWhere(
+      (TpLifecycle value) => value.name == lifecycleRaw,
+      orElse: () =>
+          throw FormatException('Unknown TP lifecycle: $lifecycleRaw'),
+    );
+
+    // Legacy F17 snapshots have no mode: they are troubleshooting TPs.
+    final Object? savedMode = json['mode'];
+    final TpMode mode = savedMode == 'wiring'
+        ? TpMode.wiring
+        : TpMode.troubleshooting;
+    if (savedMode != null &&
+        savedMode != TpMode.wiring.name &&
+        savedMode != TpMode.troubleshooting.name) {
+      throw const FormatException('Unknown TP mode.');
+    }
+    final Object? savedActivityTitle = json['activityTitle'];
+    final String? activityTitle =
+        savedActivityTitle is String && savedActivityTitle.trim().isNotEmpty
+        ? savedActivityTitle
+        : null;
+    CircuitState? referenceCircuit;
+    if (mode == TpMode.wiring) {
+      final Object? referenceRaw = json['referenceCircuit'];
+      if (referenceRaw != null) {
+        if (referenceRaw is! Map<String, dynamic>) {
+          throw const FormatException('Wiring TP reference circuit is invalid.');
+        }
+        referenceCircuit = CircuitState.fromJson(referenceRaw);
+      }
+    }
+    createDraft(
+      mode: mode,
+      wiringReferenceCircuit: referenceCircuit,
+      studentStarterCircuit: mode == TpMode.wiring
+          ? CircuitState.fromJson(json['studentCircuit'] as Map<String, dynamic>)
+          : null,
+      activityTitle: activityTitle,
+      troubleshootingScenarioId: selectedScenarioRaw,
+    );
+    if (lifecycle == TpLifecycle.draft) {
+      return;
+    }
+
+    publish();
+    if (lifecycle == TpLifecycle.published) {
+      return;
+    }
+
+    startStudent();
+    final Object? circuitRaw = json['studentCircuit'];
+    if (circuitRaw is! Map<String, dynamic>) {
+      throw const FormatException('Saved TP studentCircuit is missing.');
+    }
+    updateStudentCircuit(CircuitState.fromJson(circuitRaw));
+
+    final Object? entriesRaw = json['diagnosticEntries'];
+    if (entriesRaw is! List) {
+      throw const FormatException('Saved TP diagnostic entries are invalid.');
+    }
+    for (final Object? raw in entriesRaw) {
+      if (raw is! Map<String, dynamic>) {
+        throw const FormatException('Saved TP diagnostic entry is invalid.');
+      }
+      final Object? promptId = raw['promptId'];
+      final Object? answer = raw['answer'];
+      if (promptId is! String || answer is! String) {
+        throw const FormatException(
+          'Saved TP diagnostic entry fields are invalid.',
+        );
+      }
+      addDiagnosticEntry(promptId: promptId, answer: answer);
+    }
+
+    if (lifecycle == TpLifecycle.started) {
+      return;
+    }
+
+    submitStudent();
+    if (lifecycle == TpLifecycle.submitted) {
+      return;
+    }
+
+    final Object? scoreRaw = json['teacherScore'];
+    final int? score = scoreRaw is int ? scoreRaw : null;
+    evaluateTeacher(score: score);
+    if (lifecycle == TpLifecycle.evaluated) {
+      return;
+    }
+
+    closeTeacher();
+  }
+}
+)
+                .hasMatch(recoveredId)) ||
+        json['title'] != title) {
       throw const FormatException(
         'Saved TP identity does not match this controller.',
       );

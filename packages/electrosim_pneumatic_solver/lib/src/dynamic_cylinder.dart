@@ -274,6 +274,7 @@ final class MovingDoubleActingAirCylinder {
     required double durationS,
     double maxStepS = .0005,
     int maxSubsteps = 200000,
+    bool stopAtFirstImpact = false,
   }) {
     requireNonnegativeFinite(durationS, 'durationS');
     requirePositiveFinite(maxStepS, 'maxStepS');
@@ -383,6 +384,10 @@ final class MovingDoubleActingAirCylinder {
       addedB += qB * dt;
       now += dt;
       count++;
+      // An electropneumatic scheduler can stop the gas solver at the exact
+      // first physical impact, then solve B1/K1/Y1 before advancing air again.
+      // No speculative step or second air integration is needed.
+      if (stop != null && stopAtFirstImpact) break;
     }
 
     // Avoid displaying a floating-point remnant as a physical time drift.

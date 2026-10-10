@@ -10,21 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 const engine = ElectroSimRuntimeEngine();
 const dynamics = ProtectionDynamicsEngine();
 
-void record(
-  String family,
-  String caseName,
-  bool pass,
-  Map<String, Object?> data,
-) {
-  stdout.writeln(
-    'PHYSICS_AUDIT_JSON:' +
-        jsonEncode(<String, Object?>{
-          'family': family,
-          'case': caseName,
-          'verdict': pass ? 'PASS' : 'FAIL',
-          ...data,
-        }),
-  );
+void record(String family, String caseName, bool pass, Map<String, Object?> data) {
+  final String payload = jsonEncode(<String, Object?>{
+    'family': family,
+    'case': caseName,
+    'verdict': pass ? 'PASS' : 'FAIL',
+    ...data,
+  });
+  stdout.writeln('PHYSICS_AUDIT_JSON:$payload');
 }
 
 Terminal terminal(String id, PhaseTag phase) =>
@@ -47,7 +40,7 @@ ComponentInstance instance(
   terminals: <Terminal>[
     for (var i = 0; i < definition.terminalCount; i++)
       terminal(
-        'dev-' + i.toString(),
+        'dev-$i',
         definition.terminals.isEmpty
             ? PhaseTag.none
             : definition.terminals[i].phase,
@@ -85,18 +78,18 @@ CircuitState poles(
     final phase = <PhaseTag>[PhaseTag.l1, PhaseTag.l2, PhaseTag.l3][i];
     parts.add(
       ComponentInstance(
-        id: ComponentId('r' + k),
+        id: ComponentId('r$k'),
         modelType: 'resistor',
         terminals: <Terminal>[
-          terminal('r' + k + 'a', phase),
-          terminal('r' + k + 'b', PhaseTag.neutral),
+          terminal('r${k}a', phase),
+          terminal('r${k}b', PhaseTag.neutral),
         ],
         parameters: <String, Object?>{'resistanceOhm': resistance},
       ),
     );
-    wires.add(join('in' + k, 's' + (i + 1).toString(), 'dev-' + k));
-    wires.add(join('out' + k, 'dev-' + (offset + i).toString(), 'r' + k + 'a'));
-    wires.add(join('return' + k, 'r' + k + 'b', three ? 'sn' : 'dev-7'));
+    wires.add(join('in$k', 's${i + 1}', 'dev-$k'));
+    wires.add(join('out$k', 'dev-${offset + i}', 'r${k}a'));
+    wires.add(join('return$k', 'r${k}b', three ? 'sn' : 'dev-7'));
   }
   if (!three) wires.add(join('neutral', 'sn', 'dev-3'));
   if (spec.modelType == 'contactor_3p' && coil) {
@@ -105,7 +98,7 @@ CircuitState poles(
   }
   return CircuitState(
     circuitId: CircuitId(
-      'qualified-' + key + '-' + resistance.toString() + '-' + coil.toString(),
+      'qualified-$key-$resistance-$coil',
     ),
     revision: 1,
     mode: ElectricalMode.ac3,
@@ -119,7 +112,7 @@ CircuitState poles(
 CircuitState motor(String key, bool delta) {
   final part = instance(preset(key));
   return CircuitState(
-    circuitId: CircuitId('motor-' + key + '-' + delta.toString()),
+    circuitId: CircuitId('motor-$key-$delta'),
     revision: 1,
     mode: ElectricalMode.ac3,
     sources: <SourceInstance>[supply()],
@@ -175,8 +168,9 @@ void main() {
     final missing = <String>[];
     for (final entry in f9PaletteCatalog) {
       if (entry.kind != F9PaletteElementKind.component ||
-          entry.terminalCount <= 2)
+          entry.terminalCount <= 2) {
         continue;
+      }
       count++;
       final contract = CoreComponentModelContracts.registry.resolve(
         entry.modelType,
@@ -208,10 +202,10 @@ void main() {
     'contactor-3p',
   ]) {
     for (final resistance in <double>[46.0, 23.0, 11.5]) {
-      test('MULTIPOLE wired ' + key + ' R=' + resistance.toString(), () {
+      test('MULTIPOLE wired $key R=$resistance', () {
         final result = engine.evaluate(poles(key, resistance));
         final currents = <double>[
-          for (var i = 0; i < 3; i++) rms(result, 'component:r' + i.toString()),
+          for (var i = 0; i < 3; i++) rms(result, 'component:r$i'),
         ];
         final expected = 230.0 / resistance;
         final residual = result.solved
@@ -224,7 +218,7 @@ void main() {
             result.solved &&
             residual < 1e-4 &&
             currents.every((i) => i.isFinite && (i - expected).abs() < 0.05);
-        record('multipole-loaded', key + '/' + resistance.toString(), pass, {
+        record('multipole-loaded', '$key/$resistance', pass, {
           'measuredRmsA': currents,
           'expectedRmsA': expected,
           'expectedTotalActiveW': 3 * 230 * expected,
@@ -243,10 +237,10 @@ void main() {
     final on = engine.evaluate(poles('contactor-3p', 46));
     final off = engine.evaluate(poles('contactor-3p', 46, coil: false));
     final a = <double>[
-      for (var i = 0; i < 3; i++) rms(on, 'component:r' + i.toString()),
+      for (var i = 0; i < 3; i++) rms(on, 'component:r$i'),
     ];
     final b = <double>[
-      for (var i = 0; i < 3; i++) rms(off, 'component:r' + i.toString()),
+      for (var i = 0; i < 3; i++) rms(off, 'component:r$i'),
     ];
     final pass =
         on.solved &&
@@ -267,16 +261,16 @@ void main() {
     'external-pump-3p',
     'external-fan-3p',
   ]) {
-    test('MOTOR 6 terminals star/delta ' + key, () {
+    test('MOTOR 6 terminals star/delta $key', () {
       final y = engine.evaluate(motor(key, false));
       final d = engine.evaluate(motor(key, true));
       final ia = <double>[
         for (final p in <String>['U', 'V', 'W'])
-          rms(y, 'component:device:winding:' + p),
+          rms(y, 'component:device:winding:$p'),
       ];
       final ib = <double>[
         for (final p in <String>['U', 'V', 'W'])
-          rms(d, 'component:device:winding:' + p),
+          rms(d, 'component:device:winding:$p'),
       ];
       final ratio = ib.first / ia.first;
       final starHealth = y.componentOperatingState(ComponentId('device'));
@@ -326,7 +320,7 @@ void main() {
     'breaker-4p',
     'thermal-overload-3p',
   ]) {
-    test('OVERLOAD 3P/4P at 1x and 2x rated ' + key, () {
+    test('OVERLOAD 3P/4P at 1x and 2x rated $key', () {
       final rated = key == 'thermal-overload-3p'
           ? 5.0
           : key == 'breaker-4p'
@@ -379,13 +373,13 @@ void main() {
   }
 
   for (final curve in <String>['B', 'C', 'D']) {
-    test('IEC 60898 breaker reference limits ' + curve, () {
+    test('IEC 60898 breaker reference limits $curve', () {
       final breaker = ComponentInstance(
         id: ComponentId('curve'),
         modelType: 'breaker_3p',
         terminals: <Terminal>[
           for (var i = 0; i < 6; i++)
-            terminal('c' + i.toString(), PhaseTag.none),
+            terminal('c$i', PhaseTag.none),
         ],
         parameters: <String, Object?>{
           ProtectionRating.ratedCurrentKey: 10.0,
@@ -400,7 +394,7 @@ void main() {
         10 * profile.magneticHighMultiple,
       );
       final pass = hold > 3600 && trip > 0 && trip <= 3600 && fast <= 0.1;
-      record('iec60898', '10A-curve-' + curve, pass, {
+      record('iec60898', '10A-curve-$curve', pass, {
         '1_13InHoldSeconds': hold.isFinite ? hold : null,
         '1_45InTripSeconds': trip,
         'magneticBand': <double>[
@@ -419,7 +413,7 @@ void main() {
       modelType: 'thermal_overload_3p',
       terminals: <Terminal>[
         for (var i = 0; i < 6; i++)
-          terminal('ol' + i.toString(), PhaseTag.none),
+          terminal('ol$i', PhaseTag.none),
       ],
       parameters: <String, Object?>{
         ProtectionRating.ratedCurrentKey: 5.0,

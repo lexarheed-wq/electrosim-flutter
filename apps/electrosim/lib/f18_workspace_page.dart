@@ -221,9 +221,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Sélectionner un appareil ou un conducteur.');
       return;
     }
-    var editedReference = plan.referenceOf(kind, selected);
-    var locked = plan.locks['${kind.name}:$selected'] ?? false;
-    final answer = await showDialog<(String, bool)>(
+    final availablePorts = <Terminal>[
+      for (final source in _circuit.sources)
+        if (source.id.value == selected) ...source.terminals,
+      for (final component in _circuit.components)
+        if (component.id.value == selected) ...component.terminals,
+    ];
+    var targetId = selected;
+    var targetKind = kind;
+    var editedReference = plan.referenceOf(targetKind, targetId);
+    var locked = plan.locks['${targetKind.name}:$targetId'] ?? false;
+    final answer = await showDialog<
+        (IndustrialMarkingKind, String, String, bool)>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
@@ -231,11 +240,42 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                key: const Key('p4-marking-text'),
-                initialValue: editedReference,
-                onChanged: (value) => editedReference = value,
-                decoration: const InputDecoration(labelText: 'Repère'),
+              if (availablePorts.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  key: const Key('p4-marking-target'),
+                  initialValue: targetId,
+                  decoration: const InputDecoration(labelText: 'Élément / borne'),
+                  items: [
+                    DropdownMenuItem(
+                      value: selected,
+                      child: Text('Appareil : $selected'),
+                    ),
+                    for (final port in availablePorts)
+                      DropdownMenuItem(
+                        value: port.id.value,
+                        child: Text('Borne : ${port.name}'),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setDialogState(() {
+                      targetId = value;
+                      targetKind = value == selected
+                          ? IndustrialMarkingKind.device
+                          : IndustrialMarkingKind.terminal;
+                      editedReference = plan.referenceOf(targetKind, targetId);
+                      locked = plan.locks['${targetKind.name}:$targetId'] ?? false;
+                    });
+                  },
+                ),
+              KeyedSubtree(
+                key: ValueKey(targetId),
+                child: TextFormField(
+                  key: const Key('p4-marking-text'),
+                  initialValue: editedReference,
+                  onChanged: (value) => editedReference = value,
+                  decoration: const InputDecoration(labelText: 'Repère'),
+                ),
               ),
               SwitchListTile(
                 key: const Key('p4-marking-locked'),
@@ -252,8 +292,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             ),
             FilledButton(
               key: const Key('p4-marking-apply'),
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop((editedReference, locked)),
+              onPressed: () => Navigator.of(dialogContext).pop(
+                (targetKind, targetId, editedReference, locked),
+              ),
               child: const Text('Enregistrer'),
             ),
           ],
@@ -264,17 +305,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     try {
       final next = IndustrialMarkingRegistry.setReference(
         _circuit,
-        kind: kind,
-        id: selected,
-        reference: answer.$1,
-        locked: answer.$2,
+        kind: answer.$1,
+        id: answer.$2,
+        reference: answer.$3,
+        locked: answer.$4,
         teacherAuthorized: widget.role == F9UserRole.teacher,
       );
       final issues = IndustrialMarkingRegistry.inspect(next).issues;
       setState(() {
         _circuit = next;
         _status =
-            'Repère enregistré : ${answer.$1}. '
+            'Repère enregistré : ${answer.$3}. '
             '${issues.length} anomalie(s) de repérage.';
       });
       _simulation.updateCircuit(next);

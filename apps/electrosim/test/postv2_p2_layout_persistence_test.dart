@@ -33,7 +33,7 @@ void main() {
         ]),
       );
       final data = ElectroSimLayoutPersistence.encode(layout);
-      expect(data['schemaVersion'], 2);
+      expect(data['schemaVersion'], ElectroSimLayoutPersistence.schemaVersion);
       final restored = ElectroSimLayoutPersistence.decode(data)!;
       expect(restored.cabinetLayout.fixtures, hasLength(3));
       expect(
@@ -80,7 +80,10 @@ void main() {
       expect(loaded.cabinetLayout.fixtures, isEmpty);
       expect(loaded.positionOf('KM1'), const Offset(100, 140));
       final rewritten = ElectroSimLayoutPersistence.encode(loaded);
-      expect(rewritten['schemaVersion'], 2);
+      expect(
+        rewritten['schemaVersion'],
+        ElectroSimLayoutPersistence.schemaVersion,
+      );
     },
   );
 

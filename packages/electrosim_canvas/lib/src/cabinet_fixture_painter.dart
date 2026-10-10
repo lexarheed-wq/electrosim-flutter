@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/painting.dart';
 
@@ -117,4 +116,56 @@ void paintCabinetSelection(
     ),
     Paint()..color = const Color(0xFF2563EB),
   );
+}
+
+/// Frontal open enclosure and its usable mounting plate, in authored mm.
+void paintCabinetEnvelope(
+  Canvas canvas, {
+  required CabinetLayout cabinet,
+  required Offset Function(Offset) worldToScreen,
+  required double scale,
+}) {
+  final envelope = cabinet.envelope;
+  if (envelope == null) return;
+  Rect screen(Rect r) => Rect.fromLTWH(
+    worldToScreen(r.topLeft).dx,
+    worldToScreen(r.topLeft).dy,
+    r.width * scale,
+    r.height * scale,
+  );
+  final r = screen(envelope.bounds), plate = screen(envelope.plateBounds);
+  canvas.drawRect(
+    r.shift(Offset(5 * scale, 5 * scale)),
+    Paint()..color = const Color(0x350F172A),
+  );
+  canvas.drawRect(
+    r,
+    Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF9DAAB6), Color(0xFFE2E8EF), Color(0xFF98A7B5)],
+      ).createShader(r),
+  );
+  canvas.drawRect(
+    r,
+    Paint()
+      ..color = const Color(0xFF64748B)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2 * scale,
+  );
+  canvas.drawRect(plate, Paint()..color = const Color(0xFFF2F4F6));
+  canvas.drawRect(
+    plate,
+    Paint()
+      ..color = const Color(0xFFBAC5CF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = scale,
+  );
+  for (final p in [
+    plate.topLeft,
+    plate.topRight,
+    plate.bottomLeft,
+    plate.bottomRight,
+  ]) {
+    canvas.drawCircle(p, 3 * scale, Paint()..color = const Color(0xFF64748B));
+  }
 }

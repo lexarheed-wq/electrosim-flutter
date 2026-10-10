@@ -31,6 +31,7 @@ final class SimulatorCanvas extends StatefulWidget {
     this.wirePreviewPlanner,
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
+    this.schematicPresentation = false,
   });
 
   final CircuitState circuit;
@@ -47,6 +48,7 @@ final class SimulatorCanvas extends StatefulWidget {
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool smartWireSemantics;
   final bool paintElementChrome;
+  final bool schematicPresentation;
 
   @override
   State<SimulatorCanvas> createState() => _SimulatorCanvasState();
@@ -382,9 +384,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
               : SystemMouseCursors.grabbing,
           onHover: (PointerHoverEvent event) {
             if (_pendingTerminalId != null) {
-              final Offset next = _viewport.screenToWorld(
-                event.localPosition,
-              );
+              final Offset next = _viewport.screenToWorld(event.localPosition);
               if (_pointerWorldPosition != next) {
                 setState(() {
                   _pointerWorldPosition = next;
@@ -421,6 +421,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                           widget.smartWireSemantics ||
                           widget.wireLayoutEngine != null,
                       paintElementChrome: widget.paintElementChrome,
+                      schematicPresentation: widget.schematicPresentation,
                     ),
                     size: Size.infinite,
                   ),

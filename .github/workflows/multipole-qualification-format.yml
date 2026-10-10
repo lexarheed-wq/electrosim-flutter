@@ -21,9 +21,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dart format apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
+          dart format apps/electrosim/test/multipole_overload_realistic_qualification_test.dart packages/electrosim_measurements/lib/src/protection_dynamics.dart
           git diff --check
-          git add apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
+          git add apps/electrosim/test/multipole_overload_realistic_qualification_test.dart packages/electrosim_measurements/lib/src/protection_dynamics.dart
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

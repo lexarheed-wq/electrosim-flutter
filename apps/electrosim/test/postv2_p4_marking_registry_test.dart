@@ -231,7 +231,8 @@ void main() {
     final persisted = IndustrialMarkingRegistry.materialize(amended);
     final current = IndustrialMarkingRegistry.inspect(persisted);
     expect(current.devices['aaa-motor'], 'M2');
-    expect(current.conductors['000-new-wire'], '016');
+    expect(current.conductors['000-new-wire'],
+        (initial.connections.length + 1).toString().padLeft(3, '0'));
     expect(current.colors['000-new-wire'], IndustrialConductorColor.brown);
     for (final key in old.devices.keys) {
       expect(current.devices[key], old.devices[key], reason: key);

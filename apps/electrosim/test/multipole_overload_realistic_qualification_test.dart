@@ -20,6 +20,15 @@ void record(String family, String caseName, bool pass, Map<String, Object?> data
   stdout.writeln('PHYSICS_AUDIT_JSON:$payload');
 }
 
+void inventoryEvidence(String key, String verdict, Map<String, Object?> properties) {
+  final String payload = jsonEncode(<String, Object?>{
+    'family': 'overload-rating-inventory',
+    'case': key,
+    'verdict': verdict,
+    ...properties,
+  });
+  stdout.writeln('PHYSICS_AUDIT_JSON:$payload');
+}
 Terminal terminal(String id, PhaseTag phase) =>
     Terminal(id: TerminalId(id), name: id, phase: phase);
 Connection join(String id, String a, String b) => Connection(
@@ -163,6 +172,47 @@ void main() {
     },
   );
 
+  test('OVERLOAD-COVERAGE: inventory EVERY catalogue receiver and protection rating', () {
+    var total = 0;
+    var withRatedEnvelope = 0;
+    var lackingRatings = 0;
+    for (final entry in f9PaletteCatalog) {
+      if (entry.kind != F9PaletteElementKind.component) continue;
+      total++;
+      final params = entry.defaultParameters;
+      final bool protection = params.containsKey(ProtectionRating.ratedCurrentKey);
+      final bool nominal = params.containsKey(ReceiverNominalRating.currentKey) ||
+          params.containsKey(ReceiverNominalRating.voltageKey) ||
+          params.containsKey(ReceiverNominalRating.powerKey);
+      final bool motorNameplate = params.containsKey('ratedDeltaVoltageV') ||
+          params.containsKey('ratedStarVoltageV') ||
+          params.containsKey('ratedPowerW');
+      final bool ratings = protection || nominal || motorNameplate;
+      if (ratings) {
+        withRatedEnvelope++;
+      } else {
+        lackingRatings++;
+      }
+      inventoryEvidence(entry.keyName, ratings ? 'NAMEPLATE_ONLY' : 'DATA_GAP', {
+        'model': entry.modelType,
+        'terminalCount': entry.terminalCount,
+        'modeNames': entry.supportedModes.map((mode) => mode.name).toList(),
+        'canonicalProtectionRatedA': params[ProtectionRating.ratedCurrentKey],
+        'receiverNominalCurrentA': params[ReceiverNominalRating.currentKey],
+        'motorRatedDeltaV': params['ratedDeltaVoltageV'],
+        'thermalWithstandSeconds':
+            params[ComponentParameterKeys.thermalWithstandSeconds],
+        'manufacturerSpecificCurveQualified': false,
+      });
+    }
+    inventoryEvidence('all-palette-components', 'MEASURED', {
+      'totalComponentVariants': total,
+      'variantsWithSomeRatedData': withRatedEnvelope,
+      'variantsMissingRatedEnvelope': lackingRatings,
+      'warning': 'Rating availability does not certify overload performance.',
+    });
+    expect(total, greaterThanOrEqualTo(35));
+  });
   test('MULTIPOLE catalogue contractual enumeration', () {
     var count = 0;
     final missing = <String>[];

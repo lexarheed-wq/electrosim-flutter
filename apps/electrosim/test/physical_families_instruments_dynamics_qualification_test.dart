@@ -348,8 +348,9 @@ void main() {
               ...?result.ac1Result?.kclResiduals.values,
             ];
             final finite = residuals.every((x) => x.isFinite);
-            if (!finite)
+            if (!finite) {
               failures.add('${entry.keyName}/${mode.name}: nonfinite');
+            }
             audit(
               'loaded-family',
               '${entry.keyName}/${mode.name}',

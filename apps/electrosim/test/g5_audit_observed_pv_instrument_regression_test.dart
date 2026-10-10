@@ -50,10 +50,7 @@ CircuitState batteryLoad({
     ComponentInstance(
       id: ComponentId('resistor'),
       modelType: 'resistor',
-      terminals: <Terminal>[
-        terminal('resistor-a'),
-        terminal('resistor-b'),
-      ],
+      terminals: <Terminal>[terminal('resistor-a'), terminal('resistor-b')],
       parameters: const <String, Object?>{'resistanceOhm': 48.0},
     ),
   ],
@@ -78,8 +75,12 @@ InstrumentInstance ammeter() => InstrumentInstance(
   cutConnectionId: ConnectionId('feed'),
 );
 
-ProbeConnection lead(String id, InstrumentInstance meter, InstrumentPort port,
-    String target) => ProbeConnection(
+ProbeConnection lead(
+  String id,
+  InstrumentInstance meter,
+  InstrumentPort port,
+  String target,
+) => ProbeConnection(
   id: ProbeId(id),
   instrumentId: meter.id,
   port: port,
@@ -91,7 +92,10 @@ F9PaletteDefinition palette(String key) =>
 
 List<Terminal> paletteTerminals(F9PaletteDefinition entry, String prefix) => [
   for (var i = 0; i < entry.terminals.length; i++)
-    terminal('$prefix-${entry.terminals[i].idSuffix}', phase: entry.terminals[i].phase),
+    terminal(
+      '$prefix-${entry.terminals[i].idSuffix}',
+      phase: entry.terminals[i].phase,
+    ),
 ];
 
 CircuitState pvCircuit(F9PaletteDefinition panel) {
@@ -140,84 +144,115 @@ void main() {
     final volts = (panel.defaultParameters['mppVoltageV'] as num).toDouble();
     final amps = (panel.defaultParameters['mppCurrentA'] as num).toDouble();
     expect(volts, greaterThan(48.0));
-    expect(volts, lessThanOrEqualTo(
-        (pwm.defaultParameters['maxPvInputVoltageV'] as num).toDouble()));
-    expect(volts, inInclusiveRange(
+    expect(
+      volts,
+      lessThanOrEqualTo(
+        (pwm.defaultParameters['maxPvInputVoltageV'] as num).toDouble(),
+      ),
+    );
+    expect(
+      volts,
+      inInclusiveRange(
         (inverter.defaultParameters['minDcVoltageV'] as num).toDouble(),
-        (inverter.defaultParameters['maxDcVoltageV'] as num).toDouble()));
+        (inverter.defaultParameters['maxDcVoltageV'] as num).toDouble(),
+      ),
+    );
     expect(volts * amps, greaterThan(1000 / 0.96));
     final snapshot = engine.evaluate(pvCircuit(panel));
     expect(snapshot.solved, isTrue);
     expect(snapshot.pvResult!.inverterState.name, 'running');
-    expect(snapshot.pvResult!.inverterOutputVoltageRmsV,
-        closeTo(230.0, 0.001));
-    expect(snapshot.pvResult!.inverterOutputPowerW,
-        closeTo(1000.0, 0.01));
+    expect(snapshot.pvResult!.inverterOutputVoltageRmsV, closeTo(230.0, 0.001));
+    expect(snapshot.pvResult!.inverterOutputPowerW, closeTo(1000.0, 0.01));
   });
 
-  test('PV-DEFAULT: high-voltage MPPT panel remains a separate explicit preset',
-      () {
-    final highVoltage = palette('pv-array-high-voltage');
-    final inverter = palette('pv-inverter');
-    expect(highVoltage.searchOnlyModes, contains(ElectricalMode.pv));
-    expect(highVoltage.defaultParameters['mppVoltageV'], 360.0);
-    expect((highVoltage.defaultParameters['mppVoltageV'] as num).toDouble(),
-        greaterThan((inverter.defaultParameters['maxDcVoltageV'] as num)
-            .toDouble()));
-    final result = engine.evaluate(pvCircuit(highVoltage));
-    expect(result.pvResult?.inverterState.name, isNot('running'));
-  });
+  test(
+    'PV-DEFAULT: high-voltage MPPT panel remains a separate explicit preset',
+    () {
+      final highVoltage = palette('pv-array-high-voltage');
+      final inverter = palette('pv-inverter');
+      expect(highVoltage.searchOnlyModes, contains(ElectricalMode.pv));
+      expect(highVoltage.defaultParameters['mppVoltageV'], 360.0);
+      expect(
+        (highVoltage.defaultParameters['mppVoltageV'] as num).toDouble(),
+        greaterThan(
+          (inverter.defaultParameters['maxDcVoltageV'] as num).toDouble(),
+        ),
+      );
+      final result = engine.evaluate(pvCircuit(highVoltage));
+      expect(result.pvResult?.inverterState.name, isNot('running'));
+    },
+  );
 
   for (final mode in <ElectricalMode>[ElectricalMode.dc, ElectricalMode.pv]) {
-    test('METER: physical voltmeter reads an autonomous 48V battery in ${mode.name}',
-        () {
-      final meter = voltmeter();
-      final circuit = batteryLoad(mode: mode, meter: meter, probes: [
-        lead('v', meter, InstrumentPort.voltOhm, 'battery-plus'),
-        lead('com', meter, InstrumentPort.common, 'battery-minus'),
-      ]);
-      final snapshot = engine.evaluate(circuit);
-      expect(snapshot.solved, isTrue);
-      if (mode == ElectricalMode.pv) {
-        expect(snapshot.pvResult, isNull);
-        expect(snapshot.dcResult, isNotNull);
-        expect(snapshot.effectiveCircuit.mode, ElectricalMode.dc);
-      }
-      final reading = meters.read(snapshot: snapshot, instrument: meter);
-      expect(reading.status, PhysicalInstrumentStatus.valid,
-          reason: reading.message);
-      expect(reading.result!.reading!.value, closeTo(47.92013, 0.005));
-    });
+    test(
+      'METER: physical voltmeter reads an autonomous 48V battery in ${mode.name}',
+      () {
+        final meter = voltmeter();
+        final circuit = batteryLoad(
+          mode: mode,
+          meter: meter,
+          probes: [
+            lead('v', meter, InstrumentPort.voltOhm, 'battery-plus'),
+            lead('com', meter, InstrumentPort.common, 'battery-minus'),
+          ],
+        );
+        final snapshot = engine.evaluate(circuit);
+        expect(snapshot.solved, isTrue);
+        if (mode == ElectricalMode.pv) {
+          expect(snapshot.pvResult, isNull);
+          expect(snapshot.dcResult, isNotNull);
+          expect(snapshot.effectiveCircuit.mode, ElectricalMode.dc);
+        }
+        final reading = meters.read(snapshot: snapshot, instrument: meter);
+        expect(
+          reading.status,
+          PhysicalInstrumentStatus.valid,
+          reason: reading.message,
+        );
+        expect(reading.result!.reading!.value, closeTo(47.92013, 0.005));
+      },
+    );
 
-    test('METER: real series burden reads 48V battery current in ${mode.name}',
-        () {
-      final meter = ammeter();
-      final circuit = batteryLoad(mode: mode, meter: meter, probes: [
-        lead('a', meter, InstrumentPort.amp, 'battery-plus'),
-        lead('com', meter, InstrumentPort.common, 'resistor-a'),
-      ]);
-      final snapshot = engine.evaluate(circuit);
-      final reading = meters.read(snapshot: snapshot, instrument: meter);
-      expect(reading.status, PhysicalInstrumentStatus.valid,
-          reason: reading.message);
-      expect(reading.result!.reading!.value.abs(), closeTo(0.998, 0.005));
-    });
+    test(
+      'METER: real series burden reads 48V battery current in ${mode.name}',
+      () {
+        final meter = ammeter();
+        final circuit = batteryLoad(
+          mode: mode,
+          meter: meter,
+          probes: [
+            lead('a', meter, InstrumentPort.amp, 'battery-plus'),
+            lead('com', meter, InstrumentPort.common, 'resistor-a'),
+          ],
+        );
+        final snapshot = engine.evaluate(circuit);
+        final reading = meters.read(snapshot: snapshot, instrument: meter);
+        expect(
+          reading.status,
+          PhysicalInstrumentStatus.valid,
+          reason: reading.message,
+        );
+        expect(reading.result!.reading!.value.abs(), closeTo(0.998, 0.005));
+      },
+    );
   }
 
-  test('METER: incorrect ammeter series leads cannot produce a valid reading',
-      () {
-    final meter = ammeter();
-    final circuit = batteryLoad(
-      mode: ElectricalMode.dc,
-      meter: meter,
-      probes: [
-        lead('a', meter, InstrumentPort.amp, 'battery-plus'),
-        lead('com', meter, InstrumentPort.common, 'battery-minus'),
-      ],
-    );
-    final snapshot = engine.evaluate(circuit);
-    final reading = meters.read(snapshot: snapshot, instrument: meter);
-    expect(reading.status, PhysicalInstrumentStatus.invalidWiring);
-    expect(reading.isValid, isFalse);
-  });
+  test(
+    'METER: incorrect ammeter series leads cannot produce a valid reading',
+    () {
+      final meter = ammeter();
+      final circuit = batteryLoad(
+        mode: ElectricalMode.dc,
+        meter: meter,
+        probes: [
+          lead('a', meter, InstrumentPort.amp, 'battery-plus'),
+          lead('com', meter, InstrumentPort.common, 'battery-minus'),
+        ],
+      );
+      final snapshot = engine.evaluate(circuit);
+      final reading = meters.read(snapshot: snapshot, instrument: meter);
+      expect(reading.status, PhysicalInstrumentStatus.invalidWiring);
+      expect(reading.isValid, isFalse);
+    },
+  );
 }

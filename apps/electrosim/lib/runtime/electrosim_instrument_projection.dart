@@ -69,11 +69,11 @@ final class ElectroSimInstrumentProjection {
     // workspace mode; otherwise live battery voltage/current reads N/A.
     final CircuitState circuit =
         snapshot.circuit.mode == ElectricalMode.pv &&
-                snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
-                snapshot.dcResult != null &&
-                snapshot.pvResult == null
-            ? snapshot.effectiveCircuit
-            : snapshot.circuit;
+            snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
+            snapshot.dcResult != null &&
+            snapshot.pvResult == null
+        ? snapshot.effectiveCircuit
+        : snapshot.circuit;
     if (!circuit.instruments.any((item) => item.id == instrument.id)) {
       return error(
         PhysicalInstrumentStatus.invalidWiring,
@@ -232,10 +232,8 @@ final class ElectroSimInstrumentProjection {
       final TerminalId? amp = probe(InstrumentPort.amp)?.terminalId;
       final TerminalId? common = probe(InstrumentPort.common)?.terminalId;
       final bool isAcrossCut =
-          (amp == original.fromTerminalId &&
-              common == original.toTerminalId) ||
-          (amp == original.toTerminalId &&
-              common == original.fromTerminalId);
+          (amp == original.fromTerminalId && common == original.toTerminalId) ||
+          (amp == original.toTerminalId && common == original.fromTerminalId);
       if (!isAcrossCut) {
         return error(
           PhysicalInstrumentStatus.invalidWiring,

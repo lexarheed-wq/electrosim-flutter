@@ -16,7 +16,7 @@ ComponentInstance _component(String id, Terminal terminal) => ComponentInstance(
 
 void main() {
   test('workspace no longer rejects valid wiring only because nets cross', () {
-    final String source = File('lib/main.dart').readAsStringSync();
+    final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
     expect(
       source,
       isNot(

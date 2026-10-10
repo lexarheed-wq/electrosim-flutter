@@ -46,10 +46,10 @@ final class Valve52PhysicalCycle {
                   Valve52AirIsolation(routing: routing)
                       .withSupplyEnabled(_supplyEnabled)
                       .connect(
-                cylinder: cylinder,
-                snapshot: before,
-                energized: spool == ValveSpoolSide.coilSide,
-              );
+                        cylinder: cylinder,
+                        snapshot: before,
+                        energized: spool == ValveSpoolSide.coilSide,
+                      );
               return routed.advance(
                 before,
                 durationS: dt,

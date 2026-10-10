@@ -19,11 +19,14 @@ def join(page):
     page.goto(url, wait_until='domcontentloaded')
     print('Loaded student document', flush=True)
     enable_accessibility(page)
+    print('Accessibility enabled', flush=True)
     page.get_by_role('textbox').click()
+    print('Student name field focused', flush=True)
     page.wait_for_timeout(150)
     page.keyboard.insert_text('Élève parcours réel')
     page.wait_for_timeout(150)
     page.get_by_role('button', name='Rejoindre la séance').click()
+    print('Join submitted', flush=True)
 
 def open_tp(page):
     page.get_by_text('Espace élève', exact=True).wait_for(timeout=30000)
@@ -42,9 +45,11 @@ def diagnostic(page, answer):
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium'), headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
     context = browser.new_context(viewport={'width': 1440, 'height': 1000})
+    context.route('https://**/*', lambda route: route.abort())
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: (errors.append(str(e)), print('PAGE ERROR', str(e), flush=True)))
+    page.on('request', lambda r: print('EXTERNAL REQUEST', r.url, flush=True) if r.url.startswith('https://') else None)
     page.on('requestfailed', lambda r: print('REQUEST FAILED', r.url, r.failure, flush=True))
     try:
         join(page)

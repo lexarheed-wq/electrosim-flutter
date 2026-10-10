@@ -26,7 +26,7 @@ Use Flutter 3.38.10. Install `tools/e2e/requirements.txt` and Chromium with
 `bash tools/f15_prepare_runner.sh web`, then build its app:
 
 ```sh
-flutter build web --release --target lib/student_web_main.dart --no-wasm-dry-run
+flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
 ```
 
 In the original repository's `apps/electrosim` directory:
@@ -62,3 +62,9 @@ layout. No teacher reference or assessment truth is stored in this geometry reco
 Widget regressions also verify the actual rendered asset keeps its full unrotated
 size at 90 and 270 degrees. Rotation swaps layout constraints as well as painting,
 so the component screws stay aligned with the canvas terminal geometry.
+
+The browser journey blocks HTTPS Internet resources. The student build uses local
+CanvasKit (`--no-web-resources-cdn`) and bundled Roboto; the host serves `.wasm`
+with `application/wasm`. G5 Mac packaging includes this student Web client, checks
+the unpacked app and final archive, and re-signs after adding the resources.
+These checks verify packaging, not physical Mac acceptance.

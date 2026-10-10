@@ -79,7 +79,7 @@ jobs:
             *) echo "RUNNER_PATH_PROTOCOL_ERROR: $output"; exit 69 ;;
           esac
           cd "$runner/apps/electrosim"
-          flutter build web --release --target lib/student_web_main.dart --no-wasm-dry-run
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
           cd "$base/apps/electrosim"
           flutter pub get
           export ELECTROSIM_STUDENT_WEB_ROOT="$runner/apps/electrosim/build/web"
@@ -173,10 +173,22 @@ jobs:
           flutter test test/g5_physical_housing_assets_test.dart test/g5_native_housing_fallback_test.dart
           flutter test test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_industrial_asset_fallback_test.dart test/g5_physical_layout_migration_test.dart
           flutter test test/industrial_duct_workspace_test.dart test/industrial_representation_workspace_test.dart test/industrial_schematic_projection_test.dart test/industrial_cabinet_workspace_test.dart test/industrial_cabinet_model_test.dart test/industrial_workflow_test.dart
+          # Package the same production student Web client exercised by QR tests.
+          flutter create --platforms=web --project-name electrosim .
+          flutter pub get
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
+          test -s build/web/index.html
+          test -s build/web/main.dart.js
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$app"
+          web_dest="$app/Contents/Resources/electrosim_student_web"
+          mkdir -p "$web_dest"
+          cp -R build/web/. "$web_dest/"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$app"
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
           bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
           test -n "$bin"
           result="$base/g5-industrial-macos"
@@ -185,6 +197,7 @@ jobs:
           grep -qi x86_64 "$result/ARCH.txt"
           printf '%s\n' "$GITHUB_SHA" > "$result/SOURCE_SHA.txt"
           ditto -c -k --sequesterRsrc --keepParent "$app" "$result/ElectroSim_G5_Industrial_macOS_Intel.zip"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$result/ElectroSim_G5_Industrial_macOS_Intel.zip"
           (cd "$result" && shasum -a 256 *.zip > SHA256.txt)
       - uses: actions/upload-artifact@v4
         with:

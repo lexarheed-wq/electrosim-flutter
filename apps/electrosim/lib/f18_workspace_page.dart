@@ -53,6 +53,8 @@ class F18WorkspacePage extends StatefulWidget {
     this.initialSelectedElementId,
     this.initialCircuit,
     this.initialCabinetLayout,
+    this.initialVisualLayout,
+    this.onVisualLayoutChanged,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
@@ -71,6 +73,8 @@ class F18WorkspacePage extends StatefulWidget {
   final String? initialSelectedElementId;
   final CircuitState? initialCircuit;
   final CabinetLayout? initialCabinetLayout;
+  final CircuitVisualLayout? initialVisualLayout;
+  final ValueChanged<CircuitVisualLayout>? onVisualLayoutChanged;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
@@ -94,6 +98,41 @@ final class _F18WorkspaceHistoryEntry {
 }
 
 class _F18WorkspacePageState extends State<F18WorkspacePage> {
+  String? _studentTpIdValue;
+  CircuitVisualLayout? _lastReportedVisualLayout;
+  bool _visualLayoutReportScheduled = false;
+
+  bool get _visualLayoutMatchesSession {
+    if (widget.role != F9UserRole.student) return true;
+    final session = _tpController.session;
+    return session != null &&
+        _studentTpIdValue == session.definition.id.value &&
+        _circuit.circuitId == session.studentCircuit.circuitId &&
+        _circuit.revision == session.studentCircuit.revision;
+  }
+
+  // Report committed geometry after the frame, including asynchronous routing.
+  // Drag previews use their separate notifier and never enter this snapshot.
+  void _scheduleVisualLayoutReport() {
+    if (!_visualLayoutMatchesSession ||
+        widget.onVisualLayoutChanged == null ||
+        identical(_layout, _lastReportedVisualLayout) ||
+        _visualLayoutReportScheduled) {
+      return;
+    }
+    _visualLayoutReportScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _visualLayoutReportScheduled = false;
+      if (!mounted ||
+          !_visualLayoutMatchesSession ||
+          identical(_layout, _lastReportedVisualLayout)) {
+        return;
+      }
+      _lastReportedVisualLayout = _layout;
+      widget.onVisualLayoutChanged?.call(_layout);
+    });
+  }
+
   WorkspaceRepresentation _representation = WorkspaceRepresentation.plate;
   final Map<WorkspaceRepresentation, (double, Offset)> _viewports = {};
   CircuitVisualLayout? _schematicAuthorLayout;
@@ -209,6 +248,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitVisualLayout beforeLayout = _layout;
     final String? beforeSelection = _selected;
     super.setState(fn);
+    _scheduleVisualLayoutReport();
     if (_restoringHistory || _studentTpReadOnly) return;
     if (!identical(beforeCircuit, _circuit) ||
         !_sameEditableGeometry(beforeLayout, _layout)) {
@@ -683,6 +723,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         widget.tpSessionController ?? ElectroSimTpSessionController();
     widget.syncClient?.addListener(_onLanSyncChanged);
     final TpSession? tp = _tpController.session;
+    _studentTpIdValue = tp?.definition.id.value;
     if (widget.role == F9UserRole.student &&
         tp != null &&
         tp.lifecycle != TpLifecycle.draft &&
@@ -692,7 +733,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Câblage'
           : 'Recherche de dérangement';
     }
-    _layout = _layoutForCircuit(_circuit);
+    _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
     if (widget.initialCabinetLayout != null) {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
@@ -793,6 +834,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
+    _scheduleVisualLayoutReport();
     final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
       _circuit,
       _selected,
@@ -1320,10 +1362,46 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (session != null &&
         session.lifecycle != TpLifecycle.draft &&
         session.lifecycle != TpLifecycle.published &&
-        (session.studentCircuit.circuitId != _circuit.circuitId ||
+        (_studentTpIdValue != session.definition.id.value ||
+            session.studentCircuit.circuitId != _circuit.circuitId ||
             session.studentCircuit.revision != _circuit.revision)) {
-      _circuit = session.studentCircuit;
-      _layout = _layoutForCircuit(_circuit);
+      final sameTp = _studentTpIdValue == session.definition.id.value;
+      final next = session.studentCircuit;
+      final defaults = _layoutForCircuit(next);
+      if (sameTp && next.circuitId == _circuit.circuitId) {
+        final ids = defaults.elementPositions.keys.toSet();
+        final connections = next.connections.map((c) => c.id.value).toSet();
+        _layout = CircuitVisualLayout(
+          elementPositions: {
+            for (final id in ids)
+              id: _layout.positionOf(id) ?? defaults.elementPositions[id]!,
+          },
+          elementSizes: {
+            for (final id in ids)
+              if (_layout.elementSizes[id] ?? defaults.elementSizes[id]
+                  case final Size size)
+                id: size,
+          },
+          elementQuarterTurns: {
+            for (final entry in _layout.elementQuarterTurns.entries)
+              if (ids.contains(entry.key)) entry.key: entry.value,
+          },
+          wireRoutes: {
+            for (final id in connections)
+              id: _layout.wireRoutes[id] ?? defaults.wireRoutes[id] ?? [],
+          },
+          terminalAnchorOffsets: _layout.terminalAnchorOffsets,
+          defaultElementSize: _layout.defaultElementSize,
+          cabinetLayout: _layout.cabinetLayout.retainMounts(ids),
+        );
+      } else {
+        _layout = defaults;
+      }
+      _studentTpIdValue = session.definition.id.value;
+      _workspace = session.definition.mode == TpMode.wiring
+          ? 'Câblage'
+          : 'Recherche de dérangement';
+      _circuit = next;
       _simulation.updateCircuit(_circuit);
     }
     setState(() {});
@@ -3803,6 +3881,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   @override
   void dispose() {
+    if (_visualLayoutMatchesSession &&
+        !identical(_layout, _lastReportedVisualLayout)) {
+      widget.onVisualLayoutChanged?.call(_layout);
+    }
     _layoutSaveTimer?.cancel();
     _workspaceLayout.removeListener(_scheduleLayoutSave);
     _tpController.removeListener(_onStudentTpChanged);

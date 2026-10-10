@@ -7,7 +7,7 @@ troubleshooting and wiring activities. No legacy component assets are substitute
 The teacher creates a classroom, displays its QR, publishes and starts a TP,
 observes the student's work, assigns 81/100, and explicitly stops the classroom.
 The student follows the decoded QR URL, joins, edits the TP, opens the same URL in
-a second tab of the same browser, resumes the same identity and circuit, submits,
+a second tab of the same browser, resumes the same identity, circuit and visual geometry, submits,
 attempts a forbidden component addition after submission, receives the grade and
 sees the classroom close. The host circuit is checked unchanged after the attempt. The previous tab stops reconnecting
 when the work is transferred to the new tab. The teacher management QR is decoded
@@ -39,7 +39,10 @@ ELECTROSIM_STUDENT_WEB_ROOT=/absolute/runner/apps/electrosim/build/web \
 
 Without the Web root variable, the browser test is explicitly skipped. The G5
 qualification workflow builds and executes it, uploads screenshots and transport
-metadata for both modes, and records the source SHA and PNG checksums.
+metadata for both modes, and records the source SHA and PNG checksums. `visual-resume.json` compares the
+complete geometry before and after reopening: positions, sizes, rotations, wire
+routes and cabinet data. The wiring journey physically moves and rotates the lamp
+before rescanning.
 
 ## Scope
 
@@ -50,3 +53,8 @@ and WebSocket traffic, but does not certify a phone camera, Wi-Fi network or
 physical Mac. Resumption requires the same browser storage and the same student
 name while the teacher classroom host remains active. It does not promise recovery
 across a teacher process restart or a different device.
+
+Student visual geometry is stored separately from electrical state, under the
+student identity, TP ID and circuit ID. It is restored only at the matching
+authoritative circuit revision. A new TP cannot inherit an earlier activity's
+layout. No teacher reference or assessment truth is stored in this geometry record.

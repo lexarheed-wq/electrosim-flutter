@@ -42,17 +42,16 @@ class _GlyphPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
     final Paint fill = Paint()
-      ..color = schematic
-          ? const Color(0xfff9fafb)
-          : const Color(0xffb7c3c9)
+      ..color = schematic ? const Color(0xfff9fafb) : const Color(0xffb7c3c9)
       ..style = PaintingStyle.fill;
     canvas.save();
     canvas.translate(size.width / 2, size.height / 2);
-    final double scale = (size.width / 110 < size.height / 42
-            ? size.width / 110
-            : size.height / 42)
-        .clamp(.1, 2.0)
-        .toDouble();
+    final double scale =
+        (size.width / 110 < size.height / 42
+                ? size.width / 110
+                : size.height / 42)
+            .clamp(.1, 2.0)
+            .toDouble();
     canvas.scale(scale);
     switch (kind) {
       case PneumaticDeviceKind.valve32:
@@ -73,11 +72,7 @@ class _GlyphPainter extends CustomPainter {
           canvas.drawLine(Offset(x, 15), Offset(x, 21), line);
         }
         if (five) {
-          canvas.drawLine(
-            const Offset(0, 15),
-            const Offset(0, 21),
-            line,
-          );
+          canvas.drawLine(const Offset(0, 15), const Offset(0, 21), line);
         }
         if (!schematic) {
           canvas.drawRect(const Rect.fromLTWH(-46, -12, 10, 24), fill);
@@ -132,7 +127,11 @@ class _GlyphPainter extends CustomPainter {
         canvas.drawRect(const Rect.fromLTWH(-15, -14, 30, 28), fill);
         canvas.drawRect(const Rect.fromLTWH(-15, -14, 30, 28), line);
         for (int i = -10; i <= 10; i += 5) {
-          canvas.drawLine(Offset(i.toDouble(), -12), Offset(i.toDouble() + 6, 12), line);
+          canvas.drawLine(
+            Offset(i.toDouble(), -12),
+            Offset(i.toDouble() + 6, 12),
+            line,
+          );
         }
       default:
         canvas.drawCircle(Offset.zero, 16, fill);

@@ -81,6 +81,9 @@ void main() {
       ('motor_dc', 'moteur cc'),
       ('fan_dc', 'ventilateur'),
       ('buzzer', 'buzzer'),
+      ('resistor', 'résistance'),
+      ('capacitor', 'condensateur'),
+      ('inductor', 'inductance'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
@@ -91,6 +94,7 @@ void main() {
             'motor_dc',
             'fan_dc',
             'buzzer',
+            'resistor',
           ].contains(entry.$1)
           ? ElectricalMode.dc
           : ElectricalMode.ac3;
@@ -425,6 +429,9 @@ void main() {
       'motor_dc',
       'fan_dc',
       'buzzer',
+      'resistor',
+      'capacitor',
+      'inductor',
     ];
     for (var page = 0; page < (types.length / 9).ceil(); page++) {
       final key = GlobalKey();

@@ -4,6 +4,40 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Three significant-value bands only: no tolerance is invented for an ideal
+/// simulated resistor. Values needing more digits retain their numeric label.
+List<Color> physicalResistorBands(double ohms) {
+  if (!ohms.isFinite || ohms <= 0) return const [];
+  final exponent = (math.log(ohms) / math.ln10).floor() - 1;
+  if (exponent < -2 || exponent > 9) return const [];
+  final significant = ohms / math.pow(10, exponent);
+  final digits = significant.round();
+  if (digits < 10 || digits > 99 || (significant - digits).abs() > 1e-7) {
+    return const [];
+  }
+  const colors = [
+    Colors.black,
+    Color(0xFF633C25),
+    Color(0xFFB51C20),
+    Color(0xFFE87917),
+    Color(0xFFF2CB22),
+    Color(0xFF247A3E),
+    Color(0xFF225FA8),
+    Color(0xFF793FA1),
+    Color(0xFF737A7E),
+    Color(0xFFF1F1E9),
+  ];
+  return [
+    colors[digits ~/ 10],
+    colors[digits % 10],
+    exponent == -2
+        ? const Color(0xFFBFC5C9)
+        : exponent == -1
+        ? const Color(0xFFB89A35)
+        : colors[exponent],
+  ];
+}
+
 /// Original Cycles housing plates. Only immutable material/geometry is baked;
 /// operating states and moving controls are supplied by ElectroSim's engine.
 abstract final class F18PhysicalPlateAssets {
@@ -34,6 +68,9 @@ abstract final class F18PhysicalPlateAssets {
     'motor_dc': 'motor-dc',
     'fan_dc': 'fan',
     'buzzer': 'buzzer',
+    'resistor': 'resistor-axial',
+    'capacitor': 'capacitor-film',
+    'inductor': 'inductor-drum',
   };
   static final _images = <String, ui.Image>{};
   static final _geometry = <String, Map<String, dynamic>>{};
@@ -160,6 +197,7 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     this.voltageV = 0,
     this.ratedCurrentA = 0,
     this.currentLimitA = 2,
+    this.resistanceOhm = 0,
     this.variantKey,
   });
   final String modelType;
@@ -172,7 +210,12 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
       actuated,
       active,
       showTerminals;
-  final double phase, currentA, voltageV, ratedCurrentA, currentLimitA;
+  final double phase,
+      currentA,
+      voltageV,
+      ratedCurrentA,
+      currentLimitA,
+      resistanceOhm;
   final String? variantKey;
   double get handle => tripped
       ? 0.5
@@ -201,6 +244,9 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
         'motor-dc' => 'Moteur à courant continu',
         'fan' => 'Ventilateur axial à deux fils',
         'buzzer' => 'Avertisseur sonore',
+        'resistor-axial' => 'Résistance axiale',
+        'capacitor-film' => 'Condensateur à film non polarisé',
+        'inductor-drum' => 'Inductance sur noyau ferrite',
         _ => modelType,
       };
   String get accessibleState {
@@ -220,6 +266,9 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     }
     if (shape == 'supply') return active ? 'actif' : 'arrêté';
     if (shape == 'terminal5') return 'bornier de connexion';
+    if ({'resistor-axial', 'capacitor-film', 'inductor-drum'}.contains(shape)) {
+      return active ? 'composant passif' : 'désactivé';
+    }
     if (shape == 'coil') return energized || actuated ? 'excité' : 'au repos';
     if (shape == 'fuse-holder') {
       return tripped ? 'fusible fondu' : 'fusible intact';
@@ -552,6 +601,80 @@ final class _PhysicalPlatePainter extends CustomPainter {
       return;
     }
     switch (name) {
+      case 'resistor-axial':
+        final bands = physicalResistorBands(v.resistanceOhm);
+        for (var i = 0; i < bands.length; i++) {
+          final x = w * (.405 + i * .075);
+          final path = Path();
+          for (var side = 0; side < 2; side++) {
+            for (var k = 0; k <= 24; k++) {
+              final phi =
+                  -math.pi / 2 + math.pi * (side == 0 ? k : 24 - k) / 24;
+              final p = project(
+                Offset(
+                  x + (side == 0 ? -w * .008 : w * .008),
+                  h / 2 + h * .191 * math.sin(phi),
+                ),
+                z: 25 + h * .191 * math.cos(phi),
+              );
+              if (side == 0 && k == 0) {
+                path.moveTo(p.dx, p.dy);
+              } else {
+                path.lineTo(p.dx, p.dy);
+              }
+            }
+          }
+          path.close();
+          final top = project(Offset(x, h / 2 - h * .191), z: 25);
+          final bottom = project(Offset(x, h / 2 + h * .191), z: 25);
+          final shade = Color.lerp(bands[i], Colors.black, .35)!;
+          final sheen = Color.lerp(bands[i], Colors.white, .28)!;
+          c.drawPath(
+            path,
+            Paint()
+              ..shader = ui.Gradient.linear(
+                top,
+                bottom,
+                [shade, bands[i], sheen, bands[i], shade],
+                [0, .16, .28, .55, 1],
+              ),
+          );
+        }
+        text(
+          c,
+          v.resistanceOhm > 0 && v.resistanceOhm.isFinite
+              ? '${v.resistanceOhm.toStringAsPrecision(4)} Ω'
+              : 'R',
+          Offset(w / 2, h * .87),
+          font: h * .09,
+          z: 1,
+        );
+      case 'capacitor-film':
+        text(
+          c,
+          'C · FILM',
+          Offset(w / 2, h * .41),
+          font: h * .09,
+          color: Colors.white,
+          z: 39,
+        );
+        text(
+          c,
+          'NON POLARISÉ',
+          Offset(w / 2, h * .58),
+          font: h * .06,
+          color: Colors.white,
+          z: 39,
+        );
+      case 'inductor-drum':
+        text(
+          c,
+          'L',
+          Offset(w / 2, h * .255),
+          font: h * .09,
+          color: Colors.white,
+          z: 50,
+        );
       case 'fan':
         c.save();
         if (!v.perspective) {
@@ -803,6 +926,7 @@ final class _PhysicalPlatePainter extends CustomPainter {
       'auxiliary-no' => ['13', '14'],
       'auxiliary-nc' => ['21', '22'],
       'terminal5' => ['1', '2', '3', '4', 'PE', '1', '2', '3', '4', 'PE'],
+      'resistor-axial' || 'capacitor-film' || 'inductor-drum' => ['1', '2'],
       'motor3' => ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
       'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
       'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
@@ -895,5 +1019,6 @@ final class _PhysicalPlatePainter extends CustomPainter {
       (old.v.voltageV != v.voltageV &&
           F18PhysicalPlateAssets.models[v.modelType.toLowerCase()] == 'lamp') ||
       old.v.ratedCurrentA != v.ratedCurrentA ||
+      old.v.resistanceOhm != v.resistanceOhm ||
       old.v.showTerminals != v.showTerminals;
 }

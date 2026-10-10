@@ -2714,6 +2714,12 @@ class F9ComponentPreview extends StatelessWidget {
             modelType: definition.renderedModelType,
             variantKey: definition.visualVariant,
             size: visualSize,
+            resistanceOhm:
+                F18PhysicalPlateAssets.ready(definition.renderedModelType)
+                ? (definition.defaultParameters['resistanceOhm'] as num?)
+                          ?.toDouble() ??
+                      0
+                : 0,
           );
 
     // Every family including physical meters uses the same appearance rule.

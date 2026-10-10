@@ -1,6 +1,9 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
+
+import 'electrosim_runtime_engine.dart';
 import 'package:flutter/foundation.dart';
 
 final class ElectroSimTpSessionController extends ChangeNotifier {
@@ -22,7 +25,20 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
 
   TpEngine _buildEngine() => TpEngine(
     faultScenarios: FaultScenarioRepository(scenarios: _catalog.faultScenarios),
+    verification: VerificationEngine(qualifiedSolve: _unifiedSolve),
   );
+
+  static bool _unifiedSolve(CircuitState circuit) {
+    final ElectroSimRuntimeSnapshot snapshot =
+        const ElectroSimRuntimeEngine().evaluate(circuit);
+    return switch (circuit.mode) {
+      ElectricalMode.dc =>
+        snapshot.dcResult?.status == DcSolveStatus.solved,
+      ElectricalMode.ac1 => snapshot.ac1Result?.isSolved ?? false,
+      ElectricalMode.ac3 => snapshot.ac3Result?.isSolved ?? false,
+      ElectricalMode.pv => snapshot.pvResult?.isSolved ?? false,
+    };
+  }
 
   TpId get tpId => TpId(tpIdValue);
 
@@ -55,16 +71,19 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   TpSession createDraft({
     TpMode mode = TpMode.troubleshooting,
     CircuitState? wiringReferenceCircuit,
+    CircuitState? studentStarterCircuit,
     String? activityTitle,
   }) {
     if (_session != null) {
       throw StateError('A TP session already exists.');
     }
     if (mode == TpMode.wiring &&
-        (wiringReferenceCircuit == null ||
-            wiringReferenceCircuit.sources.isEmpty ||
-            wiringReferenceCircuit.components.isEmpty ||
-            wiringReferenceCircuit.connections.isEmpty)) {
+        (wiringReferenceCircuit == null &&
+            studentStarterCircuit == null ||
+            wiringReferenceCircuit != null &&
+            (wiringReferenceCircuit.sources.isEmpty ||
+                wiringReferenceCircuit.components.isEmpty ||
+                wiringReferenceCircuit.connections.isEmpty))) {
       throw StateError(
         'Préparez un montage de référence câblé ou choisissez un schéma V2.',
       );
@@ -73,7 +92,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       TpMode.wiring => TpDefinition.wiring(
         id: tpId,
         title: activityTitle ?? 'TP de câblage',
-        referenceCircuit: wiringReferenceCircuit!,
+        referenceCircuit: wiringReferenceCircuit,
+        studentStarterCircuit: studentStarterCircuit,
       ),
       TpMode.troubleshooting => TpDefinition.troubleshooting(
         id: tpId,
@@ -196,6 +216,18 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     };
   }
 
+  /// Browser-safe lifecycle snapshot: the teacher's reference wiring must
+  /// never leave the authoritative host, including before evaluation.
+  Map<String, Object?> toStudentPersistenceJson() {
+    final json = <String, Object?>{...toPersistenceJson()};
+    json.remove('referenceCircuit');
+    if (_session?.lifecycle != TpLifecycle.evaluated &&
+        _session?.lifecycle != TpLifecycle.closed) {
+      json.remove('teacherScore');
+    }
+    return json;
+  }
+
   /// Restores a TP session by replaying validated TpEngine transitions.
   ///
   /// Replaying transitions instead of injecting private engine state keeps all
@@ -243,16 +275,20 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
         : null;
     CircuitState? referenceCircuit;
     if (mode == TpMode.wiring) {
-      final Object? referenceRaw =
-          json['referenceCircuit'] ?? json['studentCircuit'];
-      if (referenceRaw is! Map<String, dynamic>) {
-        throw const FormatException('Wiring TP reference circuit is missing.');
+      final Object? referenceRaw = json['referenceCircuit'];
+      if (referenceRaw != null) {
+        if (referenceRaw is! Map<String, dynamic>) {
+          throw const FormatException('Wiring TP reference circuit is invalid.');
+        }
+        referenceCircuit = CircuitState.fromJson(referenceRaw);
       }
-      referenceCircuit = CircuitState.fromJson(referenceRaw);
     }
     createDraft(
       mode: mode,
       wiringReferenceCircuit: referenceCircuit,
+      studentStarterCircuit: mode == TpMode.wiring
+          ? CircuitState.fromJson(json['studentCircuit'] as Map<String, dynamic>)
+          : null,
       activityTitle: activityTitle,
     );
     if (lifecycle == TpLifecycle.draft) {

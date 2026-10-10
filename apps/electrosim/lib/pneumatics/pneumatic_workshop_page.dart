@@ -4,6 +4,8 @@ import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'pneumatic_device_glyph.dart';
+
 /// Experimental two-view editor. The physical solver is NOT driven by widgets.
 /// Both presentations edit exactly one canonical MultiphysicsProject.
 class PneumaticWorkshopPage extends StatefulWidget {
@@ -215,6 +217,12 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: ActionChip(
                       key: Key('add-' + kind.name),
+                      avatar: PneumaticDeviceGlyph(
+                        kind: kind,
+                        schematic: false,
+                        width: 28,
+                        height: 22,
+                      ),
                       label: Text('+ ' + kind.name),
                       onPressed: () => _place(kind),
                     ),
@@ -356,9 +364,11 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ),
               child: Column(
                 children: <Widget>[
-                  Icon(
-                    plate ? Icons.precision_manufacturing : Icons.schema,
-                    size: 20,
+                  PneumaticDeviceGlyph(
+                    kind: device.kind,
+                    schematic: !plate,
+                    width: 110,
+                    height: 38,
                   ),
                   Text(
                     device.id + ' : ' + device.kind.name,

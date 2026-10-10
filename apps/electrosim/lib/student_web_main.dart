@@ -450,7 +450,8 @@ class _StudentSessionGuard extends StatelessWidget {
             pageKey: const Key('student-web-reconnect-page'),
             icon: Icons.wifi_off_outlined,
             title: 'Reconnexion au professeur',
-            message: bridge.lastError ??
+            message:
+                bridge.lastError ??
                 'La connexion a été interrompue. Votre séance n’est pas '
                     'considérée comme terminée.',
             progress:

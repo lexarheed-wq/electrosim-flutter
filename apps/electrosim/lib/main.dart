@@ -1,4 +1,3 @@
-
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
@@ -430,4 +429,3 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.onExitWorkspace,
   });
 }
-

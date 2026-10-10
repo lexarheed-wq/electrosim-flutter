@@ -60,11 +60,12 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   String get sessionName => _sessionName;
   bool get sessionStarted => _sessionStarted;
   bool get simulatorEnabled => _simulatorEnabled;
-  bool get sessionUsable =>
-      _status == ElectroSimBrowserSessionStatus.connected;
+  bool get sessionUsable => _status == ElectroSimBrowserSessionStatus.connected;
 
   Future<void> connect({Duration timeout = const Duration(seconds: 6)}) async {
-    if (_disposed || _explicitlyClosed || _teacherEnded ||
+    if (_disposed ||
+        _explicitlyClosed ||
+        _teacherEnded ||
         _status == ElectroSimBrowserSessionStatus.connected ||
         _status == ElectroSimBrowserSessionStatus.connecting) {
       return;
@@ -94,14 +95,12 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
       _lastError = null;
       _emit();
     });
-    _messageSubscription = socket.onMessage.listen(
-      (html.MessageEvent event) {
-        if (!identical(_socket, socket)) return;
-        if (event.data is String) {
-          _handleMessage(event.data as String);
-        }
-      },
-    );
+    _messageSubscription = socket.onMessage.listen((html.MessageEvent event) {
+      if (!identical(_socket, socket)) return;
+      if (event.data is String) {
+        _handleMessage(event.data as String);
+      }
+    });
     _closeSubscription = socket.onClose.listen((html.CloseEvent _) {
       if (!identical(_socket, socket) || _disposed) return;
       if (!first.isCompleted) {
@@ -137,7 +136,9 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   }
 
   void _scheduleReconnect() {
-    if (_disposed || _explicitlyClosed || _teacherEnded ||
+    if (_disposed ||
+        _explicitlyClosed ||
+        _teacherEnded ||
         _reconnectTimer != null) {
       return;
     }
@@ -245,7 +246,8 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   }
 
   void _onLocalControllerChanged() {
-    if (_disposed || _applyingRemote ||
+    if (_disposed ||
+        _applyingRemote ||
         _status != ElectroSimBrowserSessionStatus.connected) {
       return;
     }

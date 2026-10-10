@@ -873,7 +873,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       soundEnabled: _soundEnabled,
-                      onToggleSound: () => setState(() => _soundEnabled = !_soundEnabled),
+                      onToggleSound: () =>
+                          setState(() => _soundEnabled = !_soundEnabled),
                       simulationRunning: _simulation.running,
                       simulatedTime: _simulation.simulatedTime,
                       onToggleSimulation: _simulation.toggle,
@@ -4242,7 +4243,11 @@ class _WorkspaceTopBar extends StatelessWidget {
         PopupMenuItem(
           key: const Key('workspace-sound-action'),
           value: _WorkspaceSecondaryAction.toggleSound,
-          child: Text(soundEnabled ? 'Couper les sons des composants' : 'Activer les sons des composants'),
+          child: Text(
+            soundEnabled
+                ? 'Couper les sons des composants'
+                : 'Activer les sons des composants',
+          ),
         ),
       PopupMenuItem(
         key: const Key('workspace-undo-action'),

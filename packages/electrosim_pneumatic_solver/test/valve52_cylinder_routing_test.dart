@@ -37,9 +37,9 @@ void main() {
     final retracted = routing.connect(cylinder: extended, snapshot: advanced, energized: false);
     expect(retracted.aBoundaries.single.id, 'exhaustA');
     expect(retracted.bBoundaries.single.id, 'supplyB');
-    expect(retracted.initialSnapshot.positionM, advanced.positionM);
-    expect(retracted.initialSnapshot.massAKg, advanced.massAKg);
-    expect(retracted.initialSnapshot.massBKg, advanced.massBKg);
+    expect(retracted.initialSnapshot.positionM, start.positionM);
+    expect(retracted.initialSnapshot.massAKg, start.massAKg);
+    expect(retracted.initialSnapshot.massBKg, start.massBKg);
     final reversed = retracted.advance(advanced, durationS: .001);
     expect(reversed.timeS, closeTo(.002, 1e-12));
     expect(retracted.massResidualKg(reversed).abs(), lessThan(1e-12));

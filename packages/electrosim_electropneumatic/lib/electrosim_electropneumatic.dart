@@ -6,3 +6,4 @@ export 'src/coupled_clock.dart';
 export 'src/self_hold_circuit.dart';
 export 'src/valve52_physical_cycle.dart';
 export 'src/valve52_air_isolation.dart';
+export 'src/self_hold_valve52_cycle.dart';

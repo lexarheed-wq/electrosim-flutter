@@ -2,10 +2,19 @@ import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('R3/C: 5/2 valve switches supply/exhaust without resetting gas mass', () {
-    final orifice = IsentropicOrifice(effectiveAreaM2: 1e-6, dischargeCoefficient: .8);
+  test(
+    'R3/C: 5/2 valve switches supply/exhaust without resetting gas mass',
+    () {
+    final orifice = IsentropicOrifice(
+        effectiveAreaM2: 1e-6,
+        dischargeCoefficient: .8,
+      );
     PneumaticPressureBoundary boundary(String id, double pressure) =>
-        PneumaticPressureBoundary(id: id, pressureAbsPa: pressure, orifice: orifice);
+          PneumaticPressureBoundary(
+            id: id,
+            pressureAbsPa: pressure,
+            orifice: orifice,
+          );
     final routing = Valve52CylinderRouting(
       supplyA: boundary('supplyA', 701325),
       supplyB: boundary('supplyB', 701325),
@@ -26,7 +35,11 @@ void main() {
       initialPressureBAbsPa: 201325,
     );
     final start = cylinder.initialSnapshot;
-    final extended = routing.connect(cylinder: cylinder, snapshot: start, energized: true);
+    final extended = routing.connect(
+        cylinder: cylinder,
+        snapshot: start,
+        energized: true,
+      );
     expect(extended.aBoundaries.single.id, 'supplyA');
     expect(extended.bBoundaries.single.id, 'exhaustB');
     expect(extended.initialSnapshot.massAKg, start.massAKg);
@@ -34,7 +47,11 @@ void main() {
     final advanced = extended.advance(start, durationS: .001);
     expect(advanced.timeS, closeTo(.001, 1e-12));
     expect(extended.massResidualKg(advanced).abs(), lessThan(1e-12));
-    final retracted = routing.connect(cylinder: extended, snapshot: advanced, energized: false);
+    final retracted = routing.connect(
+        cylinder: extended,
+        snapshot: advanced,
+        energized: false,
+      );
     expect(retracted.aBoundaries.single.id, 'exhaustA');
     expect(retracted.bBoundaries.single.id, 'supplyB');
     expect(retracted.initialSnapshot.positionM, start.positionM);
@@ -43,5 +60,6 @@ void main() {
     final reversed = retracted.advance(advanced, durationS: .001);
     expect(reversed.timeS, closeTo(.002, 1e-12));
     expect(retracted.massResidualKg(reversed).abs(), lessThan(1e-12));
-  });
+    },
+  );
 }

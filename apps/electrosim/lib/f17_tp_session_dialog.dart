@@ -107,7 +107,10 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                   ),
                   Text('État : ${_lifecycleLabel(current.lifecycle)}'),
                   Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
-                  if (current.evaluation != null) ...<Widget>[
+                  if (current.evaluation != null &&
+                      (_teacher ||
+                          current.lifecycle == TpLifecycle.evaluated ||
+                          current.lifecycle == TpLifecycle.closed)) ...<Widget>[
                     const SizedBox(height: ElectroSimSpacing.sm),
                     Text(
                       'Score : ${current.evaluation!.score}/${current.definition.maxScore}',

@@ -8,8 +8,10 @@ class F18HomeSurface extends StatelessWidget {
     required this.onMaintenance,
     required this.onDesign,
     required this.onJoinSession,
+    this.activeSession = false,
   });
 
+  final bool activeSession;
   final VoidCallback onCreateSession;
   final VoidCallback onMaintenance;
   final VoidCallback onDesign;
@@ -56,9 +58,12 @@ class F18HomeSurface extends StatelessWidget {
                                 _HomeAction(
                                   key: const Key('home-create-session'),
                                   eyebrow: 'SESSION',
-                                  title: 'Créer une nouvelle session',
-                                  description:
-                                      'Préparez un environnement de travail, invitez les participants et lancez une activité encadrée.',
+                                  title: activeSession
+                                      ? 'Reprendre la session active'
+                                      : 'Créer une nouvelle session',
+                                  description: activeSession
+                                      ? 'Une session est en cours. Reprenez-la ou terminez-la avant d’en créer une autre.'
+                                      : 'Préparez un environnement de travail, invitez les participants et lancez une activité encadrée.',
                                   icon: Icons.add,
                                   actionLabel: 'Créer une session',
                                   emphasized: true,

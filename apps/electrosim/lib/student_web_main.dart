@@ -125,7 +125,7 @@ class _LiveStudentPortalState extends State<_LiveStudentPortal> {
       );
     }
     if (bridge.status == ElectroSimBrowserSessionStatus.ended) {
-      return const _StudentClosedPage();
+      return _StudentClosedPage(replaced: bridge.replaced);
     }
     if (bridge.status == ElectroSimBrowserSessionStatus.failed) {
       return _StudentMessagePage(
@@ -339,6 +339,9 @@ class _StudentHubPage extends StatelessWidget {
                         bridge: bridge,
                         child: F18WorkspacePage(
                           entryLabel: 'TP élève',
+                          sessionNavigation: true,
+                          onSessionDashboard: () => Navigator.of(context).pop(),
+                          onSessionHome: () => Navigator.of(context).pop(),
                           initialWorkspace:
                               controller.session?.definition.mode ==
                                   TpMode.wiring
@@ -443,7 +446,7 @@ class _StudentSessionGuard extends StatelessWidget {
       animation: bridge,
       builder: (BuildContext context, Widget? _) {
         if (bridge.status == ElectroSimBrowserSessionStatus.ended) {
-          return const _StudentClosedPage();
+          return _StudentClosedPage(replaced: bridge.replaced);
         }
         if (!bridge.sessionUsable) {
           return _StudentMessagePage(
@@ -501,16 +504,20 @@ class _WaitingStudentCard extends StatelessWidget {
 }
 
 class _StudentClosedPage extends StatelessWidget {
-  const _StudentClosedPage();
+  const _StudentClosedPage({this.replaced = false});
+  final bool replaced;
 
   @override
   Widget build(BuildContext context) {
-    return const _StudentMessagePage(
-      pageKey: Key('student-web-closed-page'),
+    return _StudentMessagePage(
+      pageKey: const Key('student-web-closed-page'),
       icon: Icons.lock_clock_outlined,
-      title: 'Séance terminée',
-      message:
-          'La session du professeur est fermée. ElectroSim Élève est maintenant verrouillé. Scannez le QR code d’une nouvelle séance pour continuer.',
+      title: replaced
+          ? 'Travail repris dans un autre onglet'
+          : 'Séance terminée',
+      message: replaced
+          ? 'Votre travail continue dans le nouvel onglet. Vous pouvez fermer celui-ci.'
+          : 'La session du professeur est fermée. ElectroSim Élève est maintenant verrouillé. Scannez le QR code d’une nouvelle séance pour continuer.',
     );
   }
 }

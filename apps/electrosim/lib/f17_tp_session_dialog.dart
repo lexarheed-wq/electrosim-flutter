@@ -3,6 +3,7 @@ import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'f9_ui_context.dart';
 import 'runtime/electrosim_lan_sync.dart';
@@ -74,82 +75,86 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
       title: const Text('Gérer la session'),
       content: SizedBox(
         width: 480,
-        child: AnimatedBuilder(
-          animation: widget.controller,
-          builder: (BuildContext context, Widget? child) {
-            final TpSession? current = widget.controller.session;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                ElectroSimStatusChip(
-                  key: const Key('tp-lifecycle-status'),
-                  label: current == null
-                      ? 'Aucun TP'
-                      : _lifecycleLabel(current.lifecycle),
-                  icon: Icons.assignment_outlined,
-                  emphasized: current != null,
-                ),
-                const SizedBox(height: ElectroSimSpacing.md),
-                if (current == null)
-                  const Text(
-                    'Aucune activité n’est encore créée pour cette session.',
-                  )
-                else ...<Widget>[
-                  Text(
-                    current.definition.title,
-                    key: const Key('tp-session-title'),
-                    style: Theme.of(context).textTheme.titleMedium,
+        child: SingleChildScrollView(
+          child: AnimatedBuilder(
+            animation: widget.controller,
+            builder: (BuildContext context, Widget? child) {
+              final TpSession? current = widget.controller.session;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  ElectroSimStatusChip(
+                    key: const Key('tp-lifecycle-status'),
+                    label: current == null
+                        ? 'Aucun TP'
+                        : _lifecycleLabel(current.lifecycle),
+                    icon: Icons.assignment_outlined,
+                    emphasized: current != null,
                   ),
-                  const SizedBox(height: ElectroSimSpacing.xs),
-                  Text(
-                    'Mode : ${current.definition.mode == TpMode.troubleshooting ? 'Recherche de dérangement' : 'Câblage'}',
-                  ),
-                  Text('État : ${_lifecycleLabel(current.lifecycle)}'),
-                  Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
-                  if (current.evaluation != null &&
-                      (_teacher ||
-                          current.lifecycle == TpLifecycle.evaluated ||
-                          current.lifecycle == TpLifecycle.closed)) ...<Widget>[
-                    const SizedBox(height: ElectroSimSpacing.sm),
-                    Text(
-                      'Score : ${current.evaluation!.score}/${current.definition.maxScore}',
-                      key: const Key('tp-score-label'),
-                    ),
-                    Text(
-                      'Fonctionnel : ${current.evaluation!.functional ? 'oui' : 'non'} · '
-                      'Sécurité : ${current.evaluation!.safetyOk ? 'oui' : 'non'} · '
-                      'Mesures : ${current.evaluation!.measurementsOk ? 'oui' : 'non'}',
-                    ),
-                  ],
-                ],
-                const SizedBox(height: ElectroSimSpacing.md),
-                if (_teacher && widget.onEnableLanSharing != null) ...<Widget>[
-                  _networkSharingSection(context),
                   const SizedBox(height: ElectroSimSpacing.md),
+                  if (current == null)
+                    const Text(
+                      'Aucune activité n’est encore créée pour cette session.',
+                    )
+                  else ...<Widget>[
+                    Text(
+                      current.definition.title,
+                      key: const Key('tp-session-title'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: ElectroSimSpacing.xs),
+                    Text(
+                      'Mode : ${current.definition.mode == TpMode.troubleshooting ? 'Recherche de dérangement' : 'Câblage'}',
+                    ),
+                    Text('État : ${_lifecycleLabel(current.lifecycle)}'),
+                    Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
+                    if (current.evaluation != null &&
+                        (_teacher ||
+                            current.lifecycle == TpLifecycle.evaluated ||
+                            current.lifecycle ==
+                                TpLifecycle.closed)) ...<Widget>[
+                      const SizedBox(height: ElectroSimSpacing.sm),
+                      Text(
+                        'Score : ${current.evaluation!.score}/${current.definition.maxScore}',
+                        key: const Key('tp-score-label'),
+                      ),
+                      Text(
+                        'Fonctionnel : ${current.evaluation!.functional ? 'oui' : 'non'} · '
+                        'Sécurité : ${current.evaluation!.safetyOk ? 'oui' : 'non'} · '
+                        'Mesures : ${current.evaluation!.measurementsOk ? 'oui' : 'non'}',
+                      ),
+                    ],
+                  ],
+                  const SizedBox(height: ElectroSimSpacing.md),
+                  if (_teacher &&
+                      widget.onEnableLanSharing != null) ...<Widget>[
+                    _networkSharingSection(context),
+                    const SizedBox(height: ElectroSimSpacing.md),
+                  ],
+                  if (_teacher &&
+                      current != null &&
+                      current.definition.mode != widget.draftMode) ...<Widget>[
+                    const Text(
+                      'Une activité d’un autre type est déjà présente dans '
+                      'cette session. Terminez ou supprimez-la avant de '
+                      'créer un nouveau TP.',
+                    ),
+                    const SizedBox(height: ElectroSimSpacing.sm),
+                  ],
+                  if (_teacher) ..._teacherActions(current),
+                  if (_teacher && widget.controller.teacherArchive.isNotEmpty)
+                    TextButton.icon(
+                      key: const Key('tp-open-archive'),
+                      onPressed: _showTeacherArchive,
+                      icon: const Icon(Icons.archive_outlined),
+                      label: const Text('Anciens TP — consulter / supprimer'),
+                    ),
+                  if (!_teacher) ..._studentActions(current),
                 ],
-                if (_teacher &&
-                    current != null &&
-                    current.definition.mode != widget.draftMode) ...<Widget>[
-                  const Text(
-                    'Une activité d’un autre type est déjà présente dans '
-                    'cette session. Terminez ou supprimez-la avant de '
-                    'créer un nouveau TP.',
-                  ),
-                  const SizedBox(height: ElectroSimSpacing.sm),
-                ],
-                if (_teacher) ..._teacherActions(current),
-                if (_teacher && widget.controller.teacherArchive.isNotEmpty)
-                  TextButton.icon(
-                    key: const Key('tp-open-archive'),
-                    onPressed: _showTeacherArchive,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Anciens TP — consulter / supprimer'),
-                  ),
-                if (!_teacher) ..._studentActions(current),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
       actions: <Widget>[
@@ -157,8 +162,8 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           TextButton.icon(
             key: const Key('tp-close-classroom-session'),
             onPressed: () {
-              widget.onCloseClassroomSession!();
               Navigator.of(context).pop();
+              widget.onCloseClassroomSession!();
             },
             icon: const Icon(Icons.stop_circle_outlined),
             label: const Text('Terminer la séance'),
@@ -200,6 +205,14 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                 ),
               )
             else ...<Widget>[
+              Center(
+                child: QrImageView(
+                  key: const Key('tp-network-qr'),
+                  data: info.preferredJoinUrl.toString(),
+                  size: 140,
+                  backgroundColor: Colors.white,
+                ),
+              ),
               Text(
                 'Code : ${info.sessionCode}',
                 key: const Key('tp-network-code'),
@@ -212,7 +225,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               ),
               const SizedBox(height: ElectroSimSpacing.xxs),
               const Text(
-                'Les élèves ouvrent cette adresse dans leur navigateur ou scannent le QR code de la salle d’attente.',
+                'Les élèves scannent ce QR code pour rejoindre ou reprendre leur travail dans le même navigateur.',
               ),
               if (info.endpoints.length > 1)
                 Text(

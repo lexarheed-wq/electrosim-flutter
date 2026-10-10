@@ -489,6 +489,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   final ElectroSimConnectionRouter _connectionRouter =
       ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
+    minScale: 0.05,
     scale: 1,
     translation: const Offset(40, 40),
   );
@@ -2666,7 +2667,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
       for (final Offset point in <Offset>[
         start,
-        ..._layout.routeFor(connection.id.value),
+        ..._displayLayout(_layout).routeFor(connection.id.value),
         end,
       ]) {
         bounds = bounds.expandToInclude(

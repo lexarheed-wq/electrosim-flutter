@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:electrosim/main.dart';
+import 'package:electrosim/f18_industrial_physical_plate.dart';
+import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -20,6 +22,20 @@ void main() {
   );
   setUpAll(() async {
     await output.create(recursive: true);
+    expect(await Disjoncteur3D.prechargerTextures(), isTrue);
+    expect(await F18PhysicalPlateAssets.preload(), isTrue);
+    for (final type in [
+      'motor_3p_6t',
+      'contactor_3p',
+      'push_button_no',
+      'push_button_nc',
+    ]) {
+      expect(
+        F18PhysicalPlateAssets.ready(type),
+        isTrue,
+        reason: 'Capture must use current G5 assets for $type',
+      );
+    }
     final fonts =
         Platform.environment['ELECTROSIM_FONT_DIR'] ??
         '${Platform.environment['FLUTTER_ROOT'] ?? '/workspace/toolchains/flutter'}/bin/cache/artifacts/material_fonts';
@@ -122,6 +138,24 @@ void main() {
         if (scene.$1.contains('schematic')) {
           await t.tap(find.byKey(const Key('workspace-view-schematic')));
           await t.pumpAndSettle();
+        }
+        if (scene.$1.contains('schematic')) {
+          final simulator = t.widget<SimulatorCanvas>(
+            find.byType(SimulatorCanvas),
+          );
+          final viewport = simulator.viewportController!;
+          final visible = Offset.zero & t.getSize(find.byType(SimulatorCanvas));
+          final geometry = CircuitGeometryIndex.build(
+            simulator.circuit,
+            simulator.layout,
+          );
+          for (final point in geometry.terminalPositions.values) {
+            expect(
+              visible.contains(viewport.worldToScreen(point)),
+              isTrue,
+              reason: 'Every projected terminal must fit ${scene.$1}',
+            );
+          }
         }
         if (scene.$1 == 'preview-3d') await menu('workspace-preview-3d');
         final targetResult = await androidTapTargetGuideline.evaluate(t);

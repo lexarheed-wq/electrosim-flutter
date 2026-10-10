@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:electrosim/f9_component_palette.dart';
@@ -16,7 +17,7 @@ void _result(
   String verdict,
   Map<String, Object?> data,
 ) {
-  print(
+  stdout.writeln(
     'PHYSICS_AUDIT_JSON:${jsonEncode(<String, Object?>{'family': family, 'case': id, 'verdict': verdict, ...data})}',
   );
 }

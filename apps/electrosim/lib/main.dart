@@ -155,12 +155,14 @@ class _F9HomePageState extends State<F9HomePage> {
           ),
           onPneumatics: const PneumaticFeatureGate().enabled
               ? () => Navigator.of(routeContext).push(
-                    MaterialPageRoute<void>(
-                      settings: const RouteSettings(name: 'pneumatic-experimental'),
-                      builder: (BuildContext airContext) =>
-                          const PneumaticWorkshopPage(),
+                  MaterialPageRoute<void>(
+                    settings: const RouteSettings(
+                      name: 'pneumatic-experimental',
                     ),
-                  )
+                    builder: (BuildContext airContext) =>
+                        const PneumaticWorkshopPage(),
+                  ),
+                )
               : null,
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(

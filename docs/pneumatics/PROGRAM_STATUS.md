@@ -5,7 +5,7 @@ Référence : PNEU-DIR-001 v1.0 (2026-10-10). Document copié sans modification 
 | Lot | Statut | Preuve actuelle / obstacle |
 | --- | --- | --- |
 | R0 — Référence | **en cours** | Base G5 `054c64f` identifiée, 4 jobs G5 success au SHA de base ; tests propres et métriques R0 non encore qualifiés |
-| R1 — Contrats | non commencé | R0 nécessaire, décision enveloppe de stockage et interfaces typées requise |
+| R1 — Contrats | **implémenté partiellement, non qualifié** | PR #81 : contrats purs ports/tuyaux, identité physique, liens explicites et enveloppe v3 de migration v0–v2 ; CI en attente, intégration app/feature flag et gate complet ouverts |
 | R2 — Physique indépendante | non commencé | R1 requis, méthode et références R2-A à figer |
 | R3 — Couplage 24 V CC | non commencé | R2 requis, événements causalement ordonnés |
 | R4 — Atelier deux vues | non commencé | R1–R3 requis |

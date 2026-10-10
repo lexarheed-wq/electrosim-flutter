@@ -48,9 +48,8 @@ jobs:
           test -f docs/pneumatics/R0_BASELINE_PLAN.md
           test -f docs/pneumatics/PROGRAM_STATUS.md
           test -f docs/pneumatics/qualification/R0/BASELINE_MANIFEST.md
-          ! test -e packages/electrosim_pneumatic_domain
-          ! test -e packages/electrosim_pneumatic_solver
-          ! test -e packages/electrosim_multiphysics
+          # Post-R0 integration: retain electrical baseline regression checks
+          # without rejecting the new R1+ feature packages.
           python3 tools/core_unify_architecture_guard.py 2>&1 | tee build/pneumatics-r0/architecture.log
           python3 tools/postv2_p1_contract.py 2>&1 | tee build/pneumatics-r0/p1-contract.log
       - name: Verify existing Dart contracts and electrical solvers
@@ -73,8 +72,8 @@ jobs:
               --out-dir ../../build/pneumatics-r0/dc-fixture-smoke
           )
           test -s build/pneumatics-r0/dc-fixture-smoke/SUMMARY.json
-      - name: Reject unexpected edits to tracked sources and goldens
-        run: git diff --exit-code
+      - name: Reject source/golden mutations, ignoring lock-only pub get drift
+        run: git diff --exit-code -- . ':(exclude)**/pubspec.lock'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

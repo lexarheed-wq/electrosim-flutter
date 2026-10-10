@@ -7,6 +7,10 @@ environment:
 dependencies:
   electrosim_domain:
     path: ../electrosim_domain
+  electrosim_pneumatic_domain:
+    path: ../electrosim_pneumatic_domain
+  electrosim_multiphysics:
+    path: ../electrosim_multiphysics
 dev_dependencies:
   electrosim_scenarios:
     path: ../electrosim_scenarios

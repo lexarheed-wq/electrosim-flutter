@@ -225,8 +225,13 @@ final class IndustrialMarkingRegistry {
       for (final port in item.terminals) {
         final id = port.id.value;
         final stored = _map(terminalData[id]);
-        terminals[id] = _reference(stored['reference']) ??
-            _reference(port.metadata['industrialReference']) ??
+        final explicit = _reference(port.metadata['industrialReference']);
+        final manuallyAssigned = stored['manual'] == true || explicit != null;
+        // Automatic terminal labels track a deliberate device rename.
+        // Teacher-edited terminal labels remain fixed.
+        terminals[id] = (manuallyAssigned
+                ? _reference(stored['reference']) ?? explicit
+                : null) ??
             devices[item.id]! + ':' + port.name;
         locks[_id(IndustrialMarkingKind.terminal, id)] =
             stored['locked'] == true;

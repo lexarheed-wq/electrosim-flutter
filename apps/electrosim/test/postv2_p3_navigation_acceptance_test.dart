@@ -72,10 +72,14 @@ void main() {
       expect(second, contains('id="wire-${wire.id.value}"'));
     }
     final after = runtime.evaluate(circuit);
-    expect(reference.dc.branch('component:lamp-1').voltageV,
-        closeTo(after.dc.branch('component:lamp-1').voltageV, 1e-9));
-    expect(reference.dc.branch('component:lamp-1').currentA,
-        closeTo(after.dc.branch('component:lamp-1').currentA, 1e-9));
+    expect(
+      reference.dc.branch('component:lamp-1').voltageV,
+      closeTo(after.dc.branch('component:lamp-1').voltageV, 1e-9),
+    );
+    expect(
+      reference.dc.branch('component:lamp-1').currentA,
+      closeTo(after.dc.branch('component:lamp-1').currentA!, 1e-9),
+    );
     expect(circuit.toJsonString(), input);
   });
 }

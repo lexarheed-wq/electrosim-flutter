@@ -1,0 +1,69 @@
+name: PNEU-R2 — Scientific Ideal-Air Reference
+on:
+  push:
+    branches:
+      - feat/pneumatics-r2-ideal-gas-physics-20261010
+  pull_request:
+    branches:
+      - feat/pneumatics-r1-domain-20261010
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r2-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pneumatic-science:
+    name: pneumatic-science
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Freeze scientific reference provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r2
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            sha256sum packages/electrosim_pneumatic_solver/test/fixtures/r2_orifice_oracle.json
+            dart --version
+            flutter --version
+            uname -a
+          } | tee build/pneumatics-r2/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          if grep -R -n 'package:flutter/' packages/electrosim_pneumatic_solver/lib; then
+            echo 'A physical solver may not depend on Flutter.'
+            exit 1
+          fi
+      - name: Format, analyze and execute the independent oracle tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format --output=none --set-exit-if-changed lib test
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r2/R2_PHYSICS.log
+      - name: Check solver source and golden immutability
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r2-science-${{ github.sha }}
+          path: build/pneumatics-r2/
+          retention-days: 30
+          if-no-files-found: warn

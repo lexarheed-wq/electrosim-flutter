@@ -29,7 +29,7 @@ final class Valve52CylinderRouting {
     return MovingDoubleActingAirCylinder(
       geometry: cylinder.geometry,
       mechanics: cylinder.mechanics,
-      initialSnapshot: snapshot,
+      initialSnapshot: cylinder.initialSnapshot,
       temperatureK: cylinder.temperatureK,
       aBoundaries: energized
           ? <PneumaticPressureBoundary>[supplyA]

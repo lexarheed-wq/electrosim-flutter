@@ -24,7 +24,7 @@ void main() {
       expect(movePath, contains('routeChangedElement('));
 
       final int insertStart = source.indexOf(
-        'final CircuitState nextCircuit = CircuitState(',
+        'final CircuitState nextCircuit = _continueIndustrialMarking(',
         source.indexOf('void _add'),
       );
       expect(insertStart, greaterThan(0));

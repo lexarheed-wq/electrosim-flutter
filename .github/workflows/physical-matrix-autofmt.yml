@@ -28,5 +28,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "style(physics): canonical formatter"
+            git fetch origin "audit/g5-physical-behavior-matrix-20261010"
+            git rebase FETCH_HEAD
             git push origin "HEAD:audit/g5-physical-behavior-matrix-20261010"
           fi

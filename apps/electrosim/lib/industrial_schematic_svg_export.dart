@@ -195,7 +195,7 @@ abstract final class IndustrialSchematicSvgExport {
               : 'Q';
           svg.writeln(
             '<text x="0" y="-11" text-anchor="middle" '
-            'stroke="none" fill="black" font-size="12">${mark}</text>',
+            'stroke="none" fill="black" font-size="12">$mark</text>',
           );
         case SchematicGlyph.coil:
           svg.writeln('<rect x="-25" y="-18" width="50" height="36"/>');

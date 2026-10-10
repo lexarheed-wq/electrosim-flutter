@@ -79,4 +79,43 @@ void main() {
     expect(board.circuit.connections, original.connections);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('P4 teacher edits a terminal without changing its physical ID',
+      (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final original = buildRegressionFixtureCircuit();
+    await tester.pumpWidget(MaterialApp(
+      home: F9WorkspaceDemoPage(
+        initialCircuit: original,
+        initialSelectedElementId: 'lamp-1',
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('workspace-more-actions')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+        find.byKey(const Key('workspace-edit-industrial-marking')));
+    await tester.tap(find.byKey(const Key('workspace-edit-industrial-marking')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('p4-marking-target')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Borne : A').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('p4-marking-text')), 'X1:01');
+    await tester.tap(find.byKey(const Key('p4-marking-locked')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('p4-marking-apply')));
+    await tester.pumpAndSettle();
+    final board = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    final refs = IndustrialMarkingRegistry.inspect(board.circuit);
+    expect(refs.terminals['lamp-in'], 'X1:01');
+    expect(refs.locks['terminal:lamp-in'], isTrue);
+    expect(refs.devices['lamp-1'], 'H1');
+    expect(board.circuit.components, original.components);
+    expect(board.circuit.connections, original.connections);
+    expect(tester.takeException(), isNull);
+  });
+
 }

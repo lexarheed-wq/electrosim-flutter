@@ -26,6 +26,7 @@ jobs:
         working-directory: apps/electrosim
         run: |
           set -euo pipefail
+          flutter create . --platforms=web --project-name=electrosim
           flutter pub get
           flutter build web --release \
             --target=lib/pneumatics/pneumatic_chromium_proof_main.dart \

@@ -977,9 +977,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
                       onGenerateIndustrialMarkings:
-                          _generateIndustrialMarkings,
+                          widget.role == F9UserRole.teacher
+                              ? _generateIndustrialMarkings
+                              : null,
                       onEditIndustrialMarking:
-                          _editSelectedIndustrialMarking,
+                          widget.role == F9UserRole.teacher
+                              ? _editSelectedIndustrialMarking
+                              : null,
                       onExportSchematicSvg: () =>
                           unawaited(_exportSchematic(pdf: false)),
                       onExportSchematicPdf: () =>

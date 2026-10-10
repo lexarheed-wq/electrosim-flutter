@@ -29,7 +29,11 @@ final class VerificationEngine {
   TpEvaluation evaluateWiring(TpDefinition definition, CircuitState circuit) {
     if (definition.mode != TpMode.wiring) throw StateError('Not a wiring TP.');
     final bool functional = _isSolved(circuit) && _criticalConditionsNormal(circuit);
-    final bool matches = definition.referenceCircuit != null &&
+    final reference = definition.referenceCircuit;
+    final bool matches = reference != null &&
+        reference.sources.isNotEmpty &&
+        reference.components.isNotEmpty &&
+        reference.connections.isNotEmpty &&
         WiringTopologyMatcher.equivalent(
           definition.referenceCircuit!,
           circuit,

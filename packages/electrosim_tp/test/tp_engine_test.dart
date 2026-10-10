@@ -109,11 +109,20 @@ void main() {
           title: 'Câblage simple',
           referenceCircuit: reference,
         );
-        engine.createDraft(def);
+        final draft = engine.createDraft(def);
+        expect(draft.studentCircuit.connections, isEmpty);
+        expect(draft.studentCircuit.sources, isEmpty);
+        expect(draft.studentCircuit.components, isEmpty);
         engine.publish(def.id);
         final started = engine.start(def.id);
         expect(started.diagnosticSheetVisibleFor(TpRole.student), isFalse);
-        final submitted = engine.submit(def.id);
+        expect(engine.submit(def.id).evaluation!.score, 0);
+        final other = TpEngine(faultScenarios: scenarios);
+        other.createDraft(def);
+        other.publish(def.id);
+        other.start(def.id);
+        other.updateCircuit(def.id, reference);
+        final submitted = other.submit(def.id);
         expect(submitted.evaluation!.score, 100);
         expect(submitted.readOnly, isTrue);
       },

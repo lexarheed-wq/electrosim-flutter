@@ -14,6 +14,7 @@ on:
       - '.github/workflows/f3-gate.yml'
   pull_request:
     paths:
+      - 'packages/electrosim_tp/**'
       - 'packages/electrosim_domain/**'
       - 'packages/electrosim_topology/**'
       - 'packages/electrosim_solver_dc/**'

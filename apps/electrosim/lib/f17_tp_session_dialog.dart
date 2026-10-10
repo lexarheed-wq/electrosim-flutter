@@ -40,6 +40,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
   String? _lanError;
   bool _startingLan = false;
   String? _selectedWiringExampleId;
+  String? _selectedFaultScenarioId;
   late final List<ExampleDefinition> _wiringExamples =
       buildV2ProductExampleRepository().all;
 
@@ -106,7 +107,10 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                   ),
                   Text('État : ${_lifecycleLabel(current.lifecycle)}'),
                   Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
-                  if (current.evaluation != null) ...<Widget>[
+                  if (current.evaluation != null &&
+                      (_teacher ||
+                          current.lifecycle == TpLifecycle.evaluated ||
+                          current.lifecycle == TpLifecycle.closed)) ...<Widget>[
                     const SizedBox(height: ElectroSimSpacing.sm),
                     Text(
                       'Score : ${current.evaluation!.score}/${current.definition.maxScore}',
@@ -135,6 +139,13 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                   const SizedBox(height: ElectroSimSpacing.sm),
                 ],
                 if (_teacher) ..._teacherActions(current),
+                if (_teacher && widget.controller.teacherArchive.isNotEmpty)
+                  TextButton.icon(
+                    key: const Key('tp-open-archive'),
+                    onPressed: _showTeacherArchive,
+                    icon: const Icon(Icons.archive_outlined),
+                    label: const Text('Anciens TP — consulter / supprimer'),
+                  ),
                 if (!_teacher) ..._studentActions(current),
               ],
             );
@@ -291,9 +302,24 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
             ),
           const SizedBox(height: ElectroSimSpacing.sm),
         ] else ...<Widget>[
-          const Text(
-            'Le TP utilisera le scénario de panne configuré '
-            'pour cette session.',
+          DropdownButton<String>(
+            key: const Key('tp-fault-scenario-select'),
+            isExpanded: true,
+            value:
+                _selectedFaultScenarioId ??
+                widget.controller.defaultFaultScenarioId,
+            items: <DropdownMenuItem<String>>[
+              for (final scenario in widget.controller.availableFaultScenarios)
+                DropdownMenuItem<String>(
+                  value: scenario.id.value,
+                  child: Text(scenario.title),
+                ),
+            ],
+            onChanged: (String? value) {
+              setState(() {
+                _selectedFaultScenarioId = value;
+              });
+            },
           ),
           const SizedBox(height: ElectroSimSpacing.sm),
         ],
@@ -307,6 +333,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                     widget.controller.createDraft(
                       mode: widget.draftMode,
                       wiringReferenceCircuit: reference,
+                      troubleshootingScenarioId: _selectedFaultScenarioId,
                       activityTitle: example == null
                           ? null
                           : 'TP de câblage — ${example.title}',
@@ -461,6 +488,54 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           Text('Le TP est encore en préparation par le professeur.'),
         ];
     }
+  }
+
+  Future<void> _showTeacherArchive() async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext archiveContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter updateArchive) =>
+            AlertDialog(
+              title: const Text('Historique des TP terminés'),
+              content: SizedBox(
+                width: 480,
+                height: 300,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: <Widget>[
+                    for (final entry in widget.controller.teacherArchive)
+                      ListTile(
+                        key: Key('tp-archive-${entry['tpId']}'),
+                        title: Text(
+                          (entry['activityTitle'] ?? entry['title'])
+                                  ?.toString() ??
+                              'TP',
+                        ),
+                        subtitle: Text(entry['tpId']?.toString() ?? ''),
+                        trailing: IconButton(
+                          key: Key('tp-delete-archive-${entry['tpId']}'),
+                          tooltip: 'Supprimer définitivement ce TP archivé',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () {
+                            widget.controller.deleteArchivedActivity(
+                              entry['tpId']!.toString(),
+                            );
+                            updateArchive(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(archiveContext).pop(),
+                  child: const Text('Fermer'),
+                ),
+              ],
+            ),
+      ),
+    );
   }
 
   void _showError(String message) {

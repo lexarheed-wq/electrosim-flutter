@@ -4,6 +4,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_references.dart';
 import 'industrial_workspace_representation.dart';
 
@@ -14,6 +15,9 @@ abstract final class IndustrialSchematicSvgExport {
     final layout = IndustrialSchematicProjection.derive(circuit, plate);
     final geometry = CircuitGeometryIndex.build(circuit, layout);
     final refs = IndustrialSchematicReferences.build(circuit);
+    final marks = circuit.metadata.containsKey(
+      IndustrialMarkingRegistry.metadataKey,
+    ) ? IndustrialMarkingRegistry.inspect(circuit) : null;
     final ids = <String>[
       ...circuit.sources.map((e) => e.id.value),
       ...circuit.components.map((e) => e.id.value),
@@ -86,14 +90,35 @@ abstract final class IndustrialSchematicSvgExport {
       ..writeln('<g stroke="black" stroke-width="2" fill="none">');
     for (final wire in wires) {
       final route = paths[wire.id.value]!;
+      final ref = marks?.conductors[wire.id.value];
+      final hint = marks?.colors[wire.id.value];
       svg.writeln(
         '<polyline id="wire-${_xml(wire.id.value)}" '
         'data-from="${_xml(wire.fromTerminalId.value)}" '
         'data-to="${_xml(wire.toTerminalId.value)}" '
+        '${ref == null ? '' : 'data-reference="${_xml(ref)}" '}'
+        '${hint == null ? '' : 'data-color-hint="${hint.name}" '}'
         'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
       );
     }
     svg.writeln('</g>');
+    if (marks != null) {
+      svg.writeln(
+        '<g fill="black" stroke="none" font-family="sans-serif" '
+        'font-size="9" text-anchor="middle">',
+      );
+      for (final wire in wires) {
+        final ref = marks.conductors[wire.id.value]!;
+        final route = paths[wire.id.value]!;
+        final middle = route[route.length ~/ 2];
+        svg.writeln(
+          '<text data-wire-label="${_xml(wire.id.value)}" '
+          'x="${_n(middle.dx)}" y="${_n(middle.dy - 7)}">'
+          '${_xml(ref)}</text>',
+        );
+      }
+      svg.writeln('</g>');
+    }
 
     final models = <String, String>{
       for (final source in circuit.sources) source.id.value: source.modelType,

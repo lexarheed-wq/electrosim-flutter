@@ -142,7 +142,7 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
       return;
     }
     if (_reconnectAttempts >= maxAutomaticReconnects) return;
-    final seconds = 1 << _reconnectAttempts.clamp(0, 3);
+    final seconds = 1 << (_reconnectAttempts < 3 ? _reconnectAttempts : 3);
     _reconnectAttempts++;
     _reconnectTimer = Timer(Duration(seconds: seconds), () {
       _reconnectTimer = null;

@@ -31,12 +31,12 @@ final class DoubleActingCylinderGeometry {
   final double deadVolumeAM3;
   final double deadVolumeBM3;
 
-  double get pistonAreaM2 =>
-      math.pi * pistonDiameterM * pistonDiameterM / 4;
+  double get pistonAreaM2 => math.pi * pistonDiameterM * pistonDiameterM / 4;
 
   double get rodSideAreaM2 =>
-      math.pi * (pistonDiameterM * pistonDiameterM -
-          rodDiameterM * rodDiameterM) / 4;
+      math.pi *
+      (pistonDiameterM * pistonDiameterM - rodDiameterM * rodDiameterM) /
+      4;
 
   void _validatePosition(double positionM) {
     requireNonnegativeFinite(positionM, 'positionM');

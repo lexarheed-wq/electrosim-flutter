@@ -375,11 +375,7 @@ class IndustrialSchematicPainter extends CustomPainter {
               // dynamic opening is represented by runtime, not by this glyph.
               canvas.drawLine(const Offset(-16, 0), const Offset(16, 0), p);
             } else {
-              canvas.drawLine(
-                const Offset(-16, 0),
-                const Offset(12, -17),
-                p,
-              );
+              canvas.drawLine(const Offset(-16, 0), const Offset(12, -17), p);
             }
             canvas.drawLine(const Offset(16, 0), Offset(body.width / 2, 0), p);
           } else {
@@ -478,7 +474,8 @@ class IndustrialSchematicPainter extends CustomPainter {
       if (controlling != null) {
         label(canvas, '↔ ' + controlling, const Offset(0, 69), size: 10);
       } else if (references.contactsFor(id).isNotEmpty) {
-        final contacts = references.contactsFor(id)
+        final contacts = references
+            .contactsFor(id)
             .map(references.labelOf)
             .join(', ');
         label(canvas, '↔ ' + contacts, const Offset(0, 69), size: 10);

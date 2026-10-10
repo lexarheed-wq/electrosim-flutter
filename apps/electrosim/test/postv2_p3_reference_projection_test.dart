@@ -24,19 +24,31 @@ void main() {
   });
 
   test('P3 contacts have truthful resting NO and NC representations', () {
-    expect(IndustrialSchematicReferences.normallyClosed('push_button_nc'), isTrue);
-    expect(IndustrialSchematicReferences.normallyClosed('contactor_aux_nc'), isTrue);
-    expect(IndustrialSchematicReferences.normallyClosed('relay_contact_nc'), isTrue);
-    expect(IndustrialSchematicReferences.normallyClosed('contactor_aux_no'), isFalse);
-    expect(IndustrialSchematicReferences.normallyClosed('push_button_no'), isFalse);
+    expect(
+      IndustrialSchematicReferences.normallyClosed('push_button_nc'),
+      isTrue,
+    );
+    expect(
+      IndustrialSchematicReferences.normallyClosed('contactor_aux_nc'),
+      isTrue,
+    );
+    expect(
+      IndustrialSchematicReferences.normallyClosed('relay_contact_nc'),
+      isTrue,
+    );
+    expect(
+      IndustrialSchematicReferences.normallyClosed('contactor_aux_no'),
+      isFalse,
+    );
+    expect(
+      IndustrialSchematicReferences.normallyClosed('push_button_no'),
+      isFalse,
+    );
   });
 
   test('P3 duplicate references are reported, not silently renumbered', () {
-    Terminal terminal(String id) => Terminal(
-      id: TerminalId(id),
-      name: id,
-      role: TerminalRole.generic,
-    );
+    Terminal terminal(String id) =>
+        Terminal(id: TerminalId(id), name: id, role: TerminalRole.generic);
     ComponentInstance item(String id, String reference) => ComponentInstance(
       id: ComponentId(id),
       modelType: 'resistor',
@@ -53,7 +65,10 @@ void main() {
     expect(index.labelOf('a'), 'R1');
     expect(index.labelOf('b'), 'R1');
     expect(index.issues, hasLength(1));
-    expect(index.issues.single.kind, SchematicReferenceIssueKind.duplicateReference);
+    expect(
+      index.issues.single.kind,
+      SchematicReferenceIssueKind.duplicateReference,
+    );
     expect(index.issues.single.elementId, 'b');
   });
 
@@ -84,7 +99,10 @@ void main() {
     );
     final index = IndustrialSchematicReferences.build(modified);
     expect(index.controllingLabelFor('aux'), isNull);
-    expect(index.issues.single.kind, SchematicReferenceIssueKind.unknownLinkedCoil);
+    expect(
+      index.issues.single.kind,
+      SchematicReferenceIssueKind.unknownLinkedCoil,
+    );
   });
 
   test('P3 projection stays identical under insertion order changes', () {

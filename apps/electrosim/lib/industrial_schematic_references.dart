@@ -78,10 +78,7 @@ final class IndustrialSchematicReferences {
     final referenceOwners = <String, String>{};
     final issues = <SchematicReferenceIssue>[];
 
-    void addLabel(
-      String id,
-      Map<String, Object?> parameters,
-    ) {
+    void addLabel(String id, Map<String, Object?> parameters) {
       // P3 consumes explicit references without performing P4 auto-numbering.
       final explicit = parameters['industrialReference'];
       final value = explicit is String && explicit.trim().isNotEmpty
@@ -115,7 +112,8 @@ final class IndustrialSchematicReferences {
 
     for (final item in components) {
       final type = item.modelType;
-      final isAuxiliary = type.startsWith('contactor_aux_') ||
+      final isAuxiliary =
+          type.startsWith('contactor_aux_') ||
           type.startsWith('relay_contact_');
       if (!isAuxiliary) continue;
 

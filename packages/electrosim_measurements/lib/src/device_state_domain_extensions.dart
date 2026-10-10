@@ -75,12 +75,54 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
         );
       }
     }
-    return _fromAcBranches(
+    final ComponentOperatingState operating = _fromAcBranches(
       component: component,
       voltages: branches.map((Ac3BranchResult item) => item.voltage.magnitude),
       currents: branches.map((Ac3BranchResult item) => item.current?.magnitude),
       powers: branches.map((Ac3BranchResult item) => item.activePowerW),
       evidenceIds: branches.map((Ac3BranchResult item) => 'branch:${item.id}'),
+    );
+    if (component.modelType != 'motor_3p_6t') return operating;
+
+    // Every winding has the same permissible voltage whether the external
+    // links are star or delta. A 230Δ/400Y motor on a 400 V line must NOT
+    // be treated as nominal in delta. Compare actual solved RMS winding
+    // voltages to the winding's delta nameplate value.
+    final Object? rawWindingRating =
+        component.parameters['ratedDeltaVoltageV'];
+    if (rawWindingRating is! num ||
+        !rawWindingRating.toDouble().isFinite ||
+        rawWindingRating.toDouble() <= 0) {
+      return operating;
+    }
+    final double ratedWindingV = rawWindingRating.toDouble();
+    final double maxWindingV = branches.fold<double>(
+      0,
+      (double maximum, Ac3BranchResult branch) =>
+          branch.voltage.magnitude > maximum
+              ? branch.voltage.magnitude
+              : maximum,
+    );
+    if (!maxWindingV.isFinite || maxWindingV <= ratedWindingV * 1.10) {
+      return operating;
+    }
+    return ComponentOperatingState(
+      componentId: component.id,
+      code: ComponentOperatingCode.overloaded,
+      voltageV: operating.voltageV,
+      currentA: operating.currentA,
+      powerW: operating.powerW,
+      warnings: <OperatingWarning>[
+        ...operating.warnings,
+        OperatingWarning(
+          code: OperatingWarningCode.overVoltage,
+          message:
+              'Motor winding overvoltage: ${maxWindingV.toStringAsFixed(1)} V RMS '
+              'against ${ratedWindingV.toStringAsFixed(1)} V rated winding voltage. '
+              'Check external star/delta coupling and motor nameplate.',
+        ),
+      ],
+      evidenceIds: operating.evidenceIds,
     );
   }
 

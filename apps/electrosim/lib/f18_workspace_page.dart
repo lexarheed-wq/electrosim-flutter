@@ -22,6 +22,7 @@ import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
 import 'industrial_workspace_representation.dart';
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_svg_export.dart';
 import 'industrial_schematic_pdf_export.dart';
 import 'industrial_cabinet_workspace.dart';
@@ -166,6 +167,110 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } on Object catch (error) {
       if (!mounted) return;
       _setStatus('Échec de l’export $kind : $error');
+    }
+  }
+
+  void _generateIndustrialMarkings() {
+    if (widget.role != F9UserRole.teacher) {
+      _setStatus('Repérage réservé au professeur.');
+      return;
+    }
+    final next = IndustrialMarkingRegistry.materialize(_circuit);
+    final plan = IndustrialMarkingRegistry.inspect(next);
+    final message = 'Repérage : ' + plan.devices.length.toString() +
+        ' appareils, ' + plan.conductors.length.toString() +
+        ' conducteurs, ' + plan.terminals.length.toString() +
+        ' bornes. ' + plan.issues.length.toString() + ' anomalie(s).';
+    if (identical(next, _circuit)) {
+      _setStatus(message);
+      return;
+    }
+    setState(() {
+      _circuit = next;
+      _status = message;
+    });
+    _simulation.updateCircuit(next);
+  }
+
+  Future<void> _editSelectedIndustrialMarking() async {
+    if (widget.role != F9UserRole.teacher) {
+      _setStatus('Modification des repères réservée au professeur.');
+      return;
+    }
+    final selected = _selected;
+    if (selected == null) {
+      _setStatus('Sélectionner un appareil ou un fil à repérer.');
+      return;
+    }
+    final plan = IndustrialMarkingRegistry.inspect(_circuit);
+    final kind = plan.devices.containsKey(selected)
+        ? IndustrialMarkingKind.device
+        : plan.conductors.containsKey(selected)
+        ? IndustrialMarkingKind.conductor
+        : null;
+    if (kind == null) {
+      _setStatus('Sélectionner un appareil ou un conducteur.');
+      return;
+    }
+    final editor = TextEditingController(text: plan.referenceOf(kind, selected));
+    var locked = plan.locks[kind.name + ':' + selected] ?? false;
+    final answer = await showDialog<(String, bool)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Repérage industriel'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const Key('p4-marking-text'),
+                controller: editor,
+                decoration: const InputDecoration(labelText: 'Repère'),
+              ),
+              SwitchListTile(
+                key: const Key('p4-marking-locked'),
+                value: locked,
+                title: const Text('Verrouiller ce repère'),
+                onChanged: (value) =>
+                    setDialogState(() => locked = value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              key: const Key('p4-marking-apply'),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop((editor.text, locked)),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    editor.dispose();
+    if (answer == null || !mounted) return;
+    try {
+      final next = IndustrialMarkingRegistry.setReference(
+        _circuit,
+        kind: kind,
+        id: selected,
+        reference: answer.$1,
+        locked: answer.$2,
+        teacherAuthorized: widget.role == F9UserRole.teacher,
+      );
+      final issues = IndustrialMarkingRegistry.inspect(next).issues;
+      setState(() {
+        _circuit = next;
+        _status = 'Repère enregistré : ' + answer.$1 + '. ' +
+            issues.length.toString() + ' anomalie(s) de repérage.';
+      });
+      _simulation.updateCircuit(next);
+    } on Object catch (error) {
+      _setStatus('Repérage refusé : $error');
     }
   }
 
@@ -871,6 +976,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       _showManageSession))
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
+                      onGenerateIndustrialMarkings:
+                          _generateIndustrialMarkings,
+                      onEditIndustrialMarking:
+                          _editSelectedIndustrialMarking,
                       onExportSchematicSvg: () =>
                           unawaited(_exportSchematic(pdf: false)),
                       onExportSchematicPdf: () =>
@@ -3867,6 +3976,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onExitWorkspace,
     required this.onSave,
     required this.onOpen,
+    this.onGenerateIndustrialMarkings,
+    this.onEditIndustrialMarking,
     this.onExportSchematicSvg,
     this.onExportSchematicPdf,
     required this.onRotateSelected,
@@ -3906,6 +4017,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onExitWorkspace;
   final VoidCallback? onSave;
   final VoidCallback? onOpen;
+  final VoidCallback? onGenerateIndustrialMarkings;
+  final VoidCallback? onEditIndustrialMarking;
   final VoidCallback? onExportSchematicSvg;
   final VoidCallback? onExportSchematicPdf;
   final VoidCallback? onRotateSelected;
@@ -4268,6 +4381,10 @@ class _WorkspaceTopBar extends StatelessWidget {
           onSave?.call();
         case _WorkspaceSecondaryAction.open:
           onOpen?.call();
+        case _WorkspaceSecondaryAction.generateIndustrialMarkings:
+          onGenerateIndustrialMarkings?.call();
+        case _WorkspaceSecondaryAction.editIndustrialMarking:
+          onEditIndustrialMarking?.call();
         case _WorkspaceSecondaryAction.exportSchematicSvg:
           onExportSchematicSvg?.call();
         case _WorkspaceSecondaryAction.exportSchematicPdf:
@@ -4361,6 +4478,18 @@ class _WorkspaceTopBar extends StatelessWidget {
             title: Text('Reprendre'),
             contentPadding: EdgeInsets.zero,
           ),
+        ),
+      if (onGenerateIndustrialMarkings != null)
+        const PopupMenuItem(
+          key: Key('workspace-generate-industrial-markings'),
+          value: _WorkspaceSecondaryAction.generateIndustrialMarkings,
+          child: Text('Repérage : générer / actualiser'),
+        ),
+      if (onEditIndustrialMarking != null)
+        const PopupMenuItem(
+          key: Key('workspace-edit-industrial-marking'),
+          value: _WorkspaceSecondaryAction.editIndustrialMarking,
+          child: Text('Repérage : modifier / verrouiller'),
         ),
       if (onExportSchematicSvg != null)
         const PopupMenuItem(
@@ -4471,6 +4600,8 @@ enum _WorkspaceSecondaryAction {
   redo,
   save,
   open,
+  generateIndustrialMarkings,
+  editIndustrialMarking,
   exportSchematicSvg,
   exportSchematicPdf,
   recenter,

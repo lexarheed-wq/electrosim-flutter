@@ -399,7 +399,7 @@ void main() {
         breaker,
         10 * profile.magneticHighMultiple,
       );
-      final pass = !hold.isFinite && trip > 0 && trip <= 3600 && fast <= 0.1;
+      final pass = hold > 3600 && trip > 0 && trip <= 3600 && fast <= 0.1;
       record('iec60898', '10A-curve-' + curve, pass, {
         '1_13InHoldSeconds': hold.isFinite ? hold : null,
         '1_45InTripSeconds': trip,

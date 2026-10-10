@@ -875,7 +875,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         senderId: hostId,
         sequence: _serverSequence++,
         payload: <String, Object?>{
-          'state': source.toPersistenceJson(),
+          'state': source.toStudentPersistenceJson(),
           if (clientId != null)
             'reconnectToken': _clientReconnectTokens[clientId],
           'session': <String, Object?>{

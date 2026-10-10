@@ -174,8 +174,7 @@ final class ElectroSimInstrumentProjection {
         probe(InstrumentPort.phase2)?.terminalId,
         probe(InstrumentPort.phase3)?.terminalId,
       ];
-      if (picks.any((id) => id == null) ||
-          picks.toSet().length != 3) {
+      if (picks.any((id) => id == null) || picks.toSet().length != 3) {
         return error(
           PhysicalInstrumentStatus.invalidWiring,
           'Connect L1/L2/L3 to three distinct phase terminals.',
@@ -198,7 +197,9 @@ final class ElectroSimInstrumentProjection {
       for (final SourceInstance source in circuit.sources) {
         final Map<PhaseTag, String?> phaseNodes = <PhaseTag, String?>{
           for (final PhaseTag phase in <PhaseTag>[
-            PhaseTag.l1, PhaseTag.l2, PhaseTag.l3,
+            PhaseTag.l1,
+            PhaseTag.l2,
+            PhaseTag.l3,
           ])
             phase: source.terminals
                 .where((t) => t.phase == phase)
@@ -230,7 +231,8 @@ final class ElectroSimInstrumentProjection {
         }
       }
       final MeasurementResult base = snapshot.measurePhaseSequence();
-      if (!base.isValid || base.displayText == null ||
+      if (!base.isValid ||
+          base.displayText == null ||
           base.displayText == 'Indéterminé') {
         return error(
           PhysicalInstrumentStatus.unavailable,
@@ -238,8 +240,9 @@ final class ElectroSimInstrumentProjection {
         );
       }
       final bool sourcePositive = base.displayText == 'L1 → L2 → L3';
-      final bool measuredPositive =
-          inversions.isEven ? sourcePositive : !sourcePositive;
+      final bool measuredPositive = inversions.isEven
+          ? sourcePositive
+          : !sourcePositive;
       return PhysicalInstrumentReading(
         instrumentId: instrument.id,
         status: PhysicalInstrumentStatus.valid,

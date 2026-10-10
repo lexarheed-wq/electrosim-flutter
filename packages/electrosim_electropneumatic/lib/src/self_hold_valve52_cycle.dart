@@ -9,10 +9,7 @@ import 'dc_coil_meter.dart';
 /// Accepted state of the real DC self-hold and the dynamic two-chamber plant.
 /// The relay state is stored in the snapshot, never in a UI callback.
 final class SelfHoldValve52Snapshot {
-  const SelfHoldValve52Snapshot({
-    required this.physical,
-    this.electrical,
-  });
+  const SelfHoldValve52Snapshot({required this.physical, this.electrical});
 
   final CoupledRuntimeSnapshot<MovingCylinderSnapshot> physical;
   final SelfHold24vSnapshot? electrical;
@@ -94,10 +91,7 @@ final class SelfHoldValve52Cycle {
     if (paused) return before;
     Solenoid24vSnapshot relay =
         before.electrical?.relay ??
-        const Solenoid24vSnapshot(
-          energized: false,
-          measuredVoltageV: 0,
-        );
+        const Solenoid24vSnapshot(energized: false, measuredVoltageV: 0);
     SelfHold24vSnapshot? feedback = before.electrical;
 
     final Valve52PhysicalCycle plant = _newPhysical(
@@ -115,12 +109,9 @@ final class SelfHoldValve52Cycle {
       },
     );
     plant.setAirSupply(airSupplyEnabled);
-    final CoupledRuntimeSnapshot<MovingCylinderSnapshot> accepted =
-        plant.advance(before.physical, durationS: durationS);
-    return SelfHoldValve52Snapshot(
-      physical: accepted,
-      electrical: feedback,
-    );
+    final CoupledRuntimeSnapshot<MovingCylinderSnapshot> accepted = plant
+        .advance(before.physical, durationS: durationS);
+    return SelfHoldValve52Snapshot(physical: accepted, electrical: feedback);
   }
 
   double massResidualKg(SelfHoldValve52Snapshot state) =>

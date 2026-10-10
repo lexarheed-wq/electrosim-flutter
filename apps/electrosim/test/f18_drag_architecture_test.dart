@@ -6,7 +6,7 @@ void main() {
   test(
     'wiring hover uses prepared terminal hit testing and isolated preview notifier',
     () {
-      final String source = File('lib/main.dart').readAsStringSync();
+      final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
       final int start = source.indexOf('void _updateWiringHover(');
       final int end = source.indexOf('void _handleConnectionRequested(', start);
       expect(start, greaterThanOrEqualTo(0));
@@ -21,7 +21,7 @@ void main() {
   );
 
   test('full canvas hit testing reuses a prepared session', () {
-    final String source = File('lib/main.dart').readAsStringSync();
+    final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
     final int start = source.indexOf('CanvasHitResult _f9CanvasHit(');
     final int end = source.indexOf('void _onCanvasPointerDown(', start);
     expect(start, greaterThanOrEqualTo(0));
@@ -34,7 +34,7 @@ void main() {
   test(
     'pointer-move drag path never invokes geometry rebuild or global routing',
     () {
-      final String source = File('lib/main.dart').readAsStringSync();
+      final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
       final int moveStart = source.indexOf('void _commitElementMoveIfSafe(');
       final int finalizeStart = source.indexOf(
         'void _finalizeDirectDrag(',
@@ -60,7 +60,7 @@ void main() {
   );
 
   test('authoritative routing is offloaded to worker after pointer-up', () {
-    final String source = File('lib/main.dart').readAsStringSync();
+    final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
     final int start = source.indexOf('void _finalizeDirectDrag(');
     final int end = source.indexOf('void _cancelCanvasInteraction(', start);
     expect(start, greaterThanOrEqualTo(0));

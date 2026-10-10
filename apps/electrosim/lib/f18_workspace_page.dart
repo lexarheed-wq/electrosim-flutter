@@ -170,6 +170,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
   }
 
+  CircuitState _continueIndustrialMarking(CircuitState candidate) {
+    if (widget.role != F9UserRole.teacher ||
+        !_circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)) {
+      return candidate;
+    }
+    return IndustrialMarkingRegistry.materialize(candidate);
+  }
+
   void _generateIndustrialMarkings() {
     if (widget.role != F9UserRole.teacher) {
       _setStatus('Repérage réservé au professeur.');
@@ -1805,7 +1813,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
     }
 
-    final CircuitState nextCircuit = CircuitState(
+    final CircuitState nextCircuit = _continueIndustrialMarking(CircuitState(
       circuitId: _circuit.circuitId,
       revision: _circuit.revision + 1,
       mode: _circuit.mode,
@@ -1816,7 +1824,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       probes: _circuit.probes,
       settings: _circuit.settings,
       metadata: _circuit.metadata,
-    );
+    ));
 
     final CircuitVisualLayout moved = _layout.moveElement(
       elementId,
@@ -2923,9 +2931,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final CircuitState nextCircuit = F9WiringPolicy.append(
-      _circuit,
-      connection,
+    final CircuitState nextCircuit = _continueIndustrialMarking(
+      F9WiringPolicy.append(_circuit, connection),
     );
     final bool backgroundRouting =
         nextCircuit.components.length + nextCircuit.sources.length >= 30;

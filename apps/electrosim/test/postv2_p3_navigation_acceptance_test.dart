@@ -33,7 +33,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(board().schematicPresentation, isTrue);
       final lampPosition = board().layout.positionOf('lamp-1')!;
-      final screenPosition = tester.getTopLeft(find.byType(SimulatorCanvas)) +
+      final screenPosition =
+          tester.getTopLeft(find.byType(SimulatorCanvas)) +
           board().viewportController!.worldToScreen(lampPosition);
       await tester.tapAt(screenPosition);
       await tester.pump();
@@ -54,16 +55,20 @@ void main() {
     final input = circuit.toJsonString();
     const runtime = ElectroSimRuntimeEngine();
     final reference = runtime.evaluate(circuit);
-    final a = CircuitVisualLayout(elementPositions: const {
-      'source-24v': Offset(120, 200),
-      'switch-1': Offset(340, 200),
-      'lamp-1': Offset(560, 200),
-    });
-    final b = CircuitVisualLayout(elementPositions: const {
-      'source-24v': Offset(250, 300),
-      'switch-1': Offset(480, 100),
-      'lamp-1': Offset(750, 350),
-    });
+    final a = CircuitVisualLayout(
+      elementPositions: const {
+        'source-24v': Offset(120, 200),
+        'switch-1': Offset(340, 200),
+        'lamp-1': Offset(560, 200),
+      },
+    );
+    final b = CircuitVisualLayout(
+      elementPositions: const {
+        'source-24v': Offset(250, 300),
+        'switch-1': Offset(480, 100),
+        'lamp-1': Offset(750, 350),
+      },
+    );
     final first = IndustrialSchematicSvgExport.render(circuit, a);
     final second = IndustrialSchematicSvgExport.render(circuit, b);
     expect(first, isNot(second));

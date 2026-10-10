@@ -91,11 +91,9 @@ final class IsentropicOrifice {
 
     final double velocityFactor;
     if (ratio <= critical) {
-      velocityFactor = math.sqrt(gamma / (gasConstantJPerKgK * temperatureK)) *
-          math.pow(
-            2 / (gamma + 1),
-            (gamma + 1) / (2 * (gamma - 1)),
-          ).toDouble();
+      velocityFactor =
+          math.sqrt(gamma / (gasConstantJPerKgK * temperatureK)) *
+          math.pow(2 / (gamma + 1), (gamma + 1) / (2 * (gamma - 1))).toDouble();
     } else {
       final double exponents =
           math.pow(ratio, 2 / gamma).toDouble() -
@@ -107,15 +105,15 @@ final class IsentropicOrifice {
         );
       }
       velocityFactor = math.sqrt(
-        2 * gamma * exponents /
+        2 *
+            gamma *
+            exponents /
             (gasConstantJPerKgK * temperatureK * (gamma - 1)),
       );
     }
 
-    final double result = dischargeCoefficient *
-        effectiveAreaM2 *
-        upstream *
-        velocityFactor;
+    final double result =
+        dischargeCoefficient * effectiveAreaM2 * upstream * velocityFactor;
     if (!result.isFinite || result < 0) {
       throw const PneumaticPhysicsException(
         'nonfinite_mass_flow',
@@ -150,7 +148,8 @@ abstract final class IsothermalAir {
     requirePositiveFinite(pressureAbsPa, 'pressureAbsPa');
     requirePositiveFinite(volumeM3, 'volumeM3');
     requirePositiveFinite(temperatureK, 'temperatureK');
-    return pressureAbsPa * volumeM3 /
+    return pressureAbsPa *
+        volumeM3 /
         (DryAirReference.specificGasConstantJPerKgK * temperatureK);
   }
 

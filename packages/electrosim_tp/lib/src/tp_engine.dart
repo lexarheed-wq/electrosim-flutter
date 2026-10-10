@@ -21,7 +21,7 @@ final class TpEngine {
     if (_sessions.containsKey(definition.id))
       throw StateError('Duplicate TP ${definition.id.value}.');
     final circuit = switch (definition.mode) {
-      TpMode.wiring => definition.referenceCircuit!,
+      TpMode.wiring => _blankStudentPlate(definition),
       TpMode.troubleshooting => _scenarioFor(definition).faultyCircuit,
     };
     final session = TpSession(
@@ -32,6 +32,26 @@ final class TpEngine {
     );
     _sessions[definition.id] = session;
     return session;
+  }
+
+  /// The source circuit is grading truth, not the student's initial answer.
+  /// A separate starter also supports replicas without teacher-only material.
+  static CircuitState _blankStudentPlate(TpDefinition definition) {
+    final CircuitState? starter = definition.studentStarterCircuit;
+    if (starter != null) {
+      if (definition.referenceCircuit != null &&
+          starter.mode != definition.referenceCircuit!.mode) {
+        throw StateError('Student plate and wiring reference modes differ.');
+      }
+      return starter;
+    }
+    final CircuitState reference = definition.referenceCircuit ??
+        (throw StateError('Wiring exercise has no teacher reference.'));
+    return CircuitState(
+      circuitId: reference.circuitId,
+      revision: 0,
+      mode: reference.mode,
+    );
   }
 
   TpSession publish(TpId id) =>

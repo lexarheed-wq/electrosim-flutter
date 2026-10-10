@@ -288,7 +288,7 @@ void main() {
         poles(
           key,
           230 / rated,
-          parameters: <String, Object?>{'ratedCurrentA': rated},
+          parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: rated},
         ),
         elapsed: const Duration(hours: 1),
       );
@@ -296,7 +296,7 @@ void main() {
         poles(
           key,
           230 / (2 * rated),
-          parameters: <String, Object?>{'ratedCurrentA': rated},
+          parameters: <String, Object?>{ProtectionRating.ratedCurrentKey: rated},
         ),
         elapsed: const Duration(hours: 2),
       );
@@ -328,7 +328,7 @@ void main() {
             terminal('c' + i.toString(), PhaseTag.none),
         ],
         parameters: <String, Object?>{
-          'ratedCurrentA': 10.0,
+          ProtectionRating.ratedCurrentKey: 10.0,
           'tripCurve': curve,
         },
       );
@@ -362,7 +362,7 @@ void main() {
           terminal('ol' + i.toString(), PhaseTag.none),
       ],
       parameters: <String, Object?>{
-        'ratedCurrentA': 5.0,
+        ProtectionRating.ratedCurrentKey: 5.0,
         'tripClass': tripClass,
       },
     );

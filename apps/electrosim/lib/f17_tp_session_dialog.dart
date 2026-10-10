@@ -136,6 +136,13 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                   const SizedBox(height: ElectroSimSpacing.sm),
                 ],
                 if (_teacher) ..._teacherActions(current),
+                if (_teacher && widget.controller.teacherArchive.isNotEmpty)
+                  TextButton.icon(
+                    key: const Key('tp-open-archive'),
+                    onPressed: _showTeacherArchive,
+                    icon: const Icon(Icons.archive_outlined),
+                    label: const Text('Anciens TP — consulter / supprimer'),
+                  ),
                 if (!_teacher) ..._studentActions(current),
               ],
             );
@@ -477,6 +484,48 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           Text('Le TP est encore en préparation par le professeur.'),
         ];
     }
+  }
+
+  Future<void> _showTeacherArchive() async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext archiveContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter updateArchive) => AlertDialog(
+          title: const Text('Historique des TP terminés'),
+          content: SizedBox(
+            width: 480,
+            child: ListView(
+              shrinkWrap: true,
+              children: <Widget>[
+                for (final entry in widget.controller.teacherArchive)
+                  ListTile(
+                    key: Key('tp-archive-${entry['tpId']}'),
+                    title: Text((entry['activityTitle'] ?? entry['title'])
+                        ?.toString() ?? 'TP'),
+                    subtitle: Text(entry['tpId']?.toString() ?? ''),
+                    trailing: IconButton(
+                      key: Key('tp-delete-archive-${entry['tpId']}'),
+                      tooltip: 'Supprimer définitivement ce TP archivé',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () {
+                        widget.controller.deleteArchivedActivity(
+                            entry['tpId']!.toString());
+                        updateArchive(() {});
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(archiveContext).pop(),
+              child: const Text('Fermer'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showError(String message) {

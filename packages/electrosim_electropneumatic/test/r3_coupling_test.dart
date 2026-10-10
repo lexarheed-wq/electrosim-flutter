@@ -254,45 +254,50 @@ void main() {
       expect(stopped.pneumaticAdvances, actualAirCalls);
     });
 
-    test('CPL-04: early end-stop event re-solves DC before remaining gas time', () {
-      final FixedAirChamber chamber = FixedAirChamber.fromPressure(
-        id: 'impact-proof',
-        volumeM3: .001,
-        pressureAbsPa: 201325,
-      );
-      final physical = OpenIsothermalAirChamber(
-        initialChamber: chamber,
-        boundaries: const <PneumaticPressureBoundary>[],
-      );
-      int calls = 0;
-      bool eventPending = true;
-      final clock = ElectropneumaticEventClock<OpenAirSnapshot>(
-        solenoid: Solenoid24vDynamics(
-          Solenoid24vCalibration(pickupDelayS: 0),
-        ),
-        valveMemory: const SingleCoilValveMemory(
-          returnKind: ValveReturnKind.monostableSpring,
-        ),
-        solveElectrical: (air, spool, closed) => meter(powered: true),
-        advanceAir: (air, requested, spool) {
-          calls++;
-          final double accepted = eventPending ? requested / 2 : requested;
-          eventPending = false;
-          return physical.advance(air, durationS: accepted);
-        },
-        airTime: (air) => air.timeS,
-        maxStepS: .005,
-      );
-      final initial = clock.initial(physical.initialSnapshot);
-      final accepted = clock.advance(initial, durationS: .01);
-      expect(accepted.timeS, closeTo(.01, 1e-12));
-      expect(accepted.air.timeS, accepted.timeS);
-      expect(accepted.pneumaticAdvances, calls);
-      expect(accepted.pneumaticAdvances, greaterThanOrEqualTo(3));
-      expect(accepted.electricalSolves,
-          greaterThan(accepted.pneumaticAdvances));
-      expect(accepted.air.chamber.massKg, initial.air.chamber.massKg);
-    });
+    test(
+      'CPL-04: early end-stop event re-solves DC before remaining gas time',
+      () {
+        final FixedAirChamber chamber = FixedAirChamber.fromPressure(
+          id: 'impact-proof',
+          volumeM3: .001,
+          pressureAbsPa: 201325,
+        );
+        final physical = OpenIsothermalAirChamber(
+          initialChamber: chamber,
+          boundaries: const <PneumaticPressureBoundary>[],
+        );
+        int calls = 0;
+        bool eventPending = true;
+        final clock = ElectropneumaticEventClock<OpenAirSnapshot>(
+          solenoid: Solenoid24vDynamics(
+            Solenoid24vCalibration(pickupDelayS: 0),
+          ),
+          valveMemory: const SingleCoilValveMemory(
+            returnKind: ValveReturnKind.monostableSpring,
+          ),
+          solveElectrical: (air, spool, closed) => meter(powered: true),
+          advanceAir: (air, requested, spool) {
+            calls++;
+            final double accepted = eventPending ? requested / 2 : requested;
+            eventPending = false;
+            return physical.advance(air, durationS: accepted);
+          },
+          airTime: (air) => air.timeS,
+          maxStepS: .005,
+        );
+        final initial = clock.initial(physical.initialSnapshot);
+        final accepted = clock.advance(initial, durationS: .01);
+        expect(accepted.timeS, closeTo(.01, 1e-12));
+        expect(accepted.air.timeS, accepted.timeS);
+        expect(accepted.pneumaticAdvances, calls);
+        expect(accepted.pneumaticAdvances, greaterThanOrEqualTo(3));
+        expect(
+          accepted.electricalSolves,
+          greaterThan(accepted.pneumaticAdvances),
+        );
+        expect(accepted.air.chamber.massKg, initial.air.chamber.massKg);
+      },
+    );
 
     test('no pneumatic integration on pure zero-time electrical re-solve', () {
       int airCalls = 0;

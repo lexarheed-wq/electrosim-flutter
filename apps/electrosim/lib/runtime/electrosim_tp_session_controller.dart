@@ -213,7 +213,10 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       );
     }
     if (current.lifecycle == TpLifecycle.closed) {
-      _teacherArchive.add(toPersistenceJson());
+      final archived = <String, Object?>{...toPersistenceJson()};
+      archived.remove('archive');
+      archived.remove('nextActivityOrdinal');
+      _teacherArchive.add(archived);
     }
     _nextActivityOrdinal++;
     _activeTpIdValue = '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';

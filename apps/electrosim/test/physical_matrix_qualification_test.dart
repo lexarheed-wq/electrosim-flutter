@@ -540,6 +540,177 @@ void main() {
     expect(okay, isTrue);
   });
 
+  test('PHYS-DC: deterministic series/parallel network combinations', () {
+    final failures = <String>[];
+    var count = 0;
+    for (final volts in <double>[12, 24, 48]) {
+      for (final r1 in <double>[12, 24, 48]) {
+        for (final r2 in <double>[12, 24, 48]) {
+          for (final r3 in <double>[12, 24, 48]) {
+            for (final parallel in <bool>[false, true]) {
+              count++;
+              final id =
+                  'U=$volts,R=$r1/$r2/$r3,${parallel ? 'parallel' : 'series'}';
+              try {
+                final snap = _runtime.evaluate(_resistiveDc(
+                  'network-$count', volts, <double>[r1, r2, r3],
+                  parallel: parallel,
+                ));
+                final branches = <String>['r0', 'r1', 'r2']
+                    .map((key) => snap.dc.branch('component:$key')).toList();
+                final resistances = <double>[r1, r2, r3];
+                final seriesCurrent =
+                    volts / (resistances.reduce((a, b) => a + b));
+                final currents = <double>[
+                  for (var i = 0; i < 3; i++)
+                    branches[i].currentA?.abs() ?? double.nan,
+                ];
+                final voltageMeasurements = <double>[
+                  for (final b in branches) b.voltageV.abs(),
+                ];
+                final correct = snap.solved &&
+                    List<bool>.generate(3, (i) {
+                      final expectedI = parallel
+                          ? volts / resistances[i]
+                          : seriesCurrent;
+                      final expectedV = parallel
+                          ? volts
+                          : seriesCurrent * resistances[i];
+                      return (currents[i] - expectedI).abs() < 0.0001 &&
+                          (voltageMeasurements[i] - expectedV).abs() < 0.0001;
+                    }).every((valid) => valid) &&
+                    _maxResidual(snap.dc.kclResiduals.values) < 0.0001;
+                if (!correct) failures.add(id);
+                _result('dc-generated', id,
+                    correct ? 'PASS' : 'FAIL', {
+                  'voltageV': volts,
+                  'resistancesOhm': resistances,
+                  'currentsA': currents,
+                  'componentVoltagesV': voltageMeasurements,
+                  'maxKclResidual': _maxResidual(snap.dc.kclResiduals.values),
+                });
+              } catch (error) {
+                failures.add(id);
+                _result('dc-generated', id, 'EXCEPTION', {'error': '$error'});
+              }
+            }
+          }
+        }
+      }
+    }
+    _result('dc-generated-summary', 'series-parallel-162', 'MEASURED', {
+      'attempts': count, 'violations': failures.length,
+    });
+    expect(count, 162);
+    expect(failures, isEmpty, reason: failures.join('; '));
+  });
+
+  for (final mode in <ElectricalMode>[ElectricalMode.dc, ElectricalMode.pv]) {
+    test('PHYS-STORAGE: 48 V battery alone powers resistive load in ${mode.name}', () {
+      final snapshot = _runtime.evaluate(_dcBatteryCircuit(mode));
+      final current = snapshot.dcResult?.branch('component:load').currentA?.abs();
+      final voltage = snapshot.dcResult?.branch('component:load').voltageV.abs();
+      final okay = snapshot.solved && current != null && voltage != null &&
+          current > 0.8 && current < 1.2 &&
+          voltage > 38 && voltage < 51;
+      _result('standalone-battery', mode.name, okay ? 'PASS' : 'FAIL', {
+        'solved': snapshot.solved,
+        'solver': snapshot.solverKind.name,
+        'voltageV': voltage,
+        'currentA': current,
+        'expectedNominalV': 48.0,
+        'diagnostics': snapshot.diagnostics.advice.map((a) => a.title).toList(),
+      });
+      expect(okay, isTrue);
+    });
+  }
+
+  for (final model in <String>['inductor', 'capacitor']) {
+    test('PHYS-AC1: pure reactive $model obeys U/X and P≈0', () {
+      final isL = model == 'inductor';
+      final value = isL ? 0.1 : 0.0001;
+      final circuit = _ac1Reactive(
+        model, isL ? ComponentParameterKeys.inductanceH :
+        ComponentParameterKeys.capacitanceF, value,
+      );
+      final snapshot = _runtime.evaluate(circuit);
+      final load = snapshot.ac1Result?.branch('component:load');
+      final xr = isL
+          ? 2 * math.pi * 50 * value
+          : 1 / (2 * math.pi * 50 * value);
+      final expectedI = 230 / xr;
+      final current = load?.current?.magnitude ?? double.nan;
+      final watts = load?.activePowerW ?? double.nan;
+      final reactiveVar = load?.reactivePowerVar ?? double.nan;
+      final okay = snapshot.solved &&
+          (current - expectedI).abs() < 0.001 &&
+          watts.abs() < 0.01 &&
+          (reactiveVar.abs() - 230 * expectedI).abs() < 0.1 &&
+          (isL ? reactiveVar > 0 : reactiveVar < 0);
+      _result('ac1-reactance', model, okay ? 'PASS' : 'FAIL', {
+        'solved': snapshot.solved,
+        'currentRmsA': current,
+        'expectedCurrentRmsA': expectedI,
+        'activePowerW': watts,
+        'reactivePowerVar': reactiveVar,
+        'expectedSign': isL ? 'inductive +' : 'capacitive -',
+        'diagnostics': snapshot.ac1Result?.diagnostics.map((d) => d.message).toList(),
+      });
+      expect(okay, isTrue);
+    });
+  }
+
+  test('PHYS-AC3: asymmetric neutral current equals phasor sum', () {
+    final snapshot = _runtime.evaluate(_ac3UnbalancedStar());
+    final phaseCurrents = snapshot.ac3Result?.lineCurrents;
+    final neutral = snapshot.ac3Result?.neutralCurrent.magnitude;
+    final ia = snapshot.ac3Result?.branch('component:a').current?.magnitude;
+    final ib = snapshot.ac3Result?.branch('component:b').current?.magnitude;
+    final ic = snapshot.ac3Result?.branch('component:c').current?.magnitude;
+    final expectedNeutral = 230.0 / 1058.0;
+    final okay = snapshot.solved && neutral != null &&
+        (neutral - expectedNeutral).abs() < 0.001 &&
+        ia != null && (ia - 230/529).abs() < 0.001 &&
+        ib != null && (ib - 230/529).abs() < 0.001 &&
+        ic != null && (ic - 230/1058).abs() < 0.001;
+    _result('ac3-unbalance', 'asymmetric-star', okay ? 'PASS' : 'FAIL', {
+      'solved': snapshot.solved,
+      'phaseCurrentsA': <double?>[ia, ib, ic],
+      'neutralCurrentA': neutral,
+      'expectedNeutralCurrentA': expectedNeutral,
+      'lineCurrentKeys': phaseCurrents?.keys.map((k) => k.name).toList(),
+      'diagnostics': snapshot.ac3Result?.diagnostics.map((d) => d.message).toList(),
+    });
+    expect(okay, isTrue);
+  });
+
+  test('PHYS-PV: array -> inverter -> resistive AC load', () {
+    final snapshot = _runtime.evaluate(_pvInverterCircuit());
+    final pv = snapshot.pvResult;
+    final volts = pv?.inverterOutputVoltageRmsV ?? double.nan;
+    final watts = pv?.inverterOutputPowerW ?? double.nan;
+    final current = pv?.inverterOutputCurrentRmsA ?? double.nan;
+    final loadPowerTheory = volts * volts / 52.9;
+    final okay = snapshot.solved && volts > 100 &&
+        current > 0 &&
+        (watts - loadPowerTheory).abs() < 0.5 &&
+        (pv!.pvDrawnPowerW - watts - pv.inverterConversionLossW).abs() < 1.0;
+    _result('pv-conversion', '48V-array-inverter-230V-load',
+        okay ? 'PASS' : 'FAIL', {
+      'solved': snapshot.solved,
+      'inverterState': pv?.inverterState.name,
+      'pvAvailablePowerW': pv?.pvAvailablePowerW,
+      'pvDrawnPowerW': pv?.pvDrawnPowerW,
+      'outputVoltageRmsV': volts,
+      'outputCurrentRmsA': current,
+      'outputPowerW': watts,
+      'expectedLoadPowerW': loadPowerTheory,
+      'conversionLossW': pv?.inverterConversionLossW,
+      'diagnostics': pv?.diagnostics.map((d) => d.message).toList(),
+    });
+    expect(okay, isTrue);
+  });
+
   test('PHYS-V2: execute all native healthy examples and faulty circuits', () {
     final lib = buildV2ProductLibrary();
     expect(lib.allValidated, isTrue);

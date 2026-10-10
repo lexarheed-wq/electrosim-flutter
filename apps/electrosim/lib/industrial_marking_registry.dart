@@ -243,6 +243,10 @@ final class IndustrialMarkingRegistry {
           ref.toUpperCase(),
     };
     final usedWires = <String, String>{};
+    final portPhases = <String, PhaseTag>{
+      for (final item in list)
+        for (final port in item.terminals) port.id.value: port.phase,
+    };
     var next = 1;
     final wires = [...circuit.connections]
       ..sort((a, b) => a.id.value.compareTo(b.id.value));
@@ -272,10 +276,27 @@ final class IndustrialMarkingRegistry {
       }
       locks[_id(IndustrialMarkingKind.conductor, id)] =
           stored['locked'] == true;
-      // A hint exists only for a phase explicitly tagged on the wire.
-      colors[id] = _color(wire.phase);
+      // Suppress misleading colour when an explicitly tagged conductor
+      // conflicts with one of its declared terminal phases. This is a
+      // documentary warning: the electrical solver decides circuit validity.
+      final terminalTags = <PhaseTag>[
+        portPhases[wire.fromTerminalId.value] ?? PhaseTag.none,
+        portPhases[wire.toTerminalId.value] ?? PhaseTag.none,
+      ];
+      final mismatch = wire.phase != PhaseTag.none &&
+          terminalTags.any((tag) =>
+              tag != PhaseTag.none && tag != wire.phase);
+      if (mismatch) {
+        issues.add(IndustrialMarkingIssue(
+          id, 'Conductor phase hint differs from a terminal declaration',
+        ));
+      }
+      colors[id] = mismatch
+          ? IndustrialConductorColor.unspecified
+          : _color(wire.phase);
     }
 
+    final usedTerminals = <String, String>{};
     for (final item in list) {
       for (final port in item.terminals) {
         final id = port.id.value;
@@ -289,6 +310,15 @@ final class IndustrialMarkingRegistry {
                 ? _reference(stored['reference']) ?? explicit
                 : null) ??
             '${devices[item.id]}:${port.name}';
+        final label = terminals[id]!;
+        final owner = usedTerminals.putIfAbsent(
+          label.toUpperCase(), () => id,
+        );
+        if (owner != id) {
+          issues.add(IndustrialMarkingIssue(
+            id, 'Duplicate terminal reference $label belongs to $owner',
+          ));
+        }
         locks[_id(IndustrialMarkingKind.terminal, id)] =
             stored['locked'] == true;
       }

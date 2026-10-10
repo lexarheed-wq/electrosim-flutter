@@ -1911,10 +1911,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             InstrumentPort.phase2,
             InstrumentPort.phase3,
           ]
-        : <InstrumentPort>[
-            InstrumentPort.voltOhm,
-            InstrumentPort.common,
-          ];
+        : <InstrumentPort>[InstrumentPort.voltOhm, InstrumentPort.common];
     final bool resetAll = ports.every(
       (port) => existing.any((probe) => probe.port == port),
     );
@@ -1939,8 +1936,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       instruments: _circuit.instruments,
       probes: <ProbeConnection>[
         for (final ProbeConnection item in _circuit.probes)
-          if (item.instrumentId != meter.id ||
-              (!resetAll && item.port != port))
+          if (item.instrumentId != meter.id || (!resetAll && item.port != port))
             item,
         added,
       ],

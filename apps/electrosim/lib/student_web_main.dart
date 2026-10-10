@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 
+import 'dart:async';
 import 'dart:html' as html;
 
 import 'package:electrosim_tp/electrosim_tp.dart';
@@ -128,11 +129,13 @@ class _LiveStudentPortalState extends State<_LiveStudentPortal> {
     }
     if (bridge.status == ElectroSimBrowserSessionStatus.failed) {
       return _StudentMessagePage(
+        pageKey: const Key('student-web-connection-lost'),
         icon: Icons.wifi_off_outlined,
-        title: 'Session inaccessible',
+        title: 'Connexion interrompue',
         message:
             bridge.lastError ??
             'Vérifiez que vous êtes connecté au même réseau que le professeur.',
+        onRetry: () => unawaited(bridge.retry()),
       );
     }
     return _StudentHubPage(bridge: bridge, controller: tp);
@@ -439,8 +442,21 @@ class _StudentSessionGuard extends StatelessWidget {
     return AnimatedBuilder(
       animation: bridge,
       builder: (BuildContext context, Widget? _) {
-        if (!bridge.sessionUsable) {
+        if (bridge.status == ElectroSimBrowserSessionStatus.ended) {
           return const _StudentClosedPage();
+        }
+        if (!bridge.sessionUsable) {
+          return _StudentMessagePage(
+            pageKey: const Key('student-web-reconnect-page'),
+            icon: Icons.wifi_off_outlined,
+            title: 'Reconnexion au professeur',
+            message: bridge.lastError ??
+                'La connexion a été interrompue. Votre séance n’est pas '
+                    'considérée comme terminée.',
+            progress:
+                bridge.status == ElectroSimBrowserSessionStatus.connecting,
+            onRetry: () => unawaited(bridge.retry()),
+          );
         }
         return child;
       },
@@ -505,6 +521,7 @@ class _StudentMessagePage extends StatelessWidget {
     required this.title,
     required this.message,
     this.progress = false,
+    this.onRetry,
   });
 
   final Key? pageKey;
@@ -512,6 +529,7 @@ class _StudentMessagePage extends StatelessWidget {
   final String title;
   final String message;
   final bool progress;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -542,6 +560,15 @@ class _StudentMessagePage extends StatelessWidget {
                       if (progress) ...<Widget>[
                         const SizedBox(height: ElectroSimSpacing.lg),
                         const LinearProgressIndicator(),
+                      ],
+                      if (onRetry != null) ...<Widget>[
+                        const SizedBox(height: ElectroSimSpacing.lg),
+                        OutlinedButton.icon(
+                          key: const Key('student-web-retry-connection'),
+                          onPressed: onRetry,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Réessayer la connexion'),
+                        ),
                       ],
                     ],
                   ),

@@ -277,8 +277,7 @@ CircuitState _ac3UnbalancedStar() {
     connections: base.connections,
     components: <ComponentInstance>[
       for (final component in base.components)
-        if (component.id.value == 'c') _resistor('c', 1058.0)
-        else component,
+        if (component.id.value == 'c') _resistor('c', 1058.0) else component,
     ],
   );
 }

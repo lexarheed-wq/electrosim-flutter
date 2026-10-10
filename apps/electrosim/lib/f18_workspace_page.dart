@@ -4239,6 +4239,15 @@ class _WorkspaceTopBar extends StatelessWidget {
       }
     },
     itemBuilder: (context) => [
+      const PopupMenuItem(
+        key: Key('workspace-recenter-action'),
+        value: _WorkspaceSecondaryAction.recenter,
+        child: ListTile(
+          leading: Icon(Icons.center_focus_strong),
+          title: Text('Recentrer la platine'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
       if (onToggleSound != null)
         PopupMenuItem(
           key: const Key('workspace-sound-action'),
@@ -4375,15 +4384,6 @@ class _WorkspaceTopBar extends StatelessWidget {
         child: ListTile(
           leading: Icon(Icons.restart_alt),
           title: Text('Réinitialiser la simulation'),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-      const PopupMenuItem(
-        key: Key('workspace-recenter-action'),
-        value: _WorkspaceSecondaryAction.recenter,
-        child: ListTile(
-          leading: Icon(Icons.center_focus_strong),
-          title: Text('Recentrer la platine'),
           contentPadding: EdgeInsets.zero,
         ),
       ),

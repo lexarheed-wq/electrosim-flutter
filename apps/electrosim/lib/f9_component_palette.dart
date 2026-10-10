@@ -2609,16 +2609,34 @@ final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
     );
     final double y = size.height * .80;
     final double socketRadius = size.width * .04;
-    canvas.drawCircle(
-      Offset(size.width * .28, y),
-      socketRadius,
-      Paint()..color = const Color(0xFFD12B3C),
-    );
-    canvas.drawCircle(
-      Offset(size.width * .72, y),
-      socketRadius,
-      Paint()..color = const Color(0xFF15202D),
-    );
+    if (displayMode == 'L1 L2 L3') {
+      for (final double x in <double>[.22, .50, .78]) {
+        canvas.drawCircle(
+          Offset(size.width * x, y),
+          socketRadius,
+          Paint()..color = const Color(0xFF263E58),
+        );
+        canvas.drawCircle(
+          Offset(size.width * x, y),
+          socketRadius,
+          Paint()
+            ..color = const Color(0xFFD0DFEF)
+            ..strokeWidth = 1.0
+            ..style = PaintingStyle.stroke,
+        );
+      }
+    } else {
+      canvas.drawCircle(
+        Offset(size.width * .28, y),
+        socketRadius,
+        Paint()..color = const Color(0xFFD12B3C),
+      );
+      canvas.drawCircle(
+        Offset(size.width * .72, y),
+        socketRadius,
+        Paint()..color = const Color(0xFF15202D),
+      );
+    }
   }
 
   @override

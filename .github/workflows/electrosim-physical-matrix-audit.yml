@@ -35,7 +35,11 @@ jobs:
           cd ../..
           python3 tools/physical_audit_report.py physical-evidence/test_output.log physical-evidence "${{ github.event.pull_request.head.sha || github.sha }}"
           report_status=$?
-          tail -n 100 physical-evidence/test_output.log
+          echo '=== Every failed physical verdict ==='
+          grep 'PHYSICS_AUDIT_JSON:.*"verdict":"FAIL"' physical-evidence/test_output.log || true
+          echo '=== Test exceptions / assertion details ==='
+          grep -E 'Expected:|Actual:|Exception:|Error:|Some tests failed|All tests passed' physical-evidence/test_output.log | tail -n 100 || true
+          tail -n 30 physical-evidence/test_output.log
           if [ "$report_status" -ne 0 ]; then exit "$report_status"; fi
           exit "$status"
       - name: Preserve all results (including failing cases)

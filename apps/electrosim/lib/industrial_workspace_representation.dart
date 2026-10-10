@@ -3,6 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_references.dart';
 
 enum WorkspaceRepresentation { plate, schematic }
@@ -488,6 +489,26 @@ class IndustrialSchematicPainter extends CustomPainter {
     }
     for (final c in circuit.components) {
       element(c.id.value, c.modelType, c.terminals);
+    }
+    if (circuit.metadata.containsKey(
+      IndustrialMarkingRegistry.metadataKey,
+    )) {
+      final marks = IndustrialMarkingRegistry.inspect(circuit);
+      final geometry = CircuitGeometryIndex.build(circuit, layout);
+      for (final wire in circuit.connections) {
+        final from = geometry.terminalPositions[wire.fromTerminalId];
+        final to = geometry.terminalPositions[wire.toTerminalId];
+        if (from == null || to == null) continue;
+        final path = <Offset>[from, ...layout.routeFor(wire.id.value), to];
+        final midpoint = path[path.length ~/ 2];
+        label(
+          canvas,
+          marks.conductors[wire.id.value] ?? wire.id.value,
+          midpoint + const Offset(0, -10),
+          size: 9,
+          color: Colors.black87,
+        );
+      }
     }
     final start = pendingTerminal == null
         ? null

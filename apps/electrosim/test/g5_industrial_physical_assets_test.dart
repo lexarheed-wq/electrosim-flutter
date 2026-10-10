@@ -28,6 +28,9 @@ const industrialModels = <String, (String, int)>{
   'motor_dc': ('motor-dc', 2),
   'fan_dc': ('fan', 2),
   'buzzer': ('buzzer', 2),
+  'resistor': ('resistor-axial', 2),
+  'capacitor': ('capacitor-film', 2),
+  'inductor': ('inductor-drum', 2),
 };
 
 void main() {

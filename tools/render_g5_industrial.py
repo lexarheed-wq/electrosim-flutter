@@ -348,11 +348,61 @@ def sounder(W,H,ports):
     for x,yy in ports:
         wire('sounder solder lead',[(x,-(cy+r*.60),-5),(x,-yy,20)],1.5,steel)
 
+def axial_surface(name,y,z,points,material):
+    """Turned/coated axial body; points are longitudinal X and radius."""
+    n=96;verts=[(x,-y+r*math.sin(2*math.pi*i/n),z+r*math.cos(2*math.pi*i/n)) for x,r in points for i in range(n)]
+    faces=[(k*n+i,k*n+(i+1)%n,(k+1)*n+(i+1)%n,(k+1)*n+i) for k in range(len(points)-1) for i in range(n)]
+    me=bpy.data.meshes.new(name);me.from_pydata(verts,[],faces);me.update()
+    ob=bpy.data.objects.new(name,me);scene.collection.objects.link(ob);finish(ob,name,material)
+    for poly in me.polygons:poly.use_smooth=True
+
+def passive_terminal(x,y,H):
+    round_housing(x,y,H*.19,H*.23,27,10,terminal_gray,2)
+    cyl('nickel clamp washer',x,y,29,H*.065,2,chrome)
+
+def axial_resistor(W,H,ports):
+    coat=mat('red brown vitreous resistor coating',(.40,.035,.018),rough=.30,grain=.006)
+    cx,cy=W/2,H/2;r=H*.19;half=W*.16
+    axial_surface('axial coated resistance',cy,25,[(cx-half-7,0),(cx-half-7,3),(cx-half-3,r*.55),(cx-half,r*.92),(cx-half+4,r),(cx+half-4,r),(cx+half,r*.92),(cx+half+3,r*.55),(cx+half+7,3),(cx+half+7,0)],coat)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        end=cx-half-6 if x<cx else cx+half+6
+        wire('tinned axial resistor lead',[(x,-y,27),(end,-cy,25)],1.5,chrome)
+
+def film_capacitor(W,H,ports):
+    epoxy=mat('non polar film red thermoplastic',(.47,.018,.022),rough=.30,grain=.003)
+    cx,cy=W/2,H/2
+    body=box('rounded film capacitor case',cx,cy-3,W*.34,H*.64,23,30,epoxy,3)
+    # Potting is behind the pin exit, with no electrolytic polarity stripe.
+    box('film capacitor resin underside',cx,H*.795,W*.31,H*.018,13,22,porcelain,.7)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        side=-1 if x<cx else 1
+        wire('radial capacitor formed lead',[(cx+side*W*.09,-H*.79,13),(cx+side*W*.09,-H*.91,13),(x,-H*.91,27),(x,-y,27)],1.6,chrome)
+
+def drum_inductor(W,H,ports):
+    ferrite=mat('sintered ferrite bobbin',(.032,.035,.038),rough=.32,grain=.005)
+    enamel=mat('dark copper enamel winding',(.21,.065,.019),metallic=.6,rough=.28,grain=0)
+    cx=W/2;radius=H*.24
+    lathe('ferrite drum core',cx,25,[(H*.20,0),(H*.20,radius*.90),(H*.23,radius),(H*.30,radius),(H*.32,radius*.56),(H*.70,radius*.56),(H*.72,radius),(H*.80,radius),(H*.83,radius*.90),(H*.83,0)],ferrite)
+    points=[]
+    for i in range(1280):
+        t=i/1279;angle=t*math.pi*32;r=radius*.80
+        points.append((cx+r*math.cos(angle),-H*(.335+t*.34),25+r*math.sin(angle)))
+    wire('continuous sixteen turn enamelled winding',points,H*.0105,enamel)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        side=-1 if x<cx else 1
+        wire('formed radial inductor pin',[(cx+side*H*.10,-H*.81,13),(cx+side*H*.10,-H*.93,13),(x,-H*.93,27),(x,-y,27)],1.6,chrome)
+
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
     if name=='motor-dc':dc_motor(W,H,ports)
     elif name=='fan':axial_fan(W,H,ports)
     elif name=='buzzer':sounder(W,H,ports)
+    elif name=='resistor-axial':axial_resistor(W,H,ports)
+    elif name=='capacitor-film':film_capacitor(W,H,ports)
+    elif name=='inductor-drum':drum_inductor(W,H,ports)
     elif name=='fuse-holder':fuse_holder(W,H,ports)
     elif name in ['auxiliary-no','auxiliary-nc']:auxiliary(W,H,ports)
     elif name=='coil':relay_coil(W,H,ports)
@@ -517,7 +567,7 @@ def build(name,M):
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
         if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer']
+        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
         screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
 

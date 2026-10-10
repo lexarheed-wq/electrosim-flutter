@@ -232,6 +232,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.linear_scale,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 100.0,
+    },
     subtitle: '100 Ω',
   ),
   F9PaletteDefinition(
@@ -2610,6 +2613,12 @@ class F9ComponentPreview extends StatelessWidget {
             modelType: definition.renderedModelType,
             variantKey: definition.visualVariant,
             size: visualSize,
+            resistanceOhm:
+                F18PhysicalPlateAssets.ready(definition.renderedModelType)
+                ? (definition.defaultParameters['resistanceOhm'] as num?)
+                          ?.toDouble() ??
+                      0
+                : 0,
           );
 
     // Every family including physical meters uses the same appearance rule.

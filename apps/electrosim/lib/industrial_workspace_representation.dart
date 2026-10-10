@@ -3,6 +3,8 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_schematic_references.dart';
+
 enum WorkspaceRepresentation { plate, schematic }
 
 enum SchematicGlyph {
@@ -132,7 +134,9 @@ abstract final class IndustrialSchematicProjection {
     final ordered = positions.keys.toList()
       ..sort((a, b) {
         final y = positions[a]!.dy.compareTo(positions[b]!.dy);
-        return y == 0 ? positions[a]!.dx.compareTo(positions[b]!.dx) : y;
+        if (y != 0) return y;
+        final x = positions[a]!.dx.compareTo(positions[b]!.dx);
+        return x == 0 ? a.compareTo(b) : x;
       });
     final occupied = <Rect>[];
     for (final id in ordered) {
@@ -163,13 +167,29 @@ abstract final class IndustrialSchematicProjection {
       elementQuarterTurns: plate.elementQuarterTurns,
       terminalAnchorOffsets: offsets,
     );
+    // Normalize only the routing input order. The authored CircuitState and
+    // its electrical topology are never rewritten by a visual projection.
+    final canonicalConnections = [...circuit.connections]
+      ..sort((a, b) => a.id.value.compareTo(b.id.value));
+    final routingCircuit = CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision,
+      mode: circuit.mode,
+      components: circuit.components,
+      sources: circuit.sources,
+      connections: canonicalConnections,
+      instruments: circuit.instruments,
+      probes: circuit.probes,
+      settings: circuit.settings,
+      metadata: circuit.metadata,
+    );
     return const CircuitWireLayoutEngine(
       router: OrthogonalWireRouter(
         grid: 12,
         obstacleClearance: 12,
         envelopePadding: 96,
       ),
-    ).routeAll(circuit: circuit, layout: symbols);
+    ).routeAll(circuit: routingCircuit, layout: symbols);
   }
 }
 
@@ -247,6 +267,7 @@ class IndustrialSchematicPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final references = IndustrialSchematicReferences.build(circuit);
     canvas.save();
     canvas.translate(viewport.translation.dx, viewport.translation.dy);
     canvas.scale(viewport.scale);
@@ -349,7 +370,13 @@ class IndustrialSchematicPainter extends CustomPainter {
             );
             canvas.drawCircle(const Offset(-16, 0), 2, p);
             canvas.drawCircle(const Offset(16, 0), 2, p);
-            canvas.drawLine(const Offset(-16, 0), const Offset(12, -17), p);
+            if (IndustrialSchematicReferences.normallyClosed(type)) {
+              // A normally-closed contact must be shown conducting at rest;
+              // dynamic opening is represented by runtime, not by this glyph.
+              canvas.drawLine(const Offset(-16, 0), const Offset(16, 0), p);
+            } else {
+              canvas.drawLine(const Offset(-16, 0), const Offset(12, -17), p);
+            }
             canvas.drawLine(const Offset(16, 0), Offset(body.width / 2, 0), p);
           } else {
             // Power poles and an electrically separate coil for contactors.
@@ -438,11 +465,21 @@ class IndustrialSchematicPainter extends CustomPainter {
       }
       label(
         canvas,
-        id,
+        references.labelOf(id),
         const Offset(0, -68),
         size: 11,
         color: selectedIds.contains(id) ? Colors.blue : Colors.black,
       );
+      final controlling = references.controllingLabelFor(id);
+      if (controlling != null) {
+        label(canvas, '↔ $controlling', const Offset(0, 69), size: 10);
+      } else if (references.contactsFor(id).isNotEmpty) {
+        final contacts = references
+            .contactsFor(id)
+            .map(references.labelOf)
+            .join(', ');
+        label(canvas, '↔ $contacts', const Offset(0, 69), size: 10);
+      }
       canvas.restore();
     }
 

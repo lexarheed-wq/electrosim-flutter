@@ -6,11 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
 
+String _workspaceSource() =>
+    File('lib/f18_workspace_page.dart').readAsStringSync();
+
 void main() {
   test(
     'insertion and pointer-up never invoke global routing synchronously',
     () {
-      final String source = File('lib/f18_workspace_page.dart').readAsStringSync();
+      final String source = _workspaceSource();
       final int moveStart = source.indexOf('void _commitElementMoveIfSafe(');
       final int moveEnd = source.indexOf(
         'void _cancelCanvasInteraction(',

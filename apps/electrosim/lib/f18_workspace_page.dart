@@ -213,9 +213,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Sélectionner un appareil ou un conducteur.');
       return;
     }
-    final editor = TextEditingController(
-      text: plan.referenceOf(kind, selected),
-    );
+    var editedReference = plan.referenceOf(kind, selected);
     var locked = plan.locks['${kind.name}:$selected'] ?? false;
     final answer = await showDialog<(String, bool)>(
       context: context,
@@ -225,9 +223,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
+              TextFormField(
                 key: const Key('p4-marking-text'),
-                controller: editor,
+                initialValue: editedReference,
+                onChanged: (value) => editedReference = value,
                 decoration: const InputDecoration(labelText: 'Repère'),
               ),
               SwitchListTile(
@@ -246,14 +245,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             FilledButton(
               key: const Key('p4-marking-apply'),
               onPressed: () =>
-                  Navigator.of(dialogContext).pop((editor.text, locked)),
+                  Navigator.of(dialogContext).pop((editedReference, locked)),
               child: const Text('Enregistrer'),
             ),
           ],
         ),
       ),
     );
-    editor.dispose();
     if (answer == null || !mounted) return;
     try {
       final next = IndustrialMarkingRegistry.setReference(
@@ -4425,6 +4423,15 @@ class _WorkspaceTopBar extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
         ),
       ),
+      const PopupMenuItem(
+        key: Key('workspace-reset-simulation-action'),
+        value: _WorkspaceSecondaryAction.resetSimulation,
+        child: ListTile(
+          leading: Icon(Icons.restart_alt),
+          title: Text('Réinitialiser la simulation'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
       if (onToggleSound != null)
         PopupMenuItem(
           key: const Key('workspace-sound-action'),
@@ -4587,15 +4594,6 @@ class _WorkspaceTopBar extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
-      const PopupMenuItem(
-        key: Key('workspace-reset-simulation-action'),
-        value: _WorkspaceSecondaryAction.resetSimulation,
-        child: ListTile(
-          leading: Icon(Icons.restart_alt),
-          title: Text('Réinitialiser la simulation'),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
     ],
   );
 }

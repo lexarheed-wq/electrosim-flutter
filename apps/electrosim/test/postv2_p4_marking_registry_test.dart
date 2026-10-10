@@ -23,98 +23,130 @@ void main() {
     expect(plan.terminals['m-u1'], 'M1:U1');
     expect(plan.conductors.values.toSet().length, circuit.connections.length);
     expect(plan.conductors.values, contains('001'));
-    expect(plan.colors.values, everyElement(IndustrialConductorColor.unspecified));
+    expect(
+      plan.colors.values,
+      everyElement(IndustrialConductorColor.unspecified),
+    );
     expect(plan.issues, isEmpty);
     expect(circuit.toJsonString(), before);
   });
 
-  test('P4 allocation stable across reorder, graphical moves and new insert', () {
-    final base = fixture();
-    final stamped = IndustrialMarkingRegistry.materialize(base);
-    expect(stamped.revision, base.revision + 1);
-    expect(identical(IndustrialMarkingRegistry.materialize(stamped), stamped),
-        isTrue);
-    final previous = IndustrialMarkingRegistry.inspect(stamped);
-    final extra = ComponentInstance(
-      id: ComponentId('0-new'),
-      modelType: 'motor_dc',
-      terminals: [
-        Terminal(id: TerminalId('new-a'), name: 'A'),
-        Terminal(id: TerminalId('new-b'), name: 'B'),
-      ],
-    );
-    final changed = CircuitState(
-      circuitId: stamped.circuitId,
-      revision: stamped.revision + 1,
-      mode: stamped.mode,
-      sources: stamped.sources.reversed.toList(),
-      components: [extra, ...stamped.components.reversed],
-      connections: stamped.connections.reversed.toList(),
-      settings: stamped.settings,
-      metadata: stamped.metadata,
-    );
-    final later = IndustrialMarkingRegistry.inspect(changed);
-    for (final id in previous.devices.keys) {
-      expect(later.devices[id], previous.devices[id], reason: id);
-    }
-    for (final id in previous.conductors.keys) {
-      expect(later.conductors[id], previous.conductors[id], reason: id);
-    }
-    expect(later.devices['0-new'], 'M2');
-  });
+  test(
+    'P4 allocation stable across reorder, graphical moves and new insert',
+    () {
+      final base = fixture();
+      final stamped = IndustrialMarkingRegistry.materialize(base);
+      expect(stamped.revision, base.revision + 1);
+      expect(
+        identical(IndustrialMarkingRegistry.materialize(stamped), stamped),
+        isTrue,
+      );
+      final previous = IndustrialMarkingRegistry.inspect(stamped);
+      final extra = ComponentInstance(
+        id: ComponentId('0-new'),
+        modelType: 'motor_dc',
+        terminals: [
+          Terminal(id: TerminalId('new-a'), name: 'A'),
+          Terminal(id: TerminalId('new-b'), name: 'B'),
+        ],
+      );
+      final changed = CircuitState(
+        circuitId: stamped.circuitId,
+        revision: stamped.revision + 1,
+        mode: stamped.mode,
+        sources: stamped.sources.reversed.toList(),
+        components: [extra, ...stamped.components.reversed],
+        connections: stamped.connections.reversed.toList(),
+        settings: stamped.settings,
+        metadata: stamped.metadata,
+      );
+      final later = IndustrialMarkingRegistry.inspect(changed);
+      for (final id in previous.devices.keys) {
+        expect(later.devices[id], previous.devices[id], reason: id);
+      }
+      for (final id in previous.conductors.keys) {
+        expect(later.conductors[id], previous.conductors[id], reason: id);
+      }
+      expect(later.devices['0-new'], 'M2');
+    },
+  );
 
-  test('P4 teacher may rename and lock without modifying electrical physics', () {
-    final original = fixture();
-    final beforeJson = original.toJsonString();
-    const runtime = ElectroSimRuntimeEngine();
-    final baseline = runtime.evaluate(original);
-    final renamed = IndustrialMarkingRegistry.setReference(
-      original,
-      kind: IndustrialMarkingKind.device,
-      id: 'k1',
-      reference: 'KM3',
-      teacherAuthorized: true,
-      locked: true,
-    );
-    final marked = IndustrialMarkingRegistry.inspect(renamed);
-    expect(marked.devices['k1'], 'KM3');
-    expect(marked.devices['aux'], 'KM3:13-14');
-    expect(marked.terminals['k1-a1'], 'KM3:A1');
-    expect(marked.locks['device:k1'], isTrue);
-    expect(() => IndustrialMarkingRegistry.setReference(
-      renamed, kind: IndustrialMarkingKind.device,
-      id: 'k1', reference: 'KM4',
-      teacherAuthorized: false,
-    ), throwsStateError);
-    expect(() => IndustrialMarkingRegistry.setLock(
-      renamed, kind: IndustrialMarkingKind.device,
-      id: 'k1', locked: false, teacherAuthorized: false,
-    ), throwsStateError);
-    final output = runtime.evaluate(renamed);
-    expect(output.solverKind, baseline.solverKind);
-    expect(output.solved, baseline.solved);
-    expect(renamed.connections, original.connections);
-    expect(renamed.components, original.components);
-    expect(renamed.sources, original.sources);
-    expect(original.toJsonString(), beforeJson);
-    expect(CircuitState.fromJsonString(renamed.toJsonString()).metadata,
-        renamed.metadata);
-  });
+  test(
+    'P4 teacher may rename and lock without modifying electrical physics',
+    () {
+      final original = fixture();
+      final beforeJson = original.toJsonString();
+      const runtime = ElectroSimRuntimeEngine();
+      final baseline = runtime.evaluate(original);
+      final renamed = IndustrialMarkingRegistry.setReference(
+        original,
+        kind: IndustrialMarkingKind.device,
+        id: 'k1',
+        reference: 'KM3',
+        teacherAuthorized: true,
+        locked: true,
+      );
+      final marked = IndustrialMarkingRegistry.inspect(renamed);
+      expect(marked.devices['k1'], 'KM3');
+      expect(marked.devices['aux'], 'KM3:13-14');
+      expect(marked.terminals['k1-a1'], 'KM3:A1');
+      expect(marked.locks['device:k1'], isTrue);
+      expect(
+        () => IndustrialMarkingRegistry.setReference(
+          renamed,
+          kind: IndustrialMarkingKind.device,
+          id: 'k1',
+          reference: 'KM4',
+          teacherAuthorized: false,
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => IndustrialMarkingRegistry.setLock(
+          renamed,
+          kind: IndustrialMarkingKind.device,
+          id: 'k1',
+          locked: false,
+          teacherAuthorized: false,
+        ),
+        throwsStateError,
+      );
+      final output = runtime.evaluate(renamed);
+      expect(output.solverKind, baseline.solverKind);
+      expect(output.solved, baseline.solved);
+      expect(renamed.connections, original.connections);
+      expect(renamed.components, original.components);
+      expect(renamed.sources, original.sources);
+      expect(original.toJsonString(), beforeJson);
+      expect(
+        CircuitState.fromJsonString(renamed.toJsonString()).metadata,
+        renamed.metadata,
+      );
+    },
+  );
 
   test('P4 detects teacher-entered duplicate references', () {
     final first = IndustrialMarkingRegistry.setReference(
-      fixture(), kind: IndustrialMarkingKind.device,
-      id: 'stop', reference: 'S1', teacherAuthorized: true,
+      fixture(),
+      kind: IndustrialMarkingKind.device,
+      id: 'stop',
+      reference: 'S1',
+      teacherAuthorized: true,
     );
     final next = IndustrialMarkingRegistry.setReference(
-      first, kind: IndustrialMarkingKind.device,
-      id: 'start', reference: 'S1', teacherAuthorized: true,
+      first,
+      kind: IndustrialMarkingKind.device,
+      id: 'start',
+      reference: 'S1',
+      teacherAuthorized: true,
     );
     final result = IndustrialMarkingRegistry.inspect(next);
     expect(result.devices['start'], 'S1');
     expect(result.devices['stop'], 'S1');
-    expect(result.issues.any((issue) => issue.message.contains('Duplicate')),
-        isTrue);
+    expect(
+      result.issues.any((issue) => issue.message.contains('Duplicate')),
+      isTrue,
+    );
   });
 
   test('P4 wire colors use explicit phase only, never inferred position', () {
@@ -140,7 +172,9 @@ void main() {
     );
     final result = IndustrialMarkingRegistry.inspect(tagged);
     expect(result.colors[neutral.id.value], IndustrialConductorColor.blue);
-    expect(result.colors[original.connections[1].id.value],
-        IndustrialConductorColor.unspecified);
+    expect(
+      result.colors[original.connections[1].id.value],
+      IndustrialConductorColor.unspecified,
+    );
   });
 }

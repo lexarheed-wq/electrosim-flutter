@@ -4,8 +4,15 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 /// Document references live in metadata, never in electrical IDs or topology.
 enum IndustrialMarkingKind { device, conductor, terminal }
+
 enum IndustrialConductorColor {
-  unspecified, brown, black, grey, blue, greenYellow, red,
+  unspecified,
+  brown,
+  black,
+  grey,
+  blue,
+  greenYellow,
+  red,
 }
 
 final class IndustrialMarkingIssue {
@@ -16,8 +23,12 @@ final class IndustrialMarkingIssue {
 
 final class IndustrialMarkingRegistry {
   IndustrialMarkingRegistry._(
-    this.devices, this.conductors, this.terminals,
-    this.colors, this.locks, this.issues,
+    this.devices,
+    this.conductors,
+    this.terminals,
+    this.colors,
+    this.locks,
+    this.issues,
   );
 
   static const metadataKey = 'industrialMarkingV1';
@@ -41,7 +52,8 @@ final class IndustrialMarkingRegistry {
   }
 
   static Map<String, Object?> _data(
-    CircuitState circuit, IndustrialMarkingKind kind,
+    CircuitState circuit,
+    IndustrialMarkingKind kind,
   ) => _map(_map(circuit.metadata[metadataKey])[_group(kind)]);
 
   static String? _reference(Object? value) =>
@@ -51,16 +63,23 @@ final class IndustrialMarkingRegistry {
     final type = model.toLowerCase();
     if (type.startsWith('contactor_')) return 'KM';
     if (type.startsWith('relay_')) return 'KA';
-    if (type.startsWith('push_button') || type.contains('switch') ||
-        type.contains('selector')) return 'S';
+    if (type.startsWith('push_button') ||
+        type.contains('switch') ||
+        type.contains('selector'))
+      return 'S';
     if (type.contains('breaker') || type.contains('disconnector')) return 'Q';
     if (type.contains('fuse') || type.contains('overload')) return 'F';
     if (type.contains('motor')) return 'M';
-    if (type.contains('lamp') || type.contains('indicator') ||
-        type.contains('buzzer') || type.contains('horn')) return 'H';
+    if (type.contains('lamp') ||
+        type.contains('indicator') ||
+        type.contains('buzzer') ||
+        type.contains('horn'))
+      return 'H';
     if (type.contains('terminal') || type.contains('bornier')) return 'X';
-    if (type.contains('source') || type.contains('battery') ||
-        type.contains('generator')) return 'G';
+    if (type.contains('source') ||
+        type.contains('battery') ||
+        type.contains('generator'))
+      return 'G';
     if (type.contains('transformer')) return 'T';
     if (type.contains('resistor')) return 'R';
     if (type.contains('capacitor')) return 'C';
@@ -79,12 +98,11 @@ final class IndustrialMarkingRegistry {
     PhaseTag.none => IndustrialConductorColor.unspecified,
   };
 
-  String referenceOf(IndustrialMarkingKind kind, String id) =>
-      switch (kind) {
-        IndustrialMarkingKind.device => devices[id] ?? id,
-        IndustrialMarkingKind.conductor => conductors[id] ?? id,
-        IndustrialMarkingKind.terminal => terminals[id] ?? id,
-      };
+  String referenceOf(IndustrialMarkingKind kind, String id) => switch (kind) {
+    IndustrialMarkingKind.device => devices[id] ?? id,
+    IndustrialMarkingKind.conductor => conductors[id] ?? id,
+    IndustrialMarkingKind.terminal => terminals[id] ?? id,
+  };
 
   /// Pure deterministic projection. The first materialization freezes
   /// allocated numbers for later circuit edits and additions.
@@ -92,15 +110,31 @@ final class IndustrialMarkingRegistry {
     final deviceData = _data(circuit, IndustrialMarkingKind.device);
     final wireData = _data(circuit, IndustrialMarkingKind.conductor);
     final terminalData = _data(circuit, IndustrialMarkingKind.terminal);
-    final list = <({String id, String type, Map<String, Object?> params,
-        List<Terminal> terminals})>[
-      for (final item in circuit.sources)
-        (id: item.id.value, type: item.modelType,
-         params: item.parameters, terminals: item.terminals),
-      for (final item in circuit.components)
-        (id: item.id.value, type: item.modelType,
-         params: item.parameters, terminals: item.terminals),
-    ]..sort((a, b) => a.id.compareTo(b.id));
+    final list =
+        <
+            ({
+              String id,
+              String type,
+              Map<String, Object?> params,
+              List<Terminal> terminals,
+            })
+          >[
+            for (final item in circuit.sources)
+              (
+                id: item.id.value,
+                type: item.modelType,
+                params: item.parameters,
+                terminals: item.terminals,
+              ),
+            for (final item in circuit.components)
+              (
+                id: item.id.value,
+                type: item.modelType,
+                params: item.parameters,
+                terminals: item.terminals,
+              ),
+          ]
+          ..sort((a, b) => a.id.compareTo(b.id));
 
     final devices = <String, String>{};
     final conductors = <String, String>{};
@@ -118,9 +152,12 @@ final class IndustrialMarkingRegistry {
     void put(String id, String label) {
       final owner = used.putIfAbsent(label.toUpperCase(), () => id);
       if (owner != id) {
-        issues.add(IndustrialMarkingIssue(
-          id, 'Duplicate reference ' + label + ' belongs to ' + owner,
-        ));
+        issues.add(
+          IndustrialMarkingIssue(
+            id,
+            'Duplicate reference ' + label + ' belongs to ' + owner,
+          ),
+        );
       }
       devices[id] = label;
     }
@@ -129,7 +166,8 @@ final class IndustrialMarkingRegistry {
       final stored = _map(deviceData[item.id]);
       final explicit = _reference(item.params['industrialReference']);
       final manual = stored['manual'] == true || explicit != null;
-      final auxiliary = item.type.startsWith('contactor_aux_') ||
+      final auxiliary =
+          item.type.startsWith('contactor_aux_') ||
           item.type.startsWith('relay_contact_');
       final old = _reference(stored['reference']);
       if (old != null && (!auxiliary || manual)) {
@@ -142,8 +180,15 @@ final class IndustrialMarkingRegistry {
     }
 
     final counter = <String, int>{};
-    void assign(({String id, String type, Map<String, Object?> params,
-        List<Terminal> terminals}) item) {
+    void assign(
+      ({
+        String id,
+        String type,
+        Map<String, Object?> params,
+        List<Terminal> terminals,
+      })
+      item,
+    ) {
       if (devices.containsKey(item.id)) return;
       final family = _prefix(item.type);
       var n = counter[family] ?? 1;
@@ -157,14 +202,16 @@ final class IndustrialMarkingRegistry {
 
     for (final item in list) {
       if (!item.type.startsWith('contactor_aux_') &&
-          !item.type.startsWith('relay_contact_')) assign(item);
+          !item.type.startsWith('relay_contact_'))
+        assign(item);
     }
     for (final item in list) {
-      final aux = item.type.startsWith('contactor_aux_') ||
+      final aux =
+          item.type.startsWith('contactor_aux_') ||
           item.type.startsWith('relay_contact_');
       if (!aux || devices.containsKey(item.id)) continue;
-      final link = item.params['linkedRelayId'] ??
-          item.params['linkedContactorId'];
+      final link =
+          item.params['linkedRelayId'] ?? item.params['linkedContactorId'];
       if (link is String && devices.containsKey(link)) {
         final portNames = item.terminals.map((e) => e.name).join('-');
         final candidate = devices[link]! + ':' + portNames;
@@ -178,9 +225,12 @@ final class IndustrialMarkingRegistry {
         put(item.id, label);
       } else {
         if (link is String) {
-          issues.add(IndustrialMarkingIssue(
-            item.id, 'Unknown controlling coil: ' + link,
-          ));
+          issues.add(
+            IndustrialMarkingIssue(
+              item.id,
+              'Unknown controlling coil: ' + link,
+            ),
+          );
         }
         assign(item);
       }
@@ -198,7 +248,8 @@ final class IndustrialMarkingRegistry {
     for (final wire in wires) {
       final id = wire.id.value;
       final stored = _map(wireData[id]);
-      var label = _reference(stored['reference']) ??
+      var label =
+          _reference(stored['reference']) ??
           _reference(wire.metadata['industrialReference']);
       if (label == null) {
         while (reservedWires.contains(next.toString().padLeft(3, '0')) ||
@@ -211,9 +262,12 @@ final class IndustrialMarkingRegistry {
       conductors[id] = label;
       final owner = usedWires.putIfAbsent(label.toUpperCase(), () => id);
       if (owner != id) {
-        issues.add(IndustrialMarkingIssue(
-          id, 'Duplicate conductor ' + label + ' belongs to ' + owner,
-        ));
+        issues.add(
+          IndustrialMarkingIssue(
+            id,
+            'Duplicate conductor ' + label + ' belongs to ' + owner,
+          ),
+        );
       }
       locks[_id(IndustrialMarkingKind.conductor, id)] =
           stored['locked'] == true;
@@ -229,7 +283,8 @@ final class IndustrialMarkingRegistry {
         final manuallyAssigned = stored['manual'] == true || explicit != null;
         // Automatic terminal labels track a deliberate device rename.
         // Teacher-edited terminal labels remain fixed.
-        terminals[id] = (manuallyAssigned
+        terminals[id] =
+            (manuallyAssigned
                 ? _reference(stored['reference']) ?? explicit
                 : null) ??
             devices[item.id]! + ':' + port.name;
@@ -238,9 +293,12 @@ final class IndustrialMarkingRegistry {
       }
     }
     return IndustrialMarkingRegistry._(
-      Map.unmodifiable(devices), Map.unmodifiable(conductors),
-      Map.unmodifiable(terminals), Map.unmodifiable(colors),
-      Map.unmodifiable(locks), List.unmodifiable(issues),
+      Map.unmodifiable(devices),
+      Map.unmodifiable(conductors),
+      Map.unmodifiable(terminals),
+      Map.unmodifiable(colors),
+      Map.unmodifiable(locks),
+      List.unmodifiable(issues),
     );
   }
 
@@ -299,7 +357,8 @@ final class IndustrialMarkingRegistry {
     final records = _data(base, kind);
     final before = _map(records[id]);
     records[id] = <String, Object?>{
-      'reference': value, 'manual': true,
+      'reference': value,
+      'manual': true,
       'locked': locked ?? (before['locked'] == true),
     };
     updated[_group(kind)] = records;
@@ -317,19 +376,28 @@ final class IndustrialMarkingRegistry {
   }) {
     if (!teacherAuthorized) throw StateError('Teacher authorization required');
     return setReference(
-      circuit, kind: kind, id: id,
+      circuit,
+      kind: kind,
+      id: id,
       reference: inspect(circuit).referenceOf(kind, id),
-      teacherAuthorized: true, locked: locked,
+      teacherAuthorized: true,
+      locked: locked,
     );
   }
 
   static CircuitState _copy(
-    CircuitState source, Map<String, Object?> metadata,
+    CircuitState source,
+    Map<String, Object?> metadata,
   ) => CircuitState(
-    circuitId: source.circuitId, revision: source.revision + 1,
-    mode: source.mode, components: source.components,
-    connections: source.connections, sources: source.sources,
-    instruments: source.instruments, probes: source.probes,
-    settings: source.settings, metadata: metadata,
+    circuitId: source.circuitId,
+    revision: source.revision + 1,
+    mode: source.mode,
+    components: source.components,
+    connections: source.connections,
+    sources: source.sources,
+    instruments: source.instruments,
+    probes: source.probes,
+    settings: source.settings,
+    metadata: metadata,
   );
 }

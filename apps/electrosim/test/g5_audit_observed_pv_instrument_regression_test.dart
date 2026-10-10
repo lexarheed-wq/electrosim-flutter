@@ -128,8 +128,8 @@ CircuitState pvCircuit(F9PaletteDefinition panel) {
       ),
     ],
     connections: <Connection>[
-      wire('pv+', 'p-pos', 'i-dc-pos'),
-      wire('pv-', 'p-neg', 'i-dc-neg'),
+      wire('pv-pos', 'p-pos', 'i-dc-pos'),
+      wire('pv-neg', 'p-neg', 'i-dc-neg'),
       wire('ac-l', 'i-l', 'l-l'),
       wire('ac-n', 'i-n', 'l-n'),
     ],

@@ -101,17 +101,17 @@ void main() {
 
   group('R2 rigid isothermal gas chambers', () {
     test('PHY-01: 32 mm piston at 6 barg delivers 482.5486 N', () {
-      final Cylinder = DoubleActingCylinderGeometry(
+      final cylinder = DoubleActingCylinderGeometry(
         pistonDiameterM: .032,
         rodDiameterM: 0,
         strokeM: .2,
         deadVolumeAM3: 1e-6,
         deadVolumeBM3: 1e-6,
       );
-      expect(Cylinder.pistonAreaM2,
+      expect(cylinder.pistonAreaM2,
           closeTo(math.pi * .032 * .032 / 4, 1e-15));
       expect(
-        Cylinder.theoreticalForceN(
+        cylinder.theoreticalForceN(
           pressureAAbsPa: 701325,
           pressureBAbsPa: 101325,
         ),
@@ -120,20 +120,20 @@ void main() {
     });
 
     test('PHY-06/geometry: rod-side annular area and physical volumes', () {
-      final Cylinder = DoubleActingCylinderGeometry(
+      final cylinder = DoubleActingCylinderGeometry(
         pistonDiameterM: .032,
         rodDiameterM: .012,
         strokeM: .2,
         deadVolumeAM3: 2e-6,
         deadVolumeBM3: 3e-6,
       );
-      expect(Cylinder.rodSideAreaM2,
+      expect(cylinder.rodSideAreaM2,
           closeTo(math.pi * (.032 * .032 - .012 * .012) / 4, 1e-15));
-      expect(Cylinder.volumeAM3(0), 2e-6);
-      expect(Cylinder.volumeBM3(.2), 3e-6);
-      expect(Cylinder.volumeAM3(.2), greaterThan(Cylinder.volumeAM3(0)));
+      expect(cylinder.volumeAM3(0), 2e-6);
+      expect(cylinder.volumeBM3(.2), 3e-6);
+      expect(cylinder.volumeAM3(.2), greaterThan(cylinder.volumeAM3(0)));
       expect(
-        () => Cylinder.volumeAM3(.21),
+        () => cylinder.volumeAM3(.21),
         throwsA(isA<PneumaticPhysicsException>()),
       );
     });

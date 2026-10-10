@@ -1,5 +1,6 @@
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 
+import 'dc_coil_meter.dart';
 import 'self_hold_valve52_cycle.dart';
 import 'solenoid_actuator.dart';
 

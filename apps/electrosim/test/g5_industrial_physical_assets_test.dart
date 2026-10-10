@@ -25,6 +25,9 @@ const industrialModels = <String, (String, int)>{
   'contactor_aux_nc': ('auxiliary-nc', 2),
   'relay_coil': ('coil', 2),
   'terminal_block_5': ('terminal5', 10),
+  'motor_dc': ('motor-dc', 2),
+  'fan_dc': ('fan', 2),
+  'buzzer': ('buzzer', 2),
 };
 
 void main() {
@@ -92,10 +95,15 @@ void main() {
       for (final view in ['front', 'palette']) {
         if (entry.key.startsWith('breaker') ||
             entry.key.startsWith('isolator') ||
-            entry.key.startsWith('push_button')) {
+            entry.key.startsWith('push_button') ||
+            entry.key == 'fan_dc') {
           for (final pose in [
             '',
-            if (!entry.key.startsWith('push_button')) ...['-on', '-trip'],
+            if (entry.key.startsWith('breaker') ||
+                entry.key.startsWith('isolator')) ...[
+              '-on',
+              '-trip',
+            ],
           ]) {
             expect(
               File(

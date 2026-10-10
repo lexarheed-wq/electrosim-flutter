@@ -78,10 +78,20 @@ void main() {
       ('contactor_aux_nc', 'auxiliaire'),
       ('relay_coil', 'bobine'),
       ('terminal_block_5', 'bornier'),
+      ('motor_dc', 'moteur cc'),
+      ('fan_dc', 'ventilateur'),
+      ('buzzer', 'buzzer'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
-      final mode = ['fuse_dc', 'relay_coil'].contains(entry.$1)
+      final mode =
+          [
+            'fuse_dc',
+            'relay_coil',
+            'motor_dc',
+            'fan_dc',
+            'buzzer',
+          ].contains(entry.$1)
           ? ElectricalMode.dc
           : ElectricalMode.ac3;
       final paletteDef = f9PaletteCatalog.firstWhere(
@@ -412,6 +422,9 @@ void main() {
       'contactor_aux_nc',
       'relay_coil',
       'terminal_block_5',
+      'motor_dc',
+      'fan_dc',
+      'buzzer',
     ];
     for (var page = 0; page < (types.length / 9).ceil(); page++) {
       final key = GlobalKey();

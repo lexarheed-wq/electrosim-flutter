@@ -1,0 +1,653 @@
+{
+  "pageErrors": [],
+  "wavResponses": [
+    {
+      "url": "http://127.0.0.1:38485/assets/assets/sounds/buzzer.wav",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:38485/assets/assets/sounds/buzzer.wav",
+      "status": 200
+    }
+  ],
+  "mediaEvents": [
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216859.356469,
+            "value": "{\"created\":\"2026-10-10 15:41:01.978771 UTC\",\"event\":\"kMediaLogCreated\"}"
+          },
+          {
+            "timestamp": 216859.35677,
+            "value": "{\"event\":\"kWebMediaPlayerCreated\",\"origin_url\":\"http://127.0.0.1:38485/\"}"
+          },
+          {
+            "timestamp": 216859.356932,
+            "value": "{\"event\":\"kLoad\",\"url\":\"http://127.0.0.1:38485/assets/assets/sounds/buzzer.wav\"}"
+          },
+          {
+            "timestamp": 216859.716442,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kStarting\"}"
+          },
+          {
+            "timestamp": 216859.717548,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216859.717349,
+            "value": "{\"duration\":1.0,\"event\":\"kDurationChanged\"}"
+          },
+          {
+            "timestamp": 216859.718357,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216860.096594,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          },
+          {
+            "timestamp": 216859.985796,
+            "value": "{\"event\":\"kPlay\"}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216861.036249,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216861.163209,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216861.164249,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216861.164717,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216861.164883,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216861.306964,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216862.226066,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216862.321042,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216862.32111,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216862.321238,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216862.321368,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216862.438258,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216863.375956,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216863.432539,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216863.432702,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216863.432801,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216863.43292,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216863.551799,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216864.54595,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216864.607315,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216864.607392,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216864.60752,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216865.660075,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216864.607876,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216864.740896,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216865.744114,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216865.744202,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216865.74548,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216865.748187,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216865.932523,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216866.866583,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216867.026316,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216867.026379,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216867.032112,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216867.032331,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216867.217348,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216868.136119,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216868.137876,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216868.138586,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216868.148293,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216868.148554,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216868.329811,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216869.196044,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216869.22603,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216869.226331,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216869.22642,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216870.306106,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216869.226562,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216869.357109,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216870.323323,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216870.32339,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216870.323522,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216871.415973,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216870.323704,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216870.446371,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216871.523357,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216871.523413,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216871.523505,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216872.585944,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216871.523648,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216871.622674,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216872.646293,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216872.646365,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216872.646458,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216872.646603,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216872.787878,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216873.736644,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216873.892557,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216873.892621,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216873.892859,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216873.89493,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216874.018658,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216874.996318,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216875.018774,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216875.018901,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216875.01898,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216875.019173,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216875.130733,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216876.086181,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216876.144955,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216876.145006,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216876.14536,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216876.145567,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216876.337348,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216877.395988,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216877.432447,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216877.432523,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216877.433267,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216878.465933,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216877.433436,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216877.597758,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216878.510509,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216878.510575,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216878.510801,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216879.535975,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216878.511145,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216878.698332,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216879.671834,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216879.671967,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216879.672064,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216879.672267,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216879.800687,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          }
+        ]
+      }
+    },
+    {
+      "event": "playerEventsAdded",
+      "data": {
+        "playerId": "56F8FB6E8523FA4C6F3B31F4C29B8793",
+        "events": [
+          {
+            "timestamp": 216880.716067,
+            "value": "{\"event\":\"kEnded\"}"
+          },
+          {
+            "timestamp": 216880.816704,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216880.816769,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216880.816861,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216881.502508,
+            "value": "{\"event\":\"kSeek\",\"seek_target\":0.0}"
+          },
+          {
+            "timestamp": 216881.502764,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kSeeking\"}"
+          },
+          {
+            "timestamp": 216881.503287,
+            "value": "{\"event\":\"kPipelineStateChange\",\"pipeline_state\":\"kPlaying\"}"
+          },
+          {
+            "timestamp": 216881.503426,
+            "value": "{\"audio_buffering_state\":{\"state\":\"BUFFERING_HAVE_ENOUGH\"},\"event\":\"kBufferingStateChanged\"}"
+          },
+          {
+            "timestamp": 216881.505564,
+            "value": "{\"event\":\"kBufferingStateChanged\",\"pipeline_buffering_state\":{\"for_suspended_start\":false,\"state\":\"BUFFERING_HAVE_ENOUGH\"}}"
+          },
+          {
+            "timestamp": 216881.502454,
+            "value": "{\"event\":\"kPause\"}"
+          }
+        ]
+      }
+    }
+  ],
+  "frames": 12,
+  "differentFrames": 11
+}

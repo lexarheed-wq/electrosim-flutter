@@ -39,6 +39,7 @@ dependencies:
     path: ../../packages/electrosim_storage
   path_provider: ^2.1.5
   qr_flutter: ^4.1.0
+  audioplayers: ^6.7.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -50,3 +51,4 @@ flutter:
     - assets/g5_physical/housing-palette.png
     - assets/g5_physical/housing-platine.png
     - assets/g5_industrial/
+    - assets/sounds/

@@ -169,6 +169,21 @@ void main() {
       );
     }
   });
+  testWidgets('receiver rotors complete turns and sounder follows power', (
+    t,
+  ) async {
+    for (final type in ['motor_dc', 'motor_3p_6t', 'fan_dc']) {
+      final first = await pixels(t, type, energized: true, phase: 0);
+      final quarter = await pixels(t, type, energized: true, phase: .25);
+      final full = await pixels(t, type, energized: true, phase: 1);
+      expect(quarter, isNot(equals(first)), reason: type);
+      expect(full, equals(first), reason: '$type full revolution');
+    }
+    expect(
+      await pixels(t, 'buzzer', energized: true),
+      isNot(equals(await pixels(t, 'buzzer'))),
+    );
+  });
   testWidgets('moving receiver keeps its housing stationary', (t) async {
     final a = await pixels(t, 'motor_3p_6t', energized: true, phase: 0);
     final b = await pixels(t, 'motor_3p_6t', energized: true, phase: .25);

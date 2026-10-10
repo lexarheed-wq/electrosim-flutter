@@ -31,6 +31,9 @@ abstract final class F18PhysicalPlateAssets {
     'relay_contact_nc': 'auxiliary-nc',
     'relay_coil': 'coil',
     'terminal_block_5': 'terminal5',
+    'motor_dc': 'motor-dc',
+    'fan_dc': 'fan',
+    'buzzer': 'buzzer',
   };
   static final _images = <String, ui.Image>{};
   static final _geometry = <String, Map<String, dynamic>>{};
@@ -63,7 +66,8 @@ abstract final class F18PhysicalPlateAssets {
           final moving =
               name.startsWith('breaker') ||
               name.startsWith('isolator') ||
-              name.startsWith('button-');
+              name.startsWith('button-') ||
+              name == 'fan';
           for (final camera in ['front', 'palette']) {
             for (final layer
                 in moving
@@ -194,6 +198,9 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
         'auxiliary-nc' => 'Contact auxiliaire normalement fermé',
         'coil' => 'Bobine de relais sur socle',
         'terminal5' => 'Bornier à cinq voies indépendantes',
+        'motor-dc' => 'Moteur à courant continu',
+        'fan' => 'Ventilateur axial à deux fils',
+        'buzzer' => 'Avertisseur sonore',
         _ => modelType,
       };
   String get accessibleState {
@@ -205,7 +212,10 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
       return contactClosed ? 'fermé' : 'ouvert';
     }
     if (shape == 'lamp') return energized ? 'allumée' : 'éteinte';
-    if (shape == 'motor3') {
+    if (shape == 'motor3' ||
+        shape == 'motor-dc' ||
+        shape == 'fan' ||
+        shape == 'buzzer') {
       return energized ? 'alimenté' : 'au repos';
     }
     if (shape == 'supply') return active ? 'actif' : 'arrêté';
@@ -500,6 +510,38 @@ final class _PhysicalPlatePainter extends CustomPainter {
     );
   }
 
+  void rotationIndicator(
+    Canvas c,
+    Offset center,
+    double radius, {
+    double z = 20,
+  }) {
+    // Viewport motion marker: angle traverses a complete turn while the motor
+    // casing, physical shaft axis and electrical terminals remain fixed.
+    c.drawCircle(
+      project(center, z: z),
+      radius,
+      Paint()
+        ..color = const Color(0xFF71848D)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = .8,
+    );
+    final angle = (v.phase % 1) * 2 * math.pi;
+    final p = center + Offset(math.cos(angle), math.sin(angle)) * radius;
+    c.drawLine(
+      project(center, z: z),
+      project(p, z: z),
+      Paint()
+        ..color = const Color(0xFF25AEBB)
+        ..strokeWidth = 1.6,
+    );
+    c.drawCircle(
+      project(p, z: z),
+      1.9,
+      Paint()..color = const Color(0xFF25AEBB),
+    );
+  }
+
   void overlays(Canvas c) {
     if (name.startsWith('breaker') || name.startsWith('isolator')) {
       handles(c);
@@ -510,6 +552,74 @@ final class _PhysicalPlatePainter extends CustomPainter {
       return;
     }
     switch (name) {
+      case 'fan':
+        c.save();
+        if (!v.perspective) {
+          c.translate(w / 2, h * .44);
+          c.rotate((v.phase % 1) * math.pi * 2);
+          c.translate(-w / 2, -h * .44);
+        }
+        controlLayer(c);
+        c.restore();
+        text(
+          c,
+          'CC · 2 FILS',
+          Offset(w / 2, h * .80),
+          z: 26,
+          font: w * .040,
+          color: Colors.white,
+        );
+      case 'motor-dc':
+        text(
+          c,
+          'MOTEUR CC',
+          Offset(w * .48, h * .31),
+          z: h * .24 * .90 + 1,
+          font: w * .044,
+          color: Colors.white,
+        );
+        rotationIndicator(c, Offset(w * .91, h * .68), h * .065);
+        final a = (v.phase % 1) * 2 * math.pi;
+        if (math.sin(a) >= 0) {
+          c.drawLine(
+            project(
+              Offset(w * .85, h * .43 + h * .027 * math.cos(a)),
+              z: h * .027 * math.sin(a),
+            ),
+            project(
+              Offset(w * .97, h * .43 + h * .027 * math.cos(a)),
+              z: h * .027 * math.sin(a),
+            ),
+            Paint()
+              ..color = const Color(0xFF64727B)
+              ..strokeWidth = 1.2,
+          );
+        }
+      case 'buzzer':
+        text(
+          c,
+          'AVERTISSEUR CC',
+          Offset(w / 2, h * .60),
+          z: 38,
+          font: w * .044,
+          color: Colors.white,
+        );
+        if (v.energized) {
+          for (var i = 0; i < 3; i++) {
+            final r = w * (.055 + i * .032);
+            final center = project(Offset(w * .79, h * .42), z: 38);
+            c.drawArc(
+              Rect.fromCircle(center: center, radius: r),
+              -.65,
+              1.3,
+              false,
+              Paint()
+                ..color = const Color(0xFF22AEBB)
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.2,
+            );
+          }
+        }
       case 'fuse-holder':
         text(
           c,
@@ -623,19 +733,19 @@ final class _PhysicalPlatePainter extends CustomPainter {
           );
         }
       case 'motor3':
-        final yy = h * .48;
-        if (v.energized) {
-          const sign = 1;
-          final displacement =
-              math.sin(v.phase * math.pi * 2 * sign) * h * .018;
+        final shaftAngle = (v.phase % 1) * 2 * math.pi;
+        if (math.sin(shaftAngle) >= 0) {
+          final y = h * .48 + h * .035 * math.cos(shaftAngle);
+          final z = h * .035 * math.sin(shaftAngle);
           c.drawLine(
-            project(Offset(w * .855, yy + displacement), z: 3),
-            project(Offset(w * .935, yy + displacement), z: 3),
+            project(Offset(w * .855, y), z: z),
+            project(Offset(w * .935, y), z: z),
             Paint()
               ..color = const Color(0xFF5B6871)
               ..strokeWidth = 1,
           );
         }
+        rotationIndicator(c, Offset(w * .91, h * .64), h * .045);
         text(
           c,
           'M 3~',
@@ -688,6 +798,7 @@ final class _PhysicalPlatePainter extends CustomPainter {
     final labels = switch (name) {
       'supply' => ['+', '−'],
       'coil' => ['A1', 'A2'],
+      'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
       'fuse-holder' => ['1', '2'],
       'auxiliary-no' => ['13', '14'],
       'auxiliary-nc' => ['21', '22'],
@@ -778,9 +889,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
       old.v.energized != v.energized ||
       old.v.actuated != v.actuated ||
       (old.v.phase != v.phase &&
-          v.energized &&
-          F18PhysicalPlateAssets.models[v.modelType.toLowerCase()] ==
-              'motor3') ||
+          {'motor3', 'motor-dc', 'fan'}.contains(
+            F18PhysicalPlateAssets.models[v.modelType.toLowerCase()],
+          )) ||
       (old.v.voltageV != v.voltageV &&
           F18PhysicalPlateAssets.models[v.modelType.toLowerCase()] == 'lamp') ||
       old.v.ratedCurrentA != v.ratedCurrentA ||

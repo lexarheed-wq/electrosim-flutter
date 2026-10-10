@@ -211,6 +211,7 @@ def controls(name,M):
         width=ports[poles-1][0]-ports[0][0]+pw*.76
         round_housing(W/2,H*.76,width,H*.065,39,9,black,1.4)
         box('bar bevel highlight',W/2,H*.737,width*.96,H*.007,39.2,.4,black,.25)
+    elif name=='fan':fan_rotor(W,H)
     elif name in ['button-no','button-nc']:
         color=red if name=='button-nc' else green
         cap=cyl('flat satin pushbutton face',W/2,H*.37,31,W*.278,2.7,color)
@@ -288,9 +289,71 @@ def terminal_bank(W,H,ports):
     for x in [ports[0][0]-pitch*.57,ports[4][0]+pitch*.57]:
         box('terminal bank end plate',x,H*.5,pitch*.15,H*.98,29,38,rear,.6)
 
+def dc_motor(W,H,ports):
+    y=H*.43;r=H*.24;left=W*.12;right=W*.82
+    for x,rad,length,material,label in [(W*.47,r,right-left,black,'smooth brushed DC motor can'),(left,r*1.01,W*.035,steel,'machined front bearing shield'),(right,r*.97,W*.055,rear,'rear brush holder'),(W*.91,H*.027,W*.17,chrome,'DC motor output shaft')]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=96,radius=rad,depth=length,location=(x,-y,0))
+        o=bpy.context.object;o.rotation_euler[1]=math.pi/2;finish(o,label,material,.45)
+        for poly in o.data.polygons:
+            if len(poly.vertices)==4:poly.use_smooth=True
+    for yy in [y-r*.75,y+r*.75]:
+        box('bearing mounting detail',W*.82,yy,W*.035,H*.012,12,3,steel,.3)
+    box('neutral motor nameplate',W*.48,y-r*.48,W*.30,H*.085,r*.90,.5,black,.5)
+    round_housing(W*.5,H*.85,W*.40,H*.16,28,14,black,1.5)
+    for x,yy in ports:
+        wire('insulated brush lead',[(W*.83,-(y+r*.40),-2),(W*.85,-H*.72,7),(x,-yy,18)],1.6,black)
+
+def axial_fan(W,H,ports):
+    cy=H*.44
+    frame=round_housing(W/2,cy,W*.90,H*.84,24,31,rear,4)
+    cut(frame,cyl('open axial airflow aperture',W/2,cy,31,W*.36,65,well))
+    for xx in [W*.12,W*.88]:
+        for yy in [cy-H*.34,cy+H*.34]:
+            pad=round_housing(xx,yy,W*.13,H*.13,25,32,black,2)
+            cut(pad,cyl('fan mounting through hole',xx,yy,30,W*.026,55,well))
+    # Rear support stays fixed behind the rotor on the intake view.
+    for angle in [math.pi/4,3*math.pi/4]:
+        bar=box('fixed motor support',W/2,cy,W*.70,H*.035,-2,5,rear,.5)
+        bar.rotation_euler[2]=angle
+    round_housing(W*.5,H*.89,W*.34,H*.15,28,12,black,1.5)
+    wire('two-wire fan lead',[(W*.84,-(cy+H*.32),3),(W*.84,-H*.88,3),(ports[1][0],-ports[1][1],18)],1.4,black)
+
+def fan_rotor(W,H):
+    cx,cy=W/2,H*.44
+    for k in range(9):
+        vertices=[];steps=14
+        for i in range(steps+1):
+            t=i/steps;radius=W*(.10+.25*t)
+            sweep=k*math.tau/9+.48*t
+            for side in [0,1]:
+                a=sweep+side*(.41-.08*t)
+                vertices.append((cx+radius*math.cos(a),-cy+radius*math.sin(a),12+side*5-3*t))
+        faces=[(2*i,2*i+1,2*i+3,2*i+2) for i in range(steps)]
+        me=bpy.data.meshes.new('twisted curved fan blade');me.from_pydata(vertices,[],faces);me.update()
+        ob=bpy.data.objects.new('twisted curved fan blade',me);scene.collection.objects.link(ob);finish(ob,ob.name,black,.3)
+        solid=ob.modifiers.new('blade thickness','SOLIDIFY');solid.thickness=1.2
+        for poly in me.polygons:poly.use_smooth=True
+    cyl('satin rotor hub',cx,cy,24,W*.105,14,black)
+    cyl('hub bearing cap',cx,cy,24.3,W*.028,.4,steel)
+
+def sounder(W,H,ports):
+    cx,cy=W/2,H*.42;r=W*.29
+    body=cyl('cylindrical acoustic case',cx,cy,37,r,48,black)
+    for poly in body.data.polygons:
+        if len(poly.vertices)==4:poly.use_smooth=True
+    cut(body,cyl('central acoustic opening',cx,cy,41,W*.035,18,well))
+    cyl('dark acoustic cavity',cx,cy,24,W*.031,1,well)
+    for yy in [cy-r*.8,cy+r*.8]:box('case parting seam',cx,yy,W*.25,.5,37.1,.2,well,.1)
+    round_housing(W/2,H*.83,W*.41,H*.16,28,12,black,1)
+    for x,yy in ports:
+        wire('sounder solder lead',[(x,-(cy+r*.60),-5),(x,-yy,20)],1.5,steel)
+
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
-    if name=='fuse-holder':fuse_holder(W,H,ports)
+    if name=='motor-dc':dc_motor(W,H,ports)
+    elif name=='fan':axial_fan(W,H,ports)
+    elif name=='buzzer':sounder(W,H,ports)
+    elif name=='fuse-holder':fuse_holder(W,H,ports)
     elif name in ['auxiliary-no','auxiliary-nc']:auxiliary(W,H,ports)
     elif name=='coil':relay_coil(W,H,ports)
     elif name=='terminal5':terminal_bank(W,H,ports)
@@ -381,7 +444,7 @@ def build(name,M):
             round_housing(xx,yy,W*.11,H*.043,55.5,1.5,well,1)
             cyl('brass lamp terminal',xx,yy,56,5.5,2,brass)
             screw(xx,yy,3.9,57,porcelain)
-    elif name in ['motor-dc','motor3']:
+    elif name=='motor3':
         if name=='motor3':
             left,right,y,r=W*.11,W*.84,H*.48,H*.34
         else:
@@ -445,12 +508,6 @@ def build(name,M):
             # The identification plate remains on the curved stator flank.
             box('riveted aluminium nameplate',W*.61,H*.25,W*.13,H*.10,r*.77,1.5,chrome,1)
             for xx in [W*.55,W*.67]:screw(xx,H*.25,1.7,r*.78,chrome)
-    elif name=='fan':
-        round_housing(cx,H*.47,W*.88,H*.85,20,22,black,5)
-        cyl('fan aperture',cx,H*.47,22,W*.39,2,well)
-        for x in [W*.12,W*.88]:
-            for y in [H*.11,H*.82]:screw(x,y,3,22)
-        round_housing(cx,H*.89,W*.32,H*.095,23,6,white,1)
     elif name=='supply':
         round_housing(cx,cy,W*.89,H*.91,21,38,black,3)
         round_housing(cx,H*.36,W*.76,H*.44,24,3,chrome,2)
@@ -460,7 +517,7 @@ def build(name,M):
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
         if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc']
+        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
         screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
 
@@ -474,7 +531,7 @@ for name,M in MODELS.items():
     if selected!=[''] and name not in selected:continue
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     W,H=M['size'];build(name,M)
-    body_objects=[o for o in scene.objects if o.type=='MESH']
+    body_objects=[o for o in scene.objects if o.type in ['MESH','CURVE']]
     has_controls=controls(name,M)
     control_objects=[o for o in scene.objects if o.type=='MESH' and o not in body_objects]
     area('large soft key',(W/2-160,-H/2+200,320),180000,170)

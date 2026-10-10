@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -14,6 +15,8 @@ import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
 import 'f9_source_voltage_readout.dart';
 import 'runtime/electrosim_runtime_engine.dart';
+import 'runtime/industrial_alarm_audio.dart';
+import 'runtime/rotor_motion.dart';
 
 class F9CanvasVisualOverlay extends StatefulWidget {
   const F9CanvasVisualOverlay({
@@ -29,6 +32,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.wirePreviewPlanner,
     this.runtimeSnapshot,
     this.simulationRunning = false,
+    this.soundEnabled = true,
   });
 
   final CircuitState circuit;
@@ -42,6 +46,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final WirePreviewPlanner? wirePreviewPlanner;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
   final bool simulationRunning;
+  final bool soundEnabled;
 
   @override
   State<F9CanvasVisualOverlay> createState() => _F9CanvasVisualOverlayState();
@@ -55,6 +60,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   );
   late final Ticker _ticker;
   double _motionBaseSeconds = 0;
+  final _alarmAudio = IndustrialAlarmAudio();
 
   CircuitState? _cachedCircuit;
   CircuitVisualLayout? _cachedLayout;
@@ -169,6 +175,15 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
   }
 
   void _syncMotion() {
+    unawaited(
+      _alarmAudio.update(
+        activeAlarmVoices(
+          widget.runtimeSnapshot,
+          running: widget.simulationRunning,
+          enabled: widget.soundEnabled,
+        ),
+      ),
+    );
     final bool shouldRun =
         widget.simulationRunning &&
         (widget.runtimeSnapshot?.solved ?? false) &&
@@ -305,6 +320,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double ratedPowerW,
       required double currentLimitA,
       required double resistanceOhm,
+      double? angularSpeedRadS,
       double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
     }) {
@@ -347,8 +363,11 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   pressed: pressed,
                   actuated: actuated,
                   motionSeconds: _motionSeconds,
+                  angularSpeedRadS: angularSpeedRadS,
                   animate:
-                      energized &&
+                      (angularSpeedRadS != null
+                          ? angularSpeedRadS.abs() > 1e-8
+                          : energized) &&
                       requiresContinuousAnimation(renderedModelType),
                   showTerminals: true,
                   currentA: currentA,
@@ -457,6 +476,17 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: component.id.value,
         modelType: component.modelType,
+        angularSpeedRadS: rotorVelocity(
+          runtime,
+          component,
+          running: widget.simulationRunning,
+          energized: energized,
+          voltageV: voltageV,
+          ratedVoltageV:
+              (component.parameters[ReceiverNominalRating.voltageKey] as num?)
+                  ?.toDouble() ??
+              24,
+        ),
         visualModelType: component.parameters['_visualModelType'] as String?,
         visualVariant: component.parameters['_visualVariant'] as String?,
         enabled: component.condition != ComponentCondition.disabled,
@@ -668,17 +698,19 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     _ticker.dispose();
     _motionSeconds.dispose();
     _fallbackPointerWorld.dispose();
+    unawaited(_alarmAudio.dispose());
     super.dispose();
   }
 }
 
-class _F9ReferenceAsset extends StatelessWidget {
+class _F9ReferenceAsset extends StatefulWidget {
   const _F9ReferenceAsset({
     super.key,
     required this.modelType,
     required this.size,
     required this.motionSeconds,
     required this.animate,
+    this.angularSpeedRadS,
     this.variantKey,
     this.active = true,
     this.energized = false,
@@ -702,6 +734,7 @@ class _F9ReferenceAsset extends StatelessWidget {
   final Size size;
   final ValueListenable<double> motionSeconds;
   final bool animate;
+  final double? angularSpeedRadS;
   final String? variantKey;
   final bool active;
   final bool energized;
@@ -751,12 +784,32 @@ class _F9ReferenceAsset extends StatelessWidget {
   );
 
   @override
+  State<_F9ReferenceAsset> createState() => _F9ReferenceAssetState();
+}
+
+class _F9ReferenceAssetState extends State<_F9ReferenceAsset> {
+  final _rotor = RotorPhase();
+  @override
+  void didUpdateWidget(_F9ReferenceAsset oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _rotor.advance(
+      widget.motionSeconds.value,
+      oldWidget.animate ? (oldWidget.angularSpeedRadS ?? 0) : 0,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!animate) return _visual(0);
+    double phase() => widget.angularSpeedRadS == null
+        ? widget.motionSeconds.value % 1.0
+        : _rotor.advance(
+            widget.motionSeconds.value,
+            widget.animate ? widget.angularSpeedRadS! : 0,
+          );
+    if (!widget.animate) return widget._visual(phase());
     return AnimatedBuilder(
-      animation: motionSeconds,
-      builder: (BuildContext context, Widget? child) =>
-          _visual(motionSeconds.value % 1.0),
+      animation: widget.motionSeconds,
+      builder: (context, child) => widget._visual(phase()),
     );
   }
 }

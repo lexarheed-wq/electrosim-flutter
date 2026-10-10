@@ -472,13 +472,13 @@ class IndustrialSchematicPainter extends CustomPainter {
       );
       final controlling = references.controllingLabelFor(id);
       if (controlling != null) {
-        label(canvas, '↔ ' + controlling, const Offset(0, 69), size: 10);
+        label(canvas, '↔ $controlling', const Offset(0, 69), size: 10);
       } else if (references.contactsFor(id).isNotEmpty) {
         final contacts = references
             .contactsFor(id)
             .map(references.labelOf)
             .join(', ');
-        label(canvas, '↔ ' + contacts, const Offset(0, 69), size: 10);
+        label(canvas, '↔ $contacts', const Offset(0, 69), size: 10);
       }
       canvas.restore();
     }

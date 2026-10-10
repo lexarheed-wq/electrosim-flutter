@@ -15,7 +15,7 @@ dependencies:
     path: ../electrosim_pneumatic_solver
   electrosim_solver_dc:
     path: ../electrosim_solver_dc
-dev_dependencies:
   electrosim_topology:
     path: ../electrosim_topology
+dev_dependencies:
   test: ^1.26.3

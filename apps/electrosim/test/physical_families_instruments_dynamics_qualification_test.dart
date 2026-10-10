@@ -433,6 +433,65 @@ void main() {
     },
   );
 
+  test('PHYS-STORAGE: loaded 48V battery loses SOC over simulated time', () {
+    const params = <String, Object?>{
+      'nominalVoltageV': 48.0,
+      'internalResistanceOhm': 0.08,
+      'capacityAh': 100.0,
+      'initialSoc': 0.60,
+      'minSoc': 0.10,
+      'maxSoc': 0.95,
+      'maxChargeCurrentA': 30.0,
+      'maxDischargeCurrentA': 60.0,
+      'chargeEfficiency': 0.95,
+      'dischargeEfficiency': 0.95,
+    };
+    final circuit = CircuitState(
+      circuitId: CircuitId('time-battery-load'),
+      revision: 1,
+      mode: ElectricalMode.dc,
+      components: <ComponentInstance>[
+        ComponentInstance(
+          id: ComponentId('battery'),
+          modelType: 'pv_battery',
+          terminals: <Terminal>[
+            pin('battery-pos', PhaseTag.dcPositive),
+            pin('battery-neg', PhaseTag.dcNegative),
+          ],
+          parameters: params,
+        ),
+        ComponentInstance(
+          id: ComponentId('resistor'),
+          modelType: 'resistor',
+          terminals: <Terminal>[pin('r-a'), pin('r-b')],
+          parameters: const <String, Object?>{'resistanceOhm': 48.0},
+        ),
+      ],
+      connections: <Connection>[
+        wire('dc-feed', 'battery-pos', 'r-a'),
+        wire('dc-return', 'r-b', 'battery-neg'),
+      ],
+    );
+    final baseline = engine.advance(circuit, elapsed: Duration.zero);
+    final later = engine.advance(
+      circuit,
+      elapsed: const Duration(hours: 1),
+      previousDcBatterySocs: baseline.dcBatterySocs,
+    );
+    final initialSoc = baseline.dcBatterySocs[ComponentId('battery')] ?? 0.60;
+    final laterSoc = later.dcBatterySocs[ComponentId('battery')];
+    expect(baseline.solved, isTrue);
+    expect(later.solved, isTrue);
+    expect(laterSoc, isNotNull);
+    expect(laterSoc!, lessThan(initialSoc));
+    expect(laterSoc, greaterThan(0.50));
+    audit('battery-dynamics', '48V-100Ah-1h', 'PASS', {
+      'initialSoc': initialSoc,
+      'laterSoc': laterSoc,
+      'note': 'First-order coulomb counting; no calendar/cycle aging inferred.',
+    });
+  });
+
   test('PHYS-MOTOR: 24 V DC armature accelerates over runtime steps', () {
     final circuit = dcLoaded('motor_dc', <String, Object?>{
       ComponentParameterKeys.resistanceOhm: 8.0,

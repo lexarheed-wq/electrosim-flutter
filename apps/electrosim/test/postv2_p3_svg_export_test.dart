@@ -3,6 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/industrial_fixture.dart';
 import 'support/regression_fixture.dart';
 
 void main() {
@@ -95,4 +96,23 @@ void main() {
     expect(svg, contains('id="device-no"'));
     expect(svg, contains('id="device-nc"'));
   });
+  test('P3 SVG preserves all six motor terminals and auxiliary contact references', () {
+    final ac3 = buildIndustrialSelfHoldCircuit(startPressed: false, stopPressed: false);
+    final elements = <String, Offset>{
+      for (final source in ac3.sources) source.id.value: const Offset(100, 120),
+      for (final component in ac3.components)
+        component.id.value: Offset(350 + ac3.components.indexOf(component) * 250, 220),
+    };
+    final svg = IndustrialSchematicSvgExport.render(
+      ac3, CircuitVisualLayout(elementPositions: elements),
+    );
+    for (final terminal in ['m-u1', 'm-v1', 'm-w1', 'm-u2', 'm-v2', 'm-w2']) {
+      expect(svg, contains('data-terminal-id="$terminal"'), reason: terminal);
+    }
+    expect(svg, contains('data-reference="k1"'));
+    expect(svg, contains('id="device-aux"'));
+    expect(svg, contains('↔ k1'));
+    expect(RegExp('<polyline ').allMatches(svg).length, ac3.connections.length);
+  });
+
 }

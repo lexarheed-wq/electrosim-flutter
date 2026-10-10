@@ -19,9 +19,7 @@ void main() {
     expect(mppt.defaultParameters['controllerType'], 'mppt');
     expect(
       mppt.defaultParameters['maxPvInputVoltageV'],
-      greaterThanOrEqualTo(
-        highVoltage.defaultParameters['mppVoltageV'] as num,
-      ),
+      greaterThanOrEqualTo(highVoltage.defaultParameters['mppVoltageV'] as num),
     );
     expect(mppt.defaultParameters['outputVoltageV'], 48.0);
     expect(battery.defaultParameters['nominalVoltageV'], 48.0);

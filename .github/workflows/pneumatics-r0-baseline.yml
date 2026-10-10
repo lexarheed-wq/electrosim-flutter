@@ -169,3 +169,51 @@ jobs:
           path: build/pneumatics-r0-production-web/
           retention-days: 14
           if-no-files-found: error
+
+  dc-reference-benchmark:
+    name: dc-reference-benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Capture provenance for solver-only measurements
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r0/dc-full
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            flutter --version
+            dart --version 2>&1
+            uname -a
+            lscpu || true
+            free -h || true
+          } | tee build/pneumatics-r0/dc-full/PROVENANCE.txt
+      - name: Complete DC electrical reference (10 s warmup + 60 s x 3 per size)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_solver_dc
+            dart pub get
+            dart run tool/pneumatics_r0_baseline.dart \
+              --warmup-seconds 10 --measure-seconds 60 --repeats 3 \
+              --out-dir ../../build/pneumatics-r0/dc-full
+          ) > build/pneumatics-r0/dc-full/RUN.log 2>&1
+          test -s build/pneumatics-r0/dc-full/SUMMARY.json
+          (cd build/pneumatics-r0/dc-full && sha256sum *.csv SUMMARY.json PROVENANCE.txt > SHA256.txt)
+      - name: Ensure no tracked source or golden was rewritten
+        run: git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r0-dc-bench-${{ github.sha }}
+          path: build/pneumatics-r0/dc-full/
+          retention-days: 30
+          if-no-files-found: warn

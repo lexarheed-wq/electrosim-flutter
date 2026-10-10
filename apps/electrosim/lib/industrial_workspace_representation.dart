@@ -504,7 +504,15 @@ class IndustrialSchematicPainter extends CustomPainter {
           marks.conductors[wire.id.value] ?? wire.id.value,
           midpoint + const Offset(0, -10),
           size: 9,
-          color: Colors.black87,
+          color: switch (marks.colors[wire.id.value]) {
+            IndustrialConductorColor.brown => const Color(0xFF75451F),
+            IndustrialConductorColor.black => const Color(0xFF181818),
+            IndustrialConductorColor.grey => const Color(0xFF757575),
+            IndustrialConductorColor.blue => const Color(0xFF1E62A8),
+            IndustrialConductorColor.greenYellow => const Color(0xFF13803A),
+            IndustrialConductorColor.red => const Color(0xFFC73830),
+            IndustrialConductorColor.unspecified || null => Colors.black87,
+          },
         );
       }
     }

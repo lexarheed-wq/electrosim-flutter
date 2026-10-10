@@ -9,22 +9,32 @@ import 'package:flutter/foundation.dart';
 final class ElectroSimTpSessionController extends ChangeNotifier {
   ElectroSimTpSessionController({
     QualifiedCatalog? catalog,
+    FaultScenarioRepository? faultScenarios,
     this.tpIdValue = 'TP-RD-F17',
-    this.title = 'Recherche de dérangement — F17',
-    String scenarioId = 'FAULT-DC-003',
-  }) : _catalog = catalog ?? buildF16QualifiedCatalog(),
-       _scenarioId = FaultScenarioId(scenarioId) {
+    this.title = 'Recherche de dérangement',
+    String? scenarioId,
+  }) : _faultScenarios = faultScenarios ??
+           (catalog == null
+               ? buildV2ProductFaultRepository()
+               : FaultScenarioRepository(scenarios: catalog.faultScenarios)),
+       _scenarioId = FaultScenarioId(
+         scenarioId ??
+             (catalog == null
+                 ? 'V2-FAULT-DC-LAMP-OPEN-01'
+                 : 'FAULT-DC-003'),
+       ) {
     _engine = _buildEngine();
   }
 
-  final QualifiedCatalog _catalog;
+  /// Product TP flows use native V2 faults; legacy fixtures need explicit injection.
+  final FaultScenarioRepository _faultScenarios;
   final String tpIdValue;
   final String title;
   final FaultScenarioId _scenarioId;
   late TpEngine _engine;
 
   TpEngine _buildEngine() => TpEngine(
-    faultScenarios: FaultScenarioRepository(scenarios: _catalog.faultScenarios),
+    faultScenarios: _faultScenarios,
     verification: VerificationEngine(qualifiedSolve: _unifiedSolve),
   );
 
@@ -53,7 +63,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     bool includeDraft = false,
   }) {
     final ElectroSimTpSessionController replica = ElectroSimTpSessionController(
-      catalog: _catalog,
+      faultScenarios: _faultScenarios,
       tpIdValue: tpIdValue,
       title: title,
       scenarioId: _scenarioId.value,
@@ -73,6 +83,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     CircuitState? wiringReferenceCircuit,
     CircuitState? studentStarterCircuit,
     String? activityTitle,
+    String? troubleshootingScenarioId,
   }) {
     if (_session != null) {
       throw StateError('A TP session already exists.');
@@ -98,7 +109,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       TpMode.troubleshooting => TpDefinition.troubleshooting(
         id: tpId,
         title: activityTitle ?? title,
-        scenarioId: _scenarioId,
+        scenarioId: troubleshootingScenarioId == null
+            ? _scenarioId
+            : FaultScenarioId(troubleshootingScenarioId),
       ),
     };
     _session = _engine.createDraft(definition);
@@ -202,7 +215,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       'hasSession': true,
       'tpId': tpIdValue,
       'title': title,
-      'scenarioId': _scenarioId.value,
+      'scenarioId': current.definition.faultScenarioId?.value ??
+          _scenarioId.value,
       'mode': current.definition.mode.name,
       'activityTitle': current.definition.title,
       if (current.definition.mode == TpMode.wiring)
@@ -240,12 +254,17 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (json['tpId'] != tpIdValue ||
-        json['title'] != title ||
-        json['scenarioId'] != _scenarioId.value) {
+    if (json['tpId'] != tpIdValue || json['title'] != title) {
       throw const FormatException(
         'Saved TP identity does not match this controller.',
       );
+    }
+
+    final Object? selectedScenarioRaw = json['scenarioId'];
+    if (selectedScenarioRaw is! String ||
+        !_faultScenarios.all.any((scenario) =>
+            scenario.id.value == selectedScenarioRaw)) {
+      throw const FormatException('Unknown or missing TP scenario.');
     }
 
     final Object? lifecycleRaw = json['lifecycle'];
@@ -290,6 +309,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
           ? CircuitState.fromJson(json['studentCircuit'] as Map<String, dynamic>)
           : null,
       activityTitle: activityTitle,
+      troubleshootingScenarioId: selectedScenarioRaw,
     );
     if (lifecycle == TpLifecycle.draft) {
       return;

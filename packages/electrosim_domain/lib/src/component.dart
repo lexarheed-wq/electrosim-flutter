@@ -1,5 +1,6 @@
 import 'domain_error.dart';
 import 'electrical_types.dart';
+import 'electrical_ratings.dart';
 import 'ids.dart';
 import 'json_support.dart';
 import 'terminal.dart';
@@ -14,7 +15,7 @@ final class ComponentInstance {
     Map<String, Object?> controlState = const <String, Object?>{},
   }) : modelType = _validateModelType(modelType),
        terminals = List<Terminal>.unmodifiable(terminals),
-       parameters = freezeJsonMap(parameters),
+       parameters = freezeJsonMap(_normalizeLegacyProtectionRating(modelType, parameters)),
        controlState = freezeJsonMap(controlState) {
     final Set<TerminalId> ids = <TerminalId>{};
     for (final Terminal terminal in this.terminals) {
@@ -49,6 +50,33 @@ final class ComponentInstance {
   final JsonMap parameters;
   final ComponentCondition condition;
   final JsonMap controlState;
+
+  /// One canonical migration at the model boundary. Before PHYS-Q2 the
+  /// 4P breaker and 3P overload relay palette emitted 'ratedCurrentA',
+  /// although the AC3 solver consumes ProtectionRating.ratedCurrentKey.
+  ///
+  /// Normalize older archived/synchronized circuits without modifying
+  /// unrelated models. A valid canonical value always takes precedence.
+  static Map<String, Object?> _normalizeLegacyProtectionRating(
+    String modelType,
+    Map<String, Object?> parameters,
+  ) {
+    if ((modelType != 'breaker_4p' &&
+            modelType != 'thermal_overload_3p') ||
+        parameters.containsKey(ProtectionRating.ratedCurrentKey)) {
+      return parameters;
+    }
+    final Object? legacy = parameters['ratedCurrentA'];
+    if (legacy is! num || !legacy.toDouble().isFinite ||
+        legacy.toDouble() <= 0) {
+      return parameters;
+    }
+    return <String, Object?>{
+      for (final MapEntry<String, Object?> entry in parameters.entries)
+        if (entry.key != 'ratedCurrentA') entry.key: entry.value,
+      ProtectionRating.ratedCurrentKey: legacy.toDouble(),
+    };
+  }
 
   static String _validateModelType(String value) {
     if (value.isEmpty || value != value.trim()) {

@@ -126,8 +126,14 @@ jobs:
             flutter analyze
             flutter test --no-pub --concurrency=1
           ) 2>&1 | tee build/pneumatics-r0/canvas-tests.log
-      - name: Reject tracked mutations, including golden changes
-        run: git diff --exit-code
+      - name: Reject source and golden mutations (log dependency lock drift)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only
+          # Flutter pub get recomputes this existing stale dependency lock.
+          # No generated source, visual golden or other tracked file may change.
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

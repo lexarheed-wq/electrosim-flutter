@@ -395,9 +395,55 @@ def drum_inductor(W,H,ports):
         side=-1 if x<cx else 1
         wire('formed radial inductor pin',[(cx+side*H*.10,-H*.81,13),(cx+side*H*.10,-H*.93,13),(x,-H*.93,27),(x,-y,27)],1.6,chrome)
 
+def axial_diode(W,H,ports,kind):
+    cx,cy=W/2,H/2
+    is_glass=kind=='diode-glass';is_tvs=kind=='diode-tvs'
+    radius=H*(.105 if is_glass else .18 if is_tvs else .145)
+    half=W*(.105 if is_glass else .155 if is_tvs else .135)
+    case=mat('amber DO35 encapsulation',(.43,.085,.025),rough=.11,grain=0) if is_glass else mat('moulded axial epoxy',(.019,.022,.025),rough=.31,grain=.002)
+    if is_glass:
+        bs=case.node_tree.nodes['Principled BSDF'];bs.inputs['Transmission Weight'].default_value=.55;bs.inputs['IOR'].default_value=1.5
+        axial_surface('internal cathode electrode',cy,25,[(cx+half*.15,0),(cx+half*.15,radius*.48),(cx+half-1,radius*.48),(cx+half-1,0)],chrome)
+        axial_surface('internal silicon junction',cy,25,[(cx-2,0),(cx-2,radius*.45),(cx+3,radius*.45),(cx+3,0)],black)
+    axial_surface('axial diode case',cy,25,[(cx-half-2,0),(cx-half-2,radius*.7),(cx-half,radius),(cx+half,radius),(cx+half+2,radius*.7),(cx+half+2,0)],case)
+    # Cathode band towards canonical K: right-hand port, never mirrored.
+    band=black if is_glass else mat('silver cathode identifier',(.64,.65,.61),rough=.4,grain=0)
+    axial_surface('cathode polarity band',cy,25,[(cx+half*.63,radius+.12),(cx+half*.85,radius+.12)],band)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        end=cx-half-2 if x<cx else cx+half+2
+        wire('tinned axial diode lead',[(x,-y,27),(end,-cy,25)],1.35,chrome)
+
+def radial_led(W,H,ports,green_led):
+    cx=W/2;r=H*.165;z=25
+    resin=mat('green diffused LED resin' if green_led else 'red diffused LED resin',(.013,.31,.047) if green_led else (.53,.006,.012),rough=.16,grain=0)
+    bs=resin.node_tree.nodes['Principled BSDF'];bs.inputs['Transmission Weight'].default_value=.24;bs.inputs['IOR'].default_value=1.5
+    # Smooth hemispherical nose and cylindrical stem, axis along product Y.
+    top=H*.10;shoulder=top+r
+    points=[(top,0)]
+    for i in range(1,17):
+        angle=math.pi*.5*i/16
+        points.append((shoulder-r*math.cos(angle),r*math.sin(angle)))
+    points += [(H*.58,r),(H*.585,r*1.13),(H*.63,r*1.13),(H*.635,0)]
+    body=lathe('5mm LED domed package',cx,z,points,resin)
+    # Physical flat on K side; two electrode supports remain visible in resin.
+    cut(body,box('cathode package flat cutter',cx+r*1.27,H*.44,r*.42,H*.54,48,48,well,.01))
+    for side in [-1,1]:
+        x=cx+side*r*.36
+        box('LED lead frame',x,H*.47,r*.17,H*.22,z+1,3,chrome,.25)
+        end=ports[0 if side<0 else 1]
+        wire('formed LED lead to training clamp',[(x,-H*.54,z),(x,-H*.80,z),(end[0],-H*.80,27),(end[0],-end[1],27)],1.25,chrome)
+    # Die cup on cathode support and fine bond wire to anode.
+    cyl('cathode reflector cup',cx+r*.28,H*.38,z+2,r*.22,2,chrome)
+    box('semiconductor emitting die',cx+r*.28,H*.38,r*.09,r*.09,z+3,.8,porcelain,.1)
+    wire('gold bond wire',[(cx-r*.36,-H*.40,z+2),(cx,-H*.35,z+5),(cx+r*.28,-H*.38,z+3)],.24,brass)
+    for x,y in ports:passive_terminal(x,y,H)
+
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
-    if name=='motor-dc':dc_motor(W,H,ports)
+    if name in ['diode-axial','diode-glass','diode-tvs']:axial_diode(W,H,ports,name)
+    elif name in ['led-red','led-green']:radial_led(W,H,ports,name=='led-green')
+    elif name=='motor-dc':dc_motor(W,H,ports)
     elif name=='fan':axial_fan(W,H,ports)
     elif name=='buzzer':sounder(W,H,ports)
     elif name=='resistor-axial':axial_resistor(W,H,ports)
@@ -567,7 +613,7 @@ def build(name,M):
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
         if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum']
+        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
         screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
 

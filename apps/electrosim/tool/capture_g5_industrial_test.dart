@@ -84,6 +84,12 @@ void main() {
       ('resistor', 'résistance'),
       ('capacitor', 'condensateur'),
       ('inductor', 'inductance'),
+      ('diode', 'diode redresseuse'),
+      ('diode', 'schottky'),
+      ('diode', 'zener'),
+      ('diode', 'tvs'),
+      ('diode', 'led rouge'),
+      ('diode', 'led verte'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
@@ -95,11 +101,15 @@ void main() {
             'fan_dc',
             'buzzer',
             'resistor',
+            'diode',
           ].contains(entry.$1)
           ? ElectricalMode.dc
           : ElectricalMode.ac3;
       final paletteDef = f9PaletteCatalog.firstWhere(
-        (d) => d.modelType == entry.$1 && d.supportsMode(mode),
+        (d) =>
+            d.modelType == entry.$1 &&
+            d.supportsMode(mode) &&
+            (entry.$1 != 'diode' || d.title.toLowerCase().contains(entry.$2)),
       );
       final circuit = CircuitState(
         circuitId: CircuitId('physical-${entry.$1}'),
@@ -116,7 +126,13 @@ void main() {
                 name: paletteDef.terminalLabels[i],
               ),
             ),
-            parameters: paletteDef.defaultParameters,
+            parameters: {
+              ...paletteDef.defaultParameters,
+              if (paletteDef.visualVariant != null)
+                '_visualVariant': paletteDef.visualVariant,
+              if (paletteDef.displayLabel != null)
+                '_displayLabel': paletteDef.displayLabel,
+            },
             controlState: paletteDef.defaultControlState,
           ),
         ],
@@ -182,7 +198,11 @@ void main() {
         isTrue,
       );
       expect(t.takeException(), isNull);
-      await save(t, key, 'electrosim-${entry.$1}');
+      await save(
+        t,
+        key,
+        'electrosim-${entry.$1}${entry.$1 == 'diode' ? '-${paletteDef.visualVariant}' : ''}',
+      );
       await t.pumpWidget(const SizedBox());
     }
   });

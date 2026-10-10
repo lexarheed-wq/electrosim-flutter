@@ -28,6 +28,7 @@ const industrialModels = <String, (String, int)>{
   'motor_dc': ('motor-dc', 2),
   'fan_dc': ('fan', 2),
   'buzzer': ('buzzer', 2),
+  'diode': ('diode-axial', 2),
   'resistor': ('resistor-axial', 2),
   'capacitor': ('capacitor-film', 2),
   'inductor': ('inductor-drum', 2),
@@ -56,6 +57,9 @@ void main() {
         'size': [size.width, size.height],
         'ports': ports.map((p) => [p.dx, p.dy]).toList(),
       };
+    }
+    for (final model in F18PhysicalPlateAssets.diodeVariants.values.toSet()) {
+      manifest[model] = manifest['diode-axial']!;
     }
     Directory('build').createSync(recursive: true);
     File(
@@ -93,7 +97,14 @@ void main() {
         );
       }
     }
-    for (final entry in industrialModels.entries) {
+    final imageModels = <(String, String, int)>[
+      for (final entry in industrialModels.entries)
+        (entry.key, entry.value.$1, entry.value.$2),
+      for (final model in F18PhysicalPlateAssets.diodeVariants.values.toSet())
+        if (model != 'diode-axial') ('diode', model, 2),
+    ];
+    for (final model in imageModels) {
+      final entry = MapEntry(model.$1, (model.$2, model.$3));
       final size = F18ReferenceComponentMetrics.boardSizeFor(entry.key);
       for (final view in ['front', 'palette']) {
         if (entry.key.startsWith('breaker') ||

@@ -62,7 +62,8 @@ Les anciens gardes F9/P1 signalent des écarts sur cette base ; ils ne sont pas
 présentés comme réussis. La compilation native Mac reste à confirmer par CI.
 
 L'[inventaire du catalogue](catalogue-status.md) distingue les 77 entrées,
-les 30 entrées utilisant les plaques Cycles et les 23 géométries partagées.
+les 36 entrées utilisant les plaques Cycles et les 28 géométries partagées après
+le [lot semi-conducteurs](../g5-industrial-semiconductors/README.md).
 
 Depuis `apps/electrosim` :
 
@@ -78,5 +79,5 @@ Depuis la racine, pour les rendus originaux :
 ELECTROSIM_INDUSTRIAL_MODELS=resistor-axial,capacitor-film,inductor-drum ELECTROSIM_RENDER_SAMPLES=64 blender -b --factory-startup -t 4 --python tools/render_g5_industrial.py
 ```
 
-Le catalogue complet n'est pas terminé. Diodes/LED, instruments, sources/PV et
+Le catalogue complet n'est pas terminé. Instruments, sources/PV et
 plusieurs équipements de charge conservent leurs représentations antérieures.

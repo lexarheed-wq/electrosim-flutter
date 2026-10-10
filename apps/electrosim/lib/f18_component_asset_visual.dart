@@ -311,7 +311,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
-    if (F18PhysicalPlateAssets.ready(type)) {
+    if (F18PhysicalPlateAssets.ready(type, variantKey: variantKey)) {
       return F18IndustrialPhysicalPlate(
         modelType: type,
         size: size,

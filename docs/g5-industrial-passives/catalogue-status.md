@@ -1,6 +1,6 @@
 # Inventaire des rendus électriques
 
-État de la branche industrielle incluant le lot passifs. Les entrées sont celles du catalogue de production, avec leur type visuel réel : un moteur associé à une pompe ne signifie pas que la pompe a reçu une géométrie Cycles.
+État de la branche industrielle incluant les lots passifs et semi-conducteurs. Les entrées sont celles du catalogue de production, avec leur type visuel réel : un moteur associé à une pompe ne signifie pas que la pompe a reçu une géométrie Cycles.
 
 « Cycles » désigne une géométrie originale en perspective et face avant ; cela ne certifie ni une identité photographique à 100 % ni une qualification fabricant. Les apparences antérieures ne sont pas toutes planes : elles nécessitent une comparaison et une qualification propres.
 
@@ -21,12 +21,12 @@
 | push-button-nc | Bouton-poussoir NC | push_button_nc | push_button_nc | Cycles : button-nc |
 | buzzer | Buzzer | buzzer | buzzer | Cycles : buzzer |
 | fuse | Fusible | fuse_dc | fuse_dc | Cycles : fuse-holder |
-| diode | Diode redresseuse | diode | diode | Rendu antérieur — à comparer/améliorer |
-| diode-schottky | Diode Schottky | diode | diode | Rendu antérieur — à comparer/améliorer |
-| led-red | LED rouge | diode | diode | Rendu antérieur — à comparer/améliorer |
-| led-green | LED verte | diode | diode | Rendu antérieur — à comparer/améliorer |
-| zener-5v1 | Diode Zener 5,1 V | diode | diode | Rendu antérieur — à comparer/améliorer |
-| tvs-12v | Diode TVS 12 V | diode | diode | Rendu antérieur — à comparer/améliorer |
+| diode | Diode redresseuse | diode | diode | Cycles : diode-axial |
+| diode-schottky | Diode Schottky | diode | diode | Cycles : diode-axial |
+| led-red | LED rouge | diode | diode | Cycles : led-red |
+| led-green | LED verte | diode | diode | Cycles : led-green |
+| zener-5v1 | Diode Zener 5,1 V | diode | diode | Cycles : diode-glass |
+| tvs-12v | Diode TVS 12 V | diode | diode | Cycles : diode-tvs |
 | fan-dc | Ventilateur CC | fan_dc | fan_dc | Cycles : fan |
 | motor-dc | Moteur CC | motor_dc | motor_dc | Cycles : motor-dc |
 | relay-coil | Bobine relais 24 V CC | relay_coil | relay_coil | Cycles : coil |
@@ -84,4 +84,4 @@
 | terminal-block-5 | Bornier L1/L2/L3/N/PE | terminal_block_5 | terminal_block_5 | Cycles : terminal5 |
 | thermal-overload-3p | Relais thermique 3P | thermal_overload_3p | thermal_overload_3p | Cycles : overload |
 
-77 entrées de production, dont 30 entrées avec plaques Cycles ; 23 géométries partagées.
+77 entrées de production, dont 36 entrées avec plaques Cycles ; 28 géométries partagées.

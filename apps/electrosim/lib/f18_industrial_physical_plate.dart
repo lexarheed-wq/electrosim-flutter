@@ -68,6 +68,7 @@ abstract final class F18PhysicalPlateAssets {
     'motor_dc': 'motor-dc',
     'fan_dc': 'fan',
     'buzzer': 'buzzer',
+    'diode': 'diode-axial',
     'resistor': 'resistor-axial',
     'capacitor': 'capacitor-film',
     'inductor': 'inductor-drum',
@@ -76,9 +77,25 @@ abstract final class F18PhysicalPlateAssets {
   static final _geometry = <String, Map<String, dynamic>>{};
   static final _controlRects = <String, Rect>{};
   static Future<bool>? _loading;
+  static const diodeVariants = <String, String>{
+    'rectifier': 'diode-axial',
+    'schottky': 'diode-axial',
+    'zener': 'diode-glass',
+    'tvs': 'diode-tvs',
+    'led-red': 'led-red',
+    'led-green': 'led-green',
+  };
+  static Set<String> get assetModels => {
+    ...models.values,
+    ...diodeVariants.values,
+  };
+  static String? modelFor(String type, {String? variantKey}) =>
+      type.toLowerCase() == 'diode' && variantKey != null
+      ? diodeVariants[variantKey.toLowerCase()]
+      : models[type.toLowerCase()];
   static bool supports(String type) => models.containsKey(type.toLowerCase());
-  static bool ready(String type) =>
-      _images.containsKey('${models[type.toLowerCase()]}-front');
+  static bool ready(String type, {String? variantKey}) =>
+      _images.containsKey('${modelFor(type, variantKey: variantKey)}-front');
   static Future<bool> preload() => _loading ??= _load();
   static Future<bool> _load() async {
     try {
@@ -96,7 +113,7 @@ abstract final class F18PhysicalPlateAssets {
                 ),
               )
               as Map<String, dynamic>;
-      for (final name in models.values.toSet()) {
+      for (final name in assetModels) {
         final staged = <String, ui.Image>{};
         final stagedRects = <String, Rect>{};
         try {
@@ -163,7 +180,7 @@ abstract final class F18PhysicalPlateAssets {
     } catch (_) {
       return false;
     }
-    return _geometry.length == models.values.toSet().length;
+    return _geometry.length == assetModels.length;
   }
 }
 
@@ -222,40 +239,54 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
       : closed
       ? 0
       : 1;
-  String get accessibleName =>
-      switch (F18PhysicalPlateAssets.models[modelType.toLowerCase()]) {
-        'breaker1' => 'Disjoncteur unipolaire',
-        'breaker3' => 'Disjoncteur tripolaire',
-        'breaker4' => 'Disjoncteur tétrapolaire',
-        'isolator3' => 'Sectionneur tripolaire',
-        'isolator4' => 'Sectionneur tétrapolaire',
-        'contactor1' => 'Contacteur monophasé',
-        'contactor3' => 'Contacteur triphasé',
-        'overload' => 'Relais thermique',
-        'button-no' => 'Bouton-poussoir normalement ouvert',
-        'button-nc' => 'Bouton-poussoir normalement fermé',
-        'motor3' => 'Moteur triphasé',
-        'lamp' => 'Lampe à incandescence',
-        'fuse-holder' => 'Porte-fusible',
-        'auxiliary-no' => 'Contact auxiliaire normalement ouvert',
-        'auxiliary-nc' => 'Contact auxiliaire normalement fermé',
-        'coil' => 'Bobine de relais sur socle',
-        'terminal5' => 'Bornier à cinq voies indépendantes',
-        'motor-dc' => 'Moteur à courant continu',
-        'fan' => 'Ventilateur axial à deux fils',
-        'buzzer' => 'Avertisseur sonore',
-        'resistor-axial' => 'Résistance axiale',
-        'capacitor-film' => 'Condensateur à film non polarisé',
-        'inductor-drum' => 'Inductance sur noyau ferrite',
-        _ => modelType,
-      };
+  String get accessibleName => switch (F18PhysicalPlateAssets.modelFor(
+    modelType,
+    variantKey: variantKey,
+  )) {
+    'breaker1' => 'Disjoncteur unipolaire',
+    'breaker3' => 'Disjoncteur tripolaire',
+    'breaker4' => 'Disjoncteur tétrapolaire',
+    'isolator3' => 'Sectionneur tripolaire',
+    'isolator4' => 'Sectionneur tétrapolaire',
+    'contactor1' => 'Contacteur monophasé',
+    'contactor3' => 'Contacteur triphasé',
+    'overload' => 'Relais thermique',
+    'button-no' => 'Bouton-poussoir normalement ouvert',
+    'button-nc' => 'Bouton-poussoir normalement fermé',
+    'motor3' => 'Moteur triphasé',
+    'lamp' => 'Lampe à incandescence',
+    'fuse-holder' => 'Porte-fusible',
+    'auxiliary-no' => 'Contact auxiliaire normalement ouvert',
+    'auxiliary-nc' => 'Contact auxiliaire normalement fermé',
+    'coil' => 'Bobine de relais sur socle',
+    'terminal5' => 'Bornier à cinq voies indépendantes',
+    'motor-dc' => 'Moteur à courant continu',
+    'fan' => 'Ventilateur axial à deux fils',
+    'buzzer' => 'Avertisseur sonore',
+    'diode-axial' =>
+      variantKey == 'schottky' ? 'Diode Schottky' : 'Diode redresseuse',
+    'diode-glass' => 'Diode Zener',
+    'diode-tvs' => 'Diode TVS unidirectionnelle',
+    'led-red' => 'LED rouge',
+    'led-green' => 'LED verte',
+    'resistor-axial' => 'Résistance axiale',
+    'capacitor-film' => 'Condensateur à film non polarisé',
+    'inductor-drum' => 'Inductance sur noyau ferrite',
+    _ => modelType,
+  };
   String get accessibleState {
-    final shape = F18PhysicalPlateAssets.models[modelType.toLowerCase()] ?? '';
+    final shape =
+        F18PhysicalPlateAssets.modelFor(modelType, variantKey: variantKey) ??
+        '';
     if (shape.startsWith('button-')) return pressed ? 'appuyé' : 'relâché';
     if (shape.startsWith('contactor')) return actuated ? 'attiré' : 'au repos';
     if (shape.startsWith('auxiliary-')) {
       final contactClosed = shape == 'auxiliary-nc' ? !actuated : actuated;
       return contactClosed ? 'fermé' : 'ouvert';
+    }
+    if (shape.startsWith('led-')) return energized ? 'allumée' : 'éteinte';
+    if (shape.startsWith('diode-')) {
+      return active ? 'semi-conducteur' : 'désactivé';
     }
     if (shape == 'lamp') return energized ? 'allumée' : 'éteinte';
     if (shape == 'motor3' ||
@@ -601,6 +632,49 @@ final class _PhysicalPlatePainter extends CustomPainter {
       return;
     }
     switch (name) {
+      case 'diode-axial':
+      case 'diode-glass':
+      case 'diode-tvs':
+        text(
+          c,
+          switch (v.variantKey) {
+            'schottky' => 'Schottky',
+            'zener' => 'Zener',
+            'tvs' => 'TVS',
+            _ => 'Diode',
+          },
+          Offset(w / 2, h * .84),
+          font: h * .09,
+          z: 1,
+        );
+      case 'led-red':
+      case 'led-green':
+        if (v.energized) {
+          final color = name == 'led-green'
+              ? const Color(0xFF49ED66)
+              : const Color(0xFFFF5544);
+          final center = project(Offset(w / 2, h * .34), z: 28);
+          c.drawCircle(
+            center,
+            h * .23,
+            Paint()
+              ..shader = ui.Gradient.radial(
+                center,
+                h * .23,
+                [
+                  color.withValues(alpha: .8),
+                  color.withValues(alpha: .28),
+                  color.withValues(alpha: 0),
+                ],
+                [0, .45, 1],
+              ),
+          );
+          c.drawCircle(
+            center,
+            h * .045,
+            Paint()..color = color.withValues(alpha: .8),
+          );
+        }
       case 'resistor-axial':
         final bands = physicalResistorBands(v.resistanceOhm);
         for (var i = 0; i < bands.length; i++) {
@@ -919,6 +993,11 @@ final class _PhysicalPlatePainter extends CustomPainter {
   void portLabels(Canvas c) {
     if (!v.showTerminals) return;
     final labels = switch (name) {
+      'diode-axial' ||
+      'diode-glass' ||
+      'diode-tvs' ||
+      'led-red' ||
+      'led-green' => ['A', 'K'],
       'supply' => ['+', '−'],
       'coil' => ['A1', 'A2'],
       'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
@@ -971,7 +1050,10 @@ final class _PhysicalPlatePainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size size) {
-    name = F18PhysicalPlateAssets.models[v.modelType.toLowerCase()]!;
+    name = F18PhysicalPlateAssets.modelFor(
+      v.modelType,
+      variantKey: v.variantKey,
+    )!;
     final g = F18PhysicalPlateAssets._geometry[name]!;
     final dims = g['size'] as List;
     design = Size((dims[0] as num).toDouble(), (dims[1] as num).toDouble());
@@ -1004,6 +1086,7 @@ final class _PhysicalPlatePainter extends CustomPainter {
   @override
   bool shouldRepaint(_PhysicalPlatePainter old) =>
       old.v.modelType != v.modelType ||
+      old.v.variantKey != v.variantKey ||
       old.v.size != v.size ||
       old.v.perspective != v.perspective ||
       old.handle != handle ||
@@ -1014,10 +1097,17 @@ final class _PhysicalPlatePainter extends CustomPainter {
       old.v.actuated != v.actuated ||
       (old.v.phase != v.phase &&
           {'motor3', 'motor-dc', 'fan'}.contains(
-            F18PhysicalPlateAssets.models[v.modelType.toLowerCase()],
+            F18PhysicalPlateAssets.modelFor(
+              v.modelType,
+              variantKey: v.variantKey,
+            ),
           )) ||
       (old.v.voltageV != v.voltageV &&
-          F18PhysicalPlateAssets.models[v.modelType.toLowerCase()] == 'lamp') ||
+          F18PhysicalPlateAssets.modelFor(
+                v.modelType,
+                variantKey: v.variantKey,
+              ) ==
+              'lamp') ||
       old.v.ratedCurrentA != v.ratedCurrentA ||
       old.v.resistanceOhm != v.resistanceOhm ||
       old.v.showTerminals != v.showTerminals;

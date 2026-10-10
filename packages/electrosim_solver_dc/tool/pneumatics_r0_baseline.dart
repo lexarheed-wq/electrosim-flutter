@@ -144,7 +144,7 @@ CircuitState buildReferenceCircuit(int apparatusCount) {
   final List<ComponentInstance> components = <ComponentInstance>[];
   final List<Connection> connections = <Connection>[];
   for (var i = 0; i < apparatusCount - 1; i++) {
-    final String id = 'b' + (i % 4).toString() + '_r' + i.toString();
+    final String id = 'b' + (i % 4).toString() + '-r' + i.toString();
     final String a = id + '-a';
     final String b = id + '-b';
     components.add(ComponentInstance(

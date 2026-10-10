@@ -176,7 +176,11 @@ abstract final class IndustrialSchematicSvgExport {
         '<text x="0" y="-67" text-anchor="middle" stroke="none" '
         'fill="black" font-size="12">${_xml(refs.labelOf(id))}</text>',
       );
-      final link = refs.controllingLabelFor(id);
+      final controlled = refs.contactsFor(id);
+      final link = refs.controllingLabelFor(id) ??
+          (controlled.isEmpty
+              ? null
+              : controlled.map(refs.labelOf).join(', '));
       if (link != null) {
         svg.writeln(
           '<text x="0" y="73" text-anchor="middle" '

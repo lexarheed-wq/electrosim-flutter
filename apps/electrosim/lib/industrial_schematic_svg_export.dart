@@ -15,9 +15,10 @@ abstract final class IndustrialSchematicSvgExport {
     final layout = IndustrialSchematicProjection.derive(circuit, plate);
     final geometry = CircuitGeometryIndex.build(circuit, layout);
     final refs = IndustrialSchematicReferences.build(circuit);
-    final marks = circuit.metadata.containsKey(
-      IndustrialMarkingRegistry.metadataKey,
-    ) ? IndustrialMarkingRegistry.inspect(circuit) : null;
+    final marks =
+        circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+        ? IndustrialMarkingRegistry.inspect(circuit)
+        : null;
     final ids = <String>[
       ...circuit.sources.map((e) => e.id.value),
       ...circuit.components.map((e) => e.id.value),

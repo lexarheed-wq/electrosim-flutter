@@ -84,9 +84,8 @@ final class IndustrialSchematicReferences {
     void addLabel(String id, Map<String, Object?> parameters) {
       // P3 consumes explicit references without performing P4 auto-numbering.
       final explicit = parameters['industrialReference'];
-      final value = circuit.metadata.containsKey(
-        IndustrialMarkingRegistry.metadataKey,
-      )
+      final value =
+          circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
           ? markings.devices[id] ?? id
           : explicit is String && explicit.trim().isNotEmpty
           ? explicit.trim()

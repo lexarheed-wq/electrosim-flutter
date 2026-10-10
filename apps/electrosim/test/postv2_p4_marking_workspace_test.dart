@@ -8,16 +8,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'support/regression_fixture.dart';
 
 void main() {
-  testWidgets('P4 teacher generates persistent labels and exports wire refs',
-      (tester) async {
+  testWidgets('P4 teacher generates persistent labels and exports wire refs', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final circuit = buildRegressionFixtureCircuit();
-    await tester.pumpWidget(MaterialApp(
-      home: F9WorkspaceDemoPage(initialCircuit: circuit),
-    ));
+    await tester.pumpWidget(
+      MaterialApp(home: F9WorkspaceDemoPage(initialCircuit: circuit)),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('workspace-more-actions')));
     await tester.pumpAndSettle();
@@ -28,9 +29,7 @@ void main() {
       find.byKey(const Key('workspace-generate-industrial-markings')),
     );
     await tester.pumpAndSettle();
-    final board = tester.widget<SimulatorCanvas>(
-      find.byType(SimulatorCanvas),
-    );
+    final board = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
     final updated = board.circuit;
     final plan = IndustrialMarkingRegistry.inspect(updated);
     expect(plan.devices['lamp-1'], 'H1');
@@ -50,19 +49,23 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final original = buildRegressionFixtureCircuit();
-    await tester.pumpWidget(MaterialApp(
-      home: F9WorkspaceDemoPage(
-        initialCircuit: original,
-        initialSelectedElementId: 'lamp-1',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: F9WorkspaceDemoPage(
+          initialCircuit: original,
+          initialSelectedElementId: 'lamp-1',
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('workspace-more-actions')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
       find.byKey(const Key('workspace-edit-industrial-marking')),
     );
-    await tester.tap(find.byKey(const Key('workspace-edit-industrial-marking')));
+    await tester.tap(
+      find.byKey(const Key('workspace-edit-industrial-marking')),
+    );
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('p4-marking-text')), 'H7');
     await tester.tap(find.byKey(const Key('p4-marking-locked')));

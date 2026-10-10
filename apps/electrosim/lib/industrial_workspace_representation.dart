@@ -490,9 +490,7 @@ class IndustrialSchematicPainter extends CustomPainter {
     for (final c in circuit.components) {
       element(c.id.value, c.modelType, c.terminals);
     }
-    if (circuit.metadata.containsKey(
-      IndustrialMarkingRegistry.metadataKey,
-    )) {
+    if (circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)) {
       final marks = IndustrialMarkingRegistry.inspect(circuit);
       final geometry = CircuitGeometryIndex.build(circuit, layout);
       for (final wire in circuit.connections) {

@@ -177,10 +177,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     final next = IndustrialMarkingRegistry.materialize(_circuit);
     final plan = IndustrialMarkingRegistry.inspect(next);
-    final message = 'Repérage : ' + plan.devices.length.toString() +
-        ' appareils, ' + plan.conductors.length.toString() +
-        ' conducteurs, ' + plan.terminals.length.toString() +
-        ' bornes. ' + plan.issues.length.toString() + ' anomalie(s).';
+    final message =
+        'Repérage : ' +
+        plan.devices.length.toString() +
+        ' appareils, ' +
+        plan.conductors.length.toString() +
+        ' conducteurs, ' +
+        plan.terminals.length.toString() +
+        ' bornes. ' +
+        plan.issues.length.toString() +
+        ' anomalie(s).';
     if (identical(next, _circuit)) {
       _setStatus(message);
       return;
@@ -212,7 +218,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _setStatus('Sélectionner un appareil ou un conducteur.');
       return;
     }
-    final editor = TextEditingController(text: plan.referenceOf(kind, selected));
+    final editor = TextEditingController(
+      text: plan.referenceOf(kind, selected),
+    );
     var locked = plan.locks[kind.name + ':' + selected] ?? false;
     final answer = await showDialog<(String, bool)>(
       context: context,
@@ -231,8 +239,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 key: const Key('p4-marking-locked'),
                 value: locked,
                 title: const Text('Verrouiller ce repère'),
-                onChanged: (value) =>
-                    setDialogState(() => locked = value),
+                onChanged: (value) => setDialogState(() => locked = value),
               ),
             ],
           ),
@@ -265,8 +272,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final issues = IndustrialMarkingRegistry.inspect(next).issues;
       setState(() {
         _circuit = next;
-        _status = 'Repère enregistré : ' + answer.$1 + '. ' +
-            issues.length.toString() + ' anomalie(s) de repérage.';
+        _status =
+            'Repère enregistré : ' +
+            answer.$1 +
+            '. ' +
+            issues.length.toString() +
+            ' anomalie(s) de repérage.';
       });
       _simulation.updateCircuit(next);
     } on Object catch (error) {
@@ -978,12 +989,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       onExitWorkspace: widget.onExitWorkspace,
                       onGenerateIndustrialMarkings:
                           widget.role == F9UserRole.teacher
-                              ? _generateIndustrialMarkings
-                              : null,
-                      onEditIndustrialMarking:
-                          widget.role == F9UserRole.teacher
-                              ? _editSelectedIndustrialMarking
-                              : null,
+                          ? _generateIndustrialMarkings
+                          : null,
+                      onEditIndustrialMarking: widget.role == F9UserRole.teacher
+                          ? _editSelectedIndustrialMarking
+                          : null,
                       onExportSchematicSvg: () =>
                           unawaited(_exportSchematic(pdf: false)),
                       onExportSchematicPdf: () =>

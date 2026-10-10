@@ -9,8 +9,13 @@ import 'pneumatic_device_glyph.dart';
 /// Experimental two-view editor. The physical solver is NOT driven by widgets.
 /// Both presentations edit exactly one canonical MultiphysicsProject.
 class PneumaticWorkshopPage extends StatefulWidget {
-  const PneumaticWorkshopPage({super.key, this.initialProject});
+  const PneumaticWorkshopPage({
+    super.key,
+    this.initialProject,
+    this.initialView = PneumaticWorkshopView.physical,
+  });
   final MultiphysicsProject? initialProject;
+  final PneumaticWorkshopView initialView;
 
   @override
   State<PneumaticWorkshopPage> createState() => _PneumaticWorkshopPageState();
@@ -41,6 +46,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   void initState() {
     super.initState();
     _state = PneumaticWorkshopState(
+      view: widget.initialView,
       project:
           widget.initialProject ??
           MultiphysicsProject(

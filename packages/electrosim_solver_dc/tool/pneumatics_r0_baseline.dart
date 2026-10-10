@@ -144,7 +144,7 @@ CircuitState buildReferenceCircuit(int apparatusCount) {
   final List<ComponentInstance> components = <ComponentInstance>[];
   final List<Connection> connections = <Connection>[];
   for (var i = 0; i < apparatusCount - 1; i++) {
-    final String id = 'r' + i.toString();
+    final String id = 'b' + (i % 4).toString() + '_r' + i.toString();
     final String a = id + '-a';
     final String b = id + '-b';
     components.add(ComponentInstance(
@@ -158,13 +158,13 @@ CircuitState buildReferenceCircuit(int apparatusCount) {
     ));
     connections.add(Connection(
       id: ConnectionId('w-p-' + id),
-      fromTerminalId: const TerminalId('vp'),
+      fromTerminalId: TerminalId('vp'),
       toTerminalId: TerminalId(a),
     ));
     connections.add(Connection(
       id: ConnectionId('w-n-' + id),
       fromTerminalId: TerminalId(b),
-      toTerminalId: const TerminalId('vn'),
+      toTerminalId: TerminalId('vn'),
     ));
   }
   return CircuitState(
@@ -175,11 +175,11 @@ CircuitState buildReferenceCircuit(int apparatusCount) {
     connections: connections,
     sources: <SourceInstance>[
       SourceInstance(
-        id: const SourceId('v1'),
+        id: SourceId('v1'),
         modelType: 'dc_voltage_source',
         terminals: <Terminal>[
-          Terminal(id: const TerminalId('vp'), name: '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
-          Terminal(id: const TerminalId('vn'), name: '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
+          Terminal(id: TerminalId('vp'), name: '+', role: TerminalRole.positive, phase: PhaseTag.dcPositive),
+          Terminal(id: TerminalId('vn'), name: '-', role: TerminalRole.negative, phase: PhaseTag.dcNegative),
         ],
         parameters: const <String, Object?>{'voltageV': 24.0},
       ),

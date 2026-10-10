@@ -499,6 +499,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               title: const Text('Historique des TP terminés'),
               content: SizedBox(
                 width: 480,
+                height: 300,
                 child: ListView(
                   shrinkWrap: true,
                   children: <Widget>[

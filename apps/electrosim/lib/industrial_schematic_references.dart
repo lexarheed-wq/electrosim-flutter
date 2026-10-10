@@ -1,5 +1,7 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
+import 'industrial_marking_registry.dart';
+
 /// A presentation-only registry. It never allocates electrical IDs, renumbers
 /// terminals, or changes the authoritative CircuitState.
 enum SchematicReferenceIssueKind {
@@ -74,6 +76,7 @@ final class IndustrialSchematicReferences {
       ..sort((a, b) => a.id.value.compareTo(b.id.value));
     final sources = [...circuit.sources]
       ..sort((a, b) => a.id.value.compareTo(b.id.value));
+    final markings = IndustrialMarkingRegistry.inspect(circuit);
     final labels = <String, String>{};
     final referenceOwners = <String, String>{};
     final issues = <SchematicReferenceIssue>[];
@@ -81,7 +84,10 @@ final class IndustrialSchematicReferences {
     void addLabel(String id, Map<String, Object?> parameters) {
       // P3 consumes explicit references without performing P4 auto-numbering.
       final explicit = parameters['industrialReference'];
-      final value = explicit is String && explicit.trim().isNotEmpty
+      final value =
+          circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+          ? markings.devices[id] ?? id
+          : explicit is String && explicit.trim().isNotEmpty
           ? explicit.trim()
           : id;
       labels[id] = value;

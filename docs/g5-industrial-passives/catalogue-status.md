@@ -8,6 +8,8 @@
 |---|---|---|---|---|
 | instrument-voltmeter | Voltmètre physique | physical_voltmeter | physical_voltmeter | Rendu antérieur — à comparer/améliorer |
 | instrument-ammeter | Ampèremètre physique | physical_ammeter | physical_ammeter | Rendu antérieur — à comparer/améliorer |
+| instrument-frequency | Fréquencemètre physique | physical_frequency_meter | physical_frequency_meter | Rendu antérieur — à comparer/améliorer |
+| instrument-phase-sequence | Contrôleur d’ordre des phases | physical_phase_sequence_tester | physical_phase_sequence_tester | Rendu antérieur — à comparer/améliorer |
 | source-dc-24v | Source CC 24 V | dc_voltage_source | dc_voltage_source | Rendu antérieur — à comparer/améliorer |
 | switch-no | Interrupteur NO | switch | switch | Rendu antérieur — à comparer/améliorer |
 | lamp | Lampe | lamp | lamp | Cycles : lamp |
@@ -53,6 +55,7 @@
 | source-ac3-l2 | Réseau triphasé — L2 | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
 | source-ac3-l3 | Réseau triphasé — L3 | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
 | pv-array | Champ photovoltaïque | pv_array | pv_array | Rendu antérieur — à comparer/améliorer |
+| pv-array-high-voltage | Champ photovoltaïque haute tension | pv_array | pv_array | Rendu antérieur — à comparer/améliorer |
 | pv-controller-mppt | Régulateur solaire MPPT | pv_controller | pv_controller | Rendu antérieur — à comparer/améliorer |
 | pv-controller-pwm | Régulateur solaire PWM | pv_controller | pv_controller | Rendu antérieur — à comparer/améliorer |
 | pv-battery | Batterie photovoltaïque | pv_battery | pv_battery | Rendu antérieur — à comparer/améliorer |
@@ -66,7 +69,7 @@
 | capacitor | Condensateur | capacitor | capacitor | Cycles : capacitor-film |
 | inductor | Inductance | inductor | inductor | Cycles : inductor-drum |
 | impedance | Impédance | impedance | impedance | Rendu antérieur — à comparer/améliorer |
-| rcd-2p-ac1 | Différentiel 2P AC | rcd_2p_ac1 | rcd_2p_ac1 | Painter 3D différentiel existant |
+| rcd-2p-ac1 | Différentiel 2P AC | rcd_2p_ac1 | rcd_2p_ac1 | Rendu antérieur — à comparer/améliorer |
 | breaker-ac1 | Disjoncteur AC 1φ | breaker_ac1 | breaker_ac1 | Cycles : breaker1 |
 | fuse-ac1 | Fusible AC 1φ | fuse_ac1 | fuse_ac1 | Cycles : fuse-holder |
 | aux-contact-no | Contact auxiliaire NO | contactor_aux_no | contactor_aux_no | Cycles : auxiliary-no |
@@ -81,6 +84,4 @@
 | terminal-block-5 | Bornier L1/L2/L3/N/PE | terminal_block_5 | terminal_block_5 | Cycles : terminal5 |
 | thermal-overload-3p | Relais thermique 3P | thermal_overload_3p | thermal_overload_3p | Cycles : overload |
 
-Inventaire : **74 entrées**, **30 entrées utilisant les plaques Cycles** et **23 géométries Cycles distinctes** dans le chargeur. Une géométrie peut desservir plusieurs variantes.
-
-Preuves : `../g5-industrial-photo-reference/`, `../g5-industrial-next/`, `../g5-industrial-receivers/` et `../g5-industrial-passives/`. Les sources idéales et charges abstraites nécessitent une représentation pédagogique explicite, pas un faux appareil commercial.
+77 entrées de production, dont 30 entrées avec plaques Cycles ; 23 géométries partagées.

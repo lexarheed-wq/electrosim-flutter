@@ -1,6 +1,7 @@
 # Passifs — résistance, condensateur et inductance
 
-Ce lot poursuit la PR 72 sur la branche industrielle séparée. Il ajoute trois
+Ce lot est isolé sur `feat/g5-passive-realism-20261010`, à partir du commit
+`4b083fd` de la branche industrielle récente, qui a intégré la PR 72. Il ajoute trois
 géométries originales Cycles : vue en perspective dans la palette, vue frontale
 sur la platine métallisée. Aucune fusion n'est effectuée.
 
@@ -52,14 +53,15 @@ Ces appareils passifs ne sont pas représentés comme des modules DIN.
 
 ## Reproduction
 
-Qualification du lot : **428 tests application réussis**, **quatre tests de
-captures réussis**, analyse Dart sans problème et gardes architecture/P1
-réussies. La compilation Web release de l'entrée de production `lib/main.dart`
-a réussi. Les références visuelles électriques existantes sont conservées,
-sans mise à jour des goldens. La compilation native Mac n'est pas déduite de
-ce build Web et reste à confirmer par son workflow.
+Qualification sur cette base : **544 tests application réussis**, deux tests
+ignorés par la suite existante, **quatre tests de captures réussis** et analyse
+Dart sans problème. La compilation Web release de `lib/main.dart` a réussi
+avec les sources application et packages de cette base. Les goldens existants
+n'ont pas été modifiés. Le garde `core_unify_architecture_guard.py` réussit.
+Les anciens gardes F9/P1 signalent des écarts sur cette base ; ils ne sont pas
+présentés comme réussis. La compilation native Mac reste à confirmer par CI.
 
-L'[inventaire du catalogue](catalogue-status.md) distingue les 74 entrées,
+L'[inventaire du catalogue](catalogue-status.md) distingue les 77 entrées,
 les 30 entrées utilisant les plaques Cycles et les 23 géométries partagées.
 
 Depuis `apps/electrosim` :

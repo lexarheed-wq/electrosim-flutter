@@ -228,19 +228,28 @@ void main() {
       expect(running.coil.energized, isTrue);
       expect(running.spool, ValveSpoolSide.coilSide);
       expect(running.air.chamber.pressureAbsPa, greaterThan(101325));
-      final double trappedMass = running.air.chamber.massKg;
       expect(running.pneumaticAdvances, actualAirCalls);
       expect(running.electricalSolves, greaterThan(running.pneumaticAdvances));
 
       switchClosed = false; // Electrical switch off, not an air vent.
-      final stopped = clock.advance(running, durationS: .05);
+      // The calibrated solenoid still holds its spool for 10 ms while
+      // releasing. Air may enter until release is physically complete.
+      final releasing = clock.advance(running, durationS: .015);
+      expect(releasing.coil.energized, isFalse);
+      expect(releasing.spool, ValveSpoolSide.springSide);
+      expect(
+        releasing.air.chamber.massKg,
+        greaterThan(running.air.chamber.massKg),
+      );
+      final double trappedMass = releasing.air.chamber.massKg;
+      final stopped = clock.advance(releasing, durationS: .035);
       expect(stopped.timeS, closeTo(.11, 1e-10));
       expect(stopped.coil.energized, isFalse);
       expect(stopped.spool, ValveSpoolSide.springSide);
       expect(stopped.air.chamber.massKg, closeTo(trappedMass, 1e-13));
       expect(
         stopped.air.externalMassAddedKg,
-        closeTo(running.air.externalMassAddedKg, 1e-13),
+        closeTo(releasing.air.externalMassAddedKg, 1e-13),
       );
       expect(stopped.pneumaticAdvances, actualAirCalls);
     });

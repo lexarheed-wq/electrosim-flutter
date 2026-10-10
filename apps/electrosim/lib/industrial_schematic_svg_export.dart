@@ -4,6 +4,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_references.dart';
 import 'industrial_workspace_representation.dart';
 
@@ -14,6 +15,10 @@ abstract final class IndustrialSchematicSvgExport {
     final layout = IndustrialSchematicProjection.derive(circuit, plate);
     final geometry = CircuitGeometryIndex.build(circuit, layout);
     final refs = IndustrialSchematicReferences.build(circuit);
+    final marks =
+        circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+        ? IndustrialMarkingRegistry.inspect(circuit)
+        : null;
     final ids = <String>[
       ...circuit.sources.map((e) => e.id.value),
       ...circuit.components.map((e) => e.id.value),
@@ -86,14 +91,54 @@ abstract final class IndustrialSchematicSvgExport {
       ..writeln('<g stroke="black" stroke-width="2" fill="none">');
     for (final wire in wires) {
       final route = paths[wire.id.value]!;
+      final ref = marks?.conductors[wire.id.value];
+      final hint = marks?.colors[wire.id.value];
+      // Coloured *hints*, only for explicitly tagged conductors.
+      // They never change the electrical connection or certify IEC wiring.
+      final stroke = switch (hint) {
+        IndustrialConductorColor.brown => '#75451F',
+        IndustrialConductorColor.black => '#181818',
+        IndustrialConductorColor.grey => '#757575',
+        IndustrialConductorColor.blue => '#1E62A8',
+        IndustrialConductorColor.greenYellow => '#13803A',
+        IndustrialConductorColor.red => '#C73830',
+        IndustrialConductorColor.unspecified || null => null,
+      };
       svg.writeln(
         '<polyline id="wire-${_xml(wire.id.value)}" '
         'data-from="${_xml(wire.fromTerminalId.value)}" '
         'data-to="${_xml(wire.toTerminalId.value)}" '
+        '${ref == null ? '' : 'data-reference="${_xml(ref)}" '}'
+        '${hint == null ? '' : 'data-color-hint="${hint.name}" '}'
+        '${stroke == null ? '' : 'stroke="$stroke" '}'
         'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
       );
+      if (hint == IndustrialConductorColor.greenYellow) {
+        svg.writeln(
+          '<polyline fill="none" stroke="#F9E33B" '
+          'stroke-width="2.6" stroke-dasharray="5 7" '
+          'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
+        );
+      }
     }
     svg.writeln('</g>');
+    if (marks != null) {
+      svg.writeln(
+        '<g fill="black" stroke="none" font-family="sans-serif" '
+        'font-size="9" text-anchor="middle">',
+      );
+      for (final wire in wires) {
+        final ref = marks.conductors[wire.id.value]!;
+        final route = paths[wire.id.value]!;
+        final middle = route[route.length ~/ 2];
+        svg.writeln(
+          '<text data-wire-label="${_xml(wire.id.value)}" '
+          'x="${_n(middle.dx)}" y="${_n(middle.dy - 7)}">'
+          '${_xml(ref)}</text>',
+        );
+      }
+      svg.writeln('</g>');
+    }
 
     final models = <String, String>{
       for (final source in circuit.sources) source.id.value: source.modelType,
@@ -252,13 +297,21 @@ abstract final class IndustrialSchematicSvgExport {
           '<line x1="${_n(anchor.dx)}" y1="${_n(anchor.dy)}" '
           'x2="${_n(edgeX)}" y2="${_n(edgeY)}"/>',
         );
+        final terminalRef = marks?.terminals[ports[i].id.value];
+        final simpleRef = '${refs.labelOf(id)}:${ports[i].name}';
+        final displayedTerminal =
+            terminalRef != null && terminalRef != simpleRef
+            ? terminalRef
+            : ports[i].name;
         svg.writeln(
           '<circle data-terminal-id="${_xml(ports[i].id.value)}" '
+          '${terminalRef == null ? '' : 'data-reference="${_xml(terminalRef)}" '}'
           'cx="${_n(anchor.dx)}" cy="${_n(anchor.dy)}" r="3" fill="white"/>',
         );
         svg.writeln(
           '<text x="${_n(anchor.dx + 7)}" y="${_n(anchor.dy - 9)}" '
-          'stroke="none" fill="black" font-size="9">${_xml(ports[i].name)}</text>',
+          'stroke="none" fill="black" font-size="9">'
+          '${_xml(displayedTerminal)}</text>',
         );
       }
       svg.writeln(

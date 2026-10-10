@@ -98,10 +98,7 @@ final class ElectropneumaticEventClock<T> {
     return CoupledRuntimeSnapshot<T>(
       timeS: t,
       air: initialAir,
-      coil: const Solenoid24vSnapshot(
-        energized: false,
-        measuredVoltageV: 0,
-      ),
+      coil: const Solenoid24vSnapshot(energized: false, measuredVoltageV: 0),
       spool: initialSpool,
       endContactActuated: false,
       electricalSolves: 0,
@@ -150,8 +147,11 @@ final class ElectropneumaticEventClock<T> {
           );
         }
         final bool closed = positionSensor?.closed(actuated) ?? false;
-        final CoilElectricalReading measurement =
-            solveElectrical(air, spool, closed);
+        final CoilElectricalReading measurement = solveElectrical(
+          air,
+          spool,
+          closed,
+        );
         electricalSolves++;
         if (!measurement.voltageV.isFinite ||
             measurement.voltageV < 0 ||
@@ -171,7 +171,8 @@ final class ElectropneumaticEventClock<T> {
           previous: spool,
           coilEnergized: next.energized,
         );
-        final bool changed = nextSpool != spool || next.energized != coil.energized;
+        final bool changed =
+            nextSpool != spool || next.energized != coil.energized;
         coil = next;
         spool = nextSpool;
         if (!changed) return;

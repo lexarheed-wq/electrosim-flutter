@@ -19,19 +19,13 @@ CircuitState circuit({required double voltageV, required bool startClosed}) =>
         ComponentInstance(
           id: ComponentId('s1'),
           modelType: 'switch',
-          terminals: <Terminal>[
-            terminal('s1a', 'A'),
-            terminal('s1b', 'B'),
-          ],
+          terminals: <Terminal>[terminal('s1a', 'A'), terminal('s1b', 'B')],
           controlState: <String, Object?>{'closed': startClosed},
         ),
         ComponentInstance(
           id: ComponentId('y1'),
           modelType: 'resistor',
-          terminals: <Terminal>[
-            terminal('y1a', 'A1'),
-            terminal('y1b', 'A2'),
-          ],
+          terminals: <Terminal>[terminal('y1a', 'A1'), terminal('y1b', 'A2')],
           parameters: const <String, Object?>{'resistanceOhm': 240},
         ),
       ],
@@ -126,24 +120,24 @@ CoilElectricalReading meter({required bool powered, double voltage = 24}) {
 
 void main() {
   group('CPL-01 actual electrical 24 V → pneumatic state', () {
-    test('solenoid gets real branch current and voltage, not nominal source', () {
-      final CoilElectricalReading energized = meter(powered: true);
-      expect(energized.voltageV, closeTo(24, 1e-9));
-      expect(energized.currentA, closeTo(.1, 1e-9));
-      expect(energized.powerW, closeTo(2.4, 1e-9));
-      final CoilElectricalReading open = meter(powered: false);
-      expect(open.voltageV, closeTo(0, 1e-9));
-      expect(open.currentA, 0);
-    });
+    test(
+      'solenoid gets real branch current and voltage, not nominal source',
+      () {
+        final CoilElectricalReading energized = meter(powered: true);
+        expect(energized.voltageV, closeTo(24, 1e-9));
+        expect(energized.currentA, closeTo(.1, 1e-9));
+        expect(energized.powerW, closeTo(2.4, 1e-9));
+        final CoilElectricalReading open = meter(powered: false);
+        expect(open.voltageV, closeTo(0, 1e-9));
+        expect(open.currentA, 0);
+      },
+    );
 
     test('coil voltage below pickup does not energize a valve', () {
       final Solenoid24vDynamics drive = Solenoid24vDynamics(
         Solenoid24vCalibration(),
       );
-      final CoilElectricalReading supply = meter(
-        powered: true,
-        voltage: 10,
-      );
+      final CoilElectricalReading supply = meter(powered: true, voltage: 10);
       final Solenoid24vSnapshot state = drive.observe(
         const Solenoid24vSnapshot(energized: false, measuredVoltageV: 0),
         nowS: 0,
@@ -244,8 +238,10 @@ void main() {
       expect(stopped.coil.energized, isFalse);
       expect(stopped.spool, ValveSpoolSide.springSide);
       expect(stopped.air.chamber.massKg, closeTo(trappedMass, 1e-13));
-      expect(stopped.air.externalMassAddedKg,
-          closeTo(running.air.externalMassAddedKg, 1e-13));
+      expect(
+        stopped.air.externalMassAddedKg,
+        closeTo(running.air.externalMassAddedKg, 1e-13),
+      );
       expect(stopped.pneumaticAdvances, actualAirCalls);
     });
 
@@ -261,9 +257,7 @@ void main() {
         boundaries: const <PneumaticPressureBoundary>[],
       ).initialSnapshot;
       final clock = ElectropneumaticEventClock<OpenAirSnapshot>(
-        solenoid: Solenoid24vDynamics(
-          Solenoid24vCalibration(pickupDelayS: 0),
-        ),
+        solenoid: Solenoid24vDynamics(Solenoid24vCalibration(pickupDelayS: 0)),
         valveMemory: const SingleCoilValveMemory(
           returnKind: ValveReturnKind.monostableSpring,
         ),
@@ -317,17 +311,11 @@ void main() {
         returnKind: ValveReturnKind.bistableMemory,
       );
       expect(
-        spring.update(
-          previous: ValveSpoolSide.coilSide,
-          coilEnergized: false,
-        ),
+        spring.update(previous: ValveSpoolSide.coilSide, coilEnergized: false),
         ValveSpoolSide.springSide,
       );
       expect(
-        memory.update(
-          previous: ValveSpoolSide.coilSide,
-          coilEnergized: false,
-        ),
+        memory.update(previous: ValveSpoolSide.coilSide, coilEnergized: false),
         ValveSpoolSide.coilSide,
       );
       expect(
@@ -356,13 +344,12 @@ void main() {
         valveMemory: const SingleCoilValveMemory(
           returnKind: ValveReturnKind.monostableSpring,
         ),
-        solveElectrical: (a, v, c) =>
-            const CoilElectricalReading(
-              linkId: 'y1-valve',
-              voltageV: double.nan,
-              currentA: 0,
-              powerW: 0,
-            ),
+        solveElectrical: (a, v, c) => const CoilElectricalReading(
+          linkId: 'y1-valve',
+          voltageV: double.nan,
+          currentA: 0,
+          powerW: 0,
+        ),
         advanceAir: (a, dt, v) {
           physicalCalls++;
           return a;

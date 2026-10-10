@@ -35,7 +35,7 @@ jobs:
             flutter --version
             dart --version 2>&1
           } | tee build/pneumatics-r1/PROVENANCE.txt
-          if grep -R -n "package:flutter/" packages/electrosim_pneumatic_domain/lib; then
+          if grep -R -n "package:flutter/" packages/electrosim_pneumatic_domain/lib packages/electrosim_multiphysics/lib; then
             echo "Pure-Dart pneumatic domain may not import Flutter"
             exit 1
           fi
@@ -49,13 +49,23 @@ jobs:
             dart analyze
             dart test --reporter expanded
           ) 2>&1 | tee build/pneumatics-r1/PNEU_R1_CONTRACTS.log
+      - name: Analyze and test multiphysics identities and links
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_multiphysics
+            dart pub get
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r1/MULTIPHYSICS_R1_CONTRACTS.log
       - name: Verify original electrical domains unchanged by extensions
         shell: bash
         run: |
           set -euo pipefail
           python3 tools/core_unify_architecture_guard.py 2>&1 | tee build/pneumatics-r1/architecture.log
           python3 tools/postv2_p1_contract.py 2>&1 | tee build/pneumatics-r1/legacy-contracts.log
-          git diff --exit-code
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

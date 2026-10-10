@@ -1,4 +1,3 @@
-import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
@@ -8,6 +7,7 @@ import 'f18_industrial_physical_plate.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
+import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'reference_components/disjoncteur_3d.dart';
 import 'f9_ui_context.dart';

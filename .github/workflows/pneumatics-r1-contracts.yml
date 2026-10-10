@@ -69,6 +69,16 @@ jobs:
             dart analyze
             dart test --reporter expanded
           ) 2>&1 | tee build/pneumatics-r1/LEGACY_MULTIPHYSICS_STORAGE.log
+      - name: Verify experimental feature defaults off and app remains buildable
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd apps/electrosim
+            flutter pub get
+            flutter analyze --no-pub lib/runtime/pneumatic_feature_gate.dart test/pneumatic_feature_gate_test.dart
+            flutter test --no-pub --concurrency=1 test/pneumatic_feature_gate_test.dart
+          ) 2>&1 | tee build/pneumatics-r1/APP_FEATURE_GATE.log
       - name: Verify original electrical domains unchanged by extensions
         shell: bash
         run: |

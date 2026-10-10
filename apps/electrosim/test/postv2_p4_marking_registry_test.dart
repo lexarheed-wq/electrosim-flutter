@@ -252,7 +252,8 @@ void main() {
         isTrue,
       );
     },
-  );  test('P4 reports duplicate terminal markings without mutating wiring', () {
+  );
+  test('P4 reports duplicate terminal markings without mutating wiring', () {
     final first = IndustrialMarkingRegistry.setReference(
       fixture(),
       kind: IndustrialMarkingKind.terminal,
@@ -268,8 +269,12 @@ void main() {
       teacherAuthorized: true,
     );
     final result = IndustrialMarkingRegistry.inspect(both);
-    expect(result.issues.any((issue) =>
-      issue.message.contains('Duplicate terminal reference')), isTrue);
+    expect(
+      result.issues.any(
+        (issue) => issue.message.contains('Duplicate terminal reference'),
+      ),
+      isTrue,
+    );
     expect(both.connections, first.connections);
   });
 
@@ -296,12 +301,15 @@ void main() {
       metadata: base.metadata,
     );
     final marks = IndustrialMarkingRegistry.inspect(circuit);
-    expect(marks.colors[first.id.value],
-        IndustrialConductorColor.unspecified);
-    expect(marks.issues.any((issue) =>
-      issue.id == first.id.value &&
-      issue.message.contains('phase hint differs')), isTrue);
+    expect(marks.colors[first.id.value], IndustrialConductorColor.unspecified);
+    expect(
+      marks.issues.any(
+        (issue) =>
+            issue.id == first.id.value &&
+            issue.message.contains('phase hint differs'),
+      ),
+      isTrue,
+    );
     expect(circuit.connections.first.phase, PhaseTag.l2);
   });
-
 }

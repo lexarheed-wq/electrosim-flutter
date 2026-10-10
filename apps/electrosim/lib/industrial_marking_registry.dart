@@ -283,13 +283,16 @@ final class IndustrialMarkingRegistry {
         portPhases[wire.fromTerminalId.value] ?? PhaseTag.none,
         portPhases[wire.toTerminalId.value] ?? PhaseTag.none,
       ];
-      final mismatch = wire.phase != PhaseTag.none &&
-          terminalTags.any((tag) =>
-              tag != PhaseTag.none && tag != wire.phase);
+      final mismatch =
+          wire.phase != PhaseTag.none &&
+          terminalTags.any((tag) => tag != PhaseTag.none && tag != wire.phase);
       if (mismatch) {
-        issues.add(IndustrialMarkingIssue(
-          id, 'Conductor phase hint differs from a terminal declaration',
-        ));
+        issues.add(
+          IndustrialMarkingIssue(
+            id,
+            'Conductor phase hint differs from a terminal declaration',
+          ),
+        );
       }
       colors[id] = mismatch
           ? IndustrialConductorColor.unspecified
@@ -311,13 +314,14 @@ final class IndustrialMarkingRegistry {
                 : null) ??
             '${devices[item.id]}:${port.name}';
         final label = terminals[id]!;
-        final owner = usedTerminals.putIfAbsent(
-          label.toUpperCase(), () => id,
-        );
+        final owner = usedTerminals.putIfAbsent(label.toUpperCase(), () => id);
         if (owner != id) {
-          issues.add(IndustrialMarkingIssue(
-            id, 'Duplicate terminal reference $label belongs to $owner',
-          ));
+          issues.add(
+            IndustrialMarkingIssue(
+              id,
+              'Duplicate terminal reference $label belongs to $owner',
+            ),
+          );
         }
         locks[_id(IndustrialMarkingKind.terminal, id)] =
             stored['locked'] == true;

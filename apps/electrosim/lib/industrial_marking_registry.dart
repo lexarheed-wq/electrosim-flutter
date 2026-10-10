@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:electrosim_domain/electrosim_domain.dart';
 
 /// Document references live in metadata, never in electrical IDs or topology.
@@ -330,7 +328,7 @@ final class IndustrialMarkingRegistry {
       result[_group(kind)] = updated;
     }
     metadata[metadataKey] = result;
-    if (jsonEncode(metadata) == jsonEncode(circuit.metadata)) return circuit;
+    if (_sameJson(metadata, circuit.metadata)) return circuit;
     return _copy(circuit, metadata);
   }
 
@@ -366,7 +364,7 @@ final class IndustrialMarkingRegistry {
     };
     updated[_group(kind)] = records;
     metadata[metadataKey] = updated;
-    if (jsonEncode(metadata) == jsonEncode(base.metadata)) return base;
+    if (_sameJson(metadata, base.metadata)) return base;
     return _copy(base, metadata);
   }
 
@@ -386,6 +384,29 @@ final class IndustrialMarkingRegistry {
       teacherAuthorized: true,
       locked: locked,
     );
+  }
+
+  /// Structural comparison is essential: CircuitState canonicalizes JSON
+  /// keys, whereas a newly generated record uses insertion order.
+  static bool _sameJson(Object? left, Object? right) {
+    if (identical(left, right)) return true;
+    if (left is Map<String, Object?> && right is Map<String, Object?>) {
+      if (left.length != right.length) return false;
+      for (final key in left.keys) {
+        if (!right.containsKey(key) || !_sameJson(left[key], right[key])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (left is List<Object?> && right is List<Object?>) {
+      if (left.length != right.length) return false;
+      for (var i = 0; i < left.length; i++) {
+        if (!_sameJson(left[i], right[i])) return false;
+      }
+      return true;
+    }
+    return left == right;
   }
 
   static CircuitState _copy(

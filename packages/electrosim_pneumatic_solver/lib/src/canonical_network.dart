@@ -53,9 +53,7 @@ final class CanonicalClosedNetwork {
   }) : portToChamberId = Map<PneumaticPortId, String>.unmodifiable(
          portToChamberId,
        ),
-       hoseToChamberId = Map<String, String>.unmodifiable(
-         hoseToChamberId,
-       );
+       hoseToChamberId = Map<String, String>.unmodifiable(hoseToChamberId);
 
   final IsothermalAirNetwork solver;
   final Map<PneumaticPortId, String> portToChamberId;

@@ -377,25 +377,34 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     style: const TextStyle(fontSize: 11),
                   ),
                   const Spacer(),
-                  Wrap(
-                    spacing: 3,
-                    children: <Widget>[
-                      for (final PneumaticPort port in device.ports)
-                        InkWell(
-                          key: Key('port-' + port.id.value),
-                          onTap: () => _portTap(port.id),
-                          child: Chip(
-                            label: Text(
-                              port.id.value.split('.').last,
-                              style: const TextStyle(fontSize: 10),
+                  SizedBox(
+                    height: 27,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        for (final PneumaticPort port in device.ports)
+                          InkWell(
+                            key: Key('port-' + port.id.value),
+                            onTap: () => _portTap(port.id),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _firstPort == port.id
+                                    ? Colors.amber.shade100
+                                    : Colors.blueGrey.shade100,
+                                border: Border.all(color: Colors.blueGrey),
+                              ),
+                              child: Text(
+                                port.id.value.split('.').last,
+                                style: const TextStyle(fontSize: 10),
+                              ),
                             ),
-                            backgroundColor: _firstPort == port.id
-                                ? Colors.amber.shade100
-                                : Colors.blueGrey.shade50,
-                            visualDensity: VisualDensity.compact,
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -421,16 +430,23 @@ class _PipePainter extends CustomPainter {
       ..color = plate ? const Color(0xff216b87) : Colors.black
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    final Map<String, String> owners = <String, String>{
-      for (final PneumaticDevice d in project.pneumaticNetwork.devices)
-        for (final PneumaticPort p in d.ports) p.id.value: d.id,
-    };
+    final Map<String, Offset> terminals = <String, Offset>{};
+    for (final PneumaticDevice device in project.pneumaticNetwork.devices) {
+      final PhysicalViewPose? pose = poses[device.id];
+      if (pose == null) continue;
+      final int count = device.ports.length;
+      final double gap = (160 - count * 24) / (count + 1);
+      for (int i = 0; i < count; i++) {
+        terminals[device.ports[i].id.value] = Offset(
+          pose.x + 5 + (i + 1) * gap + (i + .5) * 24,
+          pose.y + 123,
+        );
+      }
+    }
     for (final PneumaticPipe pipe in project.pneumaticNetwork.pipes) {
-      final PhysicalViewPose? a = poses[owners[pipe.fromPortId.value]];
-      final PhysicalViewPose? b = poses[owners[pipe.toPortId.value]];
-      if (a == null || b == null) continue;
-      final Offset start = Offset(a.x + 85, a.y + 140);
-      final Offset end = Offset(b.x + 85, b.y);
+      final Offset? start = terminals[pipe.fromPortId.value];
+      final Offset? end = terminals[pipe.toPortId.value];
+      if (start == null || end == null) continue;
       final double middle = (start.dy + end.dy) / 2;
       canvas.drawPath(
         Path()
@@ -440,6 +456,8 @@ class _PipePainter extends CustomPainter {
           ..lineTo(end.dx, end.dy),
         pen,
       );
+      canvas.drawCircle(start, 3, pen);
+      canvas.drawCircle(end, 3, pen);
     }
   }
 

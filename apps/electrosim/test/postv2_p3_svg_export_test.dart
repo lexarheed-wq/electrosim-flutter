@@ -129,4 +129,44 @@ void main() {
       );
     },
   );
+  test('P3 export preserves distinct IEC-inspired passive and protection glyphs', () {
+    ComponentInstance part(String id, String type) => ComponentInstance(
+      id: ComponentId(id),
+      modelType: type,
+      terminals: [
+        Terminal(id: TerminalId('$id-in'), name: '1'),
+        Terminal(id: TerminalId('$id-out'), name: '2'),
+      ],
+    );
+    final sample = CircuitState(
+      circuitId: CircuitId('family-glyphs'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: [
+        part('r1', 'resistor'),
+        part('c1', 'capacitor'),
+        part('d1', 'diode'),
+        part('f1', 'fuse_dc'),
+      ],
+    );
+    final layout = CircuitVisualLayout(
+      elementPositions: const {
+        'r1': Offset(100, 100),
+        'c1': Offset(300, 100),
+        'd1': Offset(500, 100),
+        'f1': Offset(700, 100),
+      },
+    );
+    final svg = IndustrialSchematicSvgExport.render(sample, layout);
+    expect(svg, contains('<rect x="-28" y="-10" width="56" height="20"/>'));
+    expect(svg, contains('M -5 -19 V 19 M 5 -19 V 19'));
+    expect(svg, contains('M -16 -16 L 14 0 L -16 16 Z'));
+    expect(svg, contains('font-size="12">F</text>'));
+    for (final id in ['r1', 'c1', 'd1', 'f1']) {
+      expect(svg, contains('id="device-$id"'));
+      expect(svg, contains('data-terminal-id="$id-in"'));
+      expect(svg, contains('data-terminal-id="$id-out"'));
+    }
+  });
+
 }

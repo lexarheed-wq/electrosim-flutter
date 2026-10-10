@@ -488,6 +488,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
+  bool _soundEnabled = true;
   final ElectroSimConnectionRouter _connectionRouter =
       ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
@@ -871,6 +872,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           CabinetPlacementMode.assistedDin,
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
+                      soundEnabled: _soundEnabled,
+                      onToggleSound: () =>
+                          setState(() => _soundEnabled = !_soundEnabled),
                       simulationRunning: _simulation.running,
                       simulatedTime: _simulation.simulatedTime,
                       onToggleSimulation: _simulation.toggle,
@@ -1056,6 +1060,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                         _g2aWirePreviewPlanner,
                                                     runtimeSnapshot:
                                                         _simulation.snapshot,
+                                                    soundEnabled: _soundEnabled,
                                                     simulationRunning:
                                                         _simulation.running,
                                                   ),
@@ -3831,6 +3836,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
+    this.soundEnabled = true,
+    this.onToggleSound,
     required this.simulationRunning,
     required this.simulatedTime,
     required this.onToggleSimulation,
@@ -3865,6 +3872,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
+  final bool soundEnabled;
+  final VoidCallback? onToggleSound;
   final bool simulationRunning;
   final Duration simulatedTime;
   final VoidCallback onToggleSimulation;
@@ -4193,6 +4202,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     icon: const Icon(Icons.more_horiz),
     onSelected: (action) {
       switch (action) {
+        case _WorkspaceSecondaryAction.toggleSound:
+          onToggleSound?.call();
         case _WorkspaceSecondaryAction.undo:
           onUndo?.call();
         case _WorkspaceSecondaryAction.redo:
@@ -4228,6 +4239,25 @@ class _WorkspaceTopBar extends StatelessWidget {
       }
     },
     itemBuilder: (context) => [
+      const PopupMenuItem(
+        key: Key('workspace-recenter-action'),
+        value: _WorkspaceSecondaryAction.recenter,
+        child: ListTile(
+          leading: Icon(Icons.center_focus_strong),
+          title: Text('Recentrer la platine'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      if (onToggleSound != null)
+        PopupMenuItem(
+          key: const Key('workspace-sound-action'),
+          value: _WorkspaceSecondaryAction.toggleSound,
+          child: Text(
+            soundEnabled
+                ? 'Couper les sons des composants'
+                : 'Activer les sons des composants',
+          ),
+        ),
       PopupMenuItem(
         key: const Key('workspace-undo-action'),
         value: _WorkspaceSecondaryAction.undo,
@@ -4357,20 +4387,12 @@ class _WorkspaceTopBar extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
         ),
       ),
-      const PopupMenuItem(
-        key: Key('workspace-recenter-action'),
-        value: _WorkspaceSecondaryAction.recenter,
-        child: ListTile(
-          leading: Icon(Icons.center_focus_strong),
-          title: Text('Recentrer la platine'),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
     ],
   );
 }
 
 enum _WorkspaceSecondaryAction {
+  toggleSound,
   undo,
   redo,
   save,

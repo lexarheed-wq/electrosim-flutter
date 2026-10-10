@@ -862,8 +862,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       _showManageSession))
                           : null,
                       onExitWorkspace: widget.onExitWorkspace,
-                      onExportSchematicSvg: () => unawaited(_exportSchematic(pdf: false)),
-                      onExportSchematicPdf: () => unawaited(_exportSchematic(pdf: true)),
+                      onExportSchematicSvg: () =>
+                          unawaited(_exportSchematic(pdf: false)),
+                      onExportSchematicPdf: () =>
+                          unawaited(_exportSchematic(pdf: true)),
                       onSave: widget.persistenceController == null
                           ? null
                           : _saveWorkspace,

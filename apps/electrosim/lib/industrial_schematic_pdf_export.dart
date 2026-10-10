@@ -28,10 +28,7 @@ abstract final class IndustrialSchematicPdfExport {
           children: <pw.Widget>[
             pw.Text(
               'ElectroSim - Schema electrique multifilaire',
-              style: pw.TextStyle(
-                font: pw.Font.helveticaBold(),
-                fontSize: 16,
-              ),
+              style: pw.TextStyle(font: pw.Font.helveticaBold(), fontSize: 16),
             ),
             pw.SizedBox(height: 6),
             pw.Text(

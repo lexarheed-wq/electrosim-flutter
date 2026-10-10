@@ -68,20 +68,14 @@ final class PressureSwitchContact {
         ? pressureAbsPa > calibration.dropoutPressureAbsPa
         : pressureAbsPa >= calibration.pickupPressureAbsPa;
     if (requested == previous.actuated) {
-      return PressureSwitchSnapshot(
-        timeS: timeS,
-        actuated: previous.actuated,
-      );
+      return PressureSwitchSnapshot(timeS: timeS, actuated: previous.actuated);
     }
     final bool pending = previous.pendingActuated == requested;
     final double due = pending
         ? previous.transitionDueS!
         : timeS + calibration.responseDelayS;
     if (timeS >= due) {
-      return PressureSwitchSnapshot(
-        timeS: timeS,
-        actuated: requested,
-      );
+      return PressureSwitchSnapshot(timeS: timeS, actuated: requested);
     }
     return PressureSwitchSnapshot(
       timeS: timeS,

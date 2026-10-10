@@ -297,6 +297,24 @@ void main() {
     });
   });
 
+  test('PHYS-PRESET: a newly dropped 100Ω resistor conducts 0.24A at 24V', () {
+    final definition = f9PaletteCatalog.singleWhere(
+      (item) => item.keyName == 'resistor',
+    );
+    expect(definition.defaultParameters['resistanceOhm'], 100.0);
+    final snapshot = engine.evaluate(
+      loadedPalette(definition, ElectricalMode.dc),
+    );
+    expect(snapshot.solved, isTrue);
+    // The family fixture includes an independent 48Ω safety load in series.
+    final current = snapshot.dc.branch('component:load').currentA!.abs();
+    expect(current, closeTo(24.0 / 148.0, 0.000001));
+    audit('default-resistor', '100ohm-plus-48ohm', 'PASS', {
+      'currentA': current,
+      'expectedCurrentA': 24.0 / 148.0,
+    });
+  });
+
   test(
     'PHYS-FAMILY: load each two-terminal passive/receiver/switching model',
     () {

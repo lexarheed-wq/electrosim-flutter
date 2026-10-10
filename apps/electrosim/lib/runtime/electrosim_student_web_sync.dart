@@ -17,6 +17,8 @@ enum ElectroSimBrowserSessionStatus {
   failed,
 }
 
+/// Browser-only transport: snapshots remain authoritative on the Mac host.
+/// Unexpected disconnections are recoverable; teacher closure is terminal.
 final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   ElectroSimBrowserSessionBridge({
     required this.controller,
@@ -31,19 +33,27 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   final Uri endpoint;
   final String clientId;
 
+  static const int maxAutomaticReconnects = 5;
   html.WebSocket? _socket;
   StreamSubscription<html.Event>? _openSubscription;
   StreamSubscription<html.MessageEvent>? _messageSubscription;
   StreamSubscription<html.CloseEvent>? _closeSubscription;
   StreamSubscription<html.Event>? _errorSubscription;
+  Timer? _reconnectTimer;
   Completer<void>? _firstSnapshot;
   ElectroSimBrowserSessionStatus _status = ElectroSimBrowserSessionStatus.idle;
   String? _lastError;
+  String? _reconnectToken;
   String _sessionName = 'Session ElectroSim';
   bool _sessionStarted = false;
   bool _simulatorEnabled = false;
   bool _applyingRemote = false;
+  bool _explicitlyClosed = false;
+  bool _teacherEnded = false;
+  bool _disposed = false;
+  bool _listeningToController = false;
   int _clientSequence = 0;
+  int _reconnectAttempts = 0;
 
   ElectroSimBrowserSessionStatus get status => _status;
   String? get lastError => _lastError;
@@ -53,64 +63,115 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
   bool get sessionUsable => _status == ElectroSimBrowserSessionStatus.connected;
 
   Future<void> connect({Duration timeout = const Duration(seconds: 6)}) async {
-    if (_status == ElectroSimBrowserSessionStatus.connected ||
+    if (_disposed ||
+        _explicitlyClosed ||
+        _teacherEnded ||
+        _status == ElectroSimBrowserSessionStatus.connected ||
         _status == ElectroSimBrowserSessionStatus.connecting) {
       return;
     }
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     _setStatus(ElectroSimBrowserSessionStatus.connecting);
+    await _detachSocket();
+    if (_disposed || _explicitlyClosed || _teacherEnded) return;
+
     final Uri target = endpoint.replace(
       queryParameters: <String, String>{
         ...endpoint.queryParameters,
         'code': sessionCode,
         'clientId': clientId,
         'displayName': displayName,
+        if (_reconnectToken != null) 'reconnectToken': _reconnectToken!,
       },
     );
     final html.WebSocket socket = html.WebSocket(target.toString());
     _socket = socket;
-    final Completer<void> firstSnapshot = Completer<void>();
-    _firstSnapshot = firstSnapshot;
+    final Completer<void> first = Completer<void>();
+    _firstSnapshot = first;
 
     _openSubscription = socket.onOpen.listen((html.Event _) {
+      if (!identical(_socket, socket)) return;
       _lastError = null;
-      notifyListeners();
+      _emit();
     });
     _messageSubscription = socket.onMessage.listen((html.MessageEvent event) {
+      if (!identical(_socket, socket)) return;
       if (event.data is String) {
         _handleMessage(event.data as String);
       }
     });
     _closeSubscription = socket.onClose.listen((html.CloseEvent _) {
-      if (_status != ElectroSimBrowserSessionStatus.ended) {
-        _setStatus(ElectroSimBrowserSessionStatus.ended);
-      }
-      final Completer<void>? first = _firstSnapshot;
-      _firstSnapshot = null;
-      if (first != null && !first.isCompleted) {
+      if (!identical(_socket, socket) || _disposed) return;
+      if (!first.isCompleted) {
         first.completeError(
-          StateError('La session a été fermée avant la synchronisation.'),
+          StateError('Connexion interrompue avant la synchronisation.'),
         );
+      }
+      if (!_explicitlyClosed && !_teacherEnded) {
+        _lastError = 'Connexion au professeur interrompue.';
+        _setStatus(ElectroSimBrowserSessionStatus.failed);
+        _scheduleReconnect();
       }
     });
     _errorSubscription = socket.onError.listen((html.Event _) {
+      if (!identical(_socket, socket) || _disposed) return;
       _lastError = 'Connexion au professeur interrompue.';
-      if (_status == ElectroSimBrowserSessionStatus.connecting) {
-        _setStatus(ElectroSimBrowserSessionStatus.failed);
-      } else {
-        notifyListeners();
-      }
+      _setStatus(ElectroSimBrowserSessionStatus.failed);
+      _scheduleReconnect();
     });
-    controller.addListener(_onLocalControllerChanged);
-
+    if (!_listeningToController) {
+      controller.addListener(_onLocalControllerChanged);
+      _listeningToController = true;
+    }
     try {
-      await firstSnapshot.future.timeout(timeout);
+      await first.future.timeout(timeout);
     } on Object catch (error) {
+      if (_disposed || _explicitlyClosed || _teacherEnded) return;
       _lastError = error.toString();
-      if (_status != ElectroSimBrowserSessionStatus.ended) {
-        _setStatus(ElectroSimBrowserSessionStatus.failed);
-      }
+      _setStatus(ElectroSimBrowserSessionStatus.failed);
+      _scheduleReconnect();
       rethrow;
     }
+  }
+
+  void _scheduleReconnect() {
+    if (_disposed ||
+        _explicitlyClosed ||
+        _teacherEnded ||
+        _reconnectTimer != null) {
+      return;
+    }
+    if (_reconnectAttempts >= maxAutomaticReconnects) return;
+    final seconds = 1 << (_reconnectAttempts < 3 ? _reconnectAttempts : 3);
+    _reconnectAttempts++;
+    _reconnectTimer = Timer(Duration(seconds: seconds), () {
+      _reconnectTimer = null;
+      if (!_disposed && !_explicitlyClosed && !_teacherEnded) {
+        unawaited(_attemptReconnect());
+      }
+    });
+  }
+
+  Future<void> _attemptReconnect() async {
+    try {
+      await connect();
+    } on Object {
+      // connect() reports the failure; the bounded retry policy schedules
+      // another attempt, and the UI provides an explicit retry afterwards.
+    }
+  }
+
+  /// Resets the retry budget after the user explicitly requests a new attempt.
+  Future<void> retry() async {
+    if (_disposed || _explicitlyClosed || _teacherEnded) return;
+    _reconnectAttempts = 0;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    if (_status == ElectroSimBrowserSessionStatus.connecting) {
+      return;
+    }
+    await _attemptReconnect();
   }
 
   void _handleMessage(String source) {
@@ -133,19 +194,20 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         if (stateRaw is! Map<String, dynamic>) {
           throw const FormatException('État de TP invalide.');
         }
+        final Object? tokenRaw = payloadRaw['reconnectToken'];
+        if (tokenRaw is String && tokenRaw.isNotEmpty) {
+          _reconnectToken = tokenRaw;
+        }
         final Object? sessionRaw = payloadRaw['session'];
         if (sessionRaw is Map<String, dynamic>) {
           final Object? name = sessionRaw['name'];
-          final Object? started = sessionRaw['started'];
-          final Object? simulator = sessionRaw['simulatorEnabled'];
-          final bool closed = sessionRaw['closed'] == true;
           if (name is String && name.trim().isNotEmpty) {
             _sessionName = name.trim();
           }
-          _sessionStarted = started == true;
-          _simulatorEnabled = simulator == true;
-          if (closed) {
-            _setStatus(ElectroSimBrowserSessionStatus.ended);
+          _sessionStarted = sessionRaw['started'] == true;
+          _simulatorEnabled = sessionRaw['simulatorEnabled'] == true;
+          if (sessionRaw['closed'] == true) {
+            _teacherEnded = true;
           }
         }
         _applyingRemote = true;
@@ -159,36 +221,38 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         } finally {
           _applyingRemote = false;
         }
-        if (_status != ElectroSimBrowserSessionStatus.ended) {
+        if (_teacherEnded) {
+          _reconnectTimer?.cancel();
+          _setStatus(ElectroSimBrowserSessionStatus.ended);
+        } else {
+          _reconnectAttempts = 0;
+          _lastError = null;
           _setStatus(ElectroSimBrowserSessionStatus.connected);
         }
         final Completer<void>? first = _firstSnapshot;
         _firstSnapshot = null;
-        if (first != null && !first.isCompleted) {
-          first.complete();
-        }
-        notifyListeners();
+        if (first != null && !first.isCompleted) first.complete();
+        _emit();
         return;
       }
       if (type == 'error') {
         _lastError = payloadRaw['message']?.toString();
-        notifyListeners();
+        _emit();
       }
     } on Object catch (error) {
       _lastError = error.toString();
-      notifyListeners();
+      _emit();
     }
   }
 
   void _onLocalControllerChanged() {
-    if (_applyingRemote ||
+    if (_disposed ||
+        _applyingRemote ||
         _status != ElectroSimBrowserSessionStatus.connected) {
       return;
     }
     final html.WebSocket? socket = _socket;
-    if (socket == null || socket.readyState != html.WebSocket.OPEN) {
-      return;
-    }
+    if (socket == null || socket.readyState != html.WebSocket.OPEN) return;
     socket.send(
       jsonEncode(<String, Object?>{
         'schemaVersion': 1,
@@ -203,14 +267,17 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     );
   }
 
-  void _setStatus(ElectroSimBrowserSessionStatus value) {
-    if (_status == value) return;
-    _status = value;
-    notifyListeners();
+  void _setStatus(ElectroSimBrowserSessionStatus status) {
+    if (_status == status) return;
+    _status = status;
+    _emit();
   }
 
-  Future<void> close() async {
-    controller.removeListener(_onLocalControllerChanged);
+  void _emit() {
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> _detachSocket() async {
     await _openSubscription?.cancel();
     await _messageSubscription?.cancel();
     await _closeSubscription?.cancel();
@@ -219,15 +286,34 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     _messageSubscription = null;
     _closeSubscription = null;
     _errorSubscription = null;
-    final html.WebSocket? socket = _socket;
+    final socket = _socket;
     _socket = null;
-    socket?.close(1000, 'Client élève fermé.');
+    socket?.close(1000, 'Transport Web renouvelé.');
+  }
+
+  Future<void> close() async {
+    if (_explicitlyClosed) return;
+    _explicitlyClosed = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    if (_listeningToController) {
+      controller.removeListener(_onLocalControllerChanged);
+      _listeningToController = false;
+    }
+    await _detachSocket();
     _setStatus(ElectroSimBrowserSessionStatus.ended);
   }
 
   @override
   void dispose() {
-    unawaited(close());
+    _disposed = true;
+    _explicitlyClosed = true;
+    _reconnectTimer?.cancel();
+    if (_listeningToController) {
+      controller.removeListener(_onLocalControllerChanged);
+      _listeningToController = false;
+    }
+    unawaited(_detachSocket());
     super.dispose();
   }
 

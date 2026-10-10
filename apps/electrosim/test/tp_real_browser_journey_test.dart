@@ -134,6 +134,7 @@ void main() {
         final browserLog = StringBuffer();
         process!.stdout.transform(utf8.decoder).listen(browserLog.write);
         process.stderr.transform(utf8.decoder).listen(browserLog.write);
+        final browserExit = process.exitCode;
         addTearDown(() {
           process.kill();
         });
@@ -147,7 +148,7 @@ void main() {
           } catch (_) {
             final log = File('${evidence.path}/browser.log');
             fail(
-              '$name failed:\n${log.existsSync() ? log.readAsStringSync() : browserLog}',
+              '$name failed (browser pid: ${process.pid}, exited: ${await browserExit.timeout(const Duration(milliseconds: 200), onTimeout: () => -999)}):\n${log.existsSync() ? log.readAsStringSync() : browserLog}',
             );
           }
         }

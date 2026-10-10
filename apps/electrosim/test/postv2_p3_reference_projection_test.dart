@@ -142,4 +142,39 @@ void main() {
     expect(plate.wireRoutes, isEmpty);
     expect(plate.elementPositions, positions);
   });
+  test('P3 relay contacts cross-reference canonical linkedRelayId', () {
+    Terminal port(String id, String name) =>
+        Terminal(id: TerminalId(id), name: name);
+    final circuit = CircuitState(
+      circuitId: CircuitId('relay-cross-reference'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      components: [
+        ComponentInstance(
+          id: ComponentId('k1'),
+          modelType: 'relay_coil',
+          terminals: [port('coil-A1', 'A1'), port('coil-A2', 'A2')],
+          parameters: const {'industrialReference': 'KA1'},
+        ),
+        ComponentInstance(
+          id: ComponentId('aux'),
+          modelType: 'relay_contact_nc',
+          terminals: [port('aux-21', '21'), port('aux-22', '22')],
+          parameters: const {
+            'linkedRelayId': 'k1',
+            'industrialReference': 'KA1:21-22',
+          },
+        ),
+      ],
+    );
+    final original = circuit.toJsonString();
+    final refs = IndustrialSchematicReferences.build(circuit);
+    expect(refs.controllingLabelFor('aux'), 'KA1');
+    expect(refs.contactsFor('k1'), ['aux']);
+    expect(IndustrialSchematicReferences.normallyClosed('relay_contact_nc'),
+        isTrue);
+    expect(refs.issues, isEmpty);
+    expect(circuit.toJsonString(), original);
+  });
+
 }

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'cabinet_physical_model.dart';
 
 /// Cabinet fixtures are geometry only, never electrical components.
 /// A rail or duct MUST NOT change CircuitState, TopologyEngine or a solver.
@@ -43,10 +44,17 @@ final class CabinetFixture {
 
 @immutable
 final class CabinetLayout {
-  const CabinetLayout.empty() : fixtures = const <CabinetFixture>[];
+  const CabinetLayout.empty()
+    : fixtures = const <CabinetFixture>[],
+      envelope = null,
+      mounts = const {};
 
-  CabinetLayout(Iterable<CabinetFixture> fixtures)
-    : fixtures = List<CabinetFixture>.unmodifiable(fixtures) {
+  CabinetLayout(
+    Iterable<CabinetFixture> fixtures, {
+    this.envelope,
+    Map<String, CabinetMount> mounts = const {},
+  }) : mounts = Map<String, CabinetMount>.unmodifiable(mounts),
+       fixtures = List<CabinetFixture>.unmodifiable(fixtures) {
     final ids = <String>{};
     for (final fixture in this.fixtures) {
       if (!ids.add(fixture.id)) {
@@ -56,6 +64,23 @@ final class CabinetLayout {
   }
 
   final List<CabinetFixture> fixtures;
+  final CabinetEnvelope? envelope;
+  final Map<String, CabinetMount> mounts;
+  CabinetLayout withEnvelope(CabinetEnvelope? next) =>
+      CabinetLayout(fixtures, envelope: next, mounts: mounts);
+  CabinetLayout withMount(String id, CabinetMount mount) => CabinetLayout(
+    fixtures,
+    envelope: envelope,
+    mounts: {...mounts, id: mount},
+  );
+  CabinetLayout retainMounts(Set<String> ids) => CabinetLayout(
+    fixtures,
+    envelope: envelope,
+    mounts: {
+      for (final e in mounts.entries)
+        if (ids.contains(e.key)) e.key: e.value,
+    },
+  );
 
   CabinetFixture? fixture(String id) {
     for (final fixture in fixtures) {
@@ -68,11 +93,21 @@ final class CabinetLayout {
     if (this.fixture(fixture.id) != null) {
       throw ArgumentError('Cabinet fixture already exists: ${fixture.id}');
     }
-    return CabinetLayout([...fixtures, fixture]);
+    return CabinetLayout(
+      [...fixtures, fixture],
+      envelope: envelope,
+      mounts: mounts,
+    );
   }
 
-  CabinetLayout remove(String id) =>
-      CabinetLayout(fixtures.where((f) => f.id != id));
+  CabinetLayout remove(String id) => CabinetLayout(
+    fixtures.where((f) => f.id != id),
+    envelope: envelope,
+    mounts: {
+      for (final e in mounts.entries)
+        e.key: e.value.railId == id ? e.value.withoutRail() : e.value,
+    },
+  );
 
   CabinetLayout move(String id, Offset topLeft) {
     final old = fixture(id);
@@ -90,10 +125,21 @@ final class CabinetLayout {
     if (fixture(replacement.id) == null) {
       throw ArgumentError('Unknown cabinet fixture: ${replacement.id}');
     }
-    return CabinetLayout([
-      for (final old in fixtures)
-        if (old.id == replacement.id) replacement else old,
-    ]);
+    return CabinetLayout(
+      [
+        for (final old in fixtures)
+          if (old.id == replacement.id) replacement else old,
+      ],
+      envelope: envelope,
+      mounts: {
+        for (final e in mounts.entries)
+          e.key:
+              e.value.railId == replacement.id &&
+                  fixture(replacement.id)!.bounds != replacement.bounds
+              ? e.value.withoutRail()
+              : e.value,
+      },
+    );
   }
 }
 
@@ -104,12 +150,14 @@ final class CabinetPlacementResult {
     required this.snapped,
     required this.isValid,
     required this.intersectingIds,
+    this.railId,
   });
 
   final Offset position;
   final bool snapped;
   final bool isValid;
   final List<String> intersectingIds;
+  final String? railId;
 }
 
 /// Non-destructive placement assistance. Does not add or move any electrical
@@ -126,6 +174,8 @@ abstract final class CabinetPlacementPlanner {
     CabinetPlacementMode mode = CabinetPlacementMode.free,
     bool dinMountable = false,
     double snapDistance = 32,
+    Offset mountingAnchorOffset = Offset.zero,
+    CabinetSurface surface = CabinetSurface.interior,
   }) {
     if (!deviceSize.width.isFinite ||
         !deviceSize.height.isFinite ||
@@ -134,11 +184,14 @@ abstract final class CabinetPlacementPlanner {
         !proposedCenter.dx.isFinite ||
         !proposedCenter.dy.isFinite ||
         !snapDistance.isFinite ||
-        snapDistance < 0) {
+        snapDistance < 0 ||
+        !mountingAnchorOffset.dx.isFinite ||
+        !mountingAnchorOffset.dy.isFinite) {
       throw ArgumentError('Invalid device geometry or snap tolerance.');
     }
     Offset center = proposedCenter;
     bool snapped = false;
+    String? mountedRailId;
     if (mode == CabinetPlacementMode.assistedDin && dinMountable) {
       double nearest = double.infinity;
       for (final fixture in cabinet.fixtures) {
@@ -146,7 +199,11 @@ abstract final class CabinetPlacementPlanner {
             deviceSize.width > fixture.bounds.width) {
           continue;
         }
-        final distance = (center.dy - fixture.bounds.center.dy).abs();
+        final distance =
+            (proposedCenter.dy +
+                    mountingAnchorOffset.dy -
+                    fixture.bounds.center.dy)
+                .abs();
         if (distance > snapDistance || distance >= nearest) {
           continue;
         }
@@ -158,9 +215,10 @@ abstract final class CabinetPlacementPlanner {
                 fixture.bounds.right - deviceSize.width / 2,
               )
               .toDouble(),
-          fixture.bounds.center.dy,
+          fixture.bounds.center.dy - mountingAnchorOffset.dy,
         );
         snapped = true;
+        mountedRailId = fixture.id;
       }
     }
     final rectangle = Rect.fromCenter(
@@ -169,15 +227,23 @@ abstract final class CabinetPlacementPlanner {
       height: deviceSize.height,
     );
     final collisions = <String>[];
+    if (cabinet.envelope != null &&
+        !cabinet.envelope!.contains(rectangle, surface: surface)) {
+      collisions.add('cabinet:bounds');
+    }
     for (final fixture in cabinet.fixtures) {
       // A DIN rail lies behind the mounted device and is not an obstruction.
-      if (fixture.kind != CabinetFixtureKind.dinRail &&
+      if (surface == CabinetSurface.interior &&
+          fixture.kind != CabinetFixtureKind.dinRail &&
           rectangle.overlaps(fixture.bounds)) {
         collisions.add('fixture:${fixture.id}');
       }
     }
     for (final entry in existingDevices.entries) {
-      if (entry.key != elementId && rectangle.overlaps(entry.value)) {
+      if (entry.key != elementId &&
+          (cabinet.mounts[entry.key]?.surface ?? CabinetSurface.interior) ==
+              surface &&
+          rectangle.overlaps(entry.value)) {
         collisions.add('device:${entry.key}');
       }
     }
@@ -185,6 +251,7 @@ abstract final class CabinetPlacementPlanner {
     return CabinetPlacementResult(
       position: center,
       snapped: snapped,
+      railId: mountedRailId,
       isValid: collisions.isEmpty,
       intersectingIds: List.unmodifiable(collisions),
     );

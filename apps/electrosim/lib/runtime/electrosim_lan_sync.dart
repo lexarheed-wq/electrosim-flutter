@@ -665,7 +665,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
     if (state['hasSession'] != true) {
       throw const FormatException('Student state has no TP session.');
     }
-    if (state['tpId'] != controller.tpIdValue ||
+    if (state['tpId'] != controller.tpId.value ||
         state['title'] != controller.title) {
       throw const FormatException('Student TP identity mismatch.');
     }
@@ -875,7 +875,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
         senderId: hostId,
         sequence: _serverSequence++,
         payload: <String, Object?>{
-          'state': source.toPersistenceJson(),
+          'state': source.toStudentPersistenceJson(),
           if (clientId != null)
             'reconnectToken': _clientReconnectTokens[clientId],
           'session': <String, Object?>{

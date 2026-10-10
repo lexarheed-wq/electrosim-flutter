@@ -63,7 +63,17 @@ final class ElectroSimInstrumentProjection {
         'Instrument fuse blown.',
       );
     }
-    final CircuitState circuit = snapshot.circuit;
+    // The PV runtime can legitimately solve an autonomous battery as a
+    // DC island, without any array or inverter. Instruments must use the
+    // effective solver topology (DC) rather than the originally selected PV
+    // workspace mode; otherwise live battery voltage/current reads N/A.
+    final CircuitState circuit =
+        snapshot.circuit.mode == ElectricalMode.pv &&
+            snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
+            snapshot.dcResult != null &&
+            snapshot.pvResult == null
+        ? snapshot.effectiveCircuit
+        : snapshot.circuit;
     if (!circuit.instruments.any((item) => item.id == instrument.id)) {
       return error(
         PhysicalInstrumentStatus.invalidWiring,
@@ -88,6 +98,165 @@ final class ElectroSimInstrumentProjection {
     }
 
     final InstrumentMode mode = instrument.mode;
+    if (mode == InstrumentMode.frequency) {
+      if (circuit.mode != ElectricalMode.ac1 &&
+          circuit.mode != ElectricalMode.ac3) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Frequency measurement needs an AC1 or AC3 supply.',
+        );
+      }
+      final TerminalId? first = probe(InstrumentPort.voltOhm)?.terminalId;
+      final TerminalId? second = probe(InstrumentPort.common)?.terminalId;
+      if (first == null || second == null || first == second) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Frequency requires V/Ω and COM on distinct energized terminals.',
+        );
+      }
+      // A frequency meter does not report the network setting when the
+      // probes are disconnected or when no AC voltage exists at the probes.
+      final _ProjectionWiring meterLoad = _projectionWiring(
+        circuit,
+        resistanceOhm: instrument.inputImpedanceOhm,
+        first: first,
+        second: second,
+      );
+      final ElectroSimRuntimeSnapshot loaded = engine.evaluate(
+        meterLoad.circuit,
+      );
+      final MeasurementResult rms = loaded.measureAcVoltage(
+        positiveProbe: meterLoad.first,
+        negativeProbe: meterLoad.second,
+      );
+      final double? voltage = rms.reading?.value;
+      if (!rms.isValid || voltage == null || !voltage.isFinite) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          rms.message ?? 'AC probe voltage is unavailable.',
+        );
+      }
+      if (voltage.abs() > instrument.maximumVoltageV) {
+        return error(
+          PhysicalInstrumentStatus.overRange,
+          'Frequency meter maximum input voltage exceeded.',
+        );
+      }
+      if (voltage.abs() < 1e-6) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          'No measurable AC voltage across the frequency probes.',
+        );
+      }
+      final MeasurementResult measured = loaded.measureFrequency();
+      if (!measured.isValid || measured.reading == null) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          measured.message ?? 'Frequency result unavailable.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: measured,
+      );
+    }
+
+    if (mode == InstrumentMode.phaseSequence) {
+      if (circuit.mode != ElectricalMode.ac3 || !snapshot.solved) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Phase sequence requires a solved three-phase supply.',
+        );
+      }
+      final List<TerminalId?> picks = <TerminalId?>[
+        probe(InstrumentPort.phase1)?.terminalId,
+        probe(InstrumentPort.phase2)?.terminalId,
+        probe(InstrumentPort.phase3)?.terminalId,
+      ];
+      if (picks.any((id) => id == null) || picks.toSet().length != 3) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Connect L1/L2/L3 to three distinct phase terminals.',
+        );
+      }
+      final Map<TerminalId, String> nodes = snapshot.topology.terminalToNode;
+      final List<String?> selectedNodes = <String?>[
+        for (final TerminalId? pick in picks) nodes[pick],
+      ];
+      if (selectedNodes.any((node) => node == null) ||
+          selectedNodes.toSet().length != 3) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Phase sequence probes must reach three distinct active nodes.',
+        );
+      }
+      final Set<List<int>> candidateOrders = <List<int>>{};
+      // Values are physical phase nodes, not the labels attached to the
+      // probes. A reversed wiring must reverse the indicated sequence.
+      for (final SourceInstance source in circuit.sources) {
+        final Map<PhaseTag, String?> phaseNodes = <PhaseTag, String?>{
+          for (final PhaseTag phase in <PhaseTag>[
+            PhaseTag.l1,
+            PhaseTag.l2,
+            PhaseTag.l3,
+          ])
+            phase: source.terminals
+                .where((t) => t.phase == phase)
+                .map((t) => nodes[t.id])
+                .firstOrNull,
+        };
+        if (phaseNodes.values.any((n) => n == null)) continue;
+        final String? l1 = phaseNodes[PhaseTag.l1];
+        final String? l2 = phaseNodes[PhaseTag.l2];
+        final String? l3 = phaseNodes[PhaseTag.l3];
+        if ({l1, l2, l3}.length != 3) continue;
+        final labels = <String?>[l1, l2, l3];
+        final order = <int>[
+          for (final node in selectedNodes) labels.indexOf(node),
+        ];
+        if (!order.contains(-1)) candidateOrders.add(order);
+      }
+      if (candidateOrders.length != 1) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'The three probes must belong to the same resolved AC3 supply.',
+        );
+      }
+      final List<int> order = candidateOrders.single;
+      int inversions = 0;
+      for (int i = 0; i < 3; i++) {
+        for (int j = i + 1; j < 3; j++) {
+          if (order[i] > order[j]) inversions++;
+        }
+      }
+      final MeasurementResult base = snapshot.measurePhaseSequence();
+      if (!base.isValid ||
+          base.displayText == null ||
+          base.displayText == 'Indéterminé') {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          'Three-phase sequence is indeterminate.',
+        );
+      }
+      final bool sourcePositive = base.displayText == 'L1 → L2 → L3';
+      final bool measuredPositive = inversions.isEven
+          ? sourcePositive
+          : !sourcePositive;
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: MeasurementResult.text(
+          kind: MeasurementKind.phaseSequence,
+          value: measuredPositive ? 'L1 → L2 → L3' : 'L1 → L3 → L2',
+          evidenceIds: <String>[
+            ...base.evidenceIds,
+            for (final TerminalId? pick in picks) 'probe:${pick!.value}',
+          ],
+        ),
+      );
+    }
+
     if (mode == InstrumentMode.voltageDc ||
         mode == InstrumentMode.voltageAcRms) {
       final bool dc = mode == InstrumentMode.voltageDc;
@@ -217,6 +386,17 @@ final class ElectroSimInstrumentProjection {
         return error(
           PhysicalInstrumentStatus.invalidWiring,
           'Series connection is absent or disabled.',
+        );
+      }
+      final TerminalId? amp = probe(InstrumentPort.amp)?.terminalId;
+      final TerminalId? common = probe(InstrumentPort.common)?.terminalId;
+      final bool isAcrossCut =
+          (amp == original.fromTerminalId && common == original.toTerminalId) ||
+          (amp == original.toTerminalId && common == original.fromTerminalId);
+      if (!isAcrossCut) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must connect to opposite ends of the opened series wire.',
         );
       }
       // The original wire is opened in the temporary projection. A real

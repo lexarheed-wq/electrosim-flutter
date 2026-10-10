@@ -10,7 +10,6 @@ import 'physical_wire_path.dart';
 import 'din_rail_visual.dart';
 import 'cabinet_layout.dart';
 import 'cabinet_fixture_painter.dart';
-import 'metal_mounting_plate.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -25,6 +24,7 @@ final class CircuitScenePainter extends CustomPainter {
     this.wirePreviewSession,
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
+    this.schematicPresentation = false,
   }) : viewportScaleAtBuild = viewport.scale,
        viewportTranslationAtBuild = viewport.translation,
        geometryAtBuild = CircuitGeometryIndex.build(
@@ -52,20 +52,12 @@ final class CircuitScenePainter extends CustomPainter {
   final double viewportScaleAtBuild;
   final Offset viewportTranslationAtBuild;
   final bool paintElementChrome;
+  final bool schematicPresentation;
+  Color get backgroundColor =>
+      schematicPresentation ? Colors.white : boardColor;
   final CircuitGeometryIndex geometryAtBuild;
   final WireSemantics? semanticsAtBuild;
   late final List<Rect> dinSupportsAtBuild = _buildDinSupports();
-  late final Rect mountingPlateBoundsAtBuild = mountingPlateBounds([
-    ...geometryAtBuild.elementRects.values,
-    ...layout.cabinetLayout.fixtures.map((fixture) => fixture.bounds),
-  ]);
-
-  Rect get _plateScreenBounds => Rect.fromLTWH(
-    viewport.worldToScreen(mountingPlateBoundsAtBuild.topLeft).dx,
-    viewport.worldToScreen(mountingPlateBoundsAtBuild.topLeft).dy,
-    mountingPlateBoundsAtBuild.width * viewport.scale,
-    mountingPlateBoundsAtBuild.height * viewport.scale,
-  );
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -79,21 +71,18 @@ final class CircuitScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (paintElementChrome) {
-      canvas.drawRect(Offset.zero & size, Paint()..color = boardColor);
-      _paintGrid(canvas, size);
-    } else {
-      paintMetalMountingPlate(
-        canvas,
-        viewportSize: size,
-        screenBounds: _plateScreenBounds,
-        scale: viewport.scale,
-      );
-    }
+    canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor);
+    if (!schematicPresentation) _paintGrid(canvas, size);
 
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
-    if (!paintElementChrome) {
+    if (!paintElementChrome && !schematicPresentation) {
+      paintCabinetEnvelope(
+        canvas,
+        cabinet: layout.cabinetLayout,
+        worldToScreen: viewport.worldToScreen,
+        scale: viewport.scale,
+      );
       paintCabinetFixtures(
         canvas,
         cabinet: layout.cabinetLayout,
@@ -114,7 +103,7 @@ final class CircuitScenePainter extends CustomPainter {
     }
     // Meters are physical artifacts regardless of the electrical symbol
     // overlay and are never disguised as solver receiver components.
-    _paintInstruments(canvas, geometry);
+    if (!schematicPresentation) _paintInstruments(canvas, geometry);
     _paintWiringPreview(canvas, geometry);
   }
 
@@ -219,13 +208,15 @@ final class CircuitScenePainter extends CustomPainter {
       ];
       final Path path = buildPhysicalWirePath(
         worldPoints.map(viewport.worldToScreen).toList(),
-        bendRadius: paintElementChrome ? 0 : 6 * viewport.scale,
+        bendRadius: paintElementChrome || schematicPresentation
+            ? 0
+            : 6 * viewport.scale,
       );
       final bool selected = selectedElementId == connection.id.value;
-      final double wireWidth = paintElementChrome
+      final double wireWidth = paintElementChrome || schematicPresentation
           ? 3
           : (4 * viewport.scale).clamp(2.0, 7.0).toDouble();
-      if (!paintElementChrome) {
+      if (!paintElementChrome && !schematicPresentation) {
         canvas.drawPath(
           path.shift(const Offset(0, 1.2)),
           Paint()
@@ -239,13 +230,19 @@ final class CircuitScenePainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = selected ? selectionColor : _phaseColor(connection.phase)
+          ..color = selected
+              ? selectionColor
+              : schematicPresentation
+              ? Colors.black
+              : _phaseColor(connection.phase)
           ..strokeWidth = selected ? wireWidth + 2 : wireWidth
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round,
       );
-      if (!paintElementChrome && viewport.scale >= .65) {
+      if (!paintElementChrome &&
+          !schematicPresentation &&
+          viewport.scale >= .65) {
         canvas.drawPath(
           path,
           Paint()
@@ -402,13 +399,7 @@ final class CircuitScenePainter extends CustomPainter {
       canvas.drawCircle(
         viewport.worldToScreen(crossing.point),
         radius,
-        paintElementChrome
-            ? (Paint()..color = boardColor)
-            : _plateScreenBounds.contains(
-                viewport.worldToScreen(crossing.point),
-              )
-            ? mountingPlateSurfacePaint(_plateScreenBounds)
-            : (Paint()..color = metalWorkspaceColor),
+        Paint()..color = backgroundColor,
       );
     }
   }
@@ -536,6 +527,7 @@ final class CircuitScenePainter extends CustomPainter {
       oldDelegate.wirePreviewSession != wirePreviewSession ||
       oldDelegate.smartWireSemantics != smartWireSemantics ||
       oldDelegate.paintElementChrome != paintElementChrome ||
+      oldDelegate.schematicPresentation != schematicPresentation ||
       oldDelegate.viewportScaleAtBuild != viewportScaleAtBuild ||
       oldDelegate.viewportTranslationAtBuild != viewportTranslationAtBuild;
 }

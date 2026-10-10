@@ -47,6 +47,7 @@ final class TpDefinition {
     required this.id,
     required this.title,
     required this.referenceCircuit,
+    this.studentStarterCircuit,
     this.maxScore = 100,
   }) : mode = TpMode.wiring,
        faultScenarioId = null;
@@ -58,12 +59,18 @@ final class TpDefinition {
     this.maxScore = 100,
   }) : mode = TpMode.troubleshooting,
        faultScenarioId = scenarioId,
-       referenceCircuit = null;
+       referenceCircuit = null,
+       studentStarterCircuit = null;
 
   final TpId id;
   final String title;
   final TpMode mode;
+
+  /// Teacher-only truth. Null in an untrusted student replica.
   final CircuitState? referenceCircuit;
+
+  /// Public blank exercise plate; never a solution assembled by the teacher.
+  final CircuitState? studentStarterCircuit;
   final FaultScenarioId? faultScenarioId;
   final int maxScore;
 }

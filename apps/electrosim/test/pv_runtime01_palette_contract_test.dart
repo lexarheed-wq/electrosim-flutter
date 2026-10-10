@@ -13,11 +13,13 @@ void main() {
     final F9PaletteDefinition battery = item('pv-battery');
     final F9PaletteDefinition inverter = item('pv-inverter');
 
-    expect(array.defaultParameters['mppVoltageV'], 360.0);
+    final F9PaletteDefinition highVoltage = item('pv-array-high-voltage');
+    expect(array.defaultParameters['mppVoltageV'], 54.0);
+    expect(highVoltage.defaultParameters['mppVoltageV'], 360.0);
     expect(mppt.defaultParameters['controllerType'], 'mppt');
     expect(
       mppt.defaultParameters['maxPvInputVoltageV'],
-      greaterThanOrEqualTo(360.0),
+      greaterThanOrEqualTo(highVoltage.defaultParameters['mppVoltageV'] as num),
     );
     expect(mppt.defaultParameters['outputVoltageV'], 48.0);
     expect(battery.defaultParameters['nominalVoltageV'], 48.0);
@@ -31,6 +33,21 @@ void main() {
     );
 
     expect(pwm.defaultParameters['controllerType'], 'pwm');
-    expect(pwm.defaultParameters['maxPvInputVoltageV'], lessThan(360.0));
+    expect(
+      pwm.defaultParameters['maxPvInputVoltageV'],
+      greaterThanOrEqualTo(array.defaultParameters['mppVoltageV'] as num),
+    );
+    expect(
+      pwm.defaultParameters['maxPvInputVoltageV'],
+      lessThan(highVoltage.defaultParameters['mppVoltageV'] as num),
+    );
+    expect(
+      inverter.defaultParameters['maxDcVoltageV'],
+      greaterThanOrEqualTo(array.defaultParameters['mppVoltageV'] as num),
+    );
+    expect(
+      inverter.defaultParameters['maxDcVoltageV'],
+      lessThan(highVoltage.defaultParameters['mppVoltageV'] as num),
+    );
   });
 }

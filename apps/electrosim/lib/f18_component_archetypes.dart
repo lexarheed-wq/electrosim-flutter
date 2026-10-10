@@ -4,6 +4,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_industrial_component_visuals.dart';
+import 'f18_component_type_profile.dart';
 
 enum F18ElectricalArchetype {
   source,
@@ -18,90 +19,15 @@ enum F18ElectricalArchetype {
 
 abstract final class F18ElectricalArchetypeClassifier {
   static F18ElectricalArchetype forModel(String modelType) {
-    final String type = modelType.toLowerCase();
-
-    if (_containsAny(type, <String>[
-      'pv',
-      'solar',
-      'irradiance',
-      'battery_storage',
-      'regulator',
-    ])) {
-      return F18ElectricalArchetype.pvEnergy;
-    }
-    if (_containsAny(type, <String>[
-      'inverter',
-      'converter',
-      'rectifier',
-      'transformer',
-      'dc_dc',
-      'ac_dc',
-    ])) {
-      return F18ElectricalArchetype.conversion;
-    }
-    if (_containsAny(type, <String>[
-      'meter',
-      'voltmeter',
-      'ammeter',
-      'multimeter',
-      'oscilloscope',
-      'sensor',
-      'probe',
-    ])) {
-      return F18ElectricalArchetype.measurement;
-    }
-    if (_containsAny(type, <String>[
-      'breaker',
-      'fuse',
-      'rcd',
-      'protection',
-      'disjoncteur',
-      'fusible',
-    ])) {
-      return F18ElectricalArchetype.protection;
-    }
-    if (_containsAny(type, <String>[
-      'switch',
-      'push_button',
-      'relay',
-      'contactor',
-      'contacteur',
-      'interrupteur',
-      'bouton',
-      'coil',
-      'bobine',
-    ])) {
-      return F18ElectricalArchetype.control;
-    }
-    if (_containsAny(type, <String>[
-      'motor',
-      'fan',
-      'pump',
-      'moteur',
-      'ventilateur',
-      'pompe',
-    ])) {
-      return F18ElectricalArchetype.rotatingMachine;
-    }
-    if (_containsAny(type, <String>[
-      'lamp',
-      'resistor',
-      'heater',
-      'buzzer',
-      'diode',
-      'load',
-      'lampe',
-      'résistance',
-      'resistance',
-      'chauffage',
-    ])) {
-      return F18ElectricalArchetype.load;
-    }
+    final F18ComponentTypeProfile profile = F18ComponentTypeProfile(modelType);
+    if (profile.pvArchetype) return F18ElectricalArchetype.pvEnergy;
+    if (profile.converter) return F18ElectricalArchetype.conversion;
+    if (profile.measurementArchetype) return F18ElectricalArchetype.measurement;
+    if (profile.protective) return F18ElectricalArchetype.protection;
+    if (profile.controls) return F18ElectricalArchetype.control;
+    if (profile.motor) return F18ElectricalArchetype.rotatingMachine;
+    if (profile.load) return F18ElectricalArchetype.load;
     return F18ElectricalArchetype.source;
-  }
-
-  static bool _containsAny(String value, List<String> needles) {
-    return needles.any(value.contains);
   }
 }
 

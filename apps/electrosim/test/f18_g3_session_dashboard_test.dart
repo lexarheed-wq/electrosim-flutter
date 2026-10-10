@@ -50,6 +50,112 @@ Future<void> _ensureTopOpen(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('resume preserves the teacher workshop being prepared', (
+    tester,
+  ) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _openSession(tester);
+    await tester.tap(find.byKey(const Key('dashboard-wiring')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('activity-setup-open-workshop')));
+    await tester.pumpAndSettle();
+    final originalCanvas = tester.state(find.byType(SimulatorCanvas));
+    await _ensureTopOpen(tester);
+    await tester.tap(find.byKey(const Key('session-home-action')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-create-session')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SimulatorCanvas), findsOneWidget);
+    expect(tester.state(find.byType(SimulatorCanvas)), same(originalCanvas));
+  });
+
+  testWidgets(
+    'maintenance navigation from home keeps the active teacher session',
+    (tester) async {
+      _desktop(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _openSession(tester);
+      await tester.tap(find.byKey(const Key('session-home-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home-maintenance')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('center-home-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home-create-session')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+      expect(find.byKey(const Key('session-create-dialog')), findsNothing);
+    },
+  );
+
+  testWidgets('system back preserves the teacher session', (tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _openSession(tester);
+    final navigator = tester.state<NavigatorState>(
+      find.byType(Navigator).first,
+    );
+    await navigator.maybePop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-create-session')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+    expect(find.byKey(const Key('session-create-dialog')), findsNothing);
+  });
+
+  testWidgets(
+    'returning home preserves the active session and prevents another creation',
+    (tester) async {
+      _desktop(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await _openSession(tester);
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      final originalUrl = tester
+          .widget<SelectableText>(find.byKey(const Key('tp-network-endpoint')))
+          .data;
+      await tester.tap(find.text('Fermer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('session-home-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home-create-session')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('session-create-dialog')), findsNothing);
+      expect(find.byKey(const Key('session-shell-page')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('session-manage-action')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<SelectableText>(
+              find.byKey(const Key('tp-network-endpoint')),
+            )
+            .data,
+        originalUrl,
+      );
+      await tester.tap(find.byKey(const Key('tp-close-classroom-session')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('home-create-session')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home-create-session')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('session-create-dialog')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('manage session displays a scannable QR', (tester) async {
+    _desktop(tester);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _openSession(tester);
+    await tester.tap(find.byKey(const Key('session-manage-action')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tp-network-qr')), findsOneWidget);
+  });
+
   testWidgets(
     'session management and supervision share one real TP controller',
     (WidgetTester tester) async {

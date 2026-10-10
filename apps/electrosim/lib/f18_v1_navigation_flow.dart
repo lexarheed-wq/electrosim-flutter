@@ -438,6 +438,7 @@ class F18ActivitySetupPage extends StatelessWidget {
     required this.parentLabel,
     required this.onBack,
     required this.onOpenWorkshop,
+    this.onManageTp,
   });
 
   final Key pageKey;
@@ -446,6 +447,7 @@ class F18ActivitySetupPage extends StatelessWidget {
   final String parentLabel;
   final VoidCallback onBack;
   final VoidCallback onOpenWorkshop;
+  final VoidCallback? onManageTp;
 
   @override
   Widget build(BuildContext context) {
@@ -501,14 +503,24 @@ class F18ActivitySetupPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: ElectroSimSpacing.xl),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilledButton.icon(
-                    key: const Key('activity-setup-open-workshop'),
-                    onPressed: onOpenWorkshop,
-                    icon: const Icon(Icons.electrical_services_outlined),
-                    label: const Text('Ouvrir l’atelier'),
-                  ),
+                Wrap(
+                  spacing: ElectroSimSpacing.md,
+                  runSpacing: ElectroSimSpacing.sm,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      key: const Key('activity-setup-open-workshop'),
+                      onPressed: onOpenWorkshop,
+                      icon: const Icon(Icons.electrical_services_outlined),
+                      label: const Text('Ouvrir l’atelier'),
+                    ),
+                    if (onManageTp != null)
+                      OutlinedButton.icon(
+                        key: const Key('activity-setup-publish-tp'),
+                        onPressed: onManageTp,
+                        icon: const Icon(Icons.publish_outlined),
+                        label: const Text('Créer / publier un TP'),
+                      ),
+                  ],
                 ),
               ],
             ),

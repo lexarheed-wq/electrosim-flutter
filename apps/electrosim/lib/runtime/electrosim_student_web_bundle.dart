@@ -8,7 +8,7 @@ final class ElectroSimStudentWebBundleLocator {
         Platform.environment['ELECTROSIM_STUDENT_WEB_ROOT'];
     if (configured != null && configured.trim().isNotEmpty) {
       final Directory directory = Directory(configured.trim());
-      if (_valid(directory)) return directory;
+      if (isBundleValid(directory)) return directory;
     }
 
     final Directory executableDirectory = File(
@@ -22,12 +22,14 @@ final class ElectroSimStudentWebBundleLocator {
       Directory('${executableDirectory.path}/electrosim_student_web'),
     ];
     for (final Directory candidate in candidates) {
-      if (_valid(candidate)) return candidate;
+      if (isBundleValid(candidate)) return candidate;
     }
     return null;
   }
 
-  static bool _valid(Directory directory) =>
+  // A release must contain BOTH the entry document and its Dart JS payload.
+  // This guard is also exercised by packaging tests.
+  static bool isBundleValid(Directory directory) =>
       directory.existsSync() &&
       File('${directory.path}/index.html').existsSync() &&
       File('${directory.path}/main.dart.js').existsSync();

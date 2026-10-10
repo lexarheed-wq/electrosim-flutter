@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'f17_tp_session_dialog.dart';
@@ -19,7 +22,7 @@ typedef F18SessionWorkspaceBuilder =
       ElectroSimTpSessionController controller,
       String workspace,
       VoidCallback onDashboard,
-      VoidCallback onManageSession,
+      ValueChanged<CircuitState> onManageSession,
     );
 
 class F18TeacherSessionCoordinatorPage extends StatefulWidget {
@@ -29,12 +32,14 @@ class F18TeacherSessionCoordinatorPage extends StatefulWidget {
     required this.sessionName,
     required this.sessionCode,
     this.controller,
+    this.onHome,
   });
 
   final F18SessionWorkspaceBuilder workspaceBuilder;
   final String sessionName;
   final String sessionCode;
   final ElectroSimTpSessionController? controller;
+  final VoidCallback? onHome;
 
   @override
   State<F18TeacherSessionCoordinatorPage> createState() =>
@@ -48,6 +53,7 @@ class _F18TeacherSessionCoordinatorPageState
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanInfo;
   bool _waitingRoom = true;
+  bool _classroomEnded = false;
   String? _waitingRoomNetworkStatus;
 
   @override
@@ -63,7 +69,15 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => PopScope<void>(
+    canPop: _classroomEnded || widget.onHome == null,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _goHome();
+    },
+    child: _buildSession(context),
+  );
+
+  Widget _buildSession(BuildContext context) {
     if (_waitingRoom) {
       final ElectroSimLanSyncHost? host = _lanHost;
       return F18SessionWaitingRoomPage(
@@ -105,6 +119,10 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   void _goHome() {
+    if (widget.onHome != null) {
+      widget.onHome!();
+      return;
+    }
     Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
   }
 
@@ -130,6 +148,15 @@ class _F18TeacherSessionCoordinatorPageState
           parentLabel: 'tableau de bord',
           onBack: () => Navigator.of(setupContext).pop(),
           onOpenWorkshop: () => _openWorkspace(setupContext, workspace),
+          onManageTp: () {
+            unawaited(
+              _showManageSession(
+                draftMode: workspace == 'Câblage'
+                    ? TpMode.wiring
+                    : TpMode.troubleshooting,
+              ),
+            );
+          },
         ),
       ),
     );
@@ -149,8 +176,15 @@ class _F18TeacherSessionCoordinatorPageState
           () => Navigator.of(routeContext).popUntil(
             (Route<dynamic> route) => route.settings.name == 'teacher-session',
           ),
-          () {
-            unawaited(_showManageSession());
+          (CircuitState circuit) {
+            unawaited(
+              _showManageSession(
+                draftMode: workspace == 'Câblage'
+                    ? TpMode.wiring
+                    : TpMode.troubleshooting,
+                wiringReferenceCircuit: workspace == 'Câblage' ? circuit : null,
+              ),
+            );
           },
         ),
       ),
@@ -168,7 +202,10 @@ class _F18TeacherSessionCoordinatorPageState
     );
   }
 
-  Future<void> _showManageSession() async {
+  Future<void> _showManageSession({
+    TpMode draftMode = TpMode.troubleshooting,
+    CircuitState? wiringReferenceCircuit,
+  }) async {
     if (!mounted) {
       return;
     }
@@ -177,6 +214,8 @@ class _F18TeacherSessionCoordinatorPageState
       builder: (BuildContext dialogContext) => F17TpSessionDialog(
         controller: _controller,
         role: F9UserRole.teacher,
+        draftMode: draftMode,
+        wiringReferenceCircuit: wiringReferenceCircuit,
         initialLanHostInfo: _lanInfo,
         onEnableLanSharing: _enableLanSharing,
         onStudentStarted: (_) {},
@@ -186,8 +225,9 @@ class _F18TeacherSessionCoordinatorPageState
   }
 
   void _closeClassroomSession() {
+    _classroomEnded = true;
     _lanHost?.closeClassroomSession();
-    _goHome();
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> _enableWaitingRoomSharing() async {
@@ -218,11 +258,24 @@ class _F18TeacherSessionCoordinatorPageState
       return existingInfo;
     }
 
+    // Do not advertise a joinable QR code if the Mac release does not
+    // actually contain the student application. Otherwise GET /join/<code>
+    // responds 503 while the teacher sees a misleading "server ready".
+    final studentWebRoot = ElectroSimStudentWebBundleLocator.resolve();
+    // Widget tests run without a packaged web asset tree. Release builds
+    // must never advertise a nonfunctional QR code.
+    if (studentWebRoot == null && kReleaseMode) {
+      throw StateError(
+        'Client Web élève absent du candidat Mac. '
+        'Le QR code est désactivé ; reconstruisez avec le bundle Web '
+        '(index.html et main.dart.js).',
+      );
+    }
     final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
       controller: _controller,
       sessionCode: widget.sessionCode,
       sessionName: widget.sessionName,
-      studentWebRoot: ElectroSimStudentWebBundleLocator.resolve(),
+      studentWebRoot: studentWebRoot,
     );
     try {
       final ElectroSimLanHostInfo info = await host.start();

@@ -13,7 +13,11 @@ final class CircuitVisualLayout {
     Map<String, int> elementQuarterTurns = const <String, int>{},
     this.defaultElementSize = const Size(104, 64),
     CabinetLayout? cabinetLayout,
-  }) : cabinetLayout = cabinetLayout ?? const CabinetLayout.empty(),
+    Map<String, Offset> terminalAnchorOffsets = const {},
+  }) : terminalAnchorOffsets = Map<String, Offset>.unmodifiable(
+         terminalAnchorOffsets,
+       ),
+       cabinetLayout = cabinetLayout ?? const CabinetLayout.empty(),
        elementPositions = Map<String, Offset>.unmodifiable(elementPositions),
        elementSizes = Map<String, Size>.unmodifiable(elementSizes),
        wireRoutes = Map<String, List<Offset>>.unmodifiable(
@@ -37,6 +41,10 @@ final class CircuitVisualLayout {
   final Map<String, int> elementQuarterTurns;
   final Size defaultElementSize;
   final CabinetLayout cabinetLayout;
+
+  /// Presentation-only local anchors keyed by stable electrical terminal ID.
+  /// Derived schematic layouts use these; author documents keep physical ports.
+  final Map<String, Offset> terminalAnchorOffsets;
 
   Offset? positionOf(String elementId) => elementPositions[elementId];
 
@@ -64,6 +72,7 @@ final class CircuitVisualLayout {
         elementQuarterTurns: elementQuarterTurns,
         defaultElementSize: defaultElementSize,
         cabinetLayout: next,
+        terminalAnchorOffsets: terminalAnchorOffsets,
       );
 
   CircuitVisualLayout moveElement(String elementId, Offset worldPosition) {
@@ -76,6 +85,7 @@ final class CircuitVisualLayout {
       elementQuarterTurns: elementQuarterTurns,
       defaultElementSize: defaultElementSize,
       cabinetLayout: cabinetLayout,
+      terminalAnchorOffsets: terminalAnchorOffsets,
     );
   }
 
@@ -97,6 +107,7 @@ final class CircuitVisualLayout {
       elementQuarterTurns: next,
       defaultElementSize: defaultElementSize,
       cabinetLayout: cabinetLayout,
+      terminalAnchorOffsets: terminalAnchorOffsets,
     );
   }
 

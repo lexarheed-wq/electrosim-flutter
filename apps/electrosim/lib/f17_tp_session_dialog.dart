@@ -1,6 +1,9 @@
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'f9_ui_context.dart';
 import 'runtime/electrosim_lan_sync.dart';
@@ -12,6 +15,8 @@ class F17TpSessionDialog extends StatefulWidget {
     required this.controller,
     required this.role,
     required this.onStudentStarted,
+    this.draftMode = TpMode.troubleshooting,
+    this.wiringReferenceCircuit,
     this.onEnableLanSharing,
     this.initialLanHostInfo,
     this.onCloseClassroomSession,
@@ -20,6 +25,8 @@ class F17TpSessionDialog extends StatefulWidget {
   final ElectroSimTpSessionController controller;
   final F9UserRole role;
   final ValueChanged<TpSession> onStudentStarted;
+  final TpMode draftMode;
+  final CircuitState? wiringReferenceCircuit;
   final Future<ElectroSimLanHostInfo> Function()? onEnableLanSharing;
   final ElectroSimLanHostInfo? initialLanHostInfo;
   final VoidCallback? onCloseClassroomSession;
@@ -33,6 +40,26 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
   ElectroSimLanHostInfo? _lanInfo;
   String? _lanError;
   bool _startingLan = false;
+  String? _selectedWiringExampleId;
+  String? _selectedFaultScenarioId;
+  late final List<ExampleDefinition> _wiringExamples =
+      buildV2ProductExampleRepository().all;
+
+  bool _hasWiredReference(CircuitState? circuit) =>
+      circuit != null &&
+      circuit.sources.isNotEmpty &&
+      circuit.components.isNotEmpty &&
+      circuit.connections.isNotEmpty;
+
+  ExampleDefinition? get _selectedWiringExample {
+    for (final ExampleDefinition example in _wiringExamples) {
+      if (example.id.value == _selectedWiringExampleId) return example;
+    }
+    return null;
+  }
+
+  CircuitState? get _wiringReference =>
+      _selectedWiringExample?.circuit ?? widget.wiringReferenceCircuit;
 
   @override
   void initState() {
@@ -48,62 +75,86 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
       title: const Text('Gérer la session'),
       content: SizedBox(
         width: 480,
-        child: AnimatedBuilder(
-          animation: widget.controller,
-          builder: (BuildContext context, Widget? child) {
-            final TpSession? current = widget.controller.session;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                ElectroSimStatusChip(
-                  key: const Key('tp-lifecycle-status'),
-                  label: current == null
-                      ? 'Aucun TP'
-                      : _lifecycleLabel(current.lifecycle),
-                  icon: Icons.assignment_outlined,
-                  emphasized: current != null,
-                ),
-                const SizedBox(height: ElectroSimSpacing.md),
-                if (current == null)
-                  const Text(
-                    'Aucune activité n’est encore créée pour cette session.',
-                  )
-                else ...<Widget>[
-                  Text(
-                    current.definition.title,
-                    key: const Key('tp-session-title'),
-                    style: Theme.of(context).textTheme.titleMedium,
+        child: SingleChildScrollView(
+          child: AnimatedBuilder(
+            animation: widget.controller,
+            builder: (BuildContext context, Widget? child) {
+              final TpSession? current = widget.controller.session;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  ElectroSimStatusChip(
+                    key: const Key('tp-lifecycle-status'),
+                    label: current == null
+                        ? 'Aucun TP'
+                        : _lifecycleLabel(current.lifecycle),
+                    icon: Icons.assignment_outlined,
+                    emphasized: current != null,
                   ),
-                  const SizedBox(height: ElectroSimSpacing.xs),
-                  Text(
-                    'Mode : ${current.definition.mode == TpMode.troubleshooting ? 'Recherche de dérangement' : 'Câblage'}',
-                  ),
-                  Text('État : ${_lifecycleLabel(current.lifecycle)}'),
-                  Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
-                  if (current.evaluation != null) ...<Widget>[
-                    const SizedBox(height: ElectroSimSpacing.sm),
-                    Text(
-                      'Score : ${current.evaluation!.score}/${current.definition.maxScore}',
-                      key: const Key('tp-score-label'),
-                    ),
-                    Text(
-                      'Fonctionnel : ${current.evaluation!.functional ? 'oui' : 'non'} · '
-                      'Sécurité : ${current.evaluation!.safetyOk ? 'oui' : 'non'} · '
-                      'Mesures : ${current.evaluation!.measurementsOk ? 'oui' : 'non'}',
-                    ),
-                  ],
-                ],
-                const SizedBox(height: ElectroSimSpacing.md),
-                if (_teacher && widget.onEnableLanSharing != null) ...<Widget>[
-                  _networkSharingSection(context),
                   const SizedBox(height: ElectroSimSpacing.md),
+                  if (current == null)
+                    const Text(
+                      'Aucune activité n’est encore créée pour cette session.',
+                    )
+                  else ...<Widget>[
+                    Text(
+                      current.definition.title,
+                      key: const Key('tp-session-title'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: ElectroSimSpacing.xs),
+                    Text(
+                      'Mode : ${current.definition.mode == TpMode.troubleshooting ? 'Recherche de dérangement' : 'Câblage'}',
+                    ),
+                    Text('État : ${_lifecycleLabel(current.lifecycle)}'),
+                    Text('Lecture seule : ${current.readOnly ? 'oui' : 'non'}'),
+                    if (current.evaluation != null &&
+                        (_teacher ||
+                            current.lifecycle == TpLifecycle.evaluated ||
+                            current.lifecycle ==
+                                TpLifecycle.closed)) ...<Widget>[
+                      const SizedBox(height: ElectroSimSpacing.sm),
+                      Text(
+                        'Score : ${current.evaluation!.score}/${current.definition.maxScore}',
+                        key: const Key('tp-score-label'),
+                      ),
+                      Text(
+                        'Fonctionnel : ${current.evaluation!.functional ? 'oui' : 'non'} · '
+                        'Sécurité : ${current.evaluation!.safetyOk ? 'oui' : 'non'} · '
+                        'Mesures : ${current.evaluation!.measurementsOk ? 'oui' : 'non'}',
+                      ),
+                    ],
+                  ],
+                  const SizedBox(height: ElectroSimSpacing.md),
+                  if (_teacher &&
+                      widget.onEnableLanSharing != null) ...<Widget>[
+                    _networkSharingSection(context),
+                    const SizedBox(height: ElectroSimSpacing.md),
+                  ],
+                  if (_teacher &&
+                      current != null &&
+                      current.definition.mode != widget.draftMode) ...<Widget>[
+                    const Text(
+                      'Une activité d’un autre type est déjà présente dans '
+                      'cette session. Terminez ou supprimez-la avant de '
+                      'créer un nouveau TP.',
+                    ),
+                    const SizedBox(height: ElectroSimSpacing.sm),
+                  ],
+                  if (_teacher) ..._teacherActions(current),
+                  if (_teacher && widget.controller.teacherArchive.isNotEmpty)
+                    TextButton.icon(
+                      key: const Key('tp-open-archive'),
+                      onPressed: _showTeacherArchive,
+                      icon: const Icon(Icons.archive_outlined),
+                      label: const Text('Anciens TP — consulter / supprimer'),
+                    ),
+                  if (!_teacher) ..._studentActions(current),
                 ],
-                if (_teacher) ..._teacherActions(current),
-                if (!_teacher) ..._studentActions(current),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
       actions: <Widget>[
@@ -111,8 +162,8 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           TextButton.icon(
             key: const Key('tp-close-classroom-session'),
             onPressed: () {
-              widget.onCloseClassroomSession!();
               Navigator.of(context).pop();
+              widget.onCloseClassroomSession!();
             },
             icon: const Icon(Icons.stop_circle_outlined),
             label: const Text('Terminer la séance'),
@@ -154,6 +205,14 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                 ),
               )
             else ...<Widget>[
+              Center(
+                child: QrImageView(
+                  key: const Key('tp-network-qr'),
+                  data: info.preferredJoinUrl.toString(),
+                  size: 140,
+                  backgroundColor: Colors.white,
+                ),
+              ),
               Text(
                 'Code : ${info.sessionCode}',
                 key: const Key('tp-network-code'),
@@ -166,7 +225,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
               ),
               const SizedBox(height: ElectroSimSpacing.xxs),
               const Text(
-                'Les élèves ouvrent cette adresse dans leur navigateur ou scannent le QR code de la salle d’attente.',
+                'Les élèves scannent ce QR code pour rejoindre ou reprendre leur travail dans le même navigateur.',
               ),
               if (info.endpoints.length > 1)
                 Text(
@@ -214,10 +273,88 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
 
   List<Widget> _teacherActions(TpSession? session) {
     if (session == null) {
+      final CircuitState? reference = _wiringReference;
+      final bool needsReference =
+          widget.draftMode == TpMode.wiring && !_hasWiredReference(reference);
       return <Widget>[
+        Text(
+          widget.draftMode == TpMode.wiring
+              ? 'Créer un TP de câblage'
+              : 'Créer un TP de recherche de dérangement',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        if (widget.draftMode == TpMode.wiring) ...<Widget>[
+          if (_hasWiredReference(widget.wiringReferenceCircuit))
+            const Text(
+              'Montage de référence : circuit préparé dans l’atelier.',
+            ),
+          DropdownButton<String>(
+            key: const Key('tp-wiring-reference-example'),
+            isExpanded: true,
+            value: _selectedWiringExampleId,
+            hint: const Text('Ou choisir un schéma sain natif V2'),
+            items: <DropdownMenuItem<String>>[
+              for (final ExampleDefinition example in _wiringExamples)
+                DropdownMenuItem<String>(
+                  value: example.id.value,
+                  child: Text(example.title),
+                ),
+            ],
+            onChanged: (String? id) {
+              setState(() {
+                _selectedWiringExampleId = id;
+              });
+            },
+          ),
+          if (needsReference)
+            const Text(
+              'Choisissez un schéma V2 ou préparez votre montage '
+              'dans l’atelier avant la publication.',
+              key: Key('tp-wiring-reference-required'),
+            ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ] else ...<Widget>[
+          DropdownButton<String>(
+            key: const Key('tp-fault-scenario-select'),
+            isExpanded: true,
+            value:
+                _selectedFaultScenarioId ??
+                widget.controller.defaultFaultScenarioId,
+            items: <DropdownMenuItem<String>>[
+              for (final scenario in widget.controller.availableFaultScenarios)
+                DropdownMenuItem<String>(
+                  value: scenario.id.value,
+                  child: Text(scenario.title),
+                ),
+            ],
+            onChanged: (String? value) {
+              setState(() {
+                _selectedFaultScenarioId = value;
+              });
+            },
+          ),
+          const SizedBox(height: ElectroSimSpacing.sm),
+        ],
         FilledButton.icon(
           key: const Key('tp-create-draft'),
-          onPressed: () => widget.controller.createDraft(),
+          onPressed: needsReference
+              ? null
+              : () {
+                  final ExampleDefinition? example = _selectedWiringExample;
+                  try {
+                    widget.controller.createDraft(
+                      mode: widget.draftMode,
+                      wiringReferenceCircuit: reference,
+                      troubleshootingScenarioId: _selectedFaultScenarioId,
+                      activityTitle: example == null
+                          ? null
+                          : 'TP de câblage — ${example.title}',
+                    );
+                  } on Object catch (error) {
+                    _showError('Création du TP impossible : $error');
+                  }
+                },
           icon: const Icon(Icons.add_task_outlined),
           label: const Text('Créer le TP'),
         ),
@@ -364,6 +501,54 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           Text('Le TP est encore en préparation par le professeur.'),
         ];
     }
+  }
+
+  Future<void> _showTeacherArchive() async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext archiveContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter updateArchive) =>
+            AlertDialog(
+              title: const Text('Historique des TP terminés'),
+              content: SizedBox(
+                width: 480,
+                height: 300,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: <Widget>[
+                    for (final entry in widget.controller.teacherArchive)
+                      ListTile(
+                        key: Key('tp-archive-${entry['tpId']}'),
+                        title: Text(
+                          (entry['activityTitle'] ?? entry['title'])
+                                  ?.toString() ??
+                              'TP',
+                        ),
+                        subtitle: Text(entry['tpId']?.toString() ?? ''),
+                        trailing: IconButton(
+                          key: Key('tp-delete-archive-${entry['tpId']}'),
+                          tooltip: 'Supprimer définitivement ce TP archivé',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () {
+                            widget.controller.deleteArchivedActivity(
+                              entry['tpId']!.toString(),
+                            );
+                            updateArchive(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(archiveContext).pop(),
+                  child: const Text('Fermer'),
+                ),
+              ],
+            ),
+      ),
+    );
   }
 
   void _showError(String message) {

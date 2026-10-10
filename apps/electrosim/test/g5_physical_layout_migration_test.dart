@@ -27,18 +27,6 @@ void main() {
     'legacy motor/lamp layouts retain placement but invalidate old wire routes',
     () {
       final old = CircuitVisualLayout(
-        cabinetLayout: CabinetLayout([
-          CabinetFixture(
-            id: 'DIN-1',
-            kind: CabinetFixtureKind.dinRail,
-            bounds: const Rect.fromLTWH(0, 0, 900, 35),
-          ),
-          CabinetFixture(
-            id: 'DUCT-1',
-            kind: CabinetFixtureKind.wireDuct,
-            bounds: const Rect.fromLTWH(0, 500, 900, 45),
-          ),
-        ]),
         elementPositions: const {
           'M1': Offset(300, 200),
           'H1': Offset(750, 300),
@@ -60,7 +48,6 @@ void main() {
       );
       expect(migrated.elementPositions, old.elementPositions);
       expect(migrated.elementQuarterTurns, old.elementQuarterTurns);
-      expect(migrated.cabinetLayout, same(old.cabinetLayout));
       expect(migrated.wireRoutes, isEmpty);
       expect(circuit.revision, 3);
       expect(

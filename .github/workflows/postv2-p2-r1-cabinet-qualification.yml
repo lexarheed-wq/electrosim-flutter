@@ -3,14 +3,11 @@ on:
   push:
     branches:
       - feat/postv2-p2-cabinet-layout-r1-20261009
-      - feat/g5-p2-industrial-integration-20261009
-      - feat/g5-metal-mounting-plate-20261009
-      - feat/g5-industrial-components-next-20261009
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: postv2-p2-r1-cabinet-${{ github.ref }}
+  group: postv2-p2-r1-cabinet
   cancel-in-progress: true
 jobs:
   geometry-app-and-p1-nonregression:

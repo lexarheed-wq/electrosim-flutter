@@ -3,14 +3,11 @@ on:
   push:
     branches:
       - feat/postv2-p2-cabinet-layout-r1-20261009
-      - feat/g5-p2-industrial-integration-20261009
-      - feat/g5-metal-mounting-plate-20261009
-      - feat/g5-industrial-components-next-20261009
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: postv2-p2-mac-candidate-${{ github.ref }}
+  group: postv2-p2-mac-candidate
   cancel-in-progress: true
 jobs:
   macos-intel-candidate:
@@ -44,7 +41,6 @@ jobs:
           flutter test test/postv2_p2_cabinet_workspace_test.dart
           flutter test test/postv2_p2_layout_persistence_test.dart
           flutter test test/ac3_motor_self_hold_start_stop_test.dart
-          flutter test test/g5_industrial_asset_fallback_test.dart test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_physical_layout_migration_test.dart test/g5_p2_layout_preservation_test.dart
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"

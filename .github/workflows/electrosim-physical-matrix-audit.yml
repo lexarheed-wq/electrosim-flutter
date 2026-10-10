@@ -1,0 +1,52 @@
+name: ElectroSim Physical Behavior Matrix Audit
+on:
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  physical-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Restore authoritative painter source
+        run: python3 tools/premium_rcd2p/decode_source.py
+      - name: Install test dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Execute measured matrix and always generate report
+        shell: bash
+        run: |
+          set +e
+          set -uo pipefail
+          mkdir -p physical-evidence
+          cd apps/electrosim
+          flutter test --no-pub --concurrency=1 -r expanded test/physical_matrix_qualification_test.dart test/physical_families_instruments_dynamics_qualification_test.dart test/multipole_overload_realistic_qualification_test.dart test/ac3_contactor_motor_real_wiring_test.dart test/pv_battery_physical_instruments_test.dart test/g5_audit_observed_pv_instrument_regression_test.dart > ../../physical-evidence/test_output.log 2>&1
+          status=$?
+          cd ../..
+          python3 tools/physical_audit_report.py physical-evidence/test_output.log physical-evidence "${{ github.event.pull_request.head.sha || github.sha }}"
+          report_status=$?
+          echo '=== Every failed physical verdict ==='
+          grep 'PHYSICS_AUDIT_JSON:.*"verdict":"FAIL"' physical-evidence/test_output.log || true
+          echo '=== Test exceptions / assertion details ==='
+          grep -E 'Expected:|Actual:|Exception:|Error:|Some tests failed|All tests passed' physical-evidence/test_output.log | tail -n 100 || true
+          tail -n 30 physical-evidence/test_output.log
+          if [ "$report_status" -ne 0 ]; then exit "$report_status"; fi
+          exit "$status"
+      - name: Preserve all results (including failing cases)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Physical-Matrix-Results
+          path: physical-evidence/
+          retention-days: 30
+          if-no-files-found: error

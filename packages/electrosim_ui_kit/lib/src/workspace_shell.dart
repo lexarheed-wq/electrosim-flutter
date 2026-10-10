@@ -41,6 +41,7 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
     required this.statusBar,
     this.layoutController,
     this.interactionLocked = false,
+    this.workspaceLabel = 'PLATINE',
     this.onBeforeLayoutChange,
     this.onCanvasSizeChanged,
   });
@@ -51,6 +52,7 @@ class ElectroSimWorkspaceShell extends StatefulWidget {
   final Widget statusBar;
   final WorkspaceLayoutController? layoutController;
   final bool interactionLocked;
+  final String workspaceLabel;
   final VoidCallback? onBeforeLayoutChange;
   final ValueChanged<Size>? onCanvasSizeChanged;
   @override
@@ -289,7 +291,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'PLATINE',
+                  widget.workspaceLabel,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: ElectroSimColors.textSecondary,
                     letterSpacing: 1,

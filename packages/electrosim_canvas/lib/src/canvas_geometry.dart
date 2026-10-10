@@ -406,9 +406,17 @@ final class CircuitGeometryIndex {
           count: terminals.length,
         );
         terminalPositions[terminal.id] =
-            center + _rotateQuarterTurns(physicalLocal, quarterTurns);
+            center +
+            _rotateQuarterTurns(
+              layout.terminalAnchorOffsets[terminal.id.value] ?? physicalLocal,
+              quarterTurns,
+            );
         terminalRoutingPositions[terminal.id] =
-            center + _rotateQuarterTurns(routingLocal, quarterTurns);
+            center +
+            _rotateQuarterTurns(
+              layout.terminalAnchorOffsets[terminal.id.value] ?? routingLocal,
+              quarterTurns,
+            );
         terminalOwners[terminal.id] = id;
       }
     }

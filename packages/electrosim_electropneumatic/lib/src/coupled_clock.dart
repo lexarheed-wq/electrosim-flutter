@@ -206,11 +206,17 @@ final class ElectropneumaticEventClock<T> {
       final double dt = next - now;
       final T updatedAir = advanceAir(air, dt, spool);
       final double accepted = airTime(updatedAir);
+      // A cylinder can reach its physical end-stop *before* the requested
+      // interval ends. Accept the earlier event timestamp, re-solve B1/K1/Y1
+      // immediately, then integrate only the remaining interval.
+      // A duplicate/non-monotonic physical time is always rejected.
+      final double clockTolerance = 1e-10 * math.max(1, next.abs());
       if (!accepted.isFinite ||
-          (accepted - next).abs() > 1e-8 * math.max(1, next.abs())) {
+          accepted <= now ||
+          accepted > next + clockTolerance) {
         throw const ElectropneumaticRuntimeException(
           'pneumatic_clock_mismatch',
-          'Air solver must accept exactly one shared-clock interval.',
+          'Air solver returned an invalid or non-monotonic event timestamp.',
         );
       }
       air = updatedAir;

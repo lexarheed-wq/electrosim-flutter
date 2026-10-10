@@ -13,6 +13,7 @@ on:
       - '.github/workflows/f2-gate.yml'
   pull_request:
     paths:
+      - 'packages/electrosim_tp/**'
       - 'packages/electrosim_domain/**'
       - 'packages/electrosim_topology/**'
       - 'tools/**'

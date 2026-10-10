@@ -252,5 +252,56 @@ void main() {
         isTrue,
       );
     },
-  );
+  );  test('P4 reports duplicate terminal markings without mutating wiring', () {
+    final first = IndustrialMarkingRegistry.setReference(
+      fixture(),
+      kind: IndustrialMarkingKind.terminal,
+      id: 'k1-a1',
+      reference: 'X8:01',
+      teacherAuthorized: true,
+    );
+    final both = IndustrialMarkingRegistry.setReference(
+      first,
+      kind: IndustrialMarkingKind.terminal,
+      id: 'k1-a2',
+      reference: 'X8:01',
+      teacherAuthorized: true,
+    );
+    final result = IndustrialMarkingRegistry.inspect(both);
+    expect(result.issues.any((issue) =>
+      issue.message.contains('Duplicate terminal reference')), isTrue);
+    expect(both.connections, first.connections);
+  });
+
+  test('P4 omits functional color on contradictory phase hints', () {
+    final base = fixture();
+    final first = base.connections.first;
+    final wrong = Connection(
+      id: first.id,
+      fromTerminalId: first.fromTerminalId,
+      toTerminalId: first.toTerminalId,
+      conductorType: first.conductorType,
+      phase: PhaseTag.l2,
+      enabled: first.enabled,
+      metadata: first.metadata,
+    );
+    final circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      components: base.components,
+      sources: base.sources,
+      connections: [wrong, ...base.connections.skip(1)],
+      settings: base.settings,
+      metadata: base.metadata,
+    );
+    final marks = IndustrialMarkingRegistry.inspect(circuit);
+    expect(marks.colors[first.id.value],
+        IndustrialConductorColor.unspecified);
+    expect(marks.issues.any((issue) =>
+      issue.id == first.id.value &&
+      issue.message.contains('phase hint differs')), isTrue);
+    expect(circuit.connections.first.phase, PhaseTag.l2);
+  });
+
 }

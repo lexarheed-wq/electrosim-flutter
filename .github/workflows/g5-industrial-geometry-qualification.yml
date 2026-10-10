@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/g5-industrial-geometry-20261009
+      - feat/industrial-plate-schematic-20261009
   pull_request:
     branches:
       - feat/g5-industrial-geometry-20261009
@@ -11,7 +12,7 @@ concurrency:
   group: g5-industrial-geometry-${{ github.ref }}
   cancel-in-progress: true
 permissions:
-  contents: write
+  contents: read
 jobs:
   runtime-regression:
     runs-on: ubuntu-latest
@@ -77,20 +78,13 @@ jobs:
           test -s test/goldens/g12rq_premium_rcd2p_palette_board.png
           test -s test/goldens/g12rq_actual_widgets_palette_board.png
           test -s test/goldens/g5_industrial_off_on_trip.png
-      - name: Publish exact Flutter screenshot for review
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/feat/g5-industrial-geometry-20261009'
-        shell: bash
+      - name: Capture synchronized industrial workspace at exact source SHA
+        working-directory: apps/electrosim
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/electrosim/test/goldens/g12rq_premium_rcd2p_palette_board.png
-          git add apps/electrosim/test/goldens/g12rq_actual_widgets_palette_board.png
-          git add apps/electrosim/test/goldens/g5_industrial_off_on_trip.png
-          if ! git diff --cached --quiet; then
-            git commit -m "proof(g5): industrial 3D Flutter evidence [skip ci]"
-            git push origin HEAD:feat/g5-industrial-geometry-20261009
-          fi
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          flutter test --no-pub tool/capture_industrial_workspace_test.dart
+          printf '%s\n' "$GITHUB_SHA" > build/industrial-workspace-proof/SOURCE_SHA.txt
+          (cd build/industrial-workspace-proof && sha256sum *.png > SHA256.txt)
       - uses: actions/upload-artifact@v4
         with:
           name: G5-Industrial-Flutter-real-proof
@@ -100,6 +94,7 @@ jobs:
             apps/electrosim/test/goldens/g5_industrial_off_on_trip.png
             apps/electrosim/build/g5-reference-proof/
             apps/electrosim/build/g5-industrial-proof/
+            apps/electrosim/build/industrial-workspace-proof/
           retention-days: 14
   macos-intel:
     if: github.event_name != 'pull_request'
@@ -135,6 +130,7 @@ jobs:
           flutter test test/g12rq_rcd_2p_canvas_integration_test.dart
           flutter test test/g5_physical_housing_assets_test.dart test/g5_native_housing_fallback_test.dart
           flutter test test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_industrial_asset_fallback_test.dart test/g5_physical_layout_migration_test.dart
+          flutter test test/industrial_duct_workspace_test.dart test/industrial_representation_workspace_test.dart test/industrial_schematic_projection_test.dart test/industrial_cabinet_workspace_test.dart test/industrial_cabinet_model_test.dart test/industrial_workflow_test.dart
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"

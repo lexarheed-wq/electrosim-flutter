@@ -19,6 +19,8 @@ import 'f18_physical_instrument_readouts.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
+import 'industrial_workspace_representation.dart';
+import 'industrial_cabinet_workspace.dart';
 import 'f9_auto_placement.dart';
 import 'f9_component_palette.dart';
 import 'f9_wiring_policy.dart';
@@ -86,6 +88,43 @@ final class _F18WorkspaceHistoryEntry {
 }
 
 class _F18WorkspacePageState extends State<F18WorkspacePage> {
+  WorkspaceRepresentation _representation = WorkspaceRepresentation.plate;
+  final Map<WorkspaceRepresentation, (double, Offset)> _viewports = {};
+  CircuitVisualLayout? _schematicAuthorLayout;
+  CircuitState? _schematicCircuit;
+  CircuitVisualLayout? _schematicLayout;
+
+  CircuitVisualLayout _displayLayout(CircuitVisualLayout author) {
+    if (_representation == WorkspaceRepresentation.plate) return author;
+    if (!identical(author, _schematicAuthorLayout) ||
+        !identical(_circuit, _schematicCircuit)) {
+      _schematicAuthorLayout = author;
+      _schematicCircuit = _circuit;
+      _schematicLayout = IndustrialSchematicProjection.derive(_circuit, author);
+    }
+    return _schematicLayout!;
+  }
+
+  void _selectRepresentation(WorkspaceRepresentation next) {
+    if (_representation == next) return;
+    _viewports[_representation] = (_viewport.scale, _viewport.translation);
+    _prepareWorkspaceLayoutChange();
+    setState(() {
+      _representation = next;
+      _selectedCabinetFixtureId = null;
+      _status = next == WorkspaceRepresentation.plate
+          ? 'Platine : implantation physique'
+          : 'Schéma : symboles et connexions';
+    });
+    final saved = _viewports[next];
+    if (saved == null) {
+      _fitCircuitToViewport();
+    } else {
+      _viewport.reset(scale: saved.$1, translation: saved.$2);
+    }
+    _scheduleLayoutSave();
+  }
+
   static const int _maxHistoryEntries = 64;
   final List<_F18WorkspaceHistoryEntry> _undoHistory =
       <_F18WorkspaceHistoryEntry>[];
@@ -103,7 +142,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _sameCabinetGeometry(before.cabinetLayout, after.cabinetLayout);
 
   bool _sameCabinetGeometry(CabinetLayout a, CabinetLayout b) {
-    if (a.fixtures.length != b.fixtures.length) return false;
+    if (a.fixtures.length != b.fixtures.length ||
+        a.envelope != b.envelope ||
+        !mapEquals(a.mounts, b.mounts)) {
+      return false;
+    }
     for (var index = 0; index < a.fixtures.length; index++) {
       final first = a.fixtures[index];
       final second = b.fixtures[index];
@@ -137,6 +180,108 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   // P2 cabinet fixtures belong to visual layout, never to electrical
   // CircuitState. Edits are undoable through the existing history.
+  CabinetLayout _cabinetWithDefaultMounts() {
+    var cabinet = _layout.cabinetLayout;
+    void add(String id, String type) {
+      if (!cabinet.mounts.containsKey(id)) {
+        cabinet = cabinet.withMount(
+          id,
+          IndustrialEquipmentProfile.mounting(type, _layout.sizeOf(id)),
+        );
+      }
+    }
+
+    for (final c in _circuit.components) {
+      add(
+        c.id.value,
+        (c.parameters['_visualModelType'] as String?) ?? c.modelType,
+      );
+    }
+    for (final c in _circuit.sources) {
+      add(
+        c.id.value,
+        (c.parameters['_visualModelType'] as String?) ?? c.modelType,
+      );
+    }
+    return cabinet;
+  }
+
+  String? _cabinetConfigurationProblem(
+    CabinetLayout cabinet, {
+    CircuitVisualLayout? layout,
+    CircuitState? circuit,
+  }) {
+    final e = cabinet.envelope;
+    if (e == null) return null;
+    for (final fixture in cabinet.fixtures) {
+      if (!e.contains(fixture.bounds)) {
+        return 'Le support ${fixture.id} dépasse la plaque utile.';
+      }
+    }
+    final geometry = CircuitGeometryIndex.build(
+      circuit ?? _circuit,
+      layout ?? _layout,
+    );
+    for (final item in geometry.elementRects.entries) {
+      final details = F9ElementEditor.describe(circuit ?? _circuit, item.key);
+      if (details == null) continue;
+      final mount =
+          cabinet.mounts[item.key] ??
+          IndustrialEquipmentProfile.mounting(
+            (details.parameters['_visualModelType'] as String?) ??
+                details.modelType,
+            (layout ?? _layout).sizeOf(item.key),
+          );
+      if (!e.contains(item.value, surface: mount.surface)) {
+        return '${item.key} dépasse sa surface de montage. Agrandissez l’armoire ou repositionnez cet équipement.';
+      }
+      if (mount.surface == CabinetSurface.interior &&
+          mount.depthMm + 20 > e.depthMm) {
+        return 'Profondeur insuffisante pour ${item.key}.';
+      }
+    }
+    return null;
+  }
+
+  Future<void> _configureCabinet() async {
+    if (_blockStudentTpMutation()) return;
+    _prepareWorkspaceLayoutChange();
+    final selected = F9ElementEditor.describe(_circuit, _selected);
+    final cabinet = await showDialog<CabinetLayout>(
+      context: context,
+      builder: (context) => IndustrialCabinetInspector(
+        cabinet: _cabinetWithDefaultMounts(),
+        validate: _cabinetConfigurationProblem,
+        selectedId: selected?.kind == F9ElementKind.connection
+            ? null
+            : selected?.id,
+        selectedModelType: selected?.kind == F9ElementKind.connection
+            ? null
+            : (selected?.parameters['_visualModelType'] as String?) ??
+                  selected?.modelType,
+        selectedSize: selected == null ? null : _layout.sizeOf(selected.id),
+        selectedFixture: _layout.cabinetLayout.fixture(
+          _selectedCabinetFixtureId ?? '',
+        ),
+      ),
+    );
+    if (!mounted || cabinet == null) return;
+    setState(() {
+      _layout = _layout.withCabinetLayout(cabinet);
+      _status = 'Armoire et surfaces de montage mises à jour';
+    });
+    _fitCircuitToViewport();
+  }
+
+  Future<void> _previewCabinet() async {
+    _prepareWorkspaceLayoutChange();
+    await showDialog<void>(
+      context: context,
+      builder: (context) =>
+          IndustrialCabinetPreview(circuit: _circuit, layout: _layout),
+    );
+  }
+
   void _routeWiresViaCabinetDucts() {
     if (_blockStudentTpMutation()) return;
     if (!_layout.cabinetLayout.fixtures.any(
@@ -149,16 +294,38 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final routes = <String, List<Offset>>{..._layout.wireRoutes};
     var changed = 0;
     for (final connection in _circuit.connections) {
-      final a = geometry.terminalPositions[connection.fromTerminalId];
-      final b = geometry.terminalPositions[connection.toTerminalId];
-      if (a == null || b == null) continue;
+      final a = geometry.terminalRoutingPositions[connection.fromTerminalId];
+      final b = geometry.terminalRoutingPositions[connection.toTerminalId];
+      final physicalA = geometry.terminalPositions[connection.fromTerminalId];
+      final physicalB = geometry.terminalPositions[connection.toTerminalId];
+      if (a == null || b == null || physicalA == null || physicalB == null) {
+        continue;
+      }
+      final ownerA = geometry.terminalOwners[connection.fromTerminalId];
+      final ownerB = geometry.terminalOwners[connection.toTerminalId];
+      // Only the short physical-terminal escape may cross its own envelope.
+      if (!CabinetDuctWirePlanner.isClear(
+            [physicalA, a],
+            obstacles: geometry.elementRects.entries
+                .where((e) => e.key != ownerA)
+                .map((e) => e.value),
+          ) ||
+          !CabinetDuctWirePlanner.isClear(
+            [b, physicalB],
+            obstacles: geometry.elementRects.entries
+                .where((e) => e.key != ownerB)
+                .map((e) => e.value),
+          )) {
+        continue;
+      }
       final route = CabinetDuctWirePlanner.route(
         start: a,
         end: b,
         cabinet: _layout.cabinetLayout,
+        obstacles: geometry.elementRects.values,
       );
       if (route == null) continue;
-      routes[connection.id.value] = route;
+      routes[connection.id.value] = [a, ...route, b];
       changed++;
     }
     if (changed == 0) {
@@ -177,12 +344,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       circuit: _circuit,
       layout: candidate,
     )) {
-      _setStatus(
-        'Routage conservé : une goulotte ferait traverser '
-        'un composant ou créerait une trajectoire illisible.',
-      );
+      _setStatus('Routage conservé : trajectoire non représentable.');
       return;
     }
+    // Automatic route recomputation is excluded from geometry history. This
+    // explicit author command must nevertheless restore the exact old routes.
+    _undoHistory.add(_F18WorkspaceHistoryEntry(_circuit, _layout, _selected));
+    if (_undoHistory.length > _maxHistoryEntries) {
+      _undoHistory.removeAt(0);
+    }
+    _redoHistory.clear();
     setState(() {
       _layout = candidate;
       _status = 'Câbles routés orthogonalement en goulottes : $changed';
@@ -386,6 +557,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late final ElectroSimSimulationController _simulation;
 
   CabinetFixture? _cabinetFixtureAt(Offset local) {
+    if (_representation != WorkspaceRepresentation.plate) return null;
     final world = _viewport.screenToWorld(local);
     for (final fixture in _layout.cabinetLayout.fixtures.reversed) {
       if (fixture.bounds.inflate(8 / _viewport.scale).contains(world)) {
@@ -399,6 +571,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       CircuitGeometryIndex.build(_circuit, _layout).elementRects;
 
   bool _cabinetFixtureValid(CabinetFixture fixture) {
+    final envelope = _layout.cabinetLayout.envelope;
+    if (envelope != null && !envelope.contains(fixture.bounds)) return false;
     for (final other in _layout.cabinetLayout.fixtures) {
       if (other.id == fixture.id || !fixture.bounds.overlaps(other.bounds)) {
         continue;
@@ -408,8 +582,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return false;
     }
     if (fixture.kind != CabinetFixtureKind.dinRail) {
-      for (final rect in _cabinetDeviceRects().values) {
-        if (rect.overlaps(fixture.bounds)) return false;
+      for (final entry in _cabinetDeviceRects().entries) {
+        final details = F9ElementEditor.describe(_circuit, entry.key);
+        final surface =
+            _layout.cabinetLayout.mounts[entry.key]?.surface ??
+            (details == null
+                ? CabinetSurface.interior
+                : IndustrialEquipmentProfile.defaultSurface(
+                    (details.parameters['_visualModelType'] as String?) ??
+                        details.modelType,
+                  ));
+        if (surface == CabinetSurface.interior &&
+            entry.value.overlaps(fixture.bounds)) {
+          return false;
+        }
       }
     }
     return true;
@@ -518,6 +704,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       if (!_layoutEdited && stored != null) {
         _restoringLayout = true;
         _workspaceLayout.restore(stored);
+        setState(() {
+          _representation = stored['representation'] == 'schematic'
+              ? WorkspaceRepresentation.schematic
+              : WorkspaceRepresentation.plate;
+        });
         _restoringLayout = false;
       } else if (_layoutEdited) {
         _scheduleLayoutSave();
@@ -540,7 +731,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Future<void> _persistWorkspaceLayout(Map<String, Object?> state) async {
     try {
-      await _layoutPreferences?.save(state);
+      await _layoutPreferences?.save({
+        ...state,
+        'representation': _representation.name,
+      });
     } on Object {
       if (mounted) {
         _setStatus('Disposition non enregistrée. L’atelier reste utilisable.');
@@ -596,6 +790,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           child: Focus(
             autofocus: true,
             child: ElectroSimWorkspaceShell(
+              workspaceLabel: _representation == WorkspaceRepresentation.plate
+                  ? 'PLATINE'
+                  : 'SCHÉMA',
               layoutController: _workspaceLayout,
               onBeforeLayoutChange: _prepareWorkspaceLayoutChange,
               onCanvasSizeChanged: _onWorkspaceCanvasSizeChanged,
@@ -634,6 +831,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           ? _deleteSelectedElement
                           : null,
                       onRecenter: _fitCircuitToViewport,
+                      onConfigureCabinet: _studentTpReadOnly
+                          ? null
+                          : _configureCabinet,
+                      onPreviewCabinet: _previewCabinet,
+                      representation: _representation,
+                      onSelectRepresentation: _selectRepresentation,
                       onAddDinRail: _studentTpReadOnly
                           ? null
                           : () =>
@@ -772,7 +975,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       Widget? child,
                                     ) {
                                       final CircuitVisualLayout canvasLayout =
-                                          dragLayout ?? _layout;
+                                          _displayLayout(dragLayout ?? _layout);
                                       return Stack(
                                         clipBehavior: Clip.hardEdge,
                                         fit: StackFit.expand,
@@ -811,51 +1014,75 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                             },
                                             enableInteraction: false,
                                             paintElementChrome: false,
+                                            schematicPresentation:
+                                                _representation ==
+                                                WorkspaceRepresentation
+                                                    .schematic,
                                             smartWireSemantics: true,
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
                                           ),
-                                          AnimatedBuilder(
-                                            animation: _simulation,
-                                            builder:
-                                                (
-                                                  BuildContext context,
-                                                  Widget? child,
-                                                ) => F9CanvasVisualOverlay(
-                                                  circuit: _circuit,
-                                                  layout: canvasLayout,
-                                                  viewport: _viewport,
-                                                  selectedElementIds:
-                                                      _selectedIds,
-                                                  pendingTerminalId:
-                                                      _wiringPendingTerminal,
-                                                  hoverTerminalId:
-                                                      _wiringHoverTerminal,
-                                                  pointerWorldPositionListenable:
-                                                      _wiringPointerWorld,
-                                                  wirePreviewPlanner:
-                                                      _g2aWirePreviewPlanner,
-                                                  runtimeSnapshot:
-                                                      _simulation.snapshot,
-                                                  simulationRunning:
-                                                      _simulation.running,
-                                                ),
-                                          ),
-                                          IgnorePointer(
-                                            child: CustomPaint(
-                                              painter: _CabinetSelectionPainter(
-                                                fixture: canvasLayout
-                                                    .cabinetLayout
-                                                    .fixture(
-                                                      _selectedCabinetFixtureId ??
-                                                          '',
-                                                    ),
-                                                viewport: _viewport,
-                                              ),
-                                              size: Size.infinite,
+                                          if (_representation ==
+                                              WorkspaceRepresentation.plate)
+                                            AnimatedBuilder(
+                                              animation: _simulation,
+                                              builder:
+                                                  (
+                                                    BuildContext context,
+                                                    Widget? child,
+                                                  ) => F9CanvasVisualOverlay(
+                                                    circuit: _circuit,
+                                                    layout: canvasLayout,
+                                                    viewport: _viewport,
+                                                    selectedElementIds:
+                                                        _selectedIds,
+                                                    pendingTerminalId:
+                                                        _wiringPendingTerminal,
+                                                    hoverTerminalId:
+                                                        _wiringHoverTerminal,
+                                                    pointerWorldPositionListenable:
+                                                        _wiringPointerWorld,
+                                                    wirePreviewPlanner:
+                                                        _g2aWirePreviewPlanner,
+                                                    runtimeSnapshot:
+                                                        _simulation.snapshot,
+                                                    simulationRunning:
+                                                        _simulation.running,
+                                                  ),
                                             ),
-                                          ),
-                                          if (_circuit.instruments.isNotEmpty)
+                                          if (_representation ==
+                                              WorkspaceRepresentation.schematic)
+                                            IndustrialSchematicOverlay(
+                                              circuit: _circuit,
+                                              layout: canvasLayout,
+                                              viewport: _viewport,
+                                              selectedIds: _selectedIds,
+                                              pointer: _wiringPointerWorld,
+                                              pendingTerminal:
+                                                  _wiringPendingTerminal,
+                                              hoverTerminal:
+                                                  _wiringHoverTerminal,
+                                            ),
+                                          if (_representation ==
+                                              WorkspaceRepresentation.plate)
+                                            IgnorePointer(
+                                              child: CustomPaint(
+                                                painter: _CabinetSelectionPainter(
+                                                  fixture: canvasLayout
+                                                      .cabinetLayout
+                                                      .fixture(
+                                                        _selectedCabinetFixtureId ??
+                                                            '',
+                                                      ),
+                                                  viewport: _viewport,
+                                                ),
+                                                size: Size.infinite,
+                                              ),
+                                            ),
+                                          if (_representation ==
+                                                  WorkspaceRepresentation
+                                                      .plate &&
+                                              _circuit.instruments.isNotEmpty)
                                             AnimatedBuilder(
                                               animation: _simulation,
                                               builder:
@@ -1402,26 +1629,45 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       metadata: _circuit.metadata,
     );
 
+    final CircuitVisualLayout moved = _layout.moveElement(
+      elementId,
+      worldPosition,
+    );
+    final Map<String, Size> sizes = <String, Size>{...moved.elementSizes};
+    if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
+      sizes[elementId] = F18ReferenceComponentMetrics.boardSizeFor(
+        definition.renderedModelType,
+      );
+    }
+    var proposed = CircuitVisualLayout(
+      elementPositions: moved.elementPositions,
+      elementSizes: sizes,
+      wireRoutes: moved.wireRoutes,
+      elementQuarterTurns: moved.elementQuarterTurns,
+      defaultElementSize: moved.defaultElementSize,
+      cabinetLayout: moved.cabinetLayout,
+    );
+    proposed = proposed.withCabinetLayout(
+      proposed.cabinetLayout.withMount(
+        elementId,
+        IndustrialEquipmentProfile.mounting(
+          definition.renderedModelType,
+          proposed.sizeOf(elementId),
+        ),
+      ),
+    );
+    final problem = _cabinetConfigurationProblem(
+      proposed.cabinetLayout,
+      layout: proposed,
+      circuit: nextCircuit,
+    );
+    if (problem != null) {
+      _setStatus(problem);
+      return;
+    }
     setState(() {
       _circuit = nextCircuit;
-      final CircuitVisualLayout moved = _layout.moveElement(
-        elementId,
-        worldPosition,
-      );
-      final Map<String, Size> sizes = <String, Size>{...moved.elementSizes};
-      if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
-        sizes[elementId] = F18ReferenceComponentMetrics.boardSizeFor(
-          definition.renderedModelType,
-        );
-      }
-      _layout = CircuitVisualLayout(
-        elementPositions: moved.elementPositions,
-        elementSizes: sizes,
-        wireRoutes: moved.wireRoutes,
-        elementQuarterTurns: moved.elementQuarterTurns,
-        defaultElementSize: moved.defaultElementSize,
-        cabinetLayout: moved.cabinetLayout,
-      );
+      _layout = proposed;
       _selected = elementId;
       _status = 'Ajout : ${definition.title} — $elementId';
     });
@@ -1666,12 +1912,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   HitTestSession _preparedHitTestSession() {
+    final display = _displayLayout(_dragPreviewLayout.value ?? _layout);
     if (_hitTestSession == null ||
         !identical(_hitTestSessionCircuit, _circuit) ||
-        !identical(_hitTestSessionLayout, _layout)) {
+        !identical(_hitTestSessionLayout, display)) {
       _hitTestSessionCircuit = _circuit;
-      _hitTestSessionLayout = _layout;
-      _hitTestSession = _hitTest.prepare(circuit: _circuit, layout: _layout);
+      _hitTestSessionLayout = display;
+      _hitTestSession = _hitTest.prepare(circuit: _circuit, layout: display);
     }
     return _hitTestSession!;
   }
@@ -2375,7 +2622,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final Size size = _canvasViewportSize();
     final Offset bounded = F9ViewportBounds.clampTranslation(
       circuit: _circuit,
-      layout: _layout,
+      layout: _displayLayout(_layout),
       viewportSize: size,
       scale: _viewport.scale,
       translation: proposed,
@@ -2393,15 +2640,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
       _circuit,
-      _layout,
+      _displayLayout(_layout),
     );
-    if (geometry.elementRects.isEmpty) {
+    final envelope = _representation == WorkspaceRepresentation.plate
+        ? _layout.cabinetLayout.envelope
+        : null;
+    if (geometry.elementRects.isEmpty && envelope == null) {
       _viewport.reset(scale: 1, translation: const Offset(40, 40));
       return;
     }
 
-    Rect bounds = geometry.elementRects.values.first;
-    for (final Rect rect in geometry.elementRects.values.skip(1)) {
+    Rect bounds = envelope?.bounds ?? geometry.elementRects.values.first;
+    for (final f in _displayLayout(_layout).cabinetLayout.fixtures) {
+      bounds = bounds.expandToInclude(f.bounds);
+    }
+    for (final Rect rect in geometry.elementRects.values) {
       bounds = bounds.expandToInclude(rect);
     }
     for (final Connection connection in _circuit.connections) {
@@ -2590,6 +2843,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     final CircuitState circuit = _circuit;
     final CircuitVisualLayout moved = _layout.moveElement(elementId, position);
+    final problem = _cabinetConfigurationProblem(
+      moved.cabinetLayout,
+      layout: moved,
+    );
+    if (problem != null) {
+      _setStatus(problem);
+      return;
+    }
     setState(() {
       _layout = moved;
       _status =
@@ -2604,38 +2865,39 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
     var preview = _dragPreviewLayout.value ?? _layout;
     final CircuitState circuit = _circuit;
-    final component = circuit.components
-        .where((c) => c.id.value == elementId)
-        .firstOrNull;
-    final dinTypes = <String>{
-      'breaker_dc',
-      'breaker_ac1',
-      'rcd_2p_ac1',
-      'breaker',
-      'breaker_3p',
-      'breaker_4p',
-      'contactor_ac1',
-      'contactor_3p',
-      'relay_coil',
-      'isolator_3p',
-      'isolator_4p',
-      'terminal_block_5',
-      'thermal_overload_3p',
-    };
+    final details = F9ElementEditor.describe(circuit, elementId);
+    final type =
+        (details?.parameters['_visualModelType'] as String?) ??
+        details?.modelType ??
+        '';
+    final mount =
+        _layout.cabinetLayout.mounts[elementId] ??
+        IndustrialEquipmentProfile.mounting(type, _layout.sizeOf(elementId));
+    final anchor = IndustrialEquipmentProfile.rotateAnchor(
+      mount.anchorOffset,
+      _layout.quarterTurnsOf(elementId),
+    );
     final position = preview.positionOf(elementId);
-    if (position != null && _layout.cabinetLayout.fixtures.isNotEmpty) {
+    if (position != null &&
+        (_layout.cabinetLayout.fixtures.isNotEmpty ||
+            _layout.cabinetLayout.envelope != null)) {
       final planned = CabinetPlacementPlanner.plan(
         cabinet: _layout.cabinetLayout,
         elementId: elementId,
-        deviceSize: _layout.sizeOf(elementId),
+        deviceSize: _layout.displaySizeOf(elementId),
+        mountingAnchorOffset: anchor,
+        surface: mount.surface,
         proposedCenter: position,
         existingDevices: {
           for (final entry in _cabinetDeviceRects().entries)
             if (entry.key != elementId) entry.key: entry.value,
         },
-        mode: _cabinetPlacementMode,
-        dinMountable:
-            component != null && dinTypes.contains(component.modelType),
+        mode:
+            mount.surface == CabinetSurface.interior &&
+                _layout.quarterTurnsOf(elementId).isEven
+            ? _cabinetPlacementMode
+            : CabinetPlacementMode.free,
+        dinMountable: IndustrialEquipmentProfile.dinMountable(type),
       );
       if (!planned.isValid) {
         _setStatus(
@@ -2645,7 +2907,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _dragPreviewLayout.value = null;
         return;
       }
-      preview = preview.moveElement(elementId, planned.position);
+      preview = preview
+          .moveElement(elementId, planned.position)
+          .withCabinetLayout(
+            preview.cabinetLayout.withMount(
+              elementId,
+              CabinetMount(
+                surface: mount.surface,
+                railId: planned.railId,
+                anchorOffset: mount.anchorOffset,
+                depthMm: mount.depthMm,
+              ),
+            ),
+          );
     }
     setState(() {
       _layout = preview;
@@ -2806,26 +3080,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       controlState: replacement.defaultControlState,
       replacementTerminals: replacementTerminals,
     );
+    final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes};
+    if (F18ReferenceComponentVisuals.supports(replacement.renderedModelType)) {
+      sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
+        replacement.renderedModelType,
+      );
+    } else {
+      sizes.remove(selected);
+    }
+    var proposed = CircuitVisualLayout(
+      elementPositions: _layout.elementPositions,
+      elementSizes: sizes,
+      wireRoutes: _layout.wireRoutes,
+      elementQuarterTurns: _layout.elementQuarterTurns,
+      defaultElementSize: _layout.defaultElementSize,
+      cabinetLayout: _layout.cabinetLayout,
+    );
+    final oldMount = _layout.cabinetLayout.mounts[selected];
+    final profile = IndustrialEquipmentProfile.mounting(
+      replacement.renderedModelType,
+      proposed.sizeOf(selected),
+    );
+    final surface = oldMount?.surface ?? profile.surface;
+    proposed = proposed.withCabinetLayout(
+      proposed.cabinetLayout.withMount(
+        selected,
+        CabinetMount(
+          surface: surface,
+          anchorOffset: profile.anchorOffset,
+          depthMm: profile.depthMm,
+        ),
+      ),
+    );
+    final problem = _cabinetConfigurationProblem(
+      proposed.cabinetLayout,
+      layout: proposed,
+      circuit: next,
+    );
+    if (problem != null) {
+      _setStatus(problem);
+      return;
+    }
     setState(() {
       _circuit = next;
-      final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes};
-      if (F18ReferenceComponentVisuals.supports(
-        replacement.renderedModelType,
-      )) {
-        sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
-          replacement.renderedModelType,
-        );
-      } else {
-        sizes.remove(selected);
-      }
-      _layout = CircuitVisualLayout(
-        elementPositions: _layout.elementPositions,
-        elementSizes: sizes,
-        wireRoutes: _layout.wireRoutes,
-        elementQuarterTurns: _layout.elementQuarterTurns,
-        defaultElementSize: _layout.defaultElementSize,
-        cabinetLayout: _layout.cabinetLayout,
-      );
+      _layout = proposed;
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
     _simulation.updateCircuit(_circuit);
@@ -2868,7 +3166,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
 
     final CircuitVisualLayout previous = _layout;
-    final CircuitVisualLayout provisional = previous.rotateElement(selected);
+    var provisional = previous.rotateElement(selected);
+    final mount = provisional.cabinetLayout.mounts[selected];
+    if (mount?.railId != null) {
+      provisional = provisional.withCabinetLayout(
+        provisional.cabinetLayout.withMount(selected, mount!.withoutRail()),
+      );
+    }
+    final problem = _cabinetConfigurationProblem(
+      provisional.cabinetLayout,
+      layout: provisional,
+    );
+    if (problem != null) {
+      _setStatus(problem);
+      return;
+    }
     final CircuitState circuit = _circuit;
     setState(() {
       _layout = provisional;
@@ -3065,7 +3377,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
-        cabinetLayout: _layout.cabinetLayout,
+        cabinetLayout: _layout.cabinetLayout.retainMounts({
+          for (final c in next.components) c.id.value,
+          for (final c in next.sources) c.id.value,
+        }),
       );
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
@@ -3162,7 +3477,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         wireRoutes: routes,
         elementQuarterTurns: rotations,
         defaultElementSize: _layout.defaultElementSize,
-        cabinetLayout: _layout.cabinetLayout,
+        cabinetLayout: _layout.cabinetLayout.retainMounts(remainingElements),
       );
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
@@ -3478,6 +3793,10 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onRotateSelected,
     required this.onDeleteSelected,
     required this.onRecenter,
+    this.onConfigureCabinet,
+    this.onPreviewCabinet,
+    this.representation = WorkspaceRepresentation.plate,
+    this.onSelectRepresentation,
     this.onAddDinRail,
     this.onAddWireDuct,
     this.onAddTerminalZone,
@@ -3509,6 +3828,9 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback? onRotateSelected;
   final VoidCallback? onDeleteSelected;
   final VoidCallback onRecenter;
+  final VoidCallback? onConfigureCabinet, onPreviewCabinet;
+  final WorkspaceRepresentation representation;
+  final ValueChanged<WorkspaceRepresentation>? onSelectRepresentation;
   final VoidCallback? onAddDinRail;
   final VoidCallback? onAddWireDuct;
   final VoidCallback? onAddTerminalZone;
@@ -3542,6 +3864,24 @@ class _WorkspaceTopBar extends StatelessWidget {
           ),
         );
         final tools = <Widget>[
+          for (final view in WorkspaceRepresentation.values)
+            TextButton(
+              key: Key('workspace-view-${view.name}'),
+              onPressed: () => onSelectRepresentation?.call(view),
+              style: TextButton.styleFrom(
+                foregroundColor: representation == view
+                    ? const Color(0xFF1D4ED8)
+                    : const Color(0xFF334155),
+                backgroundColor: representation == view
+                    ? const Color(0xFFE0ECFF)
+                    : Colors.transparent,
+                minimumSize: const Size(76, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Text(
+                view == WorkspaceRepresentation.plate ? 'Platine' : 'Schéma',
+              ),
+            ),
           _modeMenu(compact),
           if (!compact)
             PopupMenuButton<Duration>(
@@ -3851,6 +4191,10 @@ class _WorkspaceTopBar extends StatelessWidget {
           onAddTerminalZone?.call();
         case _WorkspaceSecondaryAction.toggleDinSnap:
           onToggleCabinetSnap?.call();
+        case _WorkspaceSecondaryAction.configureCabinet:
+          onConfigureCabinet?.call();
+        case _WorkspaceSecondaryAction.previewCabinet:
+          onPreviewCabinet?.call();
         case _WorkspaceSecondaryAction.routeCabinetWires:
           onRouteCabinetWires?.call();
         case _WorkspaceSecondaryAction.resetSimulation:
@@ -3938,6 +4282,18 @@ class _WorkspaceTopBar extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
         ),
+      if (onConfigureCabinet != null)
+        const PopupMenuItem(
+          key: Key('workspace-configure-cabinet'),
+          value: _WorkspaceSecondaryAction.configureCabinet,
+          child: Text('Armoire : dimensions et montages'),
+        ),
+      if (onPreviewCabinet != null)
+        const PopupMenuItem(
+          key: Key('workspace-preview-3d'),
+          value: _WorkspaceSecondaryAction.previewCabinet,
+          child: Text('Aperçu 3D de l’armoire'),
+        ),
       if (onRouteCabinetWires != null)
         const PopupMenuItem(
           key: Key('workspace-route-wiring-duct'),
@@ -3999,6 +4355,8 @@ enum _WorkspaceSecondaryAction {
   addTerminalZone,
   toggleDinSnap,
   routeCabinetWires,
+  configureCabinet,
+  previewCabinet,
   resetSimulation,
   advanceMinute,
   advanceHour,

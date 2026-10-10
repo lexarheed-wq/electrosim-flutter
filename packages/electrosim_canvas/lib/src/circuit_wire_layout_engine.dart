@@ -239,6 +239,7 @@ final class CircuitWireLayoutEngine {
         elementQuarterTurns: layout.elementQuarterTurns,
         defaultElementSize: layout.defaultElementSize,
         cabinetLayout: layout.cabinetLayout,
+        terminalAnchorOffsets: layout.terminalAnchorOffsets,
       ),
       resolvedCount: resolvedCount,
       eligibleCount: eligibleCount,

@@ -6,7 +6,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 final class ElectroSimLayoutPersistence {
   const ElectroSimLayoutPersistence._();
 
-  static const int schemaVersion = 2;
+  static const int schemaVersion = 3;
 
   static Map<String, Object?> encode(
     CircuitVisualLayout layout,
@@ -42,6 +42,30 @@ final class ElectroSimLayoutPersistence {
           ],
         },
     ],
+    'cabinetEnvelope': layout.cabinetLayout.envelope == null
+        ? null
+        : <String, Object?>{
+            'widthMm': layout.cabinetLayout.envelope!.widthMm,
+            'heightMm': layout.cabinetLayout.envelope!.heightMm,
+            'depthMm': layout.cabinetLayout.envelope!.depthMm,
+            'marginMm': layout.cabinetLayout.envelope!.marginMm,
+            'origin': [
+              layout.cabinetLayout.envelope!.origin.dx,
+              layout.cabinetLayout.envelope!.origin.dy,
+            ],
+          },
+    'cabinetMounts': {
+      for (final entry in layout.cabinetLayout.mounts.entries)
+        entry.key: <String, Object?>{
+          'surface': entry.value.surface.name,
+          'railId': entry.value.railId,
+          'anchorOffset': [
+            entry.value.anchorOffset.dx,
+            entry.value.anchorOffset.dy,
+          ],
+          'depthMm': entry.value.depthMm,
+        },
+    },
     'defaultSize': <double>[
       layout.defaultElementSize.width,
       layout.defaultElementSize.height,
@@ -61,7 +85,7 @@ final class ElectroSimLayoutPersistence {
     final int? version = data['schemaVersion'] is int
         ? data['schemaVersion'] as int
         : null;
-    if (version != 1 && version != schemaVersion) {
+    if (version != 1 && version != 2 && version != schemaVersion) {
       throw FormatException(
         'Unsupported layout schemaVersion: ${data['schemaVersion']}.',
       );
@@ -108,7 +132,7 @@ final class ElectroSimLayoutPersistence {
     }
 
     final List<CabinetFixture> fixtures = <CabinetFixture>[];
-    if (version == 2) {
+    if (version! >= 2) {
       final Object? rawFixtures = data['cabinetFixtures'];
       if (rawFixtures is! List) {
         throw const FormatException('Invalid cabinetFixtures.');
@@ -154,7 +178,52 @@ final class ElectroSimLayoutPersistence {
     }
     late final CabinetLayout cabinet;
     try {
-      cabinet = CabinetLayout(fixtures);
+      CabinetEnvelope? envelope;
+      final mounts = <String, CabinetMount>{};
+      if (version == 3) {
+        final rawEnvelope = data['cabinetEnvelope'];
+        if (rawEnvelope != null) {
+          final e = _map(rawEnvelope, 'cabinetEnvelope');
+          envelope = CabinetEnvelope(
+            widthMm: _number(e['widthMm'], 'widthMm'),
+            heightMm: _number(e['heightMm'], 'heightMm'),
+            depthMm: _number(e['depthMm'], 'depthMm'),
+            marginMm: _number(e['marginMm'], 'marginMm'),
+            origin: _point(e['origin'], 'cabinetEnvelope.origin'),
+          );
+        }
+        for (final e in _map(data['cabinetMounts'], 'cabinetMounts').entries) {
+          if (e.key.trim().isEmpty) {
+            throw const FormatException('Empty mounting element ID.');
+          }
+          final m = _map(e.value, 'cabinetMounts.${e.key}');
+          final surface = CabinetSurface.values
+              .where((s) => s.name == m['surface'])
+              .toList();
+          final rail = m['railId'];
+          if (surface.length != 1 || (rail != null && rail is! String)) {
+            throw const FormatException('Invalid mounting surface or rail ID.');
+          }
+          if (rail != null &&
+              !fixtures.any(
+                (f) => f.id == rail && f.kind == CabinetFixtureKind.dinRail,
+              )) {
+            throw const FormatException(
+              'Mount references an unknown DIN rail.',
+            );
+          }
+          mounts[e.key] = CabinetMount(
+            surface: surface.single,
+            railId: rail as String?,
+            anchorOffset: _point(
+              m['anchorOffset'],
+              'cabinetMounts.${e.key}.anchorOffset',
+            ),
+            depthMm: _number(m['depthMm'], 'mount.depthMm'),
+          );
+        }
+      }
+      cabinet = CabinetLayout(fixtures, envelope: envelope, mounts: mounts);
     } on ArgumentError catch (error) {
       throw FormatException('Invalid cabinet layout: $error');
     }
@@ -166,6 +235,13 @@ final class ElectroSimLayoutPersistence {
       elementQuarterTurns: turns,
       defaultElementSize: _size(data['defaultSize'], 'defaultSize'),
     );
+  }
+
+  static double _number(Object? raw, String field) {
+    if (raw is! num || !raw.isFinite) {
+      throw FormatException('Invalid physical dimensions at $field.');
+    }
+    return raw.toDouble();
   }
 
   static Map<String, dynamic> _map(Object? raw, String field) {

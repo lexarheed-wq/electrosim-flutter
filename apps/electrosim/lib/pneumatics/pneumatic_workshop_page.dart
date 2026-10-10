@@ -83,7 +83,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   void _place(PneumaticDeviceKind kind) {
     String id;
     do {
-      id = 'air' + (++_deviceSerial).toString();
+      id = 'air${++_deviceSerial}';
     } while (_state.project.pneumaticNetwork.devices.any((d) => d.id == id));
     final List<String> names = _ports(kind);
     final PneumaticDevice part = PneumaticDevice(
@@ -131,7 +131,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     _edit(
       () => _state.connect(
         PneumaticPipe(
-          id: 'hose' + (++_pipeSerial).toString(),
+          id: 'hose${++_pipeSerial}',
           fromPortId: from,
           toPortId: port,
           lengthM: 1,
@@ -192,7 +192,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   in _state.project.pneumaticNetwork.pipes)
                 PopupMenuItem<String>(
                   value: pipe.id,
-                  child: Text('Supprimer ' + pipe.id),
+                  child: Text('Supprimer ${pipe.id}'),
                 ),
             ],
             icon: const Icon(Icons.alt_route),
@@ -257,14 +257,14 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     child: ActionChip(
-                      key: Key('add-' + kind.name),
+                      key: Key('add-${kind.name}'),
                       avatar: PneumaticDeviceGlyph(
                         kind: kind,
                         schematic: false,
                         width: 28,
                         height: 22,
                       ),
-                      label: Text('+ ' + kind.name),
+                      label: Text('+ ${kind.name}'),
                       onPressed: () => _place(kind),
                     ),
                   ),
@@ -387,7 +387,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             );
           }),
           child: InkWell(
-            key: Key('device-' + device.id),
+            key: Key('device-${device.id}'),
             onTap: () => setState(() => _state = _state.select(device.id)),
             child: Container(
               width: 170,
@@ -412,7 +412,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     height: 38,
                   ),
                   Text(
-                    device.id + ' : ' + device.kind.name,
+                    '${device.id} : ${device.kind.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 11),
@@ -425,7 +425,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                       children: <Widget>[
                         for (final PneumaticPort port in device.ports)
                           InkWell(
-                            key: Key('port-' + port.id.value),
+                            key: Key('port-${port.id.value}'),
                             onTap: () => _portTap(port.id),
                             child: Container(
                               width: 24,

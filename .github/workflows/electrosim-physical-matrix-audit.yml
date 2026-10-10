@@ -23,6 +23,10 @@ jobs:
       - name: Install test dependencies
         working-directory: apps/electrosim
         run: flutter pub get
+      - name: Show canonical Dart format diff for qualification test
+        run: |
+          dart format apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
+          git diff -- apps/electrosim/test/multipole_overload_realistic_qualification_test.dart
       - name: Execute measured matrix and always generate report
         shell: bash
         run: |

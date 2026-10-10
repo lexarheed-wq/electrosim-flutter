@@ -190,10 +190,19 @@ CircuitState loadedPalette(F9PaletteDefinition entry, ElectricalMode mode) {
         parameters: entry.defaultParameters,
         controlState: entry.defaultControlState,
       ),
+      // Never attach an ideal closed switch or protective contact straight
+      // across an ideal source: put a real receiver in series.
+      ComponentInstance(
+        id: ComponentId('ballast'),
+        modelType: 'resistor',
+        terminals: <Terminal>[pin('ballast-a'), pin('ballast-b')],
+        parameters: const <String, Object?>{'resistanceOhm': 48.0},
+      ),
     ],
     connections: <Connection>[
       wire('head', 'plus', 'load-t0'),
-      wire('return', 'load-t1', 'minus'),
+      wire('ballast-feed', 'load-t1', 'ballast-a'),
+      wire('return', 'ballast-b', 'minus'),
     ],
   );
 }
@@ -355,6 +364,8 @@ void main() {
         'families': families,
         'statuses': statuses,
         'exceptionsAndNonfinite': failures.length,
+        'ballastOhm': 48.0,
+        'unresolvedCannotBeClaimedAsQualified': true,
         'otherTopologiesNotCovered':
             'Three-phase, multipole, sensors, inverter and battery',
       });
@@ -403,6 +414,40 @@ void main() {
       });
     },
   );
+
+  test('PHYS-MOTOR: 24 V DC armature accelerates over runtime steps', () {
+    final circuit = dcLoaded('motor_dc', <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 8.0,
+      ComponentParameterKeys.motorBackEmfVPerRadS: 0.1,
+      ComponentParameterKeys.motorTorqueNmPerA: 0.1,
+      ComponentParameterKeys.motorInertiaKgM2: 0.01,
+      ComponentParameterKeys.motorFrictionNmPerRadS: 0.002,
+      ComponentParameterKeys.motorLoadTorqueNm: 0.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 3.0,
+      ReceiverNominalRating.powerKey: 72.0,
+    });
+    final first = engine.advance(
+      circuit,
+      elapsed: const Duration(milliseconds: 100),
+    );
+    expect(first.solved, isTrue);
+    final firstSpeed = first.motorAngularSpeedsRadS[ComponentId('load')] ?? 0;
+    expect(firstSpeed, greaterThan(0));
+    final next = engine.advance(
+      circuit,
+      elapsed: const Duration(milliseconds: 100),
+      previousMotorAngularSpeedsRadS: first.motorAngularSpeedsRadS,
+    );
+    final secondSpeed = next.motorAngularSpeedsRadS[ComponentId('load')] ?? 0;
+    expect(next.solved, isTrue);
+    expect(secondSpeed, greaterThan(firstSpeed));
+    audit('motor-dynamics', 'dc-armature-start', 'PASS', {
+      'firstSpeedRadS': firstSpeed,
+      'secondSpeedRadS': secondSpeed,
+      'note': 'Simplified DC rotor model; not an induction motor.',
+    });
+  });
 
   test(
     'PHYS-AGING: at nominal voltage a healthy receiver does not age by itself',

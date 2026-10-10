@@ -231,76 +231,83 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     var targetKind = kind;
     var editedReference = plan.referenceOf(targetKind, targetId);
     var locked = plan.locks['${targetKind.name}:$targetId'] ?? false;
-    final answer = await showDialog<
-        (IndustrialMarkingKind, String, String, bool)>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: const Text('Repérage industriel'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (availablePorts.isNotEmpty)
-                DropdownButtonFormField<String>(
-                  key: const Key('p4-marking-target'),
-                  initialValue: targetId,
-                  decoration: const InputDecoration(labelText: 'Élément / borne'),
-                  items: [
-                    DropdownMenuItem(
-                      value: selected,
-                      child: Text('Appareil : $selected'),
-                    ),
-                    for (final port in availablePorts)
-                      DropdownMenuItem(
-                        value: port.id.value,
-                        child: Text('Borne : ${port.name}'),
+    final answer =
+        await showDialog<(IndustrialMarkingKind, String, String, bool)>(
+          context: context,
+          builder: (dialogContext) => StatefulBuilder(
+            builder: (dialogContext, setDialogState) => AlertDialog(
+              title: const Text('Repérage industriel'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (availablePorts.isNotEmpty)
+                    DropdownButtonFormField<String>(
+                      key: const Key('p4-marking-target'),
+                      initialValue: targetId,
+                      decoration: const InputDecoration(
+                        labelText: 'Élément / borne',
                       ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setDialogState(() {
-                      targetId = value;
-                      targetKind = value == selected
-                          ? IndustrialMarkingKind.device
-                          : IndustrialMarkingKind.terminal;
-                      editedReference = plan.referenceOf(targetKind, targetId);
-                      locked = plan.locks['${targetKind.name}:$targetId'] ?? false;
-                    });
-                  },
-                ),
-              KeyedSubtree(
-                key: ValueKey(targetId),
-                child: TextFormField(
-                  key: const Key('p4-marking-text'),
-                  initialValue: editedReference,
-                  onChanged: (value) => editedReference = value,
-                  decoration: const InputDecoration(labelText: 'Repère'),
-                ),
+                      items: [
+                        DropdownMenuItem(
+                          value: selected,
+                          child: Text('Appareil : $selected'),
+                        ),
+                        for (final port in availablePorts)
+                          DropdownMenuItem(
+                            value: port.id.value,
+                            child: Text('Borne : ${port.name}'),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          targetId = value;
+                          targetKind = value == selected
+                              ? IndustrialMarkingKind.device
+                              : IndustrialMarkingKind.terminal;
+                          editedReference = plan.referenceOf(
+                            targetKind,
+                            targetId,
+                          );
+                          locked =
+                              plan.locks['${targetKind.name}:$targetId'] ??
+                              false;
+                        });
+                      },
+                    ),
+                  KeyedSubtree(
+                    key: ValueKey(targetId),
+                    child: TextFormField(
+                      key: const Key('p4-marking-text'),
+                      initialValue: editedReference,
+                      onChanged: (value) => editedReference = value,
+                      decoration: const InputDecoration(labelText: 'Repère'),
+                    ),
+                  ),
+                  SwitchListTile(
+                    key: const Key('p4-marking-locked'),
+                    value: locked,
+                    title: const Text('Verrouiller ce repère'),
+                    onChanged: (value) => setDialogState(() => locked = value),
+                  ),
+                ],
               ),
-              SwitchListTile(
-                key: const Key('p4-marking-locked'),
-                value: locked,
-                title: const Text('Verrouiller ce repère'),
-                onChanged: (value) => setDialogState(() => locked = value),
-              ),
-            ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  key: const Key('p4-marking-apply'),
+                  onPressed: () => Navigator.of(
+                    dialogContext,
+                  ).pop((targetKind, targetId, editedReference, locked)),
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              key: const Key('p4-marking-apply'),
-              onPressed: () => Navigator.of(dialogContext).pop(
-                (targetKind, targetId, editedReference, locked),
-              ),
-              child: const Text('Enregistrer'),
-            ),
-          ],
-        ),
-      ),
-    );
+        );
     if (answer == null || !mounted) return;
     try {
       final next = IndustrialMarkingRegistry.setReference(
@@ -1854,18 +1861,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
     }
 
-    final CircuitState nextCircuit = _continueIndustrialMarking(CircuitState(
-      circuitId: _circuit.circuitId,
-      revision: _circuit.revision + 1,
-      mode: _circuit.mode,
-      components: components,
-      connections: _circuit.connections,
-      sources: sources,
-      instruments: _circuit.instruments,
-      probes: _circuit.probes,
-      settings: _circuit.settings,
-      metadata: _circuit.metadata,
-    ));
+    final CircuitState nextCircuit = _continueIndustrialMarking(
+      CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        components: components,
+        connections: _circuit.connections,
+        sources: sources,
+        instruments: _circuit.instruments,
+        probes: _circuit.probes,
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      ),
+    );
 
     final CircuitVisualLayout moved = _layout.moveElement(
       elementId,

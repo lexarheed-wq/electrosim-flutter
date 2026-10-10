@@ -79,25 +79,31 @@ void main() {
     expect(board.circuit.connections, original.connections);
     expect(tester.takeException(), isNull);
   });
-  testWidgets('P4 teacher edits a terminal without changing its physical ID',
-      (tester) async {
+  testWidgets('P4 teacher edits a terminal without changing its physical ID', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final original = buildRegressionFixtureCircuit();
-    await tester.pumpWidget(MaterialApp(
-      home: F9WorkspaceDemoPage(
-        initialCircuit: original,
-        initialSelectedElementId: 'lamp-1',
+    await tester.pumpWidget(
+      MaterialApp(
+        home: F9WorkspaceDemoPage(
+          initialCircuit: original,
+          initialSelectedElementId: 'lamp-1',
+        ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('workspace-more-actions')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(
-        find.byKey(const Key('workspace-edit-industrial-marking')));
-    await tester.tap(find.byKey(const Key('workspace-edit-industrial-marking')));
+      find.byKey(const Key('workspace-edit-industrial-marking')),
+    );
+    await tester.tap(
+      find.byKey(const Key('workspace-edit-industrial-marking')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('p4-marking-target')));
     await tester.pumpAndSettle();
@@ -117,5 +123,4 @@ void main() {
     expect(board.circuit.connections, original.connections);
     expect(tester.takeException(), isNull);
   });
-
 }

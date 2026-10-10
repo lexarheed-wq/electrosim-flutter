@@ -112,7 +112,6 @@ abstract final class IndustrialSchematicSvgExport {
         '${hint == null ? '' : 'data-color-hint="${hint.name}" '}'
         '${stroke == null ? '' : 'stroke="$stroke" '}'
         'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
-
       );
       if (hint == IndustrialConductorColor.greenYellow) {
         svg.writeln(

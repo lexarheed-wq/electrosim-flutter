@@ -256,6 +256,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.linear_scale,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 100.0,
+    },
     subtitle: '100 Ω',
   ),
   F9PaletteDefinition(

@@ -20,10 +20,7 @@ PneumaticNetwork _twoFittings({
   PneumaticPipeFault fault = PneumaticPipeFault.none,
   PneumaticPipeLossModel lossModel = PneumaticPipeLossModel.effectiveOrifice,
 }) => PneumaticNetwork(
-  devices: <PneumaticDevice>[
-    _fitting('a', 'a-P'),
-    _fitting('b', 'b-P'),
-  ],
+  devices: <PneumaticDevice>[_fitting('a', 'a-P'), _fitting('b', 'b-P')],
   pipes: <PneumaticPipe>[
     PneumaticPipe(
       id: 'hose1',
@@ -42,26 +39,19 @@ final IsentropicOrifice _orifice = IsentropicOrifice(
   dischargeCoefficient: .8,
 );
 
-Map<String, RigidFittingCalibration> _fittings() =>
-    <String, RigidFittingCalibration>{
-      'a': RigidFittingCalibration(
-        volumeM3: .002,
-        initialPressureAbsPa: 701325,
-      ),
-      'b': RigidFittingCalibration(
-        volumeM3: .002,
-        initialPressureAbsPa: 101325,
-      ),
-    };
+Map<String, RigidFittingCalibration>
+_fittings() => <String, RigidFittingCalibration>{
+  'a': RigidFittingCalibration(volumeM3: .002, initialPressureAbsPa: 701325),
+  'b': RigidFittingCalibration(volumeM3: .002, initialPressureAbsPa: 101325),
+};
 
-Map<String, HoseVolumeCalibration> _hoses() =>
-    <String, HoseVolumeCalibration>{
-      'hose1': HoseVolumeCalibration(
-        firstEndOrifice: _orifice,
-        secondEndOrifice: _orifice,
-        initialPressureAbsPa: 101325,
-      ),
-    };
+Map<String, HoseVolumeCalibration> _hoses() => <String, HoseVolumeCalibration>{
+  'hose1': HoseVolumeCalibration(
+    firstEndOrifice: _orifice,
+    secondEndOrifice: _orifice,
+    initialPressureAbsPa: 101325,
+  ),
+};
 
 void main() {
   group('R2/B physical identity bridge', () {
@@ -88,10 +78,14 @@ void main() {
         after.totalMassKg,
         closeTo(before.totalMassKg, before.totalMassKg * 1e-8),
       );
-      expect(after.chambers['a']!.pressureAbsPa,
-          lessThan(before.chambers['a']!.pressureAbsPa));
-      expect(after.chambers['b']!.pressureAbsPa,
-          greaterThan(before.chambers['b']!.pressureAbsPa));
+      expect(
+        after.chambers['a']!.pressureAbsPa,
+        lessThan(before.chambers['a']!.pressureAbsPa),
+      );
+      expect(
+        after.chambers['b']!.pressureAbsPa,
+        greaterThan(before.chambers['b']!.pressureAbsPa),
+      );
       expect(before.timeS, 0);
       expect(after.timeS, 1);
     });
@@ -103,9 +97,13 @@ void main() {
           fittings: _fittings(),
           hoses: <String, HoseVolumeCalibration>{},
         ),
-        throwsA(isA<PneumaticPhysicsException>().having(
-          (e) => e.code, 'code', 'missing_hose_calibration',
-        )),
+        throwsA(
+          isA<PneumaticPhysicsException>().having(
+            (e) => e.code,
+            'code',
+            'missing_hose_calibration',
+          ),
+        ),
       );
     });
 
@@ -136,9 +134,13 @@ void main() {
           },
           hoses: <String, HoseVolumeCalibration>{},
         ),
-        throwsA(isA<PneumaticPhysicsException>().having(
-          (e) => e.code, 'code', 'unsupported_r2b_device',
-        )),
+        throwsA(
+          isA<PneumaticPhysicsException>().having(
+            (e) => e.code,
+            'code',
+            'unsupported_r2b_device',
+          ),
+        ),
       );
     });
 
@@ -153,9 +155,13 @@ void main() {
             fittings: _fittings(),
             hoses: _hoses(),
           ),
-          throwsA(isA<PneumaticPhysicsException>().having(
-            (e) => e.code, 'code', 'unsupported_r2b_hose',
-          )),
+          throwsA(
+            isA<PneumaticPhysicsException>().having(
+              (e) => e.code,
+              'code',
+              'unsupported_r2b_hose',
+            ),
+          ),
         );
       }
     });
@@ -172,9 +178,13 @@ void main() {
           fittings: extra,
           hoses: _hoses(),
         ),
-        throwsA(isA<PneumaticPhysicsException>().having(
-          (e) => e.code, 'code', 'missing_fitting_calibration',
-        )),
+        throwsA(
+          isA<PneumaticPhysicsException>().having(
+            (e) => e.code,
+            'code',
+            'missing_fitting_calibration',
+          ),
+        ),
       );
       final PneumaticNetwork colliding = PneumaticNetwork(
         devices: <PneumaticDevice>[
@@ -191,9 +201,13 @@ void main() {
           fittings: conflicting,
           hoses: _hoses(),
         ),
-        throwsA(isA<PneumaticPhysicsException>().having(
-          (e) => e.code, 'code', 'chamber_id_collision',
-        )),
+        throwsA(
+          isA<PneumaticPhysicsException>().having(
+            (e) => e.code,
+            'code',
+            'chamber_id_collision',
+          ),
+        ),
       );
     });
 

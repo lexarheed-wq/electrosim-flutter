@@ -26,6 +26,7 @@ jobs:
       - name: Execute measured matrix and always generate report
         shell: bash
         run: |
+          set +e
           set -uo pipefail
           mkdir -p physical-evidence
           cd apps/electrosim

@@ -51,10 +51,17 @@ jobs:
           (
             cd packages/electrosim_pneumatic_solver
             dart pub get
-            dart format --output=none --set-exit-if-changed lib test
+            dart format lib test
             dart analyze
             dart test --reporter expanded
           ) 2>&1 | tee build/pneumatics-r2/R2_PHYSICS.log
+      - name: Expose Dart formatter changes for exact source correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'DART_FORMAT_PATCH_BEGIN'
+          git diff -- packages/electrosim_pneumatic_solver/lib packages/electrosim_pneumatic_solver/test | tee build/pneumatics-r2/FORMAT.patch
+          echo 'DART_FORMAT_PATCH_END'
       - name: Check solver source and golden immutability
         shell: bash
         run: |

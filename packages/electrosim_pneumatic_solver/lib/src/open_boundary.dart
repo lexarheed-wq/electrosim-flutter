@@ -17,7 +17,8 @@ final class PneumaticPressureBoundary {
   }) {
     if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9.:-]{0,127}$').hasMatch(id)) {
       throw const PneumaticPhysicsException(
-        'invalid_boundary_id', 'Invalid external boundary identity.',
+        'invalid_boundary_id',
+        'Invalid external boundary identity.',
       );
     }
     requirePositiveFinite(pressureAbsPa, 'pressureAbsPa');
@@ -41,12 +42,14 @@ final class OpenAirSnapshot {
     required this.externalMassAddedKg,
     required this.acceptedSubsteps,
     required Map<String, double> signedBoundaryFlowsKgPerS,
-  }) : signedBoundaryFlowsKgPerS =
-           Map<String, double>.unmodifiable(signedBoundaryFlowsKgPerS) {
+  }) : signedBoundaryFlowsKgPerS = Map<String, double>.unmodifiable(
+         signedBoundaryFlowsKgPerS,
+       ) {
     requireNonnegativeFinite(timeS, 'timeS');
     if (!externalMassAddedKg.isFinite || acceptedSubsteps < 0) {
       throw const PneumaticPhysicsException(
-        'invalid_snapshot', 'Non-finite mass ledger or negative step count.',
+        'invalid_snapshot',
+        'Non-finite mass ledger or negative step count.',
       );
     }
   }
@@ -82,7 +85,8 @@ final class OpenIsothermalAirChamber {
     for (final PneumaticPressureBoundary b in boundaries) {
       if (!ids.add(b.id)) {
         throw const PneumaticPhysicsException(
-          'duplicate_boundary', 'External boundary IDs must be unique.',
+          'duplicate_boundary',
+          'External boundary IDs must be unique.',
         );
       }
     }
@@ -102,18 +106,21 @@ final class OpenIsothermalAirChamber {
     requirePositiveFinite(maxStepS, 'maxStepS');
     if (maxSubsteps <= 0) {
       throw const PneumaticPhysicsException(
-        'invalid_solver_options', 'maxSubsteps must be positive.',
+        'invalid_solver_options',
+        'maxSubsteps must be positive.',
       );
     }
     if (before.chamber.id != _chamberId) {
       throw const PneumaticPhysicsException(
-        'topology_mismatch', 'Input snapshot has a foreign chamber ID.',
+        'topology_mismatch',
+        'Input snapshot has a foreign chamber ID.',
       );
     }
     if (durationS == 0) return before;
     if (before.timeS + durationS == before.timeS) {
       throw const PneumaticPhysicsException(
-        'step_underflow', 'Time cannot advance at the supplied precision.',
+        'step_underflow',
+        'Time cannot advance at the supplied precision.',
       );
     }
     double remaining = durationS;
@@ -128,7 +135,8 @@ final class OpenIsothermalAirChamber {
     while (remaining > tolerance) {
       if (count >= maxSubsteps) {
         throw const PneumaticPhysicsException(
-          'substep_limit', 'No accepted snapshot after bounded solver failure.',
+          'substep_limit',
+          'No accepted snapshot after bounded solver failure.',
         );
       }
       final FixedAirChamber chamber = before.chamber.withMass(mass);
@@ -160,14 +168,16 @@ final class OpenIsothermalAirChamber {
       }
       if (!dt.isFinite || dt <= 0) {
         throw const PneumaticPhysicsException(
-          'step_underflow', 'The pressure-flow system cannot advance safely.',
+          'step_underflow',
+          'The pressure-flow system cannot advance safely.',
         );
       }
       final double delta = netFlow * dt;
       final double nextMass = mass + delta;
       if (!nextMass.isFinite || nextMass <= 0) {
         throw const PneumaticPhysicsException(
-          'negative_or_nonfinite_mass', 'Solver rejected an invalid air mass.',
+          'negative_or_nonfinite_mass',
+          'Solver rejected an invalid air mass.',
         );
       }
       mass = nextMass;

@@ -122,7 +122,7 @@ void main() {
       expect(svg, contains('data-reference="k1"'));
       expect(svg, contains('id="device-aux"'));
       expect(svg, contains('↔ k1'));
-    expect(svg, contains('↔ aux'));
+      expect(svg, contains('↔ aux'));
       expect(
         RegExp('<polyline ').allMatches(svg).length,
         ac3.connections.length,

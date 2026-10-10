@@ -45,7 +45,8 @@ final class TpEngine {
       }
       return starter;
     }
-    final CircuitState reference = definition.referenceCircuit ??
+    final CircuitState reference =
+        definition.referenceCircuit ??
         (throw StateError('Wiring exercise has no teacher reference.'));
     return CircuitState(
       circuitId: reference.circuitId,

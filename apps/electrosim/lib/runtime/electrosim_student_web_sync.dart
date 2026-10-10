@@ -196,7 +196,9 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
         'sessionCode': sessionCode,
         'senderId': clientId,
         'sequence': _clientSequence++,
-        'payload': <String, Object?>{'state': controller.toStudentPersistenceJson()},
+        'payload': <String, Object?>{
+          'state': controller.toStudentPersistenceJson(),
+        },
       }),
     );
   }

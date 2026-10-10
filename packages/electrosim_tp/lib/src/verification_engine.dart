@@ -16,6 +16,7 @@ final class VerificationEngine {
 
   final TopologyEngine _topology;
   final SolverDC _solver;
+
   /// Production supplies the same CC/AC1/AC3/PV runtime used by the simulator.
   /// Standalone domain tests use the historic DC solver as a fallback.
   final bool Function(CircuitState)? qualifiedSolve;
@@ -28,16 +29,15 @@ final class VerificationEngine {
 
   TpEvaluation evaluateWiring(TpDefinition definition, CircuitState circuit) {
     if (definition.mode != TpMode.wiring) throw StateError('Not a wiring TP.');
-    final bool functional = _isSolved(circuit) && _criticalConditionsNormal(circuit);
+    final bool functional =
+        _isSolved(circuit) && _criticalConditionsNormal(circuit);
     final reference = definition.referenceCircuit;
-    final bool matches = reference != null &&
+    final bool matches =
+        reference != null &&
         reference.sources.isNotEmpty &&
         reference.components.isNotEmpty &&
         reference.connections.isNotEmpty &&
-        WiringTopologyMatcher.equivalent(
-          definition.referenceCircuit!,
-          circuit,
-        );
+        WiringTopologyMatcher.equivalent(definition.referenceCircuit!, circuit);
     final bool passed = functional && matches;
     return TpEvaluation(
       score: passed ? definition.maxScore : 0,

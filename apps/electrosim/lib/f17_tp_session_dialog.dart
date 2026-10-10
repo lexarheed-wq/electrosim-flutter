@@ -305,7 +305,8 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
           DropdownButton<String>(
             key: const Key('tp-fault-scenario-select'),
             isExpanded: true,
-            value: _selectedFaultScenarioId ??
+            value:
+                _selectedFaultScenarioId ??
                 widget.controller.defaultFaultScenarioId,
             items: <DropdownMenuItem<String>>[
               for (final scenario in widget.controller.availableFaultScenarios)
@@ -493,40 +494,45 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
     await showDialog<void>(
       context: context,
       builder: (BuildContext archiveContext) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter updateArchive) => AlertDialog(
-          title: const Text('Historique des TP terminés'),
-          content: SizedBox(
-            width: 480,
-            child: ListView(
-              shrinkWrap: true,
-              children: <Widget>[
-                for (final entry in widget.controller.teacherArchive)
-                  ListTile(
-                    key: Key('tp-archive-${entry['tpId']}'),
-                    title: Text((entry['activityTitle'] ?? entry['title'])
-                        ?.toString() ?? 'TP'),
-                    subtitle: Text(entry['tpId']?.toString() ?? ''),
-                    trailing: IconButton(
-                      key: Key('tp-delete-archive-${entry['tpId']}'),
-                      tooltip: 'Supprimer définitivement ce TP archivé',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () {
-                        widget.controller.deleteArchivedActivity(
-                            entry['tpId']!.toString());
-                        updateArchive(() {});
-                      },
-                    ),
-                  ),
+        builder: (BuildContext context, StateSetter updateArchive) =>
+            AlertDialog(
+              title: const Text('Historique des TP terminés'),
+              content: SizedBox(
+                width: 480,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: <Widget>[
+                    for (final entry in widget.controller.teacherArchive)
+                      ListTile(
+                        key: Key('tp-archive-${entry['tpId']}'),
+                        title: Text(
+                          (entry['activityTitle'] ?? entry['title'])
+                                  ?.toString() ??
+                              'TP',
+                        ),
+                        subtitle: Text(entry['tpId']?.toString() ?? ''),
+                        trailing: IconButton(
+                          key: Key('tp-delete-archive-${entry['tpId']}'),
+                          tooltip: 'Supprimer définitivement ce TP archivé',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () {
+                            widget.controller.deleteArchivedActivity(
+                              entry['tpId']!.toString(),
+                            );
+                            updateArchive(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(archiveContext).pop(),
+                  child: const Text('Fermer'),
+                ),
               ],
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(archiveContext).pop(),
-              child: const Text('Fermer'),
-            ),
-          ],
-        ),
       ),
     );
   }

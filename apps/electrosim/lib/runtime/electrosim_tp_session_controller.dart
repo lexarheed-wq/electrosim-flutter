@@ -13,15 +13,14 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
     this.tpIdValue = 'TP-RD-F17',
     this.title = 'Recherche de dérangement',
     String? scenarioId,
-  }) : _faultScenarios = faultScenarios ??
+  }) : _faultScenarios =
+           faultScenarios ??
            (catalog == null
                ? buildV2ProductFaultRepository()
                : FaultScenarioRepository(scenarios: catalog.faultScenarios)),
        _scenarioId = FaultScenarioId(
          scenarioId ??
-             (catalog == null
-                 ? 'V2-FAULT-DC-LAMP-OPEN-01'
-                 : 'FAULT-DC-003'),
+             (catalog == null ? 'V2-FAULT-DC-LAMP-OPEN-01' : 'FAULT-DC-003'),
        ) {
     _engine = _buildEngine();
     _activeTpIdValue = tpIdValue;
@@ -52,11 +51,10 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   );
 
   static bool _unifiedSolve(CircuitState circuit) {
-    final ElectroSimRuntimeSnapshot snapshot =
-        const ElectroSimRuntimeEngine().evaluate(circuit);
+    final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
+        .evaluate(circuit);
     return switch (circuit.mode) {
-      ElectricalMode.dc =>
-        snapshot.dcResult?.status == DcSolveStatus.solved,
+      ElectricalMode.dc => snapshot.dcResult?.status == DcSolveStatus.solved,
       ElectricalMode.ac1 => snapshot.ac1Result?.isSolved ?? false,
       ElectricalMode.ac3 => snapshot.ac3Result?.isSolved ?? false,
       ElectricalMode.pv => snapshot.pvResult?.isSolved ?? false,
@@ -106,15 +104,15 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       throw StateError('A TP session already exists.');
     }
     if (_nextActivityOrdinal > 1) {
-      _activeTpIdValue = '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
+      _activeTpIdValue =
+          '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
     }
     if (mode == TpMode.wiring &&
-        (wiringReferenceCircuit == null &&
-            studentStarterCircuit == null ||
+        (wiringReferenceCircuit == null && studentStarterCircuit == null ||
             wiringReferenceCircuit != null &&
-            (wiringReferenceCircuit.sources.isEmpty ||
-                wiringReferenceCircuit.components.isEmpty ||
-                wiringReferenceCircuit.connections.isEmpty))) {
+                (wiringReferenceCircuit.sources.isEmpty ||
+                    wiringReferenceCircuit.components.isEmpty ||
+                    wiringReferenceCircuit.connections.isEmpty))) {
       throw StateError(
         'Préparez un montage de référence câblé ou choisissez un schéma V2.',
       );
@@ -219,7 +217,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       _teacherArchive.add(archived);
     }
     _nextActivityOrdinal++;
-    _activeTpIdValue = '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
+    _activeTpIdValue =
+        '$tpIdValue-${_nextActivityOrdinal.toString().padLeft(3, '0')}';
     _engine = _buildEngine();
     _session = null;
     notifyListeners();
@@ -249,8 +248,8 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       'hasSession': true,
       'tpId': _activeTpIdValue,
       'title': title,
-      'scenarioId': current.definition.faultScenarioId?.value ??
-          _scenarioId.value,
+      'scenarioId':
+          current.definition.faultScenarioId?.value ?? _scenarioId.value,
       'mode': current.definition.mode.name,
       'activityTitle': current.definition.title,
       if (current.definition.mode == TpMode.wiring)
@@ -306,12 +305,13 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       return;
     }
     final Object? recoveredId = json['tpId'];
-    final bool permittedId = recoveredId is String &&
+    final bool permittedId =
+        recoveredId is String &&
         (recoveredId == tpIdValue ||
             (recoveredId.startsWith('$tpIdValue-') &&
-                RegExp(r'^[0-9]{3,7}$').hasMatch(
-                  recoveredId.substring(tpIdValue.length + 1),
-                )));
+                RegExp(
+                  r'^[0-9]{3,7}$',
+                ).hasMatch(recoveredId.substring(tpIdValue.length + 1))));
     if (!permittedId || json['title'] != title) {
       throw const FormatException(
         'Saved TP identity does not match this controller.',
@@ -322,8 +322,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
 
     final Object? selectedScenarioRaw = json['scenarioId'];
     if (selectedScenarioRaw is! String ||
-        !_faultScenarios.all.any((scenario) =>
-            scenario.id.value == selectedScenarioRaw)) {
+        !_faultScenarios.all.any(
+          (scenario) => scenario.id.value == selectedScenarioRaw,
+        )) {
       throw const FormatException('Unknown or missing TP scenario.');
     }
 
@@ -357,7 +358,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       final Object? referenceRaw = json['referenceCircuit'];
       if (referenceRaw != null) {
         if (referenceRaw is! Map<String, dynamic>) {
-          throw const FormatException('Wiring TP reference circuit is invalid.');
+          throw const FormatException(
+            'Wiring TP reference circuit is invalid.',
+          );
         }
         referenceCircuit = CircuitState.fromJson(referenceRaw);
       }
@@ -366,7 +369,9 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       mode: mode,
       wiringReferenceCircuit: referenceCircuit,
       studentStarterCircuit: mode == TpMode.wiring
-          ? CircuitState.fromJson(json['studentCircuit'] as Map<String, dynamic>)
+          ? CircuitState.fromJson(
+              json['studentCircuit'] as Map<String, dynamic>,
+            )
           : null,
       activityTitle: activityTitle,
       troubleshootingScenarioId: selectedScenarioRaw,

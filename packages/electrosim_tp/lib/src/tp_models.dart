@@ -65,8 +65,10 @@ final class TpDefinition {
   final TpId id;
   final String title;
   final TpMode mode;
+
   /// Teacher-only truth. Null in an untrusted student replica.
   final CircuitState? referenceCircuit;
+
   /// Public blank exercise plate; never a solution assembled by the teacher.
   final CircuitState? studentStarterCircuit;
   final FaultScenarioId? faultScenarioId;

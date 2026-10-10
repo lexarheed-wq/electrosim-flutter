@@ -39,9 +39,7 @@ abstract final class WiringTopologyMatcher {
       if (depth == n) {
         return _sameMultiset(
           left.mappedEdges(mapping),
-          right.mappedEdges(<int, int>{
-            for (var i = 0; i < n; i++) i: i,
-          }),
+          right.mappedEdges(<int, int>{for (var i = 0; i < n; i++) i: i}),
         );
       }
       final i = order[depth];
@@ -175,15 +173,7 @@ final class _Graph {
   List<String> edgesWithin(Set<int> chosen) => <String>[
     for (final edge in edges)
       if (chosen.contains(edge.$1) && chosen.contains(edge.$3))
-        _edgeKey(
-          edge.$1,
-          edge.$2,
-          edge.$3,
-          edge.$4,
-          edge.$5,
-          edge.$6,
-          edge.$7,
-        ),
+        _edgeKey(edge.$1, edge.$2, edge.$3, edge.$4, edge.$5, edge.$6, edge.$7),
   ];
 
   static String _edgeKey(
@@ -211,10 +201,9 @@ final class _Graph {
 Object? _stable(Object? object) {
   if (object is Map) {
     final keys = object.keys.map((e) => e.toString()).toList()..sort();
-    return <String, Object?>{
-      for (final key in keys) key: _stable(object[key]),
-    };
+    return <String, Object?>{for (final key in keys) key: _stable(object[key])};
   }
-  if (object is List) return <Object?>[for (final value in object) _stable(value)];
+  if (object is List)
+    return <Object?>[for (final value in object) _stable(value)];
   return object;
 }

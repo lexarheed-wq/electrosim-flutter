@@ -20,7 +20,8 @@ void main() {
 
     controller.createDraft(
       mode: TpMode.wiring,
-      wiringReferenceCircuit: buildV2ProductExampleRepository().all.first.circuit,
+      wiringReferenceCircuit:
+          buildV2ProductExampleRepository().all.first.circuit,
     );
     final secondId = controller.tpId.value;
     expect(secondId, isNot(firstId));
@@ -40,22 +41,26 @@ void main() {
     expect(recovered.session, isNotNull);
   });
 
-  test('P2 archive and internal reference never enter student LAN snapshot', () {
-    final controller = ElectroSimTpSessionController();
-    addTearDown(controller.dispose);
-    controller.createDraft();
-    controller.publish();
-    controller.cancelTeacher();
-    controller.deleteTeacherActivity();
-    controller.createDraft(
-      mode: TpMode.wiring,
-      wiringReferenceCircuit: buildV2ProductExampleRepository().all.first.circuit,
-    );
-    controller.publish();
-    final public = controller.toStudentPersistenceJson();
-    expect(public, isNot(containsPair('referenceCircuit', anything)));
-    expect(public.containsKey('archive'), false);
-    expect(public.containsKey('nextActivityOrdinal'), false);
-    expect(public['tpId'], controller.tpId.value);
-  });
+  test(
+    'P2 archive and internal reference never enter student LAN snapshot',
+    () {
+      final controller = ElectroSimTpSessionController();
+      addTearDown(controller.dispose);
+      controller.createDraft();
+      controller.publish();
+      controller.cancelTeacher();
+      controller.deleteTeacherActivity();
+      controller.createDraft(
+        mode: TpMode.wiring,
+        wiringReferenceCircuit:
+            buildV2ProductExampleRepository().all.first.circuit,
+      );
+      controller.publish();
+      final public = controller.toStudentPersistenceJson();
+      expect(public, isNot(containsPair('referenceCircuit', anything)));
+      expect(public.containsKey('archive'), false);
+      expect(public.containsKey('nextActivityOrdinal'), false);
+      expect(public['tpId'], controller.tpId.value);
+    },
+  );
 }

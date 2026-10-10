@@ -10,13 +10,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 const ElectroSimRuntimeEngine _runtime = ElectroSimRuntimeEngine();
 
-void _result(String family, String id, String verdict, Map<String, Object?> data) {
-  print('PHYSICS_AUDIT_JSON:${jsonEncode(<String, Object?>{
-    'family': family,
-    'case': id,
-    'verdict': verdict,
-    ...data,
-  })}');
+void _result(
+  String family,
+  String id,
+  String verdict,
+  Map<String, Object?> data,
+) {
+  print(
+    'PHYSICS_AUDIT_JSON:${jsonEncode(<String, Object?>{'family': family, 'case': id, 'verdict': verdict, ...data})}',
+  );
 }
 
 Terminal _pin(String id, {String? name, PhaseTag phase = PhaseTag.none}) =>
@@ -38,16 +40,21 @@ SourceInstance _dcSource(double volts) => SourceInstance(
   parameters: <String, Object?>{'voltageV': volts},
 );
 
-ComponentInstance _resistor(String id, double ohms, {String model = 'resistor'}) =>
-    ComponentInstance(
-      id: ComponentId(id),
-      modelType: model,
-      terminals: <Terminal>[_pin('$id-a'), _pin('$id-b')],
-      parameters: <String, Object?>{'resistanceOhm': ohms},
-    );
+ComponentInstance _resistor(
+  String id,
+  double ohms, {
+  String model = 'resistor',
+}) => ComponentInstance(
+  id: ComponentId(id),
+  modelType: model,
+  terminals: <Terminal>[_pin('$id-a'), _pin('$id-b')],
+  parameters: <String, Object?>{'resistanceOhm': ohms},
+);
 
 CircuitState _resistiveDc(
-  String id, double volts, List<double> resistors, {
+  String id,
+  double volts,
+  List<double> resistors, {
   bool parallel = false,
   bool withSwitch = false,
   bool closed = true,
@@ -74,9 +81,9 @@ CircuitState _resistiveDc(
   } else {
     wires.add(_wire('head', positive, 'r0-a'));
     for (var i = 1; i < resistors.length; i++) {
-      wires.add(_wire('link$i', 'r${i-1}-b', 'r$i-a'));
+      wires.add(_wire('link$i', 'r${i - 1}-b', 'r$i-a'));
     }
-    wires.add(_wire('tail', 'r${resistors.length-1}-b', 's-minus'));
+    wires.add(_wire('tail', 'r${resistors.length - 1}-b', 's-minus'));
   }
   return CircuitState(
     circuitId: CircuitId(id),
@@ -154,105 +161,110 @@ double _maxResidual(Iterable<double> values) =>
     values.fold<double>(0, (a, b) => math.max(a, b.abs()));
 
 void main() {
-  test('PHYS-INV: sweep every palette entry and declared mode without exceptions', () {
-    final violations = <String>[];
-    final modes = ElectricalMode.values;
-    final unique = <String>{};
-    var total = 0;
-    for (final item in f9PaletteCatalog) {
-      for (final mode in modes.where(item.supportsMode)) {
-        total++;
-        unique.add(item.modelType);
-        try {
-          if (item.kind == F9PaletteElementKind.instrument) {
-            _result('inventory', item.keyName, 'OVERLAY', {
+  test(
+    'PHYS-INV: sweep every palette entry and declared mode without exceptions',
+    () {
+      final violations = <String>[];
+      final modes = ElectricalMode.values;
+      final unique = <String>{};
+      var total = 0;
+      for (final item in f9PaletteCatalog) {
+        for (final mode in modes.where(item.supportsMode)) {
+          total++;
+          unique.add(item.modelType);
+          try {
+            if (item.kind == F9PaletteElementKind.instrument) {
+              _result('inventory', item.keyName, 'OVERLAY', {
+                'model': item.modelType,
+                'mode': mode.name,
+                'kind': 'physical-instrument',
+                'note':
+                    'Measurement overlay: validated separately, not a solver branch.',
+              });
+              continue;
+            }
+            final terminals = <Terminal>[
+              for (var k = 0; k < item.terminalCount; k++)
+                Terminal(
+                  id: TerminalId('pin-$k'),
+                  name: item.terminals.isNotEmpty
+                      ? item.terminals[k].label
+                      : item.terminalLabels[k],
+                  role: item.terminals.isNotEmpty
+                      ? item.terminals[k].role
+                      : TerminalRole.generic,
+                  phase: item.terminals.isNotEmpty
+                      ? item.terminals[k].phase
+                      : PhaseTag.none,
+                ),
+            ];
+            final source = item.kind == F9PaletteElementKind.source;
+            final circuit = CircuitState(
+              circuitId: CircuitId('sweep-${item.keyName}-${mode.name}'),
+              revision: 1,
+              mode: mode,
+              settings: const <String, Object?>{'frequencyHz': 50.0},
+              sources: source
+                  ? <SourceInstance>[
+                      SourceInstance(
+                        id: SourceId('source'),
+                        modelType: item.modelType,
+                        terminals: terminals,
+                        parameters: item.defaultParameters,
+                      ),
+                    ]
+                  : const <SourceInstance>[],
+              components: source
+                  ? const <ComponentInstance>[]
+                  : <ComponentInstance>[
+                      ComponentInstance(
+                        id: ComponentId('device'),
+                        modelType: item.modelType,
+                        terminals: terminals,
+                        parameters: item.defaultParameters,
+                        controlState: item.defaultControlState,
+                      ),
+                    ],
+            );
+            final snapshot = _runtime.evaluate(circuit);
+            final residuals = <double>[
+              ...?snapshot.dcResult?.nodeVoltages.values,
+              ...?snapshot.dcResult?.kclResiduals.values,
+              ...?snapshot.ac1Result?.kclResiduals.values,
+              ...?snapshot.ac3Result?.kclResiduals.values,
+            ];
+            if (residuals.any((n) => !n.isFinite)) {
+              violations.add('${item.keyName}/${mode.name}: nonfinite');
+            }
+            _result('inventory', item.keyName, 'OBSERVED', {
               'model': item.modelType,
+              'kind': item.kind.name,
               'mode': mode.name,
-              'kind': 'physical-instrument',
-              'note': 'Measurement overlay: validated separately, not a solver branch.',
+              'solved': snapshot.solved,
+              'diagnostics': snapshot.diagnostics.advice.length,
+              'maxResidual': _maxResidual(residuals),
+              'note':
+                  'Isolated/open-circuit probe; unsolved is not by itself a defect.',
             });
-            continue;
+          } on Object catch (error) {
+            violations.add('${item.keyName}/${mode.name}: $error');
+            _result('inventory', item.keyName, 'EXCEPTION', {
+              'mode': mode.name,
+              'model': item.modelType,
+              'error': '$error',
+            });
           }
-          final terminals = <Terminal>[
-            for (var k = 0; k < item.terminalCount; k++)
-              Terminal(
-                id: TerminalId('pin-$k'),
-                name: item.terminals.isNotEmpty
-                    ? item.terminals[k].label
-                    : item.terminalLabels[k],
-                role: item.terminals.isNotEmpty
-                    ? item.terminals[k].role
-                    : TerminalRole.generic,
-                phase: item.terminals.isNotEmpty
-                    ? item.terminals[k].phase
-                    : PhaseTag.none,
-              ),
-          ];
-          final source = item.kind == F9PaletteElementKind.source;
-          final circuit = CircuitState(
-            circuitId: CircuitId('sweep-${item.keyName}-${mode.name}'),
-            revision: 1,
-            mode: mode,
-            settings: const <String, Object?>{'frequencyHz': 50.0},
-            sources: source
-                ? <SourceInstance>[
-                    SourceInstance(
-                      id: SourceId('source'),
-                      modelType: item.modelType,
-                      terminals: terminals,
-                      parameters: item.defaultParameters,
-                    ),
-                  ]
-                : const <SourceInstance>[],
-            components: source
-                ? const <ComponentInstance>[]
-                : <ComponentInstance>[
-                    ComponentInstance(
-                      id: ComponentId('device'),
-                      modelType: item.modelType,
-                      terminals: terminals,
-                      parameters: item.defaultParameters,
-                      controlState: item.defaultControlState,
-                    ),
-                  ],
-          );
-          final snapshot = _runtime.evaluate(circuit);
-          final residuals = <double>[
-            ...?snapshot.dcResult?.nodeVoltages.values,
-            ...?snapshot.dcResult?.kclResiduals.values,
-            ...?snapshot.ac1Result?.kclResiduals.values,
-            ...?snapshot.ac3Result?.kclResiduals.values,
-          ];
-          if (residuals.any((n) => !n.isFinite)) {
-            violations.add('${item.keyName}/${mode.name}: nonfinite');
-          }
-          _result('inventory', item.keyName, 'OBSERVED', {
-            'model': item.modelType,
-            'kind': item.kind.name,
-            'mode': mode.name,
-            'solved': snapshot.solved,
-            'diagnostics': snapshot.diagnostics.advice.length,
-            'maxResidual': _maxResidual(residuals),
-            'note': 'Isolated/open-circuit probe; unsolved is not by itself a defect.',
-          });
-        } on Object catch (error) {
-          violations.add('${item.keyName}/${mode.name}: $error');
-          _result('inventory', item.keyName, 'EXCEPTION', {
-            'mode': mode.name,
-            'model': item.modelType,
-            'error': '$error',
-          });
         }
       }
-    }
-    _result('inventory-summary', 'palette-sweep', 'MEASURED', {
-      'entries': f9PaletteCatalog.length,
-      'distinctModels': unique.length,
-      'modelModeAttempts': total,
-      'exceptionsAndNonfinite': violations.length,
-    });
-    expect(violations, isEmpty, reason: violations.join('\n'));
-  });
+      _result('inventory-summary', 'palette-sweep', 'MEASURED', {
+        'entries': f9PaletteCatalog.length,
+        'distinctModels': unique.length,
+        'modelModeAttempts': total,
+        'exceptionsAndNonfinite': violations.length,
+      });
+      expect(violations, isEmpty, reason: violations.join('\n'));
+    },
+  );
 
   for (final volts in <double>[12, 24, 48]) {
     for (final ohms in <double>[12, 24, 48, 120]) {
@@ -274,7 +286,8 @@ void main() {
               .abs(),
         };
         final tol = 0.0001;
-        final passed = (observations['voltage']! - volts).abs() < tol &&
+        final passed =
+            (observations['voltage']! - volts).abs() < tol &&
             (observations['current']! - expectedI).abs() < tol &&
             (observations['power']! - expectedP).abs() < tol &&
             (observations['sourceVoltage']! - volts).abs() < tol;
@@ -293,47 +306,62 @@ void main() {
   for (final parallel in <bool>[false, true]) {
     test('PHYS-DC: ${parallel ? 'parallel KCL' : 'series KVL'} resistors', () {
       final snap = _runtime.evaluate(
-        _resistiveDc('network-$parallel', 24, <double>[24, 48],
-            parallel: parallel),
+        _resistiveDc('network-$parallel', 24, <double>[
+          24,
+          48,
+        ], parallel: parallel),
       );
       expect(snap.solved, isTrue);
       final a = snap.dc.branch('component:r0');
       final b = snap.dc.branch('component:r1');
       final expectedA = parallel ? 1.0 : 24 / 72;
       final expectedB = parallel ? 0.5 : 24 / 72;
-      final okay = (a.currentA!.abs() - expectedA).abs() < 1e-4 &&
+      final okay =
+          (a.currentA!.abs() - expectedA).abs() < 1e-4 &&
           (b.currentA!.abs() - expectedB).abs() < 1e-4 &&
           (parallel
               ? (a.voltageV.abs() - 24).abs() < 1e-4 &&
-                  (b.voltageV.abs() - 24).abs() < 1e-4
+                    (b.voltageV.abs() - 24).abs() < 1e-4
               : (a.voltageV.abs() + b.voltageV.abs() - 24).abs() < 1e-4);
-      _result('dc-network', parallel ? 'parallel' : 'series',
-          okay ? 'PASS' : 'FAIL', {
-        'i1A': a.currentA!.abs(),
-        'i2A': b.currentA!.abs(),
-        'v1V': a.voltageV.abs(),
-        'v2V': b.voltageV.abs(),
-        'sourceV': 24,
-      });
+      _result(
+        'dc-network',
+        parallel ? 'parallel' : 'series',
+        okay ? 'PASS' : 'FAIL',
+        {
+          'i1A': a.currentA!.abs(),
+          'i2A': b.currentA!.abs(),
+          'v1V': a.voltageV.abs(),
+          'v2V': b.voltageV.abs(),
+          'sourceV': 24,
+        },
+      );
       expect(okay, isTrue);
     });
   }
 
   for (final closed in <bool>[false, true]) {
-    test('PHYS-DC: switching correctly isolates/energizes a load ($closed)', () {
-      final snap = _runtime.evaluate(
-        _resistiveDc('switch-$closed', 24, <double>[24],
-            withSwitch: true, closed: closed),
-      );
-      final i = snap.dc.branch('component:r0').currentA?.abs() ?? double.nan;
-      final okay = snap.solved && (i - (closed ? 1.0 : 0.0)).abs() < 1e-4;
-      _result('dc-switch', '$closed', okay ? 'PASS' : 'FAIL', {
-        'solved': snap.solved,
-        'currentA': i,
-        'expectedA': closed ? 1.0 : 0.0,
-      });
-      expect(okay, isTrue);
-    });
+    test(
+      'PHYS-DC: switching correctly isolates/energizes a load ($closed)',
+      () {
+        final snap = _runtime.evaluate(
+          _resistiveDc(
+            'switch-$closed',
+            24,
+            <double>[24],
+            withSwitch: true,
+            closed: closed,
+          ),
+        );
+        final i = snap.dc.branch('component:r0').currentA?.abs() ?? double.nan;
+        final okay = snap.solved && (i - (closed ? 1.0 : 0.0)).abs() < 1e-4;
+        _result('dc-switch', '$closed', okay ? 'PASS' : 'FAIL', {
+          'solved': snap.solved,
+          'currentA': i,
+          'expectedA': closed ? 1.0 : 0.0,
+        });
+        expect(okay, isTrue);
+      },
+    );
   }
 
   test('PHYS-AC1: resistive 230 V RMS / 529 ohm / 50 Hz', () {
@@ -342,7 +370,9 @@ void main() {
     final v = b?.voltage.magnitude ?? double.nan;
     final i = b?.current?.magnitude ?? double.nan;
     final p = b?.activePowerW ?? double.nan;
-    final okay = snap.solved && (v - 230).abs() < 0.001 &&
+    final okay =
+        snap.solved &&
+        (v - 230).abs() < 0.001 &&
         (i - 230 / 529).abs() < 0.001 &&
         (p - 100).abs() < 0.01;
     _result('ac1-rms', 'R=529;U=230;f=50', okay ? 'PASS' : 'FAIL', {
@@ -360,11 +390,16 @@ void main() {
   test('PHYS-AC3: symmetrical star L1/L2/L3/N and neutral current', () {
     final snap = _runtime.evaluate(_ac3BalancedStar());
     final result = snap.ac3Result;
-    final branches = <String>['a', 'b', 'c']
-        .map((id) => result?.branch('component:$id')).toList();
+    final branches = <String>[
+      'a',
+      'b',
+      'c',
+    ].map((id) => result?.branch('component:$id')).toList();
     final currents = branches
-        .map((b) => b?.current?.magnitude ?? double.nan).toList();
-    final okay = snap.solved &&
+        .map((b) => b?.current?.magnitude ?? double.nan)
+        .toList();
+    final okay =
+        snap.solved &&
         currents.every((i) => (i - (230 / 529)).abs() < 0.001) &&
         (result!.neutralCurrent.magnitude < 0.001);
     _result('ac3-star', 'balanced-230V-50Hz', okay ? 'PASS' : 'FAIL', {
@@ -387,16 +422,22 @@ void main() {
     for (final example in lib.schemas) {
       try {
         final snap = _runtime.evaluate(example.circuit);
-        _result('v2-healthy', example.id.value,
-            snap.solved ? 'PASS' : 'UNRESOLVED', {
-          'mode': example.circuit.mode.name,
-          'solved': snap.solved,
-          'diagnosticCount': snap.diagnostics.advice.length,
-        });
+        _result(
+          'v2-healthy',
+          example.id.value,
+          snap.solved ? 'PASS' : 'UNRESOLVED',
+          {
+            'mode': example.circuit.mode.name,
+            'solved': snap.solved,
+            'diagnosticCount': snap.diagnostics.advice.length,
+          },
+        );
         if (!snap.solved) exceptions.add(example.id.value);
       } catch (error) {
         exceptions.add(example.id.value);
-        _result('v2-healthy', example.id.value, 'EXCEPTION', {'error': '$error'});
+        _result('v2-healthy', example.id.value, 'EXCEPTION', {
+          'error': '$error',
+        });
       }
     }
     for (final example in lib.faultScenarios) {

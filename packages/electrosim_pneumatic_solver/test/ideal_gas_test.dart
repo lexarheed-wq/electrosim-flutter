@@ -13,13 +13,16 @@ final IsentropicOrifice orifice = IsentropicOrifice(
 void main() {
   group('R2-A analytical mass flow (independent oracle)', () {
     final Map<String, dynamic> reference =
-        jsonDecode(File('test/fixtures/r2_orifice_oracle.json').readAsStringSync())
+        jsonDecode(
+              File('test/fixtures/r2_orifice_oracle.json').readAsStringSync(),
+            )
             as Map<String, dynamic>;
     final Map<String, dynamic> setup =
         reference['assumptions'] as Map<String, dynamic>;
     final double pu = (setup['upstreamPressureAbsPa'] as num).toDouble();
     final double temp = (setup['temperatureK'] as num).toDouble();
-    final List<dynamic> vectors = reference['pressureRatioVectors'] as List<dynamic>;
+    final List<dynamic> vectors =
+        reference['pressureRatioVectors'] as List<dynamic>;
 
     for (final dynamic data in vectors) {
       final Map<String, dynamic> v = data as Map<String, dynamic>;
@@ -38,8 +41,10 @@ void main() {
     }
 
     test('PHY-04: the critical pressure ratio is computed, not hardcoded', () {
-      expect(orifice.criticalDownstreamUpstreamRatio,
-          closeTo((setup['chokedPressureRatio'] as num).toDouble(), 1e-12));
+      expect(
+        orifice.criticalDownstreamUpstreamRatio,
+        closeTo((setup['chokedPressureRatio'] as num).toDouble(), 1e-12),
+      );
     });
 
     test('PHY-04: reverse gradients invert signed flow', () {
@@ -53,10 +58,10 @@ void main() {
       );
       expect(f, greaterThan(0));
       expect(reverse, closeTo(-f, 1e-14));
-      expect(orifice.massFlowKgPerS(
-        fromPressureAbsPa: pu,
-        toPressureAbsPa: pu,
-      ), 0);
+      expect(
+        orifice.massFlowKgPerS(fromPressureAbsPa: pu, toPressureAbsPa: pu),
+        0,
+      );
     });
 
     test('PHY-04: malformed pressure, temperature, Cd, A and gamma fail', () {
@@ -75,17 +80,11 @@ void main() {
         throwsA(isA<PneumaticPhysicsException>()),
       );
       expect(
-        () => IsentropicOrifice(
-          effectiveAreaM2: 1,
-          dischargeCoefficient: 1.2,
-        ),
+        () => IsentropicOrifice(effectiveAreaM2: 1, dischargeCoefficient: 1.2),
         throwsA(isA<PneumaticPhysicsException>()),
       );
       expect(
-        () => IsentropicOrifice(
-          effectiveAreaM2: 0,
-          dischargeCoefficient: .8,
-        ),
+        () => IsentropicOrifice(effectiveAreaM2: 0, dischargeCoefficient: .8),
         throwsA(isA<PneumaticPhysicsException>()),
       );
       expect(
@@ -108,8 +107,7 @@ void main() {
         deadVolumeAM3: 1e-6,
         deadVolumeBM3: 1e-6,
       );
-      expect(cylinder.pistonAreaM2,
-          closeTo(math.pi * .032 * .032 / 4, 1e-15));
+      expect(cylinder.pistonAreaM2, closeTo(math.pi * .032 * .032 / 4, 1e-15));
       expect(
         cylinder.theoreticalForceN(
           pressureAAbsPa: 701325,
@@ -127,8 +125,10 @@ void main() {
         deadVolumeAM3: 2e-6,
         deadVolumeBM3: 3e-6,
       );
-      expect(cylinder.rodSideAreaM2,
-          closeTo(math.pi * (.032 * .032 - .012 * .012) / 4, 1e-15));
+      expect(
+        cylinder.rodSideAreaM2,
+        closeTo(math.pi * (.032 * .032 - .012 * .012) / 4, 1e-15),
+      );
       expect(cylinder.volumeAM3(0), 2e-6);
       expect(cylinder.volumeBM3(.2), 3e-6);
       expect(cylinder.volumeAM3(.2), greaterThan(cylinder.volumeAM3(0)));
@@ -175,12 +175,16 @@ void main() {
       );
       final before = net.initialSnapshot;
       final after = net.advance(before, durationS: 10);
-      expect(after.totalMassKg,
-          closeTo(before.totalMassKg, before.totalMassKg * 1e-8));
+      expect(
+        after.totalMassKg,
+        closeTo(before.totalMassKg, before.totalMassKg * 1e-8),
+      );
       expect(after.chambers['a']!.massKg, greaterThan(0));
       expect(after.chambers['b']!.massKg, greaterThan(0));
-      expect(after.chambers['a']!.pressureAbsPa,
-          closeTo(after.chambers['b']!.pressureAbsPa, 1));
+      expect(
+        after.chambers['a']!.pressureAbsPa,
+        closeTo(after.chambers['b']!.pressureAbsPa, 1),
+      );
       expect(before.chambers['a']!.pressureAbsPa, closeTo(701325, 1e-8));
       expect(after.timeS, 10);
       expect(after.acceptedSubsteps, greaterThan(1));
@@ -217,45 +221,56 @@ void main() {
       expect(after.passageMassFlowKgPerS['check'], 0);
     });
 
-    test('ERR-01: impossible topology and impossible timestep fail explicitly', () {
-      expect(
-        () => IsothermalAirNetwork(
+    test(
+      'ERR-01: impossible topology and impossible timestep fail explicitly',
+      () {
+        expect(
+          () => IsothermalAirNetwork(
+            chambers: <FixedAirChamber>[
+              FixedAirChamber.fromPressure(
+                id: 'a',
+                volumeM3: .001,
+                pressureAbsPa: 101325,
+              ),
+            ],
+            passages: <AirPassage>[
+              AirPassage(
+                id: 'fault',
+                firstChamberId: 'a',
+                secondChamberId: 'missing',
+                orifice: orifice,
+              ),
+            ],
+          ),
+          throwsA(isA<PneumaticPhysicsException>()),
+        );
+        final net = IsothermalAirNetwork(
           chambers: <FixedAirChamber>[
             FixedAirChamber.fromPressure(
-              id: 'a', volumeM3: .001, pressureAbsPa: 101325,
+              id: 'a',
+              volumeM3: .001,
+              pressureAbsPa: 101325,
             ),
           ],
-          passages: <AirPassage>[
-            AirPassage(
-              id: 'fault',
-              firstChamberId: 'a',
-              secondChamberId: 'missing',
-              orifice: orifice,
-            ),
-          ],
-        ),
-        throwsA(isA<PneumaticPhysicsException>()),
-      );
-      final net = IsothermalAirNetwork(
-        chambers: <FixedAirChamber>[
-          FixedAirChamber.fromPressure(
-            id: 'a', volumeM3: .001, pressureAbsPa: 101325,
+          passages: <AirPassage>[],
+        );
+        expect(
+          () => net.advance(
+            net.initialSnapshot,
+            durationS: 10,
+            maxStepS: 1e-6,
+            maxSubsteps: 1,
           ),
-        ],
-        passages: <AirPassage>[],
-      );
-      expect(
-        () => net.advance(
-          net.initialSnapshot,
-          durationS: 10,
-          maxStepS: 1e-6,
-          maxSubsteps: 1,
-        ),
-        throwsA(isA<PneumaticPhysicsException>().having(
-          (e) => e.code, 'code', 'substep_limit',
-        )),
-      );
-      expect(net.initialSnapshot.timeS, 0);
-    });
+          throwsA(
+            isA<PneumaticPhysicsException>().having(
+              (e) => e.code,
+              'code',
+              'substep_limit',
+            ),
+          ),
+        );
+        expect(net.initialSnapshot.timeS, 0);
+      },
+    );
   });
 }

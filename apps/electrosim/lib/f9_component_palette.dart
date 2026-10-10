@@ -163,6 +163,30 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: 'Insertion en série, fusible et charge interne',
   ),
   F9PaletteDefinition(
+    keyName: 'instrument-frequency',
+    title: 'Fréquencemètre physique',
+    category: 'Instruments de mesure',
+    modelType: 'physical_frequency_meter',
+    icon: Icons.graphic_eq,
+    kind: F9PaletteElementKind.instrument,
+    terminalLabels: <String>[],
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+    subtitle: 'Mesure réelle sur sondes V/Ω et COM · 50 Hz nominal',
+  ),
+  F9PaletteDefinition(
+    keyName: 'instrument-phase-sequence',
+    title: 'Contrôleur d’ordre des phases',
+    category: 'Instruments de mesure',
+    modelType: 'physical_phase_sequence_tester',
+    icon: Icons.rotate_right,
+    kind: F9PaletteElementKind.instrument,
+    terminalLabels: <String>[],
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    searchOnlyModes: <ElectricalMode>{ElectricalMode.ac3},
+    subtitle: 'Trois sondes L1, L2, L3 · sens direct/inverse',
+  ),
+  F9PaletteDefinition(
     keyName: 'source-dc-24v',
     title: 'Source CC 24 V',
     category: 'Sources',
@@ -180,6 +204,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.toggle_on_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['1', '2'],
+    defaultControlState: <String, Object?>{'closed': false},
     subtitle: 'Contact 2 bornes',
   ),
   F9PaletteDefinition(
@@ -232,6 +257,9 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.linear_scale,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['1', '2'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 100.0,
+    },
     subtitle: '100 Ω',
   ),
   F9PaletteDefinition(
@@ -278,6 +306,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.radio_button_checked,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['13', '14'],
+    defaultControlState: <String, Object?>{'pressed': false},
     subtitle: 'Commande momentanée',
   ),
   F9PaletteDefinition(
@@ -288,6 +317,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.radio_button_unchecked,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['21', '22'],
+    defaultControlState: <String, Object?>{'pressed': false},
     subtitle: 'Arrêt momentanée NC',
   ),
   F9PaletteDefinition(
@@ -298,6 +328,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.volume_up_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 48.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 0.5,
+      ReceiverNominalRating.powerKey: 12.0,
+    },
     subtitle: 'Avertisseur CC',
   ),
   F9PaletteDefinition(
@@ -429,6 +465,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.air,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['+', '−'],
+    defaultParameters: <String, Object?>{
+      ComponentParameterKeys.resistanceOhm: 12.0,
+      ReceiverNominalRating.voltageKey: 24.0,
+      ReceiverNominalRating.currentKey: 2.0,
+      ReceiverNominalRating.powerKey: 48.0,
+    },
     subtitle: 'Actionneur rotatif',
   ),
   F9PaletteDefinition(
@@ -2497,10 +2539,12 @@ class F18PhysicalInstrumentPreview extends StatelessWidget {
   const F18PhysicalInstrumentPreview({
     super.key,
     required this.ammeter,
+    this.displayMode,
     this.compact = false,
   });
 
   final bool ammeter;
+  final String? displayMode;
   final bool compact;
 
   @override
@@ -2509,15 +2553,16 @@ class F18PhysicalInstrumentPreview extends StatelessWidget {
       width: compact ? 72 : 112,
       height: compact ? 94 : 152,
       child: CustomPaint(
-        painter: _F18PhysicalInstrumentPreviewPainter(ammeter),
+        painter: _F18PhysicalInstrumentPreviewPainter(ammeter, displayMode),
       ),
     );
   }
 }
 
 final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
-  const _F18PhysicalInstrumentPreviewPainter(this.ammeter);
+  const _F18PhysicalInstrumentPreviewPainter(this.ammeter, this.displayMode);
   final bool ammeter;
+  final String? displayMode;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2546,7 +2591,7 @@ final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
     );
     final TextPainter text = TextPainter(
       text: TextSpan(
-        text: ammeter ? '— A' : '— V',
+        text: displayMode ?? (ammeter ? '— A' : '— V'),
         style: TextStyle(
           fontSize: size.width * .12,
           fontWeight: FontWeight.w700,
@@ -2564,21 +2609,39 @@ final class _F18PhysicalInstrumentPreviewPainter extends CustomPainter {
     );
     final double y = size.height * .80;
     final double socketRadius = size.width * .04;
-    canvas.drawCircle(
-      Offset(size.width * .28, y),
-      socketRadius,
-      Paint()..color = const Color(0xFFD12B3C),
-    );
-    canvas.drawCircle(
-      Offset(size.width * .72, y),
-      socketRadius,
-      Paint()..color = const Color(0xFF15202D),
-    );
+    if (displayMode == 'L1 L2 L3') {
+      for (final double x in <double>[.22, .50, .78]) {
+        canvas.drawCircle(
+          Offset(size.width * x, y),
+          socketRadius,
+          Paint()..color = const Color(0xFF263E58),
+        );
+        canvas.drawCircle(
+          Offset(size.width * x, y),
+          socketRadius,
+          Paint()
+            ..color = const Color(0xFFD0DFEF)
+            ..strokeWidth = 1.0
+            ..style = PaintingStyle.stroke,
+        );
+      }
+    } else {
+      canvas.drawCircle(
+        Offset(size.width * .28, y),
+        socketRadius,
+        Paint()..color = const Color(0xFFD12B3C),
+      );
+      canvas.drawCircle(
+        Offset(size.width * .72, y),
+        socketRadius,
+        Paint()..color = const Color(0xFF15202D),
+      );
+    }
   }
 
   @override
   bool shouldRepaint(covariant _F18PhysicalInstrumentPreviewPainter old) =>
-      ammeter != old.ammeter;
+      ammeter != old.ammeter || displayMode != old.displayMode;
 }
 
 class F9ComponentPreview extends StatelessWidget {
@@ -2638,6 +2701,11 @@ class F9ComponentPreview extends StatelessWidget {
         definition.kind == F9PaletteElementKind.instrument
         ? F18PhysicalInstrumentPreview(
             ammeter: definition.keyName == 'instrument-ammeter',
+            displayMode: switch (definition.keyName) {
+              'instrument-frequency' => 'Hz',
+              'instrument-phase-sequence' => 'L1 L2 L3',
+              _ => null,
+            },
             compact: compact,
           )
         : F18ComponentAssetVisual(

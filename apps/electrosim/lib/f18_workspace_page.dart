@@ -1338,9 +1338,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
     } else {
       Map<String, Object?> parameters = <String, Object?>{
-        ...(definition.defaultParameters.isNotEmpty
-            ? definition.defaultParameters
-            : _defaultParametersFor(definition.keyName)),
+        ...definition.defaultParameters,
         if (definition.visualModelType != null)
           '_visualModelType': definition.visualModelType!,
         if (definition.visualVariant != null)
@@ -1386,9 +1384,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           modelType: definition.modelType,
           terminals: terminals,
           parameters: parameters,
-          controlState: definition.defaultControlState.isNotEmpty
-              ? definition.defaultControlState
-              : _defaultControlStateFor(definition.keyName),
+          controlState: definition.defaultControlState,
         ),
       );
     }
@@ -1457,12 +1453,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         instrument: item,
       );
       final double? value = reading.result?.reading?.value;
-      if (reading.status == PhysicalInstrumentStatus.valid && value != null) {
-        final bool current =
-            item.mode == InstrumentMode.currentDc ||
-            item.mode == InstrumentMode.currentAcRms;
-        results[item.id.value] =
-            '${value.toStringAsFixed(2)} ${current ? 'A' : 'V'}';
+      final String? textValue = reading.result?.displayText;
+      if (reading.status == PhysicalInstrumentStatus.valid &&
+          textValue != null) {
+        results[item.id.value] = textValue;
+      } else if (reading.status == PhysicalInstrumentStatus.valid &&
+          value != null) {
+        final String unit = switch (item.mode) {
+          InstrumentMode.currentDc || InstrumentMode.currentAcRms => 'A',
+          InstrumentMode.frequency => 'Hz',
+          InstrumentMode.resistance => 'Ω',
+          _ => 'V',
+        };
+        results[item.id.value] = '${value.toStringAsFixed(2)} $unit';
       } else {
         results[item.id.value] = switch (reading.status) {
           PhysicalInstrumentStatus.off => 'OFF',
@@ -1501,15 +1504,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     Offset worldPosition,
   ) {
     final bool current = definition.keyName == 'instrument-ammeter';
+    final bool frequency = definition.keyName == 'instrument-frequency';
+    final bool phaseSequence =
+        definition.keyName == 'instrument-phase-sequence';
     final String elementId = _allocateElementId(definition.keyName);
     final bool dc =
         _circuit.mode == ElectricalMode.dc ||
         _circuit.mode == ElectricalMode.pv;
     final InstrumentInstance instrument = InstrumentInstance(
       id: InstrumentId(elementId),
-      kind: current ? InstrumentKind.ammeter : InstrumentKind.voltmeter,
+      kind: current
+          ? InstrumentKind.ammeter
+          : frequency
+          ? InstrumentKind.frequencyMeter
+          : phaseSequence
+          ? InstrumentKind.phaseSequenceTester
+          : InstrumentKind.voltmeter,
       mode: current
           ? (dc ? InstrumentMode.currentDc : InstrumentMode.currentAcRms)
+          : frequency
+          ? InstrumentMode.frequency
+          : phaseSequence
+          ? InstrumentMode.phaseSequence
           : (dc ? InstrumentMode.voltageDc : InstrumentMode.voltageAcRms),
     );
     final CircuitState next = CircuitState(
@@ -1544,6 +1560,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = elementId;
       _status = current
           ? 'Ampèremètre physique ajouté : sélectionnez un fil pour l’insérer en série.'
+          : frequency
+          ? 'Fréquencemètre : choisissez deux bornes sous tension AC pour V/Ω et COM.'
+          : phaseSequence
+          ? 'Ordre des phases : sélectionnez trois bornes L1, L2 et L3 successivement.'
           : 'Voltmètre physique ajouté : sélectionnez V puis COM sur deux bornes.';
     });
     _simulation.updateCircuit(next);
@@ -1630,66 +1650,6 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     return fallback;
   }
-
-  Map<String, Object?> _defaultParametersFor(String keyName) =>
-      switch (keyName) {
-        'lamp' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 24.0,
-          ReceiverNominalRating.voltageKey: 24.0,
-          ReceiverNominalRating.currentKey: 1.0,
-          ReceiverNominalRating.powerKey: 24.0,
-          ComponentParameterKeys.thermalWithstandSeconds: 0.5,
-        },
-        'resistor' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 100.0,
-        },
-        'buzzer' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 48.0,
-          ReceiverNominalRating.voltageKey: 24.0,
-          ReceiverNominalRating.currentKey: 0.5,
-          ReceiverNominalRating.powerKey: 12.0,
-        },
-        'fan-dc' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 12.0,
-          ReceiverNominalRating.voltageKey: 24.0,
-          ReceiverNominalRating.currentKey: 2.0,
-          ReceiverNominalRating.powerKey: 48.0,
-        },
-        'motor-dc' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 8.0,
-          ComponentParameterKeys.motorBackEmfVPerRadS: 0.1,
-          ComponentParameterKeys.motorTorqueNmPerA: 0.1,
-          ComponentParameterKeys.motorInertiaKgM2: 0.01,
-          ComponentParameterKeys.motorFrictionNmPerRadS: 0.002,
-          ComponentParameterKeys.motorLoadTorqueNm: 0.0,
-          ReceiverNominalRating.voltageKey: 24.0,
-          ReceiverNominalRating.currentKey: 3.0,
-          ReceiverNominalRating.powerKey: 72.0,
-        },
-        'relay-coil' => const <String, Object?>{
-          ComponentParameterKeys.resistanceOhm: 120.0,
-          ReceiverNominalRating.voltageKey: 24.0,
-          ReceiverNominalRating.currentKey: 0.2,
-          ReceiverNominalRating.powerKey: 4.8,
-        },
-        'breaker' => const <String, Object?>{
-          ProtectionRating.ratedCurrentKey: 10.0,
-        },
-        'fuse' => const <String, Object?>{
-          ProtectionRating.ratedCurrentKey: 10.0,
-        },
-        _ => const <String, Object?>{},
-      };
-
-  Map<String, Object?> _defaultControlStateFor(String keyName) =>
-      switch (keyName) {
-        'switch-no' => const <String, Object?>{'closed': false},
-        'push-button-no' => const <String, Object?>{'pressed': false},
-        'push-button-nc' => const <String, Object?>{'pressed': false},
-        'breaker' => const <String, Object?>{'closed': true, 'tripped': false},
-        'fuse' => const <String, Object?>{'closed': true, 'tripped': false},
-        _ => const <String, Object?>{},
-      };
 
   bool get _multiSelectionModifierPressed {
     final HardwareKeyboard keyboard = HardwareKeyboard.instance;
@@ -1867,7 +1827,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         break;
       }
     }
-    if (meter == null || meter.kind != InstrumentKind.voltmeter) return false;
+    if (meter == null ||
+        (meter.kind != InstrumentKind.voltmeter &&
+            meter.kind != InstrumentKind.frequencyMeter &&
+            meter.kind != InstrumentKind.phaseSequenceTester)) {
+      return false;
+    }
     if (_studentTpReadOnly) {
       _setStatus('TP remis : sondes en lecture seule.');
       return true;
@@ -1875,16 +1840,22 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final List<ProbeConnection> existing = _circuit.probes
         .where((item) => item.instrumentId == meter!.id)
         .toList(growable: false);
-    final bool hasV = existing.any(
-      (item) => item.port == InstrumentPort.voltOhm,
+    final bool three = meter.mode == InstrumentMode.phaseSequence;
+    final List<InstrumentPort> ports = three
+        ? <InstrumentPort>[
+            InstrumentPort.phase1,
+            InstrumentPort.phase2,
+            InstrumentPort.phase3,
+          ]
+        : <InstrumentPort>[InstrumentPort.voltOhm, InstrumentPort.common];
+    final bool resetAll = ports.every(
+      (port) => existing.any((probe) => probe.port == port),
     );
-    final bool hasCom = existing.any(
-      (item) => item.port == InstrumentPort.common,
-    );
-    final InstrumentPort port = hasV && !hasCom
-        ? InstrumentPort.common
-        : InstrumentPort.voltOhm;
-    final bool resetBoth = hasV && hasCom;
+    final InstrumentPort port = resetAll
+        ? ports.first
+        : ports.firstWhere(
+            (port) => !existing.any((probe) => probe.port == port),
+          );
     final ProbeConnection added = ProbeConnection(
       id: ProbeId('${meter.id.value}-${port.name}'),
       instrumentId: meter.id,
@@ -1901,8 +1872,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       instruments: _circuit.instruments,
       probes: <ProbeConnection>[
         for (final ProbeConnection item in _circuit.probes)
-          if (item.instrumentId != meter.id ||
-              (!resetBoth && item.port != port))
+          if (item.instrumentId != meter.id || (!resetAll && item.port != port))
             item,
         added,
       ],
@@ -1911,7 +1881,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     setState(() {
       _circuit = next;
-      _status = port == InstrumentPort.voltOhm
+      _status = three
+          ? 'Sonde ${port.name} : ${target.value}. '
+                'Complétez L1, L2 et L3 pour obtenir l’ordre des phases.'
+          : port == InstrumentPort.voltOhm
           ? 'Sonde V/Ω : ${target.value}. Sélectionner une borne pour COM.'
           : 'Sonde COM : ${target.value}. Mesure physique disponible.';
     });
@@ -2817,9 +2790,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ),
     ];
     final Map<String, Object?> replacementParameters = <String, Object?>{
-      ...(replacement.defaultParameters.isNotEmpty
-          ? replacement.defaultParameters
-          : _defaultParametersFor(replacement.keyName)),
+      ...replacement.defaultParameters,
       if (replacement.visualModelType != null)
         '_visualModelType': replacement.visualModelType!,
       if (replacement.visualVariant != null)
@@ -2832,9 +2803,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       selected,
       modelType: replacement.modelType,
       parameters: replacementParameters,
-      controlState: replacement.defaultControlState.isNotEmpty
-          ? replacement.defaultControlState
-          : _defaultControlStateFor(replacement.keyName),
+      controlState: replacement.defaultControlState,
       replacementTerminals: replacementTerminals,
     );
     setState(() {

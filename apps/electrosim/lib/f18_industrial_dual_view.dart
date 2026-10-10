@@ -25,8 +25,9 @@ abstract final class F18IndustrialIdentity {
   static F18IndustrialFamily familyOf(String modelType) {
     final F18ComponentTypeProfile profile = F18ComponentTypeProfile(modelType);
     if (profile.measurementHardware) return F18IndustrialFamily.instrument;
-    if (profile.protectiveHardware)
+    if (profile.protectiveHardware) {
       return F18IndustrialFamily.modularProtection;
+    }
     if (profile.switchingHardware) return F18IndustrialFamily.switching;
     if (profile.rotatingHardware) return F18IndustrialFamily.drive;
     if (profile.pvHardware) return F18IndustrialFamily.solar;

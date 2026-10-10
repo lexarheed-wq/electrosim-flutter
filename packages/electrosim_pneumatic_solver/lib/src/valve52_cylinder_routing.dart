@@ -24,7 +24,11 @@ final class Valve52CylinderRouting {
     required bool energized,
   }) {
     if (snapshot.timeS < cylinder.initialSnapshot.timeS) {
-      throw ArgumentError.value(snapshot.timeS, 'snapshot.timeS', 'Cannot route a snapshot before the initial time.');
+      throw ArgumentError.value(
+        snapshot.timeS,
+        'snapshot.timeS',
+        'Cannot route a snapshot before the initial time.',
+      );
     }
     return MovingDoubleActingAirCylinder(
       geometry: cylinder.geometry,

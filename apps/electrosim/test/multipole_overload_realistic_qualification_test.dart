@@ -177,7 +177,9 @@ void main() {
     var withRatedEnvelope = 0;
     var lackingRatings = 0;
     for (final entry in f9PaletteCatalog) {
-      if (entry.kind != F9PaletteElementKind.component) continue;
+      if (entry.kind != F9PaletteElementKind.component) {
+        continue;
+      }
       total++;
       final params = entry.defaultParameters;
       final bool protection = params.containsKey(ProtectionRating.ratedCurrentKey);

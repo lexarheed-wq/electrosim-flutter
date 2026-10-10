@@ -4,6 +4,7 @@ import 'coupled_clock.dart';
 import 'self_hold_circuit.dart';
 import 'solenoid_actuator.dart';
 import 'valve52_physical_cycle.dart';
+import 'valve52_fault_profile.dart';
 import 'dc_coil_meter.dart';
 
 /// Accepted state of the real DC self-hold and the dynamic two-chamber plant.
@@ -35,6 +36,7 @@ final class SelfHoldValve52Cycle {
     required this.endSensor,
     required this.solenoid,
     this.maxStepS = .001,
+    this.faults = const Valve52FaultProfile(),
     this.valveMemory = const SingleCoilValveMemory(
       returnKind: ValveReturnKind.monostableSpring,
     ),
@@ -55,6 +57,7 @@ final class SelfHoldValve52Cycle {
   final Solenoid24vDynamics solenoid;
   final SingleCoilValveMemory valveMemory;
   final double maxStepS;
+  final Valve52FaultProfile faults;
 
   SelfHoldValve52Snapshot initial() => SelfHoldValve52Snapshot(
     physical: _newPhysical(
@@ -75,6 +78,7 @@ final class SelfHoldValve52Cycle {
     solveElectrical: solve,
     solenoid: solenoid,
     valveMemory: valveMemory,
+    faults: faults,
     endSensor: endSensor,
     maxStepS: maxStepS,
   );

@@ -104,8 +104,10 @@ final class IsothermalAirSnapshot {
   final Map<String, double> passageMassFlowKgPerS;
   final int acceptedSubsteps;
 
-  double get totalMassKg =>
-      chambers.values.fold<double>(0, (double a, FixedAirChamber b) => a + b.massKg);
+  double get totalMassKg => chambers.values.fold<double>(
+    0,
+    (double a, FixedAirChamber b) => a + b.massKg,
+  );
 }
 
 /// Conservative Euler flux exchange across closed, fixed-volume compartments.
@@ -123,7 +125,8 @@ final class IsothermalAirNetwork {
     for (final FixedAirChamber chamber in chambers) {
       if (byId.containsKey(chamber.id)) {
         throw PneumaticPhysicsException(
-          'duplicate_chamber', 'Duplicate chamber: ${chamber.id}',
+          'duplicate_chamber',
+          'Duplicate chamber: ${chamber.id}',
         );
       }
       byId[chamber.id] = chamber;
@@ -132,13 +135,15 @@ final class IsothermalAirNetwork {
     for (final AirPassage passage in passages) {
       if (!passageIds.add(passage.id)) {
         throw PneumaticPhysicsException(
-          'duplicate_passage', 'Duplicate passage: ${passage.id}',
+          'duplicate_passage',
+          'Duplicate passage: ${passage.id}',
         );
       }
       if (!byId.containsKey(passage.firstChamberId) ||
           !byId.containsKey(passage.secondChamberId)) {
         throw PneumaticPhysicsException(
-          'unknown_chamber', 'Passage ${passage.id} refers to absent chamber.',
+          'unknown_chamber',
+          'Passage ${passage.id} refers to absent chamber.',
         );
       }
     }
@@ -165,20 +170,23 @@ final class IsothermalAirNetwork {
     requirePositiveFinite(maxStepS, 'maxStepS');
     if (maxSubsteps <= 0) {
       throw const PneumaticPhysicsException(
-        'invalid_solver_options', 'maxSubsteps must be positive.',
+        'invalid_solver_options',
+        'maxSubsteps must be positive.',
       );
     }
     final Set<String> inputIds = before.chambers.keys.toSet();
     if (!inputIds.containsAll(initialSnapshot.chambers.keys) ||
         inputIds.length != initialSnapshot.chambers.length) {
       throw const PneumaticPhysicsException(
-        'topology_mismatch', 'Snapshot chamber identities do not match network.',
+        'topology_mismatch',
+        'Snapshot chamber identities do not match network.',
       );
     }
     if (durationS == 0) return before;
 
-    Map<String, FixedAirChamber> current =
-        Map<String, FixedAirChamber>.from(before.chambers);
+    Map<String, FixedAirChamber> current = Map<String, FixedAirChamber>.from(
+      before.chambers,
+    );
     Map<String, double> lastFlow = <String, double>{
       for (final AirPassage passage in passages) passage.id: 0,
     };
@@ -226,7 +234,8 @@ final class IsothermalAirNetwork {
       }
       if (!dt.isFinite || dt <= 0 || before.timeS + durationS == before.timeS) {
         throw const PneumaticPhysicsException(
-          'step_underflow', 'Step underflow or invalid step.',
+          'step_underflow',
+          'Step underflow or invalid step.',
         );
       }
       final Map<String, double> nextMass = <String, double>{

@@ -40,6 +40,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
   String? _lanError;
   bool _startingLan = false;
   String? _selectedWiringExampleId;
+  String? _selectedFaultScenarioId;
   late final List<ExampleDefinition> _wiringExamples =
       buildV2ProductExampleRepository().all;
 
@@ -291,9 +292,23 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
             ),
           const SizedBox(height: ElectroSimSpacing.sm),
         ] else ...<Widget>[
-          const Text(
-            'Le TP utilisera le scénario de panne configuré '
-            'pour cette session.',
+          DropdownButton<String>(
+            key: const Key('tp-fault-scenario-select'),
+            isExpanded: true,
+            value: _selectedFaultScenarioId ??
+                widget.controller.defaultFaultScenarioId,
+            items: <DropdownMenuItem<String>>[
+              for (final scenario in widget.controller.availableFaultScenarios)
+                DropdownMenuItem<String>(
+                  value: scenario.id.value,
+                  child: Text(scenario.title),
+                ),
+            ],
+            onChanged: (String? value) {
+              setState(() {
+                _selectedFaultScenarioId = value;
+              });
+            },
           ),
           const SizedBox(height: ElectroSimSpacing.sm),
         ],
@@ -307,6 +322,7 @@ class _F17TpSessionDialogState extends State<F17TpSessionDialog> {
                     widget.controller.createDraft(
                       mode: widget.draftMode,
                       wiringReferenceCircuit: reference,
+                      troubleshootingScenarioId: _selectedFaultScenarioId,
                       activityTitle: example == null
                           ? null
                           : 'TP de câblage — ${example.title}',

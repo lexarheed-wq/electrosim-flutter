@@ -141,7 +141,8 @@ final class IndustrialSchematicReferences {
         );
         continue;
       }
-      if (!controller.modelType.startsWith('contactor_') ||
+      if ((!controller.modelType.startsWith('contactor_') &&
+              controller.modelType != 'relay_coil') ||
           controller.modelType.startsWith('contactor_aux_')) {
         issues.add(
           SchematicReferenceIssue(

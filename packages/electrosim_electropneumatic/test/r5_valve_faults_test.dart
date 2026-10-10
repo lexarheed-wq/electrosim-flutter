@@ -8,11 +8,7 @@ void main() {
     dischargeCoefficient: .8,
   );
   PneumaticPressureBoundary boundary(String id, double p) =>
-      PneumaticPressureBoundary(
-        id: id,
-        pressureAbsPa: p,
-        orifice: orifice,
-      );
+      PneumaticPressureBoundary(id: id, pressureAbsPa: p, orifice: orifice);
   final Valve52CylinderRouting routing = Valve52CylinderRouting(
     supplyA: boundary('sourceA', 701325),
     supplyB: boundary('sourceB', 701325),
@@ -34,30 +30,35 @@ void main() {
         initialPressureBAbsPa: 201325,
       );
 
-  test('R5/B blocked exhaust preserves trapped chamber rather than venting', () {
-    final Valve52FaultProfile fault = Valve52FaultProfile(
-      blockedExhaustR: true,
-      stuckSpoolAt: ValveSpoolSide.springSide,
-    );
-    final MovingDoubleActingAirCylinder routed = fault.connect(
-      cylinder: cylinder,
-      snapshot: cylinder.initialSnapshot,
-      routing: routing,
-      commandedSpool: ValveSpoolSide.coilSide,
-      supplyEnabled: true,
-    );
-    expect(fault.effectiveSpool(ValveSpoolSide.coilSide),
-        ValveSpoolSide.springSide);
-    expect(routed.aBoundaries.single.id, 'exhaustR');
-    expect(routed.aBoundaries.single.enabled, isFalse);
-    expect(routed.bBoundaries.single.id, 'sourceB');
-    final MovingCylinderSnapshot after = routed.advance(
-      cylinder.initialSnapshot,
-      durationS: .001,
-    );
-    expect(after.timeS, closeTo(.001, 1e-12));
-    expect(routed.massResidualKg(after).abs(), lessThan(1e-11));
-  });
+  test(
+    'R5/B blocked exhaust preserves trapped chamber rather than venting',
+    () {
+      final Valve52FaultProfile fault = Valve52FaultProfile(
+        blockedExhaustR: true,
+        stuckSpoolAt: ValveSpoolSide.springSide,
+      );
+      final MovingDoubleActingAirCylinder routed = fault.connect(
+        cylinder: cylinder,
+        snapshot: cylinder.initialSnapshot,
+        routing: routing,
+        commandedSpool: ValveSpoolSide.coilSide,
+        supplyEnabled: true,
+      );
+      expect(
+        fault.effectiveSpool(ValveSpoolSide.coilSide),
+        ValveSpoolSide.springSide,
+      );
+      expect(routed.aBoundaries.single.id, 'exhaustR');
+      expect(routed.aBoundaries.single.enabled, isFalse);
+      expect(routed.bBoundaries.single.id, 'sourceB');
+      final MovingCylinderSnapshot after = routed.advance(
+        cylinder.initialSnapshot,
+        durationS: .001,
+      );
+      expect(after.timeS, closeTo(.001, 1e-12));
+      expect(routed.massResidualKg(after).abs(), lessThan(1e-11));
+    },
+  );
 
   test('R5/B independent leakage adds an ambient gas path', () {
     final Valve52FaultProfile fault = Valve52FaultProfile(
@@ -70,8 +71,10 @@ void main() {
       commandedSpool: ValveSpoolSide.coilSide,
       supplyEnabled: true,
     );
-    expect(routed.aBoundaries.map((b) => b.id),
-        containsAll(<String>['sourceA', 'sealLeakA']));
+    expect(
+      routed.aBoundaries.map((b) => b.id),
+      containsAll(<String>['sourceA', 'sealLeakA']),
+    );
     expect(routed.bBoundaries.single.id, 'exhaustS');
     final MovingCylinderSnapshot after = routed.advance(
       cylinder.initialSnapshot,

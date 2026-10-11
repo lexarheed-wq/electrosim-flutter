@@ -118,6 +118,14 @@ final class CircuitWireLayoutEngine {
     var differentNetOverlapCount = 0;
     var totalRouteLength = 0.0;
     var totalBendCount = 0;
+    final localMotorPorts = <String, Set<TerminalId>>{
+      for (final c in circuit.components)
+        if ((c.modelType == 'motor_3p_6t' ||
+                c.modelType == 'earthed_machine_3p_7t') &&
+            (c.parameters['_visualModelType'] != 'catalog_motor_driven_6t' ||
+                c.parameters['_visualVariant'] == 'crusher'))
+          c.id.value: c.terminals.take(6).map((t) => t.id).toSet(),
+    };
 
     final List<RoutingObstacle> obstacles = geometry.elementRects.values
         .map((Rect rect) => RoutingObstacle(bounds: rect))
@@ -139,6 +147,25 @@ final class CircuitWireLayoutEngine {
         continue;
       }
       eligibleCount++;
+
+      final owner = geometry.terminalOwners[connection.fromTerminalId];
+      final internal = localMotorPorts[owner];
+      if (owner == geometry.terminalOwners[connection.toTerminalId] &&
+          internal != null &&
+          internal.contains(connection.fromTerminalId) &&
+          internal.contains(connection.toTerminalId)) {
+        final aligned =
+            (start.dx - end.dx).abs() < .001 ||
+            (start.dy - end.dy).abs() < .001;
+        nextRoutes[connection.id.value] = aligned
+            ? const <Offset>[]
+            : <Offset>[Offset(end.dx, start.dy)];
+        totalRouteLength +=
+            (start.dx - end.dx).abs() + (start.dy - end.dy).abs();
+        if (!aligned) totalBendCount++;
+        resolvedCount++;
+        continue;
+      }
 
       final String netId = _connectionNetId(connection, topology);
       final List<OrthogonalWirePath> differentNetPaths = occupied

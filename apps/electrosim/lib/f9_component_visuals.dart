@@ -390,6 +390,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                           : energized) &&
                       requiresContinuousAnimation(renderedModelType),
                   showTerminals: true,
+                  serviceOpen: widget.selectedElementIds.contains(elementId),
                   currentA: currentA,
                   voltageV: voltageV,
                   batterySoc: batterySoc,
@@ -742,6 +743,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     this.actuated = false,
     this.batterySoc = 0,
     this.showTerminals = true,
+    this.serviceOpen = false,
     this.currentA = 0,
     this.voltageV = 0,
     this.ratedCurrentA = 1,
@@ -767,6 +769,7 @@ class _F9ReferenceAsset extends StatefulWidget {
   final bool actuated;
   final double batterySoc;
   final bool showTerminals;
+  final bool serviceOpen;
   final double currentA;
   final double voltageV;
   final double ratedCurrentA;
@@ -796,6 +799,7 @@ class _F9ReferenceAsset extends StatefulWidget {
       animationValue: phase,
       batterySoc: batterySoc,
       showTerminals: showTerminals,
+      serviceOpen: serviceOpen,
       currentA: currentA,
       voltageV: voltageV,
       ratedCurrentA: ratedCurrentA,
@@ -1169,7 +1173,80 @@ class _F9StaticOverlayPainter extends CustomPainter {
       );
     }
 
+    _paintCrusherMaintenanceWires(canvas);
     _paintSelection(canvas, geometry);
+  }
+
+  void _paintCrusherMaintenanceWires(Canvas canvas) {
+    for (final c in circuit.components) {
+      final standalone =
+          (c.parameters['_visualModelType'] ?? c.modelType) == 'motor_3p_6t';
+      final crusher =
+          c.parameters['_visualModelType'] == 'catalog_motor_driven_6t' &&
+          c.parameters['_visualVariant'] == 'crusher';
+      if (!standalone &&
+          (!crusher || !selectedElementIds.contains(c.id.value))) {
+        continue;
+      }
+      final rect = geometry.elementRects[c.id.value];
+      if (rect == null) continue;
+      final ports = c.terminals.map((t) => t.id).toSet();
+      canvas.save();
+      final a = viewport.worldToScreen(rect.topLeft);
+      final b = viewport.worldToScreen(rect.bottomRight);
+      canvas.clipRect(Rect.fromPoints(a, b));
+      for (final wire in circuit.connections) {
+        if (!ports.contains(wire.fromTerminalId) &&
+            !ports.contains(wire.toTerminalId)) {
+          continue;
+        }
+        final internal =
+            ports.contains(wire.fromTerminalId) &&
+            ports.contains(wire.toTerminalId);
+        if (standalone && !internal) continue;
+        final start = geometry.terminalPositions[wire.fromTerminalId];
+        final end = geometry.terminalPositions[wire.toTerminalId];
+        if (start == null || end == null) continue;
+        final points = [start, ...layout.routeFor(wire.id.value), end];
+        final path = Path();
+        for (var i = 0; i < points.length; i++) {
+          final p = viewport.worldToScreen(points[i]);
+          if (i == 0) {
+            path.moveTo(p.dx, p.dy);
+          } else {
+            path.lineTo(p.dx, p.dy);
+          }
+        }
+        final earth = c.terminals.any(
+          (t) =>
+              t.name == 'PE' &&
+              (t.id == wire.fromTerminalId || t.id == wire.toTerminalId),
+        );
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = earth
+                ? const Color(0xff258945)
+                : internal
+                ? const Color(0xffae8b3c)
+                : const Color(0xff202b35)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3.5 * viewport.scale
+            ..strokeJoin = StrokeJoin.round
+            ..strokeCap = StrokeCap.round,
+        );
+        if (earth) {
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = const Color(0xffeacf33)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.2 * viewport.scale,
+          );
+        }
+      }
+      canvas.restore();
+    }
   }
 
   void _paintSelection(Canvas canvas, CircuitGeometryIndex geometry) {

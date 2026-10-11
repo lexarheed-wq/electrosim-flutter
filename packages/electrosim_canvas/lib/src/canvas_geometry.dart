@@ -186,6 +186,19 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.17, h * 0.42),
         Offset(w * 0.17, h * 0.42),
       ],
+      'catalog_crusher_6t' || 'catalog_crusher_7t' => <Offset>[
+        for (final point in const [
+          Offset(97, 174),
+          Offset(107, 174),
+          Offset(117, 174),
+          Offset(107, 187),
+          Offset(117, 187),
+          Offset(97, 187),
+        ])
+          Offset(w * (point.dx / 240 - .5), h * (point.dy / 220 - .5)),
+        if (modelType == 'catalog_crusher_7t')
+          Offset(w * (130 / 240 - .5), h * (187 / 220 - .5)),
+      ],
       'catalog_earthed_6t' => <Offset>[
         Offset(w * -.20, h * -.42),
         Offset(0, h * -.42),
@@ -461,7 +474,14 @@ final class CircuitGeometryIndex {
     for (final ComponentInstance component in circuit.components) {
       indexElement(
         component.id.value,
-        component.modelType == 'earthed_machine_3p_7t'
+        component.parameters['_visualModelType'] == 'catalog_motor_driven_6t' &&
+                component.parameters['_visualVariant'] == 'crusher' &&
+                (component.terminals.length == 6 ||
+                    component.terminals.length == 7)
+            ? (component.terminals.length == 7
+                  ? 'catalog_crusher_7t'
+                  : 'catalog_crusher_6t')
+            : component.modelType == 'earthed_machine_3p_7t'
             ? 'catalog_earthed_6t'
             : const {
                 'earthed_resistor',

@@ -16,7 +16,7 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 | 02 | `instrument-ammeter` | Vues Cycles originales et captures série/fusible ; solveur commun et fusible vérifiés en CC. Parité AC/PV différée. |
 | 03 | `instrument-frequency` | Vues Cycles dédiées ; commandes et captures 50/60 Hz vérifiées. Noms externes retirés et câbles source orthogonaux. |
 | 04 | `instrument-phase-sequence` | Photo officielle Fluke 9040 téléchargée et examinée ; corps original et cordons hauts intégrés ; 4 tests électriques passent. Deux vues Cycles finalisées ; captures Flutter aller/inverse régénérées, essais passent. Validation humaine globale différée. |
-| 05 | `external-crusher` | Maillage repris après rejet du prototype : gros plans fabricant, vis filetée, conduits, assemblages et coffret fermé ; contacts seulement en maintenance. Intégration Flutter et qualification non réalisées. |
+| 05 | `external-crusher` | Intégré dans Flutter : perspective palette, face platine, coffret de maintenance à la sélection, six bornes + PE. Tests et captures réelles disponibles ; validation visuelle utilisateur en attente. |
 | 06 | `external-air-conditioner` | En attente de son tour |
 | 07 | `external-compressor` | En attente de son tour |
 | 08 | `external-freezer` | En attente de son tour |

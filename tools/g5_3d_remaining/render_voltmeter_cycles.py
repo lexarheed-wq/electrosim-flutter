@@ -188,6 +188,7 @@ def main():
     parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence', 'external-crusher'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
     parser.add_argument('--denoise', action='store_true')
+    parser.add_argument('--service-open', action='store_true')
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
     recipe_name = opts.component.replace('-', '_') + '_recipe'
@@ -220,7 +221,8 @@ def main():
     scene.world.color = (.36, .40, .45)
 
     h = CyclesGeometry()
-    build(h, {'kind': 'draft_preview', 'key': KEY, 'size': SIZE})
+    build(h, {'kind': 'draft_preview', 'key': KEY, 'size': SIZE,
+              'service_open': opts.service_open})
     body_d = SIZE[1] - 4.0
     body_d *= 46.0 / 167.0
     if KEY == 'external-crusher':
@@ -341,6 +343,7 @@ def main():
     (out / 'provenance.json').write_text(json.dumps({
         'key': KEY, 'blender_version': bpy.app.version_string,
         'samples': opts.samples, 'denoised': opts.denoise,
+        'service_open': opts.service_open,
         'sha256_recipe': hashlib.sha256(recipe.read_bytes()).hexdigest(),
         'sha256_render_runner': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'seconds': round(time.monotonic() - t0, 2),

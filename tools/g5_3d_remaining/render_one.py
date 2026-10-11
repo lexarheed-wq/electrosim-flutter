@@ -110,6 +110,7 @@ def main():
     parser.add_argument('--verify-existing', action='store_true')
     parser.add_argument('--denoise', action='store_true',
                         help='Requires a Blender build with OpenImageDenoise')
+    parser.add_argument('--service-open', action='store_true')
     args = parser.parse_args()
     folder = Path(args.output_root) / args.component
     if args.verify_existing:
@@ -129,6 +130,8 @@ def main():
         ]
         if args.denoise:
             command.append('--denoise')
+        if args.service_open:
+            command.append('--service-open')
         subprocess.run(command, cwd=ROOT, check=True)
         verify_assets(folder, args.component)
     print(f'Original front Cycles PNG: {folder / "front.png"}')

@@ -16,8 +16,8 @@ d'alimentation de la machine. Un septième contact est réservé au PE.
 La photo ne permet pas de vérifier la position du bornier réel : sa position
 sur ce maillage reste une proposition, à distinguer d'une reproduction exacte.
 Le maillage présente désormais un capot fermé en vue normale. L'option
-`service_open=True` du générateur expose les contacts pour les futurs essais
-de maintenance ; elle n'est pas encore accessible depuis ElectroSim.
+`service_open=True` du générateur expose les contacts. Cette vue est désormais
+accessible dans ElectroSim lors de la sélection du broyeur.
 
 Le bornier a été déplacé hors de la silhouette du capot latéral : le premier
 essai de rendu montrait plusieurs plots masqués par le capot. Les contrôles
@@ -26,8 +26,9 @@ avec le capot et le refus d'une identité de composant incorrecte.
 
 Rendus de travail : `build/g5_sequential/external-crusher/{front,palette}.png`.
 Ce sont des sorties Blender, **pas des captures de la palette ou de la platine**.
-L'adaptateur Dart, les ancrages des fils, la migration des anciens projets et
-les preuves Flutter restent à réaliser avant de qualifier le composant 05.
+L'intégration Dart, les ancrages, la migration et les captures Flutter ont
+été réalisés ensuite : voir [le rapport d'intégration](2026-10-11-crusher-integration-and-motor-bridges.md).
+La validation visuelle utilisateur du composant 05 reste en attente.
 Les composants 01–04 restent les seuls qualifiés dans cette série.
 
 Vérification locale : `python3 -m unittest discover -s tools/tests -v` :

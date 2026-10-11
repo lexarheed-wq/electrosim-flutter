@@ -10,6 +10,7 @@ import 'f18_voltmeter_3d_assets.dart';
 import 'f18_ammeter_3d_assets.dart';
 import 'f18_frequency_3d_assets.dart';
 import 'f18_phase_sequence_3d_assets.dart';
+import 'f18_crusher_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2860,6 +2861,18 @@ class F9ComponentPreview extends StatelessWidget {
 
     // The original Cycles perspective is baked once. Never apply the
     // generic 3/4 transformation again to an instrument texture.
+    if (definition.keyName == 'external-crusher' && F18Crusher3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: compact ? 116 : 190,
+        height: compact ? 107 : 175,
+        child: RawImage(
+          image: F18Crusher3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
     if (definition.keyName == 'instrument-voltmeter' &&
         F18Voltmeter3dAssets.ready) {
       return SizedBox(

@@ -23,6 +23,7 @@ import 'f18_ammeter_3d_assets.dart';
 import 'f18_ammeter_controls.dart';
 import 'f18_frequency_3d_assets.dart';
 import 'f18_phase_sequence_3d_assets.dart';
+import 'f18_crusher_3d_assets.dart';
 import 'f18_frequency_controls.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
@@ -919,6 +920,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void initState() {
     super.initState();
     unawaited(
+      F18Crusher3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
       F18PhaseSequence3dAssets.preload().then((_) {
         if (mounted) setState(() {});
       }),
@@ -960,6 +966,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _circuit = AppliancePowerConnection.addProtectiveEarth(_circuit);
     }
     _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
+    _layout = migrateCrusherPhysicalLayout(
+      _circuit,
+      _layout,
+      router: _g2aWireLayoutEngine,
+    );
     if (widget.initialCabinetLayout != null) {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
@@ -1619,6 +1630,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             : _routeWithG2A(_circuit, migrated);
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
+        _layout = migrateCrusherPhysicalLayout(
+          _circuit,
+          _layout,
+          router: _g2aWireLayoutEngine,
+        );
       });
       _simulation.updateCircuit(_circuit);
     } catch (error) {
@@ -1910,6 +1926,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
         ? F18ReferenceComponentMetrics.boardSizeFor(
             definition.renderedModelType,
+            variantKey: definition.visualVariant,
           )
         : _layout.defaultElementSize;
     Offset? position = F9AutoPlacement.findPosition(
@@ -2112,6 +2129,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
       sizes[elementId] = F18ReferenceComponentMetrics.boardSizeFor(
         definition.renderedModelType,
+        variantKey: definition.visualVariant,
       );
     }
     var proposed = CircuitVisualLayout(
@@ -3811,6 +3829,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (F18ReferenceComponentVisuals.supports(replacement.renderedModelType)) {
       sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
         replacement.renderedModelType,
+        variantKey: replacement.visualVariant,
       );
     } else {
       sizes.remove(selected);
@@ -4294,6 +4313,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
       ),
     ];
+    final variants = {
+      for (final c in circuit.components)
+        c.id.value: c.parameters['_visualVariant'] as String?,
+    };
     double rowTop = 96;
     for (var start = 0; start < elements.length; start += 3) {
       final row = elements.skip(start).take(3).toList();
@@ -4303,7 +4326,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         final size = modelType == 'physical-instrument'
             ? const Size(112, 152)
             : F18ReferenceComponentVisuals.supports(modelType)
-            ? F18ReferenceComponentMetrics.boardSizeFor(modelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(
+                modelType,
+                variantKey: variants[id],
+              )
             : const Size(104, 64);
         if (modelType == 'physical-instrument' ||
             F18ReferenceComponentVisuals.supports(modelType)) {

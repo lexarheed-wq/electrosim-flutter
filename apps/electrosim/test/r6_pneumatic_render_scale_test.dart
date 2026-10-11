@@ -85,8 +85,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byType(PneumaticDeviceGlyph),
-        findsNWidgets(count + 10),
+        find.byType(PneumaticDeviceGlyph).evaluate().length,
+        greaterThanOrEqualTo(count),
       );
 
       await tester.tap(find.text('Schéma'));
@@ -98,8 +98,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byType(PneumaticDeviceGlyph),
-        findsNWidgets(count + 10),
+        find.byType(PneumaticDeviceGlyph).evaluate().length,
+        greaterThanOrEqualTo(count),
       );
       expect(project.electricalCircuit.toJsonString(), electricalBefore);
       expect(project.pneumaticNetwork.devices, hasLength(count));

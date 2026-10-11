@@ -7,6 +7,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'f18_voltmeter_3d_assets.dart';
+import 'f18_ammeter_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2761,6 +2762,20 @@ class F9ComponentPreview extends StatelessWidget {
         height: visualSize.height,
         child: RawImage(
           image: F18Voltmeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
+    if (definition.keyName == 'instrument-ammeter' &&
+        F18Ammeter3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Ammeter3dAssets.palette,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
         ),

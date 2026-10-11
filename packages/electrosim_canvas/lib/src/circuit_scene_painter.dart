@@ -205,6 +205,7 @@ final class CircuitScenePainter extends CustomPainter {
         : SeriesMeterWiring.openConnectionIds(circuit);
     for (final Connection connection in circuit.connections) {
       if (opened.contains(connection.id)) continue;
+      if (!schematicPresentation && connection.metadata.containsKey(AppliancePowerConnection.cableTag)) continue;
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];

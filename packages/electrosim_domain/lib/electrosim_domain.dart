@@ -15,3 +15,4 @@ export 'src/terminal.dart';
 export 'src/instrument.dart';
 
 export 'src/series_meter_wiring.dart';
+export 'src/appliance_power_connection.dart';

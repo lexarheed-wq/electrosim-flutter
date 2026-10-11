@@ -135,6 +135,94 @@ const List<F9PaletteTerminalSpec> f9Motor3p6tTerminals =
 
 const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   F9PaletteDefinition(
+    keyName: 'power_socket_dc',
+    title: 'Connecteur alimentation CC',
+    category: 'Raccordements',
+    modelType: 'power_socket_dc',
+    icon: Icons.power,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    terminalLabels: <String>[],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '+ IN',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: '0-in',
+      ),
+      F9PaletteTerminalSpec(
+        '− IN',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: '1-in',
+      ),
+      F9PaletteTerminalSpec(
+        '+ OUT',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: '0-out',
+      ),
+      F9PaletteTerminalSpec(
+        '− OUT',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: '1-out',
+      ),
+    ],
+    subtitle: 'Entrées câblées / sortie pour fiche',
+  ),
+
+  F9PaletteDefinition(
+    keyName: 'power_socket_ac',
+    title: 'Prise alimentation L/N/PE',
+    category: 'Raccordements',
+    modelType: 'power_socket_ac',
+    icon: Icons.power,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+    terminalLabels: <String>[],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L IN',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+        idSuffix: '0-in',
+      ),
+      F9PaletteTerminalSpec(
+        'N IN',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: '1-in',
+      ),
+      F9PaletteTerminalSpec(
+        'PE IN',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.none,
+        idSuffix: '2-in',
+      ),
+      F9PaletteTerminalSpec(
+        'L OUT',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+        idSuffix: '0-out',
+      ),
+      F9PaletteTerminalSpec(
+        'N OUT',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: '1-out',
+      ),
+      F9PaletteTerminalSpec(
+        'PE OUT',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.none,
+        idSuffix: '2-out',
+      ),
+    ],
+    subtitle: 'Entrées câblées / sortie pour fiche',
+  ),
+
+  F9PaletteDefinition(
     keyName: 'instrument-voltmeter',
     title: 'Voltmètre physique',
     category: 'Instruments de mesure',

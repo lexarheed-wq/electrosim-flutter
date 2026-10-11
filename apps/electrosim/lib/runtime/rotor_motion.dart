@@ -39,7 +39,14 @@ double? rotorVelocity(
   required double ratedVoltageV,
 }) {
   final type = component.modelType;
-  if (!{'motor_dc', 'motor_3p_6t', 'fan_dc'}.contains(type)) return null;
+  if (!{
+    'motor_dc',
+    'motor_3p_6t',
+    'earthed_machine_3p_7t',
+    'fan_dc',
+  }.contains(type)) {
+    return null;
+  }
   if (!running || snapshot == null || !snapshot.solved) return 0;
   if (type == 'motor_dc') {
     return visibleRotorSpeed(

@@ -956,6 +956,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Câblage'
           : 'Recherche de dérangement';
     }
+    if (tp == null) {
+      _circuit = AppliancePowerConnection.addProtectiveEarth(_circuit);
+    }
     _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
     if (widget.initialCabinetLayout != null) {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
@@ -1240,6 +1243,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       builder: (BuildContext context, Widget? child) =>
                           F9ContextPanels(
                             circuit: _circuit,
+                            onPowerConnectionChanged: _studentTpReadOnly
+                                ? null
+                                : _configureSelectedPower,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -1597,7 +1603,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         return;
       }
       setState(() {
-        _circuit = restored.circuit;
+        _circuit = AppliancePowerConnection.addProtectiveEarth(
+          restored.circuit,
+        );
         _workspace = restored.workspace;
         _selected = null;
         final savedLayout = restored.visualLayout;
@@ -2045,6 +2053,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           };
         }
       }
+      if (const {
+        'catalog_appliance_2t',
+        'catalog_heater',
+        'catalog_motor_driven_2t',
+      }.contains(definition.visualModelType)) {
+        parameters = {
+          ...parameters,
+          'powerConnectionMode':
+              (definition.visualVariant == 'refrigerator-dc' ||
+                  definition.modelType == 'motor_dc')
+              ? 'dc'
+              : const {
+                  'computer',
+                  'television',
+                  'iron',
+                  'freezer',
+                  'refrigerator',
+                }.contains(definition.visualVariant)
+              ? 'plug'
+              : 'fixed',
+        };
+      }
       components.add(
         ComponentInstance(
           id: ComponentId(elementId),
@@ -2056,7 +2086,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
     }
 
-    final CircuitState nextCircuit = _continueIndustrialMarking(
+    var nextCircuit = _continueIndustrialMarking(
       CircuitState(
         circuitId: _circuit.circuitId,
         revision: _circuit.revision + 1,
@@ -2071,6 +2101,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       ),
     );
 
+    if (_tpController.session == null) {
+      nextCircuit = AppliancePowerConnection.addProtectiveEarth(nextCircuit);
+    }
     final CircuitVisualLayout moved = _layout.moveElement(
       elementId,
       worldPosition,
@@ -3401,6 +3434,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _handleConnectionRequested(TerminalId from, TerminalId to) {
+    if (_circuit.components.any(
+      (c) =>
+          AppliancePowerConnection.isExternal(c) &&
+          AppliancePowerConnection.mode(c) != 'fixed' &&
+          c.terminals.any((t) => t.id == from || t.id == to),
+    )) {
+      _setStatus(
+        'Raccorder la prise, puis brancher la fiche depuis les propriétés de l’appareil.',
+      );
+      return;
+    }
     if (_blockStudentTpMutation()) return;
     final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
       _circuit,
@@ -3837,6 +3881,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
+  }
+
+  void _configureSelectedPower(String mode, String? socketId) {
+    if (_blockStudentTpMutation() || _selected == null) return;
+    try {
+      final next = mode == 'fault-on' || mode == 'fault-off'
+          ? AppliancePowerConnection.setInsulationFault(
+              _circuit,
+              _selected!,
+              mode == 'fault-on',
+            )
+          : AppliancePowerConnection.configure(
+              _circuit,
+              _selected!,
+              mode,
+              socketId: socketId,
+            );
+      var nextLayout = _layout;
+      for (final wire in next.connections) {
+        if (!mode.startsWith('fault-') &&
+            wire.metadata[AppliancePowerConnection.cableTag] == _selected) {
+          nextLayout = _g2aWireLayoutEngine.routeConnection(
+            circuit: next,
+            layout: nextLayout,
+            connectionId: wire.id,
+          );
+        }
+      }
+      setState(() {
+        _circuit = next;
+        _layout = nextLayout;
+        _status = mode.startsWith('fault-')
+            ? (mode == 'fault-on'
+                  ? 'Défaut d’isolement activé.'
+                  : 'Défaut d’isolement supprimé.')
+            : socketId == null
+            ? 'Raccordement modifié — fiche débranchée si présente.'
+            : 'Fiche branchée dans $socketId';
+      });
+      _simulation.updateCircuit(next);
+      _syncStudentTpCircuit();
+    } on ArgumentError catch (error) {
+      _setStatus(error.message.toString());
+    }
   }
 
   void _rotateSelectedElement() {

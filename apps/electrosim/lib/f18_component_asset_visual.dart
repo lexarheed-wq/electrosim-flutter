@@ -6,6 +6,7 @@ import 'f14_library_components.dart';
 import 'f15_source_pv_components.dart';
 import 'f17_three_phase_components.dart';
 import 'f20_catalog_components.dart';
+import 'f18_power_socket_visual.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
 import 'f18_industrial_physical_devices.dart';
@@ -22,6 +23,8 @@ import 'reference_components/reference_widgets_extended.dart';
 /// the visual layer never advances electrical physics.
 abstract final class F18ReferenceComponentVisuals {
   static const Set<String> coveredModelTypes = <String>{
+    'power_socket_ac',
+    'power_socket_dc',
     'dc_voltage_source',
     'voltage_source',
     'switch',
@@ -178,6 +181,8 @@ abstract final class F18ReferenceComponentMetrics {
     'load_delta_3p' => F17ThreePhaseGeometry.boardSizeFor(
       F17ThreePhaseDevice.deltaLoad,
     ),
+    'power_socket_ac' => const Size(120, 120),
+    'power_socket_dc' => const Size(120, 120),
     'catalog_battery' => F20CatalogGeometry.boardSizeFor(
       F20CatalogDevice.battery,
     ),
@@ -268,6 +273,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     required this.modelType,
     required this.size,
     this.variantKey,
+    this.powerConnectionMode = 'fixed',
     this.active = true,
     this.energized = false,
     this.closed,
@@ -290,6 +296,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final String modelType;
   final Size size;
   final String? variantKey;
+  final String powerConnectionMode;
   final bool active;
   final bool energized;
   final bool? closed;
@@ -311,6 +318,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (type == 'power_socket_ac' || type == 'power_socket_dc') {
+      return F18PowerSocketVisual(size: size, dc: type == 'power_socket_dc');
+    }
     if (F18PhysicalPlateAssets.ready(type, variantKey: variantKey)) {
       return F18IndustrialPhysicalPlate(
         modelType: type,
@@ -579,6 +589,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
         device: catalogDevice,
         size: size,
         state: F20CatalogState(
+          powerConnectionMode: powerConnectionMode,
           energized: energized,
           actuated: actuated,
           currentA: currentA,

@@ -186,6 +186,20 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.17, h * 0.42),
         Offset(w * 0.17, h * 0.42),
       ],
+      'catalog_earthed_6t' => <Offset>[
+        Offset(w * -.20, h * -.42),
+        Offset(0, h * -.42),
+        Offset(w * .20, h * -.42),
+        Offset(w * -.20, h * .42),
+        Offset(0, h * .42),
+        Offset(w * .20, h * .42),
+        Offset(w * -.38, 0),
+      ],
+      'catalog_earthed_2t' => <Offset>[
+        Offset(w * -.17, h * .42),
+        Offset(w * .17, h * .42),
+        Offset(0, h * .42),
+      ],
       'catalog_motor_driven_6t' => <Offset>[
         Offset(w * -0.20, h * -0.42),
         Offset(0, h * -0.42),
@@ -211,6 +225,20 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.0925, h * 0.425),
         Offset(w * 0.0925, h * 0.425),
         Offset(w * 0.2775, h * 0.425),
+      ],
+      'power_socket_ac' => <Offset>[
+        Offset(w * -.24, h * -.4),
+        Offset(0, h * -.4),
+        Offset(w * .24, h * -.4),
+        Offset(w * -.18, h * .15),
+        Offset(w * .18, h * .15),
+        Offset(0, h * -.05),
+      ],
+      'power_socket_dc' => <Offset>[
+        Offset(w * -0.12, h * -0.4),
+        Offset(w * 0.12, h * -0.4),
+        Offset(w * -0.12, h * 0.25),
+        Offset(w * 0.12, h * 0.25),
       ],
       'terminal_block_5' => <Offset>[
         Offset(w * -0.328, h * -0.425),
@@ -433,8 +461,15 @@ final class CircuitGeometryIndex {
     for (final ComponentInstance component in circuit.components) {
       indexElement(
         component.id.value,
-        (component.parameters['_visualModelType'] as String?) ??
-            component.modelType,
+        component.modelType == 'earthed_machine_3p_7t'
+            ? 'catalog_earthed_6t'
+            : const {
+                'earthed_resistor',
+                'earthed_impedance',
+              }.contains(component.modelType)
+            ? 'catalog_earthed_2t'
+            : (component.parameters['_visualModelType'] as String?) ??
+                  component.modelType,
         component.terminals,
       );
     }

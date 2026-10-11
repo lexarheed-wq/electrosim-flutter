@@ -494,6 +494,35 @@ final class CoreComponentModelContracts {
       ],
     ),
     ComponentModelContract(
+      modelType: 'earthed_machine_3p_7t',
+      family: ComponentFamily.receiver,
+      terminalCount: 7,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'winding:U',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+          poleIndex: 0,
+        ),
+        ComponentBranchDefinition(
+          id: 'winding:V',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.main,
+          poleIndex: 1,
+        ),
+        ComponentBranchDefinition(
+          id: 'winding:W',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 5,
+          role: ElectricalBranchRole.main,
+          poleIndex: 2,
+        ),
+      ],
+    ),
+    ComponentModelContract(
       modelType: 'load_wye_3p',
       family: ComponentFamily.receiver,
       terminalCount: 4,
@@ -578,6 +607,84 @@ final class CoreComponentModelContracts {
       terminalCount: 8,
       supportedModes: <ElectricalMode>{ElectricalMode.ac3},
       branches: _fourPowerPoles,
+    ),
+    ComponentModelContract(
+      modelType: 'power_socket_ac',
+      family: ComponentFamily.passive,
+      terminalCount: 6,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'pole:0',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+        ),
+        ComponentBranchDefinition(
+          id: 'pole:1',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.main,
+        ),
+        ComponentBranchDefinition(
+          id: 'pole:2',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 5,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'power_socket_dc',
+      family: ComponentFamily.passive,
+      terminalCount: 4,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'pole:0',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 2,
+          role: ElectricalBranchRole.main,
+        ),
+        ComponentBranchDefinition(
+          id: 'pole:1',
+          fromTerminalIndex: 1,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'earthed_resistor',
+      family: ComponentFamily.receiver,
+      terminalCount: 3,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'earthed_impedance',
+      family: ComponentFamily.receiver,
+      terminalCount: 3,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
     ),
     ComponentModelContract(
       modelType: 'terminal_block_5',

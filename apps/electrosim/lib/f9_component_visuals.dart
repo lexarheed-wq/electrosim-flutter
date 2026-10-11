@@ -11,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'f18_component_archetypes.dart';
 import 'f18_terminal_affordances.dart';
+import 'f18_appliance_power_cords.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
@@ -281,6 +282,18 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                           ),
                         ),
               ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: F18AppliancePowerCords(
+                      circuit: widget.circuit,
+                      layout: widget.layout,
+                      viewport: widget.viewport,
+                      geometry: geometry,
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
@@ -311,6 +324,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required String modelType,
       String? visualModelType,
       String? visualVariant,
+      String powerConnectionMode = 'fixed',
       required bool enabled,
       required bool energized,
       required bool closed,
@@ -360,6 +374,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   key: ValueKey<String>('board-v1-visual-$elementId'),
                   modelType: renderedModelType,
                   variantKey: visualVariant,
+                  powerConnectionMode: powerConnectionMode,
                   size: baseVisualSize,
                   active: enabled,
                   energized: energized,
@@ -494,6 +509,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         ),
         visualModelType: component.parameters['_visualModelType'] as String?,
         visualVariant: component.parameters['_visualVariant'] as String?,
+        powerConnectionMode: AppliancePowerConnection.mode(component),
         enabled: component.condition != ComponentCondition.disabled,
         energized: energized,
         closed: closed,
@@ -716,6 +732,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     required this.motionSeconds,
     required this.animate,
     this.angularSpeedRadS,
+    this.powerConnectionMode = 'fixed',
     this.variantKey,
     this.active = true,
     this.energized = false,
@@ -740,6 +757,7 @@ class _F9ReferenceAsset extends StatefulWidget {
   final ValueListenable<double> motionSeconds;
   final bool animate;
   final double? angularSpeedRadS;
+  final String powerConnectionMode;
   final String? variantKey;
   final bool active;
   final bool energized;
@@ -767,6 +785,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     child: F18ComponentAssetVisual(
       modelType: modelType,
       variantKey: variantKey,
+      powerConnectionMode: powerConnectionMode,
       size: size,
       active: active,
       energized: energized,
@@ -969,6 +988,9 @@ class _F9CurrentFlowPainter extends CustomPainter {
     if (!simulationRunning || runtime == null || !runtime.solved) return;
 
     for (final Connection connection in circuit.connections) {
+      if (connection.metadata.containsKey(AppliancePowerConnection.cableTag)) {
+        continue;
+      }
       if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
         continue;
       }
@@ -1250,7 +1272,14 @@ class _F9StaticOverlayPainter extends CustomPainter {
 
   void _paintTerminals(Canvas canvas, CircuitGeometryIndex geometry) {
     final descriptors = F18TerminalAffordances.descriptors(circuit);
+    final plugTerminalIds = {
+      for (final c in circuit.components)
+        if (AppliancePowerConnection.isExternal(c) &&
+            AppliancePowerConnection.mode(c) != 'fixed')
+          ...c.terminals.map((t) => t.id),
+    };
     for (final entry in geometry.terminalPositions.entries) {
+      if (plugTerminalIds.contains(entry.key)) continue;
       final descriptor = descriptors[entry.key];
       final pending = entry.key == pendingTerminalId;
       final hovered = entry.key == hoverTerminalId;

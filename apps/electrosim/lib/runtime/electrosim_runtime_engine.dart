@@ -738,16 +738,17 @@ final class ElectroSimRuntimeEngine {
 
     // Blowout lives in InstrumentInstance; electrical disconnection belongs
     // only to the runtime topology. The authored Connection remains intact.
-    final CircuitState fusedEffective =
-        F18AmmeterFuseSafety.projectOpenFuses(circuit);
+    final CircuitState fusedEffective = F18AmmeterFuseSafety.projectOpenFuses(
+      circuit,
+    );
     final CircuitState firstEffective =
         F18AmmeterFuseSafety.projectDcSeriesBurden(
-      design: circuit,
-      fusedRuntime: _projectRuntimeFailures(
-        fusedEffective,
-        previousComponentHealthStates,
-      ),
-    );
+          design: circuit,
+          fusedRuntime: _projectRuntimeFailures(
+            fusedEffective,
+            previousComponentHealthStates,
+          ),
+        );
     ElectroSimRuntimeSnapshot snapshot = _solveOnce(
       designCircuit: circuit,
       effectiveCircuit: firstEffective,
@@ -783,12 +784,9 @@ final class ElectroSimRuntimeEngine {
     // tick. The second solve is zero-time: dynamics are not integrated twice.
     final CircuitState failedEffective =
         F18AmmeterFuseSafety.projectDcSeriesBurden(
-      design: circuit,
-      fusedRuntime: _projectRuntimeFailures(
-        fusedEffective,
-        nextHealth,
-      ),
-    );
+          design: circuit,
+          fusedRuntime: _projectRuntimeFailures(fusedEffective, nextHealth),
+        );
     return _solveOnce(
       designCircuit: circuit,
       effectiveCircuit: failedEffective,
@@ -822,13 +820,16 @@ final class ElectroSimRuntimeEngine {
     final CircuitState projected = _projectAutonomousStorageDc(
       effectiveCircuit,
     );
-    final CircuitState solverCircuit = projected.mode == ElectricalMode.dc
+    final CircuitState baseSolverCircuit = projected.mode == ElectricalMode.dc
         ? _projectMotorDynamics(
             _projectDcBatteryState(projected, previousDcBatterySocs),
             previousMotorAngularSpeedsRadS,
             elapsed,
           )
         : projected;
+    final solverCircuit = AppliancePowerConnection.projectInsulationFaults(
+      baseSolverCircuit,
+    );
     final TopologyGraph topology = topologyEngine.compile(solverCircuit);
     switch (solverCircuit.mode) {
       case ElectricalMode.dc:

@@ -1,5 +1,15 @@
 String f9ModelLabel(String modelType) {
   switch (modelType) {
+    case 'power_socket_ac':
+      return 'Prise alimentation L/N/PE';
+    case 'power_socket_dc':
+      return 'Connecteur CC';
+    case 'earthed_resistor':
+      return 'Charge classe I';
+    case 'earthed_impedance':
+      return 'Appareil classe I';
+    case 'earthed_machine_3p_7t':
+      return 'Machine triphasée classe I';
     case 'dc_voltage_source':
       return 'Source CC';
     case 'switch':

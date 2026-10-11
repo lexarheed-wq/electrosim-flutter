@@ -16,20 +16,26 @@ Future<void> captureWorkshop(WidgetTester tester, String fileName) async {
   final RenderRepaintBoundary boundary = tester.renderObject(
     find.byKey(const Key('r6l-live-evidence-boundary')),
   );
-  final ui.Image image = await boundary.toImage(pixelRatio: 1);
-  try {
-    final ByteData? bytes = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
-    if (bytes == null) {
-      throw StateError('Flutter failed to encode the actual workshop PNG');
+  // The render/PNG encoding future and disk operations require real async
+  // time, not the WidgetTester fake-clock zone. Never block the test clock.
+  debugPrint('R6L_CAPTURE_BEGIN $fileName');
+  await tester.runAsync(() async {
+    final ui.Image image = await boundary.toImage(pixelRatio: 1);
+    try {
+      final ByteData? bytes = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      if (bytes == null) {
+        throw StateError('Flutter failed to encode the actual workshop PNG');
+      }
+      final File file = File('build/pneumatics-r6l-evidence/$fileName');
+      file.parent.createSync(recursive: true);
+      file.writeAsBytesSync(bytes.buffer.asUint8List(), flush: true);
+    } finally {
+      image.dispose();
     }
-    final File file = File('build/pneumatics-r6l-evidence/$fileName');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
-  } finally {
-    image.dispose();
-  }
+  });
+  debugPrint('R6L_CAPTURE_DONE $fileName');
 }
 
 void main() {
@@ -50,6 +56,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    debugPrint('R6L_EVIDENCE_WORKSHOP_READY');
 
     await tester.tap(find.byKey(const Key('device-cyl')));
     await tester.pumpAndSettle();

@@ -12,10 +12,10 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 
 | N° | Clé | Développement et preuve |
 |---:|---|---|
-| 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; réseau ouvert désormais OL explicite ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
-| 02 | `instrument-ammeter` | Modèle Cycles A/COM/fusible et commandes Flutter ; 5 tests Python géométriques PASS antérieurs ; surcharge fuse désormais verrouillée dans l’instrument et liaison coupée uniquement dans la topologie runtime ; trappe avec remplacement explicite OFF/circuit sans source ; tests Dart rédigés NON exécutés ; rendu Blender/PNG ampèremètre non produit, NON qualifié |
-| 03 | `instrument-frequency` | En attente de son tour |
-| 04 | `instrument-phase-sequence` | En attente de son tour |
+| 01 | `instrument-voltmeter` | Vues propres et capture Flutter 120 Ω ; essais Ω/commandes exécutés. Validation humaine globale différée. |
+| 02 | `instrument-ammeter` | Vues Cycles originales et captures série/fusible ; solveur commun et fusible vérifiés en CC. Parité AC/PV différée. |
+| 03 | `instrument-frequency` | Vues Cycles dédiées ; commandes et captures 50/60 Hz vérifiées. Noms externes retirés et câbles source orthogonaux. |
+| 04 | `instrument-phase-sequence` | Photo officielle Fluke 9040 téléchargée et examinée ; corps original et cordons hauts intégrés ; 4 tests électriques passent. Deux vues Cycles finalisées ; captures Flutter aller/inverse régénérées, essais passent. Validation humaine globale différée. |
 | 05 | `external-crusher` | En attente de son tour |
 | 06 | `external-air-conditioner` | En attente de son tour |
 | 07 | `external-compressor` | En attente de son tour |

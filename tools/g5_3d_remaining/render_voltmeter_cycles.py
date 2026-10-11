@@ -107,7 +107,7 @@ def main():
     argv = sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
-    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency'], default='instrument-voltmeter')
+    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
@@ -142,7 +142,22 @@ def main():
     build(h, {'kind': 'draft_preview', 'key': KEY, 'size': SIZE})
     body_d = SIZE[1] - 4.0
     body_d *= 46.0 / 167.0
-    if KEY == 'instrument-frequency':
+    if KEY == 'instrument-phase-sequence':
+        scene.view_settings.look = 'AgX - Medium High Contrast'
+        scene.view_settings.exposure = .65
+        for obj in bpy.data.objects:
+            if obj.type != 'MESH':
+                continue
+            for modifier in obj.modifiers:
+                if modifier.type == 'BEVEL':
+                    modifier.segments = 12
+                    modifier.harden_normals = True
+            normal = obj.modifiers.new('moulded surface normals', 'WEIGHTED_NORMAL')
+            normal.keep_sharp = True
+        for i, x in enumerate((34, 56, 78), 1):
+            raised_legend(f'phase_input_{i}', f'L{i}', x, 24, 34, 5, h.steel)
+        raised_legend('phase_function_title', 'PHASE ROTATION', 56, 41, 34, 3.6, h.steel)
+    elif KEY == 'instrument-frequency':
         raised_legend('frequency_title', 'FREQUENCY', 56, 15, 37.2, 3.5, h.steel)
         raised_legend('frequency_units', 'Hz', 56, 62, 37.2, 7, h.steel)
         for name, x in [('HOLD', 35), ('ON/OFF', 56), ('LIGHT', 77)]:
@@ -199,7 +214,7 @@ def main():
         # Front selector grip is a real moving UI part. Keep it OUT of the
         # baked front PNG; show it fixed only in the static 3/4 palette image.
         selector = bpy.data.objects.get('selector_grip')
-        if selector is None and KEY != 'instrument-frequency':
+        if selector is None and KEY not in ('instrument-frequency', 'instrument-phase-sequence'):
             raise RuntimeError('Missing selector_grip 3D object')
         if selector is not None:
             selector.hide_render = view == 'front'

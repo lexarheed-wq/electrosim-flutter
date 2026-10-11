@@ -22,6 +22,7 @@ import 'f18_voltmeter_3d_assets.dart';
 import 'f18_ammeter_3d_assets.dart';
 import 'f18_ammeter_controls.dart';
 import 'f18_frequency_3d_assets.dart';
+import 'f18_phase_sequence_3d_assets.dart';
 import 'f18_frequency_controls.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
@@ -907,9 +908,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             .toSet()
       : const <String>{};
 
+  Set<String> get _phaseSequence3dIds => F18PhaseSequence3dAssets.ready
+      ? _circuit.instruments
+            .where(F18PhaseSequence3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
+      : const <String>{};
+
   @override
   void initState() {
     super.initState();
+    unawaited(
+      F18PhaseSequence3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     unawaited(
       F18Frequency3dAssets.preload().then((_) {
         if (mounted) setState(() {});
@@ -1368,6 +1381,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 ..._voltmeter3dIds,
                                                 ..._ammeter3dIds,
                                                 ..._frequency3dIds,
+                                                ..._phaseSequence3dIds,
                                               },
                                             ),
                                             if (_representation ==
@@ -1464,6 +1478,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                               _frequency3dIds,
                                                           frequencyFront:
                                                               F18Frequency3dAssets
+                                                                  .front,
+                                                          phaseSequence3dIds:
+                                                              _phaseSequence3dIds,
+                                                          phaseSequenceFront:
+                                                              F18PhaseSequence3dAssets
                                                                   .front,
                                                           selectedElementId:
                                                               _selected,

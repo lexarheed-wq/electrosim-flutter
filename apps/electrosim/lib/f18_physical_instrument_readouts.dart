@@ -11,6 +11,7 @@ import 'f18_voltmeter_controls.dart';
 import 'f18_ammeter_controls.dart';
 import 'f18_ammeter_3d_assets.dart';
 import 'f18_frequency_3d_assets.dart';
+import 'f18_phase_sequence_3d_assets.dart';
 import 'f18_frequency_controls.dart';
 
 /// LCD readouts are projected from the electrical runtime: invalid/disconnected
@@ -28,6 +29,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     this.ammeterFront,
     this.frequency3dIds = const <String>{},
     this.frequencyFront,
+    this.phaseSequence3dIds = const <String>{},
+    this.phaseSequenceFront,
     this.selectedElementId,
   });
 
@@ -41,6 +44,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   final ui.Image? ammeterFront;
   final Set<String> frequency3dIds;
   final ui.Image? frequencyFront;
+  final Set<String> phaseSequence3dIds;
+  final ui.Image? phaseSequenceFront;
   final String? selectedElementId;
 
   Rect? screenRect(String id) {
@@ -206,6 +211,27 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       }
     }
 
+    final ui.Image? phase = phaseSequenceFront;
+    if (phase != null) {
+      for (final id in phaseSequence3dIds) {
+        final rect = screenRect(id);
+        if (rect == null || !_inView(id, rect, size)) continue;
+        _paint3dRotated(canvas, id, rect, (local) {
+          canvas.drawImageRect(
+            phase,
+            Rect.fromLTWH(
+              0,
+              0,
+              phase.width.toDouble(),
+              phase.height.toDouble(),
+            ),
+            local,
+            Paint()..filterQuality = FilterQuality.high,
+          );
+        });
+      }
+    }
+
     // The measurement sockets are on the FRONT: draw cords and insulated
     // plugs above the physical enclosure, independently of power wiring.
     _paintConnectedProbes(canvas);
@@ -216,7 +242,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       final bool original3d =
           (front != null && voltmeter3dIds.contains(item.key)) ||
           (ammeter != null && ammeter3dIds.contains(item.key)) ||
-          (frequencyFront != null && frequency3dIds.contains(item.key));
+          (frequencyFront != null && frequency3dIds.contains(item.key)) ||
+          (phase != null && phaseSequence3dIds.contains(item.key));
       if (original3d && !_inView(item.key, rect, size)) continue;
       if (!original3d && !rect.overlaps(Offset.zero & size)) continue;
       if (original3d) {
@@ -224,6 +251,14 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           final InstrumentInstance? meter = circuit?.instruments
               .where((it) => it.id.value == item.key)
               .firstOrNull;
+          if (phaseSequence3dIds.contains(item.key)) {
+            _drawPhaseReading(
+              canvas,
+              F18PhaseSequence3dAssets.projectReadout(local),
+              item.value,
+            );
+            return;
+          }
           _drawReading(
             canvas,
             frequency3dIds.contains(item.key)
@@ -552,7 +587,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     if (active == null ||
         ((voltmeterFront == null || voltmeter3dIds.isEmpty) &&
             (ammeterFront == null || ammeter3dIds.isEmpty) &&
-            (frequencyFront == null || frequency3dIds.isEmpty))) {
+            (frequencyFront == null || frequency3dIds.isEmpty) &&
+            (phaseSequenceFront == null || phaseSequence3dIds.isEmpty))) {
       return;
     }
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
@@ -565,8 +601,17 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           (voltmeterFront != null && voltmeter3dIds.contains(id)) ||
           (frequencyFront != null && frequency3dIds.contains(id));
       final bool isCurrent = ammeterFront != null && ammeter3dIds.contains(id);
-      if (!isVoltage && !isCurrent) continue;
-      if (probe.port != InstrumentPort.common &&
+      final bool isPhase =
+          phaseSequenceFront != null && phaseSequence3dIds.contains(id);
+      final int phaseIndex = const [
+        InstrumentPort.phase1,
+        InstrumentPort.phase2,
+        InstrumentPort.phase3,
+      ].indexOf(probe.port);
+      if (!isVoltage && !isCurrent && !isPhase) continue;
+      if (isPhase && phaseIndex < 0) continue;
+      if (!isPhase &&
+          probe.port != InstrumentPort.common &&
           probe.port !=
               (isVoltage ? InstrumentPort.voltOhm : InstrumentPort.amp)) {
         continue;
@@ -576,8 +621,14 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       if (meter == null || targetWorld == null) continue;
       final bool common = probe.port == InstrumentPort.common;
       final Offset local = Offset(
-        meter.width * (common ? 42 / 112 : 70 / 112) - meter.width / 2,
-        meter.height * (128 / 152) - meter.height / 2,
+        meter.width *
+                (isPhase
+                    ? (34 + 22 * phaseIndex) / 112
+                    : common
+                    ? 42 / 112
+                    : 70 / 112) -
+            meter.width / 2,
+        meter.height * (isPhase ? 1 / 152 : 128 / 152) - meter.height / 2,
       );
       final double angle = layout.quarterTurnsOf(id) * math.pi / 2;
       final Offset socket =
@@ -593,16 +644,18 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       final double direction = target.dx >= socket.dx ? 1 : -1;
       final Offset start =
           socket +
-          Offset(-math.sin(angle), math.cos(angle)) * (3 * viewport.scale);
+          Offset(-math.sin(angle), math.cos(angle)) *
+              ((isPhase ? -3 : 3) * viewport.scale);
       final Offset probeAxis = Offset(direction * 0.8, 0.6);
       final Offset end = target - probeAxis * (72 * viewport.scale);
       // Follow the meter's local downward direction past the base before
       // turning towards the terminal, so the cable cannot cross its LCD/dial.
-      final double tail = meter.height * 36 / 152;
+      final double tail = meter.height * (isPhase ? -28 : 36) / 152;
       final Offset exit =
           socket + Offset(-tail * math.sin(angle), tail * math.cos(angle));
       final Offset tangent =
-          Offset(-math.sin(angle), math.cos(angle)) * (12 * viewport.scale);
+          Offset(-math.sin(angle), math.cos(angle)) *
+          ((isPhase ? -12 : 12) * viewport.scale);
       final Path cable = Path()
         ..moveTo(start.dx, start.dy)
         ..cubicTo(
@@ -621,7 +674,13 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           end.dx,
           end.dy,
         );
-      final Color color = common
+      final Color color = isPhase
+          ? const [
+              Color(0xFFA45629),
+              Color(0xFF24282C),
+              Color(0xFF777F87),
+            ][phaseIndex]
+          : common
           ? const Color(0xFF171C24)
           : const Color(0xFFCE2839);
       final Paint insulation = Paint()
@@ -710,7 +769,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       );
       canvas.save();
       canvas.translate(socket.dx, socket.dy);
-      canvas.rotate(angle);
+      canvas.rotate(angle + (isPhase ? math.pi : 0));
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(
@@ -721,11 +780,62 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           ),
           Radius.circular(2 * viewport.scale),
         ),
-        Paint()
-          ..color = common ? const Color(0xFF171C24) : const Color(0xFFCE2839),
+        Paint()..color = color,
       );
       canvas.restore();
     }
+  }
+
+  void _drawPhaseReading(Canvas canvas, Rect display, String reading) {
+    final positive = reading == 'L1 → L2 → L3';
+    final negative = reading == 'L1 → L3 → L2';
+    if (!positive && !negative) {
+      _drawReading(canvas, display, reading);
+      return;
+    }
+    canvas.drawRect(display, Paint()..color = const Color(0xFFD5E5D6));
+    _drawReading(
+      canvas,
+      Rect.fromLTWH(
+        display.left,
+        display.top,
+        display.width,
+        display.height * .4,
+      ),
+      positive ? 'L1 L2 L3' : 'L1 L3 L2',
+    );
+    final center = Offset(
+      display.center.dx,
+      display.top + display.height * .73,
+    );
+    final radius = math.min(display.width, display.height) * .24;
+    final pen = Paint()
+      ..color = const Color(0xFF142C1F)
+      ..strokeWidth = math.max(1, 2.5 * viewport.scale)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final start = -math.pi * .72;
+    final sweep = (positive ? 1 : -1) * math.pi * 1.65;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      start,
+      sweep,
+      false,
+      pen,
+    );
+    final end = start + sweep;
+    final tip = center + Offset(math.cos(end), math.sin(end)) * radius;
+    final tangent = Offset(-math.sin(end), math.cos(end)) * (positive ? 1 : -1);
+    final normal = Offset(-tangent.dy, tangent.dx);
+    final arrow = Path()..moveTo(tip.dx, tip.dy);
+    for (final point in [
+      tip - tangent * radius * .5 + normal * radius * .25,
+      tip - tangent * radius * .5 - normal * radius * .25,
+    ]) {
+      arrow.lineTo(point.dx, point.dy);
+    }
+    arrow.close();
+    canvas.drawPath(arrow, Paint()..color = const Color(0xFF142C1F));
   }
 
   void _drawReading(
@@ -783,6 +893,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       !identical(circuit, old.circuit) ||
       !identical(voltmeterFront, old.voltmeterFront) ||
       !identical(ammeterFront, old.ammeterFront) ||
+      !identical(frequencyFront, old.frequencyFront) ||
+      !identical(phaseSequenceFront, old.phaseSequenceFront) ||
+      !setEquals(frequency3dIds, old.frequency3dIds) ||
+      !setEquals(phaseSequence3dIds, old.phaseSequence3dIds) ||
       !setEquals(ammeter3dIds, old.ammeter3dIds) ||
       !setEquals(voltmeter3dIds, old.voltmeter3dIds) ||
       selectedElementId != old.selectedElementId;

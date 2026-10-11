@@ -221,6 +221,26 @@ final class _P {
     double? size,
     Color color = const Color(0xFF273943),
   }) {
+    // Names belong to the palette/inspector, not to physical housings or
+    // captions around them. Keep actual terminal labels and technical values.
+    const componentCaptions = <String>{
+      'CLIM',
+      'CONGÉL.',
+      'PC',
+      'FRIGO',
+      'FRIGO DC',
+      'TV',
+      'FER',
+      'POMPE',
+      'COMP.',
+      'CONVOYEUR',
+      'CONVOY.',
+      'MÉLANGEUR',
+      'BROYEUR',
+      'VENTIL.',
+      'VENTIL. 3φ',
+    };
+    if (componentCaptions.contains(value)) return;
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,

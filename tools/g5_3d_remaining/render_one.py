@@ -19,7 +19,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 ROOT = BASE.parents[1]
-SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency')
+SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence')
 PNG_MAGIC = b'\x89PNG\r\n\x1a\n'
 EXPECTED_SIZE = (1120, 1520)
 

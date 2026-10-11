@@ -421,13 +421,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       }
       // Earlier R4 workshop clipboard exports were raw design-only v1.
       // Use that reader only when its canonical fields are present.
-      final bool rawR4 = decoded['schemaVersion'] == 1 &&
+      final bool rawR4 =
+          decoded['schemaVersion'] == 1 &&
           decoded.containsKey('electricalCircuit') &&
           decoded.containsKey('pneumaticNetwork');
       final MultiphysicsProject incoming = rawR4
           ? MultiphysicsProject.fromJsonString(source)
           : const MultiphysicsSessionStorage()
-              .importProject(source).state.project;
+                .importProject(source)
+                .state
+                .project;
       _edit(() => PneumaticWorkshopState(project: incoming));
     } on Object catch (error) {
       if (!mounted) return;

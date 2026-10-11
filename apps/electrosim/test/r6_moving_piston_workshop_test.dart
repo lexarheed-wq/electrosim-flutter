@@ -103,55 +103,70 @@ MultiphysicsProject actualProject() {
     ],
     physicalLayout: <String, PhysicalViewPose>{
       for (int i = 0; i < devices.length; i++)
-        devices[i].id: PhysicalViewPose(x: 60 + (i % 4) * 240.0, y: 95 + (i ~/ 4) * 210),
+        devices[i].id: PhysicalViewPose(
+          x: 60 + (i % 4) * 240.0,
+          y: 95 + (i ~/ 4) * 210,
+        ),
     },
     schematicLayout: <String, PhysicalViewPose>{
       for (int i = 0; i < devices.length; i++)
-        devices[i].id: PhysicalViewPose(x: 70 + (i % 4) * 240.0, y: 145 + (i ~/ 4) * 210),
+        devices[i].id: PhysicalViewPose(
+          x: 70 + (i % 4) * 240.0,
+          y: 145 + (i ~/ 4) * 210,
+        ),
     },
   );
 }
 
 void main() {
-  testWidgets('R6/L accepted piston position renders identically in two views', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1600, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(initialProject: actualProject())),
-    );
-    await tester.tap(find.byKey(const Key('device-cyl')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('air-advance')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).last, '0.8');
-    await tester.tap(find.byKey(const Key('air-cd-apply')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('air-measured-position')), findsOneWidget);
-    expect(find.textContaining('Simulation réelle : t = 0.020 s'), findsOneWidget);
-    final Finder actualGlyph = find.descendant(
-      of: find.byKey(const Key('device-cyl')),
-      matching: find.byType(PneumaticDeviceGlyph),
-    );
-    final PneumaticDeviceGlyph first =
-        tester.widget<PneumaticDeviceGlyph>(actualGlyph);
-    expect(first.pistonFraction, isNotNull);
-    expect(first.pistonFraction!, inInclusiveRange(0, 1));
-    await tester.tap(find.text('Schéma'));
-    await tester.pumpAndSettle();
-    final PneumaticDeviceGlyph second =
-        tester.widget<PneumaticDeviceGlyph>(actualGlyph);
-    expect(second.pistonFraction, first.pistonFraction);
-    await tester.tap(find.byKey(const Key('air-reset-physics')));
-    await tester.pumpAndSettle();
-    final PneumaticDeviceGlyph reset =
-        tester.widget<PneumaticDeviceGlyph>(actualGlyph);
-    expect(reset.pistonFraction, isNull);
-    expect(find.byKey(const Key('air-measured-position')), findsNothing);
-  });
+  testWidgets(
+    'R6/L accepted piston position renders identically in two views',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PneumaticWorkshopPage(initialProject: actualProject()),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('device-cyl')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('air-advance')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).last, '0.8');
+      await tester.tap(find.byKey(const Key('air-cd-apply')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('air-measured-position')), findsOneWidget);
+      expect(
+        find.textContaining('Simulation réelle : t = 0.020 s'),
+        findsOneWidget,
+      );
+      final Finder actualGlyph = find.descendant(
+        of: find.byKey(const Key('device-cyl')),
+        matching: find.byType(PneumaticDeviceGlyph),
+      );
+      final PneumaticDeviceGlyph first = tester.widget<PneumaticDeviceGlyph>(
+        actualGlyph,
+      );
+      expect(first.pistonFraction, isNotNull);
+      expect(first.pistonFraction!, inInclusiveRange(0, 1));
+      await tester.tap(find.text('Schéma'));
+      await tester.pumpAndSettle();
+      final PneumaticDeviceGlyph second = tester.widget<PneumaticDeviceGlyph>(
+        actualGlyph,
+      );
+      expect(second.pistonFraction, first.pistonFraction);
+      await tester.tap(find.byKey(const Key('air-reset-physics')));
+      await tester.pumpAndSettle();
+      final PneumaticDeviceGlyph reset = tester.widget<PneumaticDeviceGlyph>(
+        actualGlyph,
+      );
+      expect(reset.pistonFraction, isNull);
+      expect(find.byKey(const Key('air-measured-position')), findsNothing);
+    },
+  );
 
   testWidgets('R6/L cylinder geometry fields are user-authored, not defaults', (
     WidgetTester tester,

@@ -1,0 +1,42 @@
+name: G5 voltmeter 3D draft checks
+
+on:
+  pull_request:
+    paths:
+      - 'tools/g5_3d_remaining/instrument_voltmeter_recipe.py'
+      - 'tools/g5_3d_remaining/voltmeter_construction_draft.json'
+      - 'tools/tests/test_g5_voltmeter_recipe.py'
+      - '.github/workflows/g5-voltmeter-3d-draft.yml'
+  push:
+    branches:
+      - 'feat/g5-3d-voltmeter-draft-20261011'
+    paths:
+      - 'tools/g5_3d_remaining/instrument_voltmeter_recipe.py'
+      - 'tools/g5_3d_remaining/voltmeter_construction_draft.json'
+      - 'tools/tests/test_g5_voltmeter_recipe.py'
+      - '.github/workflows/g5-voltmeter-3d-draft.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  recipe-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile recipe Python syntax
+        run: python3 -m py_compile tools/g5_3d_remaining/instrument_voltmeter_recipe.py
+      - name: Check sockets, proportions and enforced identity
+        run: python3 -m unittest discover -s tools/tests -p 'test_g5_voltmeter_recipe.py' -v
+      - name: Ensure draft cannot masquerade as qualified
+        run: |
+          python3 - <<'PY'
+          import json
+          p = 'tools/g5_3d_remaining/voltmeter_construction_draft.json'
+          data = json.load(open(p))
+          assert data['key'] == 'instrument-voltmeter'
+          assert data['verified'] is False
+          assert data['qualification_state'] == 'reference_incomplete'
+          assert all(port['verified'] is False for port in data['ports'])
+          PY

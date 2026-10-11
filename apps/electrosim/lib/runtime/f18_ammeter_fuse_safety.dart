@@ -253,10 +253,15 @@ abstract final class F18AmmeterFuseSafety {
   /// Runtime-only open circuit. The design connections and their metadata
   /// survive untouched; the solver sees exactly the cut wire disabled.
   static CircuitState projectOpenFuses(CircuitState design) {
+    // A tripped series fuse must not reconnect just because somebody pulls
+    // one probe lead away. cutConnectionId remains the authored insertion
+    // point until the instrument is removed or the fuse is replaced safely.
     final cutIds = <ConnectionId>{
       for (final meter in design.instruments)
-        if (meter.fuseBlown)
-          if (wiredCut(design, meter) case final Connection cut) cut.id,
+        if (meter.kind == InstrumentKind.ammeter &&
+            meter.fuseBlown &&
+            meter.cutConnectionId != null)
+          meter.cutConnectionId!,
     };
     if (cutIds.isEmpty) return design;
     return CircuitState(

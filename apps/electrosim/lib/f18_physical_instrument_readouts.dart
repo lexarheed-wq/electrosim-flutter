@@ -148,7 +148,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
               ),
               Paint()
                 ..color = const Color(0xFF2563EB)
-                ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0)
+                ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
                 ..style = PaintingStyle.stroke,
             );
           }
@@ -230,7 +230,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       text.dispose();
     }
     }
-    if ((current ? ammeterFront?.width ?? 0 : voltmeterFront?.width ?? 0) >= 1000) {
+    if ((current ? (ammeterFront?.width ?? 0) : (voltmeterFront?.width ?? 0)) >= 1000) {
       // High-definition front PNG intentionally has no selector grip.
       // Rotate a tactile vector grip above the shaft without rotating body,
       // LCD or connected measurement probes.

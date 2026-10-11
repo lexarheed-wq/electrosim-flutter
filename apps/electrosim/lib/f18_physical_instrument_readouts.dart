@@ -306,7 +306,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       final flags = <String>[
         if (isHeld) 'H',
         if (rangeIndex != 0)
-          current ? 'RANGE $rangeIndex' : F18VoltmeterControls.rangeLabel(meter),
+          current ? F18AmmeterControls.rangeLabel(meter) : F18VoltmeterControls.rangeLabel(meter),
       ].join(' ');
       final labels = TextPainter(
         text: TextSpan(text: flags, style: const TextStyle(

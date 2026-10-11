@@ -64,3 +64,40 @@ jobs:
           name: pneumatics-r6n-worker-${{ github.sha }}
           path: build/pneumatics-r6n/
           retention-days: 21
+
+  mac-intel-native-isolate:
+    runs-on: macos-15-intel
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Native R6N Mac Intel AOT parity and observed isolated solver transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p build/pneumatics-r6n-mac-intel
+          printf 'sourceSha=%s\\narchitecture=%s\\n' "$GITHUB_SHA" "$(uname -m)" > build/pneumatics-r6n-mac-intel/PROVENANCE.txt
+          sw_vers >> build/pneumatics-r6n-mac-intel/PROVENANCE.txt
+          dart --version 2>&1 | tee -a build/pneumatics-r6n-mac-intel/PROVENANCE.txt
+          cd packages/electrosim_pneumatic_solver
+          dart pub get
+          dart test --concurrency=1 --reporter expanded test/r6n_worker_test.dart test/r6n_worker_scheduler_test.dart \
+            | tee ../../build/pneumatics-r6n-mac-intel/TEST.log
+          dart compile exe -o ../../build/pneumatics-r6n-mac-intel/native-worker-aot benchmark/r6n_worker_transport.dart
+          ../../build/pneumatics-r6n-mac-intel/native-worker-aot \
+            | tee ../../build/pneumatics-r6n-mac-intel/native-worker-transport-mac-intel.json
+          python3 -m json.tool ../../build/pneumatics-r6n-mac-intel/native-worker-transport-mac-intel.json >/dev/null
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6n-mac-intel-observed-${{ github.sha }}
+          path: |
+            build/pneumatics-r6n-mac-intel/PROVENANCE.txt
+            build/pneumatics-r6n-mac-intel/TEST.log
+            build/pneumatics-r6n-mac-intel/native-worker-transport-mac-intel.json
+          retention-days: 21

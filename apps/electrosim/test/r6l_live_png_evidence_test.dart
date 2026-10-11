@@ -73,6 +73,7 @@ void main() {
         tester.widget<PneumaticDeviceGlyph>(physicalGlyph);
     expect(beforeSwitch.pistonFraction, isNotNull);
     expect(beforeSwitch.pistonFraction!, inInclusiveRange(0, 1));
+    expect(beforeSwitch.pistonFraction!, greaterThan(.005 / .06 + .001));
     await captureWorkshop(tester, '02_platine_mesuree.png');
 
     await tester.tap(find.text('Schéma'));

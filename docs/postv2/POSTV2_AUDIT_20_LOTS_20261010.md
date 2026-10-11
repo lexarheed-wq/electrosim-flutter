@@ -1,9 +1,9 @@
 # ElectroSim — Audit de couverture du cahier des charges post-V2 (P1 à P20)
 
-**Date :** 10/10/2026\\
-**Référence de lecture :** `ElectroSim_Cahier_des_charges_fonctionnel_Post_V2(2)(2).pdf` (version 1.0 du 05/10/2026, 16 pages).\\
-**Dépôt audité :** `lexarheed-wq/electrosim-flutter`\\
-**Arbre audité :** `53485fde9f8ae410318713c2ee0b4453562ffaee` (fusion #70), branche `feat/g5-industrial-geometry-20261009`.\\
+**Date :** 10/10/2026\
+**Référence de lecture :** `ElectroSim_Cahier_des_charges_fonctionnel_Post_V2(2)(2).pdf` (version 1.0 du 05/10/2026, 16 pages).\
+**Dépôt audité :** `lexarheed-wq/electrosim-flutter`\
+**Arbre audité :** `53485fde9f8ae410318713c2ee0b4453562ffaee` (fusion #70), branche `feat/g5-industrial-geometry-20261009`.\
 **Nature :** revue statique du dépôt, des tests, des workflows et de leurs résultats connus. **Ce rapport n'est pas une recette physique sur Mac ni une certification constructeur.**
 
 ## 1. Convention de verdict

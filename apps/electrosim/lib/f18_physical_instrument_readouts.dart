@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -15,6 +16,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     required this.layout,
     required this.viewport,
     required this.readouts,
+    this.circuit,
     this.voltmeter3dIds = const <String>{},
     this.voltmeterFront,
     this.selectedElementId,
@@ -23,6 +25,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   final CircuitVisualLayout layout;
   final ViewportController viewport;
   final Map<String, String> readouts;
+  final CircuitState? circuit;
   final Set<String> voltmeter3dIds;
   final ui.Image? voltmeterFront;
   final String? selectedElementId;
@@ -129,6 +132,53 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         );
       }
     }
+    // These are graphical leads sourced EXCLUSIVELY from the real ProbeConnection
+    // objects. Drawing them adds no electrical edges and cannot fake a reading.
+    _paintConnectedProbes(canvas, front);
+  }
+
+  void _paintConnectedProbes(Canvas canvas, ui.Image? front) {
+    final CircuitState? active = circuit;
+    if (active == null || front == null || voltmeter3dIds.isEmpty) return;
+    final CircuitGeometryIndex geometry =
+        CircuitGeometryIndex.build(active, layout);
+    for (final ProbeConnection probe in active.probes) {
+      final String id = probe.instrumentId.value;
+      if (!voltmeter3dIds.contains(id)) continue;
+      if (probe.port != InstrumentPort.common &&
+          probe.port != InstrumentPort.voltOhm) continue;
+      final Rect? meter = screenRect(id);
+      final Offset? targetWorld = geometry.terminalPositions[probe.terminalId];
+      if (meter == null || targetWorld == null) continue;
+      final bool common = probe.port == InstrumentPort.common;
+      final Offset local = Offset(
+        meter.width * (common ? 42 / 112 : 70 / 112) - meter.width / 2,
+        meter.height * (128 / 152) - meter.height / 2,
+      );
+      final double angle = layout.quarterTurnsOf(id) * math.pi / 2;
+      final Offset socket = meter.center + Offset(
+        local.dx * math.cos(angle) - local.dy * math.sin(angle),
+        local.dx * math.sin(angle) + local.dy * math.cos(angle),
+      );
+      final Offset target = viewport.worldToScreen(targetWorld);
+      final double slack = 25 * viewport.scale;
+      final double lane = socket.dy + slack;
+      final Path cable = Path()
+        ..moveTo(socket.dx, socket.dy)
+        ..lineTo(socket.dx, lane)
+        ..lineTo(target.dx, lane)
+        ..lineTo(target.dx, target.dy);
+      final Color color =
+          common ? const Color(0xFF172027) : const Color(0xFFC92330);
+      final Paint paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2, viewport.scale * 3.2)
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      canvas.drawPath(cable, paint);
+      canvas.drawCircle(target, math.max(3, viewport.scale * 3), Paint()..color = color);
+    }
   }
 
   void _drawReading(Canvas canvas, Rect display, String reading) {
@@ -177,6 +227,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       !identical(layout, old.layout) ||
       !identical(viewport, old.viewport) ||
       !identical(readouts, old.readouts) ||
+      !identical(circuit, old.circuit) ||
       !identical(voltmeterFront, old.voltmeterFront) ||
       !setEquals(voltmeter3dIds, old.voltmeter3dIds) ||
       selectedElementId != old.selectedElementId;

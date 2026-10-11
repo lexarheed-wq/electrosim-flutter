@@ -1,33 +1,46 @@
-# ElectroSim Pneumatique / Électropneumatique — PROGRAM_STATUS
-Référence : PNEU-DIR-001 v1.0 (2026-10-10). Document copié sans modification sur la branche R0.
+# ElectroSim — Programme PNEU-DIR-001
 
-## État vérifié (ne pas confondre intention et preuve)
-| Lot | Statut | Preuve actuelle / obstacle |
+État technique au 11 octobre 2026. Ne pas assimiler **fusion de lots**, 
+**qualification de sous-scénarios** et **livraison conforme à l'intégralité du directeur**.
+
+## Branches et provenance
+
+- Staging : `feat/g5-industrial-geometry-20261009` ; `main` inchangée par le programme.
+- PR fusionnées dans G5 : #79 (R0), #81 (R1), #83/#85/#86/#89 (R2),
+  #87/#88/#91 (R3/A–C), #93 (compatibilité Web), #92 (R3/D–E, R4/A, R5/A–B).
+- La PR #94 a synchronisé la base G5 dans #92 avant sa qualification finale.
+- Fusion #92 vérifiée : `5e7b75c3d35535a9e8234bfeff63c6bf9cc5c79e`,
+  18 contrôles de CI complets dont Mac Intel, Web, Chromium, R2/R3, F0–F3,
+  benchmark électrique et non-régression.
+- PR #95 (R6/A) en développement/qualification : bancs physiques et de
+  rendu 30/100/200/400, Mac Intel, physique réelle, vérification temporelle
+  PHY-07 et essai causal 24 V/5/2/B1. La PR #96 a fusionné G5 dans sa branche
+  pour exécuter des contrôles sur la combinaison réellement prévue.
+
+## Tableau de réalisation (statuts distincts)
+
+| Lot | Code intégré | Couverture restante |
 | --- | --- | --- |
-| R0 — Référence | **en cours** | Base G5 `054c64f` identifiée, 4 jobs G5 success au SHA de base ; tests propres et métriques R0 non encore qualifiés |
-| R1 — Contrats | **implémenté partiellement, non qualifié** | PR #81 : contrats purs ports/tuyaux, identité physique, liens explicites et enveloppe v3 de migration v0–v2 ; CI en attente, intégration app/feature flag et gate complet ouverts |
-| R2 — Physique indépendante | non commencé | R1 requis, méthode et références R2-A à figer |
-| R3 — Couplage 24 V CC | non commencé | R2 requis, événements causalement ordonnés |
-| R4 — Atelier deux vues | non commencé | R1–R3 requis |
-| R5 — Extension réaliste | non commencé | R4 requis ; modèles non idéaux et défauts |
-| R6 — Qualification et livraison | non commencé | R4 et extensions réellement livrées ; tests Mac/Web réels |
+| R0 | Oui | Base G5 référencée |
+| R1 | Contrats pneumatiques et identités intégrés | Migration/UX complète à auditer |
+| R2 | Solveur gaz, volumes, débits, vérin double effet, 5/2 intégrés | Catalogue entier du directeur (3/2, vérin simple effet, clapet calibré, etc.) non entièrement simulé |
+| R3 | Couplage réel 24 V S1/K1/Y1, B1, distributeur 5/2 et temps partagé intégrés | Scénarios transitoires et diversité d'appareils à poursuivre |
+| R4 | Atelier Flutter expérimental platine/schéma synchronisés | **Simulation de l'éditeur pas encore reliée à son projet arbitraire ; tige/tiroir animés, courbes, instruments physiques et ISO 1219 visuel à achever** |
+| R5 | Réservoir fini, fuites, tiroir bloqué et échappement bouché | Modèles plus larges de traitement de l'air non idéal et fiches fabricant à qualifier |
+| R6 | Bancs 30/100/200/400, preuve Mac Intel/Linux, widget tree réel, contrôle causality/convergence en PR #95 | **PERF-01 complet et UI-01/UI-02 toujours non qualifiés ; pas de R6_FINAL_PASS** |
 
-## Références et branchement
-- Dépôt : `lexarheed-wq/electrosim-flutter`.
-- Base candidate électricité G5 : `feat/g5-industrial-geometry-20261009` @ `054c64f5d2c74bf9a7137c730b811968834543ee`.
-- Directeur source : `docs/pneumatic-program-director-20261010` @ `8b10c9e683239e13a3186c7b4a3a944e1cac4d75`.
-- Branche d'exécution documentaire R0 : `docs/pneumatic-r0-baseline-20261010`.
-- Validation G5 antérieure : https://github.com/lexarheed-wq/electrosim-flutter/actions/runs/38074446746 (4 jobs success ; n'est pas une validation du lot R0).
-- PR dépendantes hors base : #73 audit P2 et #78 P4, toutes deux ouvertes au repérage.
+## Directive de qualification
 
-## Décisions en vigueur
-ADR-P01 à ADR-P08 selon le document directeur. Aucun nouveau contrat partagé modifié. Isolation stricte du moteur électrique ; mode pneumatique **n'est pas** `ElectricalMode`.
+Voir `docs/pneumatics/qualification/R6/ACCEPTANCE_MATRIX.md`. Les mesures
+isothermes 40 ms / 10 sous-pas sont utiles, mais **ne démontrent pas**
+10 secondes d'échauffement, 3 × 60 secondes en électrique/pneumatique/mixte,
+95 % des frames à 16,7 ms, p95 des clics à 100 ms, fermeture des workers,
+absence de fuite d'objets, ni lancement de la simulation depuis l'atelier.
 
-## Critères non validés
-- Toutes les exigences pneumatiques PHY-01..07, CPL-01..04, UI-01..02 et PERF-01 restent **non testées / non implémentées**.
-- Les performances réelles 30/100/200/400 et budgets temporels ne sont pas mesurés.
-- Les builds et les captures de G5 ne prouvent pas les fonctionnalités pneumatiques.
-- Exécution autonome limitée aux contrôles effectivement possibles et aux CI déclenchées ; pas d'affirmation de validation physique sur un Mac utilisateur.
+Aucune capture ni quantité de widgets ne remplace la causalité physique.
+Les validations doivent toujours porter sur un SHA exact et conserver
+les résultats bruts ; toute exigence non prouvée reste ouverte.
 
-## Prochaine action du lot
-Exécuter le workflow R0 au SHA du dernier commit documentaire, inspecter tous les jobs, produire la matrice de scénarios et le rapport d'écarts ; décider `qualifié` seulement sur preuves. Ne pas fusionner sans instruction explicite.
+La fonctionnalité expérimentale reste désactivée par défaut pour éviter
+un usage pédagogique qui présenterait les graphismes comme une
+simulation physique quantifiée de tous les appareils.

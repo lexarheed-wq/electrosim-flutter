@@ -445,7 +445,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                 border: Border.all(color: Colors.blueGrey),
                               ),
                               child: Text(
-                                port.id.value.split('.').last,
+                                _displayPortLabel(device.kind, port),
                                 style: const TextStyle(fontSize: 10),
                               ),
                             ),
@@ -527,3 +527,28 @@ List<String> _ports(PneumaticDeviceKind kind) => switch (kind) {
   PneumaticDeviceKind.restrictor => <String>['A', 'B'],
   _ => <String>['P'],
 };
+
+String _displayPortLabel(PneumaticDeviceKind kind, PneumaticPort port) {
+  final String label = port.id.value.split('.').last;
+  if (kind == PneumaticDeviceKind.valve52) {
+    // ISO 1219 / industry-identification convention for 5/2 devices:
+    // 1=P supply, 2=A, 4=B, 3=R exhaust, 5=S exhaust.
+    return switch (label) {
+      'P' => '1/P',
+      'A' => '2/A',
+      'B' => '4/B',
+      'R' => '3/R',
+      'S' => '5/S',
+      _ => label,
+    };
+  }
+  if (kind == PneumaticDeviceKind.valve32) {
+    return switch (label) {
+      'P' => '1/P',
+      'A' => '2/A',
+      'R' => '3/R',
+      _ => label,
+    };
+  }
+  return label;
+}

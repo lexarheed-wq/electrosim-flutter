@@ -180,10 +180,8 @@ final class IsothermalAirNetwork {
       }
       final bool firstChamber = byId.containsKey(passage.firstChamberId);
       final bool secondChamber = byId.containsKey(passage.secondChamberId);
-      if ((!firstChamber &&
-              !boundaryIds.contains(passage.firstChamberId)) ||
-          (!secondChamber &&
-              !boundaryIds.contains(passage.secondChamberId))) {
+      if ((!firstChamber && !boundaryIds.contains(passage.firstChamberId)) ||
+          (!secondChamber && !boundaryIds.contains(passage.secondChamberId))) {
         throw PneumaticPhysicsException(
           'unknown_chamber',
           'Passage ${passage.id} refers to absent gas node.',

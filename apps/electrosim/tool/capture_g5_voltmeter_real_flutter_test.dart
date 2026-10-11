@@ -19,7 +19,10 @@ void main() {
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
 
-    expect(await F18Voltmeter3dAssets.preload(), isTrue);
+    expect(
+      await t.runAsync(() => F18Voltmeter3dAssets.preload()),
+      isTrue,
+    );
     const meterId = 'voltmeter-3d-001';
     final circuit = CircuitState(
       circuitId: CircuitId('g5-voltmeter-3d-proof'),

@@ -2700,7 +2700,7 @@ class F9ComponentPreview extends StatelessWidget {
         child: RawImage(
           image: F18Voltmeter3dAssets.palette,
           fit: BoxFit.contain,
-          filterQuality: FilterQuality.medium,
+          filterQuality: FilterQuality.high,
         ),
       );
     }

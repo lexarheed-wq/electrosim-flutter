@@ -39,6 +39,36 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     );
   }
 
+  /// The board footprint rotates with layout.quarterTurnsOf; transform both
+  /// the image and its live LCD together, never the probe connections.
+  void _paint3dRotated(
+    Canvas canvas,
+    String id,
+    Rect screen,
+    void Function(Rect localBody) paintLocal,
+  ) {
+    canvas.save();
+    canvas.translate(screen.center.dx, screen.center.dy);
+    canvas.rotate(layout.quarterTurnsOf(id) * math.pi / 2);
+    paintLocal(Rect.fromCenter(
+      center: Offset.zero,
+      width: screen.width,
+      height: screen.height,
+    ));
+    canvas.restore();
+  }
+
+  bool _inView(String id, Rect screen, Size viewportSize) {
+    final Rect visualBounds = layout.quarterTurnsOf(id).isOdd
+        ? Rect.fromCenter(
+            center: screen.center,
+            width: screen.height,
+            height: screen.width,
+          )
+        : screen;
+    return visualBounds.overlaps(Offset.zero & viewportSize);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final ui.Image? front = voltmeterFront;
@@ -46,40 +76,63 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       // Draw first, independent of the reading map (OFF/ERR may be absent).
       for (final String id in voltmeter3dIds) {
         final Rect? rect = screenRect(id);
-        if (rect == null || !rect.overlaps(Offset.zero & size)) continue;
-        canvas.drawImageRect(
-          front,
-          Rect.fromLTWH(0, 0, front.width.toDouble(), front.height.toDouble()),
-          rect,
-          Paint()..filterQuality = FilterQuality.medium,
-        );
-        if (id == selectedElementId) {
-          final Rect inner = rect.deflate(2 * viewport.scale);
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(inner, Radius.circular(8 * viewport.scale)),
-            Paint()
-              ..color = const Color(0xFF2563EB)
-              ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
-              ..style = PaintingStyle.stroke,
+        if (rect == null || !_inView(id, rect, size)) continue;
+        _paint3dRotated(canvas, id, rect, (Rect local) {
+          canvas.drawImageRect(
+            front,
+            Rect.fromLTWH(
+              0, 0, front.width.toDouble(), front.height.toDouble(),
+            ),
+            local,
+            Paint()..filterQuality = FilterQuality.medium,
           );
-        }
+          if (id == selectedElementId) {
+            final Rect inner = local.deflate(2 * viewport.scale);
+            canvas.drawRRect(
+              RRect.fromRectAndRadius(
+                inner, Radius.circular(8 * viewport.scale),
+              ),
+              Paint()
+                ..color = const Color(0xFF2563EB)
+                ..strokeWidth =
+                    (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
+                ..style = PaintingStyle.stroke,
+            );
+          }
+        });
       }
     }
 
     for (final MapEntry<String, String> item in readouts.entries) {
       final Rect? rect = screenRect(item.key);
-      if (rect == null || !rect.overlaps(Offset.zero & size)) continue;
+      if (rect == null) continue;
       final bool original3d =
           front != null && voltmeter3dIds.contains(item.key);
-      final Rect display = original3d
-          ? F18Voltmeter3dAssets.projectReadout(rect)
-          : Rect.fromLTWH(
-              rect.left + rect.width * 0.10,
-              rect.top + rect.height * 0.11,
-              rect.width * 0.80,
-              rect.height * 0.38,
-            );
-      if (display.width <= 0 || display.height <= 0) continue;
+      if (original3d && !_inView(item.key, rect, size)) continue;
+      if (!original3d && !rect.overlaps(Offset.zero & size)) continue;
+      if (original3d) {
+        _paint3dRotated(canvas, item.key, rect, (Rect local) {
+          _drawReading(
+            canvas, F18Voltmeter3dAssets.projectReadout(local), item.value,
+          );
+        });
+      } else {
+        _drawReading(
+          canvas,
+          Rect.fromLTWH(
+            rect.left + rect.width * 0.10,
+            rect.top + rect.height * 0.11,
+            rect.width * 0.80,
+            rect.height * 0.38,
+          ),
+          item.value,
+        );
+      }
+    }
+  }
+
+  void _drawReading(Canvas canvas, Rect display, String reading) {
+    if (display.width <= 0 || display.height <= 0) return;
       final double radius = (3 * viewport.scale).clamp(1.0, 6.0).toDouble();
       canvas.save();
       canvas.clipRRect(
@@ -91,7 +144,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       );
       final TextPainter text = TextPainter(
         text: TextSpan(
-          text: item.value,
+          text: reading,
           style: TextStyle(
             fontSize: (13 * viewport.scale).clamp(7, 22).toDouble(),
             fontWeight: FontWeight.w700,
@@ -117,7 +170,6 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       );
       canvas.restore();
       text.dispose();
-    }
   }
 
   @override

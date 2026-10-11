@@ -43,7 +43,7 @@ try {
     const until = Date.now() + 24000;
     const check = () => {
       const value = document.getElementById('result')?.textContent ?? 'R6N_NO_OUTPUT';
-      if (value !== 'R6N_PENDING') { resolve(value); return; }
+      if (value !== 'R6N_PENDING' && value !== 'R6N_NO_OUTPUT') { resolve(value); return; }
       if (Date.now() >= until) { resolve('R6N_TIMEOUT'); return; }
       setTimeout(check, 100);
     };

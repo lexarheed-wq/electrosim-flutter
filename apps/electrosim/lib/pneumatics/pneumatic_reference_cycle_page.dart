@@ -95,9 +95,11 @@ class _PneumaticReferenceCyclePageState
   Widget build(BuildContext context) {
     final PneumaticCylinderTelemetry m = _reference.read(_accepted);
     final bool running = _clock != null;
-    final double fraction = (m.positionM /
-            _reference.cycle.cylinder.geometry.strokeM)
-        .clamp(0.0, 1.0);
+    final double fraction =
+        (m.positionM / _reference.cycle.cylinder.geometry.strokeM).clamp(
+          0.0,
+          1.0,
+        );
     final bool energized = _accepted.electrical?.relay.energized ?? false;
     final double voltageV = _accepted.electrical?.valveReading.voltageV ?? 0;
     return Scaffold(
@@ -119,7 +121,9 @@ class _PneumaticReferenceCyclePageState
             children: <Widget>[
               FilledButton(
                 key: const Key('r6-start-s1'),
-                onPressed: _error == null ? () => _advance(0, press: true) : null,
+                onPressed: _error == null
+                    ? () => _advance(0, press: true)
+                    : null,
                 child: const Text('Impulsion Marche S1'),
               ),
               OutlinedButton(
@@ -135,7 +139,9 @@ class _PneumaticReferenceCyclePageState
               OutlinedButton(
                 key: const Key('r6-isolate-air'),
                 onPressed: () => setState(() => _airEnabled = !_airEnabled),
-                child: Text(_airEnabled ? 'Fermer arrivée air' : 'Ouvrir arrivée air'),
+                child: Text(
+                  _airEnabled ? 'Fermer arrivée air' : 'Ouvrir arrivée air',
+                ),
               ),
               TextButton(
                 key: const Key('r6-reset'),
@@ -145,49 +151,71 @@ class _PneumaticReferenceCyclePageState
             ],
           ),
           if (_error != null)
-            Text('Erreur de calcul : $_error',
-                key: const Key('r6-diagnostic'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              'Erreur de calcul : $_error',
+              key: const Key('r6-diagnostic'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           const SizedBox(height: 14),
           Wrap(
             spacing: 20,
             runSpacing: 12,
             children: <Widget>[
-              _value('Temps simulé', '${m.timeS.toStringAsFixed(3)} s',
-                  'r6-time'),
-              _value('K1 / Y1', energized ? 'Excités' : 'Repos',
-                  'r6-relay'),
-              _value('Tension Y1', '${voltageV.toStringAsFixed(2)} V',
-                  'r6-voltage'),
-              _value('B1 fin de course',
-                  _accepted.endStopActuated ? 'Actionné' : 'Non actionné',
-                  'r6-endstop'),
-              _value('Pression A',
-                  '${m.pressureAGaugeBar.toStringAsFixed(3)} bar (rel.)',
-                  'r6-pressure-a'),
-              _value('Pression B',
-                  '${m.pressureBGaugeBar.toStringAsFixed(3)} bar (rel.)',
-                  'r6-pressure-b'),
-              _value('Position',
-                  '${m.positionMm.toStringAsFixed(2)} mm',
-                  'r6-position'),
-              _value('Vitesse',
-                  '${m.velocityMPerS.toStringAsFixed(3)} m/s',
-                  'r6-speed'),
-              _value('Effort',
-                  '${m.forceN.toStringAsFixed(2)} N',
-                  'r6-force'),
-              _value('Résidu de masse',
-                  '${m.massResidualKg.toStringAsExponential(2)} kg',
-                  'r6-mass-residual'),
-              _value('Distributeur',
-                  m.commutedSpool == ValveSpoolSide.coilSide
-                      ? 'Bobine' : 'Ressort',
-                  'r6-spool'),
+              _value(
+                'Temps simulé',
+                '${m.timeS.toStringAsFixed(3)} s',
+                'r6-time',
+              ),
+              _value('K1 / Y1', energized ? 'Excités' : 'Repos', 'r6-relay'),
+              _value(
+                'Tension Y1',
+                '${voltageV.toStringAsFixed(2)} V',
+                'r6-voltage',
+              ),
+              _value(
+                'B1 fin de course',
+                _accepted.endStopActuated ? 'Actionné' : 'Non actionné',
+                'r6-endstop',
+              ),
+              _value(
+                'Pression A',
+                '${m.pressureAGaugeBar.toStringAsFixed(3)} bar (rel.)',
+                'r6-pressure-a',
+              ),
+              _value(
+                'Pression B',
+                '${m.pressureBGaugeBar.toStringAsFixed(3)} bar (rel.)',
+                'r6-pressure-b',
+              ),
+              _value(
+                'Position',
+                '${m.positionMm.toStringAsFixed(2)} mm',
+                'r6-position',
+              ),
+              _value(
+                'Vitesse',
+                '${m.velocityMPerS.toStringAsFixed(3)} m/s',
+                'r6-speed',
+              ),
+              _value('Effort', '${m.forceN.toStringAsFixed(2)} N', 'r6-force'),
+              _value(
+                'Résidu de masse',
+                '${m.massResidualKg.toStringAsExponential(2)} kg',
+                'r6-mass-residual',
+              ),
+              _value(
+                'Distributeur',
+                m.commutedSpool == ValveSpoolSide.coilSide
+                    ? 'Bobine'
+                    : 'Ressort',
+                'r6-spool',
+              ),
             ],
           ),
           const SizedBox(height: 22),
-          const Text('Schéma cinématique — tige animée uniquement par le snapshot physique'),
+          const Text(
+            'Schéma cinématique — tige animée uniquement par le snapshot physique',
+          ),
           const SizedBox(height: 4),
           Row(
             children: <Widget>[
@@ -216,7 +244,9 @@ class _PneumaticReferenceCyclePageState
             minHeight: 9,
           ),
           const SizedBox(height: 12),
-          Text('Historique temporel borné : ${_series.samples.length} / 600 mesures'),
+          Text(
+            'Historique temporel borné : ${_series.samples.length} / 600 mesures',
+          ),
           SizedBox(
             height: 120,
             child: CustomPaint(
@@ -238,16 +268,19 @@ class _PneumaticReferenceCyclePageState
   }
 
   Widget _value(String title, String value, String key) => SizedBox(
-        width: 170,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(title, style: const TextStyle(fontSize: 12)),
-            Text(value, key: Key(key),
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
+    width: 170,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, style: const TextStyle(fontSize: 12)),
+        Text(
+          value,
+          key: Key(key),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _ReferenceCylinderPainter extends CustomPainter {
@@ -289,8 +322,10 @@ class _PositionHistoryPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     final Path line = Path();
     final double t0 = samples.first.timeS;
-    final double timeSpan =
-        (samples.last.timeS - t0).clamp(.001, double.infinity);
+    final double timeSpan = (samples.last.timeS - t0).clamp(
+      .001,
+      double.infinity,
+    );
     for (int i = 0; i < samples.length; i++) {
       final PneumaticCylinderTelemetry point = samples[i];
       final double x = size.width * (point.timeS - t0) / timeSpan;

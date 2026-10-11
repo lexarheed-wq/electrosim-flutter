@@ -11,7 +11,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MaterialApp(home: PneumaticWorkshopPage()));
-    await tester.tap(find.byKey(const Key('add-manometer')));
+    await tester.tap(find.byKey(const Key('add-idealSource')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('device-air1')), findsOneWidget);
     await tester.tap(find.byKey(const Key('air-undo')));

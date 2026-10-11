@@ -60,6 +60,51 @@ void main() {
     );
   }
 
+  test('main DC solver includes 0.01 ohm meter burden in series', () {
+    final design = seriesMeter(rating: 10);
+    final bare = buildRegressionFixtureCircuit();
+    final loaded = engine.evaluate(design);
+    final uninstrumented = engine.evaluate(bare);
+    expect(loaded.solved, isTrue);
+    expect(loaded.circuit, same(design));
+    expect(loaded.effectiveCircuit.components, hasLength(bare.components.length + 1));
+    final shunts = loaded.effectiveCircuit.components
+        .where((component) => component.id.value.startsWith('g5-amperemeter-burden-'))
+        .toList(growable: false);
+    expect(shunts, hasLength(1));
+    expect(shunts.single.parameters['resistanceOhm'], closeTo(0.01, 1e-12));
+    final original = design.connections.firstWhere((c) => c.id.value == 'wire-2');
+    expect(original.enabled, isTrue);
+    final runtimeOriginal = loaded.effectiveCircuit.connections
+        .singleWhere((c) => c.id == original.id);
+    expect(runtimeOriginal.enabled, isFalse);
+    expect(loaded.topology.enabledConnectionIds.contains(original.id), isFalse);
+    final meterBranch = loaded.dcResult!.branchResults
+        .singleWhere((branch) => branch.id == 'component:${shunts.single.id.value}');
+    expect(meterBranch.currentA.abs(), closeTo(24 / 24.01, .03));
+    final originalSource = uninstrumented.dcResult!.branchResults
+        .singleWhere((branch) => branch.id == 'source:source-24v');
+    expect(originalSource.currentA.abs(), closeTo(1, .03));
+    expect(meterBranch.currentA.abs(), lessThan(originalSource.currentA.abs()));
+    expect(design.components, hasLength(bare.components.length));
+    expect(design.connections, orderedEquals(bare.connections));
+    expect(design.probes, hasLength(2));
+  });
+
+  test('main solver does not reconnect a blown fuse with a burden', () {
+    final design = seriesMeter(rating: 0.5);
+    final tripped = F18AmmeterFuseSafety.latch(
+      circuit: design,
+      instrumentId: design.instruments.single.id,
+    );
+    final snapshot = engine.evaluate(tripped);
+    expect(snapshot.effectiveCircuit.components
+        .where((c) => c.id.value.startsWith('g5-amperemeter-burden-')),
+        isEmpty);
+    expect(snapshot.effectiveCircuit.connections
+        .singleWhere((c) => c.id.value == 'wire-2').enabled, isFalse);
+  });
+
   test('real ~1 A measurement triggers 0.5 A fuse from solver only', () {
     final design = seriesMeter();
     final meter = design.instruments.single;

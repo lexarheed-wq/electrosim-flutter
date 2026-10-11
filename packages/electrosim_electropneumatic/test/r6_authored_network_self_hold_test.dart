@@ -1,4 +1,3 @@
-import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_electropneumatic/electrosim_electropneumatic.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';

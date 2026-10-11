@@ -2471,7 +2471,9 @@ class _PaletteDraggableTile extends StatelessWidget {
                          (definition.keyName == 'instrument-ammeter' &&
                           F18Ammeter3dAssets.ready))
                     ? Tooltip(
-                        key: Key('g5-${definition.keyName}-3d-detail-preview'),
+                        key: Key(definition.keyName == 'instrument-voltmeter'
+                            ? 'g5-voltmeter-3d-detail-preview'
+                            : 'g5-ammeter-3d-detail-preview'),
                         waitDuration: const Duration(milliseconds: 450),
                         decoration: BoxDecoration(
                           color: const Color(0xFF182438),

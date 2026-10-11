@@ -6,6 +6,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f18_industrial_physical_plate.dart';
+import 'f18_voltmeter_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2682,6 +2683,22 @@ class F9ComponentPreview extends StatelessWidget {
         bounds.height / design.height,
       );
       visualSize = Size(design.width * scale, design.height * scale);
+    }
+
+    // The original Cycles perspective is baked once. Never apply the
+    // generic 3/4 transformation again to an instrument texture.
+    if (definition.keyName == 'instrument-voltmeter' &&
+        F18Voltmeter3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Voltmeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+        ),
+      );
     }
 
     if (definition.modelType == 'rcd_2p_ac1') {

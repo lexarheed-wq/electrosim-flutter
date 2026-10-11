@@ -43,7 +43,8 @@ jobs:
             git diff -- lib/src/workshop_closed_air_compiler.dart test/r6_workshop_closed_network_test.dart | tee ../../build/pneumatics-r6d/FORMAT_PATCH.diff
             git diff --exit-code -- lib/src/workshop_closed_air_compiler.dart test/r6_workshop_closed_network_test.dart
             dart analyze
-            dart test --reporter expanded
+            # Stable single-threaded output makes per-scenario evidence reliable.
+            dart test --concurrency=1 --reporter expanded
           ) 2>&1 | tee build/pneumatics-r6d/SCIENCE.log
           grep -F "R6/D actual drawn hoses transfer mass between 3 finite chambers" build/pneumatics-r6d/SCIENCE.log
           grep -F "R6/D a blocked hose really isolates finite air mass" build/pneumatics-r6d/SCIENCE.log

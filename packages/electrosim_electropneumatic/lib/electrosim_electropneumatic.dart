@@ -11,3 +11,4 @@ export 'src/valve52_fault_profile.dart';
 export 'src/pressure_switch_contact.dart';
 export 'src/pneumatic_telemetry.dart';
 export 'src/reference_cycle.dart';
+export 'src/authored_network_self_hold_cycle.dart';

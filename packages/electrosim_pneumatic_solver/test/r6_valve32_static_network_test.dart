@@ -28,14 +28,12 @@ PneumaticDevice valve32(
   ports: <PneumaticPort>[
     for (final (String id, PneumaticPortRole role)
         in <(String, PneumaticPortRole)>[
-      ('P', PneumaticPortRole.supply),
-      ('A', PneumaticPortRole.work),
-      ('R', PneumaticPortRole.exhaust),
-    ])
+          ('P', PneumaticPortRole.supply),
+          ('A', PneumaticPortRole.work),
+          ('R', PneumaticPortRole.exhaust),
+        ])
       PneumaticPort(
-        id: PneumaticPortId(
-          'v32.' + (invalidPort && id == 'R' ? 'X' : id),
-        ),
+        id: PneumaticPortId('v32.' + (invalidPort && id == 'R' ? 'X' : id)),
         deviceId: 'v32',
         role: role,
       ),
@@ -59,10 +57,7 @@ PneumaticDevice manifold() => PneumaticDevice(
       role: PneumaticPortRole.work,
     ),
   ],
-  parametersSi: <String, double>{
-    'volumeM3': .0003,
-    'pressureAbsPa': 201325,
-  },
+  parametersSi: <String, double>{'volumeM3': .0003, 'pressureAbsPa': 201325},
 );
 
 PneumaticPipe hose(String id, String from, String to) => PneumaticPipe(
@@ -82,11 +77,7 @@ PneumaticNetwork graph({
   devices: <PneumaticDevice>[
     boundary('source', PneumaticDeviceKind.idealSource, 601325),
     boundary('ambient', PneumaticDeviceKind.silencer, 101325),
-    valve32(
-      energized,
-      invalidPort: invalidPort,
-      deadVolumeM3: deadVolumeM3,
-    ),
+    valve32(energized, invalidPort: invalidPort, deadVolumeM3: deadVolumeM3),
     manifold(),
   ],
   pipes: <PneumaticPipe>[
@@ -97,8 +88,9 @@ PneumaticNetwork graph({
 );
 
 void main() {
-  const WorkshopClosedAirCompiler compiler =
-      WorkshopClosedAirCompiler(dischargeCoefficient: .8);
+  const WorkshopClosedAirCompiler compiler = WorkshopClosedAirCompiler(
+    dischargeCoefficient: .8,
+  );
 
   test('R6/K 3/2 energized connects source to working chamber', () {
     final IsothermalAirNetwork solver = compiler.compileWithStaticValves(

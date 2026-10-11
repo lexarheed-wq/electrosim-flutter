@@ -117,7 +117,8 @@ final class CoupledMovingCylinderAirNetwork {
       s.air.chambers[chamberBId]!.pressureAbsPa;
 
   double resultantForceN(CoupledCylinderNetworkSnapshot s) {
-    final double drive = geometry.theoreticalForceN(
+    final double drive =
+        geometry.theoreticalForceN(
           pressureAAbsPa: pressureAAbsPa(s),
           pressureBAbsPa: pressureBAbsPa(s),
         ) -
@@ -125,8 +126,7 @@ final class CoupledMovingCylinderAirNetwork {
     final double v = s.velocityMPerS;
     if (v.abs() <= 1e-12) {
       if (drive.abs() <= mechanics.staticBreakawayFrictionN) return 0;
-      return drive -
-          mechanics.coulombFrictionN * (drive.isNegative ? -1 : 1);
+      return drive - mechanics.coulombFrictionN * (drive.isNegative ? -1 : 1);
     }
     return drive -
         mechanics.viscousNsPerM * v -
@@ -242,8 +242,8 @@ final class CoupledMovingCylinderAirNetwork {
       final double nextX = stop == CylinderStop.retracted
           ? 0
           : stop == CylinderStop.extended
-              ? geometry.strokeM
-              : x + v * dt + .5 * acceleration * dt * dt;
+          ? geometry.strokeM
+          : x + v * dt + .5 * acceleration * dt * dt;
       final double nextV = stop == null ? v + acceleration * dt : 0;
       final Map<String, FixedAirChamber> resized =
           Map<String, FixedAirChamber>.from(flowed.chambers);
@@ -275,8 +275,7 @@ final class CoupledMovingCylinderAirNetwork {
         mechanicalSubsteps: before.mechanicalSubsteps + accepted + 1,
         stopEvents: <CylinderStopEvent>[
           ...current.stopEvents,
-          if (stop != null)
-            CylinderStopEvent(timeS: flowed.timeS, stop: stop),
+          if (stop != null) CylinderStopEvent(timeS: flowed.timeS, stop: stop),
         ],
       );
       accepted++;

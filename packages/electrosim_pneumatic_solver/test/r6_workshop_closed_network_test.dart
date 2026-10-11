@@ -22,10 +22,7 @@ PneumaticDevice manifold(
       role: PneumaticPortRole.work,
     ),
   ],
-  parametersSi: <String, double>{
-    'volumeM3': volume,
-    'pressureAbsPa': pressure,
-  },
+  parametersSi: <String, double>{'volumeM3': volume, 'pressureAbsPa': pressure},
 );
 
 PneumaticPipe pipe(
@@ -45,8 +42,9 @@ PneumaticPipe pipe(
 );
 
 void main() {
-  const WorkshopClosedAirCompiler compiler =
-      WorkshopClosedAirCompiler(dischargeCoefficient: .8);
+  const WorkshopClosedAirCompiler compiler = WorkshopClosedAirCompiler(
+    dischargeCoefficient: .8,
+  );
 
   test('R6/D actual drawn hoses transfer mass between 3 finite chambers', () {
     final PneumaticNetwork network = PneumaticNetwork(
@@ -78,8 +76,10 @@ void main() {
     expect(next.chambers, hasLength(3));
     expect(next.chambers['left']!.pressureAbsPa, lessThan(601325));
     expect(next.chambers['right']!.pressureAbsPa, greaterThan(101325));
-    expect(next.totalMassKg,
-        closeTo(initial.totalMassKg, initial.totalMassKg * 1e-10));
+    expect(
+      next.totalMassKg,
+      closeTo(initial.totalMassKg, initial.totalMassKg * 1e-10),
+    );
     expect(next.acceptedSubsteps, greaterThan(0));
     expect(initial.chambers['left']!.pressureAbsPa, closeTo(601325, 1e-8));
     final IsothermalAirSnapshot repeat = solver.advance(
@@ -87,8 +87,10 @@ void main() {
       durationS: .04,
       maxStepS: .001,
     );
-    expect(repeat.chambers['right']!.pressureAbsPa,
-        next.chambers['right']!.pressureAbsPa);
+    expect(
+      repeat.chambers['right']!.pressureAbsPa,
+      next.chambers['right']!.pressureAbsPa,
+    );
     expect(repeat.passageMassFlowKgPerS, next.passageMassFlowKgPerS);
   });
 
@@ -105,15 +107,13 @@ void main() {
     final IsothermalAirNetwork solver = compiler.compile(network);
     expect(solver.passages, isEmpty);
     final IsothermalAirSnapshot initial = solver.initialSnapshot;
-    final IsothermalAirSnapshot next =
-        solver.advance(initial, durationS: .1);
+    final IsothermalAirSnapshot next = solver.advance(initial, durationS: .1);
     expect(next.chambers['left']!.pressureAbsPa, closeTo(601325, 1e-8));
     expect(next.chambers['right']!.pressureAbsPa, closeTo(101325, 1e-8));
     expect(next.totalMassKg, initial.totalMassKg);
   });
 
-  test('R6/D reversing gradient reverses direction without swapping wires',
-      () {
+  test('R6/D reversing gradient reverses direction without swapping wires', () {
     final PneumaticNetwork reverse = PneumaticNetwork(
       devices: <PneumaticDevice>[
         manifold('left', pressure: 101325),
@@ -131,8 +131,7 @@ void main() {
     expect(next.chambers['left']!.pressureAbsPa, greaterThan(101325));
   });
 
-  test('R6/D uncalibrated or unsupported source/valve never fakes physics',
-      () {
+  test('R6/D uncalibrated or unsupported source/valve never fakes physics', () {
     final PneumaticDevice invalid = PneumaticDevice(
       id: 'supply',
       kind: PneumaticDeviceKind.idealSource,
@@ -145,9 +144,16 @@ void main() {
       ],
     );
     expect(
-      () => compiler.compile(PneumaticNetwork(devices: <PneumaticDevice>[invalid])),
-      throwsA(isA<PneumaticPhysicsException>()
-          .having((e) => e.code, 'code', 'unsupported_device')),
+      () => compiler.compile(
+        PneumaticNetwork(devices: <PneumaticDevice>[invalid]),
+      ),
+      throwsA(
+        isA<PneumaticPhysicsException>().having(
+          (e) => e.code,
+          'code',
+          'unsupported_device',
+        ),
+      ),
     );
     final PneumaticDevice absent = PneumaticDevice(
       id: 't',
@@ -161,36 +167,56 @@ void main() {
       ],
     );
     expect(
-      () => compiler.compile(PneumaticNetwork(devices: <PneumaticDevice>[absent])),
-      throwsA(isA<PneumaticPhysicsException>()
-          .having((e) => e.code, 'code', 'missing_physical_calibration')),
+      () => compiler.compile(
+        PneumaticNetwork(devices: <PneumaticDevice>[absent]),
+      ),
+      throwsA(
+        isA<PneumaticPhysicsException>().having(
+          (e) => e.code,
+          'code',
+          'missing_physical_calibration',
+        ),
+      ),
     );
   });
 
-  test('R6/D cannot pretend to simulate faults needing open atmosphere',
-      () {
+  test('R6/D cannot pretend to simulate faults needing open atmosphere', () {
     for (final PneumaticPipeFault bad in <PneumaticPipeFault>[
       PneumaticPipeFault.leaking,
       PneumaticPipeFault.disconnected,
     ]) {
       expect(
-        () => compiler.compile(PneumaticNetwork(
-          devices: <PneumaticDevice>[manifold('a'), manifold('b')],
-          pipes: <PneumaticPipe>[pipe('a', 'b', fault: bad)],
-        )),
-        throwsA(isA<PneumaticPhysicsException>()
-            .having((e) => e.code, 'code', 'unsupported_pipe_fault')),
+        () => compiler.compile(
+          PneumaticNetwork(
+            devices: <PneumaticDevice>[manifold('a'), manifold('b')],
+            pipes: <PneumaticPipe>[pipe('a', 'b', fault: bad)],
+          ),
+        ),
+        throwsA(
+          isA<PneumaticPhysicsException>().having(
+            (e) => e.code,
+            'code',
+            'unsupported_pipe_fault',
+          ),
+        ),
       );
     }
     expect(
-      () => compiler.compile(PneumaticNetwork(
-        devices: <PneumaticDevice>[manifold('a'), manifold('b')],
-        pipes: <PneumaticPipe>[
-          pipe('a', 'b', model: PneumaticPipeLossModel.distributedDarcy),
-        ],
-      )),
-      throwsA(isA<PneumaticPhysicsException>()
-          .having((e) => e.code, 'code', 'unsupported_loss_model')),
+      () => compiler.compile(
+        PneumaticNetwork(
+          devices: <PneumaticDevice>[manifold('a'), manifold('b')],
+          pipes: <PneumaticPipe>[
+            pipe('a', 'b', model: PneumaticPipeLossModel.distributedDarcy),
+          ],
+        ),
+      ),
+      throwsA(
+        isA<PneumaticPhysicsException>().having(
+          (e) => e.code,
+          'code',
+          'unsupported_loss_model',
+        ),
+      ),
     );
   });
 }

@@ -4,17 +4,14 @@ on:
   push:
     branches:
       - 'feat/g5-3d-voltmeter-draft-20261011'
-    paths:
-      - 'tools/g5_3d_remaining/**'
-      - '.github/workflows/g5-voltmeter-cycles-preview.yml'
-  pull_request:
+      - 'feat/g5-voltmeter-flutter-integration-20261011'
     paths:
       - 'tools/g5_3d_remaining/**'
       - '.github/workflows/g5-voltmeter-cycles-preview.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   blender-preview:
@@ -55,3 +52,20 @@ jobs:
           path: build/g5-3d-voltmeter/
           retention-days: 14
           if-no-files-found: error
+
+      - name: Stage generated PNGs on integration branch only
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/g5-voltmeter-flutter-integration-20261011') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/g5-voltmeter-flutter-integration-20261011' && github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: |
+          set -euo pipefail
+          git fetch origin feat/g5-voltmeter-flutter-integration-20261011
+          git checkout -B feat/g5-voltmeter-flutter-integration-20261011 FETCH_HEAD
+          mkdir -p apps/electrosim/assets/g5_industrial
+          cp build/g5-3d-voltmeter/front.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-front.png
+          cp build/g5-3d-voltmeter/palette.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-palette.png
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/assets/g5_industrial/instrument-voltmeter-front.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-palette.png
+          if ! git diff --cached --quiet; then
+            git commit -m "assets(g5): stage original Cycles voltmeter preview (unqualified)"
+            git push origin "HEAD:feat/g5-voltmeter-flutter-integration-20261011"
+          fi

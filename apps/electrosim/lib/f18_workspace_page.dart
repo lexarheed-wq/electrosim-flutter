@@ -18,6 +18,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
+import 'f18_voltmeter_3d_assets.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -878,9 +879,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   bool get _studentTpReadOnly =>
       widget.role == F9UserRole.student && _tpController.readOnly;
 
+  Set<String> get _voltmeter3dIds => F18Voltmeter3dAssets.ready
+      ? _circuit.instruments
+          .where(F18Voltmeter3dAssets.uses3d)
+          .map((InstrumentInstance instrument) => instrument.id.value)
+          .toSet()
+      : const <String>{};
+
   @override
   void initState() {
     super.initState();
+    unawaited(F18Voltmeter3dAssets.preload().then((_) {
+      if (mounted) setState(() {});
+    }));
     _circuit = widget.initialCircuit ?? _buildBlankCircuit();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
@@ -1308,6 +1319,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                             smartWireSemantics: true,
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
+                                            customInstrumentCaseIds:
+                                                _voltmeter3dIds,
                                           ),
                                           if (_representation ==
                                               WorkspaceRepresentation.plate)
@@ -1386,6 +1399,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                             viewport: _viewport,
                                                             readouts:
                                                                 _physicalMeterReadouts(),
+                                                            circuit: _circuit,
+                                                            voltmeter3dIds:
+                                                                _voltmeter3dIds,
+                                                            voltmeterFront:
+                                                                F18Voltmeter3dAssets.front,
+                                                            selectedElementId:
+                                                                _selected,
                                                           ),
                                                       size: Size.infinite,
                                                     ),

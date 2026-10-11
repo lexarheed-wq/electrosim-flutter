@@ -6,6 +6,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f18_industrial_physical_plate.dart';
+import 'f18_voltmeter_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2252,7 +2253,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           // Other catalog entries retain original search-only semantics.
           // Only physical instruments become available in the expanded
           // catalog and the dedicated measuring-instruments category.
-          if (q.isEmpty && item.searchOnlyModes.contains(widget.mode)) {
+          if (q.isEmpty &&
+              item.searchOnlyModes.contains(widget.mode) &&
+              item.keyName != 'instrument-voltmeter') {
             if (item.kind != F9PaletteElementKind.instrument ||
                 (_category == 'Tous' && !_expanded)) {
               return false;
@@ -2447,12 +2450,14 @@ class _PaletteDraggableTile extends StatelessWidget {
                 // Physical housings need enough pixels to show their moulding.
                 width:
                     definition.modelType == 'rcd_2p_ac1' ||
+                        definition.keyName == 'instrument-voltmeter' ||
                         F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 72
                     : 48,
                 height: definition.modelType == 'rcd_2p_ac1'
                     ? 108
-                    : F18PhysicalPlateAssets.ready(definition.modelType)
+                    : definition.keyName == 'instrument-voltmeter' ||
+                          F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
                 child: FittedBox(
@@ -2682,6 +2687,22 @@ class F9ComponentPreview extends StatelessWidget {
         bounds.height / design.height,
       );
       visualSize = Size(design.width * scale, design.height * scale);
+    }
+
+    // The original Cycles perspective is baked once. Never apply the
+    // generic 3/4 transformation again to an instrument texture.
+    if (definition.keyName == 'instrument-voltmeter' &&
+        F18Voltmeter3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Voltmeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+        ),
+      );
     }
 
     if (definition.modelType == 'rcd_2p_ac1') {

@@ -13,10 +13,7 @@ PneumaticDevice finiteNode(String id, double pressure) => PneumaticDevice(
         role: PneumaticPortRole.work,
       ),
   ],
-  parametersSi: <String, double>{
-    'volumeM3': .002,
-    'pressureAbsPa': pressure,
-  },
+  parametersSi: <String, double>{'volumeM3': .002, 'pressureAbsPa': pressure},
 );
 
 PneumaticDevice fixedBoundary(
@@ -109,7 +106,10 @@ void main() {
       maxStepS: .001,
     );
     expect(repeated.externalMassAddedKg, result.externalMassAddedKg);
-    expect(repeated.chambers['right']!.massKg, result.chambers['right']!.massKg);
+    expect(
+      repeated.chambers['right']!.massKg,
+      result.chambers['right']!.massKg,
+    );
 
     final IsothermalAirSnapshot later = solver.advance(
       result,
@@ -123,23 +123,26 @@ void main() {
     );
   });
 
-  test('R6/E pressure boundary permits reverse gradient without fake valve', () {
-    final IsothermalAirNetwork solver = compiler.compileWithIdealBoundaries(
-      simpleWorkshop(sourcePressure: 101325, chamberPressure: 601325),
-    );
-    final IsothermalAirSnapshot result = solver.advance(
-      solver.initialSnapshot,
-      durationS: .002,
-      maxStepS: .0002,
-    );
-    expect(result.passageMassFlowKgPerS['supply.line'], lessThan(0));
-    expect(result.externalMassAddedKg, lessThan(0));
-    expect(result.chambers['left']!.pressureAbsPa, lessThan(601325));
-    expect(
-      solver.massBalanceResidualKg(result).abs(),
-      lessThan(solver.initialSnapshot.totalMassKg * 1e-9),
-    );
-  });
+  test(
+    'R6/E pressure boundary permits reverse gradient without fake valve',
+    () {
+      final IsothermalAirNetwork solver = compiler.compileWithIdealBoundaries(
+        simpleWorkshop(sourcePressure: 101325, chamberPressure: 601325),
+      );
+      final IsothermalAirSnapshot result = solver.advance(
+        solver.initialSnapshot,
+        durationS: .002,
+        maxStepS: .0002,
+      );
+      expect(result.passageMassFlowKgPerS['supply.line'], lessThan(0));
+      expect(result.externalMassAddedKg, lessThan(0));
+      expect(result.chambers['left']!.pressureAbsPa, lessThan(601325));
+      expect(
+        solver.massBalanceResidualKg(result).abs(),
+        lessThan(solver.initialSnapshot.totalMassKg * 1e-9),
+      );
+    },
+  );
 
   test('R6/E physically blocked supply cannot secretly inject air', () {
     final IsothermalAirNetwork solver = compiler.compileWithIdealBoundaries(
@@ -218,9 +221,7 @@ void main() {
         fixedBoundary('atmosphere', PneumaticDeviceKind.silencer, 101325),
         finiteNode('isolated', 101325),
       ],
-      pipes: <PneumaticPipe>[
-        hose('direct', 'supply.1', 'atmosphere.1'),
-      ],
+      pipes: <PneumaticPipe>[hose('direct', 'supply.1', 'atmosphere.1')],
     );
     expect(
       () => compiler.compileWithIdealBoundaries(network),

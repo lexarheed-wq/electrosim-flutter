@@ -162,7 +162,17 @@ jobs:
             dart test test/r6_scale_test.dart --reporter expanded
             dart run benchmark/r6_scale.dart
           ) 2>&1 | tee build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log
-          grep -F 'R6_30_100_200_400_PHYSICAL_SCALE_PASS' build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          log=Path('build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log')
+          data=[x for x in log.read_text().splitlines() if x.startswith('{"schema":"electrosim.pneumatic.r6.performance.v1"')]
+          assert len(data)==1, 'Missing exactly one observed Mac benchmark report'
+          cases=json.loads(data[0])['cases']
+          assert [x['fittingDevices'] for x in cases]==[30,100,200,400]
+          assert all(x['massConserved'] and x['p95Ms']>=0 for x in cases)
+          print('R6_MAC_INTEL_PHYSICAL_SCALE_PASS')
+          PY
           git diff --exit-code -- . ':(exclude)**/pubspec.lock'
       - uses: actions/upload-artifact@v4
         if: always()

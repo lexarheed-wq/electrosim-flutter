@@ -1,0 +1,60 @@
+"""Sequential real Cycles renders of the authorized ten-component lot.
+blender -b --factory-startup -t 4 --python-exit-code 1 --python THIS -- --out build/g5_lot_06_15
+"""
+import argparse,hashlib,json,math,sys,time
+from pathlib import Path
+import bpy
+from mathutils import Vector,Matrix
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from render_voltmeter_cycles import CyclesGeometry
+from lot_06_15_geometry import build
+BASE=Path(__file__).resolve().parent
+CONTRACT=json.loads((BASE/'lot_06_15_contract.json').read_text())
+
+def light(scene,name,loc,target,power,w,hh):
+    data=bpy.data.lights.new(name,'AREA');data.energy=power;data.shape='RECTANGLE';data.size=w;data.size_y=hh
+    o=bpy.data.objects.new(name,data);scene.collection.objects.link(o);o.location=loc
+    o.rotation_euler=(Vector(target)-o.location).to_track_quat('-Z','Y').to_euler()
+
+def main():
+    a=argparse.ArgumentParser();a.add_argument('--out',required=True);a.add_argument('--only');a.add_argument('--samples',type=int,default=32);opts=a.parse_args(sys.argv[sys.argv.index('--')+1:])
+    assert 16<=opts.samples<=256
+    for key,s in CONTRACT.items():
+        if opts.only and key not in opts.only.split(','):continue
+        folder=Path(opts.out)/key;folder.mkdir(parents=True,exist_ok=True);start=time.monotonic();records={}
+        for view,service in [('front',False),('palette',False),('service',True)]:
+            bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+            # Reset orphaned datablocks between components to bound memory.
+            for collection in (bpy.data.meshes,bpy.data.curves,bpy.data.materials,bpy.data.cameras,bpy.data.lights):
+                for block in list(collection):
+                    if block.users==0:collection.remove(block)
+            scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=opts.samples;scene.cycles.use_denoising=True;scene.cycles.denoiser='OPENIMAGEDENOISE'
+            scene.render.film_transparent=True;scene.render.image_settings.file_format='PNG';scene.render.image_settings.color_mode='RGBA';scene.render.resolution_percentage=100
+            w,hh=s['size'];scene.render.resolution_x=w*4;scene.render.resolution_y=hh*4
+            scene.view_settings.view_transform='AgX';scene.view_settings.look='AgX - Medium High Contrast';scene.view_settings.exposure=.15
+            scene.world.use_nodes=True;nodes=scene.world.node_tree.nodes;bg=nodes.get('Background')
+            env=nodes.get('lot HDR') or nodes.new('ShaderNodeTexEnvironment');env.name='lot HDR';env.image=bpy.data.images.load(str(BASE.parent/'g5_render_environment/studio_small_09_1k.hdr'),check_existing=True)
+            scene.world.node_tree.links.new(env.outputs['Color'],bg.inputs['Color']);bg.inputs['Strength'].default_value=.42
+            h=CyclesGeometry();build(h,key,s,service)
+            for o in bpy.data.objects:
+                if o.type=='MESH':
+                    for mod in o.modifiers:
+                        if mod.type=='BEVEL':mod.segments=5;mod.harden_normals=True
+                    mod=o.modifiers.new('weighted machining normals','WEIGHTED_NORMAL');mod.keep_sharp=True
+            target=(w/2,-hh/2,25);unit=max(w,hh)/240;energy=unit*unit
+            light(scene,'large key',(-w*.15,-hh*.15,280*unit),target,90000*energy,100*unit,180*unit)
+            light(scene,'reflection strip',(w*1.15,-hh*.7,180*unit),target,65000*energy,25*unit,200*unit)
+            light(scene,'top rim',(w*.5,-hh*1.3,120*unit),target,65000*energy,160*unit,40*unit)
+            light(scene,'front fill',(w*.5,hh*.15,220*unit),target,25000*energy,150*unit,100*unit)
+            data=bpy.data.cameras.new('front aligned physical camera');data.type='ORTHO';data.clip_end=3000
+            cam=bpy.data.objects.new('front aligned physical camera',data);scene.collection.objects.link(cam);scene.camera=cam
+            yaw,pitch=(-24,-16) if view=='palette' else (0,0)
+            cy,sy=math.cos(math.radians(yaw)),math.sin(math.radians(yaw));cp,sp=math.cos(math.radians(pitch)),math.sin(math.radians(pitch))
+            right=Vector((cy,0,sy));up=Vector((-sp*sy,cp,sp*cy));back=Vector((-cp*sy,-sp,cp*cy))
+            cam.rotation_euler=Matrix((right,up,back)).transposed().to_euler();cam.location=Vector((w/2,-hh/2,0))+back*1000
+            data.ortho_scale=max(w,hh)*(1.18 if view=='palette' else 1)
+            scene.render.filepath=str(folder/(view+'.png'));bpy.ops.render.render(write_still=True)
+            records[view+'.png']={'sha256':hashlib.sha256((folder/(view+'.png')).read_bytes()).hexdigest(),'size':[w*4,hh*4]}
+        (folder/'provenance.json').write_text(json.dumps({'key':key,'images':records,'samples':opts.samples,'blender':bpy.app.version_string,'seconds':round(time.monotonic()-start,2),'contract_sha256':hashlib.sha256((BASE/'lot_06_15_contract.json').read_bytes()).hexdigest(),'geometry_sha256':hashlib.sha256((BASE/'lot_06_15_geometry.py').read_bytes()).hexdigest(),'actual_flutter_capture':False},indent=2)+'\n')
+        print('COMPLETED '+key,flush=True)
+if __name__=='__main__':main()

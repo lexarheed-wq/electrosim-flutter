@@ -336,6 +336,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                           device.parametersSi['movingMassKg'],
                           (double x) => values['movingMassKg'] = x,
                         ),
+                        _physicalInput(
+                          'Position déclenchement B1 (m)',
+                          device.parametersSi['sensorTriggerPositionM'],
+                          (double x) => values['sensorTriggerPositionM'] = x,
+                        ),
+                        _physicalInput(
+                          'Position réarmement B1 (m)',
+                          device.parametersSi['sensorReleasePositionM'],
+                          (double x) => values['sensorReleasePositionM'] = x,
+                          allowZero: true,
+                        ),
                       ],
                       if (valve52) ...<Widget>[
                         _physicalInput(
@@ -353,6 +364,36 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                           device.parametersSi['valveCd'],
                           (double x) => values['valveCd'] = x,
                           maxValue: 1,
+                        ),
+                        _physicalInput(
+                          'Bobine tension nominale (V)',
+                          device.parametersSi['coilNominalVoltageV'],
+                          (double x) => values['coilNominalVoltageV'] = x,
+                        ),
+                        _physicalInput(
+                          'Seuil d’enclenchement (rapport)',
+                          device.parametersSi['coilPickupRatio'],
+                          (double x) => values['coilPickupRatio'] = x,
+                          maxValue: 1,
+                        ),
+                        _physicalInput(
+                          'Seuil de retombée (rapport)',
+                          device.parametersSi['coilDropRatio'],
+                          (double x) => values['coilDropRatio'] = x,
+                          maxValue: 1,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Délai bobine enclenchement (s)',
+                          device.parametersSi['coilPickupDelayS'],
+                          (double x) => values['coilPickupDelayS'] = x,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Délai bobine retombée (s)',
+                          device.parametersSi['coilReleaseDelayS'],
+                          (double x) => values['coilReleaseDelayS'] = x,
+                          allowZero: true,
                         ),
                         DropdownButtonFormField<double>(
                           key: const Key('air-valve-static-position'),

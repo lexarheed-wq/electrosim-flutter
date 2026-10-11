@@ -62,19 +62,6 @@ final class PneumaticWorkshopState {
         'Physical pneumatic device was not found.',
       );
     }
-    final Set<String> validKeys = <String>{
-      'pressureAbsPa',
-      'volumeM3',
-      'temperatureK',
-    };
-    for (final MapEntry<String, double> e in parametersSi.entries) {
-      if (!validKeys.contains(e.key) || !e.value.isFinite || e.value <= 0) {
-        throw const MultiphysicsContractException(
-          'invalid_calibration',
-          'Physical SI pressure, volume and temperature must be positive.',
-        );
-      }
-    }
     final List<PneumaticDevice> devices = <PneumaticDevice>[];
     for (final PneumaticDevice device in project.pneumaticNetwork.devices) {
       if (device.id != physicalId) {
@@ -87,17 +74,38 @@ final class PneumaticWorkshopState {
       final bool boundary =
           device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
-      if (!fitting && !boundary) {
+      final bool valve = device.kind == PneumaticDeviceKind.valve52;
+      if (!fitting && !boundary && !valve) {
         throw const MultiphysicsContractException(
           'unsupported_calibration',
-          'This device has no R6/F qualified parameter editor.',
+          'This device has no qualified pneumatic parameter editor.',
         );
       }
-      if (!fitting && parametersSi.containsKey('volumeM3')) {
-        throw const MultiphysicsContractException(
-          'unsupported_calibration',
-          'An ideal pressure boundary has no finite chamber volume.',
-        );
+      final Set<String> accepted = <String>{
+        'pressureAbsPa',
+        'temperatureK',
+        if (fitting) 'volumeM3',
+        if (valve) ...<String>[
+          'portDeadVolumeM3',
+          'valveEffectiveAreaM2',
+          'valveCd',
+          'energized',
+        ],
+      };
+      for (final MapEntry<String, double> e in parametersSi.entries) {
+        final double value = e.value;
+        if (!accepted.contains(e.key) ||
+            !value.isFinite ||
+            (e.key == 'energized'
+                ? value != 0 && value != 1
+                : value <= 0) ||
+            (e.key == 'valveCd' && value > 1)) {
+          throw const MultiphysicsContractException(
+            'invalid_calibration',
+            'Only explicit, physically valid SI parameters and spool '
+                'positions 0 or 1 can be saved.',
+          );
+        }
       }
       devices.add(
         PneumaticDevice(

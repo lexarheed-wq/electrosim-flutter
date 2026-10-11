@@ -65,10 +65,11 @@ class AmmeterGeometryTest(unittest.TestCase):
         self.assertEqual([p[f'key_{i}']['x'] for i in range(4)],
                          [35, 49, 63, 77])
         self.assertEqual((p['selector_shaft']['x'],
-                          p['selector_shaft']['y']), (53, 91))
+                          p['selector_shaft']['y']), (53, 86))
         self.assertEqual((p['fuse_hatch']['x'],
                           p['fuse_hatch']['y']), (53, 114))
         self.assertEqual(p['fuse_hatch']['height'], 8.5)
+        self.assertLess(86 + 21, p['fuse_hatch']['y'] - p['fuse_hatch']['height'] / 2)
         self.assertEqual(len([k for k in p if k.startswith('selector_detent_')]),
                          11)
 

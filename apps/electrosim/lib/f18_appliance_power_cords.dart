@@ -28,10 +28,13 @@ class F18AppliancePowerCords extends CustomPainter {
       if (contacts.length < 2) continue;
       final originWorld = (contacts[0] + contacts[1]) / 2;
       final q = layout.elementQuarterTurns[c.id.value] ?? 0;
-      final exit = Offset(
-        -math.sin(q * math.pi / 2),
-        math.cos(q * math.pi / 2),
-      );
+      final direction =
+          NativeApplianceGeometry.forComponent(c)?.key == 'external-iron'
+          ? -1.0
+          : 1.0;
+      final exit =
+          Offset(-math.sin(q * math.pi / 2), math.cos(q * math.pi / 2)) *
+          direction;
       final start = viewport.worldToScreen(originWorld);
       final cable = circuit.connections
           .where(

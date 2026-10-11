@@ -1,3 +1,4 @@
+import 'native_appliance_geometry.dart';
 import 'dart:ui';
 
 import 'package:electrosim_domain/electrosim_domain.dart';
@@ -123,7 +124,8 @@ final class CircuitWireLayoutEngine {
         if ((c.modelType == 'motor_3p_6t' ||
                 c.modelType == 'earthed_machine_3p_7t') &&
             (c.parameters['_visualModelType'] != 'catalog_motor_driven_6t' ||
-                c.parameters['_visualVariant'] == 'crusher'))
+                c.parameters['_visualVariant'] == 'crusher' ||
+                NativeApplianceGeometry.forComponent(c)?.threePhase == true))
           c.id.value: c.terminals.take(6).map((t) => t.id).toSet(),
     };
 

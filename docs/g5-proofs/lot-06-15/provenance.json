@@ -1,0 +1,849 @@
+{
+  "source": "actual Flutter F18WorkspacePage captures",
+  "is_ai_generated": false,
+  "test": "apps/electrosim/tool/capture_g5_lot_06_15_test.dart",
+  "flutter_tests_passed": 57,
+  "components": {
+    "external-air-conditioner": {
+      "mesh_provenance": {
+        "key": "external-air-conditioner",
+        "images": {
+          "front.png": {
+            "sha256": "1432671895f59f4792446c8f69eb144b8ba0b558cf9b43b0040aadfa28cd4b0a",
+            "size": [
+              1280,
+              640
+            ]
+          },
+          "palette.png": {
+            "sha256": "3ab4466a7af6d77a9dc487cb5c19a4164a028b641936c795eb84c22fb05d7930",
+            "size": [
+              1280,
+              640
+            ]
+          },
+          "service.png": {
+            "sha256": "eb7c3efb80ebf878e5819826e495368850c60ff7bd0bfd2d0b3acfe9df047a0b",
+            "size": [
+              1280,
+              640
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 94.62,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "1432671895f59f4792446c8f69eb144b8ba0b558cf9b43b0040aadfa28cd4b0a",
+          "size": [
+            1280,
+            640
+          ]
+        },
+        "palette": {
+          "sha256": "3ab4466a7af6d77a9dc487cb5c19a4164a028b641936c795eb84c22fb05d7930",
+          "size": [
+            1280,
+            640
+          ]
+        },
+        "service": {
+          "sha256": "eb7c3efb80ebf878e5819826e495368850c60ff7bd0bfd2d0b3acfe9df047a0b",
+          "size": [
+            1280,
+            640
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-air-conditioner-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "238a8ddb0bd0f9377cca9d647ef1eb58e1c409f818f2f3ccd292b7a20074edcf"
+        },
+        "maintenance": {
+          "file": "external-air-conditioner-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "55dc828ebbac73fad79e0dff38c2f85d551a8d1cd2d86669d592834d0b5343a1"
+        },
+        "running": {
+          "file": "external-air-conditioner-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "6bd3fba204b298c1f938fd8b5fc0d4dbf7f6092dfc0161d81b97462fc1e5c110"
+        }
+      }
+    },
+    "external-compressor": {
+      "mesh_provenance": {
+        "key": "external-compressor",
+        "images": {
+          "front.png": {
+            "sha256": "c03fa503fbc6c59cfe140758644e73642eb6f60aeec4d8d7218ae260683b700d",
+            "size": [
+              960,
+              880
+            ]
+          },
+          "palette.png": {
+            "sha256": "9579440cb53f12177fceba4f21aa4dad5ea4f4f89b32c6eac1fb1866ad2074a1",
+            "size": [
+              960,
+              880
+            ]
+          },
+          "service.png": {
+            "sha256": "54274258e252a651d840f5dc50a2c5c50ecb3d5016773bf8c997ba3aeb4e765a",
+            "size": [
+              960,
+              880
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 114.51,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "c03fa503fbc6c59cfe140758644e73642eb6f60aeec4d8d7218ae260683b700d",
+          "size": [
+            960,
+            880
+          ]
+        },
+        "palette": {
+          "sha256": "9579440cb53f12177fceba4f21aa4dad5ea4f4f89b32c6eac1fb1866ad2074a1",
+          "size": [
+            960,
+            880
+          ]
+        },
+        "service": {
+          "sha256": "54274258e252a651d840f5dc50a2c5c50ecb3d5016773bf8c997ba3aeb4e765a",
+          "size": [
+            960,
+            880
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-compressor-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "e1d684160abe417806950edf50a07679b25c85be2a042b5f350316155a64c86d"
+        },
+        "maintenance": {
+          "file": "external-compressor-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "800f415cf71939a732f6782af9e372cb51b8799211516d151c4ade6dfa4d6e70"
+        },
+        "running": {
+          "file": "external-compressor-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "999b5d2be6ea1e6e5cabed8103090ab19a42ba0c8b570ec6385923f91a643f83"
+        }
+      }
+    },
+    "external-freezer": {
+      "mesh_provenance": {
+        "key": "external-freezer",
+        "images": {
+          "front.png": {
+            "sha256": "063ae100270647dc386a41d0a8e1acfb87d3e91ae71bf71e0995cecbea758229",
+            "size": [
+              1280,
+              840
+            ]
+          },
+          "palette.png": {
+            "sha256": "d026dbaf1d0290360906985bf9c2941fe2ae173f3a707a2f40dc6a39eea68534",
+            "size": [
+              1280,
+              840
+            ]
+          },
+          "service.png": {
+            "sha256": "9859b92cc8de3bc8516aa861c10f2917fb450aa0d1cb2650a1d79eb6f22285ce",
+            "size": [
+              1280,
+              840
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 136.36,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "063ae100270647dc386a41d0a8e1acfb87d3e91ae71bf71e0995cecbea758229",
+          "size": [
+            1280,
+            840
+          ]
+        },
+        "palette": {
+          "sha256": "d026dbaf1d0290360906985bf9c2941fe2ae173f3a707a2f40dc6a39eea68534",
+          "size": [
+            1280,
+            840
+          ]
+        },
+        "service": {
+          "sha256": "9859b92cc8de3bc8516aa861c10f2917fb450aa0d1cb2650a1d79eb6f22285ce",
+          "size": [
+            1280,
+            840
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-freezer-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "e11d15817f0a633ad1f7c6655967712abd4e6d6eea162dcd0ba7af69698b82d1"
+        },
+        "maintenance": {
+          "file": "external-freezer-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "5ad455583cb665b8aa0a12a0e2b8b61e404d732f732f1f5fbe4a7bd5d6c3fd16"
+        },
+        "running": {
+          "file": "external-freezer-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "5be0b9a33a533661313755e2cefcbb31db1eaf63dad5f6d96c96943552f52b11"
+        }
+      }
+    },
+    "external-conveyor": {
+      "mesh_provenance": {
+        "key": "external-conveyor",
+        "images": {
+          "front.png": {
+            "sha256": "b73608db55df16023b240395527924871ed8fb96a94b457a6a80ceef521982a1",
+            "size": [
+              1440,
+              920
+            ]
+          },
+          "palette.png": {
+            "sha256": "36751f603614806b73fe486cc9affb206ab7b9bfcbf4b5ecf4fe84e8783378eb",
+            "size": [
+              1440,
+              920
+            ]
+          },
+          "service.png": {
+            "sha256": "5a94a585814f39562eef61919260a59693046519ce47839b375cd1a703aaf379",
+            "size": [
+              1440,
+              920
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 121.75,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "b73608db55df16023b240395527924871ed8fb96a94b457a6a80ceef521982a1",
+          "size": [
+            1440,
+            920
+          ]
+        },
+        "palette": {
+          "sha256": "36751f603614806b73fe486cc9affb206ab7b9bfcbf4b5ecf4fe84e8783378eb",
+          "size": [
+            1440,
+            920
+          ]
+        },
+        "service": {
+          "sha256": "5a94a585814f39562eef61919260a59693046519ce47839b375cd1a703aaf379",
+          "size": [
+            1440,
+            920
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-conveyor-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "e231d0be442c939b05f594731d54f2bcf55613aa91815fb162a04860dd591e14"
+        },
+        "maintenance": {
+          "file": "external-conveyor-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "759c2ced05745a155ac4903f34be99c23b274c68a84a89945d0407db724d483f"
+        },
+        "running": {
+          "file": "external-conveyor-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "76af3053197e62afff36ba7a4bef8ed1119e4eb209d975192f60b1ae9996ac47"
+        }
+      }
+    },
+    "external-iron": {
+      "mesh_provenance": {
+        "key": "external-iron",
+        "images": {
+          "front.png": {
+            "sha256": "15affa9dd23ae9c5387bcb20559269c56be6af87bec1ecf245255375948768f7",
+            "size": [
+              960,
+              720
+            ]
+          },
+          "palette.png": {
+            "sha256": "c0a5d6a335c52a37a946051ad31fcdfbe47f4278fdc5f7142afeb96f77e3404e",
+            "size": [
+              960,
+              720
+            ]
+          },
+          "service.png": {
+            "sha256": "3730d7d0020ec9557b5060891e1b00ed3bbeee8ffa210a080277093613b0998f",
+            "size": [
+              960,
+              720
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 60.95,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "final-touchup",
+      "assets": {
+        "front": {
+          "sha256": "15affa9dd23ae9c5387bcb20559269c56be6af87bec1ecf245255375948768f7",
+          "size": [
+            960,
+            720
+          ]
+        },
+        "palette": {
+          "sha256": "c0a5d6a335c52a37a946051ad31fcdfbe47f4278fdc5f7142afeb96f77e3404e",
+          "size": [
+            960,
+            720
+          ]
+        },
+        "service": {
+          "sha256": "3730d7d0020ec9557b5060891e1b00ed3bbeee8ffa210a080277093613b0998f",
+          "size": [
+            960,
+            720
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-iron-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "da5c2a4875068d2237cf06bcfcfd02c138fab0ac60eb89471ba07c21faaf602d"
+        },
+        "maintenance": {
+          "file": "external-iron-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "33be1c739d099cda2fd79906a9a05a6fc93487c2128c850741f2d34c70965a49"
+        },
+        "running": {
+          "file": "external-iron-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "d5e3bfb7f6ab93f6d8fa5d361b0ad519e17499668c26211fbc74f64b6ad12638"
+        }
+      }
+    },
+    "external-mixer": {
+      "mesh_provenance": {
+        "key": "external-mixer",
+        "images": {
+          "front.png": {
+            "sha256": "9ed38ab6c3f7f967867f112e3a72af8a9403b8f14f669663bc90841068d26cc7",
+            "size": [
+              800,
+              1200
+            ]
+          },
+          "palette.png": {
+            "sha256": "54ce25336829b70becf170b0015f1badbafc41f5fe94112e58e79bf9e6377921",
+            "size": [
+              800,
+              1200
+            ]
+          },
+          "service.png": {
+            "sha256": "ad98833224ccba2f75cfd17b5d2b5faf06bfec7d9e2533c68e5da98b6ab7a1af",
+            "size": [
+              800,
+              1200
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 75.32,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "9ed38ab6c3f7f967867f112e3a72af8a9403b8f14f669663bc90841068d26cc7",
+          "size": [
+            800,
+            1200
+          ]
+        },
+        "palette": {
+          "sha256": "54ce25336829b70becf170b0015f1badbafc41f5fe94112e58e79bf9e6377921",
+          "size": [
+            800,
+            1200
+          ]
+        },
+        "service": {
+          "sha256": "ad98833224ccba2f75cfd17b5d2b5faf06bfec7d9e2533c68e5da98b6ab7a1af",
+          "size": [
+            800,
+            1200
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-mixer-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "ff5df87d718588cf7c4e7a2a256c54824921cf77b8e74ca79b0c7ca186ec0e1b"
+        },
+        "maintenance": {
+          "file": "external-mixer-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "885c0da98fc1026a85f0135c32cb70b83b7f1786eb9d32fdd23a82b5cf75c2c6"
+        },
+        "running": {
+          "file": "external-mixer-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "a6733c57f62961fd76be2fd8738d698c2c83ee8ff3ec1d80fb0b34daa35927da"
+        }
+      }
+    },
+    "external-computer": {
+      "mesh_provenance": {
+        "key": "external-computer",
+        "images": {
+          "front.png": {
+            "sha256": "4d461f467c4d6b762ac47c6c29279494652cf0284872c953147a447ac29f047e",
+            "size": [
+              1120,
+              960
+            ]
+          },
+          "palette.png": {
+            "sha256": "f79d69edaaf8d30c8122920b3000ed55511150aa3c506b30b5f448abfa384c8e",
+            "size": [
+              1120,
+              960
+            ]
+          },
+          "service.png": {
+            "sha256": "1e5bdffc15fa92b8ba7281eaa744d82772b44d09fec16b2274ab89bba3e72e61",
+            "size": [
+              1120,
+              960
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 125.63,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "assets": {
+        "front": {
+          "sha256": "4d461f467c4d6b762ac47c6c29279494652cf0284872c953147a447ac29f047e",
+          "size": [
+            1120,
+            960
+          ]
+        },
+        "palette": {
+          "sha256": "f79d69edaaf8d30c8122920b3000ed55511150aa3c506b30b5f448abfa384c8e",
+          "size": [
+            1120,
+            960
+          ]
+        },
+        "service": {
+          "sha256": "1e5bdffc15fa92b8ba7281eaa744d82772b44d09fec16b2274ab89bba3e72e61",
+          "size": [
+            1120,
+            960
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-computer-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "d953bad1fe9f434ef71dc24661a58f68f75257176f0039f37e8f2e01a1e5f652"
+        },
+        "maintenance": {
+          "file": "external-computer-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "b963b98b0c8b0fa31a3fb10f64d728a51a48a2aa234a8822dd0d60ddfc2e9ec7"
+        },
+        "running": {
+          "file": "external-computer-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "22183f4a847ca4d67a15ee8272b3abb0c6163e9406e43d1cef441c4e0295619e"
+        }
+      }
+    },
+    "external-pump-3p": {
+      "mesh_provenance": {
+        "key": "external-pump-3p",
+        "images": {
+          "front.png": {
+            "sha256": "c5043cc870968ceb6bae582d70c356ce187f5693d8bed4ff7a1cc6f34fd10123",
+            "size": [
+              1200,
+              800
+            ]
+          },
+          "palette.png": {
+            "sha256": "bdd86ea6f714dd26939f78b5e9ba06a7c37dae6f3c0deda74d653f4e02c4466c",
+            "size": [
+              1200,
+              800
+            ]
+          },
+          "service.png": {
+            "sha256": "37781c6fe8cb3df838c8b051292e55700ff7b53a5a1e92aa06d8461c0dbc7145",
+            "size": [
+              1200,
+              800
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 99.63,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "final-touchup",
+      "assets": {
+        "front": {
+          "sha256": "c5043cc870968ceb6bae582d70c356ce187f5693d8bed4ff7a1cc6f34fd10123",
+          "size": [
+            1200,
+            800
+          ]
+        },
+        "palette": {
+          "sha256": "bdd86ea6f714dd26939f78b5e9ba06a7c37dae6f3c0deda74d653f4e02c4466c",
+          "size": [
+            1200,
+            800
+          ]
+        },
+        "service": {
+          "sha256": "37781c6fe8cb3df838c8b051292e55700ff7b53a5a1e92aa06d8461c0dbc7145",
+          "size": [
+            1200,
+            800
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-pump-3p-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "3e3b02db1875a968af3bf4d7ff84f508732d9cdf5a5b41b7b3a0b8bb5895c990"
+        },
+        "maintenance": {
+          "file": "external-pump-3p-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "18ba75219c8d14d0ca827d1732cebe900286bcfaf11defc92ae032b09b6c3ce6"
+        },
+        "running": {
+          "file": "external-pump-3p-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "f9d82cec65fef47a52101f84d76b82ada6ba9df6875fbd78d7fd8f3f5260841e"
+        }
+      }
+    },
+    "external-pump-ac1": {
+      "mesh_provenance": {
+        "key": "external-pump-ac1",
+        "images": {
+          "front.png": {
+            "sha256": "333980c5943c1e92d87f83f654800026d46df3b78fd2bacc1410f01662116574",
+            "size": [
+              1040,
+              720
+            ]
+          },
+          "palette.png": {
+            "sha256": "39b3111277471b6f461aa3100c6725ddea1ad5eed63925fe37d4af456df7307c",
+            "size": [
+              1040,
+              720
+            ]
+          },
+          "service.png": {
+            "sha256": "4b753c6d55af76ded092d504df8b186349c4034c348e687c988b8de9a37787f0",
+            "size": [
+              1040,
+              720
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 80.29,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "final-touchup",
+      "assets": {
+        "front": {
+          "sha256": "333980c5943c1e92d87f83f654800026d46df3b78fd2bacc1410f01662116574",
+          "size": [
+            1040,
+            720
+          ]
+        },
+        "palette": {
+          "sha256": "39b3111277471b6f461aa3100c6725ddea1ad5eed63925fe37d4af456df7307c",
+          "size": [
+            1040,
+            720
+          ]
+        },
+        "service": {
+          "sha256": "4b753c6d55af76ded092d504df8b186349c4034c348e687c988b8de9a37787f0",
+          "size": [
+            1040,
+            720
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-pump-ac1-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "0eea0a0e7e5f4bc4c2dff66351cbde2641186c49271420303ea4aaf0474d9b7b"
+        },
+        "maintenance": {
+          "file": "external-pump-ac1-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "89238486423b15a08cc007ee29598e6488d34011560467c3e9f1501eb3df2f21"
+        },
+        "running": {
+          "file": "external-pump-ac1-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "e52347b12ed65bc8746163329773c9a1406b57f85b32e416633ac69436b82f94"
+        }
+      }
+    },
+    "external-solar-pump": {
+      "mesh_provenance": {
+        "key": "external-solar-pump",
+        "images": {
+          "front.png": {
+            "sha256": "23d84eea1cfd8f808bd916c9c1d9997cd90b6437484b2ad984fcd491f8ec0fd4",
+            "size": [
+              720,
+              1200
+            ]
+          },
+          "palette.png": {
+            "sha256": "b31c695180dd0658edbbbf82f9b99864acbb799e33bf300c69fdd1954cbb203a",
+            "size": [
+              720,
+              1200
+            ]
+          },
+          "service.png": {
+            "sha256": "2b8427f5889e55b4f8104fb382b2b9f508e21ad31cedc8afab80ebbc2e8354ce",
+            "size": [
+              720,
+              1200
+            ]
+          }
+        },
+        "samples": 32,
+        "blender": "4.5.3 LTS",
+        "seconds": 78.66,
+        "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
+        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "actual_flutter_capture": false
+      },
+      "recipe_version": "final-touchup",
+      "assets": {
+        "front": {
+          "sha256": "23d84eea1cfd8f808bd916c9c1d9997cd90b6437484b2ad984fcd491f8ec0fd4",
+          "size": [
+            720,
+            1200
+          ]
+        },
+        "palette": {
+          "sha256": "b31c695180dd0658edbbbf82f9b99864acbb799e33bf300c69fdd1954cbb203a",
+          "size": [
+            720,
+            1200
+          ]
+        },
+        "service": {
+          "sha256": "2b8427f5889e55b4f8104fb382b2b9f508e21ad31cedc8afab80ebbc2e8354ce",
+          "size": [
+            720,
+            1200
+          ]
+        }
+      },
+      "actual_flutter_captures": {
+        "closed": {
+          "file": "external-solar-pump-closed.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "0a01c28339c51d37f7fa3b0ed7ea2208c40d132c8452768abc5cd3aafe6a9f50"
+        },
+        "maintenance": {
+          "file": "external-solar-pump-maintenance.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "e3fac8259fce250a6c5e55d055a56df09d2b0b408e22c0cb2b381fcb4a7863f9"
+        },
+        "running": {
+          "file": "external-solar-pump-running.png",
+          "size": [
+            2400,
+            1500
+          ],
+          "sha256": "60275f82d1eb6890a15f669c3f6beb60ef03491eab6b616eabd84942bc79eed9"
+        }
+      }
+    }
+  },
+  "qualification": "local integration verified; user visual review pending; no release/400-component qualification"
+}

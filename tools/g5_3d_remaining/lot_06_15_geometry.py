@@ -192,7 +192,7 @@ def iron(h,s):
     h.box('status_lens',168,91,5,3,66,1,h.terminal_gray,r=1)
     h.tube('cord_strain_relief',[(205,80,36),(208,63,35),(211,56,35)],3,dark)
     for y in range(58,75,3):h.box('strain_relief_rib_'+str(y),209,y,7,1,37,3,dark,r=.5)
-    for x in range(47,203,6):h.cyl('soleplate_steam_hole_'+str(x),x,152,67,.7,.3,h.well)
+    for x in range(47,203,6):h.cyl('soleplate_steam_hole_'+str(x),x,152,45,.7,.3,h.well)
     terminals(h,s)
 
 
@@ -229,7 +229,12 @@ def pump(h,s,single=False):
         a=i*math.tau/6;screw(h,'volute_bolt_'+str(i),cx+(r-7)*math.cos(a),cy+(r-7)*math.sin(a),60,1.8)
     h.bolt('drain_plug',cx-9,cy+r-10,61,3,h.brass)
     h.box('volute_foot',cx,cy+r+5,r*1.4,7,40,44,m,r=.6)
+    # The coupling adapter physically joins volute to the drive. Neither part
+    # is a detached icon; the flange remains behind the frontal volute cover.
+    cylinder(h,'pump_motor_coupling_adapter',118 if single else 136,
+        112 if single else 119,19,25 if single else 28,20 if single else 26,m,'x')
     motor(h,173 if single else 204,112 if single else 119,19,101 if single else 117,30 if single else 34,m)
+    if not single:h.box('motor_terminal_box_mount',188,81,31,14,42,18,m,r=1.2)
     if single:h.box('capacitor_housing',175,66,56,29,37,25,m,r=5)
     terminals(h,s)
 
@@ -247,6 +252,8 @@ def solar(h,s):
     for x in (49,119):
         h.box('floor_foot_'+str(x),x,275,22,6,46,40,dark,r=.6)
         screw(h,'anchor_'+str(x),x,274,48,2)
+    # The side terminal enclosure has an actual mounting neck into the motor.
+    h.box('side_terminal_box_mount',115,86,22,12,45,20,dark,r=1.5)
     plate(h,'rating_plate',84,186,58,23,24);terminals(h,s)
 
 

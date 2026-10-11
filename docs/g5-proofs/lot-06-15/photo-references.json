@@ -1,0 +1,103 @@
+{
+  "photos_downloaded_and_visually_examined": true,
+  "manufacturer_photos_bundled_in_app": false,
+  "download_date_is_not_model_release_date": true,
+  "records": [
+    {
+      "file": "compressor-automan-ac100.jpg",
+      "url": "https://www.atlascopco-kompressoren.de/media/ed/96/2d/1733298991/S2%2BB%2B4116026019%2BAUTOMAN%2BAC100-BM%2BSIL_S2_01.jpg",
+      "family": "external-compressor",
+      "source": "https://www.atlascopco-kompressoren.de/de/p/automan-af-ac-ah-oelgeschmierte-und-oelfreie-kolbenkompressoren-fuer-die-werkstatt/4116026322",
+      "download_date": "2026-10-11",
+      "bytes": 1264412,
+      "sha256": "8e0ea980c68ce9ac522bb5f41b38bc722519d34de80aad49356f6e4424d2becf",
+      "last_modified": "Wed, 04 Dec 2024 07:56:31 GMT",
+      "model_recency": "candidate; exact current range must be checked, download date is not model date",
+      "status": "downloaded"
+    },
+    {
+      "file": "air-conditioner-daikin-ftxfd.jpg",
+      "url": "https://www.daikin.de/content/dam/MDM/Pictures/Split/IndoorUnits/Packshots/FTXF-D.tif/jcr%3Acontent/renditions/cq5dam.web.1280.1280.jpeg",
+      "family": "external-air-conditioner indoor split unit",
+      "source": "https://www.daikin.de/de_de/produkte/product.html/FTXF-D---RXF-C.html",
+      "download_date": "2026-10-11",
+      "bytes": 41970,
+      "sha256": "0a59852934f06c6ab5a7e49087ed1c8ad4a85fdf7e386125cbeb177384814ee0",
+      "last_modified": "Mon, 12 Sep 2022 17:24:29 GMT",
+      "model_recency": "candidate; exact current range must be checked, download date is not model date",
+      "status": "downloaded"
+    },
+    {
+      "file": "iron-tefal-fv9844.png",
+      "url": "https://shop.tefal.gr/cdn/shop/files/A9B3CFE82855A6DAF9E5223A05683F470A3F74D88F699AF749A298028122DE32.png?v=1771845867&width=500",
+      "family": "external-iron",
+      "source": "https://shop.tefal.gr/products/ultimate-pure-sidero-atmoy-fv9844",
+      "download_date": "2026-10-11",
+      "bytes": 108305,
+      "sha256": "996f3818edf478ae90861ed0cc95cc873fad57b4b1e037a38863b80f0cd46e18",
+      "last_modified": "Fri, 09 Oct 2026 17:16:02 GMT",
+      "model_recency": "candidate; exact current range must be checked, download date is not model date",
+      "status": "downloaded"
+    },
+    {
+      "file": "conveyor-dorner2200-current-catalogue.jpg",
+      "family": "external-conveyor",
+      "source": "https://www.dornerconveyors.com/products/2200-series/2200-belted-conveyor",
+      "url": "https://www.dornerconveyors.com/wp-content/uploads/2017/08/2200-Belted-Updated-Frame-Design-2048x1365.jpg",
+      "download_date": "2026-10-11",
+      "bytes": 96722,
+      "sha256": "74395b8c2e4e8b4d7a91ee6e4ea82e8aea074fe94ac29ecd28508a45bc015dc8",
+      "last_modified": "Mon, 12 Dec 2022 19:33:50 GMT",
+      "model_recency": "candidate; exact current range must be checked, download date is not model date",
+      "status": "downloaded"
+    },
+    {
+      "file": "mixer-photo.webp",
+      "url": "https://www.silverson.com/images/uploads/products/_detail/silverson-high-shear-batch-in-tank-mixer.webp",
+      "bytes": 40296,
+      "sha256": "e0c504146b83304036ef39c031838d2c6b68a56e577fab8f1db9fc7597f9ac4b",
+      "download_date": "2026-10-11",
+      "last_modified": "Thu, 07 May 2026 14:09:40 GMT"
+    },
+    {
+      "file": "pump-photo.webp",
+      "url": "https://www.pedrollo.com/wp-content/uploads/products/CP.webp",
+      "bytes": 137454,
+      "sha256": "c62ac38cd0dba5318e763bcde26af403bb034456d06c84ce5fca9bbd5ff6d02e",
+      "download_date": "2026-10-11",
+      "last_modified": "Mon, 09 Sep 2024 13:26:47 GMT"
+    },
+    {
+      "file": "solar-photo.jpg",
+      "url": "https://www.lorentz.de/wp-content/uploads/2017/02/lorentz_surface_family_square.jpg",
+      "bytes": 81095,
+      "sha256": "d912cf1bf5f6792c68869b505e2953b8d7f92922b3387bd193a92ae142f777e9",
+      "download_date": "2026-10-11",
+      "last_modified": "Wed, 27 May 2026 12:53:25 GMT"
+    },
+    {
+      "file": "computer-photo.png",
+      "url": "https://p3-ofp.static.pub//fes/cms/2025/03/05/9t3m91vzhwutrz68fiwyd85ffn3gj9949032.png",
+      "bytes": 181578,
+      "sha256": "6fb3d16be53e990b19ee3f8adb5f05093848c26da6b42eb3df70d28036551647",
+      "download_date": "2026-10-11",
+      "last_modified": "Fri, 11 Sep 2026 12:58:29 GMT"
+    },
+    {
+      "file": "freezer-photo.webp",
+      "url": "https://assets-cdn.liebherr.com/versions/02ce4a87-1577-4e89-94cb-30b74f68814e/w-1280_h-1280_f-webp/CFd%202505.webp",
+      "source": "https://www.liebherr.com/en-ae/p/cfd-2505-3245759",
+      "bytes": 24006,
+      "sha256": "79952344c0f0755741ca89d96904d377698472d1a8432d81eaa0aa8554cedb2f",
+      "download_date": "2026-10-11"
+    },
+    {
+      "file": "air-conditioner-current-e.jpg",
+      "url": "https://my.daikin.eu/content/dam/MDM/Pictures/Split/IndoorUnits/Packshots/FTXF-E/FTXF-E_R.tif/_jcr_content/renditions/cq5dam.web.1280.1280.jpeg",
+      "source": "https://www.daikin.eu/en_us/products/product.html/FTXF-E---RXF-E.html",
+      "download_date": "2026-10-11",
+      "sha256": "7c086022b17595085cc696a6cf3aef8f87d21c57097c6bb442e686ffa43b816d",
+      "bytes": 48254
+    }
+  ]
+}

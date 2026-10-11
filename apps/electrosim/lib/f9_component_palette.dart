@@ -1,3 +1,4 @@
+import 'f18_native_appliance_assets.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -837,7 +838,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     category: 'Appareils externes',
     modelType: 'impedance',
     visualModelType: 'catalog_motor_driven_2t',
-    visualVariant: 'pump',
+    visualVariant: 'pump-ac1',
     displayLabel: 'Pompe 1φ',
     icon: Icons.water_drop_outlined,
     kind: F9PaletteElementKind.component,
@@ -855,7 +856,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     category: 'Appareils externes',
     modelType: 'motor_dc',
     visualModelType: 'catalog_motor_driven_2t',
-    visualVariant: 'pump',
+    visualVariant: 'solar-pump',
     displayLabel: 'Pompe DC',
     icon: Icons.solar_power_outlined,
     kind: F9PaletteElementKind.component,
@@ -2861,6 +2862,19 @@ class F9ComponentPreview extends StatelessWidget {
 
     // The original Cycles perspective is baked once. Never apply the
     // generic 3/4 transformation again to an instrument texture.
+    final nativeImages = F18NativeApplianceAssets.images(definition.keyName);
+    if (nativeImages != null) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: compact ? 116 : 190,
+        height: compact ? 107 : 175,
+        child: RawImage(
+          image: nativeImages.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
     if (definition.keyName == 'external-crusher' && F18Crusher3dAssets.ready) {
       return SizedBox(
         key: Key('component-identity-preview-${definition.keyName}'),

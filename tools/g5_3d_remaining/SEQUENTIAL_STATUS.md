@@ -17,16 +17,16 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 | 03 | `instrument-frequency` | Vues Cycles dédiées ; commandes et captures 50/60 Hz vérifiées. Noms externes retirés et câbles source orthogonaux. |
 | 04 | `instrument-phase-sequence` | Photo officielle Fluke 9040 téléchargée et examinée ; corps original et cordons hauts intégrés ; 4 tests électriques passent. Deux vues Cycles finalisées ; captures Flutter aller/inverse régénérées, essais passent. Validation humaine globale différée. |
 | 05 | `external-crusher` | Intégré dans Flutter : perspective palette, face platine, coffret de maintenance à la sélection, six bornes + PE. Tests et captures réelles disponibles ; validation visuelle utilisateur en attente. |
-| 06 | `external-air-conditioner` | En attente de son tour |
-| 07 | `external-compressor` | En attente de son tour |
-| 08 | `external-freezer` | En attente de son tour |
-| 09 | `external-conveyor` | En attente de son tour |
-| 10 | `external-iron` | En attente de son tour |
-| 11 | `external-mixer` | En attente de son tour |
-| 12 | `external-computer` | En attente de son tour |
-| 13 | `external-pump-3p` | En attente de son tour |
-| 14 | `external-pump-ac1` | En attente de son tour |
-| 15 | `external-solar-pump` | En attente de son tour |
+| 06 | `external-air-conditioner` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 07 | `external-compressor` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 08 | `external-freezer` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 09 | `external-conveyor` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 10 | `external-iron` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 11 | `external-mixer` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 12 | `external-computer` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 13 | `external-pump-3p` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 14 | `external-pump-ac1` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
+| 15 | `external-solar-pump` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
 | 16 | `external-refrigerator` | En attente de son tour |
 | 17 | `external-refrigerator-dc` | En attente de son tour |
 | 18 | `external-tv` | En attente de son tour |
@@ -108,3 +108,17 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - Ampèremètre : le fil ouvert pour insertion en série ne reste plus dessiné en parallèle sur la platine. Contrat partagé `SeriesMeterWiring` entre domaine/runtime/rendu ; 27 tests ciblés passent, captures de série/fusible régénérées.
 - Noms externes sous les appareils supprimés à la demande du chef de projet. Marquages physiques, bornes, mesures, palette et inspecteur conservés. Analyse Dart sans erreur ; deux captures Flutter passent après suppression.
 - Limite : fréquence fondamentale des scénarios AC1/AC3, sans revendication de détection harmonique ou de mesure temporelle réelle. Composant 03 techniquement vérifié localement ; validation humaine globale et qualification Mac/Chromium différées. Aucun lot déclaré complet, aucune fusion.
+
+### Lot continu 06–15 — reprise autorisée du 11 octobre 2026
+
+Dix identités reprises à partir de photos fabricant téléchargées et examinées :
+climatiseur, compresseur, congélateur, convoyeur, fer, mélangeur, ordinateur et
+pompes triphasée, monophasée et CC. La revue se fait en fin de lot, à la demande
+du chef de projet. Raccords mécaniques des pompes, borniers dans les enveloppes,
+arrivées de phase séparées et étoile/triangle internes contrôlés ; effets visibles
+synchronisés au moteur existant. Boutons décoratifs inactifs par autorisation.
+
+Voir `docs/g5-proofs/lot-06-15/README.md` pour les trente captures réelles,
+les 57 tests locaux et les limites. Aucun de ces dix visuels n'est déclaré validé
+par l'utilisateur. Il reste 11 identités non commencées dans cet inventaire
+(16–26). Pas de merge G5 ni de campagne générale 400 composants pendant ce lot.

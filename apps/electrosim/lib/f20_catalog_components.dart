@@ -50,7 +50,7 @@ abstract final class F20CatalogVisualIdentity {
 
   static F20MotorSilhouette motorSilhouette(String? variantKey) =>
       switch (variantKey) {
-        'pump' => F20MotorSilhouette.pump,
+        'pump' || 'pump-ac1' || 'solar-pump' => F20MotorSilhouette.pump,
         'fan' => F20MotorSilhouette.fan,
         'compressor' => F20MotorSilhouette.compressor,
         'conveyor' => F20MotorSilhouette.conveyor,

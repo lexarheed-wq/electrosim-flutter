@@ -388,7 +388,12 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                       (angularSpeedRadS != null
                           ? angularSpeedRadS.abs() > 1e-8
                           : energized) &&
-                      requiresContinuousAnimation(renderedModelType),
+                      (requiresContinuousAnimation(renderedModelType) ||
+                          NativeApplianceGeometry.forVisual(
+                                renderedModelType,
+                                visualVariant,
+                              ) !=
+                              null),
                   showTerminals: true,
                   serviceOpen: widget.selectedElementIds.contains(elementId),
                   currentA: currentA,
@@ -509,7 +514,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               24,
         ),
         visualModelType: component.parameters['_visualModelType'] as String?,
-        visualVariant: component.parameters['_visualVariant'] as String?,
+        visualVariant:
+            NativeApplianceGeometry.forComponent(component)?.variant ??
+            component.parameters['_visualVariant'] as String?,
         powerConnectionMode: AppliancePowerConnection.mode(component),
         enabled: component.condition != ComponentCondition.disabled,
         energized: energized,
@@ -1181,21 +1188,47 @@ class _F9StaticOverlayPainter extends CustomPainter {
     for (final c in circuit.components) {
       final standalone =
           (c.parameters['_visualModelType'] ?? c.modelType) == 'motor_3p_6t';
+      final native = NativeApplianceGeometry.forComponent(c);
       final crusher =
           c.parameters['_visualModelType'] == 'catalog_motor_driven_6t' &&
           c.parameters['_visualVariant'] == 'crusher';
       if (!standalone &&
-          (!crusher || !selectedElementIds.contains(c.id.value))) {
+          (!(crusher || native != null) ||
+              !selectedElementIds.contains(c.id.value))) {
         continue;
       }
       final rect = geometry.elementRects[c.id.value];
       if (rect == null) continue;
       final ports = c.terminals.map((t) => t.id).toSet();
       canvas.save();
-      final a = viewport.worldToScreen(rect.topLeft);
-      final b = viewport.worldToScreen(rect.bottomRight);
-      canvas.clipRect(Rect.fromPoints(a, b));
+      if (native != null) {
+        final size = layout.sizeOf(c.id.value);
+        Offset project(Offset point) {
+          var p = Offset(
+            (point.dx / native.designSize.width - .5) * size.width,
+            (point.dy / native.designSize.height - .5) * size.height,
+          );
+          for (var q = 0; q < layout.quarterTurnsOf(c.id.value); q++) {
+            p = Offset(-p.dy, p.dx);
+          }
+          return viewport.worldToScreen(rect.center + p);
+        }
+
+        canvas.clipRect(
+          Rect.fromPoints(
+            project(native.serviceBox.topLeft),
+            project(native.serviceBox.bottomRight),
+          ),
+        );
+      } else {
+        final a = viewport.worldToScreen(rect.topLeft);
+        final b = viewport.worldToScreen(rect.bottomRight);
+        canvas.clipRect(Rect.fromPoints(a, b));
+      }
       for (final wire in circuit.connections) {
+        if (wire.metadata.containsKey(AppliancePowerConnection.cableTag)) {
+          continue;
+        }
         if (!ports.contains(wire.fromTerminalId) &&
             !ports.contains(wire.toTerminalId)) {
           continue;
@@ -1229,7 +1262,14 @@ class _F9StaticOverlayPainter extends CustomPainter {
                 ? const Color(0xff258945)
                 : internal
                 ? const Color(0xffae8b3c)
-                : const Color(0xff202b35)
+                : switch (wire.phase) {
+                    PhaseTag.l1 => const Color(0xff92400e),
+                    PhaseTag.l2 => const Color(0xff111827),
+                    PhaseTag.l3 => const Color(0xff6b7280),
+                    PhaseTag.neutral => const Color(0xff2563eb),
+                    PhaseTag.dcPositive => const Color(0xffdc2626),
+                    _ => const Color(0xff202b35),
+                  }
             ..style = PaintingStyle.stroke
             ..strokeWidth = 3.5 * viewport.scale
             ..strokeJoin = StrokeJoin.round

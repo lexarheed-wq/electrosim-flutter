@@ -1,3 +1,4 @@
+import 'f18_native_appliance_assets.dart';
 // Shared electrical workspace for desktop and browser frontends.
 // The student browser must import this module, never the Mac application entrypoint.
 import 'dart:async';
@@ -920,6 +921,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   void initState() {
     super.initState();
     unawaited(
+      F18NativeApplianceAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
       F18Crusher3dAssets.preload().then((_) {
         if (mounted) setState(() {});
       }),
@@ -967,6 +973,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
     _layout = migrateCrusherPhysicalLayout(
+      _circuit,
+      _layout,
+      router: _g2aWireLayoutEngine,
+    );
+    _layout = migrateNativeApplianceLayout(
       _circuit,
       _layout,
       router: _g2aWireLayoutEngine,
@@ -1631,6 +1642,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
         _layout = migrateCrusherPhysicalLayout(
+          _circuit,
+          _layout,
+          router: _g2aWireLayoutEngine,
+        );
+        _layout = migrateNativeApplianceLayout(
           _circuit,
           _layout,
           router: _g2aWireLayoutEngine,
@@ -3485,7 +3501,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     final bool backgroundRouting =
         nextCircuit.components.length + nextCircuit.sources.length >= 30;
-    final CircuitVisualLayout nextLayout = backgroundRouting
+    var nextLayout = backgroundRouting
         ? provisionalConnectionLayout(
             circuit: nextCircuit,
             layout: _layout,
@@ -3496,6 +3512,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             layout: _layout,
             connectionId: connection.id,
           );
+    if (!backgroundRouting) {
+      nextLayout = migrateNativeApplianceLayout(
+        nextCircuit,
+        nextLayout,
+        router: _g2aWireLayoutEngine,
+      );
+    }
     final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
       circuit: nextCircuit,
       layout: nextLayout,
@@ -4315,7 +4338,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     ];
     final variants = {
       for (final c in circuit.components)
-        c.id.value: c.parameters['_visualVariant'] as String?,
+        c.id.value:
+            NativeApplianceGeometry.forComponent(c)?.variant ??
+            c.parameters['_visualVariant'] as String?,
     };
     double rowTop = 96;
     for (var start = 0; start < elements.length; start += 3) {

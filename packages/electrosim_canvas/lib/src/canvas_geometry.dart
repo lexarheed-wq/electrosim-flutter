@@ -5,6 +5,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'circuit_visual_layout.dart';
 import 'motor_terminal_geometry.dart';
+import 'native_appliance_geometry.dart';
 import 'premium_rcd2p_terminal_geometry.dart';
 
 /// Presentation-only terminal anchors for component drawings.
@@ -413,7 +414,12 @@ final class CircuitGeometryIndex {
     final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
     final Set<String> seenElementIds = <String>{};
 
-    void indexElement(String id, String modelType, List<Terminal> terminals) {
+    void indexElement(
+      String id,
+      String modelType,
+      List<Terminal> terminals, {
+      NativeApplianceGeometry? native,
+    }) {
       if (!seenElementIds.add(id)) {
         throw StateError(
           'Canvas requires globally unique source/component visual IDs; duplicate: $id',
@@ -434,20 +440,31 @@ final class CircuitGeometryIndex {
         height: displaySize.height,
       );
       elementRects[id] = rect;
+      final nativeOffsets = native?.offsets(baseSize, terminals.length);
       for (var index = 0; index < terminals.length; index++) {
         final Terminal terminal = terminals[index];
-        final Offset physicalLocal = TerminalVisualProfile.terminalOffset(
-          modelType: modelType,
-          size: baseSize,
-          index: index,
-          count: terminals.length,
-        );
-        final Offset routingLocal = TerminalVisualProfile.routingOffset(
-          modelType: modelType,
-          size: baseSize,
-          index: index,
-          count: terminals.length,
-        );
+        final Offset physicalLocal =
+            nativeOffsets != null && index < nativeOffsets.length
+            ? nativeOffsets[index]
+            : TerminalVisualProfile.terminalOffset(
+                modelType: modelType,
+                size: baseSize,
+                index: index,
+                count: terminals.length,
+              );
+        final Offset routingLocal =
+            nativeOffsets != null && index < nativeOffsets.length
+            ? _nativeRoutingDock(
+                physicalLocal,
+                baseSize,
+                incoming: index < (native!.threePhase ? 3 : 2),
+              )
+            : TerminalVisualProfile.routingOffset(
+                modelType: modelType,
+                size: baseSize,
+                index: index,
+                count: terminals.length,
+              );
         terminalPositions[terminal.id] =
             center +
             _rotateQuarterTurns(
@@ -491,6 +508,7 @@ final class CircuitGeometryIndex {
             : (component.parameters['_visualModelType'] as String?) ??
                   component.modelType,
         component.terminals,
+        native: NativeApplianceGeometry.forComponent(component),
       );
     }
     for (final InstrumentInstance instrument in circuit.instruments) {
@@ -544,4 +562,21 @@ final class CircuitGeometryIndex {
       _ => Offset(offset.dy, -offset.dx),
     };
   }
+}
+
+Offset _nativeRoutingDock(Offset p, Size size, {required bool incoming}) {
+  if (incoming) return Offset(p.dx, -size.height / 2);
+  final distances = [
+    p.dx + size.width / 2,
+    size.width / 2 - p.dx,
+    p.dy + size.height / 2,
+    size.height / 2 - p.dy,
+  ];
+  final index = distances.indexOf(distances.reduce(math.min));
+  return switch (index) {
+    0 => Offset(-size.width / 2, p.dy),
+    1 => Offset(size.width / 2, p.dy),
+    2 => Offset(p.dx, -size.height / 2),
+    _ => Offset(p.dx, size.height / 2),
+  };
 }

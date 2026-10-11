@@ -196,6 +196,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         text: TextSpan(
           text: reading,
           style: TextStyle(
+            fontFamily: 'Roboto',
             fontSize: (13 * viewport.scale).clamp(7, 22).toDouble(),
             fontWeight: FontWeight.w700,
             color: const Color(0xFF142C1F),

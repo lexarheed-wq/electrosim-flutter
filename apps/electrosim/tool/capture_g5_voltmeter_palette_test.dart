@@ -52,7 +52,8 @@ void main() {
       String? added;
       String? status;
       final key = GlobalKey();
-      await t.pumpWidget(MaterialApp(
+      final rootKey = GlobalKey();
+      await t.pumpWidget(RepaintBoundary(key: rootKey, child: MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           backgroundColor: const Color(0xFFF2F4F7),
@@ -78,7 +79,7 @@ void main() {
             ),
           ),
         ),
-      ));
+      )));
       await t.pump(const Duration(milliseconds: 20));
 
       const item = Key('palette-item-instrument-voltmeter');
@@ -116,15 +117,45 @@ void main() {
         });
         expect(File('${out.path}/palette-3d-default-visible.png').existsSync(),
             isTrue);
+        // The expanded detail is rendered by the REAL Tooltip overlay, not
+        // an externally assembled image or a Blender-only product picture.
+        const detailKey = Key('g5-voltmeter-3d-detail-preview');
+        expect(find.byKey(detailKey), findsOneWidget);
+        final mouse = await t.createGesture(kind: ui.PointerDeviceKind.mouse);
+        await mouse.addPointer(location: const Offset(1, 1));
+        await mouse.moveTo(t.getCenter(find.byKey(detailKey)));
+        await t.pump(const Duration(milliseconds: 500));
+        // Complete the tooltip fade-in before capturing an opaque inspection.
+        await t.pump(const Duration(milliseconds: 320));
+        expect(find.text('Voltmètre — vue 3/4'), findsOneWidget);
+        final expanded = rootKey.currentContext!.findRenderObject()!
+            as RenderRepaintBoundary;
+        await t.runAsync(() async {
+          final image = await expanded.toImage(pixelRatio: 1.5);
+          try {
+            final data =
+                await image.toByteData(format: ui.ImageByteFormat.png);
+            File('${out.path}/palette-3d-detail-zoom.png')
+                .writeAsBytesSync(data!.buffer.asUint8List());
+          } finally {
+            image.dispose();
+          }
+        });
+        expect(File('${out.path}/palette-3d-detail-zoom.png').existsSync(),
+            isTrue);
+        await mouse.removePointer();
+        await t.pump(const Duration(seconds: 3));
 
         await t.enterText(
             find.byKey(const Key('palette-search-field')), 'voltmètre');
         await t.pump();
         expect(find.byKey(item), findsOneWidget);
-        expect(find.byKey(preview), findsOneWidget);
+        // Tooltip's magnified WidgetSpan is a second preview of the SAME
+        // instrument; never mistake two render instances for two products.
+        expect(find.byKey(preview), findsAtLeastNWidgets(1));
         expect(find.descendant(
           of: find.byKey(item), matching: find.byType(RawImage),
-        ), findsOneWidget);
+        ), findsAtLeastNWidgets(1));
         await t.ensureVisible(find.byKey(add));
         await t.tap(find.byKey(add));
         expect(added, 'instrument-voltmeter');

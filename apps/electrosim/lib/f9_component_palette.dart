@@ -2460,13 +2460,75 @@ class _PaletteDraggableTile extends StatelessWidget {
                           F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: F9ComponentPreview(
-                    definition: definition,
-                    compact: true,
-                  ),
-                ),
+                child: definition.keyName == 'instrument-voltmeter'
+                    ? Tooltip(
+                        key: const Key('g5-voltmeter-3d-detail-preview'),
+                        waitDuration: const Duration(milliseconds: 450),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF182438),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF526477)),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x44000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10,
+                        ),
+                        richMessage: WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: SizedBox(
+                            width: 236,
+                            height: 308,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Text(
+                                  'Voltmètre — vue 3/4',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: F9ComponentPreview(
+                                      definition: definition,
+                                    ),
+                                  ),
+                                ),
+                                const Text(
+                                  'HOLD  RANGE  SELECT  LIGHT',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: F9ComponentPreview(
+                            definition: definition,
+                            compact: true,
+                          ),
+                        ),
+                      )
+                    : FittedBox(
+                        fit: BoxFit.contain,
+                        child: F9ComponentPreview(
+                          definition: definition,
+                          compact: true,
+                        ),
+                      ),
               ),
               const SizedBox(width: ElectroSimSpacing.sm),
               Expanded(
@@ -2700,7 +2762,7 @@ class F9ComponentPreview extends StatelessWidget {
         child: RawImage(
           image: F18Voltmeter3dAssets.palette,
           fit: BoxFit.contain,
-          filterQuality: FilterQuality.medium,
+          filterQuality: FilterQuality.high,
         ),
       );
     }

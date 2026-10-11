@@ -191,7 +191,11 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               _physicalInput('Longueur (m)', null, (double x) => length = x),
-              _physicalInput('Diamètre intérieur (m)', null, (double x) => bore = x),
+              _physicalInput(
+                'Diamètre intérieur (m)',
+                null,
+                (double x) => bore = x,
+              ),
               _physicalInput(
                 'Coefficient de perte K',
                 null,
@@ -242,60 +246,59 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   Future<void> _calibrateSelected(PneumaticDevice device) async {
-    final bool fitting = device.kind == PneumaticDeviceKind.tee ||
+    final bool fitting =
+        device.kind == PneumaticDeviceKind.tee ||
         device.kind == PneumaticDeviceKind.manifold;
-    final bool boundary = device.kind == PneumaticDeviceKind.idealSource ||
+    final bool boundary =
+        device.kind == PneumaticDeviceKind.idealSource ||
         device.kind == PneumaticDeviceKind.silencer;
     if (!fitting && !boundary) return;
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final Map<String, double> values = <String, double>{};
     final Map<String, double>? calibrated =
         await showDialog<Map<String, double>>(
-      context: context,
-      builder: (BuildContext dialog) => AlertDialog(
-        title: Text('Calibrer ${device.id} — unités SI'),
-        content: Form(
-          key: key,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              _physicalInput(
-                'Pression absolue (Pa)',
-                device.parametersSi['pressureAbsPa'],
-                (double x) => values['pressureAbsPa'] = x,
+          context: context,
+          builder: (BuildContext dialog) => AlertDialog(
+            title: Text('Calibrer ${device.id} — unités SI'),
+            content: Form(
+              key: key,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _physicalInput(
+                    'Pression absolue (Pa)',
+                    device.parametersSi['pressureAbsPa'],
+                    (double x) => values['pressureAbsPa'] = x,
+                  ),
+                  if (fitting)
+                    _physicalInput(
+                      'Volume gazeux (m³)',
+                      device.parametersSi['volumeM3'],
+                      (double x) => values['volumeM3'] = x,
+                    ),
+                ],
               ),
-              if (fitting)
-                _physicalInput(
-                  'Volume gazeux (m³)',
-                  device.parametersSi['volumeM3'],
-                  (double x) => values['volumeM3'] = x,
-                ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(dialog).pop(),
+                child: const Text('Annuler'),
+              ),
+              FilledButton(
+                key: const Key('air-calibration-apply'),
+                onPressed: () {
+                  if (!key.currentState!.validate()) return;
+                  key.currentState!.save();
+                  Navigator.of(dialog).pop(values);
+                },
+                child: const Text('Appliquer'),
+              ),
             ],
           ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialog).pop(),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            key: const Key('air-calibration-apply'),
-            onPressed: () {
-              if (!key.currentState!.validate()) return;
-              key.currentState!.save();
-              Navigator.of(dialog).pop(values);
-            },
-            child: const Text('Appliquer'),
-          ),
-        ],
-      ),
-    );
+        );
     if (!mounted || calibrated == null) return;
     _edit(
-      () => _state.calibrate(
-        physicalId: device.id,
-        parametersSi: calibrated,
-      ),
+      () => _state.calibrate(physicalId: device.id, parametersSi: calibrated),
     );
   }
 
@@ -337,7 +340,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       if (!mounted || cd == null) return;
     }
     try {
-      final IsothermalAirNetwork solver = _airSolver ??
+      final IsothermalAirNetwork solver =
+          _airSolver ??
           WorkshopClosedAirCompiler(
             dischargeCoefficient: cd,
           ).compileWithIdealBoundaries(_state.project.pneumaticNetwork);
@@ -352,9 +356,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         _airSnapshot = next;
       });
     } on Object catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Simulation impossible : $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Simulation impossible : $error')));
     }
   }
 
@@ -483,12 +487,12 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   child: Text(
                     _airSnapshot == null
                         ? 'Réseau expérimental : calcul seulement pour '
-                            'sources idéales, silencieux et collecteurs '
-                            'physiquement calibrés. Autres modèles refusés.'
+                              'sources idéales, silencieux et collecteurs '
+                              'physiquement calibrés. Autres modèles refusés.'
                         : 'Simulation réelle : t = '
-                            '${_airSnapshot!.timeS.toStringAsFixed(3)} s ; '
-                            'masse externe = '
-                            '${_airSnapshot!.externalMassAddedKg.toStringAsExponential(3)} kg',
+                              '${_airSnapshot!.timeS.toStringAsFixed(3)} s ; '
+                              'masse externe = '
+                              '${_airSnapshot!.externalMassAddedKg.toStringAsExponential(3)} kg',
                     key: const Key('air-runtime-state'),
                     maxLines: 3,
                   ),

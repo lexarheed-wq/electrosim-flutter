@@ -1,0 +1,58 @@
+name: PNEU R6D Closed Workshop Real Physics
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6d-workshop-physical-network-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6c-reference-live-ui-20261011
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r6d-closed-gas-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  r6d-canonical-closed-gas:
+    name: r6d-canonical-closed-gas
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Solve from actual authored pneumatic port topology
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6d
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            dart --version
+          } | tee build/pneumatics-r6d/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format lib/src/workshop_closed_air_compiler.dart test/r6_workshop_closed_network_test.dart
+            git diff -- lib/src/workshop_closed_air_compiler.dart test/r6_workshop_closed_network_test.dart | tee ../../build/pneumatics-r6d/FORMAT_PATCH.diff
+            git diff --exit-code -- lib/src/workshop_closed_air_compiler.dart test/r6_workshop_closed_network_test.dart
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6d/SCIENCE.log
+          grep -F "R6/D actual drawn hoses transfer mass between 3 finite chambers" build/pneumatics-r6d/SCIENCE.log
+          grep -F "R6/D a blocked hose really isolates finite air mass" build/pneumatics-r6d/SCIENCE.log
+          grep -F "All tests passed!" build/pneumatics-r6d/SCIENCE.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6d-authored-physical-islands-${{ github.sha }}
+          path: build/pneumatics-r6d/
+          if-no-files-found: warn
+          retention-days: 21

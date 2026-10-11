@@ -43,6 +43,7 @@ import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
 import 'runtime/electrosim_instrument_projection.dart';
+import 'runtime/f18_ammeter_fuse_safety.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
@@ -2058,6 +2059,33 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
   }
 
+  final Set<InstrumentId> _pendingAmmeterFuseTrips = <InstrumentId>{};
+
+  /// Never mutate a circuit from inside a CustomPainter/build. A solver-
+  /// verified overcurrent queues one post-frame transition, which stays
+  /// latched in InstrumentInstance until a fuse is explicitly replaced.
+  void _scheduleAmmeterFuseTrip(InstrumentId id) {
+    if (!_pendingAmmeterFuseTrips.add(id)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pendingAmmeterFuseTrips.remove(id);
+      if (!mounted) return;
+      final CircuitState before = _circuit;
+      final CircuitState after = F18AmmeterFuseSafety.latch(
+        circuit: before,
+        instrumentId: id,
+      );
+      if (identical(before, after)) return;
+      setState(() {
+        _circuit = after;
+        _meterReadoutCacheCircuit = null;
+        _status = 'Ampèremètre : fusible déclenché. '
+            'Circuit de mesure ouvert. Remplacement requis.';
+      });
+      _simulation.updateCircuit(after);
+      _syncStudentTpCircuit();
+    });
+  }
+
   Map<String, String> _physicalMeterReadouts() {
     if (_circuit.instruments.isEmpty) return const <String, String>{};
     final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
@@ -2079,6 +2107,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         snapshot: snapshot,
         instrument: item,
       );
+      if (F18AmmeterFuseSafety.shouldTrip(
+        circuit: _circuit,
+        instrument: item,
+        solverDetectedOvercurrent:
+            reading.status == PhysicalInstrumentStatus.blownFuse,
+      )) {
+        _scheduleAmmeterFuseTrip(item.id);
+      }
       final double? value = reading.result?.reading?.value;
       final String? textValue = reading.result?.displayText;
       final bool valid = reading.status == PhysicalInstrumentStatus.valid;

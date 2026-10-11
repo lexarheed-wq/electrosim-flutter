@@ -55,14 +55,16 @@ final class ElectroSimInstrumentProjection {
       message: message,
     );
 
-    if (!instrument.poweredOn) {
-      return error(PhysicalInstrumentStatus.off, 'Instrument switched off.');
-    }
+    // A physically blown fuse remains failed when the instrument is OFF.
+    // Do not mask the failure behind the power switch state.
     if (instrument.fuseBlown) {
       return error(
         PhysicalInstrumentStatus.blownFuse,
-        'Instrument fuse blown.',
+        'Instrument fuse blown. Replacement required.',
       );
+    }
+    if (!instrument.poweredOn) {
+      return error(PhysicalInstrumentStatus.off, 'Instrument switched off.');
     }
     // The PV runtime can legitimately solve an autonomous battery as a
     // DC island, without any array or inverter. Instruments must use the

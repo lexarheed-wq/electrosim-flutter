@@ -28,7 +28,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
 
     const meterId = 'meter-v';
-    const meter = InstrumentInstance(
+    final meter = InstrumentInstance(
       id: InstrumentId(meterId),
       kind: InstrumentKind.voltmeter,
       mode: InstrumentMode.voltageDc,
@@ -44,7 +44,7 @@ void main() {
       connections: base.connections,
       settings: base.settings,
       metadata: base.metadata,
-      instruments: const <InstrumentInstance>[meter],
+      instruments: <InstrumentInstance>[meter],
       probes: <ProbeConnection>[
         ProbeConnection(
           id: ProbeId('lead-v'),

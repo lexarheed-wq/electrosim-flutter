@@ -160,8 +160,11 @@ def main():
         'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
         70, jack_legend_y, body_d + 9.1, 3.4, h.steel)
     if KEY == 'instrument-ammeter':
-        raised_legend('fuse-panel-legend', 'FUSE 10 A',
-                      53, 114, body_d + 11.2, 2.7, h.steel)
+        # Fuse rating is editable at runtime. Never bake a fixed "10 A"
+        # certification/rating into the image: Flutter will print the
+        # instrument's *actual* fuseRatingA on the lower hatch line.
+        raised_legend('fuse-panel-legend', 'FUSE',
+                      53, 112.0, body_d + 11.2, 2.7, h.steel)
     # The tactile moulding belongs to the lateral holster, NOT to the dial.
     for i, x in enumerate((28, 84)):
         h.cyl(f'casing-fastener-{i}', x, 137, body_d + 5.0,

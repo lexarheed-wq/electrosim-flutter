@@ -47,7 +47,6 @@ class CyclesGeometry:
             modifier = obj.modifiers.new('actual moulded corner radius', 'BEVEL')
             modifier.width = bevel
             modifier.segments = 4
-            obj.modifiers.new('weighted face normals', 'WEIGHTED_NORMAL')
         return obj
 
     def box(self, name, x, y, width, height, z, depth, material, r=0):
@@ -100,6 +99,11 @@ def main():
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = opts.samples
+    # Ubuntu apt Blender builds can be compiled without OpenImageDenoiser.
+    scene.cycles.use_denoising = False
+    for layer in scene.view_layers:
+        if hasattr(layer, 'cycles'):
+            layer.cycles.use_denoising = False
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'

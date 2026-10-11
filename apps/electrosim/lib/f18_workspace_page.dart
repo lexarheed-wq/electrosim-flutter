@@ -2662,6 +2662,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _clearDirectPointerState();
       return;
     }
+    // The generic hit tester may classify an instrument as background.
+    // Dispatch its physical controls BEFORE background deselection.
+    if (!_directPointerMoved &&
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown &&
+        _handleVoltmeterControlTap(event.localPosition)) {
+      _resetDirectControlTapTracking();
+      _clearDirectPointerState();
+      return;
+    }
     final String? movedId = _directDragElementId;
     final bool moved = _directPointerMoved && movedId != null;
     if (moved) {
@@ -2679,9 +2689,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } else if (!_directPointerMoved &&
         _wiringPendingTerminal == null &&
         !_selectionModifierAtPointerDown) {
-      if (!_handleVoltmeterControlTap(event.localPosition)) {
-        _handleDirectControlTap(event.localPosition);
-      }
+      _handleDirectControlTap(event.localPosition);
     }
     _clearDirectPointerState();
   }

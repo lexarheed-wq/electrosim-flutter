@@ -302,6 +302,78 @@ void main() {
     ), same(notSafe));
   });
 
+  test('fuse cannot be bypassed by detaching a probe after blowing', () {
+    final intact = seriesMeter(rating: 0.5);
+    final tripped = F18AmmeterFuseSafety.latch(
+      circuit: intact, instrumentId: intact.instruments.single.id,
+    );
+    final detached = CircuitState(
+      circuitId: tripped.circuitId,
+      revision: tripped.revision + 1,
+      mode: tripped.mode,
+      sources: tripped.sources,
+      components: tripped.components,
+      connections: tripped.connections,
+      instruments: tripped.instruments,
+      probes: <ProbeConnection>[
+        tripped.probes.first,
+      ],
+      settings: tripped.settings,
+      metadata: tripped.metadata,
+    );
+    expect(F18AmmeterFuseSafety.wiredCut(
+      detached, detached.instruments.single,
+    ), isNull);
+    final effective = engine.evaluate(detached).effectiveCircuit;
+    expect(effective.connections.singleWhere((c) =>
+      c.id.value == 'wire-2').enabled, isFalse);
+    expect(detached.connections.singleWhere((c) =>
+      c.id.value == 'wire-2').enabled, isTrue);
+  });
+
+  test('duplicate series meters on one wire fail open, not bypassed', () {
+    final original = seriesMeter(rating: 10);
+    final second = InstrumentInstance(
+      id: InstrumentId('amp-second'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      burdenResistanceOhm: 0.02,
+      cutConnectionId: ConnectionId('wire-2'),
+    );
+    final conflict = CircuitState(
+      circuitId: original.circuitId,
+      revision: original.revision + 1,
+      mode: original.mode,
+      sources: original.sources,
+      components: original.components,
+      connections: original.connections,
+      instruments: <InstrumentInstance>[...original.instruments, second],
+      probes: <ProbeConnection>[
+        ...original.probes,
+        ProbeConnection(
+          id: ProbeId('second-a'),
+          instrumentId: second.id,
+          port: InstrumentPort.amp,
+          terminalId: TerminalId('switch-out'),
+        ),
+        ProbeConnection(
+          id: ProbeId('second-com'),
+          instrumentId: second.id,
+          port: InstrumentPort.common,
+          terminalId: TerminalId('lamp-in'),
+        ),
+      ],
+    );
+    final snapshot = engine.evaluate(conflict);
+    expect(snapshot.effectiveCircuit.connections
+      .singleWhere((c) => c.id.value == 'wire-2').enabled, isFalse);
+    expect(snapshot.effectiveCircuit.components
+      .where((c) => c.id.value.startsWith('g5-amperemeter-burden-')),
+      isEmpty);
+    expect(conflict.connections.singleWhere((c) =>
+      c.id.value == 'wire-2').enabled, isTrue);
+  });
+
   test('valid reversed lead order still corresponds to cut endpoints', () {
     final design = seriesMeter(swappedLeads: true);
     expect(F18AmmeterFuseSafety.wiredCut(

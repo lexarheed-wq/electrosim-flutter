@@ -88,6 +88,20 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  electrosim_multiphysics:
+    dependency: "direct main"
+    description:
+      path: "../electrosim_multiphysics"
+      relative: true
+    source: path
+    version: "0.1.0"
+  electrosim_pneumatic_domain:
+    dependency: "direct main"
+    description:
+      path: "../electrosim_pneumatic_domain"
+      relative: true
+    source: path
+    version: "0.1.0"
   electrosim_scenarios:
     dependency: "direct dev"
     description:

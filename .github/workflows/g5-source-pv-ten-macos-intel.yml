@@ -1,0 +1,62 @@
+name: G5 Source PV Ten Mac Intel
+on:
+  push:
+    branches:
+      - feat/g5-source-pv-ten-20261010
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: g5-source-pv-ten-mac
+  cancel-in-progress: true
+jobs:
+  macos-intel-candidate:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Validate and build exact G5 source on macOS Intel
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          base="$(pwd)"
+          python3 tools/premium_rcd2p/decode_source.py
+          runner="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$runner" in
+            F17_RUNNER_PATH=*) root="${runner#F17_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $runner"; exit 69 ;;
+          esac
+          cd "$root/apps/electrosim"
+          flutter pub get
+          flutter analyze
+          flutter test --concurrency=1
+          flutter test tool/capture_g5_industrial_test.dart
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          output="$base/g5-source-pv-ten-macOS"
+          mkdir -p "$output"
+          file "$executable" | tee "$output/ARCHITECTURE.txt"
+          grep -qi x86_64 "$output/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
+          printf '%s\n' 'G5 source and PV realism — physical Mac acceptance pending user validation.' > "$output/READ_ME_FIRST.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_G5_Source_PV_Ten_Mac_Intel.zip"
+          (cd "$output" && shasum -a 256 ElectroSim_G5_Source_PV_Ten_Mac_Intel.zip > SHA256.txt)
+          (cd "$output" && unzip -t ElectroSim_G5_Source_PV_Ten_Mac_Intel.zip | tail -1)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G5-Source-PV-Ten-Mac-Intel
+          path: g5-source-pv-ten-macOS/
+          retention-days: 14
+          if-no-files-found: error

@@ -3,10 +3,12 @@ Run blender -b --factory-startup -t 4 --python tools/render_g5_industrial.py.
 Geometry JSON is exported by the Canvas-port regression test. Front projection
 is exact: one design unit is one Flutter logical pixel. Palette is a true camera.
 """
-import bpy, bmesh, math, json, os, subprocess
+import bpy, bmesh, math, json, os, subprocess, sys
 from pathlib import Path
 from mathutils import Vector, Matrix
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'tools'))
+from g5_source_pv_meshes import SOURCE_PV_MODELS, build_source_pv
 OUT = Path(os.environ.get('ELECTROSIM_RENDER_OUTPUT', str(ROOT / 'apps/electrosim/assets/g5_industrial')))
 OUT.mkdir(parents=True, exist_ok=True)
 MODELS = json.loads((ROOT / 'apps/electrosim/assets/g5_industrial/geometry.json').read_text())
@@ -211,6 +213,12 @@ def controls(name,M):
         width=ports[poles-1][0]-ports[0][0]+pw*.76
         round_housing(W/2,H*.76,width,H*.065,39,9,black,1.4)
         box('bar bevel highlight',W/2,H*.737,width*.96,H*.007,39.2,.4,black,.25)
+    elif name=='switch-toggle':
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64,radius=W*.048,depth=H*.19,location=(W/2,-H*.5,39))
+        lever=bpy.context.object;lever.rotation_euler[0]=math.radians(-20)
+        finish(lever,'polished steel switch lever',chrome,.6)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=W*.052,location=(W/2,-H*.5-H*.095*math.sin(math.radians(-20)),39+H*.095*math.cos(math.radians(-20))))
+        finish(bpy.context.object,'rounded lever tip',chrome)
     elif name=='fan':fan_rotor(W,H)
     elif name in ['button-no','button-nc']:
         color=red if name=='button-nc' else green
@@ -348,11 +356,108 @@ def sounder(W,H,ports):
     for x,yy in ports:
         wire('sounder solder lead',[(x,-(cy+r*.60),-5),(x,-yy,20)],1.5,steel)
 
+def axial_surface(name,y,z,points,material):
+    """Turned/coated axial body; points are longitudinal X and radius."""
+    n=96;verts=[(x,-y+r*math.sin(2*math.pi*i/n),z+r*math.cos(2*math.pi*i/n)) for x,r in points for i in range(n)]
+    faces=[(k*n+i,k*n+(i+1)%n,(k+1)*n+(i+1)%n,(k+1)*n+i) for k in range(len(points)-1) for i in range(n)]
+    me=bpy.data.meshes.new(name);me.from_pydata(verts,[],faces);me.update()
+    ob=bpy.data.objects.new(name,me);scene.collection.objects.link(ob);finish(ob,name,material)
+    for poly in me.polygons:poly.use_smooth=True
+
+def passive_terminal(x,y,H):
+    round_housing(x,y,H*.19,H*.23,27,10,terminal_gray,2)
+    cyl('nickel clamp washer',x,y,29,H*.065,2,chrome)
+
+def axial_resistor(W,H,ports):
+    coat=mat('red brown vitreous resistor coating',(.40,.035,.018),rough=.30,grain=.006)
+    cx,cy=W/2,H/2;r=H*.19;half=W*.16
+    axial_surface('axial coated resistance',cy,25,[(cx-half-7,0),(cx-half-7,3),(cx-half-3,r*.55),(cx-half,r*.92),(cx-half+4,r),(cx+half-4,r),(cx+half,r*.92),(cx+half+3,r*.55),(cx+half+7,3),(cx+half+7,0)],coat)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        end=cx-half-6 if x<cx else cx+half+6
+        wire('tinned axial resistor lead',[(x,-y,27),(end,-cy,25)],1.5,chrome)
+
+def film_capacitor(W,H,ports):
+    epoxy=mat('non polar film red thermoplastic',(.47,.018,.022),rough=.30,grain=.003)
+    cx,cy=W/2,H/2
+    body=box('rounded film capacitor case',cx,cy-3,W*.34,H*.64,23,30,epoxy,3)
+    # Potting is behind the pin exit, with no electrolytic polarity stripe.
+    box('film capacitor resin underside',cx,H*.795,W*.31,H*.018,13,22,porcelain,.7)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        side=-1 if x<cx else 1
+        wire('radial capacitor formed lead',[(cx+side*W*.09,-H*.79,13),(cx+side*W*.09,-H*.91,13),(x,-H*.91,27),(x,-y,27)],1.6,chrome)
+
+def drum_inductor(W,H,ports):
+    ferrite=mat('sintered ferrite bobbin',(.032,.035,.038),rough=.32,grain=.005)
+    enamel=mat('dark copper enamel winding',(.21,.065,.019),metallic=.6,rough=.28,grain=0)
+    cx=W/2;radius=H*.24
+    lathe('ferrite drum core',cx,25,[(H*.20,0),(H*.20,radius*.90),(H*.23,radius),(H*.30,radius),(H*.32,radius*.56),(H*.70,radius*.56),(H*.72,radius),(H*.80,radius),(H*.83,radius*.90),(H*.83,0)],ferrite)
+    points=[]
+    for i in range(1280):
+        t=i/1279;angle=t*math.pi*32;r=radius*.80
+        points.append((cx+r*math.cos(angle),-H*(.335+t*.34),25+r*math.sin(angle)))
+    wire('continuous sixteen turn enamelled winding',points,H*.0105,enamel)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        side=-1 if x<cx else 1
+        wire('formed radial inductor pin',[(cx+side*H*.10,-H*.81,13),(cx+side*H*.10,-H*.93,13),(x,-H*.93,27),(x,-y,27)],1.6,chrome)
+
+def axial_diode(W,H,ports,kind):
+    cx,cy=W/2,H/2
+    is_glass=kind=='diode-glass';is_tvs=kind=='diode-tvs'
+    radius=H*(.105 if is_glass else .18 if is_tvs else .145)
+    half=W*(.105 if is_glass else .155 if is_tvs else .135)
+    case=mat('amber DO35 encapsulation',(.43,.085,.025),rough=.11,grain=0) if is_glass else mat('moulded axial epoxy',(.019,.022,.025),rough=.31,grain=.002)
+    if is_glass:
+        bs=case.node_tree.nodes['Principled BSDF'];bs.inputs['Transmission Weight'].default_value=.55;bs.inputs['IOR'].default_value=1.5
+        axial_surface('internal cathode electrode',cy,25,[(cx+half*.15,0),(cx+half*.15,radius*.48),(cx+half-1,radius*.48),(cx+half-1,0)],chrome)
+        axial_surface('internal silicon junction',cy,25,[(cx-2,0),(cx-2,radius*.45),(cx+3,radius*.45),(cx+3,0)],black)
+    axial_surface('axial diode case',cy,25,[(cx-half-2,0),(cx-half-2,radius*.7),(cx-half,radius),(cx+half,radius),(cx+half+2,radius*.7),(cx+half+2,0)],case)
+    # Cathode band towards canonical K: right-hand port, never mirrored.
+    band=black if is_glass else mat('silver cathode identifier',(.64,.65,.61),rough=.4,grain=0)
+    axial_surface('cathode polarity band',cy,25,[(cx+half*.63,radius+.12),(cx+half*.85,radius+.12)],band)
+    for x,y in ports:
+        passive_terminal(x,y,H)
+        end=cx-half-2 if x<cx else cx+half+2
+        wire('tinned axial diode lead',[(x,-y,27),(end,-cy,25)],1.35,chrome)
+
+def radial_led(W,H,ports,green_led):
+    cx=W/2;r=H*.165;z=25
+    resin=mat('green diffused LED resin' if green_led else 'red diffused LED resin',(.013,.31,.047) if green_led else (.53,.006,.012),rough=.16,grain=0)
+    bs=resin.node_tree.nodes['Principled BSDF'];bs.inputs['Transmission Weight'].default_value=.24;bs.inputs['IOR'].default_value=1.5
+    # Smooth hemispherical nose and cylindrical stem, axis along product Y.
+    top=H*.10;shoulder=top+r
+    points=[(top,0)]
+    for i in range(1,17):
+        angle=math.pi*.5*i/16
+        points.append((shoulder-r*math.cos(angle),r*math.sin(angle)))
+    points += [(H*.58,r),(H*.585,r*1.13),(H*.63,r*1.13),(H*.635,0)]
+    body=lathe('5mm LED domed package',cx,z,points,resin)
+    # Physical flat on K side; two electrode supports remain visible in resin.
+    cut(body,box('cathode package flat cutter',cx+r*1.27,H*.44,r*.42,H*.54,48,48,well,.01))
+    for side in [-1,1]:
+        x=cx+side*r*.36
+        box('LED lead frame',x,H*.47,r*.17,H*.22,z+1,3,chrome,.25)
+        end=ports[0 if side<0 else 1]
+        wire('formed LED lead to training clamp',[(x,-H*.54,z),(x,-H*.80,z),(end[0],-H*.80,27),(end[0],-end[1],27)],1.25,chrome)
+    # Die cup on cathode support and fine bond wire to anode.
+    cyl('cathode reflector cup',cx+r*.28,H*.38,z+2,r*.22,2,chrome)
+    box('semiconductor emitting die',cx+r*.28,H*.38,r*.09,r*.09,z+3,.8,porcelain,.1)
+    wire('gold bond wire',[(cx-r*.36,-H*.40,z+2),(cx,-H*.35,z+5),(cx+r*.28,-H*.38,z+3)],.24,brass)
+    for x,y in ports:passive_terminal(x,y,H)
+
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
-    if name=='motor-dc':dc_motor(W,H,ports)
+    if name in SOURCE_PV_MODELS:build_source_pv(name,M,globals())
+    elif name in ['diode-axial','diode-glass','diode-tvs']:axial_diode(W,H,ports,name)
+    elif name in ['led-red','led-green']:radial_led(W,H,ports,name=='led-green')
+    elif name=='motor-dc':dc_motor(W,H,ports)
     elif name=='fan':axial_fan(W,H,ports)
     elif name=='buzzer':sounder(W,H,ports)
+    elif name=='resistor-axial':axial_resistor(W,H,ports)
+    elif name=='capacitor-film':film_capacitor(W,H,ports)
+    elif name=='inductor-drum':drum_inductor(W,H,ports)
     elif name=='fuse-holder':fuse_holder(W,H,ports)
     elif name in ['auxiliary-no','auxiliary-nc']:auxiliary(W,H,ports)
     elif name=='coil':relay_coil(W,H,ports)
@@ -516,10 +621,11 @@ def build(name,M):
             for y in [H*.095,H*.90]:screw(x,y,2.2,23)
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
-        if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer']
+        if name in ['motor3','lamp','solar-panel','solar-battery','controller-mppt','controller-pwm','solar-inverter'] or name.startswith('source-'):continue
+        dark_rim=name in SOURCE_PV_MODELS or name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
-        screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
+        screw_radius=min(W,H)*(.022 if name in ['controller-mppt','controller-pwm','solar-battery'] else .038)
+        screw(x,y,screw_radius,34 if dark_rim else 29,rim)
 
 def area(name,loc,power,size):
     data=bpy.data.lights.new(name,'AREA');data.energy=power;data.size=size;data.shape='DISK'
@@ -541,7 +647,9 @@ for name,M in MODELS.items():
     cam=bpy.data.objects.new('industrial product camera',data);scene.collection.objects.link(cam);scene.camera=cam
     factor=1.5 if name=='motor3' else 2.5
     scene.render.resolution_x=round(W*factor);scene.render.resolution_y=round(H*factor)
-    for view,yaw,pitch,scale in [('front',0,0,1),('palette',-24,-16,.78)]:
+    views=[('front',0,0,1),('palette',-24,-16,.78)]
+    if name=='solar-panel':views.append(('rear',180,0,1))
+    for view,yaw,pitch,scale in views:
         cy,sy=math.cos(math.radians(yaw)),math.sin(math.radians(yaw))
         cp,sp=math.cos(math.radians(pitch)),math.sin(math.radians(pitch))
         right=Vector((cy,0,sy));up=Vector((-sp*sy,cp,sp*cy));back=Vector((-cp*sy,-sp,cp*cy))
@@ -561,9 +669,9 @@ for name,M in MODELS.items():
             source=temporary/f'{name}-{view}.png';target=OUT/f'{name}-controls-{view}.png'
             originals={o:o.matrix_world.copy() for o in control_objects}
             poses=[('',0)]
-            if name.startswith('breaker') or name.startswith('isolator'):poses += [('-on',-40),('-trip',-20)]
+            if name.startswith('breaker') or name.startswith('isolator') or name=='switch-toggle':poses += [('-on',-40),('-trip',-20)]
             for pose,angle in poses:
-                pivot=Vector((W/2,-H*.655,26))
+                pivot=Vector((W/2,-H*.5,27)) if name=='switch-toggle' else Vector((W/2,-H*.655,26))
                 transform=Matrix.Translation(pivot) @ Matrix.Rotation(math.radians(angle),4,'X') @ Matrix.Translation(-pivot)
                 for o in control_objects:o.matrix_world=transform @ originals[o]
                 source=temporary/f'{name}{pose}-{view}.png';target=OUT/f'{name}-controls{pose}-{view}.png'

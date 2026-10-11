@@ -83,16 +83,25 @@ final class HitTestEngine {
         ? viewportScale
         : 1;
     final double terminalWorldRadius = terminalRadius / safeScale;
+    MapEntry<TerminalId, Offset>? nearest;
+    double nearestDistanceSquared = terminalWorldRadius * terminalWorldRadius;
     for (final MapEntry<TerminalId, Offset> entry
         in session.geometry.terminalPositions.entries) {
-      if ((entry.value - worldPoint).distance <= terminalWorldRadius) {
-        return CanvasHitResult(
-          kind: CanvasHitKind.terminal,
-          worldPosition: worldPoint,
-          elementId: session.geometry.terminalOwners[entry.key],
-          terminalId: entry.key,
-        );
+      final double distanceSquared = (entry.value - worldPoint).distanceSquared;
+      if (distanceSquared <= nearestDistanceSquared &&
+          (nearest == null || distanceSquared < nearestDistanceSquared)) {
+        nearest = entry;
+        nearestDistanceSquared = distanceSquared;
+        if (distanceSquared == 0) break;
       }
+    }
+    if (nearest != null) {
+      return CanvasHitResult(
+        kind: CanvasHitKind.terminal,
+        worldPosition: worldPoint,
+        elementId: session.geometry.terminalOwners[nearest.key],
+        terminalId: nearest.key,
+      );
     }
     return CanvasHitResult.background(worldPoint);
   }
@@ -151,7 +160,8 @@ final class HitTestEngine {
     }
 
     for (final Connection connection in circuit.connections.reversed) {
-      final Offset? start = geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
       if (start == null || end == null) continue;
       final List<Offset> points = <Offset>[

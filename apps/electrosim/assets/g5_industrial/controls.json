@@ -214,5 +214,41 @@
     42.4,
     105.2,
     111.6
+  ],
+  "switch-toggle-front": [
+    40.0,
+    60.4,
+    10.0,
+    18.8
+  ],
+  "switch-toggle-on-front": [
+    39.6,
+    45.6,
+    10.4,
+    30.4
+  ],
+  "switch-toggle-trip-front": [
+    40.0,
+    52.4,
+    10.0,
+    25.6
+  ],
+  "switch-toggle-palette": [
+    24.8,
+    72.8,
+    15.2,
+    9.6
+  ],
+  "switch-toggle-on-palette": [
+    27.2,
+    60.0,
+    12.0,
+    21.2
+  ],
+  "switch-toggle-trip-palette": [
+    25.6,
+    66.0,
+    14.0,
+    16.0
   ]
 }

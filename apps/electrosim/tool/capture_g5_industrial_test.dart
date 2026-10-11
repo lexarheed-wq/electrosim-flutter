@@ -81,6 +81,15 @@ void main() {
       ('motor_dc', 'moteur cc'),
       ('fan_dc', 'ventilateur'),
       ('buzzer', 'buzzer'),
+      ('resistor', 'résistance'),
+      ('capacitor', 'condensateur'),
+      ('inductor', 'inductance'),
+      ('diode', 'diode redresseuse'),
+      ('diode', 'schottky'),
+      ('diode', 'zener'),
+      ('diode', 'tvs'),
+      ('diode', 'led rouge'),
+      ('diode', 'led verte'),
     ]) {
       final key = GlobalKey();
       final def = CoreComponentModelContracts.registry.resolve(entry.$1)!;
@@ -91,11 +100,16 @@ void main() {
             'motor_dc',
             'fan_dc',
             'buzzer',
+            'resistor',
+            'diode',
           ].contains(entry.$1)
           ? ElectricalMode.dc
           : ElectricalMode.ac3;
       final paletteDef = f9PaletteCatalog.firstWhere(
-        (d) => d.modelType == entry.$1 && d.supportsMode(mode),
+        (d) =>
+            d.modelType == entry.$1 &&
+            d.supportsMode(mode) &&
+            (entry.$1 != 'diode' || d.title.toLowerCase().contains(entry.$2)),
       );
       final circuit = CircuitState(
         circuitId: CircuitId('physical-${entry.$1}'),
@@ -112,7 +126,13 @@ void main() {
                 name: paletteDef.terminalLabels[i],
               ),
             ),
-            parameters: paletteDef.defaultParameters,
+            parameters: {
+              ...paletteDef.defaultParameters,
+              if (paletteDef.visualVariant != null)
+                '_visualVariant': paletteDef.visualVariant,
+              if (paletteDef.displayLabel != null)
+                '_displayLabel': paletteDef.displayLabel,
+            },
             controlState: paletteDef.defaultControlState,
           ),
         ],
@@ -178,7 +198,11 @@ void main() {
         isTrue,
       );
       expect(t.takeException(), isNull);
-      await save(t, key, 'electrosim-${entry.$1}');
+      await save(
+        t,
+        key,
+        'electrosim-${entry.$1}${entry.$1 == 'diode' ? '-${paletteDef.visualVariant}' : ''}',
+      );
       await t.pumpWidget(const SizedBox());
     }
   });
@@ -425,6 +449,9 @@ void main() {
       'motor_dc',
       'fan_dc',
       'buzzer',
+      'resistor',
+      'capacitor',
+      'inductor',
     ];
     for (var page = 0; page < (types.length / 9).ceil(); page++) {
       final key = GlobalKey();
@@ -542,6 +569,126 @@ void main() {
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
       await save(t, key, 'industriels-perspective-face-${page + 1}');
+      await t.pumpWidget(const SizedBox());
+    }
+  });
+  testWidgets('ten source and PV equipment in the real workspace', (t) async {
+    t.view.physicalSize = const Size(1440, 900);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    for (final equipmentKey in [
+      'switch-no',
+      'source-dc-24v',
+      'source-dc-current',
+      'source-ac1-230v',
+      'source-ac1-current',
+      'pv-array',
+      'pv-controller-mppt',
+      'pv-controller-pwm',
+      'pv-battery',
+      'pv-inverter',
+    ]) {
+      final d = f9PaletteCatalog.firstWhere((d) => d.keyName == equipmentKey);
+      final mode = d.supportedModes.isEmpty
+          ? ElectricalMode.dc
+          : d.supportedModes.first;
+      final terminals = List.generate(
+        d.terminalCount,
+        (i) => Terminal(
+          id: TerminalId('Q1-$i'),
+          name: d.terminalLabels[i],
+          role: d.terminals.isEmpty
+              ? TerminalRole.generic
+              : d.terminals[i].role,
+          phase: d.terminals.isEmpty ? PhaseTag.none : d.terminals[i].phase,
+        ),
+      );
+      final isSource = d.kind == F9PaletteElementKind.source;
+      final parameters = {
+        ...(isSource && d.defaultParameters.isEmpty
+            ? const {'voltageV': 24.0}
+            : d.defaultParameters),
+        if (d.visualVariant != null) '_visualVariant': d.visualVariant,
+        if (d.displayLabel != null) '_displayLabel': d.displayLabel,
+      };
+      final circuit = CircuitState(
+        circuitId: CircuitId('proof-$equipmentKey'),
+        revision: 0,
+        mode: mode,
+        sources: isSource
+            ? [
+                SourceInstance(
+                  id: SourceId('Q1'),
+                  modelType: d.modelType,
+                  terminals: terminals,
+                  parameters: parameters,
+                ),
+              ]
+            : [],
+        components: isSource
+            ? []
+            : [
+                ComponentInstance(
+                  id: ComponentId('Q1'),
+                  modelType: d.modelType,
+                  terminals: terminals,
+                  parameters: parameters,
+                  controlState: d.defaultControlState,
+                ),
+              ],
+      );
+      final key = GlobalKey();
+      await t.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ElectroSimTheme.light(),
+            home: F9WorkspaceDemoPage(
+              initialCircuit: circuit,
+              initialSelectedElementId: 'Q1',
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      await t.enterText(find.byKey(const Key('palette-search-field')), d.title);
+      await t.pumpAndSettle();
+      final plates = t.widgetList<F18IndustrialPhysicalPlate>(
+        find.byType(F18IndustrialPhysicalPlate),
+      );
+      expect(
+        plates.any(
+          (p) =>
+              p.modelType == d.modelType &&
+              p.perspective &&
+              p.variantKey == d.visualVariant,
+        ),
+        isTrue,
+        reason: '$equipmentKey palette',
+      );
+      expect(
+        plates.any(
+          (p) =>
+              p.modelType == d.modelType &&
+              !p.perspective &&
+              p.variantKey == d.visualVariant,
+        ),
+        isTrue,
+        reason: '$equipmentKey board',
+      );
+      expect(t.takeException(), isNull);
+      await save(t, key, 'electrosim-$equipmentKey');
+      if (equipmentKey == 'pv-array') {
+        await t.tap(find.byTooltip('Voir le bornier arrière'));
+        await t.pumpAndSettle();
+        expect(find.text('Bornier arrière du panneau'), findsOneWidget);
+        expect(t.takeException(), isNull);
+        await save(t, key, 'electrosim-pv-array-bornier-arriere');
+        await t.tap(find.text('Fermer'));
+        await t.pumpAndSettle();
+      }
       await t.pumpWidget(const SizedBox());
     }
   });

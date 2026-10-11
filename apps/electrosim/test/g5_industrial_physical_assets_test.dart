@@ -8,6 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 // Geometry is exported from the same public contract used by the wire canvas.
 const industrialModels = <String, (String, int)>{
+  'switch': ('switch-toggle', 2),
+  'dc_voltage_source': ('source-dc-voltage', 2),
+  'dc_current_source': ('source-dc-current', 2),
+  'ac_voltage_source': ('source-ac-voltage', 2),
+  'ac_current_source': ('source-ac-current', 2),
+  'pv_array': ('solar-panel', 2),
+  'pv_controller': ('controller-mppt', 4),
+  'pv_battery': ('solar-battery', 2),
+  'pv_inverter': ('solar-inverter', 4),
   'breaker_ac1': ('breaker1', 2),
   'push_button_no': ('button-no', 2),
   'push_button_nc': ('button-nc', 2),
@@ -28,10 +37,14 @@ const industrialModels = <String, (String, int)>{
   'motor_dc': ('motor-dc', 2),
   'fan_dc': ('fan', 2),
   'buzzer': ('buzzer', 2),
+  'diode': ('diode-axial', 2),
+  'resistor': ('resistor-axial', 2),
+  'capacitor': ('capacitor-film', 2),
+  'inductor': ('inductor-drum', 2),
 };
 
 void main() {
-  testWidgets('physical industrial screw drives coincide with Canvas ports', (
+  testWidgets('physical industrial contact centres coincide with Canvas ports', (
     tester,
   ) async {
     final manifest = <String, Object>{};
@@ -54,6 +67,10 @@ void main() {
         'ports': ports.map((p) => [p.dx, p.dy]).toList(),
       };
     }
+    for (final model in F18PhysicalPlateAssets.diodeVariants.values.toSet()) {
+      manifest[model] = manifest['diode-axial']!;
+    }
+    manifest['controller-pwm'] = manifest['controller-mppt']!;
     Directory('build').createSync(recursive: true);
     File(
       'build/g5-industrial-geometry.json',
@@ -90,17 +107,27 @@ void main() {
         );
       }
     }
-    for (final entry in industrialModels.entries) {
+    final imageModels = <(String, String, int)>[
+      for (final entry in industrialModels.entries)
+        (entry.key, entry.value.$1, entry.value.$2),
+      for (final model in F18PhysicalPlateAssets.diodeVariants.values.toSet())
+        if (model != 'diode-axial') ('diode', model, 2),
+      ('pv_controller', 'controller-pwm', 4),
+    ];
+    for (final model in imageModels) {
+      final entry = MapEntry(model.$1, (model.$2, model.$3));
       final size = F18ReferenceComponentMetrics.boardSizeFor(entry.key);
       for (final view in ['front', 'palette']) {
         if (entry.key.startsWith('breaker') ||
             entry.key.startsWith('isolator') ||
             entry.key.startsWith('push_button') ||
-            entry.key == 'fan_dc') {
+            entry.key == 'fan_dc' ||
+            entry.key == 'switch') {
           for (final pose in [
             '',
             if (entry.key.startsWith('breaker') ||
-                entry.key.startsWith('isolator')) ...[
+                entry.key.startsWith('isolator') ||
+                entry.key == 'switch') ...[
               '-on',
               '-trip',
             ],
@@ -152,7 +179,8 @@ void main() {
               expect(
                 luminance,
                 lessThan(170),
-                reason: '${entry.key} port $i must land inside the screw drive',
+                reason:
+                    '${entry.key} port $i must land inside the connector opening',
               );
             }
           } finally {

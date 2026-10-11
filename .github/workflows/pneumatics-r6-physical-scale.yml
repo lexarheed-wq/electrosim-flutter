@@ -1,0 +1,279 @@
+name: PNEU R6 Deterministic Physical Scale
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6-deterministic-scale-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r3d-r4-workspace-20261010
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r6-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pneumatic-r6-physical-scale:
+    name: pneumatic-r6-physical-scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Provenance, fixed versions and no Flutter imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            dart --version
+            uname -a
+            sha256sum packages/electrosim_pneumatic_solver/benchmark/r6_scale.dart
+            sha256sum packages/electrosim_pneumatic_solver/benchmark/r6_scale_fixture.dart
+          } | tee build/pneumatics-r6/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          if grep -R -n 'package:flutter/' packages/electrosim_pneumatic_solver/lib; then
+            echo 'R6 physical solver must remain Flutter-independent'
+            exit 1
+          fi
+      - name: Full scientific regressions and formatter gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format lib test benchmark
+            git diff -- lib test benchmark | tee ../../build/pneumatics-r6/FORMAT_PATCH.diff
+            git diff --exit-code -- lib test benchmark
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6/R6_SCIENCE.log
+      - name: Observe 30 100 200 400 calibrated gas volumes
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart run benchmark/r6_scale.dart
+          ) | tee build/pneumatics-r6/OBSERVED_SCALE.jsonl
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("build/pneumatics-r6/OBSERVED_SCALE.jsonl")
+          report=json.loads(p.read_text().strip().splitlines()[-1])
+          cases=report["cases"]
+          assert report["schema"]=="electrosim.pneumatic.r6.performance.v1"
+          assert [x["fittingDevices"] for x in cases]==[30,100,200,400]
+          assert all(x["massConserved"] and x["acceptedSubsteps"]>=1 and x["p95Ms"]>=0 for x in cases)
+          assert all(x["calibratedPassages"]==x["fittingDevices"]-1 for x in cases)
+          print("R6_30_100_200_400_PHYSICAL_SCALE_PASS")
+          PY
+      - name: Reject tracked physics/golden source rewrites
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-physical-scale-${{ github.sha }}
+          path: build/pneumatics-r6/
+          if-no-files-found: warn
+          retention-days: 30
+
+  pneumatic-r6-editor-model-scale:
+    name: pneumatic-r6-editor-model-scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Prove canonical shared-layout invariants at four sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6
+          echo "source_sha=$GITHUB_SHA" | tee build/pneumatics-r6/EDITOR_PROVENANCE.txt
+          (
+            cd packages/electrosim_multiphysics
+            dart pub get
+            # Scope formatting to the new R6 test, not unrelated historical
+            # domain files; preserve G5 source immutability.
+            dart format test/r6_workshop_scale_test.dart
+            git diff -- test/r6_workshop_scale_test.dart | tee ../../build/pneumatics-r6/EDITOR_FORMAT_PATCH.diff
+            git diff --exit-code -- test/r6_workshop_scale_test.dart
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6/EDITOR_MODEL_SCALE.log
+      - name: Validate observed model coverage and non-mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "R6 two-view canonical workshop preserves 30 device identities" build/pneumatics-r6/EDITOR_MODEL_SCALE.log
+          grep -F "R6 two-view canonical workshop preserves 100 device identities" build/pneumatics-r6/EDITOR_MODEL_SCALE.log
+          grep -F "R6 two-view canonical workshop preserves 200 device identities" build/pneumatics-r6/EDITOR_MODEL_SCALE.log
+          grep -F "R6 two-view canonical workshop preserves 400 device identities" build/pneumatics-r6/EDITOR_MODEL_SCALE.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-editor-model-${{ github.sha }}
+          path: build/pneumatics-r6/
+          if-no-files-found: warn
+          retention-days: 30
+
+  pneumatic-r6-macos-intel-scale:
+    name: pneumatic-r6-macos-intel-scale
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Execute authentic Intel Mac physics and benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-mac
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            dart --version
+            uname -a
+            sw_vers
+            sysctl -n machdep.cpu.brand_string
+          } | tee build/pneumatics-r6-mac/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart test test/r6_scale_test.dart --reporter expanded
+            dart run benchmark/r6_scale.dart
+          ) 2>&1 | tee build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          log=Path('build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log')
+          data=[x for x in log.read_text().splitlines() if x.startswith('{"schema":"electrosim.pneumatic.r6.performance.v1"')]
+          assert len(data)==1, 'Missing exactly one observed Mac benchmark report'
+          cases=json.loads(data[0])['cases']
+          assert [x['fittingDevices'] for x in cases]==[30,100,200,400]
+          assert all(x['massConserved'] and x['p95Ms']>=0 for x in cases)
+          print('R6_MAC_INTEL_PHYSICAL_SCALE_PASS')
+          PY
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-macos-intel-${{ github.sha }}
+          path: build/pneumatics-r6-mac/
+          if-no-files-found: warn
+          retention-days: 30
+
+  pneumatic-r6-rendered-flutter-scale:
+    name: pneumatic-r6-rendered-flutter-scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Build actual Flutter widget tree at 30 100 200 400
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-rendered
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            flutter --version
+            uname -a
+          } | tee build/pneumatics-r6-rendered/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format test/r6_pneumatic_render_scale_test.dart
+            git diff -- test/r6_pneumatic_render_scale_test.dart | tee ../../build/pneumatics-r6-rendered/FORMAT_PATCH.diff
+            git diff --exit-code -- test/r6_pneumatic_render_scale_test.dart
+            flutter test --no-pub --concurrency=1 test/r6_pneumatic_render_scale_test.dart --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6-rendered/REAL_WIDGETS.log
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('build/pneumatics-r6-rendered/REAL_WIDGETS.log').read_text()
+          for n in (30,100,200,400):
+              assert f'R6 Flutter constructs {n} real pneumatic tiles in both views' in s
+              assert f'"deviceCount":{n}' in s, f'Missing real widget count {n}'
+          assert 'All tests passed!' in s
+          print('R6_REAL_30_100_200_400_FLUTTER_WIDGETS_PASS')
+          PY
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-real-widget-scale-${{ github.sha }}
+          path: build/pneumatics-r6-rendered/
+          retention-days: 30
+          if-no-files-found: warn
+
+  pneumatic-r6-macos-flutter-render:
+    name: pneumatic-r6-macos-flutter-render
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Actual Intel Mac Flutter widget construction 30 100 200 400
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-mac-widget
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            sw_vers
+            sysctl -n machdep.cpu.brand_string
+            flutter --version
+          } | tee build/pneumatics-r6-mac-widget/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd apps/electrosim
+            flutter pub get
+            flutter test --no-pub --concurrency=1 test/r6_pneumatic_render_scale_test.dart --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6-mac-widget/REAL_MAC_WIDGETS.log
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('build/pneumatics-r6-mac-widget/REAL_MAC_WIDGETS.log').read_text()
+          for n in (30,100,200,400):
+              assert f'R6 Flutter constructs {n} real pneumatic tiles in both views' in s
+              assert f'"deviceCount":{n}' in s
+          assert 'All tests passed!' in s
+          print('R6_MAC_INTEL_400_WIDGETS_PASS')
+          PY
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-macos-widget-${{ github.sha }}
+          path: build/pneumatics-r6-mac-widget/
+          if-no-files-found: warn
+          retention-days: 30

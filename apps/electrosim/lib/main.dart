@@ -488,6 +488,7 @@ class F9WorkspaceDemoPage extends F18WorkspacePage {
     super.tpSessionController,
     super.persistenceController,
     super.layoutPreferences,
+    super.layoutPreferencesFuture,
     super.syncClient,
     super.onSessionDashboard,
     super.onSessionManage,

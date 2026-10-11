@@ -9,6 +9,12 @@ final class WorkspaceLayoutPreferences {
   final File file;
   static final Map<String, Future<void>> _pending = {};
   static int _temporaryId = 0;
+  static int _saveOrder = 0;
+  static final Map<String, int> _latestOrder = {};
+
+  /// Reserve at edit time, even if the native directory is still resolving.
+  /// Orders are process-local; only outstanding writes need ordering.
+  static int reserveSaveOrder() => ++_saveOrder;
 
   static Future<WorkspaceLayoutPreferences> createDefault() async {
     final root = await getApplicationSupportDirectory();
@@ -32,12 +38,16 @@ final class WorkspaceLayoutPreferences {
     }
   }
 
-  Future<void> save(Map<String, Object?> state) {
+  Future<void> save(Map<String, Object?> state, {int? order}) {
+    final key = file.absolute.path;
+    final currentOrder = order ?? reserveSaveOrder();
+    if (currentOrder < (_latestOrder[key] ?? 0)) return Future<void>.value();
+    _latestOrder[key] = currentOrder;
     // Snapshot now, before callers can mutate the data during another write.
     final encoded = jsonEncode(state);
-    final key = file.absolute.path;
     final previous = _pending[key] ?? Future<void>.value();
     final write = previous.then((_) async {
+      if (currentOrder < (_latestOrder[key] ?? 0)) return;
       final temp = File('$key.tmp-${++_temporaryId}');
       try {
         await file.parent.create(recursive: true);

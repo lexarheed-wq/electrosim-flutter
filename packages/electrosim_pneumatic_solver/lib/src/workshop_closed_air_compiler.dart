@@ -165,7 +165,7 @@ final class WorkshopClosedAirCompiler {
           throw PneumaticPhysicsException(
             'invalid_valve_ports',
             'Valve ${device.id} must expose exact ISO P/A/R'
-            ' (plus B/S for 5/2) with correct roles.',
+                ' (plus B/S for 5/2) with correct roles.',
           );
         }
         for (final MapEntry<String, PneumaticPort> entry in byName.entries) {
@@ -185,11 +185,11 @@ final class WorkshopClosedAirCompiler {
         );
         final List<(String, String)> routes = isValve
             ? (spoolPosition == 1
-                ? <(String, String)>[('P', 'A'), ('B', 'S')]
-                : <(String, String)>[('P', 'B'), ('A', 'R')])
+                  ? <(String, String)>[('P', 'A'), ('B', 'S')]
+                  : <(String, String)>[('P', 'B'), ('A', 'R')])
             : (spoolPosition == 1
-                ? <(String, String)>[('P', 'A')]
-                : <(String, String)>[('A', 'R')]);
+                  ? <(String, String)>[('P', 'A')]
+                  : <(String, String)>[('A', 'R')]);
         for (final (String first, String second) in routes) {
           valvePassages.add(
             AirPassage(

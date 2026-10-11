@@ -79,7 +79,13 @@ void main() {
     // Stock Flutter golden fonts replace letters with black blocks. Load an
     // ordinary system font for an honest, readable visual review. This font
     // is never packaged in the ElectroSim application or test artifact.
-    final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    final String? home = Platform.environment['HOME'];
+    final String macFont = '${home ?? ''}/Library/Fonts/DejaVuSans.ttf';
+    final font = File(
+      home != null && File(macFont).existsSync()
+          ? macFont
+          : '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    );
     if (font.existsSync()) {
       final bytes = font.readAsBytesSync();
       await (FontLoader(

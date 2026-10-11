@@ -1,12 +1,18 @@
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
 
 void main() {
+  // Reference PNGs were recorded using the Linux Material platform.
+  // Keep this visual-only fixture deterministic on macOS Intel; native
+  // macOS behavior is validated separately by the full functional suite.
+  setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.linux);
+
   Future<void> pumpWorkspace(
     WidgetTester tester,
     Size size, {
@@ -107,6 +113,7 @@ void main() {
       size: const Size(390, 844),
       prefix: 'f9_compact',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('medium 820x1180 reference set', (WidgetTester tester) async {
@@ -117,6 +124,7 @@ void main() {
       size: const Size(820, 1180),
       prefix: 'f9_medium',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('expanded 1440x900 reference set', (WidgetTester tester) async {
@@ -127,6 +135,7 @@ void main() {
       size: const Size(1440, 900),
       prefix: 'f9_expanded',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('student troubleshooting diagnostic reference', (
@@ -149,5 +158,6 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile('goldens/f9_compact_student_diagnostic.png'),
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 }

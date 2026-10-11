@@ -1,6 +1,7 @@
 /// R6/N release evidence schema. Measurements are captured by real runners;
 /// this class must never fabricate observed FPS, timings or mass conservation.
 enum R6PerfScenario { electrical, pneumatic, mixed }
+
 enum R6PerfPlatform { chromium, macIntel }
 
 final class R6PerfObservation {
@@ -57,8 +58,7 @@ final class R6PerfQualification {
     required String integratedG5Sha,
   }) {
     final List<String> problems = <String>[];
-    final Map<String, R6PerfObservation> byKey =
-        <String, R6PerfObservation>{};
+    final Map<String, R6PerfObservation> byKey = <String, R6PerfObservation>{};
     final RegExp hash = RegExp(r'^[0-9a-f]{40}$');
     final RegExp checksum = RegExp(r'^[0-9a-f]{64}$');
     if (!hash.hasMatch(integratedG5Sha)) {

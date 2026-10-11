@@ -37,8 +37,10 @@ void main() {
     final List<String> problems = audit.errors(<R6PerfObservation>[
       fixture(R6PerfScenario.pneumatic, R6PerfPlatform.chromium, 30),
     ], integratedG5Sha: sha);
-    expect(problems.where((String p) => p.contains('Missing release')).length,
-        23);
+    expect(
+      problems.where((String p) => p.contains('Missing release')).length,
+      23,
+    );
   });
 
   test('R6/N proof validator enforces all 24 scenario/platform cells', () {
@@ -53,12 +55,17 @@ void main() {
     expect(audit.errors(synthetic, integratedG5Sha: sha), isEmpty);
     final List<R6PerfObservation> bad = <R6PerfObservation>[
       ...synthetic.take(23),
-      fixture(R6PerfScenario.mixed, R6PerfPlatform.macIntel, 400,
-          latencyMs: 101),
+      fixture(
+        R6PerfScenario.mixed,
+        R6PerfPlatform.macIntel,
+        400,
+        latencyMs: 101,
+      ),
     ];
-    expect(audit.errors(bad, integratedG5Sha: sha),
-        contains(contains('Performance threshold failed')));
-    expect(audit.errors(synthetic, integratedG5Sha: 'other'),
-        isNotEmpty);
+    expect(
+      audit.errors(bad, integratedG5Sha: sha),
+      contains(contains('Performance threshold failed')),
+    );
+    expect(audit.errors(synthetic, integratedG5Sha: 'other'), isNotEmpty);
   });
 }

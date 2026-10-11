@@ -40,7 +40,7 @@ def validate(failure_dir: Path, log_path: Path, output_path: Path) -> None:
         reference = failure_dir / f"{name}_masterImage.png"
         for path in (test_image, reference):
             data = path.read_bytes()
-            assert data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"), str(path)
+            assert data.startswith(b"\x89PNG\r\n\x1a\n"), str(path)
         measured = digest(test_image)
         expected = approved[name]["mac_png_sha256"]
         assert measured == expected, (
@@ -54,7 +54,7 @@ def validate(failure_dir: Path, log_path: Path, output_path: Path) -> None:
         )
         report.append({"name": name, "mac_png_sha256": measured, "source": "Mac Intel renderer"})
     text = log_path.read_text(encoding="utf-8")
-    failures = re.findall(r"^\\d\\d:\\d\\d [^\\n]* \\[E\\]$", text, re.MULTILINE)
+    failures = re.findall(r"^\d\d:\d\d [^\n]* \[E\]$", text, re.MULTILINE)
     golden_names = re.findall(r'Golden "goldens/([^"]+)": Pixel test failed', text)
     expected_failing_widget_cases = 9
     assert len(failures) == expected_failing_widget_cases, (
@@ -76,7 +76,7 @@ def validate(failure_dir: Path, log_path: Path, output_path: Path) -> None:
             "reviewed_widget_failures": expected_failing_widget_cases,
             "approved_pixel_exact_cases": len(report),
             "cases": report,
-        }, indent=2) + "\\n",
+        }, indent=2) + "\n",
         encoding="utf-8"
     )
     print("G5_PR98_MAC_EXACT_APPROVED_PIXELS_PASS: 15/15")

@@ -1,6 +1,8 @@
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim/f18_physical_instrument_readouts.dart';
+import 'package:electrosim/f18_workspace_page.dart';
+import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f18_voltmeter_3d_assets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,11 @@ void main() {
     kind: InstrumentKind.ammeter,
     mode: InstrumentMode.currentDc,
   );
+
+  test('workspace and palette both compile against 3D integration', () {
+    expect(F18WorkspacePage, isNotNull);
+    expect(F9ComponentPreview, isNotNull);
+  });
 
   test('voltmeter contract never replaces other instrument kinds', () {
     expect(F18Voltmeter3dAssets.uses3d(voltmeter), isFalse);

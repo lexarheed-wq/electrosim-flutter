@@ -1,0 +1,47 @@
+name: PNEU R6J Physical DC Self Hold Network
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6j-authored-dc-network-cycle-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6i-moving-cylinder-network-20261011
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  r6j-physical-causal-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Prove real DC solver and physical gas time on exact commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6j
+          echo "sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6j/PROVENANCE.txt
+          dart --version | tee -a build/pneumatics-r6j/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_electropneumatic
+            dart pub get
+            dart format lib/src/authored_network_self_hold_cycle.dart test/r6_authored_network_self_hold_test.dart
+            git diff -- lib/src/authored_network_self_hold_cycle.dart test/r6_authored_network_self_hold_test.dart | tee ../../build/pneumatics-r6j/FORMAT_PATCH.diff
+            git diff --exit-code -- lib/src/authored_network_self_hold_cycle.dart test/r6_authored_network_self_hold_test.dart
+            dart analyze
+            dart test --concurrency=1 --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6j/SCIENCE.log
+          grep -F 'R6/J authored hoses DC S1/K1/Y1 switch valve without gas reset' build/pneumatics-r6j/SCIENCE.log
+          grep -F 'All tests passed!' build/pneumatics-r6j/SCIENCE.log
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6j-dc-author-network-${{ github.sha }}
+          path: build/pneumatics-r6j/
+          retention-days: 21

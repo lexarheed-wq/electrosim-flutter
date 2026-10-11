@@ -32,6 +32,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late final PneumaticWorkshopSession _session;
   final DateTime _createdAtUtc = DateTime.now().toUtc();
   PneumaticWorkshopState? _dragBaseline;
+  Offset? _dragStartGlobal;
+  PhysicalViewPose? _dragStartPose;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
@@ -736,36 +738,46 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         left: pose.x,
         top: pose.y,
         child: GestureDetector(
-          onPanStart: (_) => _dragBaseline = _state,
+          onPanDown: (details) {
+            // Capture the pointer before pan-slop is consumed by the recognizer.
+            _dragStartGlobal = details.globalPosition;
+            _dragStartPose = pose;
+          },
+          onPanStart: (details) {
+            _dragBaseline = _state;
+            _dragStartGlobal ??= details.globalPosition;
+            _dragStartPose ??= pose;
+          },
           onPanUpdate: (details) => setState(() {
-            // Read the latest layout on every pointer update. A captured
-            // pre-drag pose loses all but the last delta when Flutter rebuilds.
-            final Map<String, PhysicalViewPose> activeLayout =
-                _state.view == PneumaticWorkshopView.physical
-                ? _state.project.physicalLayout
-                : _state.project.schematicLayout;
-            final PhysicalViewPose currentPose =
-                activeLayout[device.id] ?? pose;
+            final Offset origin = _dragStartGlobal ?? details.globalPosition;
+            final PhysicalViewPose initial = _dragStartPose ?? pose;
+            final Offset distance = details.globalPosition - origin;
             _state = _state.move(
               physicalId: device.id,
               pose: PhysicalViewPose(
-                x: currentPose.x + details.delta.dx,
-                y: currentPose.y + details.delta.dy,
-                rotationRad: currentPose.rotationRad,
+                x: initial.x + distance.dx,
+                y: initial.y + distance.dy,
+                rotationRad: initial.rotationRad,
               ),
             );
           }),
           onPanEnd: (_) {
-            if (_dragBaseline == null) return;
-            final PneumaticWorkshopState accepted = _state;
-            _session.apply((PneumaticWorkshopState current) => accepted);
+            if (_dragBaseline != null) {
+              final PneumaticWorkshopState accepted = _state;
+              _session.apply((PneumaticWorkshopState current) => accepted);
+              setState(() => _state = _session.state);
+            }
             _dragBaseline = null;
-            setState(() => _state = _session.state);
+            _dragStartGlobal = null;
+            _dragStartPose = null;
           },
           onPanCancel: () {
-            if (_dragBaseline == null) return;
-            setState(() => _state = _dragBaseline!);
+            if (_dragBaseline != null) {
+              setState(() => _state = _dragBaseline!);
+            }
             _dragBaseline = null;
+            _dragStartGlobal = null;
+            _dragStartPose = null;
           },
           child: InkWell(
             key: Key('device-${device.id}'),

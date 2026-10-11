@@ -384,6 +384,20 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         title: const Text('Atelier pneumatique expérimental'),
         actions: <Widget>[
           IconButton(
+            key: const Key('air-advance'),
+            tooltip: 'Avancer de 20 ms le réseau physique calibré',
+            onPressed: _advanceAir,
+            icon: const Icon(Icons.speed),
+          ),
+          IconButton(
+            key: const Key('air-reset-physics'),
+            tooltip: 'Réinitialiser les mesures physiques',
+            onPressed: _airSnapshot == null
+                ? null
+                : () => setState(_invalidateAirRuntime),
+            icon: const Icon(Icons.restart_alt),
+          ),
+          IconButton(
             key: const Key('r6-open-reference'),
             tooltip: 'Ouvrir le cycle physique de référence 24 V / 5/2',
             onPressed: () => Navigator.of(context).push(
@@ -461,10 +475,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   }),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Édition de réseau uniquement. Simulation pneumatique '
-                    'non encore raccordée à cette interface.',
+                    _airSnapshot == null
+                        ? 'Réseau expérimental : calcul seulement pour '
+                            'sources idéales, silencieux et collecteurs '
+                            'physiquement calibrés. Autres modèles refusés.'
+                        : 'Simulation réelle : t = '
+                            '${_airSnapshot!.timeS.toStringAsFixed(3)} s ; '
+                            'masse externe = '
+                            '${_airSnapshot!.externalMassAddedKg.toStringAsExponential(3)} kg',
+                    key: const Key('air-runtime-state'),
                     maxLines: 3,
                   ),
                 ),
@@ -551,6 +572,19 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                               children: <Widget>[
                                 Text(selected.id),
                                 Text(selected.kind.name),
+                                if (selected.parametersSi.isNotEmpty)
+                                  Text(
+                                    selected.parametersSi.entries
+                                        .map((e) => '${e.key}=${e.value}')
+                                        .join('  '),
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                if (_airSnapshot?.chambers[selected.id] != null)
+                                  Text(
+                                    'P abs = '
+                                    '${_airSnapshot!.chambers[selected.id]!.pressureAbsPa.toStringAsFixed(0)} Pa',
+                                    key: const Key('air-measured-pressure'),
+                                  ),
                                 const SizedBox(height: 10),
                                 Text(
                                   selected.ports
@@ -558,10 +592,24 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                       .join(' • '),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'Pressions et débits : aucun résultat '
-                                  'physique disponible dans cet éditeur.',
+                                Text(
+                                  _airSnapshot == null
+                                      ? 'Aucune mesure disponible avant '
+                                          'simulation du réseau calibré.'
+                                      : 'Débits calculés (kg/s) : '
+                                          '${_airSnapshot!.passageMassFlowKgPerS.entries.map((e) => '${e.key}=${e.value.toStringAsExponential(2)}').join(' ; ')}',
+                                  style: const TextStyle(fontSize: 11),
+                                  key: const Key('air-measured-flows'),
                                 ),
+                                if (selected.kind == PneumaticDeviceKind.tee ||
+                                    selected.kind == PneumaticDeviceKind.manifold ||
+                                    selected.kind == PneumaticDeviceKind.idealSource ||
+                                    selected.kind == PneumaticDeviceKind.silencer)
+                                  FilledButton.tonal(
+                                    key: const Key('air-calibrate-device'),
+                                    onPressed: () => _calibrateSelected(selected),
+                                    child: const Text('Calibrer'),
+                                  ),
                                 const Spacer(),
                                 FilledButton.tonalIcon(
                                   key: const Key('air-delete'),

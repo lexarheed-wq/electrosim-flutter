@@ -86,26 +86,28 @@ Future<void> main() async {
     await worker.close();
   }
   final String sha = Platform.environment['GITHUB_SHA'] ?? 'LOCAL_UNVERIFIED';
-  stdout.writeln(jsonEncode(<String, Object?>{
-    'schema': 'electrosim.pneumatic.r6n.native-transport-observed.v1',
-    'sourceSha': sha,
-    'timeSource': 'Stopwatch (observed wall clock)',
-    'platform': Platform.operatingSystem,
-    'processorCount': Platform.numberOfProcessors,
-    'dart': Platform.version,
-    'solver': 'canonical IsothermalAirNetwork',
-    'worker': 'persistent Dart isolate',
-    'warmupRuns': warmupRuns,
-    'measuredRuns': measuredRuns,
-    'durationSPerRun': durationS,
-    'notPerf01': true,
-    'scopeExclusions': <String>[
-      'flutter_frames',
-      'chromium_rendering_fps',
-      'mac_intel_release_runtime',
-      'three_by_sixty_second_profile',
-      'electrical_and_mixed_networks',
-    ],
-    'observations': results,
-  }));
+  stdout.writeln(
+    jsonEncode(<String, Object?>{
+      'schema': 'electrosim.pneumatic.r6n.native-transport-observed.v1',
+      'sourceSha': sha,
+      'timeSource': 'Stopwatch (observed wall clock)',
+      'platform': Platform.operatingSystem,
+      'processorCount': Platform.numberOfProcessors,
+      'dart': Platform.version,
+      'solver': 'canonical IsothermalAirNetwork',
+      'worker': 'persistent Dart isolate',
+      'warmupRuns': warmupRuns,
+      'measuredRuns': measuredRuns,
+      'durationSPerRun': durationS,
+      'notPerf01': true,
+      'scopeExclusions': <String>[
+        'flutter_frames',
+        'chromium_rendering_fps',
+        'mac_intel_release_runtime',
+        'three_by_sixty_second_profile',
+        'electrical_and_mixed_networks',
+      ],
+      'observations': results,
+    }),
+  );
 }

@@ -15,6 +15,16 @@ abstract final class F18AmmeterControls {
     final raw = i.settings[rangeKey];
     return raw is int && raw >= 0 && raw <= limits.length ? raw : 0;
   }
+
+  static String rangeLabel(InstrumentInstance i) {
+    final index = rangeIndex(i);
+    if (index == 0) return 'AUTO';
+    final amperes = limits[index - 1];
+    return amperes < 1
+        ? '${(amperes * 1000).toInt()} mA'
+        : '${amperes.toStringAsFixed(amperes == 10 ? 0 : 1)} A';
+  }
+
   static String display(InstrumentInstance i, String text,
       double? measured, bool valid) {
     if (!i.poweredOn) return 'OFF';

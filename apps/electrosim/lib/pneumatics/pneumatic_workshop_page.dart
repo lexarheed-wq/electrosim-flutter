@@ -27,6 +27,7 @@ class PneumaticWorkshopPage extends StatefulWidget {
 class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late PneumaticWorkshopState _state;
   late final PneumaticWorkshopSession _session;
+  PneumaticWorkshopState? _dragBaseline;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
@@ -706,10 +707,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         left: pose.x,
         top: pose.y,
         child: GestureDetector(
-          onPanStart: (_) {
-            _undo.add(_state);
-            _redo.clear();
-          },
+          onPanStart: (_) => _dragBaseline = _state,
           onPanUpdate: (details) => setState(() {
             _state = _state.move(
               physicalId: device.id,
@@ -720,6 +718,18 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ),
             );
           }),
+          onPanEnd: (_) {
+            if (_dragBaseline == null) return;
+            final PneumaticWorkshopState accepted = _state;
+            _session.apply((PneumaticWorkshopState current) => accepted);
+            _dragBaseline = null;
+            setState(() => _state = _session.state);
+          },
+          onPanCancel: () {
+            if (_dragBaseline == null) return;
+            setState(() => _state = _dragBaseline!);
+            _dragBaseline = null;
+          },
           child: InkWell(
             key: Key('device-${device.id}'),
             onTap: () => setState(() {

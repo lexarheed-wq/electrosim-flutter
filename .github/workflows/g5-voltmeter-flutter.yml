@@ -9,6 +9,7 @@ on:
       - 'apps/electrosim/lib/f18_voltmeter_3d_assets.dart'
       - 'apps/electrosim/lib/f18_workspace_page.dart'
       - 'apps/electrosim/test/g5_voltmeter_3d_projection_test.dart'
+      - 'apps/electrosim/tool/capture_g5_voltmeter_real_flutter_test.dart'
       - 'packages/electrosim_canvas/lib/src/circuit_scene_painter.dart'
       - 'packages/electrosim_canvas/lib/src/simulator_canvas.dart'
       - 'apps/electrosim/assets/g5_industrial/instrument-voltmeter-*.png'
@@ -19,6 +20,7 @@ on:
       - 'apps/electrosim/lib/f18_voltmeter_3d_assets.dart'
       - 'apps/electrosim/lib/f18_workspace_page.dart'
       - 'apps/electrosim/test/g5_voltmeter_3d_projection_test.dart'
+      - 'apps/electrosim/tool/capture_g5_voltmeter_real_flutter_test.dart'
       - 'packages/electrosim_canvas/lib/src/circuit_scene_painter.dart'
       - 'packages/electrosim_canvas/lib/src/simulator_canvas.dart'
       - 'apps/electrosim/assets/g5_industrial/instrument-voltmeter-*.png'
@@ -50,3 +52,15 @@ jobs:
           dart analyze lib/f18_voltmeter_3d_assets.dart
           dart analyze test/g5_voltmeter_3d_projection_test.dart
         working-directory: apps/electrosim
+
+      - name: Capture actual Flutter workspace with loaded Cycles body
+        run: flutter test tool/capture_g5_voltmeter_real_flutter_test.dart -r expanded
+        working-directory: apps/electrosim
+      - name: Upload true Flutter proof, not Blender nor Chromium
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: G5-voltmeter-real-Flutter-preview
+          path: apps/electrosim/build/g5-voltmeter-real-flutter-proof/
+          if-no-files-found: warn
+          retention-days: 14

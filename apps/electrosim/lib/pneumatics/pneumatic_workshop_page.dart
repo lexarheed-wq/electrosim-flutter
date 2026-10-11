@@ -733,122 +733,125 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     return null;
   }
 
-  Widget _tile(PneumaticDevice device, PhysicalViewPose pose, bool plate) =>
-      Positioned(
-        left: pose.x,
-        top: pose.y,
-        child: GestureDetector(
-          onPanDown: (details) {
-            // Capture the pointer before pan-slop is consumed by the recognizer.
-            _dragStartGlobal = details.globalPosition;
-            _dragStartPose = pose;
-          },
-          onPanStart: (details) {
-            _dragBaseline = _state;
-            _dragStartGlobal ??= details.globalPosition;
-            _dragStartPose ??= pose;
-          },
-          onPanUpdate: (details) => setState(() {
-            final Offset origin = _dragStartGlobal ?? details.globalPosition;
-            final PhysicalViewPose initial = _dragStartPose ?? pose;
-            final Offset distance = details.globalPosition - origin;
-            _state = _state.move(
-              physicalId: device.id,
-              pose: PhysicalViewPose(
-                x: initial.x + distance.dx,
-                y: initial.y + distance.dy,
-                rotationRad: initial.rotationRad,
-              ),
-            );
-          }),
-          onPanEnd: (_) {
-            if (_dragBaseline != null) {
-              final PneumaticWorkshopState accepted = _state;
-              _session.apply((PneumaticWorkshopState current) => accepted);
-              setState(() => _state = _session.state);
-            }
-            _dragBaseline = null;
-            _dragStartGlobal = null;
-            _dragStartPose = null;
-          },
-          onPanCancel: () {
-            if (_dragBaseline != null) {
-              setState(() => _state = _dragBaseline!);
-            }
-            _dragBaseline = null;
-            _dragStartGlobal = null;
-            _dragStartPose = null;
-          },
-          child: InkWell(
-            key: Key('device-${device.id}'),
-            onTap: () => setState(() {
-              _session.select(device.id);
-              _state = _session.state;
-            }),
-            child: Container(
-              width: 170,
-              height: 140,
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: plate ? const Color(0xfff4f5f6) : Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _state.selectedPhysicalId == device.id
-                      ? Colors.blue
-                      : Colors.blueGrey,
-                  width: _state.selectedPhysicalId == device.id ? 3 : 1,
-                ),
-              ),
-              child: Column(
-                children: <Widget>[
-                  PneumaticDeviceGlyph(
-                    kind: device.kind,
-                    schematic: !plate,
-                    width: 110,
-                    height: 38,
-                  ),
-                  Text(
-                    '${device.id} : ${device.kind.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    height: 27,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        for (final PneumaticPort port in device.ports)
-                          InkWell(
-                            key: Key('port-${port.id.value}'),
-                            onTap: () => _portTap(port.id),
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _firstPort == port.id
-                                    ? Colors.amber.shade100
-                                    : Colors.blueGrey.shade100,
-                                border: Border.all(color: Colors.blueGrey),
-                              ),
-                              child: Text(
-                                _displayPortLabel(device.kind, port),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+  Widget _tile(
+    PneumaticDevice device,
+    PhysicalViewPose pose,
+    bool plate,
+  ) => Positioned(
+    left: pose.x,
+    top: pose.y,
+    child: GestureDetector(
+      onPanDown: (details) {
+        // Capture the pointer before pan-slop is consumed by the recognizer.
+        _dragStartGlobal = details.globalPosition;
+        _dragStartPose = pose;
+      },
+      onPanStart: (details) {
+        _dragBaseline = _state;
+        _dragStartGlobal ??= details.globalPosition;
+        _dragStartPose ??= pose;
+      },
+      onPanUpdate: (details) => setState(() {
+        final Offset origin = _dragStartGlobal ?? details.globalPosition;
+        final PhysicalViewPose initial = _dragStartPose ?? pose;
+        final Offset distance = details.globalPosition - origin;
+        _state = _state.move(
+          physicalId: device.id,
+          pose: PhysicalViewPose(
+            x: initial.x + distance.dx,
+            y: initial.y + distance.dy,
+            rotationRad: initial.rotationRad,
+          ),
+        );
+      }),
+      onPanEnd: (_) {
+        if (_dragBaseline != null) {
+          final PneumaticWorkshopState accepted = _state;
+          _session.apply((PneumaticWorkshopState current) => accepted);
+          setState(() => _state = _session.state);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      onPanCancel: () {
+        if (_dragBaseline != null) {
+          setState(() => _state = _dragBaseline!);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      child: InkWell(
+        key: Key('device-${device.id}'),
+        onTap: () => setState(() {
+          _session.select(device.id);
+          _state = _session.state;
+        }),
+        child: Container(
+          width: 170,
+          height: 140,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: plate ? const Color(0xfff4f5f6) : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _state.selectedPhysicalId == device.id
+                  ? Colors.blue
+                  : Colors.blueGrey,
+              width: _state.selectedPhysicalId == device.id ? 3 : 1,
             ),
           ),
+          child: Column(
+            children: <Widget>[
+              PneumaticDeviceGlyph(
+                kind: device.kind,
+                schematic: !plate,
+                width: 110,
+                height: 38,
+              ),
+              Text(
+                '${device.id} : ${device.kind.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              ),
+              const Spacer(),
+              SizedBox(
+                height: 27,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    for (final PneumaticPort port in device.ports)
+                      InkWell(
+                        key: Key('port-${port.id.value}'),
+                        onTap: () => _portTap(port.id),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _firstPort == port.id
+                                ? Colors.amber.shade100
+                                : Colors.blueGrey.shade100,
+                            border: Border.all(color: Colors.blueGrey),
+                          ),
+                          child: Text(
+                            _displayPortLabel(device.kind, port),
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _PipePainter extends CustomPainter {

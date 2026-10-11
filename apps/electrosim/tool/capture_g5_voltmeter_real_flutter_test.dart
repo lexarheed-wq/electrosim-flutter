@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:electrosim/f18_workspace_page.dart';
 import 'package:electrosim/f18_physical_instrument_readouts.dart';
 import 'package:electrosim/f18_voltmeter_3d_assets.dart';
+import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/runtime/electrosim_instrument_projection.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -137,6 +138,27 @@ void main() {
         p.circuit?.probes.length == 2 &&
         p.readouts[meterId] != null &&
         p.readouts[meterId]!.contains('24')), isTrue);
+    // Verify the exact same preview is mounted inside the real full workspace
+    // palette without requiring the user to search.
+    const paletteItem = Key('palette-item-instrument-voltmeter');
+    expect(find.byKey(paletteItem), findsOneWidget);
+    final paletteImages = t.widgetList<RawImage>(
+      find.descendant(
+        of: find.byKey(paletteItem),
+        matching: find.byType(RawImage),
+      ),
+    );
+    expect(
+      paletteImages.any(
+        (image) => identical(image.image, F18Voltmeter3dAssets.palette),
+      ),
+      isTrue,
+      reason: 'Workspace palette must show the Cycles perspective, not front',
+    );
+    expect(
+      find.byKey(const Key('palette-quick-add-instrument-voltmeter')),
+      findsOneWidget,
+    );
     expect(t.takeException(), isNull);
     final out = Directory('build/g5-voltmeter-real-flutter-proof');
     out.createSync(recursive: true);

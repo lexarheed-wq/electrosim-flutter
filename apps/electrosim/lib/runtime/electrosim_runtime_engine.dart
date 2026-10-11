@@ -740,9 +740,13 @@ final class ElectroSimRuntimeEngine {
     // only to the runtime topology. The authored Connection remains intact.
     final CircuitState fusedEffective =
         F18AmmeterFuseSafety.projectOpenFuses(circuit);
-    final CircuitState firstEffective = _projectRuntimeFailures(
-      fusedEffective,
-      previousComponentHealthStates,
+    final CircuitState firstEffective =
+        F18AmmeterFuseSafety.projectDcSeriesBurden(
+      design: circuit,
+      fusedRuntime: _projectRuntimeFailures(
+        fusedEffective,
+        previousComponentHealthStates,
+      ),
     );
     ElectroSimRuntimeSnapshot snapshot = _solveOnce(
       designCircuit: circuit,
@@ -777,9 +781,13 @@ final class ElectroSimRuntimeEngine {
 
     // A newly destroyed receiver is opened electrically in the same runtime
     // tick. The second solve is zero-time: dynamics are not integrated twice.
-    final CircuitState failedEffective = _projectRuntimeFailures(
-      fusedEffective,
-      nextHealth,
+    final CircuitState failedEffective =
+        F18AmmeterFuseSafety.projectDcSeriesBurden(
+      design: circuit,
+      fusedRuntime: _projectRuntimeFailures(
+        fusedEffective,
+        nextHealth,
+      ),
     );
     return _solveOnce(
       designCircuit: circuit,

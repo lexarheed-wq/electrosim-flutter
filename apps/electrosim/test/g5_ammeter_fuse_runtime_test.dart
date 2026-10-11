@@ -374,6 +374,47 @@ void main() {
       c.id.value == 'wire-2').enabled, isTrue);
   });
 
+  test('clamp ammeter is distinct: it never inserts a burden or cuts a wire', () {
+    final base = buildRegressionFixtureCircuit();
+    final clamp = InstrumentInstance(
+      id: InstrumentId('clamp-independent'),
+      kind: InstrumentKind.clampAmmeter,
+      mode: InstrumentMode.currentDc,
+    );
+    final circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      sources: base.sources,
+      components: base.components,
+      connections: base.connections,
+      instruments: <InstrumentInstance>[clamp],
+      probes: <ProbeConnection>[
+        ProbeConnection(
+          id: ProbeId('clamp-wire'),
+          instrumentId: clamp.id,
+          port: InstrumentPort.clamp,
+          connectionId: ConnectionId('wire-2'),
+        ),
+      ],
+    );
+    final snapshot = engine.evaluate(circuit);
+    expect(snapshot.effectiveCircuit.connections,
+        orderedEquals(circuit.connections));
+    expect(snapshot.effectiveCircuit.components,
+        orderedEquals(circuit.components));
+    expect(F18AmmeterFuseSafety.wiredCut(circuit, clamp), isNull);
+    expect(F18AmmeterFuseSafety.shouldTrip(
+      circuit: circuit,
+      instrument: clamp,
+      solverDetectedOvercurrent: true,
+    ), isFalse);
+    expect(snapshot.effectiveCircuit.components.where(
+      (component) => component.id.value.startsWith('g5-amperemeter-burden-'),
+    ), isEmpty);
+    expect(snapshot.circuit.probes.single.port, InstrumentPort.clamp);
+  });
+
   test('valid reversed lead order still corresponds to cut endpoints', () {
     final design = seriesMeter(swappedLeads: true);
     expect(F18AmmeterFuseSafety.wiredCut(

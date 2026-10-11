@@ -199,7 +199,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     canvas.scale(body.width / 112, body.height / 152);
     // Legacy low-resolution PNGs lack physically embossed text. 4x Cycles
     // textures already contain HOLD/RANGE/SELECT/LIGHT and COM/V-ohm labels.
-    if ((current ? ammeterFront?.width : voltmeterFront?.width ?? 0) < 1000) {
+    if ((current ? (ammeterFront?.width ?? 0) : (voltmeterFront?.width ?? 0)) < 1000) {
     const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
     const xs = <double>[35, 49, 63, 77];
     for (var index = 0; index < names.length; index++) {

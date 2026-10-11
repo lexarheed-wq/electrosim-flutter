@@ -9,6 +9,8 @@ import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 
+import 'f18_ammeter_fuse_safety.dart';
+
 enum ElectroSimRuntimeSolverKind { dc, ac1, ac3, pv }
 
 /// Solver-backed current evidence for one physical wire connection.
@@ -734,8 +736,12 @@ final class ElectroSimRuntimeEngine {
       );
     }
 
+    // Blowout lives in InstrumentInstance; electrical disconnection belongs
+    // only to the runtime topology. The authored Connection remains intact.
+    final CircuitState fusedEffective =
+        F18AmmeterFuseSafety.projectOpenFuses(circuit);
     final CircuitState firstEffective = _projectRuntimeFailures(
-      circuit,
+      fusedEffective,
       previousComponentHealthStates,
     );
     ElectroSimRuntimeSnapshot snapshot = _solveOnce(
@@ -772,7 +778,7 @@ final class ElectroSimRuntimeEngine {
     // A newly destroyed receiver is opened electrically in the same runtime
     // tick. The second solve is zero-time: dynamics are not integrated twice.
     final CircuitState failedEffective = _projectRuntimeFailures(
-      circuit,
+      fusedEffective,
       nextHealth,
     );
     return _solveOnce(

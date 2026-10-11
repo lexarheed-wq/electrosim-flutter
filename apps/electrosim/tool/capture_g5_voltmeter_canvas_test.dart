@@ -150,8 +150,6 @@ void main() {
     await t.pump(const Duration(milliseconds: 16));
     expect(t.takeException(), isNull);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
-    final overlay = t.widget<F18PhysicalInstrumentReadouts>(
-        find.byType(CustomPaint).first); // Check painters below directly.
     // The actual overlay is validated by inspecting all registered painters.
     final painters = t
       .widgetList<CustomPaint>(find.byType(CustomPaint))

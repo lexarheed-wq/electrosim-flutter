@@ -8,16 +8,18 @@ import 'r6_moving_piston_workshop_test.dart' as fixture;
 /// Cross-lot regression: R6/L physical snapshots and R6/M editor history
 /// must share the same workshop, not two incompatible representations.
 void main() {
-  testWidgets('R6/L+M physical piston survives layout undo across two views', (
-    WidgetTester tester,
-  ) async {
+  testWidgets(
+    'R6/L+M physical piston survives layout undo across two views',
+    (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1600, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(initialProject: fixture.actualProject())),
+      MaterialApp(
+        home: PneumaticWorkshopPage(initialProject: fixture.actualProject()),
+      ),
     );
     await tester.tap(find.byKey(const Key('device-cyl')));
     await tester.pumpAndSettle();
@@ -32,8 +34,10 @@ void main() {
       of: cylinder,
       matching: find.byType(PneumaticDeviceGlyph),
     );
-    final double measured =
-        tester.widget<PneumaticDeviceGlyph>(cylinderGlyph).pistonFraction!;
+    final PneumaticDeviceGlyph initialGlyph = tester.widget<PneumaticDeviceGlyph>(
+      cylinderGlyph,
+    );
+    final double measured = initialGlyph.pistonFraction!;
     expect(measured, inInclusiveRange(0, 1));
 
     await tester.tap(find.text('Schéma'));
@@ -63,5 +67,6 @@ void main() {
       measured,
     );
     expect(find.byKey(const Key('air-measured-position')), findsOneWidget);
-  });
+    },
+  );
 }

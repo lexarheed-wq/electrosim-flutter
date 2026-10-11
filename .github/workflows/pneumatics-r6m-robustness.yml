@@ -1,0 +1,44 @@
+name: PNEU R6M Transactional Session and Robustness
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6m-session-robustness-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  r6m-science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Verify complete transactional session tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6m
+          echo "sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6m/PROVENANCE.txt
+          dart --version | tee -a build/pneumatics-r6m/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          for p in electrosim_multiphysics electrosim_electropneumatic; do
+            (
+              cd "packages/$p"
+              dart pub get
+              dart format --output=none --set-exit-if-changed lib test
+              dart analyze
+              dart test --concurrency=1 --reporter expanded
+            ) 2>&1 | tee "build/pneumatics-r6m/$p.log"
+          done
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6m-session-${{ github.sha }}
+          path: build/pneumatics-r6m/
+          retention-days: 21

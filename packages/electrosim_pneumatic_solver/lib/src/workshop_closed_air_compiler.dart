@@ -36,9 +36,17 @@ final class WorkshopClosedAirCompiler {
   IsothermalAirNetwork compileWithIdealBoundaries(PneumaticNetwork network) =>
       _compile(network, withIdealBoundaries: true);
 
+  /// R6/G: optional quasi-static ISO 1219 5/2 spool at an authored state.
+  /// Every valve port is a finite dead volume. State changes require a new
+  /// compiled topology AND explicit conservative snapshot reconciliation.
+  /// This method models no moving spool, solenoid voltage or moving piston.
+  IsothermalAirNetwork compileWithStaticValve52(PneumaticNetwork network) =>
+      _compile(network, withIdealBoundaries: true, withStaticValve52: true);
+
   IsothermalAirNetwork _compile(
     PneumaticNetwork network, {
     required bool withIdealBoundaries,
+    bool withStaticValve52 = false,
   }) {
     requirePositiveFinite(dischargeCoefficient, 'dischargeCoefficient');
     if (dischargeCoefficient > 1) {
@@ -60,6 +68,7 @@ final class WorkshopClosedAirCompiler {
     final List<FixedPressureAirNode> boundaryNodes = <FixedPressureAirNode>[];
     final Map<String, PneumaticDeviceKind> kinds =
         <String, PneumaticDeviceKind>{};
+    final List<AirPassage> valvePassages = <AirPassage>[];
     for (final PneumaticDevice device in network.devices) {
       final bool isFitting =
           device.kind == PneumaticDeviceKind.tee ||
@@ -67,7 +76,9 @@ final class WorkshopClosedAirCompiler {
       final bool isExternal =
           device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
-      if (!isFitting && (!withIdealBoundaries || !isExternal)) {
+      final bool isValve =
+          withStaticValve52 && device.kind == PneumaticDeviceKind.valve52;
+      if (!isFitting && (!withIdealBoundaries || !isExternal) && !isValve) {
         throw PneumaticPhysicsException(
           'unsupported_device',
           'The physical workshop compiler has no accepted dynamic model for '
@@ -75,6 +86,100 @@ final class WorkshopClosedAirCompiler {
         );
       }
       kinds[device.id] = device.kind;
+      if (isValve) {
+        final double? deadVolume = device.parametersSi['portDeadVolumeM3'];
+        final double? initialPressure = device.parametersSi['pressureAbsPa'];
+        final double? effectiveArea =
+            device.parametersSi['valveEffectiveAreaM2'];
+        final double? valveCd = device.parametersSi['valveCd'];
+        final double? spoolPosition = device.parametersSi['energized'];
+        if (deadVolume == null ||
+            initialPressure == null ||
+            effectiveArea == null ||
+            valveCd == null ||
+            spoolPosition == null) {
+          throw PneumaticPhysicsException(
+            'missing_valve_calibration',
+            'A 5/2 valve needs explicit dead volume, absolute pressure, '
+                'effective area, discharge coefficient, and spool state: '
+                '${device.id}.',
+          );
+        }
+        requirePositiveFinite(deadVolume, 'portDeadVolumeM3');
+        requirePositiveFinite(initialPressure, 'pressureAbsPa');
+        requirePositiveFinite(effectiveArea, 'valveEffectiveAreaM2');
+        requirePositiveFinite(valveCd, 'valveCd');
+        if (valveCd > 1 || (spoolPosition != 0 && spoolPosition != 1)) {
+          throw const PneumaticPhysicsException(
+            'invalid_valve_calibration',
+            'Valve Cd must be <=1 and energized must be exactly 0 or 1.',
+          );
+        }
+        final Map<String, PneumaticPort> byName = <String, PneumaticPort>{};
+        for (final PneumaticPort port in device.ports) {
+          final String prefix = '${device.id}.';
+          if (!port.id.value.startsWith(prefix)) {
+            throw const PneumaticPhysicsException(
+              'invalid_valve_ports',
+              'Valve port IDs must use their physical owner prefix.',
+            );
+          }
+          final String name = port.id.value.substring(prefix.length);
+          if (byName.containsKey(name)) {
+            throw const PneumaticPhysicsException(
+              'invalid_valve_ports',
+              'Valve port names must be unique.',
+            );
+          }
+          byName[name] = port;
+        }
+        final Map<String, PneumaticPortRole> roles =
+            <String, PneumaticPortRole>{
+              'P': PneumaticPortRole.supply,
+              'A': PneumaticPortRole.work,
+              'B': PneumaticPortRole.work,
+              'R': PneumaticPortRole.exhaust,
+              'S': PneumaticPortRole.exhaust,
+            };
+        if (byName.length != roles.length ||
+            roles.entries.any(
+              (e) => byName[e.key] == null || byName[e.key]!.role != e.value,
+            )) {
+          throw PneumaticPhysicsException(
+            'invalid_valve_ports',
+            'Valve ${device.id} must expose ISO P/A/B/R/S and correct roles.',
+          );
+        }
+        for (final MapEntry<String, PneumaticPort> entry in byName.entries) {
+          final String chamber = '${device.id}.${entry.key}';
+          chambers.add(
+            FixedAirChamber.fromPressure(
+              id: chamber,
+              volumeM3: deadVolume,
+              pressureAbsPa: initialPressure,
+            ),
+          );
+          chamberByPort[entry.value.id] = chamber;
+        }
+        final IsentropicOrifice internal = IsentropicOrifice(
+          effectiveAreaM2: effectiveArea,
+          dischargeCoefficient: valveCd,
+        );
+        final List<(String, String)> routes = spoolPosition == 1
+            ? <(String, String)>[('P', 'A'), ('B', 'S')]
+            : <(String, String)>[('P', 'B'), ('A', 'R')];
+        for (final (String first, String second) in routes) {
+          valvePassages.add(
+            AirPassage(
+              id: '${device.id}.${first}to${second}',
+              firstChamberId: '${device.id}.${first}',
+              secondChamberId: '${device.id}.${second}',
+              orifice: internal,
+            ),
+          );
+        }
+        continue;
+      }
       if (isExternal) {
         final double? pressure = device.parametersSi['pressureAbsPa'];
         if (pressure == null) {
@@ -137,7 +242,7 @@ final class WorkshopClosedAirCompiler {
       }
     }
 
-    final List<AirPassage> passages = <AirPassage>[];
+    final List<AirPassage> passages = <AirPassage>[...valvePassages];
     for (final PneumaticPipe pipe in network.pipes) {
       if (pipe.fault == PneumaticPipeFault.blocked) {
         continue; // A blocked pipe has no mass flow or hidden vent.

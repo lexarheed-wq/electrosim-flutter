@@ -152,7 +152,9 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     canvas.save();
     canvas.translate(body.left, body.top);
     canvas.scale(body.width / 112, body.height / 152);
-    // All labels are vector text above the actual baked button geometry.
+    // Legacy low-resolution PNGs lack physically embossed text. 4x Cycles
+    // textures already contain HOLD/RANGE/SELECT/LIGHT and COM/V-ohm labels.
+    if ((voltmeterFront?.width ?? 0) < 1000) {
     const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
     const xs = <double>[35, 49, 63, 77];
     for (var index = 0; index < names.length; index++) {
@@ -174,6 +176,49 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       )..layout();
       text.paint(canvas, Offset(xs[index] - text.width / 2, 54.3));
       text.dispose();
+    }
+    }
+    if ((voltmeterFront?.width ?? 0) >= 1000) {
+      // High-definition front PNG intentionally has no selector grip.
+      // Rotate a tactile vector grip above the shaft without rotating body,
+      // LCD or connected measurement probes.
+      final double turn = !meter.poweredOn ? -math.pi / 3 : switch (meter.mode) {
+        InstrumentMode.voltageDc => 0.0,
+        InstrumentMode.voltageAcRms => math.pi / 3,
+        InstrumentMode.resistance => 2 * math.pi / 3,
+        _ => 0.0,
+      };
+      canvas.save();
+      canvas.translate(53, 91);
+      canvas.rotate(turn);
+      final Rect knob = Rect.fromCenter(
+        center: Offset.zero, width: 9, height: 29,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(knob, const Radius.circular(2)),
+        Paint()..color = const Color(0xFF7A8288),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(knob.deflate(.85), const Radius.circular(1.4)),
+        Paint()..color = const Color(0xFF353E49),
+      );
+      for (var rib = 0; rib < 5; rib++) {
+        final double y = -9 + rib * 4.3;
+        canvas.drawLine(
+          Offset(-2.5, y), Offset(2.5, y),
+          Paint()
+            ..color = const Color(0xFFAFB8C0)
+            ..strokeWidth = .8
+            ..strokeCap = StrokeCap.round,
+        );
+      }
+      final Path marker = Path()
+        ..moveTo(0, -17.0)
+        ..lineTo(-3, -12.5)
+        ..lineTo(3, -12.5)
+        ..close();
+      canvas.drawPath(marker, Paint()..color = const Color(0xFFF2F6F9));
+      canvas.restore();
     }
     final String mode = !meter.poweredOn ? 'OFF' : switch (meter.mode) {
       InstrumentMode.voltageDc => 'V⎓',

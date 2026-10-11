@@ -17,6 +17,7 @@ class PneumaticDeviceGlyph extends StatelessWidget {
   final bool schematic;
   final double width;
   final double height;
+
   /// Position is passed only from an accepted physical snapshot.
   /// Null preserves legacy/static glyph rendering and golden parity.
   final double? pistonFraction;

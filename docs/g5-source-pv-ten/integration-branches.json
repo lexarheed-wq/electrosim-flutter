@@ -1,0 +1,76 @@
+{
+  "target": "feat/g5-industrial-geometry-20261009",
+  "target_before": "5e7b75c3d35535a9e8234bfeff63c6bf9cc5c79e",
+  "branches": [
+    {
+      "branch": "design/professional-workspace",
+      "sha": "0c42ba80dbebfcdf786a66a0eafc977ba363f6e1",
+      "included": true
+    },
+    {
+      "branch": "feat/professional-workspace",
+      "sha": "7f001c2521db9b863136e682c8ab9d93fd27a9d6",
+      "included": true
+    },
+    {
+      "branch": "fix/connection-performance",
+      "sha": "8f5f1f14d8a54c6e08f4d590cddf7b0d148b2aa7",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-reference-rendering-20261009",
+      "sha": "1934f0d118dc7ace94e4ea5cdd94d8da5a7fd3e8",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-catalogue-physical-rendering-20261009",
+      "sha": "f0b09f7b95e9235c111e5a7d648dba30c1f6d834",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-industrial-components-next-20261009",
+      "sha": "ad54d6cbbab2025f31646b828dceb06372066079",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-p2-industrial-integration-20261009",
+      "sha": "ac4792e18718c55e04c7f2ab70b99f32d5957251",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-metal-mounting-plate-20261009",
+      "sha": "dabe8d160137608fddbc65b73b558dffa74d6d9d",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-passive-realism-20261010",
+      "sha": "710aad1a7522fce95978dc06dbf0fc11013992b0",
+      "included": true
+    },
+    {
+      "branch": "feat/g5-semiconductor-realism-20261010",
+      "sha": "a8c21b4d9f0d4bafb7d2248dba0faa533e619354",
+      "included": true
+    },
+    {
+      "branch": "docs/pneumatic-program-director-20261010",
+      "sha": "8b10c9e683239e13a3186c7b4a3a944e1cac4d75",
+      "included": true
+    },
+    {
+      "branch": "origin/audit/postv2-20lots-p2-dc-isolation-20261010",
+      "sha": "7dd9c5b2d70ecba54d0b45054ca558c30e75eeb8",
+      "included": true
+    },
+    {
+      "branch": "origin/feat/pneumatics-r6-deterministic-scale-20261011",
+      "sha": "3edb2556dbcc390ab6fb1f5d5089c20a1f5cf7b1",
+      "included": false
+    },
+    {
+      "branch": "origin/feat/pneumatics-r6b-iso-port-identity-20261011",
+      "sha": "2a5f154c301a96f49a757eddecdef54de663b637",
+      "included": true
+    }
+  ]
+}

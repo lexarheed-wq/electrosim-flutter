@@ -149,17 +149,28 @@ def main():
             ('function-select', 'SELECT', 63, 2.12, h.steel),
             ('function-light', 'LIGHT', 77, 2.45, h.black)):
         raised_legend(name, value, x, 56.0, body_d + 9.12, size, material)
-    raised_legend('socket-com-label', 'COM', 42, 116.0, body_d + 9.1,
-                  3.6, h.steel)
-    raised_legend('socket-voltage-label', 'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
-                  70, 116.0, body_d + 9.1, 3.4, h.steel)
-    # Small moulded reference rivets and tactile relief, not extra terminals.
+    # On the ammeter, the physical fuse hatch covers y=110..118.
+    # Move jack legends BELOW the bores so COM is not hidden behind the hatch.
+    # The voltmeter has no hatch and preserves the original y=116 legends.
+    jack_legend_y = 143.0 if KEY == 'instrument-ammeter' else 116.0
+    raised_legend('socket-com-label', 'COM', 42, jack_legend_y,
+                  body_d + 9.1, 3.6, h.steel)
+    raised_legend(
+        'socket-input-label',
+        'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
+        70, jack_legend_y, body_d + 9.1, 3.4, h.steel)
+    if KEY == 'instrument-ammeter':
+        raised_legend('fuse-panel-legend', 'FUSE 10 A',
+                      53, 114, body_d + 11.2, 2.7, h.steel)
+    # The tactile moulding belongs to the lateral holster, NOT to the dial.
     for i, x in enumerate((28, 84)):
         h.cyl(f'casing-fastener-{i}', x, 137, body_d + 5.0,
               1.6, 0.8, h.steel)
-    for i in range(5):
-        h.box(f'grip-rib-{i}', 53, 80 + i * 5.0,
-              6.2, 0.9, body_d + 15.6, 0.8, h.steel, r=0.35)
+    for side, x in (('left', 22), ('right', 90)):
+        for i in range(5):
+            h.box(
+                f'holster-grip-{side}-{i}', x, 76 + i * 6.5,
+                2.0, 4.2, body_d + 7.0, 0.9, h.yellow, r=0.35)
     area('diffused studio left', (-70, 60, 190), 100000, 150)
     area('diffused studio right', (190, -60, 170), 75000, 100)
     area('soft rim reflection', (48, -130, 120), 45000, 130)

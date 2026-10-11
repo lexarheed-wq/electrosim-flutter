@@ -1,4 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:flutter/material.dart';
 import 'f18_voltmeter_controls.dart';
 
 /// Component 02: controls a FUSED serial ammeter; never bypasses burden.
@@ -33,6 +34,27 @@ abstract final class F18AmmeterControls {
     if (!valid || measured == null || !measured.isFinite) return text;
     final index = rangeIndex(i);
     return index > 0 && measured.abs() > limits[index - 1] ? 'OL' : text;
+  }
+
+  /// Current-meter selector is above its fuse cover (centre y=86, not
+  /// the voltmeter's y=91). The fuse hatch y=110..118 remains non-interactive
+  /// until an explicit, safe physical replacement workflow is implemented.
+  static F18VoltmeterAction? actionAt(Offset location, Size extent) {
+    if (extent.width <= 0 || extent.height <= 0) return null;
+    final x = location.dx * 112 / extent.width;
+    final y = location.dy * 152 / extent.height;
+    if (y >= 50 && y <= 65) {
+      if (x >= 28 && x < 42) return F18VoltmeterAction.hold;
+      if (x >= 42 && x < 56) return F18VoltmeterAction.range;
+      if (x >= 56 && x < 70) return F18VoltmeterAction.select;
+      if (x >= 70 && x <= 84) return F18VoltmeterAction.light;
+    }
+    final dx = x - 53.0;
+    final dy = y - 86.0;
+    if (dx * dx + dy * dy <= 20 * 20) {
+      return F18VoltmeterAction.selector;
+    }
+    return null;
   }
 
   static InstrumentInstance apply(InstrumentInstance meter,

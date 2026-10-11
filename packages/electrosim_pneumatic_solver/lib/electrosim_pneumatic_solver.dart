@@ -12,3 +12,4 @@ export 'src/workshop_closed_air_compiler.dart';
 export 'src/moving_cylinder_network.dart';
 export 'src/r6n_network_job.dart';
 export 'src/r6n_worker.dart';
+export 'src/r6n_perf_acceptance.dart';

@@ -12,8 +12,8 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 
 | N° | Clé | Développement et preuve |
 |---:|---|---|
-| 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
-| 02 | `instrument-ammeter` | Recette Blender originale A/COM/fusible + rendu Cycles paramétré ; loader dédié, palette/frontale/câbles/contrôles et tests Dart écrits ; PNG non générés ; qualité visuelle/mesure réelle NON qualifiées |
+| 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; réseau ouvert désormais OL explicite ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
+| 02 | `instrument-ammeter` | Recette Blender originale A/COM/fusible + rendu Cycles paramétré ; loader dédié, palette/frontale/câbles/contrôles et tests Dart écrits ; construction.json explicite et référence photographique marquée INCOMPLÈTE (3 douilles sur photo contre 2 A/COM dans le contrat) ; PNG non générés ; qualité visuelle/mesure réelle NON qualifiées |
 | 03 | `instrument-frequency` | En attente de son tour |
 | 04 | `instrument-phase-sequence` | En attente de son tour |
 | 05 | `external-crusher` | En attente de son tour |
@@ -44,3 +44,10 @@ Recette Blender originale → front et perspective palette → composants intera
 
 ### Observations d'environnement
 Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender ne sont installés. Les tests de la branche séquentielle sont rédigés mais n'ont pas été exécutés localement. La qualification de ces sources et les PNG réels seront produits sur les runners finaux ; ne jamais afficher une illustration IA comme preuve de capture Flutter.
+
+### Rapport ponctuel — 11/10/2026 (session)
+- Ordre strict : composant 01 traité au niveau du code, composant 02 ampèremètre en développement ; composant 03 non ouvert.
+- Composant 01 : injection électrique Ω 1 V / 1 kΩ sur copie déconnectée, refus de toute source et d'élément actif, préflight réseau ouvert OL ; tests ajoutés mais NON exécutés.
+- Composant 02 : recette Blender A/COM/fusible, loader et rendu face/3-4 conditionnels, fonctions HOLD/RANGE/SELECT/LIGHT, cordons souples de sondes, tests non exécutés.
+- Contrat de construction : photo de référence à trois douilles, modèle logiciel ampèremètre à deux ports de mesure A/COM ; divergence documentée sans inventer de troisième borne.
+- État global : 0 fusion, 0 nouveau PNG Flutter/Blender qualifié pendant cette session, pas de lancement de qualification générale ; Mac Intel et Chromium reportés.

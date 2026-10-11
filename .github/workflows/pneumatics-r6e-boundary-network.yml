@@ -1,0 +1,55 @@
+name: PNEU R6E Ideal Source and Vent Network
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6e-boundary-network-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r6e-ideal-boundary-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  r6e-real-pressure-boundaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Dart scientific integrity and source formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6e
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            dart --version
+          } | tee build/pneumatics-r6e/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format lib/src/isothermal_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_workshop_ideal_boundary_test.dart
+            git diff -- lib/src/isothermal_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_workshop_ideal_boundary_test.dart | tee ../../build/pneumatics-r6e/FORMAT_PATCH.diff
+            git diff --exit-code -- lib/src/isothermal_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_workshop_ideal_boundary_test.dart
+            dart analyze
+            dart test --concurrency=1 --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6e/SCIENCE.log
+          grep -F "R6/E source and vent exchange measured mass across authored graph" build/pneumatics-r6e/SCIENCE.log
+          grep -F "R6/E physically blocked supply cannot secretly inject air" build/pneumatics-r6e/SCIENCE.log
+          grep -F "All tests passed!" build/pneumatics-r6e/SCIENCE.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6e-source-vent-${{ github.sha }}
+          path: build/pneumatics-r6e/
+          retention-days: 21
+          if-no-files-found: warn

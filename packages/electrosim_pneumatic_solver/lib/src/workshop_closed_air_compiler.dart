@@ -25,7 +25,21 @@ final class WorkshopClosedAirCompiler {
   /// An explicit generic effective-orifice coefficient, 0 < Cd <= 1.
   final double dischargeCoefficient;
 
-  IsothermalAirNetwork compile(PneumaticNetwork network) {
+  /// Closed R6/D remains the strict default. Existing callers are unchanged.
+  IsothermalAirNetwork compile(PneumaticNetwork network) =>
+      _compile(network, withIdealBoundaries: false);
+
+  /// R6/E opt-in: an ideal source and an atmosphere outlet are explicitly
+  /// prescribed constant-pressure boundary conditions, not finite tanks,
+  /// regulators, compressors, valves or cylinders. Their signed mass exchange
+  /// is available in IsothermalAirSnapshot.externalMassAddedKg.
+  IsothermalAirNetwork compileWithIdealBoundaries(PneumaticNetwork network) =>
+      _compile(network, withIdealBoundaries: true);
+
+  IsothermalAirNetwork _compile(
+    PneumaticNetwork network, {
+    required bool withIdealBoundaries,
+  }) {
     requirePositiveFinite(dischargeCoefficient, 'dischargeCoefficient');
     if (dischargeCoefficient > 1) {
       throw const PneumaticPhysicsException(
@@ -43,14 +57,57 @@ final class WorkshopClosedAirCompiler {
     final Map<PneumaticPortId, String> chamberByPort =
         <PneumaticPortId, String>{};
     final List<FixedAirChamber> chambers = <FixedAirChamber>[];
+    final List<FixedPressureAirNode> boundaryNodes = <FixedPressureAirNode>[];
+    final Map<String, PneumaticDeviceKind> kinds =
+        <String, PneumaticDeviceKind>{};
     for (final PneumaticDevice device in network.devices) {
-      if (device.kind != PneumaticDeviceKind.tee &&
-          device.kind != PneumaticDeviceKind.manifold) {
+      final bool isFitting =
+          device.kind == PneumaticDeviceKind.tee ||
+          device.kind == PneumaticDeviceKind.manifold;
+      final bool isExternal =
+          device.kind == PneumaticDeviceKind.idealSource ||
+          device.kind == PneumaticDeviceKind.silencer;
+      if (!isFitting && (!withIdealBoundaries || !isExternal)) {
         throw PneumaticPhysicsException(
           'unsupported_device',
           'The physical workshop compiler has no accepted dynamic model for '
               '${device.id} (${device.kind.name}). Do not infer its behavior.',
         );
+      }
+      kinds[device.id] = device.kind;
+      if (isExternal) {
+        final double? pressure = device.parametersSi['pressureAbsPa'];
+        if (pressure == null) {
+          throw PneumaticPhysicsException(
+            'missing_physical_calibration',
+            'An explicit absolute boundary pressure is required for '
+                '${device.id}.',
+          );
+        }
+        final PneumaticPortRole requiredRole =
+            device.kind == PneumaticDeviceKind.idealSource
+            ? PneumaticPortRole.supply
+            : PneumaticPortRole.exhaust;
+        for (final PneumaticPort port in device.ports) {
+          if (port.role != requiredRole) {
+            throw PneumaticPhysicsException(
+              'unsupported_port_role',
+              'The ${device.kind.name} boundary requires '
+                  '${requiredRole.name} ports.',
+            );
+          }
+          chamberByPort[port.id] = device.id;
+        }
+        boundaryNodes.add(
+          FixedPressureAirNode(
+            id: device.id,
+            pressureAbsPa: pressure,
+            temperatureK:
+                device.parametersSi['temperatureK'] ??
+                DryAirReference.temperatureK,
+          ),
+        );
+        continue;
       }
       final double? volume = device.parametersSi['volumeM3'];
       final double? pressure = device.parametersSi['pressureAbsPa'];
@@ -108,6 +165,20 @@ final class WorkshopClosedAirCompiler {
         );
       }
 
+      final bool firstIsBoundary =
+          kinds[first] == PneumaticDeviceKind.idealSource ||
+          kinds[first] == PneumaticDeviceKind.silencer;
+      final bool secondIsBoundary =
+          kinds[second] == PneumaticDeviceKind.idealSource ||
+          kinds[second] == PneumaticDeviceKind.silencer;
+      if (firstIsBoundary && secondIsBoundary) {
+        throw const PneumaticPhysicsException(
+          'unsupported_boundary_connection',
+          'Ideal pressure boundaries cannot be connected directly without '
+              'a finite gas volume.',
+        );
+      }
+
       // This is the standard lumped effective-area K correction, not a
       // detailed length-dependent Darcy friction calculation.
       final double boreArea = math.pi * math.pow(pipe.innerDiameterM, 2) / 4;
@@ -124,6 +195,16 @@ final class WorkshopClosedAirCompiler {
         ),
       );
     }
-    return IsothermalAirNetwork(chambers: chambers, passages: passages);
+    if (chambers.isEmpty) {
+      throw const PneumaticPhysicsException(
+        'missing_finite_volume',
+        'An ideal pressure boundary needs a connected finite gas volume.',
+      );
+    }
+    return IsothermalAirNetwork(
+      chambers: chambers,
+      passages: passages,
+      boundaries: boundaryNodes,
+    );
   }
 }

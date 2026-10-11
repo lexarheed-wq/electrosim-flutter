@@ -10,6 +10,8 @@ import 'f18_voltmeter_3d_assets.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_ammeter_controls.dart';
 import 'f18_ammeter_3d_assets.dart';
+import 'f18_frequency_3d_assets.dart';
+import 'f18_frequency_controls.dart';
 
 /// LCD readouts are projected from the electrical runtime: invalid/disconnected
 /// devices never manufacture a zero. The optional Cycles body is painted by
@@ -24,6 +26,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     this.voltmeterFront,
     this.ammeter3dIds = const <String>{},
     this.ammeterFront,
+    this.frequency3dIds = const <String>{},
+    this.frequencyFront,
     this.selectedElementId,
   });
 
@@ -35,6 +39,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   final ui.Image? voltmeterFront;
   final Set<String> ammeter3dIds;
   final ui.Image? ammeterFront;
+  final Set<String> frequency3dIds;
+  final ui.Image? frequencyFront;
   final String? selectedElementId;
 
   Rect? screenRect(String id) {
@@ -163,6 +169,43 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       }
     }
 
+    final ui.Image? frequency = frequencyFront;
+    if (frequency != null) {
+      for (final String id in frequency3dIds) {
+        final Rect? rect = screenRect(id);
+        if (rect == null || !_inView(id, rect, size)) continue;
+        _paint3dRotated(canvas, id, rect, (Rect local) {
+          canvas.drawImageRect(
+            frequency,
+            Rect.fromLTWH(
+              0,
+              0,
+              frequency.width.toDouble(),
+              frequency.height.toDouble(),
+            ),
+            local,
+            Paint()..filterQuality = FilterQuality.high,
+          );
+          final InstrumentInstance? meter = circuit?.instruments
+              .where((i) => i.id.value == id)
+              .firstOrNull;
+          if (meter != null) _paintFrequencyControls(canvas, local, meter);
+          if (id == selectedElementId) {
+            canvas.drawRRect(
+              RRect.fromRectAndRadius(
+                local.deflate(2 * viewport.scale),
+                Radius.circular(8 * viewport.scale),
+              ),
+              Paint()
+                ..color = const Color(0xFF2563EB)
+                ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
+                ..style = PaintingStyle.stroke,
+            );
+          }
+        });
+      }
+    }
+
     // The measurement sockets are on the FRONT: draw cords and insulated
     // plugs above the physical enclosure, independently of power wiring.
     _paintConnectedProbes(canvas);
@@ -172,7 +215,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       if (rect == null) continue;
       final bool original3d =
           (front != null && voltmeter3dIds.contains(item.key)) ||
-          (ammeter != null && ammeter3dIds.contains(item.key));
+          (ammeter != null && ammeter3dIds.contains(item.key)) ||
+          (frequencyFront != null && frequency3dIds.contains(item.key));
       if (original3d && !_inView(item.key, rect, size)) continue;
       if (!original3d && !rect.overlaps(Offset.zero & size)) continue;
       if (original3d) {
@@ -182,13 +226,17 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
               .firstOrNull;
           _drawReading(
             canvas,
-            ammeter3dIds.contains(item.key)
+            frequency3dIds.contains(item.key)
+                ? F18Frequency3dAssets.projectReadout(local)
+                : ammeter3dIds.contains(item.key)
                 ? F18Ammeter3dAssets.projectReadout(local)
                 : F18Voltmeter3dAssets.projectReadout(local),
             item.value,
             illuminated:
                 meter != null &&
-                (meter.kind == InstrumentKind.ammeter
+                (meter.kind == InstrumentKind.frequencyMeter
+                    ? F18FrequencyControls.lit(meter)
+                    : meter.kind == InstrumentKind.ammeter
                     ? F18AmmeterControls.lit(meter)
                     : F18VoltmeterControls.isLit(meter)),
           );
@@ -206,6 +254,69 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         );
       }
     }
+  }
+
+  void _paintFrequencyControls(
+    Canvas canvas,
+    Rect body,
+    InstrumentInstance meter,
+  ) {
+    canvas.save();
+    canvas.translate(body.left, body.top);
+    canvas.scale(body.width / 112, body.height / 152);
+    for (final entry in <double, String>{
+      35: 'HOLD',
+      56: 'ON/OFF',
+      77: 'LIGHT',
+    }.entries) {
+      final button = Rect.fromCenter(
+        center: Offset(entry.key, 78),
+        width: 13,
+        height: 5.5,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(button, const Radius.circular(.6)),
+        Paint()
+          ..color = entry.key == 77
+              ? const Color(0xFFC9A533)
+              : entry.key == 56
+              ? const Color(0xFF17486E)
+              : const Color(0xFF515A60),
+      );
+      final text = TextPainter(
+        text: TextSpan(
+          text: entry.value,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 2.7,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFF1F5FA),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(
+        canvas,
+        Offset(entry.key - text.width / 2, 78 - text.height / 2),
+      );
+      text.dispose();
+    }
+    if (F18FrequencyControls.held(meter) && meter.poweredOn) {
+      final text = TextPainter(
+        text: const TextSpan(
+          text: 'HOLD',
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 4,
+            color: Color(0xFF87C5EF),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(canvas, const Offset(47, 90));
+      text.dispose();
+    }
+    canvas.restore();
   }
 
   void _paintFrontControls(Canvas canvas, Rect body, InstrumentInstance meter) {
@@ -440,8 +551,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     final CircuitState? active = circuit;
     if (active == null ||
         ((voltmeterFront == null || voltmeter3dIds.isEmpty) &&
-            (ammeterFront == null || ammeter3dIds.isEmpty)))
+            (ammeterFront == null || ammeter3dIds.isEmpty) &&
+            (frequencyFront == null || frequency3dIds.isEmpty))) {
       return;
+    }
     final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
       active,
       layout,
@@ -449,7 +562,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     for (final ProbeConnection probe in active.probes) {
       final String id = probe.instrumentId.value;
       final bool isVoltage =
-          voltmeterFront != null && voltmeter3dIds.contains(id);
+          (voltmeterFront != null && voltmeter3dIds.contains(id)) ||
+          (frequencyFront != null && frequency3dIds.contains(id));
       final bool isCurrent = ammeterFront != null && ammeter3dIds.contains(id);
       if (!isVoltage && !isCurrent) continue;
       if (probe.port != InstrumentPort.common &&

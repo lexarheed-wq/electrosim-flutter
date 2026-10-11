@@ -7,35 +7,7 @@ abstract final class F18AmmeterFuseSafety {
   static Connection? wiredCut(
     CircuitState circuit,
     InstrumentInstance instrument,
-  ) {
-    if (instrument.kind != InstrumentKind.ammeter ||
-        instrument.cutConnectionId == null) {
-      return null;
-    }
-    final Connection? cut = circuit.connections
-        .where((c) => c.id == instrument.cutConnectionId && c.enabled)
-        .firstOrNull;
-    if (cut == null) return null;
-    final TerminalId? amp = circuit.probes
-        .where(
-          (p) =>
-              p.instrumentId == instrument.id && p.port == InstrumentPort.amp,
-        )
-        .firstOrNull
-        ?.terminalId;
-    final TerminalId? common = circuit.probes
-        .where(
-          (p) =>
-              p.instrumentId == instrument.id &&
-              p.port == InstrumentPort.common,
-        )
-        .firstOrNull
-        ?.terminalId;
-    final bool bridged =
-        (amp == cut.fromTerminalId && common == cut.toTerminalId) ||
-        (amp == cut.toTerminalId && common == cut.fromTerminalId);
-    return bridged ? cut : null;
-  }
+  ) => SeriesMeterWiring.wiredCut(circuit, instrument);
 
   /// Trips only when the caller supplies a solver-verified overcurrent. An invalid wiring,
   /// disconnected meter, unsupported mode or arbitrary ERR cannot blow a fuse.

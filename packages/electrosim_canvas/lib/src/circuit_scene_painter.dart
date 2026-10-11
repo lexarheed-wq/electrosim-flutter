@@ -55,6 +55,7 @@ final class CircuitScenePainter extends CustomPainter {
   final Offset viewportTranslationAtBuild;
   final bool paintElementChrome;
   final bool schematicPresentation;
+
   /// IDs of instruments whose 3D front texture is rendered by the app overlay.
   /// Only their legacy case is skipped. Hit testing and probes are unchanged.
   final Set<String> customInstrumentCaseIds;
@@ -199,7 +200,11 @@ final class CircuitScenePainter extends CustomPainter {
   }
 
   void _paintWires(Canvas canvas, CircuitGeometryIndex geometry) {
+    final opened = schematicPresentation
+        ? const <ConnectionId>{}
+        : SeriesMeterWiring.openConnectionIds(circuit);
     for (final Connection connection in circuit.connections) {
+      if (opened.contains(connection.id)) continue;
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
@@ -534,7 +539,10 @@ final class CircuitScenePainter extends CustomPainter {
       oldDelegate.smartWireSemantics != smartWireSemantics ||
       oldDelegate.paintElementChrome != paintElementChrome ||
       oldDelegate.schematicPresentation != schematicPresentation ||
-      !setEquals(oldDelegate.customInstrumentCaseIds, customInstrumentCaseIds) ||
+      !setEquals(
+        oldDelegate.customInstrumentCaseIds,
+        customInstrumentCaseIds,
+      ) ||
       oldDelegate.viewportScaleAtBuild != viewportScaleAtBuild ||
       oldDelegate.viewportTranslationAtBuild != viewportTranslationAtBuild;
 }

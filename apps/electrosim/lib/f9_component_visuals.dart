@@ -1129,7 +1129,6 @@ class _F9StaticOverlayPainter extends CustomPainter {
         (source.parameters['_visualModelType'] as String?) ?? source.modelType,
         source.enabled,
         layout.quarterTurnsOf(source.id.value),
-        displayLabel: source.parameters['_displayLabel'] as String?,
       );
     }
     for (final ComponentInstance component in circuit.components) {
@@ -1145,7 +1144,6 @@ class _F9StaticOverlayPainter extends CustomPainter {
             component.modelType,
         active,
         layout.quarterTurnsOf(component.id.value),
-        displayLabel: component.parameters['_displayLabel'] as String?,
       );
     }
 
@@ -1321,9 +1319,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
     Rect worldRect,
     String modelType,
     bool active,
-    int quarterTurns, {
-    String? displayLabel,
-  }) {
+    int quarterTurns,
+  ) {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final Size visualSize = F18ReferenceComponentVisuals.supports(modelType)
         ? Size(
@@ -1352,56 +1349,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
       canvas.restore();
     }
 
-    if (viewport.scale >= 0.72) {
-      final TextPainter painter = TextPainter(
-        text: TextSpan(
-          text: displayLabel ?? _boardLabel(modelType),
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            color: ElectroSimColors.textPrimary,
-            fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-      )..layout(maxWidth: visualSize.width + 40);
-      painter.paint(
-        canvas,
-        Offset(
-          center.dx - painter.width / 2,
-          center.dy + visualSize.height / 2 + 7,
-        ),
-      );
-    }
-  }
-
-  String _boardLabel(String modelType) {
-    return switch (modelType.toLowerCase()) {
-      'dc_voltage_source' || 'voltage_source' => 'Alim. 24 V',
-      'push_button_no' => 'BP NO',
-      'switch' || 'switch_spst' => 'Interrupteur',
-      'lamp' => 'Lampe',
-      'resistor' => 'Résistance',
-      'breaker_dc' || 'breaker_ac1' || 'breaker' => 'Disjoncteur',
-      'fuse_dc' || 'fuse_ac1' || 'fuse' => 'Fusible',
-      'motor_dc' => 'Moteur CC',
-      'fan_dc' => 'Ventilateur',
-      'relay_coil' => 'Bobine',
-      'buzzer' => 'Buzzer',
-      'capacitor' => 'Condensateur',
-      'inductor' => 'Inductance',
-      'impedance' => 'Impédance',
-      'contactor_aux_no' => 'Aux. NO',
-      'contactor_aux_nc' => 'Aux. NC',
-      'relay_contact_no' => 'Relais NO',
-      'relay_contact_nc' => 'Relais NC',
-      'contactor_ac1' => 'Contacteur 1φ',
-      'contactor_3p' => 'Contacteur 3P',
-      'breaker_3p' => 'Disjoncteur 3P',
-      'thermal_overload_3p' => 'Relais thermique',
-      _ => modelType.replaceAll('_', ' '),
-    };
+    // Physical device markings remain on the body; palette and inspector
+    // provide component names without duplicating captions on the plate.
   }
 
   @override

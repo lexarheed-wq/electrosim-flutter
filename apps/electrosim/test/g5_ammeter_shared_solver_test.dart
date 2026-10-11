@@ -82,6 +82,19 @@ CircuitState fixture({bool reversed = false, bool voltageMeter = false}) {
 void main() {
   const engine = ElectroSimRuntimeEngine();
   const projection = ElectroSimInstrumentProjection();
+  test('physical power cables do not bypass connected series meters', () {
+    final circuit = fixture();
+    final serialized = circuit.toJsonString();
+    expect(SeriesMeterWiring.openConnectionIds(circuit), {
+      ConnectionId('feed'),
+      ConnectionId('return'),
+    });
+    expect(SeriesMeterWiring.openConnectionIds(fixture(reversed: true)), {
+      ConnectionId('feed'),
+      ConnectionId('return'),
+    });
+    expect(circuit.toJsonString(), serialized);
+  });
   test('both series ammeters read the same globally solved current', () {
     final circuit = fixture();
     final snapshot = engine.evaluate(circuit);

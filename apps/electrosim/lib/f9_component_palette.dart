@@ -8,6 +8,7 @@ import 'f18_industrial_dual_view.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'f18_voltmeter_3d_assets.dart';
 import 'f18_ammeter_3d_assets.dart';
+import 'f18_frequency_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -2454,8 +2455,8 @@ class _PaletteDraggableTile extends StatelessWidget {
                 width:
                     definition.modelType == 'rcd_2p_ac1' ||
                         (definition.keyName == 'instrument-voltmeter' ||
-                         (definition.keyName == 'instrument-ammeter' &&
-                          F18Ammeter3dAssets.ready)) ||
+                            (definition.keyName == 'instrument-ammeter' &&
+                                F18Ammeter3dAssets.ready)) ||
                         F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 72
                     : 48,
@@ -2463,17 +2464,20 @@ class _PaletteDraggableTile extends StatelessWidget {
                     ? 108
                     : definition.keyName == 'instrument-voltmeter' ||
                           (definition.keyName == 'instrument-ammeter' &&
-                           F18Ammeter3dAssets.ready) ||
+                              F18Ammeter3dAssets.ready) ||
                           F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
-                child: (definition.keyName == 'instrument-voltmeter' ||
-                         (definition.keyName == 'instrument-ammeter' &&
-                          F18Ammeter3dAssets.ready))
+                child:
+                    (definition.keyName == 'instrument-voltmeter' ||
+                        (definition.keyName == 'instrument-ammeter' &&
+                            F18Ammeter3dAssets.ready))
                     ? Tooltip(
-                        key: Key(definition.keyName == 'instrument-voltmeter'
-                            ? 'g5-voltmeter-3d-detail-preview'
-                            : 'g5-ammeter-3d-detail-preview'),
+                        key: Key(
+                          definition.keyName == 'instrument-voltmeter'
+                              ? 'g5-voltmeter-3d-detail-preview'
+                              : 'g5-ammeter-3d-detail-preview',
+                        ),
                         waitDuration: const Duration(milliseconds: 450),
                         decoration: BoxDecoration(
                           color: const Color(0xFF182438),
@@ -2488,7 +2492,8 @@ class _PaletteDraggableTile extends StatelessWidget {
                           ],
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10,
+                          horizontal: 12,
+                          vertical: 10,
                         ),
                         richMessage: WidgetSpan(
                           alignment: PlaceholderAlignment.middle,
@@ -2788,6 +2793,20 @@ class F9ComponentPreview extends StatelessWidget {
         height: visualSize.height,
         child: RawImage(
           image: F18Ammeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
+    if (definition.keyName == 'instrument-frequency' &&
+        F18Frequency3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Frequency3dAssets.palette,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
         ),

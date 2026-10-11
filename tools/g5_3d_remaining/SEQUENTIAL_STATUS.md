@@ -1,10 +1,10 @@
-# G5 / 26 composants 3D — développement séquentiel
+# G5 / 26 composants 3D — lots de 10, vérifications par composant
 
 Date d'origine : 11 octobre 2026.
 Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 **INTERDICTION DE FUSION** dans G5/main avant validation humaine des **26/26 visuels et preuves PNG**. Cette interdiction inclut les PR #103 et #107.
 **Preuves** : toujours fichiers PNG directs (deux vues et captures réelles Flutter), jamais envoyer de ZIP comme preuve.
-**Ordre** : finir chaque composant, puis passer au suivant sans demander de validation intermédiaire.
+**Organisation actualisée par le chef de projet** : lots de 10 (01–10, 11–20, puis 21–26). Chaque composant conserve ses contrôles propres ; recherches photo regroupées par lot. Aucun développement parallèle imposé. Modèles actuellement commercialisés recherchés chez les fabricants ; date de téléchargement et date du modèle distinguées.
 **Qualification** : garder les essais Mac Intel et Chromium, ainsi que la campagne GitHub de qualification générale, pour la fin des 26. Les captures sont uniquement de vrais rendus logiciels, pas des images IA.
 **Non-régression** : contrats de ports/sondes/TerminalId, branchements, solveur, animation, persistance et rendu de repli.
 
@@ -100,3 +100,11 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - 42/42 tests ciblés passent, dont trois captures de l'application Flutter : courant 1,00 A (valeur solveur 24/24,01), surcharge FUSE et surcharge avec écran initialement OFF. Captures dans apps/electrosim/build/g5-sequential-proof/instrument-ammeter/workspace-{series,fuse-overload,off-input-overload}.png.
 - Qualification technique de cette étape : CC et contrôles/fusible. La parité de charge commune AC/PV reste à qualifier ; ne pas revendiquer une équivalence physique intégrale pour ces modes. Mac Intel/Chromium et campagne globale restent différés. Aucune fusion ni validation humaine finale des 26.
 - Prochaine étape autorisée : composant 03, fréquencemètre, suivant l'ordre séquentiel.
+
+### Qualification locale 03 et corrections transversales (11/10/2026)
+- Fréquencemètre : géométrie Cycles dédiée, deux PNG 1120×1520, chargeur atomique avec repli, boutons HOLD/ON-OFF/LIGHT et écran vectoriel. Aucun changement du contrat de ports.
+- Tests : 6 contrôles/captures passent ; qualification PHYS-METER : 3 passent ; campagne ciblée instruments : 22 passent. Captures réelles 50 et 60 Hz dans `apps/electrosim/build/g5-sequential-proof/instrument-frequency/`. Après routage de la fixture par le moteur orthogonal de production, les deux captures passent à nouveau.
+- Source : conducteurs de puissance marron/bleu routés orthogonalement ; cordons de mesure et pointes uniquement pour les instruments. La fixture initiale sans routes donnait un trajet direct masqué par le corps ; aucune substitution du rendu de puissance en cordons dans le moteur.
+- Ampèremètre : le fil ouvert pour insertion en série ne reste plus dessiné en parallèle sur la platine. Contrat partagé `SeriesMeterWiring` entre domaine/runtime/rendu ; 27 tests ciblés passent, captures de série/fusible régénérées.
+- Noms externes sous les appareils supprimés à la demande du chef de projet. Marquages physiques, bornes, mesures, palette et inspecteur conservés. Analyse Dart sans erreur ; deux captures Flutter passent après suppression.
+- Limite : fréquence fondamentale des scénarios AC1/AC3, sans revendication de détection harmonique ou de mesure temporelle réelle. Composant 03 techniquement vérifié localement ; validation humaine globale et qualification Mac/Chromium différées. Aucun lot déclaré complet, aucune fusion.

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:electrosim/f18_workspace_page.dart';
+import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:electrosim/f18_physical_instrument_readouts.dart';
 import 'package:electrosim/f18_ammeter_3d_assets.dart';
 import 'package:electrosim/f9_component_palette.dart';
@@ -19,6 +20,7 @@ import '../test/support/regression_fixture.dart';
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    expect(await F18PhysicalPlateAssets.preload(), isTrue);
     expect(await F18Ammeter3dAssets.preload(), isTrue);
     final fonts =
         '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
@@ -116,6 +118,9 @@ void main() {
           expect(reading.result!.reading!.value, closeTo(24 / 24.01, 1e-6));
         expect(circuit.connections, hasLength(3));
         expect(circuit.probes, hasLength(2));
+        expect(SeriesMeterWiring.openConnectionIds(circuit), {
+          ConnectionId('wire-2'),
+        });
 
         final layout = CircuitVisualLayout(
           elementPositions: const {

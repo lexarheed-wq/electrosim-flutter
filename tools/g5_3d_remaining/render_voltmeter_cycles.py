@@ -107,11 +107,11 @@ def main():
     argv = sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
-    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter'], default='instrument-voltmeter')
+    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
-    recipe_name = 'instrument_ammeter_recipe' if opts.component == 'instrument-ammeter' else 'instrument_voltmeter_recipe'
+    recipe_name = opts.component.replace('-', '_') + '_recipe'
     recipe_module = importlib.import_module(recipe_name)
     build = recipe_module.build
     KEY = recipe_module.KEY
@@ -142,38 +142,46 @@ def main():
     build(h, {'kind': 'draft_preview', 'key': KEY, 'size': SIZE})
     body_d = SIZE[1] - 4.0
     body_d *= 46.0 / 167.0
-    # Permanent *function* labels; dynamic mode/range/reading remain Flutter.
-    for name, value, x, size, material in (
-            ('function-hold', 'HOLD', 35, 2.45, h.steel),
-            ('function-range', 'RANGE', 49, 2.30, h.steel),
-            ('function-select', 'SELECT', 63, 2.12, h.steel),
-            ('function-light', 'LIGHT', 77, 2.45, h.black)):
-        raised_legend(name, value, x, 56.0, body_d + 9.12, size, material)
-    # On the ammeter, the physical fuse hatch covers y=110..118.
-    # Move jack legends BELOW the bores so COM is not hidden behind the hatch.
-    # The voltmeter has no hatch and preserves the original y=116 legends.
-    jack_legend_y = 143.0 if KEY == 'instrument-ammeter' else 116.0
-    raised_legend('socket-com-label', 'COM', 42, jack_legend_y,
-                  body_d + 9.1, 3.6, h.steel)
-    raised_legend(
-        'socket-input-label',
-        'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
-        70, jack_legend_y, body_d + 9.1, 3.4, h.steel)
-    if KEY == 'instrument-ammeter':
-        # Fuse rating is editable at runtime. Never bake a fixed "10 A"
-        # certification/rating into the image: Flutter will print the
-        # instrument's *actual* fuseRatingA on the lower hatch line.
-        raised_legend('fuse-panel-legend', 'FUSE',
-                      53, 112.0, body_d + 11.2, 2.7, h.steel)
-    # The tactile moulding belongs to the lateral holster, NOT to the dial.
-    for i, x in enumerate((28, 84)):
-        h.cyl(f'casing-fastener-{i}', x, 137, body_d + 5.0,
-              1.6, 0.8, h.steel)
-    for side, x in (('left', 22), ('right', 90)):
-        for i in range(5):
-            h.box(
-                f'holster-grip-{side}-{i}', x, 76 + i * 6.5,
-                2.0, 4.2, body_d + 7.0, 0.9, h.yellow, r=0.35)
+    if KEY == 'instrument-frequency':
+        raised_legend('frequency_title', 'FREQUENCY', 56, 15, 37.2, 3.5, h.steel)
+        raised_legend('frequency_units', 'Hz', 56, 62, 37.2, 7, h.steel)
+        for name, x in [('HOLD', 35), ('ON/OFF', 56), ('LIGHT', 77)]:
+            raised_legend('frequency_button_' + name, name, x, 78, 41.2, 2.4, h.steel)
+        raised_legend('frequency_common', 'COM', 42, 116, 37.2, 3.5, h.steel)
+        raised_legend('frequency_input', 'V/Hz', 70, 116, 37.2, 3.5, h.steel)
+    else:
+        # Permanent *function* labels; dynamic mode/range/reading remain Flutter.
+        for name, value, x, size, material in (
+                ('function-hold', 'HOLD', 35, 2.45, h.steel),
+                ('function-range', 'RANGE', 49, 2.30, h.steel),
+                ('function-select', 'SELECT', 63, 2.12, h.steel),
+                ('function-light', 'LIGHT', 77, 2.45, h.black)):
+            raised_legend(name, value, x, 56.0, body_d + 9.12, size, material)
+        # On the ammeter, the physical fuse hatch covers y=110..118.
+        # Move jack legends BELOW the bores so COM is not hidden behind the hatch.
+        # The voltmeter has no hatch and preserves the original y=116 legends.
+        jack_legend_y = 143.0 if KEY == 'instrument-ammeter' else 116.0
+        raised_legend('socket-com-label', 'COM', 42, jack_legend_y,
+                      body_d + 9.1, 3.6, h.steel)
+        raised_legend(
+            'socket-input-label',
+            'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
+            70, jack_legend_y, body_d + 9.1, 3.4, h.steel)
+        if KEY == 'instrument-ammeter':
+            # Fuse rating is editable at runtime. Never bake a fixed "10 A"
+            # certification/rating into the image: Flutter will print the
+            # instrument's *actual* fuseRatingA on the lower hatch line.
+            raised_legend('fuse-panel-legend', 'FUSE',
+                          53, 112.0, body_d + 11.2, 2.7, h.steel)
+        # The tactile moulding belongs to the lateral holster, NOT to the dial.
+        for i, x in enumerate((28, 84)):
+            h.cyl(f'casing-fastener-{i}', x, 137, body_d + 5.0,
+                  1.6, 0.8, h.steel)
+        for side, x in (('left', 22), ('right', 90)):
+            for i in range(5):
+                h.box(
+                    f'holster-grip-{side}-{i}', x, 76 + i * 6.5,
+                    2.0, 4.2, body_d + 7.0, 0.9, h.yellow, r=0.35)
     area('diffused studio left', (-70, 60, 190), 100000, 150)
     area('diffused studio right', (190, -60, 170), 75000, 100)
     area('soft rim reflection', (48, -130, 120), 45000, 130)
@@ -191,9 +199,10 @@ def main():
         # Front selector grip is a real moving UI part. Keep it OUT of the
         # baked front PNG; show it fixed only in the static 3/4 palette image.
         selector = bpy.data.objects.get('selector_grip')
-        if selector is None:
+        if selector is None and KEY != 'instrument-frequency':
             raise RuntimeError('Missing selector_grip 3D object')
-        selector.hide_render = view == 'front'
+        if selector is not None:
+            selector.hide_render = view == 'front'
         cy, sy = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
         cp, sp = math.cos(math.radians(pitch)), math.sin(math.radians(pitch))
         right = Vector((cy, 0, sy))

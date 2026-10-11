@@ -21,6 +21,8 @@ import 'f18_physical_instrument_readouts.dart';
 import 'f18_voltmeter_3d_assets.dart';
 import 'f18_ammeter_3d_assets.dart';
 import 'f18_ammeter_controls.dart';
+import 'f18_frequency_3d_assets.dart';
+import 'f18_frequency_controls.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
@@ -898,9 +900,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             .toSet()
       : const <String>{};
 
+  Set<String> get _frequency3dIds => F18Frequency3dAssets.ready
+      ? _circuit.instruments
+            .where(F18Frequency3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
+      : const <String>{};
+
   @override
   void initState() {
     super.initState();
+    unawaited(
+      F18Frequency3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     unawaited(
       F18Ammeter3dAssets.preload().then((_) {
         if (mounted) setState(() {});
@@ -1353,6 +1367,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                               customInstrumentCaseIds: <String>{
                                                 ..._voltmeter3dIds,
                                                 ..._ammeter3dIds,
+                                                ..._frequency3dIds,
                                               },
                                             ),
                                             if (_representation ==
@@ -1444,6 +1459,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                               _ammeter3dIds,
                                                           ammeterFront:
                                                               F18Ammeter3dAssets
+                                                                  .front,
+                                                          frequency3dIds:
+                                                              _frequency3dIds,
+                                                          frequencyFront:
+                                                              F18Frequency3dAssets
                                                                   .front,
                                                           selectedElementId:
                                                               _selected,
@@ -2172,6 +2192,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
               computedValue: value,
               validReading: valid,
             )
+          : item.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.display(item, raw, valid)
           : raw;
     }
     _meterReadoutCacheCircuit = _circuit;
@@ -2778,15 +2800,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   /// Independent physical control hit testing. Image and probe sockets
   /// never alter circuit.connections, only the selected InstrumentInstance.
   bool _handleVoltmeterControlTap(Offset screenPosition) {
-    if ((!F18Voltmeter3dAssets.ready && !F18Ammeter3dAssets.ready) ||
-        _representation != WorkspaceRepresentation.plate)
+    if ((!F18Voltmeter3dAssets.ready &&
+            !F18Ammeter3dAssets.ready &&
+            !F18Frequency3dAssets.ready) ||
+        _representation != WorkspaceRepresentation.plate) {
       return false;
+    }
     final Offset world = _viewport.screenToWorld(screenPosition);
     for (final InstrumentInstance meter in _circuit.instruments) {
       if (meter.kind == InstrumentKind.voltmeter) {
         if (!F18Voltmeter3dAssets.ready) continue;
       } else if (meter.kind == InstrumentKind.ammeter) {
         if (!F18Ammeter3dAssets.ready) continue;
+      } else if (meter.kind == InstrumentKind.frequencyMeter) {
+        if (!F18Frequency3dAssets.ready) continue;
       } else {
         continue;
       }
@@ -2821,6 +2848,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
       final F18VoltmeterAction? action = meter.kind == InstrumentKind.ammeter
           ? F18AmmeterControls.actionAt(local, size)
+          : meter.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.actionAt(local, size)
           : F18VoltmeterControls.actionAt(local, size);
       if (action == null) continue;
       if (_blockStudentTpMutation()) return true;
@@ -2842,6 +2871,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final bool valid = reading.status == PhysicalInstrumentStatus.valid;
       final InstrumentInstance next = meter.kind == InstrumentKind.ammeter
           ? F18AmmeterControls.apply(
+              meter,
+              action,
+              text: text,
+              value: value,
+              valid: valid,
+            )
+          : meter.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.apply(
               meter,
               action,
               text: text,

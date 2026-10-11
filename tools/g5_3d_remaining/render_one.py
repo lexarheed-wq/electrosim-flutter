@@ -19,7 +19,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 ROOT = BASE.parents[1]
-SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter')
+SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency')
 PNG_MAGIC = b'\x89PNG\r\n\x1a\n'
 EXPECTED_SIZE = (1120, 1520)
 
@@ -78,8 +78,7 @@ def verify_assets(folder, component):
     record = json.loads(prov.read_text())
     if record.get('key') != component:
         raise ValueError(f"wrong original model identity: {record.get('key')}")
-    recipe = BASE / ('instrument_ammeter_recipe.py' if component == 'instrument-ammeter'
-                      else 'instrument_voltmeter_recipe.py')
+    recipe = BASE / (component.replace('-', '_') + '_recipe.py')
     current_sha = hashlib.sha256(recipe.read_bytes()).hexdigest()
     if record.get('sha256_recipe') != current_sha:
         raise ValueError('image provenance SHA does not match Blender recipe')

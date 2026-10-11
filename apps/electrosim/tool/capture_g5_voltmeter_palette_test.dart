@@ -71,7 +71,7 @@ void main() {
                 Expanded(
                   child: Center(
                     child: Text('ElectroSim • vue palette 3/4',
-                      style: Theme.of(t.element(find.byType(Scaffold))).textTheme.headlineSmall),
+                      style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],

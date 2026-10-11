@@ -6,6 +6,10 @@ on:
     paths:
       - 'apps/electrosim/tool/capture_g5_voltmeter_canvas_test.dart'
       - '.github/workflows/g5-voltmeter-real-renderer-capture.yml'
+  pull_request:
+    paths:
+      - 'apps/electrosim/tool/capture_g5_voltmeter_canvas_test.dart'
+      - '.github/workflows/g5-voltmeter-real-renderer-capture.yml'
   workflow_dispatch:
 permissions:
   contents: read

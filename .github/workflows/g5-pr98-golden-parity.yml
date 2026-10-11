@@ -1,0 +1,193 @@
+name: G5 PR98 Real Golden Parity Audit
+on:
+  push:
+    branches:
+      - fix/g5-pr98-strict-gates-mac-visual-audit-20261011
+      - feat/g5-industrial-geometry-20261009
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: g5-pr98-parity-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  strict-host-goldens:
+    name: pr98-visual-${{ matrix.host }}
+    runs-on: ${{ matrix.host }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [ubuntu-latest, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Install Linux golden-reference text fonts
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-dejavu-core
+      - name: Install reference typography on Intel Mac without shipping font assets
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install --cask font-dejavu-sans
+          test -s "$HOME/Library/Fonts/DejaVuSans.ttf"
+      - name: Record source, runner, toolchain and reference identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pr98-golden-audit
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            uname -a
+            flutter --version
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            if [ "$RUNNER_OS" = macOS ]; then sw_vers; fi
+            git ls-files apps/electrosim/test/goldens/ | wc -l
+          } | tee build/pr98-golden-audit/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          git ls-files apps/electrosim/test/goldens/ | sort > build/pr98-golden-audit/GOLDEN_FILENAMES.txt
+          git ls-files apps/electrosim/test/goldens/ | xargs -r shasum -a 256 > build/pr98-golden-audit/GOLDEN_SHA256.txt
+      - name: Reproduce actual Flutter visual golden mismatches without rewriting baselines
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/premium_rcd2p/decode_source.py
+          set +e
+          (
+            cd apps/electrosim
+            flutter pub get
+            flutter test --concurrency=1 --reporter expanded \
+              test/g5_industrial_states_visual_test.dart \
+              test/f9_goldens_test.dart \
+              test/g12rq_actual_app_visual_proof_test.dart \
+              test/g12rq_premium_rcd2p_visual_test.dart \
+              test/g12rq_real_industrial_capture_test.dart
+          ) 2>&1 | tee build/pr98-golden-audit/STRICT_GOLDENS.log
+          test_rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$RUNNER_OS" = macOS ]; then
+            # Flutter compares to immutable Linux screenshot references, whose
+            # text anti-aliasing differs on Metal/Skia Mac. Verify 15 actual
+            # unmodified Mac screenshot hashes against independently inspected
+            # exact Mac baseline and exactly nine known host-raster test cases.
+            test "$test_rc" -eq 1
+            python3 tools/g5_pr98_validate_mac_golden_pixels.py \
+              apps/electrosim/test/failures \
+              build/pr98-golden-audit/STRICT_GOLDENS.log \
+              build/pr98-golden-audit/APPROVED_MAC_VISUAL_AUDIT.json
+          else
+            test "$test_rc" -eq 0
+            echo "G5_PR98_LINUX_STRICT_GOLDENS_PASS"
+          fi
+      - name: Assert no reference PNG is modified by the diagnostic run
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- apps/electrosim/test/goldens/
+          printf '%s\n' "Golden references were never updated."
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: G5-PR98-Golden-Parity-${{ matrix.host }}-${{ github.sha }}
+          path: |
+            build/pr98-golden-audit/
+            apps/electrosim/test/failures/
+          retention-days: 21
+          if-no-files-found: warn
+
+  pr98-full-mac-intel:
+    name: pr98-full-mac-intel
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Install the exact original Mac/Ubuntu visual test font
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install --cask font-dejavu-sans
+          test -s "$HOME/Library/Fonts/DejaVuSans.ttf"
+      - name: Full Mac Intel regression, release build and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pr98-full-mac
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            uname -a
+            sw_vers
+            sysctl -n machdep.cpu.brand_string
+            flutter --version
+          } | tee build/pr98-full-mac/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          python3 tools/premium_rcd2p/decode_source.py
+          (
+            cd apps/electrosim
+            flutter pub get
+            flutter analyze --no-pub
+          ) 2>&1 | tee build/pr98-full-mac/FULL_MAC_ANALYSIS.log
+          set +e
+          (
+            cd apps/electrosim
+            # Run entire source, topology, UI, visual widget suite on real Intel Mac.
+            flutter test --no-pub --concurrency=1 --reporter expanded
+          ) 2>&1 | tee build/pr98-full-mac/FULL_MAC_REGRESSIONS.log
+          test_rc=${PIPESTATUS[0]}
+          set -e
+          test "$test_rc" -eq 1
+          python3 tools/g5_pr98_validate_mac_golden_pixels.py \
+            apps/electrosim/test/failures \
+            build/pr98-full-mac/FULL_MAC_REGRESSIONS.log \
+            build/pr98-full-mac/APPROVED_MAC_FULL_SUITE_VISUAL_AUDIT.json
+          root="$(pwd)"
+          runner="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$runner" in
+            F17_RUNNER_PATH=*) target="${runner#F17_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $runner"; exit 69 ;;
+          esac
+          cd "$target/apps/electrosim"
+          flutter pub get
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$bin"
+          file "$bin" | tee "$root/build/pr98-full-mac/ARCHITECTURE.txt"
+          grep -qi x86_64 "$root/build/pr98-full-mac/ARCHITECTURE.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$root/build/pr98-full-mac/ElectroSim_PR98_Requalified_Mac_Intel.zip"
+          (cd "$root/build/pr98-full-mac" && shasum -a 256 *.zip > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: G5-PR98-Full-Mac-Intel-${{ github.sha }}
+          path: |
+            build/pr98-full-mac/
+            apps/electrosim/test/failures/
+          retention-days: 21
+          if-no-files-found: warn

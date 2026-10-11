@@ -1,6 +1,6 @@
 # ElectroSim — Programme PNEU-DIR-001
 
-État technique au 11 octobre 2026. Ne pas assimiler **fusion de lots**, 
+État technique au 11 octobre 2026. Ne pas assimiler **fusion de lots**,
 **qualification de sous-scénarios** et **livraison conforme à l'intégralité du directeur**.
 
 ## Branches et provenance

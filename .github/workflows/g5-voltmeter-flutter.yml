@@ -46,5 +46,7 @@ jobs:
         working-directory: apps/electrosim
       - name: Check compilation and style of changed sources
         run: |
-          dart analyze lib/f18_physical_instrument_readouts.dart lib/f18_voltmeter_3d_assets.dart test/g5_voltmeter_3d_projection_test.dart
+          dart analyze lib/f18_physical_instrument_readouts.dart
+          dart analyze lib/f18_voltmeter_3d_assets.dart
+          dart analyze test/g5_voltmeter_3d_projection_test.dart
         working-directory: apps/electrosim

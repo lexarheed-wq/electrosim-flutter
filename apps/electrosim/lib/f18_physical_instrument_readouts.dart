@@ -20,6 +20,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     this.circuit,
     this.voltmeter3dIds = const <String>{},
     this.voltmeterFront,
+    this.ammeter3dIds = const <String>{},
+    this.ammeterFront,
     this.selectedElementId,
   });
 
@@ -29,6 +31,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   final CircuitState? circuit;
   final Set<String> voltmeter3dIds;
   final ui.Image? voltmeterFront;
+  final Set<String> ammeter3dIds;
+  final ui.Image? ammeterFront;
   final String? selectedElementId;
 
   Rect? screenRect(String id) {
@@ -78,7 +82,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     final ui.Image? front = voltmeterFront;
     // Silicone probe leads stay BEHIND the meter body, never replacing power
     // wiring in the circuit painter.
-    _paintConnectedProbes(canvas, front);
+    _paintConnectedProbes(canvas);
     if (front != null) {
       // Draw first, independent of the reading map (OFF/ERR may be absent).
       for (final String id in voltmeter3dIds) {
@@ -116,11 +120,44 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       }
     }
 
+    // Component 02: independent original current-meter body; the same
+    // runtime layer continues to paint the actual meter current reading.
+    final ui.Image? ammeter = ammeterFront;
+    if (ammeter != null) {
+      for (final String id in ammeter3dIds) {
+        final Rect? rect = screenRect(id);
+        if (rect == null || !_inView(id, rect, size)) continue;
+        _paint3dRotated(canvas, id, rect, (Rect local) {
+          canvas.drawImageRect(
+            ammeter,
+            Rect.fromLTWH(
+              0, 0, ammeter.width.toDouble(), ammeter.height.toDouble(),
+            ),
+            local,
+            Paint()..filterQuality = FilterQuality.high,
+          );
+          if (id == selectedElementId) {
+            canvas.drawRRect(
+              RRect.fromRectAndRadius(
+                local.deflate(2 * viewport.scale),
+                Radius.circular(8 * viewport.scale),
+              ),
+              Paint()
+                ..color = const Color(0xFF2563EB)
+                ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0)
+                ..style = PaintingStyle.stroke,
+            );
+          }
+        });
+      }
+    }
+
     for (final MapEntry<String, String> item in readouts.entries) {
       final Rect? rect = screenRect(item.key);
       if (rect == null) continue;
       final bool original3d =
-          front != null && voltmeter3dIds.contains(item.key);
+          (front != null && voltmeter3dIds.contains(item.key)) ||
+          (ammeter != null && ammeter3dIds.contains(item.key));
       if (original3d && !_inView(item.key, rect, size)) continue;
       if (!original3d && !rect.overlaps(Offset.zero & size)) continue;
       if (original3d) {
@@ -255,16 +292,24 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     canvas.restore();
   }
 
-  void _paintConnectedProbes(Canvas canvas, ui.Image? front) {
+  void _paintConnectedProbes(Canvas canvas) {
     final CircuitState? active = circuit;
-    if (active == null || front == null || voltmeter3dIds.isEmpty) return;
+    if (active == null ||
+        ((voltmeterFront == null || voltmeter3dIds.isEmpty) &&
+         (ammeterFront == null || ammeter3dIds.isEmpty))) return;
     final CircuitGeometryIndex geometry =
         CircuitGeometryIndex.build(active, layout);
     for (final ProbeConnection probe in active.probes) {
       final String id = probe.instrumentId.value;
-      if (!voltmeter3dIds.contains(id)) continue;
+      final bool isVoltage = voltmeterFront != null &&
+          voltmeter3dIds.contains(id);
+      final bool isCurrent = ammeterFront != null &&
+          ammeter3dIds.contains(id);
+      if (!isVoltage && !isCurrent) continue;
       if (probe.port != InstrumentPort.common &&
-          probe.port != InstrumentPort.voltOhm) continue;
+          probe.port != (isVoltage ? InstrumentPort.voltOhm : InstrumentPort.amp)) {
+        continue;
+      }
       final Rect? meter = screenRect(id);
       final Offset? targetWorld = geometry.terminalPositions[probe.terminalId];
       if (meter == null || targetWorld == null) continue;
@@ -388,6 +433,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       !identical(readouts, old.readouts) ||
       !identical(circuit, old.circuit) ||
       !identical(voltmeterFront, old.voltmeterFront) ||
+      !identical(ammeterFront, old.ammeterFront) ||
+      !setEquals(ammeter3dIds, old.ammeter3dIds) ||
       !setEquals(voltmeter3dIds, old.voltmeter3dIds) ||
       selectedElementId != old.selectedElementId;
 }

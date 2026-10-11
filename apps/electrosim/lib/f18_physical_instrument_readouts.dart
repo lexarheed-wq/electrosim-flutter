@@ -279,6 +279,30 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       canvas.drawPath(marker, Paint()..color = const Color(0xFFF2F6F9));
       canvas.restore();
     }
+    if (current && (ammeterFront?.width ?? 0) >= 1000) {
+      // The lid is marked FUSE in the original Cycles mesh, but its ampere
+      // rating is live metadata. Printing it here prevents a false fixed
+      // rating when the instrument's fuseRatingA property is edited.
+      final double fuse = meter.fuseRatingA;
+      final String rating = fuse == fuse.truncateToDouble()
+          ? '${fuse.toInt()} A'
+          : '${fuse.toStringAsFixed(1)} A';
+      final fuseText = TextPainter(
+        text: TextSpan(
+          text: rating,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 2.35,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFF1F4F7),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      fuseText.paint(canvas, Offset(53 - fuseText.width / 2, 115.0));
+      fuseText.dispose();
+    }
     final String mode = !meter.poweredOn ? 'OFF' : switch (meter.mode) {
       InstrumentMode.voltageDc => 'V⎓',
       InstrumentMode.currentDc => 'A⎓',

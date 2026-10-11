@@ -30,7 +30,7 @@ def build(h, job):
           h.yellow, r=6.0)
     h.box('base', cx, cy, body_w - 4, logical_h - 4, body_d + 1, 8,
           h.black, r=6.0)
-    h.box('cover', cx, cy, body_w - 9, logical_h - 13, body_d + 4, 5,
+    cover = h.box('cover', cx, cy, body_w - 9, logical_h - 13, body_d + 4, 5,
           h.black, r=4.5)
 
     # Fixed LCD housing, with no baked simulated reading or fake 0 V.
@@ -62,10 +62,18 @@ def build(h, job):
     for index, (name, x, color) in enumerate((
             ('com', cx - 14, h.black), ('v_ohm', cx + 14, h.red))):
         y = height - 24
-        h.cyl(f'terminal_housing_{name}', x, y, body_d + 9,
-              6.7, 3.0, color)
-        h.cyl(f'contact_{index}', x, y, body_d + 10, 3.8, 4.0,
-              h.well)
-        h.cyl(f'insulated_recess_{name}', x, y, body_d + 10.4,
-              2.5, 3.5, h.black)
+        # Actual Boolean socket well, with insulated annular surround.
+        # Neither hole is a normal electrical TerminalId.
+        plate_bore = h.cyl(f'cut_plate_{name}', x, y, body_d + 7,
+                           4.5, 12.0, h.well)
+        h.cut(cover, plate_bore)
+        rim = h.cyl(f'terminal_housing_{name}', x, y, body_d + 6.3,
+                    6.7, 3.0, color)
+        ring_bore = h.cyl(f'cut_ring_{name}', x, y, body_d + 7,
+                           4.1, 7.0, h.well)
+        h.cut(rim, ring_bore)
+        h.cyl(f'well_liner_{name}', x, y, body_d + 3.4,
+              3.7, 1.5, h.well)
+        h.cyl(f'contact_{index}', x, y, body_d + 3.5,
+              1.3, 1.3, h.brass)
     # These positions are DRAFT artwork, not verified runtime hit regions.

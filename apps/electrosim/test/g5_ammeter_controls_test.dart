@@ -63,11 +63,18 @@ void main() {
     expect(F18AmmeterControls.lit(a), isTrue);
     a = F18AmmeterControls.apply(a, F18VoltmeterAction.select);
     expect(a.mode, InstrumentMode.currentAcRms);
+    expect(F18AmmeterControls.rangeLabel(a), 'AUTO');
     a = F18AmmeterControls.apply(a, F18VoltmeterAction.range);
     expect(F18AmmeterControls.rangeIndex(a), 1);
+    expect(F18AmmeterControls.rangeLabel(a), '200 mA');
     expect(F18AmmeterControls.display(a, '0.75 A', 0.75, true), 'OL');
     a = F18AmmeterControls.apply(a, F18VoltmeterAction.range);
+    expect(F18AmmeterControls.rangeLabel(a), '2.0 A');
     expect(F18AmmeterControls.display(a, '0.75 A', 0.75, true), '0.75 A');
+    a = F18AmmeterControls.apply(a, F18VoltmeterAction.range);
+    expect(F18AmmeterControls.rangeLabel(a), '10 A');
+    a = F18AmmeterControls.apply(a, F18VoltmeterAction.range);
+    expect(F18AmmeterControls.rangeLabel(a), 'AUTO');
     expect(a.burdenResistanceOhm, 0.01);
     expect(a.fuseRatingA, 10);
     expect(a.cutConnectionId, originalCut);

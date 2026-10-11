@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_voltmeter_3d_assets.dart';
+import 'f18_voltmeter_controls.dart';
 
 /// LCD readouts are projected from the electrical runtime: invalid/disconnected
 /// devices never manufacture a zero. The optional Cycles body is painted by
@@ -75,6 +76,9 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final ui.Image? front = voltmeterFront;
+    // Silicone probe leads stay BEHIND the meter body, never replacing power
+    // wiring in the circuit painter.
+    _paintConnectedProbes(canvas, front);
     if (front != null) {
       // Draw first, independent of the reading map (OFF/ERR may be absent).
       for (final String id in voltmeter3dIds) {
@@ -89,6 +93,12 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
             local,
             Paint()..filterQuality = FilterQuality.medium,
           );
+          final InstrumentInstance? meter = circuit?.instruments
+              .where((item) => item.id.value == id)
+              .firstOrNull;
+          if (meter != null) {
+            _paintFrontControls(canvas, local, meter);
+          }
           if (id == selectedElementId) {
             final Rect inner = local.deflate(2 * viewport.scale);
             canvas.drawRRect(
@@ -132,9 +142,68 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         );
       }
     }
-    // These are graphical leads sourced EXCLUSIVELY from the real ProbeConnection
-    // objects. Drawing them adds no electrical edges and cannot fake a reading.
-    _paintConnectedProbes(canvas, front);
+  }
+
+  void _paintFrontControls(Canvas canvas, Rect body, InstrumentInstance meter) {
+    canvas.save();
+    canvas.translate(body.left, body.top);
+    canvas.scale(body.width / 112, body.height / 152);
+    // All labels are vector text above the actual baked button geometry.
+    const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
+    const xs = <double>[35, 49, 63, 77];
+    for (var index = 0; index < names.length; index++) {
+      final String label = names[index];
+      final bool selected = switch (index) {
+        0 => F18VoltmeterControls.isHeld(meter),
+        1 => F18VoltmeterControls.rangeIndex(meter) != 0,
+        2 => meter.mode == InstrumentMode.voltageAcRms,
+        _ => F18VoltmeterControls.isLit(meter),
+      };
+      final text = TextPainter(
+        text: TextSpan(text: label, style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: label == 'SELECT' ? 2.35 : 2.7,
+          fontWeight: FontWeight.w800,
+          color: selected ? const Color(0xFF102335) : const Color(0xFFE5E9ED),
+        )),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(canvas, Offset(xs[index] - text.width / 2, 54.3));
+      text.dispose();
+    }
+    final String mode = !meter.poweredOn ? 'OFF' : switch (meter.mode) {
+      InstrumentMode.voltageDc => 'V⎓',
+      InstrumentMode.voltageAcRms => 'V~',
+      InstrumentMode.resistance => 'Ω',
+      _ => 'V',
+    };
+    final indicator = TextPainter(
+      text: TextSpan(text: mode, style: const TextStyle(
+        fontFamily: 'Roboto', fontSize: 4.5, fontWeight: FontWeight.w800,
+        color: Color(0xFFF4F7F9),
+      )),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    indicator.paint(canvas, Offset(53 - indicator.width / 2, 111));
+    indicator.dispose();
+    if (F18VoltmeterControls.isHeld(meter) ||
+        F18VoltmeterControls.rangeIndex(meter) != 0) {
+      final flags = <String>[
+        if (F18VoltmeterControls.isHeld(meter)) 'H',
+        if (F18VoltmeterControls.rangeIndex(meter) != 0)
+          F18VoltmeterControls.rangeLabel(meter),
+      ].join(' ');
+      final labels = TextPainter(
+        text: TextSpan(text: flags, style: const TextStyle(
+          fontFamily: 'Roboto', fontSize: 3.2, fontWeight: FontWeight.w700,
+          color: Color(0xFF1D4E38),
+        )),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      labels.paint(canvas, Offset(37, 27));
+      labels.dispose();
+    }
+    canvas.restore();
   }
 
   void _paintConnectedProbes(Canvas canvas, ui.Image? front) {
@@ -161,23 +230,59 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         local.dx * math.sin(angle) + local.dy * math.cos(angle),
       );
       final Offset target = viewport.worldToScreen(targetWorld);
-      final double slack = 25 * viewport.scale;
-      final double lane = socket.dy + slack;
+      // Flexible silicone cords, curved and shaded, terminate in insulated
+      // probes. The ordinary circuit cables stay orthogonal in SimulatorCanvas.
+      final double slack = 34 * viewport.scale;
+      final double direction = target.dx >= socket.dx ? 1 : -1;
+      final Offset start = socket + Offset(0, 3 * viewport.scale);
+      final Offset end = target + Offset(-direction * 12 * viewport.scale, -8 * viewport.scale);
       final Path cable = Path()
-        ..moveTo(socket.dx, socket.dy)
-        ..lineTo(socket.dx, lane)
-        ..lineTo(target.dx, lane)
-        ..lineTo(target.dx, target.dy);
+        ..moveTo(start.dx, start.dy)
+        ..cubicTo(
+          start.dx + direction * 11 * viewport.scale,
+          start.dy + slack,
+          end.dx - direction * 32 * viewport.scale,
+          end.dy + slack * 1.15,
+          end.dx,
+          end.dy,
+        );
       final Color color =
-          common ? const Color(0xFF172027) : const Color(0xFFC92330);
-      final Paint paint = Paint()
+          common ? const Color(0xFF171C24) : const Color(0xFFCE2839);
+      final Paint insulation = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(2, viewport.scale * 3.2)
+        ..strokeWidth = math.max(3.2, viewport.scale * 3.9)
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round;
-      canvas.drawPath(cable, paint);
-      canvas.drawCircle(target, math.max(3, viewport.scale * 3), Paint()..color = color);
+      canvas.drawPath(cable, insulation);
+      canvas.drawPath(
+        cable,
+        Paint()
+          ..color = common ? const Color(0xFF515D65) : const Color(0xFFEE7780)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(0.7, viewport.scale * 0.95)
+          ..strokeCap = StrokeCap.round,
+      );
+      final double shaftW = math.max(4, viewport.scale * 5.0);
+      canvas.drawLine(
+        end, target,
+        Paint()
+          ..color = const Color(0xFFD4DAE0)
+          ..strokeWidth = math.max(1.4, viewport.scale * 1.7)
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawCircle(
+        end, shaftW,
+        Paint()..color = color,
+      );
+      canvas.drawCircle(
+        socket, math.max(2.5, viewport.scale * 3),
+        Paint()..color = color,
+      );
+      canvas.drawCircle(
+        target, math.max(1.4, viewport.scale * 1.7),
+        Paint()..color = const Color(0xFFC5CED7),
+      );
     }
   }
 
@@ -188,9 +293,14 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       canvas.clipRRect(
         RRect.fromRectAndRadius(display, Radius.circular(radius)),
       );
+      final bool illuminated = circuit?.instruments.any((meter) =>
+          meter.kind == InstrumentKind.voltmeter &&
+          F18VoltmeterControls.isLit(meter)) ?? false;
       canvas.drawRect(
         display,
-        Paint()..color = const Color(0xFFD5E5D6),
+        Paint()..color = illuminated
+            ? const Color(0xFFA5ECF5)
+            : const Color(0xFFD5E5D6),
       );
       final TextPainter text = TextPainter(
         text: TextSpan(

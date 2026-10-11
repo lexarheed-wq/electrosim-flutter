@@ -248,7 +248,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         _ => 0.0,
       };
       canvas.save();
-      canvas.translate(53, 91);
+      canvas.translate(53, current ? 86 : 91);
       canvas.rotate(turn);
       final Rect knob = Rect.fromCenter(
         center: Offset.zero, width: 9, height: 29,
@@ -318,7 +318,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       )),
       textDirection: TextDirection.ltr,
     )..layout();
-    indicator.paint(canvas, Offset(53 - indicator.width / 2, 111));
+    indicator.paint(canvas, Offset(53 - indicator.width / 2, current ? 106 : 111));
     indicator.dispose();
     final bool isHeld = current
         ? F18AmmeterControls.held(meter)

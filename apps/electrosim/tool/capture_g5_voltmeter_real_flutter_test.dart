@@ -11,6 +11,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    expect(await F18Voltmeter3dAssets.preload(), isTrue);
+  });
+
   testWidgets('genuine Flutter workspace: Cycles voltmeter board and palette', (
     WidgetTester t,
   ) async {
@@ -19,10 +24,7 @@ void main() {
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
 
-    expect(
-      await t.runAsync(() => F18Voltmeter3dAssets.preload()),
-      isTrue,
-    );
+    expect(F18Voltmeter3dAssets.ready, isTrue);
     const meterId = 'voltmeter-3d-001';
     final circuit = CircuitState(
       circuitId: CircuitId('g5-voltmeter-3d-proof'),

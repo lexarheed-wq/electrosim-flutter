@@ -61,6 +61,7 @@ final class R6WorkerScheduler {
             answer.engineVersion != engineVersion) {
           calculation.reject(StateError('Stale or foreign solver result'));
         } else {
+          _validatePhysicalOutcome(calculation.job, answer);
           calculation.accept(answer);
         }
       } catch (error, stack) {
@@ -78,6 +79,62 @@ final class R6WorkerScheduler {
         }
       }
     });
+  }
+
+  // Worker IDs alone do not authenticate physical correctness. A worker
+  // response is never promoted to the accepted UI snapshot unless it
+  // conserves mass and preserves the fixed-chamber topology and clock.
+  static void _validatePhysicalOutcome(
+    R6NetworkJob job,
+    R6NetworkOutcome answer,
+  ) {
+    final snapshot = answer.snapshot;
+    final expectedTime = job.before.timeS + job.durationS;
+    final timeTolerance = 1e-12 * (1 + expectedTime.abs());
+    if (!snapshot.timeS.isFinite ||
+        (snapshot.timeS - expectedTime).abs() > timeTolerance ||
+        snapshot.acceptedSubsteps < job.before.acceptedSubsteps ||
+        (job.durationS > 0 &&
+            snapshot.acceptedSubsteps <= job.before.acceptedSubsteps)) {
+      throw StateError('R6/N worker returned an inconsistent physical clock');
+    }
+
+    final expectedChambers = job.before.chambers;
+    if (snapshot.chambers.length != expectedChambers.length ||
+        !snapshot.chambers.keys.toSet().containsAll(expectedChambers.keys)) {
+      throw StateError('R6/N worker changed the physical topology');
+    }
+    for (final entry in expectedChambers.entries) {
+      final before = entry.value;
+      final after = snapshot.chambers[entry.key]!;
+      if (after.id != entry.key ||
+          after.volumeM3 != before.volumeM3 ||
+          after.temperatureK != before.temperatureK ||
+          !after.massKg.isFinite ||
+          after.massKg <= 0) {
+        throw StateError('R6/N worker returned an invalid chamber state');
+      }
+    }
+
+    final expectedPassages = job.network.passages
+        .map((passage) => passage.id)
+        .toSet();
+    if (snapshot.passageMassFlowKgPerS.length != expectedPassages.length ||
+        !snapshot.passageMassFlowKgPerS.keys.toSet().containsAll(
+          expectedPassages,
+        ) ||
+        snapshot.passageMassFlowKgPerS.values.any(
+          (flow) => !flow.isFinite,
+        )) {
+      throw StateError('R6/N worker returned invalid passage flows');
+    }
+
+    final massResidual = snapshot.totalMassKg -
+        job.before.totalMassKg -
+        (snapshot.externalMassAddedKg - job.before.externalMassAddedKg);
+    if (!massResidual.isFinite || massResidual.abs() > 1e-9) {
+      throw StateError('R6/N worker violated the air mass balance');
+    }
   }
 
   Future<void> close() async {

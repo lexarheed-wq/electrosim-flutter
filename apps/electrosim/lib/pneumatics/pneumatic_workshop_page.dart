@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -27,6 +30,7 @@ class PneumaticWorkshopPage extends StatefulWidget {
 class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late PneumaticWorkshopState _state;
   late final PneumaticWorkshopSession _session;
+  final DateTime _createdAtUtc = DateTime.now().toUtc();
   PneumaticWorkshopState? _dragBaseline;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
@@ -410,11 +414,21 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     try {
       final ClipboardData? clipboard = await Clipboard.getData('text/plain');
       if (!mounted) return;
-      _edit(
-        () => PneumaticWorkshopState(
-          project: MultiphysicsProject.fromJsonString(clipboard?.text ?? ''),
-        ),
-      );
+      final String source = clipboard?.text ?? '';
+      final Object? decoded = jsonDecode(source);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid project object');
+      }
+      // Earlier R4 workshop clipboard exports were raw design-only v1.
+      // Use that reader only when its canonical fields are present.
+      final bool rawR4 = decoded['schemaVersion'] == 1 &&
+          decoded.containsKey('electricalCircuit') &&
+          decoded.containsKey('pneumaticNetwork');
+      final MultiphysicsProject incoming = rawR4
+          ? MultiphysicsProject.fromJsonString(source)
+          : const MultiphysicsSessionStorage()
+              .importProject(source).state.project;
+      _edit(() => PneumaticWorkshopState(project: incoming));
     } on Object catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -496,7 +510,19 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           IconButton(
             key: const Key('air-export'),
             onPressed: () => Clipboard.setData(
-              ClipboardData(text: _state.project.toJsonString()),
+              ClipboardData(
+                text: const MultiphysicsSessionStorage().exportProject(
+                  session: _session,
+                  electricalDocument: SavedCircuitDocument(
+                    saveId: _state.project.electricalCircuit.circuitId.value,
+                    title: 'Atelier pneumatique',
+                    createdAtUtc: _createdAtUtc,
+                    updatedAtUtc: DateTime.now().toUtc(),
+                    circuit: _state.project.electricalCircuit,
+                    engineVersion: 'electrosim-g5-r6m',
+                  ),
+                ),
+              ),
             ),
             icon: const Icon(Icons.copy_all),
             tooltip: 'Copier le projet multiphysique',

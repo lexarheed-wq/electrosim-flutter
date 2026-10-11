@@ -32,12 +32,12 @@ PneumaticDevice fiveTwo() => PneumaticDevice(
   ports: <PneumaticPort>[
     for (final (String name, PneumaticPortRole role)
         in <(String, PneumaticPortRole)>[
-      ('P', PneumaticPortRole.supply),
-      ('A', PneumaticPortRole.work),
-      ('B', PneumaticPortRole.work),
-      ('R', PneumaticPortRole.exhaust),
-      ('S', PneumaticPortRole.exhaust),
-    ])
+          ('P', PneumaticPortRole.supply),
+          ('A', PneumaticPortRole.work),
+          ('B', PneumaticPortRole.work),
+          ('R', PneumaticPortRole.exhaust),
+          ('S', PneumaticPortRole.exhaust),
+        ])
       PneumaticPort(
         id: PneumaticPortId('valve.$name'),
         deviceId: 'valve',
@@ -189,11 +189,7 @@ void main() {
     bool reached = false;
     for (int i = 0; i < 220; i++) {
       final double timeBefore = snapshot.timeS;
-      snapshot = cycle.advance(
-        snapshot,
-        durationS: .005,
-        startPressed: false,
-      );
+      snapshot = cycle.advance(snapshot, durationS: .005, startPressed: false);
       expect(snapshot.timeS, greaterThan(timeBefore));
       expect(snapshot.air.timeS, snapshot.timeS);
       expect(snapshot.air.positionM, inInclusiveRange(0, .06));

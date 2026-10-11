@@ -125,7 +125,7 @@ void main() {
         p.readouts[meterId]!.contains('24')), isTrue);
     expect(t.takeException(), isNull);
     final out = Directory('build/g5-voltmeter-real-flutter-proof');
-    await out.create(recursive: true);
+    out.createSync(recursive: true);
     final boundary =
         captureKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     await t.runAsync(() async {
@@ -138,7 +138,7 @@ void main() {
         image.dispose();
       }
     });
-    await File('${out.path}/fixture.json').writeAsString(
+    File('${out.path}/fixture.json').writeAsStringSync(
       '{"mode":"dc","source":"24V","connections":3,'
       '"probes":{"V":"lamp-in","COM":"lamp-out"},'
       '"meter":"$meterId","data_source":"ElectroSimRuntimeEngine"}',

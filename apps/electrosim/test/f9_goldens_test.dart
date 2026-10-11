@@ -12,7 +12,6 @@ void main() {
   // Keep this visual-only fixture deterministic on macOS Intel; native
   // macOS behavior is validated separately by the full functional suite.
   setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.linux);
-  tearDown(() => debugDefaultTargetPlatformOverride = null);
 
   Future<void> pumpWorkspace(
     WidgetTester tester,
@@ -114,6 +113,7 @@ void main() {
       size: const Size(390, 844),
       prefix: 'f9_compact',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('medium 820x1180 reference set', (WidgetTester tester) async {
@@ -124,6 +124,7 @@ void main() {
       size: const Size(820, 1180),
       prefix: 'f9_medium',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('expanded 1440x900 reference set', (WidgetTester tester) async {
@@ -134,6 +135,7 @@ void main() {
       size: const Size(1440, 900),
       prefix: 'f9_expanded',
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('student troubleshooting diagnostic reference', (
@@ -156,5 +158,6 @@ void main() {
       find.byType(Scaffold),
       matchesGoldenFile('goldens/f9_compact_student_diagnostic.png'),
     );
+    debugDefaultTargetPlatformOverride = null;
   });
 }

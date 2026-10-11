@@ -1,0 +1,47 @@
+{
+  "key": "instrument-voltmeter",
+  "verified": false,
+  "reference_model": "Handheld Fluke 117 proportions for an ORIGINAL ElectroSim appearance; no logo or proprietary texture",
+  "reference_urls": [
+    "https://www.fluke.com/en/product/electrical-testing/digital-multimeters/fluke-117",
+    "https://assets.fluke.com/manuals/114_____umeng0000.pdf"
+  ],
+  "physical_mm": {
+    "width": 84,
+    "height": 167,
+    "depth": 46
+  },
+  "logical_units_per_mm": null,
+  "measurement_method": "Manufacturer external dimensions; body and controls draft; rear, side and socket positions not dimensionally certified",
+  "ports": [
+    {
+      "name": "COM",
+      "kind": "instrument_probe_socket",
+      "position_logical_draft": [
+        42,
+        128
+      ],
+      "verified": false
+    },
+    {
+      "name": "V_ohm",
+      "kind": "instrument_probe_socket",
+      "position_logical_draft": [
+        70,
+        128
+      ],
+      "verified": false
+    }
+  ],
+  "moving_parts": [
+    "selector_shaft",
+    "selector_grip"
+  ],
+  "unknowns": [
+    "Rear/side detail and dimensioned jack coordinates",
+    "Exact runtime probe hit regions and dynamic readout geometry relative to 112x152 Canvas",
+    "Revalidate size and appearance with target SHA before application integration"
+  ],
+  "qualification_state": "reference_incomplete",
+  "reviewer": null
+}

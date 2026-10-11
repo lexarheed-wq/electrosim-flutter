@@ -13,10 +13,7 @@ import 'pneumatic_telemetry.dart';
 /// electropneumatic 5/2 valve link. This fixture must not be confused with
 /// compilation of arbitrary wires and pipes edited by the workshop user.
 final class PneumaticReferenceCycle {
-  PneumaticReferenceCycle._({
-    required this.project,
-    required this.cycle,
-  });
+  PneumaticReferenceCycle._({required this.project, required this.cycle});
 
   final MultiphysicsProject project;
   final SelfHoldValve52Cycle cycle;
@@ -49,8 +46,12 @@ final class PneumaticReferenceCycle {
         if (kind != 'switch') 'actuated': false,
       },
     );
-    ComponentInstance winding(String id, String left, String right,
-        double resistanceOhm) => ComponentInstance(
+    ComponentInstance winding(
+      String id,
+      String left,
+      String right,
+      double resistanceOhm,
+    ) => ComponentInstance(
       id: ComponentId(id),
       modelType: 'resistor',
       terminals: <Terminal>[t(left), t(right)],
@@ -128,29 +129,46 @@ final class PneumaticReferenceCycle {
     );
     final MultiphysicsProject model = MultiphysicsProject(
       electricalCircuit: circuit,
-      pneumaticNetwork: PneumaticNetwork(devices: <PneumaticDevice>[
-        device('source', PneumaticDeviceKind.idealSource, <(String, PneumaticPortRole)>[
-          ('P', PneumaticPortRole.supply),
-        ]),
-        device('valve', PneumaticDeviceKind.valve52, <(String, PneumaticPortRole)>[
-          ('P', PneumaticPortRole.supply),
-          ('A', PneumaticPortRole.work),
-          ('B', PneumaticPortRole.work),
-          ('R', PneumaticPortRole.exhaust),
-          ('S', PneumaticPortRole.exhaust),
-        ]),
-        device('cylinder', PneumaticDeviceKind.doubleActingCylinder,
-          <(String, PneumaticPortRole)>[
-            ('A', PneumaticPortRole.work),
-            ('B', PneumaticPortRole.work),
-          ]),
-      ]),
+      pneumaticNetwork: PneumaticNetwork(
+        devices: <PneumaticDevice>[
+          device(
+            'source',
+            PneumaticDeviceKind.idealSource,
+            <(String, PneumaticPortRole)>[('P', PneumaticPortRole.supply)],
+          ),
+          device(
+            'valve',
+            PneumaticDeviceKind.valve52,
+            <(String, PneumaticPortRole)>[
+              ('P', PneumaticPortRole.supply),
+              ('A', PneumaticPortRole.work),
+              ('B', PneumaticPortRole.work),
+              ('R', PneumaticPortRole.exhaust),
+              ('S', PneumaticPortRole.exhaust),
+            ],
+          ),
+          device(
+            'cylinder',
+            PneumaticDeviceKind.doubleActingCylinder,
+            <(String, PneumaticPortRole)>[
+              ('A', PneumaticPortRole.work),
+              ('B', PneumaticPortRole.work),
+            ],
+          ),
+        ],
+      ),
       devices: <PhysicalDeviceRecord>[
         PhysicalDeviceRecord(id: 'source-body', pneumaticDeviceId: 'source'),
-        PhysicalDeviceRecord(id: 'valve-body', pneumaticDeviceId: 'valve',
-          electricalComponentIds: <String>['y1']),
-        PhysicalDeviceRecord(id: 'cylinder-body', pneumaticDeviceId: 'cylinder',
-          electricalComponentIds: <String>['b1']),
+        PhysicalDeviceRecord(
+          id: 'valve-body',
+          pneumaticDeviceId: 'valve',
+          electricalComponentIds: <String>['y1'],
+        ),
+        PhysicalDeviceRecord(
+          id: 'cylinder-body',
+          pneumaticDeviceId: 'cylinder',
+          electricalComponentIds: <String>['b1'],
+        ),
       ],
       links: <ElectropneumaticLink>[
         y1,
@@ -167,11 +185,7 @@ final class PneumaticReferenceCycle {
       dischargeCoefficient: .8,
     );
     PneumaticPressureBoundary boundary(String name, double p) =>
-        PneumaticPressureBoundary(
-          id: name,
-          pressureAbsPa: p,
-          orifice: orifice,
-        );
+        PneumaticPressureBoundary(id: name, pressureAbsPa: p, orifice: orifice);
     final MovingDoubleActingAirCylinder cylinder =
         MovingDoubleActingAirCylinder.fromPressure(
           geometry: DoubleActingCylinderGeometry(

@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/pneumatics-r6l-physical-piston-widget-20261011
+      - feat/pneumatics-r6l-resolved-g5-r6j-20261011
   pull_request:
     branches:
       - feat/pneumatics-r6j-authored-dc-network-cycle-20261011

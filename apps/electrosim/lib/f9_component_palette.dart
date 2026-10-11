@@ -2460,13 +2460,60 @@ class _PaletteDraggableTile extends StatelessWidget {
                           F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: F9ComponentPreview(
-                    definition: definition,
-                    compact: true,
-                  ),
-                ),
+                child: definition.keyName == 'instrument-voltmeter'
+                    ? Tooltip.rich(
+                        key: const Key('g5-voltmeter-3d-detail-preview'),
+                        waitDuration: const Duration(milliseconds: 450),
+                        richMessage: WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: SizedBox(
+                            width: 210,
+                            height: 292,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Text(
+                                  'Voltmètre — vue 3/4',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: F9ComponentPreview(
+                                      definition: definition,
+                                    ),
+                                  ),
+                                ),
+                                const Text(
+                                  'HOLD  RANGE  SELECT  LIGHT',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: F9ComponentPreview(
+                            definition: definition,
+                            compact: true,
+                          ),
+                        ),
+                      )
+                    : FittedBox(
+                        fit: BoxFit.contain,
+                        child: F9ComponentPreview(
+                          definition: definition,
+                          compact: true,
+                        ),
+                      ),
               ),
               const SizedBox(width: ElectroSimSpacing.sm),
               Expanded(

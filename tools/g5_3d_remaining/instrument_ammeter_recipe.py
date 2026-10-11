@@ -28,13 +28,13 @@ def build(h, job):
         h.box(f'key_{i}', x, 56, 11, 5.3, depth + 9,
               3, h.yellow if i == 3 else h.terminal_gray, r=1.1)
     # The selector grip will be painted dynamically in Flutter.
-    h.cyl('selector_shaft', 53, 91, depth + 9, 21, 6, h.black)
-    h.box('selector_grip', 53, 91, 9, 29, depth + 12, 3,
+    h.cyl('selector_shaft', 53, 86, depth + 9, 21, 6, h.black)
+    h.box('selector_grip', 53, 86, 9, 29, depth + 12, 3,
           h.terminal_gray, r=2)
     for i in range(11):
         theta = math.radians(180 + 18 * i)
         h.cyl(f'selector_detent_{i}', 53 + 26 * math.cos(theta),
-              91 + 26 * math.sin(theta), depth + 8, .9, 1, h.steel)
+              86 + 26 * math.sin(theta), depth + 8, .9, 1, h.steel)
     # Recessed connector pair differs from V/ohm meter: fused A and COM.
     for i, (name, x, material) in enumerate((
             ('com', 42, h.black), ('current_a', 70, h.red))):

@@ -1,0 +1,59 @@
+name: PNEU R6H Static Valve Flutter Science
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6h-static-valve-flutter-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6g-static-iso52-network-20261011
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  r6h-valve-flutter-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+      - name: Check valve editor immutable SI contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6h
+          echo "source_sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6h/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_multiphysics
+            dart pub get
+            dart format lib/src/pneumatic_workshop_state.dart
+            git diff -- lib/src/pneumatic_workshop_state.dart | tee ../../build/pneumatics-r6h/FORMAT_DOMAIN.diff
+            git diff --exit-code -- lib/src/pneumatic_workshop_state.dart
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6h/DOMAIN.log
+      - name: Check valve editor real Flutter and fail-closed models
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format lib/pneumatics/pneumatic_workshop_page.dart test/r6_static_valve52_calibration_test.dart test/r6_workshop_authored_runtime_test.dart
+            git diff -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_static_valve52_calibration_test.dart test/r6_workshop_authored_runtime_test.dart | tee ../../build/pneumatics-r6h/FORMAT_FLUTTER.diff
+            git diff --exit-code -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_static_valve52_calibration_test.dart test/r6_workshop_authored_runtime_test.dart
+            flutter analyze --no-pub lib/pneumatics/pneumatic_workshop_page.dart test/r6_static_valve52_calibration_test.dart
+            flutter test --no-pub --reporter expanded test/r6_static_valve52_calibration_test.dart test/r6_workshop_authored_runtime_test.dart
+          ) 2>&1 | tee build/pneumatics-r6h/FLUTTER.log
+          grep -F 'All tests passed!' build/pneumatics-r6h/FLUTTER.log
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6h-static-valve-${{ github.sha }}
+          path: build/pneumatics-r6h/
+          retention-days: 21

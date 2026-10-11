@@ -2781,7 +2781,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         size.height / 2 + unrotated.dy,
       );
       final F18VoltmeterAction? action =
-          F18VoltmeterControls.actionAt(local, size);
+          meter.kind == InstrumentKind.ammeter
+          ? F18AmmeterControls.actionAt(local, size)
+          : F18VoltmeterControls.actionAt(local, size);
       if (action == null) continue;
       if (_blockStudentTpMutation()) return true;
       final PhysicalInstrumentReading reading =

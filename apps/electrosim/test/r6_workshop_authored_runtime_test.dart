@@ -16,11 +16,7 @@ PneumaticDevice device(
   kind: kind,
   ports: <PneumaticPort>[
     for (final String name in names)
-      PneumaticPort(
-        id: PneumaticPortId('$id.$name'),
-        deviceId: id,
-        role: role,
-      ),
+      PneumaticPort(id: PneumaticPortId('$id.$name'), deviceId: id, role: role),
   ],
   parametersSi: properties,
 );
@@ -126,7 +122,10 @@ void main() {
     await tester.enterText(find.byType(TextFormField).last, '0.8');
     await tester.tap(find.byKey(const Key('air-cd-apply')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Simulation réelle : t = 0.020 s'), findsOneWidget);
+    expect(
+      find.textContaining('Simulation réelle : t = 0.020 s'),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('air-measured-pressure')), findsOneWidget);
     expect(find.byKey(const Key('air-measured-flows')), findsOneWidget);
     await tester.tap(find.text('Schéma'));
@@ -143,7 +142,9 @@ void main() {
     await setSize(tester);
     await tester.pumpWidget(
       MaterialApp(
-        home: PneumaticWorkshopPage(initialProject: project(unsupportedValve: true)),
+        home: PneumaticWorkshopPage(
+          initialProject: project(unsupportedValve: true),
+        ),
       ),
     );
     await tester.tap(find.byKey(const Key('air-advance')));

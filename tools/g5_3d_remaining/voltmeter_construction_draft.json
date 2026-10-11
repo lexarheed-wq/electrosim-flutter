@@ -40,8 +40,44 @@
   "unknowns": [
     "Rear/side detail and dimensioned jack coordinates",
     "Exact runtime probe hit regions and dynamic readout geometry relative to 112x152 Canvas",
-    "Revalidate size and appearance with target SHA before application integration"
+    "Revalidate size and appearance with target SHA before application integration",
+    "Digital text layer currently uses a 0.10/0.11/0.80/0.38 normalized canvas rectangle; should use this instance-specific glass rectangle instead."
   ],
   "qualification_state": "reference_incomplete",
-  "reviewer": null
+  "reviewer": null,
+  "canvas_contract": {
+    "size_logical": [
+      112,
+      152
+    ],
+    "lcd_glass_bounds_logical": {
+      "x": 31.278443113772454,
+      "y": 19.5,
+      "width": 49.44311377245509,
+      "height": 25
+    },
+    "lcd_glass_bounds_normalized": {
+      "left": 0.2792718135158255,
+      "top": 0.12828947368421054,
+      "width": 0.44145637296834905,
+      "height": 0.16447368421052633
+    },
+    "recommended_dynamic_text_inset_logical": {
+      "x": 34.278443113772454,
+      "y": 22.5,
+      "width": 43.44311377245509,
+      "height": 19
+    },
+    "probe_socket_centers_logical": {
+      "COM": [
+        42,
+        128
+      ],
+      "V_ohm": [
+        70,
+        128
+      ]
+    },
+    "verification_note": "Derived analytically from original mesh recipe on 112x152 canvas, not yet tested with Flutter worldToScreen. Preserve per-component fallback."
+  }
 }

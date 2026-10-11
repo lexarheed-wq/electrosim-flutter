@@ -107,9 +107,11 @@ jobs:
           (
             cd packages/electrosim_multiphysics
             dart pub get
-            dart format lib test
-            git diff -- lib test | tee ../../build/pneumatics-r6/EDITOR_FORMAT_PATCH.diff
-            git diff --exit-code -- lib test
+            # Scope formatting to the new R6 test, not unrelated historical
+            # domain files; preserve G5 source immutability.
+            dart format test/r6_workshop_scale_test.dart
+            git diff -- test/r6_workshop_scale_test.dart | tee ../../build/pneumatics-r6/EDITOR_FORMAT_PATCH.diff
+            git diff --exit-code -- test/r6_workshop_scale_test.dart
             dart analyze
             dart test --reporter expanded
           ) 2>&1 | tee build/pneumatics-r6/EDITOR_MODEL_SCALE.log

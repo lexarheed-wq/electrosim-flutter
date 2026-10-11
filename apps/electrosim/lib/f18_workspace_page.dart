@@ -2780,6 +2780,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         size.width / 2 + unrotated.dx,
         size.height / 2 + unrotated.dy,
       );
+      // The fuse hatch is not a mode button. A click on its actual
+      // 3D front rectangle opens a separate, guarded replacement dialog.
+      if (meter.kind == InstrumentKind.ammeter && meter.fuseBlown &&
+          size.width > 0 && size.height > 0) {
+        final double hx = local.dx * 112 / size.width;
+        final double hy = local.dy * 152 / size.height;
+        if (hx >= 39 && hx <= 67 && hy >= 109.75 && hy <= 118.25) {
+          if (_blockStudentTpMutation()) return true;
+          unawaited(_confirmAmmeterFuseReplacement(meter.id));
+          return true;
+        }
+      }
       final F18VoltmeterAction? action =
           meter.kind == InstrumentKind.ammeter
           ? F18AmmeterControls.actionAt(local, size)
@@ -2843,6 +2855,52 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return true;
     }
     return false;
+  }
+
+  Future<void> _confirmAmmeterFuseReplacement(InstrumentId id) async {
+    final InstrumentInstance? meter = _circuit.instruments
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (meter == null || !F18AmmeterFuseSafety.canReplace(_circuit, meter)) {
+      _setStatus('Remplacement du fusible refusé : éteindre '
+          'l’ampèremètre et retirer/isoler toutes les sources.');
+      return;
+    }
+    final bool? approved = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Remplacer le fusible de l’ampèremètre'),
+        content: Text('Instrument hors tension et sources retirées. '
+            'Remplacer le fusible ${meter.fuseRatingA} A ?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remplacer le fusible'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || approved != true) return;
+    final CircuitState old = _circuit;
+    // Recheck AFTER dialog; the circuit may have changed while it was open.
+    final CircuitState next = F18AmmeterFuseSafety.replaceSafely(
+      circuit: old, instrumentId: id,
+    );
+    if (identical(next, old)) {
+      _setStatus('Remplacement refusé : circuit modifié ou non isolé.');
+      return;
+    }
+    setState(() {
+      _circuit = next;
+      _meterReadoutCacheCircuit = null;
+      _status = 'Fusible remplacé. Ampèremètre encore hors tension.';
+    });
+    _simulation.updateCircuit(next);
+    _syncStudentTpCircuit();
   }
 
   void _onCanvasPointerCancel(PointerCancelEvent event) {

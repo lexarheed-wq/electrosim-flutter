@@ -58,6 +58,26 @@ final class FixedAirChamber {
   );
 }
 
+/// An ideal, constant absolute-pressure source or atmospheric boundary.
+///
+/// This is a prescribed gas pressure, not a compressor or finite air tank.
+/// It may both deliver and absorb air. A signed external-mass ledger is
+/// maintained separately from the finite chambers.
+final class FixedPressureAirNode {
+  FixedPressureAirNode({
+    required String id,
+    required this.pressureAbsPa,
+    this.temperatureK = DryAirReference.temperatureK,
+  }) : id = _checkedChamberId(id) {
+    requirePositiveFinite(pressureAbsPa, 'pressureAbsPa');
+    requirePositiveFinite(temperatureK, 'temperatureK');
+  }
+
+  final String id;
+  final double pressureAbsPa;
+  final double temperatureK;
+}
+
 final class AirPassage {
   AirPassage({
     required String id,
@@ -90,6 +110,7 @@ final class IsothermalAirSnapshot {
     required Map<String, FixedAirChamber> chambers,
     required Map<String, double> passageMassFlowKgPerS,
     required this.acceptedSubsteps,
+    this.externalMassAddedKg = 0,
   }) : chambers = UnmodifiableMapView<String, FixedAirChamber>(
          Map<String, FixedAirChamber>.from(chambers),
        ),
@@ -97,9 +118,16 @@ final class IsothermalAirSnapshot {
          Map<String, double>.from(passageMassFlowKgPerS),
        ) {
     requireNonnegativeFinite(timeS, 'timeS');
+    if (!externalMassAddedKg.isFinite) {
+      throw const PneumaticPhysicsException(
+        'invalid_snapshot',
+        'External mass ledger must be finite.',
+      );
+    }
   }
 
   final double timeS;
+  final double externalMassAddedKg;
   final Map<String, FixedAirChamber> chambers;
   final Map<String, double> passageMassFlowKgPerS;
   final int acceptedSubsteps;
@@ -120,7 +148,9 @@ final class IsothermalAirNetwork {
   IsothermalAirNetwork({
     required List<FixedAirChamber> chambers,
     required List<AirPassage> passages,
-  }) : passages = List<AirPassage>.unmodifiable(passages) {
+    List<FixedPressureAirNode> boundaries = const <FixedPressureAirNode>[],
+  }) : passages = List<AirPassage>.unmodifiable(passages),
+       boundaries = List<FixedPressureAirNode>.unmodifiable(boundaries) {
     final Map<String, FixedAirChamber> byId = <String, FixedAirChamber>{};
     for (final FixedAirChamber chamber in chambers) {
       if (byId.containsKey(chamber.id)) {
@@ -131,6 +161,15 @@ final class IsothermalAirNetwork {
       }
       byId[chamber.id] = chamber;
     }
+    final Set<String> boundaryIds = <String>{};
+    for (final FixedPressureAirNode boundary in boundaries) {
+      if (byId.containsKey(boundary.id) || !boundaryIds.add(boundary.id)) {
+        throw PneumaticPhysicsException(
+          'duplicate_boundary',
+          'Boundary ID collides with another physical node: $boundary.id',
+        );
+      }
+    }
     final Set<String> passageIds = <String>{};
     for (final AirPassage passage in passages) {
       if (!passageIds.add(passage.id)) {
@@ -139,11 +178,21 @@ final class IsothermalAirNetwork {
           'Duplicate passage: ${passage.id}',
         );
       }
-      if (!byId.containsKey(passage.firstChamberId) ||
-          !byId.containsKey(passage.secondChamberId)) {
+      final bool firstChamber = byId.containsKey(passage.firstChamberId);
+      final bool secondChamber = byId.containsKey(passage.secondChamberId);
+      if ((!firstChamber &&
+              !boundaryIds.contains(passage.firstChamberId)) ||
+          (!secondChamber &&
+              !boundaryIds.contains(passage.secondChamberId))) {
         throw PneumaticPhysicsException(
           'unknown_chamber',
-          'Passage ${passage.id} refers to absent chamber.',
+          'Passage ${passage.id} refers to absent gas node.',
+        );
+      }
+      if (!firstChamber && !secondChamber) {
+        throw PneumaticPhysicsException(
+          'boundary_to_boundary',
+          'Passage ${passage.id} has no finite storage node.',
         );
       }
     }
@@ -158,7 +207,14 @@ final class IsothermalAirNetwork {
   }
 
   final List<AirPassage> passages;
+  final List<FixedPressureAirNode> boundaries;
   late final IsothermalAirSnapshot initialSnapshot;
+
+  /// Stored mass minus initial mass minus integrated boundary exchange.
+  double massBalanceResidualKg(IsothermalAirSnapshot snapshot) =>
+      snapshot.totalMassKg -
+      initialSnapshot.totalMassKg -
+      snapshot.externalMassAddedKg;
 
   IsothermalAirSnapshot advance(
     IsothermalAirSnapshot before, {
@@ -187,6 +243,11 @@ final class IsothermalAirNetwork {
     Map<String, FixedAirChamber> current = Map<String, FixedAirChamber>.from(
       before.chambers,
     );
+    final Map<String, FixedPressureAirNode> boundaryById =
+        <String, FixedPressureAirNode>{
+          for (final FixedPressureAirNode b in boundaries) b.id: b,
+        };
+    double externalMassAdded = before.externalMassAddedKg;
     Map<String, double> lastFlow = <String, double>{
       for (final AirPassage passage in passages) passage.id: 0,
     };
@@ -206,21 +267,29 @@ final class IsothermalAirNetwork {
       };
       final Map<String, double> flow = <String, double>{};
       for (final AirPassage passage in passages) {
-        final FixedAirChamber first = current[passage.firstChamberId]!;
-        final FixedAirChamber second = current[passage.secondChamberId]!;
+        final FixedAirChamber? first = current[passage.firstChamberId];
+        final FixedAirChamber? second = current[passage.secondChamberId];
+        final FixedPressureAirNode? firstBoundary =
+            boundaryById[passage.firstChamberId];
+        final FixedPressureAirNode? secondBoundary =
+            boundaryById[passage.secondChamberId];
+        final double pFirst =
+            first?.pressureAbsPa ?? firstBoundary!.pressureAbsPa;
+        final double pSecond =
+            second?.pressureAbsPa ?? secondBoundary!.pressureAbsPa;
         double q = passage.orifice.massFlowKgPerS(
-          fromPressureAbsPa: first.pressureAbsPa,
-          toPressureAbsPa: second.pressureAbsPa,
-          temperatureK: first.pressureAbsPa >= second.pressureAbsPa
-              ? first.temperatureK
-              : second.temperatureK,
+          fromPressureAbsPa: pFirst,
+          toPressureAbsPa: pSecond,
+          temperatureK: pFirst >= pSecond
+              ? (first?.temperatureK ?? firstBoundary!.temperatureK)
+              : (second?.temperatureK ?? secondBoundary!.temperatureK),
         );
         if (!passage.reverseFlowAllowed && q < 0) q = 0;
         flow[passage.id] = q;
-        if (q > 0) {
+        if (q > 0 && first != null) {
           outgoing[passage.firstChamberId] =
               outgoing[passage.firstChamberId]! + q;
-        } else {
+        } else if (q < 0 && second != null) {
           outgoing[passage.secondChamberId] =
               outgoing[passage.secondChamberId]! - q;
         }
@@ -242,18 +311,28 @@ final class IsothermalAirNetwork {
         for (final FixedAirChamber chamber in current.values)
           chamber.id: chamber.massKg,
       };
+      double boundaryExchange = 0;
       for (final AirPassage passage in passages) {
         final double exchange = flow[passage.id]! * dt;
-        nextMass[passage.firstChamberId] =
-            nextMass[passage.firstChamberId]! - exchange;
-        nextMass[passage.secondChamberId] =
-            nextMass[passage.secondChamberId]! + exchange;
+        if (nextMass.containsKey(passage.firstChamberId)) {
+          nextMass[passage.firstChamberId] =
+              nextMass[passage.firstChamberId]! - exchange;
+        } else {
+          boundaryExchange += exchange;
+        }
+        if (nextMass.containsKey(passage.secondChamberId)) {
+          nextMass[passage.secondChamberId] =
+              nextMass[passage.secondChamberId]! + exchange;
+        } else {
+          boundaryExchange -= exchange;
+        }
       }
       final Map<String, FixedAirChamber> next = <String, FixedAirChamber>{
         for (final FixedAirChamber chamber in current.values)
           chamber.id: chamber.withMass(nextMass[chamber.id]!),
       };
       current = next;
+      externalMassAdded += boundaryExchange;
       lastFlow = flow;
       remaining -= dt;
       accepted++;
@@ -264,6 +343,7 @@ final class IsothermalAirNetwork {
       chambers: current,
       passageMassFlowKgPerS: lastFlow,
       acceptedSubsteps: before.acceptedSubsteps + accepted,
+      externalMassAddedKg: externalMassAdded,
     );
   }
 }

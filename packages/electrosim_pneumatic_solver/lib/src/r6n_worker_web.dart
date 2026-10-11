@@ -10,28 +10,35 @@ final class WebR6Worker implements R6Worker {
   WebR6Worker._(this._worker) {
     _listener = _worker.onMessage.listen((html.MessageEvent event) {
       final dynamic raw = event.data;
+      Completer<R6NetworkOutcome>? response;
       try {
         final Map<String, dynamic> data = Map<String, dynamic>.from(
           jsonDecode(raw as String) as Map,
         );
         final int id = data['requestId']! as int;
-        final Completer<R6NetworkOutcome>? completer = _pending.remove(id);
-        if (completer == null) return;
+        response = _pending.remove(id);
+        if (response == null) return;
         if (data['error'] is String) {
-          completer.completeError(StateError(data['error']! as String));
+          response.completeError(StateError(data['error']! as String));
         } else {
-          completer.complete(
-            R6NetworkOutcome.fromJson(
-              Map<String, dynamic>.from(data['result']! as Map),
-            ),
+          // Parse before settling: a malformed payload must never strand
+          // the already-removed request completer.
+          final R6NetworkOutcome outcome = R6NetworkOutcome.fromJson(
+            Map<String, dynamic>.from(data['result']! as Map),
           );
+          response.complete(outcome);
         }
       } catch (error, stack) {
-        final Completer<R6NetworkOutcome>? active = _pending.values.isEmpty
-            ? null
-            : _pending.values.first;
-        _pending.clear();
-        active?.completeError(error, stack);
+        if (response != null && !response.isCompleted) {
+          response.completeError(error, stack);
+        } else {
+          // If the reply cannot be correlated, fail the active request
+          // rather than waiting indefinitely for a missing request ID.
+          for (final Completer<R6NetworkOutcome> pending in _pending.values) {
+            pending.completeError(error, stack);
+          }
+          _pending.clear();
+        }
       }
     });
     _errorListener = _worker.onError.listen((_) {

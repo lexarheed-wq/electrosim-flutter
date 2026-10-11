@@ -46,6 +46,17 @@ final class WorkshopClosedAirCompiler {
   IsothermalAirNetwork compileWithStaticValve52(PneumaticNetwork network) =>
       _compile(network, withIdealBoundaries: true, withStaticValve52: true);
 
+  /// R6/K: opt-in calibrated 3/2 and 5/2 discrete direction valves.
+  /// The 3/2 connects P->A when energized and A->R at rest, with no
+  /// invented pressure source or common exhaust on a closed port.
+  IsothermalAirNetwork compileWithStaticValves(PneumaticNetwork network) =>
+      _compile(
+        network,
+        withIdealBoundaries: true,
+        withStaticValve52: true,
+        withStaticValve32: true,
+      );
+
   /// R6/I experimental dynamic coupling for exactly one double-acting
   /// cylinder. It reuses the ISO 5/2 network and its signed gas ledger.
   CoupledMovingCylinderAirNetwork compileWithMovingCylinder(
@@ -125,6 +136,7 @@ final class WorkshopClosedAirCompiler {
     PneumaticNetwork network, {
     required bool withIdealBoundaries,
     bool withStaticValve52 = false,
+    bool withStaticValve32 = false,
     bool withMovingCylinder = false,
   }) {
     requirePositiveFinite(dischargeCoefficient, 'dischargeCoefficient');
@@ -157,12 +169,15 @@ final class WorkshopClosedAirCompiler {
           device.kind == PneumaticDeviceKind.silencer;
       final bool isValve =
           withStaticValve52 && device.kind == PneumaticDeviceKind.valve52;
+      final bool isValve32 =
+          withStaticValve32 && device.kind == PneumaticDeviceKind.valve32;
       final bool isCylinder =
           withMovingCylinder &&
           device.kind == PneumaticDeviceKind.doubleActingCylinder;
       if (!isFitting &&
           (!withIdealBoundaries || !isExternal) &&
           !isValve &&
+          !isValve32 &&
           !isCylinder) {
         throw PneumaticPhysicsException(
           'unsupported_device',
@@ -228,7 +243,7 @@ final class WorkshopClosedAirCompiler {
         chamberByPort[cylinderPorts['B']!.id] = '${device.id}.B';
         continue;
       }
-      if (isValve) {
+      if (isValve || isValve32) {
         final double? deadVolume = device.parametersSi['portDeadVolumeM3'];
         final double? initialPressure = device.parametersSi['pressureAbsPa'];
         final double? effectiveArea =
@@ -242,7 +257,7 @@ final class WorkshopClosedAirCompiler {
             spoolPosition == null) {
           throw PneumaticPhysicsException(
             'missing_valve_calibration',
-            'A 5/2 valve needs explicit dead volume, absolute pressure, '
+            'A directional valve needs explicit dead volume, absolute pressure, '
                 'effective area, discharge coefficient, and spool state: '
                 '${device.id}.',
           );
@@ -279,9 +294,9 @@ final class WorkshopClosedAirCompiler {
             <String, PneumaticPortRole>{
               'P': PneumaticPortRole.supply,
               'A': PneumaticPortRole.work,
-              'B': PneumaticPortRole.work,
+              if (isValve) 'B': PneumaticPortRole.work,
               'R': PneumaticPortRole.exhaust,
-              'S': PneumaticPortRole.exhaust,
+              if (isValve) 'S': PneumaticPortRole.exhaust,
             };
         if (byName.length != roles.length ||
             roles.entries.any(
@@ -289,7 +304,8 @@ final class WorkshopClosedAirCompiler {
             )) {
           throw PneumaticPhysicsException(
             'invalid_valve_ports',
-            'Valve ${device.id} must expose ISO P/A/B/R/S and correct roles.',
+            'Valve ${device.id} must expose exact ISO P/A/R'
+                ' (plus B/S for 5/2) with correct roles.',
           );
         }
         for (final MapEntry<String, PneumaticPort> entry in byName.entries) {
@@ -307,9 +323,13 @@ final class WorkshopClosedAirCompiler {
           effectiveAreaM2: effectiveArea,
           dischargeCoefficient: valveCd,
         );
-        final List<(String, String)> routes = spoolPosition == 1
-            ? <(String, String)>[('P', 'A'), ('B', 'S')]
-            : <(String, String)>[('P', 'B'), ('A', 'R')];
+        final List<(String, String)> routes = isValve
+            ? (spoolPosition == 1
+                  ? <(String, String)>[('P', 'A'), ('B', 'S')]
+                  : <(String, String)>[('P', 'B'), ('A', 'R')])
+            : (spoolPosition == 1
+                  ? <(String, String)>[('P', 'A')]
+                  : <(String, String)>[('A', 'R')]);
         for (final (String first, String second) in routes) {
           valvePassages.add(
             AirPassage(

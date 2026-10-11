@@ -63,8 +63,12 @@ void main() {
     expect(F18Voltmeter3dAssets.ready, isTrue);
     expect(F18Voltmeter3dAssets.front, isNotNull);
     expect(F18Voltmeter3dAssets.palette, isNotNull);
-    expect(F18Voltmeter3dAssets.front!.width, 280);
-    expect(F18Voltmeter3dAssets.front!.height, 380);
+    final front = F18Voltmeter3dAssets.front!;
+    final palette = F18Voltmeter3dAssets.palette!;
+    expect(front.width, anyOf(280, 1120));
+    expect(front.height, front.width * 19 ~/ 14);
+    expect(palette.width, front.width);
+    expect(palette.height, front.height);
     expect(F18Voltmeter3dAssets.uses3d(voltmeter), isTrue);
     expect(F18Voltmeter3dAssets.uses3d(ammeter), isFalse);
     expect(

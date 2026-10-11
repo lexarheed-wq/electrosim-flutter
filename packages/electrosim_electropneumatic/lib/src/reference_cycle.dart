@@ -6,7 +6,6 @@ import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 import 'self_hold_circuit.dart';
 import 'self_hold_valve52_cycle.dart';
 import 'solenoid_actuator.dart';
-import 'valve52_physical_cycle.dart';
 import 'pneumatic_telemetry.dart';
 
 /// An explicitly labeled, calibrated generic demonstration: the exact
@@ -32,7 +31,7 @@ final class PneumaticReferenceCycle {
         !pressureAbsPa.isFinite ||
         pressureAbsPa <= 101325 ||
         !strokeM.isFinite ||
-        strokeM <= 0) {
+        strokeM <= .006) {
       throw ArgumentError('Invalid generic reference cycle calibration.');
     }
     Terminal t(String id) => Terminal(id: TerminalId(id), name: id);

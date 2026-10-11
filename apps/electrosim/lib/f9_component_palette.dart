@@ -2461,7 +2461,7 @@ class _PaletteDraggableTile extends StatelessWidget {
                     ? 96
                     : 56,
                 child: definition.keyName == 'instrument-voltmeter'
-                    ? Tooltip.rich(
+                    ? Tooltip(
                         key: const Key('g5-voltmeter-3d-detail-preview'),
                         waitDuration: const Duration(milliseconds: 450),
                         richMessage: WidgetSpan(

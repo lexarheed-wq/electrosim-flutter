@@ -60,11 +60,13 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     canvas.save();
     canvas.translate(screen.center.dx, screen.center.dy);
     canvas.rotate(layout.quarterTurnsOf(id) * math.pi / 2);
-    paintLocal(Rect.fromCenter(
-      center: Offset.zero,
-      width: screen.width,
-      height: screen.height,
-    ));
+    paintLocal(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: screen.width,
+        height: screen.height,
+      ),
+    );
     canvas.restore();
   }
 
@@ -82,9 +84,6 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final ui.Image? front = voltmeterFront;
-    // Silicone probe leads stay BEHIND the meter body, never replacing power
-    // wiring in the circuit painter.
-    _paintConnectedProbes(canvas);
     if (front != null) {
       // Draw first, independent of the reading map (OFF/ERR may be absent).
       for (final String id in voltmeter3dIds) {
@@ -94,7 +93,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           canvas.drawImageRect(
             front,
             Rect.fromLTWH(
-              0, 0, front.width.toDouble(), front.height.toDouble(),
+              0,
+              0,
+              front.width.toDouble(),
+              front.height.toDouble(),
             ),
             local,
             Paint()..filterQuality = FilterQuality.high,
@@ -109,12 +111,12 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
             final Rect inner = local.deflate(2 * viewport.scale);
             canvas.drawRRect(
               RRect.fromRectAndRadius(
-                inner, Radius.circular(8 * viewport.scale),
+                inner,
+                Radius.circular(8 * viewport.scale),
               ),
               Paint()
                 ..color = const Color(0xFF2563EB)
-                ..strokeWidth =
-                    (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
+                ..strokeWidth = (2 * viewport.scale).clamp(1.5, 5.0).toDouble()
                 ..style = PaintingStyle.stroke,
             );
           }
@@ -133,13 +135,17 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           canvas.drawImageRect(
             ammeter,
             Rect.fromLTWH(
-              0, 0, ammeter.width.toDouble(), ammeter.height.toDouble(),
+              0,
+              0,
+              ammeter.width.toDouble(),
+              ammeter.height.toDouble(),
             ),
             local,
             Paint()..filterQuality = FilterQuality.high,
           );
           final InstrumentInstance? meter = circuit?.instruments
-              .where((i) => i.id.value == id).firstOrNull;
+              .where((i) => i.id.value == id)
+              .firstOrNull;
           if (meter != null) _paintFrontControls(canvas, local, meter);
           if (id == selectedElementId) {
             canvas.drawRRect(
@@ -156,6 +162,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         });
       }
     }
+
+    // The measurement sockets are on the FRONT: draw cords and insulated
+    // plugs above the physical enclosure, independently of power wiring.
+    _paintConnectedProbes(canvas);
 
     for (final MapEntry<String, String> item in readouts.entries) {
       final Rect? rect = screenRect(item.key);
@@ -176,10 +186,11 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
                 ? F18Ammeter3dAssets.projectReadout(local)
                 : F18Voltmeter3dAssets.projectReadout(local),
             item.value,
-            illuminated: meter != null && (
-              meter.kind == InstrumentKind.ammeter
-                  ? F18AmmeterControls.lit(meter)
-                  : F18VoltmeterControls.isLit(meter)),
+            illuminated:
+                meter != null &&
+                (meter.kind == InstrumentKind.ammeter
+                    ? F18AmmeterControls.lit(meter)
+                    : F18VoltmeterControls.isLit(meter)),
           );
         });
       } else {
@@ -202,56 +213,118 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     canvas.save();
     canvas.translate(body.left, body.top);
     canvas.scale(body.width / 112, body.height / 152);
-    // Legacy low-resolution PNGs lack physically embossed text. 4x Cycles
-    // textures already contain HOLD/RANGE/SELECT/LIGHT and COM/V-ohm labels.
-    if ((current ? (ammeterFront?.width ?? 0) : (voltmeterFront?.width ?? 0)) < 1000) {
-    const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
-    const xs = <double>[35, 49, 63, 77];
-    for (var index = 0; index < names.length; index++) {
-      final String label = names[index];
-      final bool selected = switch (index) {
-        0 => current
-            ? F18AmmeterControls.held(meter)
-            : F18VoltmeterControls.isHeld(meter),
-        1 => current
-            ? F18AmmeterControls.rangeIndex(meter) != 0
-            : F18VoltmeterControls.rangeIndex(meter) != 0,
-        2 => meter.mode == InstrumentMode.voltageAcRms ||
-            meter.mode == InstrumentMode.currentAcRms,
-        _ => current
-            ? F18AmmeterControls.lit(meter)
-            : F18VoltmeterControls.isLit(meter),
-      };
-      final text = TextPainter(
-        text: TextSpan(text: label, style: TextStyle(
-          fontFamily: 'Roboto',
-          fontSize: label == 'SELECT' ? 2.35 : 2.7,
-          fontWeight: FontWeight.w800,
-          color: selected ? const Color(0xFF102335) : const Color(0xFFE5E9ED),
-        )),
+    // Draw front legends as vector text at the current viewport resolution.
+    // Mask baked legends to avoid blurred text and doubled contours.
+    {
+      const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
+      const xs = <double>[35, 49, 63, 77];
+      for (var index = 0; index < names.length; index++) {
+        final String label = names[index];
+        final bool selected = switch (index) {
+          0 =>
+            current
+                ? F18AmmeterControls.held(meter)
+                : F18VoltmeterControls.isHeld(meter),
+          1 =>
+            current
+                ? F18AmmeterControls.rangeIndex(meter) != 0
+                : F18VoltmeterControls.rangeIndex(meter) != 0,
+          2 =>
+            meter.mode == InstrumentMode.voltageAcRms ||
+                meter.mode == InstrumentMode.currentAcRms,
+          _ =>
+            current
+                ? F18AmmeterControls.lit(meter)
+                : F18VoltmeterControls.isLit(meter),
+        };
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset(xs[index], 56),
+              width: 10,
+              height: 4.1,
+            ),
+            const Radius.circular(0.6),
+          ),
+          Paint()
+            ..color = index == 3
+                ? const Color(0xFFC9A533)
+                : const Color(0xFF515A60),
+        );
+        final text = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: label == 'SELECT' ? 2.5 : 2.8,
+              fontWeight: FontWeight.w800,
+              color: selected
+                  ? const Color(0xFF102335)
+                  : const Color(0xFFE5E9ED),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        text.paint(
+          canvas,
+          Offset(xs[index] - text.width / 2, 56 - text.height / 2),
+        );
+        text.dispose();
+      }
+    }
+    final double legendY = current ? 143 : 116;
+    for (final entry in <double, String>{
+      42: 'COM',
+      70: current ? 'A' : 'V/Ω',
+    }.entries) {
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(entry.key, legendY),
+          width: 18,
+          height: 5,
+        ),
+        Paint()..color = const Color(0xFF292D2D),
+      );
+      final legend = TextPainter(
+        text: TextSpan(
+          text: entry.value,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 3.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFE5E9ED),
+          ),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
-      text.paint(canvas, Offset(xs[index] - text.width / 2, 54.3));
-      text.dispose();
+      legend.paint(
+        canvas,
+        Offset(entry.key - legend.width / 2, legendY - legend.height / 2),
+      );
+      legend.dispose();
     }
-    }
-    if ((current ? (ammeterFront?.width ?? 0) : (voltmeterFront?.width ?? 0)) >= 1000) {
+    if ((current ? (ammeterFront?.width ?? 0) : (voltmeterFront?.width ?? 0)) >=
+        1000) {
       // High-definition front PNG intentionally has no selector grip.
       // Rotate a tactile vector grip above the shaft without rotating body,
       // LCD or connected measurement probes.
-      final double turn = !meter.poweredOn ? -math.pi / 3 : switch (meter.mode) {
-        InstrumentMode.voltageDc => 0.0,
-        InstrumentMode.voltageAcRms => math.pi / 3,
-        InstrumentMode.currentDc => 0.0,
-        InstrumentMode.currentAcRms => math.pi / 3,
-        InstrumentMode.resistance => 2 * math.pi / 3,
-        _ => 0.0,
-      };
+      final double turn = !meter.poweredOn
+          ? -math.pi / 3
+          : switch (meter.mode) {
+              InstrumentMode.voltageDc => 0.0,
+              InstrumentMode.voltageAcRms => math.pi / 3,
+              InstrumentMode.currentDc => 0.0,
+              InstrumentMode.currentAcRms => math.pi / 3,
+              InstrumentMode.resistance => 2 * math.pi / 3,
+              _ => 0.0,
+            };
       canvas.save();
       canvas.translate(53, current ? 86 : 91);
       canvas.rotate(turn);
       final Rect knob = Rect.fromCenter(
-        center: Offset.zero, width: 9, height: 29,
+        center: Offset.zero,
+        width: 9,
+        height: 29,
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(knob, const Radius.circular(2)),
@@ -264,7 +337,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       for (var rib = 0; rib < 5; rib++) {
         final double y = -9 + rib * 4.3;
         canvas.drawLine(
-          Offset(-2.5, y), Offset(2.5, y),
+          Offset(-2.5, y),
+          Offset(2.5, y),
           Paint()
             ..color = const Color(0xFFAFB8C0)
             ..strokeWidth = .8
@@ -303,22 +377,32 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       fuseText.paint(canvas, Offset(53 - fuseText.width / 2, 115.0));
       fuseText.dispose();
     }
-    final String mode = !meter.poweredOn ? 'OFF' : switch (meter.mode) {
-      InstrumentMode.voltageDc => 'V⎓',
-      InstrumentMode.currentDc => 'A⎓',
-      InstrumentMode.currentAcRms => 'A~',
-      InstrumentMode.voltageAcRms => 'V~',
-      InstrumentMode.resistance => 'Ω',
-      _ => 'V',
-    };
+    final String mode = !meter.poweredOn
+        ? 'OFF'
+        : switch (meter.mode) {
+            InstrumentMode.voltageDc => 'V⎓',
+            InstrumentMode.currentDc => 'A⎓',
+            InstrumentMode.currentAcRms => 'A~',
+            InstrumentMode.voltageAcRms => 'V~',
+            InstrumentMode.resistance => 'Ω',
+            _ => 'V',
+          };
     final indicator = TextPainter(
-      text: TextSpan(text: mode, style: const TextStyle(
-        fontFamily: 'Roboto', fontSize: 4.5, fontWeight: FontWeight.w800,
-        color: Color(0xFFF4F7F9),
-      )),
+      text: TextSpan(
+        text: mode,
+        style: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 4.5,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFFF4F7F9),
+        ),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
-    indicator.paint(canvas, Offset(53 - indicator.width / 2, current ? 106 : 111));
+    indicator.paint(
+      canvas,
+      Offset(53 - indicator.width / 2, current ? 106 : 111),
+    );
     indicator.dispose();
     final bool isHeld = current
         ? F18AmmeterControls.held(meter)
@@ -330,13 +414,20 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       final flags = <String>[
         if (isHeld) 'H',
         if (rangeIndex != 0)
-          current ? F18AmmeterControls.rangeLabel(meter) : F18VoltmeterControls.rangeLabel(meter),
+          current
+              ? F18AmmeterControls.rangeLabel(meter)
+              : F18VoltmeterControls.rangeLabel(meter),
       ].join(' ');
       final labels = TextPainter(
-        text: TextSpan(text: flags, style: const TextStyle(
-          fontFamily: 'Roboto', fontSize: 3.2, fontWeight: FontWeight.w700,
-          color: Color(0xFF1D4E38),
-        )),
+        text: TextSpan(
+          text: flags,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 3.2,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1D4E38),
+          ),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
       labels.paint(canvas, Offset(37, 27));
@@ -349,18 +440,21 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     final CircuitState? active = circuit;
     if (active == null ||
         ((voltmeterFront == null || voltmeter3dIds.isEmpty) &&
-         (ammeterFront == null || ammeter3dIds.isEmpty))) return;
-    final CircuitGeometryIndex geometry =
-        CircuitGeometryIndex.build(active, layout);
+            (ammeterFront == null || ammeter3dIds.isEmpty)))
+      return;
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      active,
+      layout,
+    );
     for (final ProbeConnection probe in active.probes) {
       final String id = probe.instrumentId.value;
-      final bool isVoltage = voltmeterFront != null &&
-          voltmeter3dIds.contains(id);
-      final bool isCurrent = ammeterFront != null &&
-          ammeter3dIds.contains(id);
+      final bool isVoltage =
+          voltmeterFront != null && voltmeter3dIds.contains(id);
+      final bool isCurrent = ammeterFront != null && ammeter3dIds.contains(id);
       if (!isVoltage && !isCurrent) continue;
       if (probe.port != InstrumentPort.common &&
-          probe.port != (isVoltage ? InstrumentPort.voltOhm : InstrumentPort.amp)) {
+          probe.port !=
+              (isVoltage ? InstrumentPort.voltOhm : InstrumentPort.amp)) {
         continue;
       }
       final Rect? meter = screenRect(id);
@@ -372,29 +466,50 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
         meter.height * (128 / 152) - meter.height / 2,
       );
       final double angle = layout.quarterTurnsOf(id) * math.pi / 2;
-      final Offset socket = meter.center + Offset(
-        local.dx * math.cos(angle) - local.dy * math.sin(angle),
-        local.dx * math.sin(angle) + local.dy * math.cos(angle),
-      );
+      final Offset socket =
+          meter.center +
+          Offset(
+            local.dx * math.cos(angle) - local.dy * math.sin(angle),
+            local.dx * math.sin(angle) + local.dy * math.cos(angle),
+          );
       final Offset target = viewport.worldToScreen(targetWorld);
       // Flexible silicone cords, curved and shaded, terminate in insulated
       // probes. The ordinary circuit cables stay orthogonal in SimulatorCanvas.
       final double slack = 34 * viewport.scale;
       final double direction = target.dx >= socket.dx ? 1 : -1;
-      final Offset start = socket + Offset(0, 3 * viewport.scale);
-      final Offset end = target + Offset(-direction * 12 * viewport.scale, -8 * viewport.scale);
+      final Offset start =
+          socket +
+          Offset(-math.sin(angle), math.cos(angle)) * (3 * viewport.scale);
+      final Offset probeAxis = Offset(direction * 0.8, 0.6);
+      final Offset end = target - probeAxis * (72 * viewport.scale);
+      // Follow the meter's local downward direction past the base before
+      // turning towards the terminal, so the cable cannot cross its LCD/dial.
+      final double tail = meter.height * 36 / 152;
+      final Offset exit =
+          socket + Offset(-tail * math.sin(angle), tail * math.cos(angle));
+      final Offset tangent =
+          Offset(-math.sin(angle), math.cos(angle)) * (12 * viewport.scale);
       final Path cable = Path()
         ..moveTo(start.dx, start.dy)
         ..cubicTo(
-          start.dx + direction * 11 * viewport.scale,
-          start.dy + slack,
+          start.dx + tangent.dx,
+          start.dy + tangent.dy,
+          exit.dx - tangent.dx,
+          exit.dy - tangent.dy,
+          exit.dx,
+          exit.dy,
+        )
+        ..cubicTo(
+          exit.dx + direction * slack,
+          exit.dy + slack,
           end.dx - direction * 32 * viewport.scale,
           end.dy + slack * 1.15,
           end.dx,
           end.dy,
         );
-      final Color color =
-          common ? const Color(0xFF171C24) : const Color(0xFFCE2839);
+      final Color color = common
+          ? const Color(0xFF171C24)
+          : const Color(0xFFCE2839);
       final Paint insulation = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
@@ -410,73 +525,140 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
           ..strokeWidth = math.max(0.7, viewport.scale * 0.95)
           ..strokeCap = StrokeCap.round,
       );
-      final double shaftW = math.max(4, viewport.scale * 5.0);
-      canvas.drawLine(
-        end, target,
+      // Metal point touches the exact terminal; cable enters the rear of
+      // the insulated hand grip. Dimensions are shared by both meter types.
+      canvas.save();
+      canvas.translate(target.dx, target.dy);
+      canvas.rotate(math.atan2(probeAxis.dy, probeAxis.dx));
+      canvas.scale(viewport.scale);
+      final Path tip = Path()
+        ..moveTo(0, 0)
+        ..lineTo(-15, -1.25)
+        ..lineTo(-15, 1.25)
+        ..close();
+      canvas.drawPath(
+        tip,
         Paint()
-          ..color = const Color(0xFFD4DAE0)
-          ..strokeWidth = math.max(1.4, viewport.scale * 1.7)
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF667480), Color(0xFFF4F7FA), Color(0xFF8996A0)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(const Rect.fromLTWH(-15, -1.25, 15, 2.5)),
+      );
+      final Rect grip = const Rect.fromLTWH(-66, -3.8, 51, 7.6);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(grip, const Radius.circular(3)),
+        Paint()
+          ..shader = LinearGradient(
+            colors: [
+              common ? const Color(0xFF53606B) : const Color(0xFFF07883),
+              color,
+              common ? const Color(0xFF090D12) : const Color(0xFF7B1221),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(grip),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-21, -7, 4, 14),
+          const Radius.circular(1.5),
+        ),
+        Paint()..color = color,
+      );
+      for (int rib = 0; rib < 4; rib++) {
+        canvas.drawLine(
+          Offset(-64 + rib * 3, -3),
+          Offset(-64 + rib * 3, 3),
+          Paint()
+            ..color = const Color(0x55000000)
+            ..strokeWidth = 1,
+        );
+      }
+      canvas.drawLine(
+        const Offset(-72, 0),
+        const Offset(-66, 0),
+        Paint()
+          ..color = color
+          ..strokeWidth = 4
           ..strokeCap = StrokeCap.round,
       );
+      canvas.restore();
       canvas.drawCircle(
-        end, shaftW,
+        socket,
+        math.max(2.5, viewport.scale * 3),
         Paint()..color = color,
       );
       canvas.drawCircle(
-        socket, math.max(2.5, viewport.scale * 3),
-        Paint()..color = color,
-      );
-      canvas.drawCircle(
-        target, math.max(1.4, viewport.scale * 1.7),
+        target,
+        math.max(1.4, viewport.scale * 1.7),
         Paint()..color = const Color(0xFFC5CED7),
       );
+      canvas.save();
+      canvas.translate(socket.dx, socket.dy);
+      canvas.rotate(angle);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            -3.5 * viewport.scale,
+            -3 * viewport.scale,
+            7 * viewport.scale,
+            10 * viewport.scale,
+          ),
+          Radius.circular(2 * viewport.scale),
+        ),
+        Paint()
+          ..color = common ? const Color(0xFF171C24) : const Color(0xFFCE2839),
+      );
+      canvas.restore();
     }
   }
 
-  void _drawReading(Canvas canvas, Rect display, String reading, {
+  void _drawReading(
+    Canvas canvas,
+    Rect display,
+    String reading, {
     bool illuminated = false,
   }) {
     if (display.width <= 0 || display.height <= 0) return;
-      final double radius = (3 * viewport.scale).clamp(1.0, 6.0).toDouble();
-      canvas.save();
-      canvas.clipRRect(
-        RRect.fromRectAndRadius(display, Radius.circular(radius)),
-      );
-      canvas.drawRect(
-        display,
-        Paint()..color = illuminated
+    final double radius = (3 * viewport.scale).clamp(1.0, 6.0).toDouble();
+    canvas.save();
+    canvas.clipRRect(RRect.fromRectAndRadius(display, Radius.circular(radius)));
+    canvas.drawRect(
+      display,
+      Paint()
+        ..color = illuminated
             ? const Color(0xFFA5ECF5)
             : const Color(0xFFD5E5D6),
-      );
-      final TextPainter text = TextPainter(
-        text: TextSpan(
-          text: reading,
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            fontSize: (13 * viewport.scale).clamp(7, 22).toDouble(),
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF142C1F),
-          ),
+    );
+    final TextPainter text = TextPainter(
+      text: TextSpan(
+        text: reading,
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: (13 * viewport.scale).clamp(7, 22).toDouble(),
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF142C1F),
         ),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-      )..layout();
-      // Shrink, don't clip, values such as 230.00 V / FUSE at low zoom.
-      final double targetW = math.max(1, display.width - 4 * viewport.scale);
-      final double targetH = math.max(1, display.height - 2 * viewport.scale);
-      final double fit = math.min(
-        1,
-        math.min(targetW / math.max(1, text.width),
-                 targetH / math.max(1, text.height)),
-      );
-      canvas.translate(display.center.dx, display.center.dy);
-      canvas.scale(fit);
-      text.paint(
-        canvas,
-        Offset(-text.width / 2, -text.height / 2),
-      );
-      canvas.restore();
-      text.dispose();
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    // Shrink, don't clip, values such as 230.00 V / FUSE at low zoom.
+    final double targetW = math.max(1, display.width - 4 * viewport.scale);
+    final double targetH = math.max(1, display.height - 2 * viewport.scale);
+    final double fit = math.min(
+      1,
+      math.min(
+        targetW / math.max(1, text.width),
+        targetH / math.max(1, text.height),
+      ),
+    );
+    canvas.translate(display.center.dx, display.center.dy);
+    canvas.scale(fit);
+    text.paint(canvas, Offset(-text.width / 2, -text.height / 2));
+    canvas.restore();
+    text.dispose();
   }
 
   @override

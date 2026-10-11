@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'f18_component_archetypes.dart';
+import 'f18_terminal_affordances.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
@@ -27,6 +28,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.selectedElementIds = const <String>{},
     this.pendingTerminalId,
     this.hoverTerminalId,
+    this.showAllTerminals = false,
     this.pointerWorldPosition,
     this.pointerWorldPositionListenable,
     this.wirePreviewPlanner,
@@ -41,6 +43,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final bool showAllTerminals;
   final Offset? pointerWorldPosition;
   final ValueListenable<Offset?>? pointerWorldPositionListenable;
   final WirePreviewPlanner? wirePreviewPlanner;
@@ -239,6 +242,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     selectedElementIds: widget.selectedElementIds,
                     pendingTerminalId: widget.pendingTerminalId,
                     hoverTerminalId: widget.hoverTerminalId,
+                    showAllTerminals: widget.showAllTerminals,
                     pointerWorldPosition: null,
                     wirePreviewPlanner: widget.wirePreviewPlanner,
                     wirePreviewSession: wirePreviewSession,
@@ -265,6 +269,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                               selectedElementIds: widget.selectedElementIds,
                               pendingTerminalId: widget.pendingTerminalId,
                               hoverTerminalId: widget.hoverTerminalId,
+                              showAllTerminals: widget.showAllTerminals,
                               pointerWorldPosition: pointer,
                               wirePreviewPlanner: widget.wirePreviewPlanner,
                               wirePreviewSession: wirePreviewSession,
@@ -1086,6 +1091,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
     required this.wirePreviewPlanner,
     required this.wirePreviewSession,
     required this.wiringDecisions,
+    this.showAllTerminals = false,
     this.paintStaticChrome = true,
     this.paintInteraction = true,
   });
@@ -1097,6 +1103,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
   final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final bool showAllTerminals;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
   final WirePreviewSession? wirePreviewSession;
@@ -1244,102 +1251,28 @@ class _F9StaticOverlayPainter extends CustomPainter {
   }
 
   void _paintTerminals(Canvas canvas, CircuitGeometryIndex geometry) {
-    for (final MapEntry<TerminalId, Offset> entry
-        in geometry.terminalPositions.entries) {
-      final Offset p = viewport.worldToScreen(entry.value);
-      final bool pending = entry.key == pendingTerminalId;
-      final bool hovered = entry.key == hoverTerminalId;
-      final double radius = pending || hovered ? 6.4 : 5.2;
-      final bool referenceTerminal = _isReferenceTerminal(entry.key);
-
-      if (referenceTerminal) {
-        if (pending || hovered) {
-          canvas.drawCircle(
-            p,
-            radius + 4,
-            Paint()
-              ..color = ElectroSimColors.primary.withValues(alpha: 45 / 255),
-          );
-          canvas.drawCircle(
-            p,
-            radius + 1.5,
-            Paint()
-              ..color = ElectroSimColors.primary
-              ..strokeWidth = 2
-              ..style = PaintingStyle.stroke,
-          );
-        }
+    final descriptors = F18TerminalAffordances.descriptors(circuit);
+    for (final entry in geometry.terminalPositions.entries) {
+      final descriptor = descriptors[entry.key];
+      final pending = entry.key == pendingTerminalId;
+      final hovered = entry.key == hoverTerminalId;
+      final selected = selectedElementIds.contains(descriptor?.owner);
+      if (!F18TerminalAffordances.visible(
+        hovered: hovered,
+        pending: pending,
+        selected: selected,
+        showAll: showAllTerminals,
+      )) {
         continue;
       }
-
-      if (pending || hovered) {
-        canvas.drawCircle(
-          p,
-          radius + 3,
-          Paint()..color = ElectroSimColors.primary.withValues(alpha: 52 / 255),
-        );
-      }
-      canvas.drawCircle(
-        p.translate(0, 1),
-        radius,
-        Paint()..color = const Color(0x33000000),
-      );
-      final Rect metal = Rect.fromCircle(center: p, radius: radius);
-      canvas.drawCircle(
-        p,
-        radius,
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(-.35, -.35),
-            colors: <Color>[
-              Color(0xFFFFF2BF),
-              Color(0xFFD4A44B),
-              Color(0xFF7C5927),
-            ],
-          ).createShader(metal),
-      );
-      canvas.drawCircle(
-        p,
-        radius,
-        Paint()
-          ..color = pending || hovered
-              ? ElectroSimColors.primary
-              : const Color(0xFF49371F)
-          ..strokeWidth = pending || hovered ? 2.2 : 1.4
-          ..style = PaintingStyle.stroke,
-      );
-      canvas.drawCircle(
-        p,
-        math.max(1.5, radius * .30),
-        Paint()..color = const Color(0xFF4D3A22),
+      F18TerminalAffordances.paint(
+        canvas,
+        viewport.worldToScreen(entry.value),
+        hovered: hovered,
+        pending: pending,
+        name: descriptor?.name ?? '',
       );
     }
-  }
-
-  bool _isReferenceTerminal(TerminalId terminalId) {
-    for (final SourceInstance source in circuit.sources) {
-      final String rendered =
-          (source.parameters['_visualModelType'] as String?) ??
-          source.modelType;
-      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (source.terminals.any(
-        (Terminal terminal) => terminal.id == terminalId,
-      )) {
-        return true;
-      }
-    }
-    for (final ComponentInstance component in circuit.components) {
-      final String rendered =
-          (component.parameters['_visualModelType'] as String?) ??
-          component.modelType;
-      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (component.terminals.any(
-        (Terminal terminal) => terminal.id == terminalId,
-      )) {
-        return true;
-      }
-    }
-    return false;
   }
 
   void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {

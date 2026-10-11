@@ -742,6 +742,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
   bool _soundEnabled = true;
+  bool _showAllTerminals = false;
   final ElectroSimConnectionRouter _connectionRouter =
       ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
@@ -885,27 +886,31 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Set<String> get _voltmeter3dIds => F18Voltmeter3dAssets.ready
       ? _circuit.instruments
-          .where(F18Voltmeter3dAssets.uses3d)
-          .map((InstrumentInstance instrument) => instrument.id.value)
-          .toSet()
+            .where(F18Voltmeter3dAssets.uses3d)
+            .map((InstrumentInstance instrument) => instrument.id.value)
+            .toSet()
       : const <String>{};
 
   Set<String> get _ammeter3dIds => F18Ammeter3dAssets.ready
       ? _circuit.instruments
-          .where(F18Ammeter3dAssets.uses3d)
-          .map((i) => i.id.value)
-          .toSet()
+            .where(F18Ammeter3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
       : const <String>{};
 
   @override
   void initState() {
     super.initState();
-    unawaited(F18Ammeter3dAssets.preload().then((_) {
-      if (mounted) setState(() {});
-    }));
-    unawaited(F18Voltmeter3dAssets.preload().then((_) {
-      if (mounted) setState(() {});
-    }));
+    unawaited(
+      F18Ammeter3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18Voltmeter3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     _circuit = widget.initialCircuit ?? _buildBlankCircuit();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
@@ -1171,6 +1176,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       soundEnabled: _soundEnabled,
+                      showAllTerminals: _showAllTerminals,
+                      onToggleTerminals: () => setState(
+                        () => _showAllTerminals = !_showAllTerminals,
+                      ),
                       onToggleSound: () =>
                           setState(() => _soundEnabled = !_soundEnabled),
                       simulationRunning: _simulation.running,
@@ -1265,176 +1274,188 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       width: 2,
                                     ),
                             ),
-                            child: Listener(
-                              behavior: HitTestBehavior.opaque,
-                              onPointerDown: _onCanvasPointerDown,
-                              onPointerMove: _onCanvasPointerMove,
-                              onPointerUp: _onCanvasPointerUp,
-                              onPointerCancel: _onCanvasPointerCancel,
-                              onPointerHover: _onCanvasPointerHover,
-                              onPointerSignal: _onCanvasPointerSignal,
-                              onPointerPanZoomStart:
-                                  _onCanvasPointerPanZoomStart,
-                              onPointerPanZoomUpdate:
-                                  _onCanvasPointerPanZoomUpdate,
-                              onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
-                              child: ValueListenableBuilder<CircuitVisualLayout?>(
-                                valueListenable: _dragPreviewLayout,
-                                builder:
-                                    (
-                                      BuildContext context,
-                                      CircuitVisualLayout? dragLayout,
-                                      Widget? child,
-                                    ) {
-                                      final CircuitVisualLayout canvasLayout =
-                                          _displayLayout(dragLayout ?? _layout);
-                                      return Stack(
-                                        clipBehavior: Clip.hardEdge,
-                                        fit: StackFit.expand,
-                                        children: <Widget>[
-                                          SimulatorCanvas(
-                                            key: ValueKey<int>(
-                                              _canvasInteractionEpoch,
-                                            ),
-                                            circuit: _circuit,
-                                            layout: canvasLayout,
-                                            viewportController: _viewport,
-                                            selectedElementId: _selected,
-                                            onSelectionChanged: (String? id) {
-                                              setState(() {
-                                                _selected = id;
-                                                _status = id == null
-                                                    ? 'Sélection effacée'
-                                                    : 'Sélection : $id';
-                                              });
-                                            },
-                                            onElementMoved:
-                                                (String id, Offset position) {
-                                                  _commitElementMoveIfSafe(
-                                                    id,
-                                                    position,
-                                                  );
-                                                },
-                                            onConnectionRequested:
-                                                _handleConnectionRequested,
-                                            onContextAction: (CanvasHitResult hit) {
-                                              setState(() {
-                                                _status =
-                                                    'Action contextuelle : ${hit.kind.name}. '
-                                                    'Les mêmes actions sont disponibles dans Propriétés.';
-                                              });
-                                            },
-                                            enableInteraction: false,
-                                            paintElementChrome: false,
-                                            schematicPresentation:
-                                                _representation ==
-                                                WorkspaceRepresentation
-                                                    .schematic,
-                                            smartWireSemantics: true,
-                                            wirePreviewPlanner:
-                                                _g2aWirePreviewPlanner,
-                                            customInstrumentCaseIds:
-                                                <String>{
-                                                  ..._voltmeter3dIds,
-                                                  ..._ammeter3dIds,
-                                                },
-                                          ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.plate)
-                                            AnimatedBuilder(
-                                              animation: _simulation,
-                                              builder:
-                                                  (
-                                                    BuildContext context,
-                                                    Widget? child,
-                                                  ) => F9CanvasVisualOverlay(
-                                                    circuit: _circuit,
-                                                    layout: canvasLayout,
-                                                    viewport: _viewport,
-                                                    selectedElementIds:
-                                                        _selectedIds,
-                                                    pendingTerminalId:
-                                                        _wiringPendingTerminal,
-                                                    hoverTerminalId:
-                                                        _wiringHoverTerminal,
-                                                    pointerWorldPositionListenable:
-                                                        _wiringPointerWorld,
-                                                    wirePreviewPlanner:
-                                                        _g2aWirePreviewPlanner,
-                                                    runtimeSnapshot:
-                                                        _simulation.snapshot,
-                                                    soundEnabled: _soundEnabled,
-                                                    simulationRunning:
-                                                        _simulation.running,
-                                                  ),
-                                            ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.schematic)
-                                            IndustrialSchematicOverlay(
+                            child: MouseRegion(
+                              onExit: (_) {
+                                if (_wiringHoverTerminal != null && mounted) {
+                                  setState(() => _wiringHoverTerminal = null);
+                                }
+                              },
+                              child: Listener(
+                                behavior: HitTestBehavior.opaque,
+                                onPointerDown: _onCanvasPointerDown,
+                                onPointerMove: _onCanvasPointerMove,
+                                onPointerUp: _onCanvasPointerUp,
+                                onPointerCancel: _onCanvasPointerCancel,
+                                onPointerHover: _onCanvasPointerHover,
+                                onPointerSignal: _onCanvasPointerSignal,
+                                onPointerPanZoomStart:
+                                    _onCanvasPointerPanZoomStart,
+                                onPointerPanZoomUpdate:
+                                    _onCanvasPointerPanZoomUpdate,
+                                onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
+                                child: ValueListenableBuilder<CircuitVisualLayout?>(
+                                  valueListenable: _dragPreviewLayout,
+                                  builder:
+                                      (
+                                        BuildContext context,
+                                        CircuitVisualLayout? dragLayout,
+                                        Widget? child,
+                                      ) {
+                                        final CircuitVisualLayout canvasLayout =
+                                            _displayLayout(
+                                              dragLayout ?? _layout,
+                                            );
+                                        return Stack(
+                                          clipBehavior: Clip.hardEdge,
+                                          fit: StackFit.expand,
+                                          children: <Widget>[
+                                            SimulatorCanvas(
+                                              key: ValueKey<int>(
+                                                _canvasInteractionEpoch,
+                                              ),
                                               circuit: _circuit,
                                               layout: canvasLayout,
-                                              viewport: _viewport,
-                                              selectedIds: _selectedIds,
-                                              pointer: _wiringPointerWorld,
-                                              pendingTerminal:
-                                                  _wiringPendingTerminal,
-                                              hoverTerminal:
-                                                  _wiringHoverTerminal,
-                                            ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.plate)
-                                            IgnorePointer(
-                                              child: CustomPaint(
-                                                painter: _CabinetSelectionPainter(
-                                                  fixture: canvasLayout
-                                                      .cabinetLayout
-                                                      .fixture(
-                                                        _selectedCabinetFixtureId ??
-                                                            '',
-                                                      ),
-                                                  viewport: _viewport,
-                                                ),
-                                                size: Size.infinite,
-                                              ),
-                                            ),
-                                          if (_representation ==
+                                              viewportController: _viewport,
+                                              selectedElementId: _selected,
+                                              onSelectionChanged: (String? id) {
+                                                setState(() {
+                                                  _selected = id;
+                                                  _status = id == null
+                                                      ? 'Sélection effacée'
+                                                      : 'Sélection : $id';
+                                                });
+                                              },
+                                              onElementMoved:
+                                                  (String id, Offset position) {
+                                                    _commitElementMoveIfSafe(
+                                                      id,
+                                                      position,
+                                                    );
+                                                  },
+                                              onConnectionRequested:
+                                                  _handleConnectionRequested,
+                                              onContextAction: (CanvasHitResult hit) {
+                                                setState(() {
+                                                  _status =
+                                                      'Action contextuelle : ${hit.kind.name}. '
+                                                      'Les mêmes actions sont disponibles dans Propriétés.';
+                                                });
+                                              },
+                                              enableInteraction: false,
+                                              paintElementChrome: false,
+                                              schematicPresentation:
+                                                  _representation ==
                                                   WorkspaceRepresentation
-                                                      .plate &&
-                                              _circuit.instruments.isNotEmpty)
-                                            AnimatedBuilder(
-                                              animation: _simulation,
-                                              builder:
-                                                  (
-                                                    BuildContext context,
-                                                    Widget? child,
-                                                  ) => IgnorePointer(
-                                                    child: CustomPaint(
-                                                      painter:
-                                                          F18PhysicalInstrumentReadouts(
-                                                            layout:
-                                                                canvasLayout,
-                                                            viewport: _viewport,
-                                                            readouts:
-                                                                _physicalMeterReadouts(),
-                                                            circuit: _circuit,
-                                                            voltmeter3dIds:
-                                                                _voltmeter3dIds,
-                                                            voltmeterFront:
-                                                                F18Voltmeter3dAssets.front,
-                                                            ammeter3dIds:
-                                                                _ammeter3dIds,
-                                                            ammeterFront:
-                                                                F18Ammeter3dAssets.front,
-                                                            selectedElementId:
-                                                                _selected,
-                                                          ),
-                                                      size: Size.infinite,
-                                                    ),
-                                                  ),
+                                                      .schematic,
+                                              smartWireSemantics: true,
+                                              wirePreviewPlanner:
+                                                  _g2aWirePreviewPlanner,
+                                              customInstrumentCaseIds: <String>{
+                                                ..._voltmeter3dIds,
+                                                ..._ammeter3dIds,
+                                              },
                                             ),
-                                        ],
-                                      );
-                                    },
+                                            if (_representation ==
+                                                WorkspaceRepresentation.plate)
+                                              AnimatedBuilder(
+                                                animation: _simulation,
+                                                builder:
+                                                    (
+                                                      BuildContext context,
+                                                      Widget? child,
+                                                    ) => F9CanvasVisualOverlay(
+                                                      showAllTerminals:
+                                                          _showAllTerminals,
+                                                      circuit: _circuit,
+                                                      layout: canvasLayout,
+                                                      viewport: _viewport,
+                                                      selectedElementIds:
+                                                          _selectedIds,
+                                                      pendingTerminalId:
+                                                          _wiringPendingTerminal,
+                                                      hoverTerminalId:
+                                                          _wiringHoverTerminal,
+                                                      pointerWorldPositionListenable:
+                                                          _wiringPointerWorld,
+                                                      wirePreviewPlanner:
+                                                          _g2aWirePreviewPlanner,
+                                                      runtimeSnapshot:
+                                                          _simulation.snapshot,
+                                                      soundEnabled:
+                                                          _soundEnabled,
+                                                      simulationRunning:
+                                                          _simulation.running,
+                                                    ),
+                                              ),
+                                            if (_representation ==
+                                                WorkspaceRepresentation
+                                                    .schematic)
+                                              IndustrialSchematicOverlay(
+                                                circuit: _circuit,
+                                                layout: canvasLayout,
+                                                viewport: _viewport,
+                                                selectedIds: _selectedIds,
+                                                pointer: _wiringPointerWorld,
+                                                pendingTerminal:
+                                                    _wiringPendingTerminal,
+                                                hoverTerminal:
+                                                    _wiringHoverTerminal,
+                                              ),
+                                            if (_representation ==
+                                                WorkspaceRepresentation.plate)
+                                              IgnorePointer(
+                                                child: CustomPaint(
+                                                  painter: _CabinetSelectionPainter(
+                                                    fixture: canvasLayout
+                                                        .cabinetLayout
+                                                        .fixture(
+                                                          _selectedCabinetFixtureId ??
+                                                              '',
+                                                        ),
+                                                    viewport: _viewport,
+                                                  ),
+                                                  size: Size.infinite,
+                                                ),
+                                              ),
+                                            if (_representation ==
+                                                    WorkspaceRepresentation
+                                                        .plate &&
+                                                _circuit.instruments.isNotEmpty)
+                                              AnimatedBuilder(
+                                                animation: _simulation,
+                                                builder:
+                                                    (
+                                                      BuildContext context,
+                                                      Widget? child,
+                                                    ) => IgnorePointer(
+                                                      child: CustomPaint(
+                                                        painter: F18PhysicalInstrumentReadouts(
+                                                          layout: canvasLayout,
+                                                          viewport: _viewport,
+                                                          readouts:
+                                                              _physicalMeterReadouts(),
+                                                          circuit: _circuit,
+                                                          voltmeter3dIds:
+                                                              _voltmeter3dIds,
+                                                          voltmeterFront:
+                                                              F18Voltmeter3dAssets
+                                                                  .front,
+                                                          ammeter3dIds:
+                                                              _ammeter3dIds,
+                                                          ammeterFront:
+                                                              F18Ammeter3dAssets
+                                                                  .front,
+                                                          selectedElementId:
+                                                              _selected,
+                                                        ),
+                                                        size: Size.infinite,
+                                                      ),
+                                                    ),
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                ),
                               ),
                             ),
                           ),
@@ -2078,7 +2099,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _circuit = after;
         _meterReadoutCacheCircuit = null;
-        _status = 'Ampèremètre : fusible déclenché. '
+        _status =
+            'Ampèremètre : fusible déclenché. '
             'Circuit de mesure ouvert. Remplacement requis.';
       });
       _simulation.updateCircuit(after);
@@ -2755,7 +2777,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   /// never alter circuit.connections, only the selected InstrumentInstance.
   bool _handleVoltmeterControlTap(Offset screenPosition) {
     if ((!F18Voltmeter3dAssets.ready && !F18Ammeter3dAssets.ready) ||
-        _representation != WorkspaceRepresentation.plate) return false;
+        _representation != WorkspaceRepresentation.plate)
+      return false;
     final Offset world = _viewport.screenToWorld(screenPosition);
     for (final InstrumentInstance meter in _circuit.instruments) {
       if (meter.kind == InstrumentKind.voltmeter) {
@@ -2782,8 +2805,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
       // The fuse hatch is not a mode button. A click on its actual
       // 3D front rectangle opens a separate, guarded replacement dialog.
-      if (meter.kind == InstrumentKind.ammeter && meter.fuseBlown &&
-          size.width > 0 && size.height > 0) {
+      if (meter.kind == InstrumentKind.ammeter &&
+          meter.fuseBlown &&
+          size.width > 0 &&
+          size.height > 0) {
         final double hx = local.dx * 112 / size.width;
         final double hy = local.dy * 152 / size.height;
         if (hx >= 39 && hx <= 67 && hy >= 109.75 && hy <= 118.25) {
@@ -2792,8 +2817,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           return true;
         }
       }
-      final F18VoltmeterAction? action =
-          meter.kind == InstrumentKind.ammeter
+      final F18VoltmeterAction? action = meter.kind == InstrumentKind.ammeter
           ? F18AmmeterControls.actionAt(local, size)
           : F18VoltmeterControls.actionAt(local, size);
       if (action == null) continue;
@@ -2810,12 +2834,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         InstrumentMode.frequency => 'Hz',
         _ => 'V',
       };
-      final String? text = reading.result?.displayText ??
+      final String? text =
+          reading.result?.displayText ??
           (value == null ? null : '${value.toStringAsFixed(2)} $unit');
       final bool valid = reading.status == PhysicalInstrumentStatus.valid;
       final InstrumentInstance next = meter.kind == InstrumentKind.ammeter
-          ? F18AmmeterControls.apply(meter, action,
-              text: text, value: value, valid: valid)
+          ? F18AmmeterControls.apply(
+              meter,
+              action,
+              text: text,
+              value: value,
+              valid: valid,
+            )
           : F18VoltmeterControls.apply(
               meter: meter,
               action: action,
@@ -2845,7 +2875,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       setState(() {
         _circuit = candidate;
         _selected = meter.id.value;
-        _status = '${meter.kind == InstrumentKind.ammeter ? 'Ampèremètre' : 'Voltmètre'} : '
+        _status =
+            '${meter.kind == InstrumentKind.ammeter ? 'Ampèremètre' : 'Voltmètre'} : '
             '${action.name.toUpperCase()} — '
             '${next.poweredOn ? next.mode.name : 'OFF'}';
         _meterReadoutCacheCircuit = null;
@@ -2862,16 +2893,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         .where((item) => item.id == id)
         .firstOrNull;
     if (meter == null || !F18AmmeterFuseSafety.canReplace(_circuit, meter)) {
-      _setStatus('Remplacement du fusible refusé : éteindre '
-          'l’ampèremètre et retirer/isoler toutes les sources.');
+      _setStatus(
+        'Remplacement du fusible refusé : éteindre '
+        'l’ampèremètre et retirer/isoler toutes les sources.',
+      );
       return;
     }
     final bool? approved = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
         title: const Text('Remplacer le fusible de l’ampèremètre'),
-        content: Text('Instrument hors tension et sources retirées. '
-            'Remplacer le fusible ${meter.fuseRatingA} A ?'),
+        content: Text(
+          'Instrument hors tension et sources retirées. '
+          'Remplacer le fusible ${meter.fuseRatingA} A ?',
+        ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -2888,7 +2923,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final CircuitState old = _circuit;
     // Recheck AFTER dialog; the circuit may have changed while it was open.
     final CircuitState next = F18AmmeterFuseSafety.replaceSafely(
-      circuit: old, instrumentId: id,
+      circuit: old,
+      instrumentId: id,
     );
     if (identical(next, old)) {
       _setStatus('Remplacement refusé : circuit modifié ou non isolé.');
@@ -3288,9 +3324,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _updateWiringHover(Offset localPosition) {
-    if (_wiringPendingTerminal == null) return;
     final Offset worldPoint = _viewport.screenToWorld(localPosition);
-    _wiringPointerWorld.value = worldPoint;
+    if (_wiringPendingTerminal != null) {
+      _wiringPointerWorld.value = worldPoint;
+    }
     final CanvasHitResult hit = _hitTest.hitTestTerminalPrepared(
       worldPoint: worldPoint,
       session: _preparedHitTestSession(),
@@ -4407,6 +4444,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
+    this.showAllTerminals = false,
+    this.onToggleTerminals,
     this.soundEnabled = true,
     this.onToggleSound,
     required this.simulationRunning,
@@ -4447,6 +4486,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
+  final bool showAllTerminals;
+  final VoidCallback? onToggleTerminals;
   final bool soundEnabled;
   final VoidCallback? onToggleSound;
   final bool simulationRunning;
@@ -4491,6 +4532,17 @@ class _WorkspaceTopBar extends StatelessWidget {
               child: Text(
                 view == WorkspaceRepresentation.plate ? 'Platine' : 'Schéma',
               ),
+            ),
+          if (representation == WorkspaceRepresentation.plate)
+            IconButton(
+              key: const Key('workspace-toggle-terminals'),
+              tooltip: showAllTerminals
+                  ? 'Masquer les bornes'
+                  : 'Afficher les bornes',
+              isSelected: showAllTerminals,
+              onPressed: onToggleTerminals,
+              icon: const Icon(Icons.adjust_outlined),
+              selectedIcon: const Icon(Icons.adjust, color: Color(0xFF2563EB)),
             ),
           _modeMenu(compact),
           if (!compact)

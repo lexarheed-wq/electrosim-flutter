@@ -1399,6 +1399,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                             viewport: _viewport,
                                                             readouts:
                                                                 _physicalMeterReadouts(),
+                                                            circuit: _circuit,
                                                             voltmeter3dIds:
                                                                 _voltmeter3dIds,
                                                             voltmeterFront:

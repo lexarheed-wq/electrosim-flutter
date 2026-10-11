@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/g5-pr98-strict-gates-mac-visual-audit-20261011
+      - feat/g5-industrial-geometry-20261009
   pull_request:
     branches:
       - feat/g5-industrial-geometry-20261009

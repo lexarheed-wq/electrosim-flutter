@@ -1,0 +1,44 @@
+name: PNEU R6N Persistent Isolate and Web Worker Contract
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6n-perf-workers-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  native-and-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Native isolate regression and compiled real browser worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6n
+          echo "sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6n/PROVENANCE.txt
+          dart --version | tee -a build/pneumatics-r6n/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cd packages/electrosim_pneumatic_solver
+          dart pub get
+          dart format lib/src/r6n_network_job.dart lib/src/r6n_worker.dart lib/src/r6n_worker_stub.dart lib/src/r6n_worker_native.dart lib/src/r6n_worker_web.dart tool/r6n_web_worker_main.dart test/r6n_worker_test.dart
+          git diff -- lib/src/r6n_network_job.dart lib/src/r6n_worker.dart lib/src/r6n_worker_stub.dart lib/src/r6n_worker_native.dart lib/src/r6n_worker_web.dart tool/r6n_web_worker_main.dart test/r6n_worker_test.dart
+          dart analyze
+          dart test --concurrency=1 --reporter expanded
+          dart compile js -O2 -o ../../build/pneumatics-r6n/r6n_worker.dart.js tool/r6n_web_worker_main.dart
+          git diff --exit-code -- lib/src/r6n_network_job.dart lib/src/r6n_worker.dart lib/src/r6n_worker_stub.dart lib/src/r6n_worker_native.dart lib/src/r6n_worker_web.dart tool/r6n_web_worker_main.dart test/r6n_worker_test.dart
+          cd ../..
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6n-worker-${{ github.sha }}
+          path: build/pneumatics-r6n/
+          retention-days: 21

@@ -145,11 +145,14 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git diff --check
           python3 tools/premium_rcd2p/decode_source.py
-          set +e
           (
             cd apps/electrosim
             flutter pub get
             flutter analyze --no-pub
+          ) 2>&1 | tee build/pr98-full-mac/FULL_MAC_ANALYSIS.log
+          set +e
+          (
+            cd apps/electrosim
             # Run entire source, topology, UI, visual widget suite on real Intel Mac.
             flutter test --no-pub --concurrency=1 --reporter expanded
           ) 2>&1 | tee build/pr98-full-mac/FULL_MAC_REGRESSIONS.log

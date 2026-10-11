@@ -52,7 +52,9 @@ jobs:
             sleep 1
           done
           "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=20000 --dump-dom http://127.0.0.1:8796/             > build/pneumatics-r6n/chromium-worker-dom.html             2> build/pneumatics-r6n/chromium-worker-stderr.txt
-          grep -F 'R6N_WEB_WORKER_PASS' build/pneumatics-r6n/chromium-worker-dom.html
+          grep -F '<output id="result">R6N_WEB_WORKER_PASS</output>' build/pneumatics-r6n/chromium-worker-dom.html
+          ! grep -F '<output id="result">R6N_PENDING</output>' build/pneumatics-r6n/chromium-worker-dom.html
+          ! grep -F '<output id="result">R6N_WEB_WORKER_FAIL:' build/pneumatics-r6n/chromium-worker-dom.html
           "$CHROME" --version | tee build/pneumatics-r6n/CHROMIUM_VERSION.txt
       - uses: actions/upload-artifact@v4
         if: always()

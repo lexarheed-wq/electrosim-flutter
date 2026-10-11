@@ -24,12 +24,12 @@ PneumaticDevice valve52(double energized) => PneumaticDevice(
   ports: <PneumaticPort>[
     for (final (String name, PneumaticPortRole role)
         in <(String, PneumaticPortRole)>[
-      ('P', PneumaticPortRole.supply),
-      ('A', PneumaticPortRole.work),
-      ('B', PneumaticPortRole.work),
-      ('R', PneumaticPortRole.exhaust),
-      ('S', PneumaticPortRole.exhaust),
-    ])
+          ('P', PneumaticPortRole.supply),
+          ('A', PneumaticPortRole.work),
+          ('B', PneumaticPortRole.work),
+          ('R', PneumaticPortRole.exhaust),
+          ('S', PneumaticPortRole.exhaust),
+        ])
       PneumaticPort(
         id: PneumaticPortId('v52.$name'),
         deviceId: 'v52',
@@ -103,12 +103,13 @@ PneumaticNetwork assembled({required double energized}) => PneumaticNetwork(
 );
 
 void main() {
-  const WorkshopClosedAirCompiler compiler =
-      WorkshopClosedAirCompiler(dischargeCoefficient: .8);
+  const WorkshopClosedAirCompiler compiler = WorkshopClosedAirCompiler(
+    dischargeCoefficient: .8,
+  );
 
   test('R6/I real hoses valve and moving piston share mass and clock', () {
-    final CoupledMovingCylinderAirNetwork solver =
-        compiler.compileWithMovingCylinder(assembled(energized: 1));
+    final CoupledMovingCylinderAirNetwork solver = compiler
+        .compileWithMovingCylinder(assembled(energized: 1));
     final CoupledCylinderNetworkSnapshot initial = solver.initialSnapshot;
     expect(initial.positionM, 0);
     expect(initial.timeS, 0);
@@ -157,8 +158,8 @@ void main() {
         ),
       ],
     );
-    final CoupledMovingCylinderAirNetwork solver =
-        compiler.compileWithMovingCylinder(physical);
+    final CoupledMovingCylinderAirNetwork solver = compiler
+        .compileWithMovingCylinder(physical);
     final CoupledCylinderNetworkSnapshot initial = solver.initialSnapshot;
     expect(solver.resultantForceN(initial), closeTo(482.55, .5));
     final CoupledCylinderNetworkSnapshot stopped = solver.advance(
@@ -190,8 +191,8 @@ void main() {
         cylinder(pressureA: 101325, pressureB: 701325, positionM: .04),
       ],
     );
-    final CoupledMovingCylinderAirNetwork solver =
-        compiler.compileWithMovingCylinder(physical);
+    final CoupledMovingCylinderAirNetwork solver = compiler
+        .compileWithMovingCylinder(physical);
     expect(solver.resultantForceN(solver.initialSnapshot), lessThan(0));
     final CoupledCylinderNetworkSnapshot later = solver.advance(
       solver.initialSnapshot,

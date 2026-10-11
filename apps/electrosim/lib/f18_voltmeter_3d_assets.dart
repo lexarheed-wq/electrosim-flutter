@@ -50,10 +50,11 @@ abstract final class F18Voltmeter3dAssets {
     try {
       newFront = await _decode(frontPath);
       newPalette = await _decode(palettePath);
-      if (newFront.width != 280 ||
-          newFront.height != 380 ||
-          newPalette.width != 280 ||
-          newPalette.height != 380) {
+      final bool original = newFront.width == 280 && newFront.height == 380;
+      final bool premium = newFront.width == 1120 && newFront.height == 1520;
+      if ((!original && !premium) ||
+          newPalette.width != newFront.width ||
+          newPalette.height != newFront.height) {
         throw const FormatException('Unexpected G5 voltmeter texture size');
       }
       _front = newFront;

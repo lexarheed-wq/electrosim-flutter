@@ -31,7 +31,14 @@ void main() {
           ),
         ),
       );
-      await Future<void>.delayed(const Duration(milliseconds: 80));
+      // Filesystem-backed view preferences load asynchronously on macOS CI.
+      // Wait for the requested representation, not a fixed wall-clock delay.
+      final deadline = Stopwatch()..start();
+      while (find.byType(F9CanvasVisualOverlay).evaluate().isNotEmpty &&
+          deadline.elapsed < const Duration(seconds: 3)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await tester.pump();
+      }
     });
     await tester.pumpAndSettle();
     expect(find.byType(F9CanvasVisualOverlay), findsNothing);

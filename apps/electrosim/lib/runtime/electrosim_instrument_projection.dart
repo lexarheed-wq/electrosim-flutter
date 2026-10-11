@@ -3,6 +3,7 @@ import 'package:electrosim_measurements/electrosim_measurements.dart';
 
 import 'electrosim_runtime_engine.dart';
 import 'f18_resistance_projection.dart';
+import 'f18_ammeter_fuse_safety.dart';
 import 'pv_series_burden_projection.dart';
 
 enum PhysicalInstrumentStatus {
@@ -41,6 +42,33 @@ final class ElectroSimInstrumentProjection {
   });
 
   final ElectroSimRuntimeEngine engine;
+
+  /// Read the physical shunt from the same solved topology as all loads.
+  /// A switched-off LCD does not disconnect the current input or its fuse.
+  double? dcSeriesCurrent(
+    ElectroSimRuntimeSnapshot snapshot,
+    InstrumentInstance meter,
+  ) {
+    if (snapshot.effectiveCircuit.mode != ElectricalMode.dc ||
+        meter.kind != InstrumentKind.ammeter ||
+        meter.fuseBlown ||
+        F18AmmeterFuseSafety.wiredCut(snapshot.circuit, meter) == null) {
+      return null;
+    }
+    final shunt = snapshot.effectiveCircuit.components
+        .where(
+          (c) =>
+              c.modelType == 'resistor' &&
+              c.id.value.startsWith('g5-amperemeter-burden-') &&
+              c.controlState['runtimeMeterId'] == meter.id.value,
+        )
+        .firstOrNull;
+    if (shunt == null) return null;
+    final measured = snapshot.measureCurrent(
+      branchId: 'component:${shunt.id.value}',
+    );
+    return measured.isValid ? measured.reading?.value : null;
+  }
 
   PhysicalInstrumentReading read({
     required ElectroSimRuntimeSnapshot snapshot,
@@ -294,7 +322,7 @@ final class ElectroSimInstrumentProjection {
       // Finite input impedance: solve a temporary shunt using the same MNA
       // solver as the original circuit, instead of reading an ideal voltage.
       final _ProjectionWiring wiring = _projectionWiring(
-        circuit,
+        dc ? snapshot.effectiveCircuit : circuit,
         resistanceOhm: instrument.inputImpedanceOhm,
         first: positive,
         second: common,
@@ -414,20 +442,35 @@ final class ElectroSimInstrumentProjection {
           'A and COM must connect to opposite ends of the opened series wire.',
         );
       }
-      // The original wire is opened in the temporary projection. A real
-      // ammeter burden element is inserted in series. A second solver is NOT
-      // introduced, and the authored circuit remains untouched.
-      final _ProjectionWiring wiring = _projectionWiring(
-        circuit,
-        resistanceOhm: instrument.burdenResistanceOhm,
-        first: original.fromTerminalId,
-        second: original.toTerminalId,
-        cutConnection: cut,
-      );
-      final ElectroSimRuntimeSnapshot loaded = engine.evaluate(wiring.circuit);
-      final MeasurementResult measured = dc
-          ? loaded.measureCurrent(branchId: wiring.branchId)
-          : loaded.measureAcCurrent(branchId: wiring.branchId);
+      final MeasurementResult measured;
+      if (dc) {
+        final current = dcSeriesCurrent(snapshot, instrument);
+        if (current == null || !current.isFinite) {
+          return error(
+            PhysicalInstrumentStatus.unavailable,
+            'The series meter has no valid shunt in the common solved topology.',
+          );
+        }
+        measured = MeasurementResult.valid(
+          kind: MeasurementKind.currentDc,
+          value: amp == original.fromTerminalId ? current : -current,
+          unit: ElectricalUnit.ampere,
+          evidenceIds: ['wire:${cut.value}', 'meter:${instrument.id.value}'],
+        );
+      } else {
+        // AC keeps its established projection until phase-specific burden
+        // parity is qualified separately.
+        final wiring = _projectionWiring(
+          circuit,
+          resistanceOhm: instrument.burdenResistanceOhm,
+          first: original.fromTerminalId,
+          second: original.toTerminalId,
+          cutConnection: cut,
+        );
+        measured = engine
+            .evaluate(wiring.circuit)
+            .measureAcCurrent(branchId: wiring.branchId);
+      }
       if (!measured.isValid || measured.reading == null) {
         return error(
           PhysicalInstrumentStatus.unavailable,

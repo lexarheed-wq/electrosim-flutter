@@ -1,6 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-
 /// The fuse is persistent state on the physical ammeter, never an edited
 /// ordinary wire. Its electrical open state is projected only for simulation.
 /// A user must explicitly replace a blown fuse; power cycling never resets it.
@@ -18,13 +17,18 @@ abstract final class F18AmmeterFuseSafety {
         .firstOrNull;
     if (cut == null) return null;
     final TerminalId? amp = circuit.probes
-        .where((p) =>
-            p.instrumentId == instrument.id && p.port == InstrumentPort.amp)
+        .where(
+          (p) =>
+              p.instrumentId == instrument.id && p.port == InstrumentPort.amp,
+        )
         .firstOrNull
         ?.terminalId;
     final TerminalId? common = circuit.probes
-        .where((p) =>
-            p.instrumentId == instrument.id && p.port == InstrumentPort.common)
+        .where(
+          (p) =>
+              p.instrumentId == instrument.id &&
+              p.port == InstrumentPort.common,
+        )
         .firstOrNull
         ?.terminalId;
     final bool bridged =
@@ -42,7 +46,6 @@ abstract final class F18AmmeterFuseSafety {
   }) =>
       instrument.kind == InstrumentKind.ammeter &&
       !instrument.fuseBlown &&
-      instrument.poweredOn &&
       solverDetectedOvercurrent &&
       wiredCut(circuit, instrument) != null;
 
@@ -109,9 +112,14 @@ abstract final class F18AmmeterFuseSafety {
       circuit.sources.isEmpty &&
       // Motors can regenerate and reactive elements may store energy.
       // Prefer a conservative explicit allow-list to fragile name guessing.
-      circuit.components.every((component) =>
-          const <String>{'resistor', 'lamp', 'switch', 'switch_spst'}
-              .contains(component.modelType.toLowerCase()));
+      circuit.components.every(
+        (component) => const <String>{
+          'resistor',
+          'lamp',
+          'switch',
+          'switch_spst',
+        }.contains(component.modelType.toLowerCase()),
+      );
 
   static CircuitState replaceSafely({
     required CircuitState circuit,
@@ -240,15 +248,18 @@ abstract final class F18AmmeterFuseSafety {
       final a = TerminalId('$id-a');
       final b = TerminalId('$id-b');
       final amp = entry.meter;
-      newComponents.add(ComponentInstance(
-        id: ComponentId(id),
-        modelType: 'resistor',
-        terminals: [
-          Terminal(id: a, name: 'A'),
-          Terminal(id: b, name: 'COM'),
-        ],
-        parameters: {'resistanceOhm': amp.burdenResistanceOhm},
-      ));
+      newComponents.add(
+        ComponentInstance(
+          id: ComponentId(id),
+          modelType: 'resistor',
+          terminals: [
+            Terminal(id: a, name: 'A'),
+            Terminal(id: b, name: 'COM'),
+          ],
+          parameters: {'resistanceOhm': amp.burdenResistanceOhm},
+          controlState: {'runtimeMeterId': amp.id.value},
+        ),
+      );
       newConnections.addAll([
         Connection(
           id: ConnectionId('$id-wire-a'),

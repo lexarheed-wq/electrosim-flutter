@@ -2133,7 +2133,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         circuit: _circuit,
         instrument: item,
         solverDetectedOvercurrent:
-            reading.status == PhysicalInstrumentStatus.blownFuse,
+            reading.status == PhysicalInstrumentStatus.blownFuse ||
+            (projection.dcSeriesCurrent(snapshot, item)?.abs() ?? 0) >
+                item.fuseRatingA,
       )) {
         _scheduleAmmeterFuseTrip(item.id);
       }

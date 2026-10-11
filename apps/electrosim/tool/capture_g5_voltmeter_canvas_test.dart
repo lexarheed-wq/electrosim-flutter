@@ -26,6 +26,7 @@ void main() {
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
 
+    print('G5PROOF: fixture start');
     final base = buildRegressionFixtureCircuit();
     final meter = InstrumentInstance(
       id: InstrumentId('meter-v'),
@@ -60,7 +61,9 @@ void main() {
     );
     const engine = ElectroSimRuntimeEngine();
     const projection = ElectroSimInstrumentProjection();
+    print('G5PROOF: solver start');
     final snapshot = engine.evaluate(circuit);
+    print('G5PROOF: solver done');
     final read = projection.read(snapshot: snapshot, instrument: meter);
     expect(snapshot.solved, isTrue);
     expect(read.status, PhysicalInstrumentStatus.valid);
@@ -90,6 +93,7 @@ void main() {
     addTearDown(viewport.dispose);
     final captureKey = GlobalKey();
 
+    print('G5PROOF: pumpWidget start');
     await t.pumpWidget(MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -147,7 +151,9 @@ void main() {
         ),
       ),
     ));
+    print('G5PROOF: pumpWidget done');
     await t.pump(const Duration(milliseconds: 16));
+    print('G5PROOF: extra pump done');
     expect(t.takeException(), isNull);
     expect(find.byType(SimulatorCanvas), findsOneWidget);
     // The actual overlay is validated by inspecting all registered painters.
@@ -162,16 +168,21 @@ void main() {
     await out.create(recursive: true);
     final boundary =
         captureKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    print('G5PROOF: capture runAsync start');
     await t.runAsync(() async {
+      print('G5PROOF: toImage start');
       final image = await boundary.toImage(pixelRatio: 1.3);
+      print('G5PROOF: toImage done');
       try {
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        print('G5PROOF: image bytes done');
         await File('${out.path}/renderer-24v-connected.png')
             .writeAsBytes(bytes!.buffer.asUint8List());
       } finally {
         image.dispose();
       }
     });
+    print('G5PROOF: screenshot written');
     await File('${out.path}/renderer-fixture.txt').writeAsString(
       'Real Flutter SimulatorCanvas + F18PhysicalInstrumentReadouts. '
       'Three actual power wires; two actual probes to lamp-in and lamp-out. '
@@ -179,5 +190,5 @@ void main() {
       'Not a screenshot of the full workspace chrome.\n',
     );
     await t.pumpWidget(const SizedBox());
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  }, timeout: const Timeout(Duration(seconds: 40)));
 }

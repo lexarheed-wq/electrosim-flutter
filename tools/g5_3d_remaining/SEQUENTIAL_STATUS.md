@@ -66,3 +66,11 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - Gammes de courant explicites dans l'interface : AUTO, 200 mA, 2,0 A, 10 A. Les changements de calibre ne changent pas la résistance interne du solveur ; précision matérielle des calibres à qualifier.
 - Point de vigilance non résolu : le signal `blownFuse` du résultat de simulation peut indiquer un dépassement sans que l'état `InstrumentInstance.fuseBlown` soit encore verrouillé de façon persistante. Ne pas qualifier un fusible déclenché comme complet sans ce verrouillage et la coupure réelle du courant.
 - Aucune fusion, aucun test Mac/Chromium ni campagne GitHub générale, aucune image de qualification prétendue. Composant 03 **non commencé**.
+
+### Audit de reprise — correction visuelle 02, avant rendu Cycles
+- Corrections du script Blender : COM et A sous leurs douilles, trappe porteuse de l'inscription **FUSE** sans valeur figée ; la valeur réelle `InstrumentInstance.fuseRatingA` est dessinée dynamiquement par le painter Flutter. Les nervures du grip n'empiètent plus sur le sélecteur.
+- Les quatre gammes AUTO / 200 mA / 2 A / 10 A affichent maintenant leurs valeurs réelles, pas des indices génériques (`RANGE 1`).
+- La palette du composant 02 réutilise la prévisualisation 3/4 agrandie du voltmètre lorsque ses propres images Cycles sont chargées ; ancienne clé de tooltip voltmètre conservée pour ne pas casser ses tests.
+- Outil local de rendu isolé `render_one.py` : contrôle **intégral** des chunks/CRC du PNG et des dimensions 1120×1520, identité et empreinte SHA-256 ; ne produit ni ZIP ni faux rendu si Blender absent.
+- 5/5 tests structurels Python exécutés localement sur la recette de géométrie de l'ampèremètre et PASS ; le contrôle de CRC a été exécuté localement sur un PNG Flutter antérieur authentique et PASS. **Aucun nouveau PNG ampèremètre** dans cette étape.
+- Limite maintenue : aucun test Dart/Flutter ou Blender Cycles courant exécuté ici faute d'outillage local. Statut de l'ampèremètre = **source en progression, visuel et fusible non qualifiés**. Prochain composant (03) non ouvert.

@@ -7,11 +7,13 @@ class F18DesignCenterPage extends StatelessWidget {
     required this.onHome,
     required this.onWiring,
     required this.onSchemaLibrary,
+    this.onPneumatics,
   });
 
   final VoidCallback onHome;
   final VoidCallback onWiring;
   final VoidCallback onSchemaLibrary;
+  final VoidCallback? onPneumatics;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,17 @@ class F18DesignCenterPage extends StatelessWidget {
           actionLabel: 'Ouvrir l’atelier',
           onTap: onWiring,
         ),
+        if (onPneumatics != null)
+          _F18CenterAction(
+            key: const Key('design-pneumatics-experimental'),
+            icon: Icons.air,
+            title: 'Atelier pneumatique expérimental',
+            description:
+                'Deux vues d’un même réseau : appareils, tuyaux et schéma. '
+                'La simulation n’est pas encore raccordée à cet éditeur.',
+            actionLabel: 'Ouvrir l’atelier',
+            onTap: onPneumatics!,
+          ),
         _F18CenterAction(
           key: const Key('design-schema-library'),
           icon: Icons.library_books_outlined,

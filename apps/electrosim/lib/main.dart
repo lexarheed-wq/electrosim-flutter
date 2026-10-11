@@ -11,6 +11,8 @@ import 'f18_shell_navigation.dart';
 import 'f18_v1_navigation_flow.dart';
 import 'reference_components/disjoncteur_3d.dart';
 import 'f9_ui_context.dart';
+import 'pneumatics/pneumatic_workshop_page.dart';
+import 'runtime/pneumatic_feature_gate.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -151,6 +153,17 @@ class _F9HomePageState extends State<F9HomePage> {
             persistenceController: persistenceController,
             parentRouteName: 'design-center',
           ),
+          onPneumatics: const PneumaticFeatureGate().enabled
+              ? () => Navigator.of(routeContext).push(
+                  MaterialPageRoute<void>(
+                    settings: const RouteSettings(
+                      name: 'pneumatic-experimental',
+                    ),
+                    builder: (BuildContext airContext) =>
+                        const PneumaticWorkshopPage(),
+                  ),
+                )
+              : null,
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'design-schema-library'),

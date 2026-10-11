@@ -1,0 +1,83 @@
+name: PNEU R4 Chromium Component Evidence
+
+on:
+  pull_request:
+    paths:
+      - 'apps/electrosim/lib/pneumatics/**'
+      - '.github/workflows/pneumatics-r4-chromium-evidence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-browser-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+
+      - name: Build real R4 Flutter Web component gallery
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter create . --platforms=web --project-name=electrosim
+          flutter pub get
+          flutter build web --release \
+            --target=lib/pneumatics/pneumatic_chromium_proof_main.dart \
+            --dart-define=ELECTROSIM_PNEUMATICS_EXPERIMENTAL=true
+
+      - name: Capture real Chromium viewport — plate and schematic
+        working-directory: apps/electrosim
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$CHROME" || { echo 'ERROR: Chromium is unavailable on runner'; exit 1; }
+          mkdir -p ../../build/pneumatics-r4-chromium
+          python3 -m http.server 8765 --directory build/web >/tmp/electrosim-pneumatic-proof-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:8765/ >/dev/null
+          for VIEW in physical schematic; do
+            "$CHROME" \
+              --headless=new --no-sandbox --disable-dev-shm-usage \
+              --enable-webgl --use-gl=angle --use-angle=swiftshader \
+              --enable-unsafe-swiftshader --hide-scrollbars \
+              --window-size=1600,960 --force-device-scale-factor=1 \
+              --virtual-time-budget=16000 \
+              --screenshot="$PWD/../../build/pneumatics-r4-chromium/$VIEW.png" \
+              "http://127.0.0.1:8765/?view=$([ "$VIEW" = schematic ] && echo schematic || echo physical)" \
+              >/tmp/electrosim-chromium-"$VIEW".log 2>&1
+            test -s "../../build/pneumatics-r4-chromium/$VIEW.png"
+          done
+          python3 - <<'PY'
+          import pathlib, struct
+          root = pathlib.Path('../../build/pneumatics-r4-chromium')
+          for p in (root/'physical.png', root/'schematic.png'):
+              data = p.read_bytes()
+              assert data[:8] == b'\x89PNG\r\n\x1a\n', f'Not PNG: {p}'
+              w, h = struct.unpack('>II', data[16:24])
+              assert w >= 1200 and h >= 700 and len(data) >= 10000, f'Unexpected capture: {p} {w}x{h} {len(data)} bytes'
+              print(f'CHROMIUM_CAPTURE {p.name} {w}x{h} {len(data)} bytes')
+          PY
+          git rev-parse HEAD > ../../build/pneumatics-r4-chromium/SOURCE_SHA.txt
+          "$CHROME" --version > ../../build/pneumatics-r4-chromium/CHROMIUM_VERSION.txt
+          (cd ../../build/pneumatics-r4-chromium && sha256sum physical.png schematic.png > SHA256SUMS.txt)
+
+      - name: Upload unaltered Chromium screenshots and source trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pneumatic-r4-chromium-components
+          path: build/pneumatics-r4-chromium/
+          if-no-files-found: warn
+          retention-days: 14

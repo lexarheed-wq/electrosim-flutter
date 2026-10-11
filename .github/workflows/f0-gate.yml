@@ -6,7 +6,12 @@ on:
     branches:
       - main
       - migration-c15-full-parity
+      - feat/g5-industrial-geometry-20261009
     paths:
+      - 'packages/electrosim_pneumatic_domain/**'
+      - 'packages/electrosim_pneumatic_solver/**'
+      - 'packages/electrosim_multiphysics/**'
+      - 'packages/electrosim_electropneumatic/**'
       - 'apps/electrosim/**'
       - 'packages/electrosim_scenarios/**'
       - 'tools/**'
@@ -18,6 +23,10 @@ on:
       - '.github/workflows/f0-gate.yml'
   pull_request:
     paths:
+      - 'packages/electrosim_pneumatic_domain/**'
+      - 'packages/electrosim_pneumatic_solver/**'
+      - 'packages/electrosim_multiphysics/**'
+      - 'packages/electrosim_electropneumatic/**'
       - 'apps/electrosim/**'
       - 'packages/electrosim_scenarios/**'
       - 'tools/**'

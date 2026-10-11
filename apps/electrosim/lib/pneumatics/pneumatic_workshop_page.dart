@@ -850,6 +850,14 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     '${_airSnapshot!.chambers[selected.id]!.pressureAbsPa.toStringAsFixed(0)} Pa',
                                     key: const Key('air-measured-pressure'),
                                   ),
+                                if (_linkedSnapshot != null)
+                                  Text(
+                                    'Y1 : ${_linkedSnapshot!.electrical!.valveReading.voltageV.toStringAsFixed(2)} V ; '
+                                    'K1 : ${_linkedSnapshot!.electrical!.relay.energized ? 'enclenché' : 'retombé'} ; '
+                                    'B1 : ${_linkedSnapshot!.endStopActuated ? 'fin de course' : 'libre'}',
+                                    key: const Key('air-live-dc-feedback'),
+                                    maxLines: 3,
+                                  ),
                                 const SizedBox(height: 10),
                                 Text(
                                   selected.ports

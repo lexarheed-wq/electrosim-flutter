@@ -57,14 +57,15 @@ final class WorkshopClosedAirCompiler {
     final Map<PneumaticPortId, String> chamberByPort =
         <PneumaticPortId, String>{};
     final List<FixedAirChamber> chambers = <FixedAirChamber>[];
-    final List<FixedPressureAirNode> boundaryNodes =
-        <FixedPressureAirNode>[];
+    final List<FixedPressureAirNode> boundaryNodes = <FixedPressureAirNode>[];
     final Map<String, PneumaticDeviceKind> kinds =
         <String, PneumaticDeviceKind>{};
     for (final PneumaticDevice device in network.devices) {
-      final bool isFitting = device.kind == PneumaticDeviceKind.tee ||
+      final bool isFitting =
+          device.kind == PneumaticDeviceKind.tee ||
           device.kind == PneumaticDeviceKind.manifold;
-      final bool isExternal = device.kind == PneumaticDeviceKind.idealSource ||
+      final bool isExternal =
+          device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
       if (!isFitting && (!withIdealBoundaries || !isExternal)) {
         throw PneumaticPhysicsException(

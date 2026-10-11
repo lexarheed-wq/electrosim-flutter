@@ -1,0 +1,28 @@
+name: PNEU R6L Verified Git Tree Lineage
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6l-resolved-g5-r6j-20261011
+      - feat/pneumatics-r6l-physical-piston-widget-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  verified-tree:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Record exact immutable tree for conflict-free branch lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "PNEU_R6L_HEAD_SHA=$(git rev-parse HEAD)"
+          echo "PNEU_R6L_GIT_TREE_SHA=$(git rev-parse 'HEAD^{tree}')"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain)"
+          git diff --check

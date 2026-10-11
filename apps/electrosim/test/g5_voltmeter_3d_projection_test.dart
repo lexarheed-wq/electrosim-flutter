@@ -56,7 +56,8 @@ void main() {
   testWidgets('bundled Cycles textures load and only enable the voltmeter', (
     WidgetTester tester,
   ) async {
-    final bool loaded = await F18Voltmeter3dAssets.preload();
+    final bool loaded =
+        await tester.runAsync(() => F18Voltmeter3dAssets.preload()) ?? false;
     expect(loaded, isTrue);
     expect(F18Voltmeter3dAssets.front, isNotNull);
     expect(F18Voltmeter3dAssets.palette, isNotNull);

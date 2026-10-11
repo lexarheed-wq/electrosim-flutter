@@ -43,10 +43,22 @@ final class WorkshopClosedAirCompiler {
   IsothermalAirNetwork compileWithStaticValve52(PneumaticNetwork network) =>
       _compile(network, withIdealBoundaries: true, withStaticValve52: true);
 
+  /// R6/K: opt-in calibrated 3/2 and 5/2 discrete direction valves.
+  /// The 3/2 connects P->A when energized and A->R at rest, with no
+  /// invented pressure source or common exhaust on a closed port.
+  IsothermalAirNetwork compileWithStaticValves(PneumaticNetwork network) =>
+      _compile(
+        network,
+        withIdealBoundaries: true,
+        withStaticValve52: true,
+        withStaticValve32: true,
+      );
+
   IsothermalAirNetwork _compile(
     PneumaticNetwork network, {
     required bool withIdealBoundaries,
     bool withStaticValve52 = false,
+    bool withStaticValve32 = false,
   }) {
     requirePositiveFinite(dischargeCoefficient, 'dischargeCoefficient');
     if (dischargeCoefficient > 1) {
@@ -78,7 +90,12 @@ final class WorkshopClosedAirCompiler {
           device.kind == PneumaticDeviceKind.silencer;
       final bool isValve =
           withStaticValve52 && device.kind == PneumaticDeviceKind.valve52;
-      if (!isFitting && (!withIdealBoundaries || !isExternal) && !isValve) {
+      final bool isValve32 =
+          withStaticValve32 && device.kind == PneumaticDeviceKind.valve32;
+      if (!isFitting &&
+          (!withIdealBoundaries || !isExternal) &&
+          !isValve &&
+          !isValve32) {
         throw PneumaticPhysicsException(
           'unsupported_device',
           'The physical workshop compiler has no accepted dynamic model for '
@@ -86,7 +103,7 @@ final class WorkshopClosedAirCompiler {
         );
       }
       kinds[device.id] = device.kind;
-      if (isValve) {
+      if (isValve || isValve32) {
         final double? deadVolume = device.parametersSi['portDeadVolumeM3'];
         final double? initialPressure = device.parametersSi['pressureAbsPa'];
         final double? effectiveArea =
@@ -100,7 +117,7 @@ final class WorkshopClosedAirCompiler {
             spoolPosition == null) {
           throw PneumaticPhysicsException(
             'missing_valve_calibration',
-            'A 5/2 valve needs explicit dead volume, absolute pressure, '
+            'A directional valve needs explicit dead volume, absolute pressure, '
                 'effective area, discharge coefficient, and spool state: '
                 '${device.id}.',
           );
@@ -137,9 +154,9 @@ final class WorkshopClosedAirCompiler {
             <String, PneumaticPortRole>{
               'P': PneumaticPortRole.supply,
               'A': PneumaticPortRole.work,
-              'B': PneumaticPortRole.work,
+              if (isValve) 'B': PneumaticPortRole.work,
               'R': PneumaticPortRole.exhaust,
-              'S': PneumaticPortRole.exhaust,
+              if (isValve) 'S': PneumaticPortRole.exhaust,
             };
         if (byName.length != roles.length ||
             roles.entries.any(
@@ -147,7 +164,8 @@ final class WorkshopClosedAirCompiler {
             )) {
           throw PneumaticPhysicsException(
             'invalid_valve_ports',
-            'Valve ${device.id} must expose ISO P/A/B/R/S and correct roles.',
+            'Valve ${device.id} must expose exact ISO P/A/R'
+            ' (plus B/S for 5/2) with correct roles.',
           );
         }
         for (final MapEntry<String, PneumaticPort> entry in byName.entries) {
@@ -165,9 +183,13 @@ final class WorkshopClosedAirCompiler {
           effectiveAreaM2: effectiveArea,
           dischargeCoefficient: valveCd,
         );
-        final List<(String, String)> routes = spoolPosition == 1
-            ? <(String, String)>[('P', 'A'), ('B', 'S')]
-            : <(String, String)>[('P', 'B'), ('A', 'R')];
+        final List<(String, String)> routes = isValve
+            ? (spoolPosition == 1
+                ? <(String, String)>[('P', 'A'), ('B', 'S')]
+                : <(String, String)>[('P', 'B'), ('A', 'R')])
+            : (spoolPosition == 1
+                ? <(String, String)>[('P', 'A')]
+                : <(String, String)>[('A', 'R')]);
         for (final (String first, String second) in routes) {
           valvePassages.add(
             AirPassage(

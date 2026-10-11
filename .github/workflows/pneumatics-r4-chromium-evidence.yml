@@ -52,7 +52,8 @@ jobs:
             for ATTEMPT in 1 2 3; do
               OUT="$PWD/../../build/pneumatics-r4-chromium/$VIEW.png"
               BUDGET=$((18000 + ATTEMPT * 8000))
-              "$CHROME" \
+              rm -f "$OUT"
+              if ! "$CHROME" \
                 --headless=new --no-sandbox --disable-dev-shm-usage \
                 --enable-webgl --use-gl=angle --use-angle=swiftshader \
                 --enable-unsafe-swiftshader --hide-scrollbars \
@@ -60,7 +61,10 @@ jobs:
                 --virtual-time-budget="$BUDGET" \
                 --screenshot="$OUT" \
                 "http://127.0.0.1:8765/?view=$VIEW" \
-                >"../../build/pneumatics-r4-chromium/$VIEW-attempt-$ATTEMPT.log" 2>&1 || true
+                >"../../build/pneumatics-r4-chromium/$VIEW-attempt-$ATTEMPT.log" 2>&1; then
+                echo "REJECT nonzero Chromium exit: $VIEW attempt $ATTEMPT" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
+                continue
+              fi
               if python3 - "$OUT" <<'PYCHECK'
           import pathlib, struct, sys
           path = pathlib.Path(sys.argv[1])

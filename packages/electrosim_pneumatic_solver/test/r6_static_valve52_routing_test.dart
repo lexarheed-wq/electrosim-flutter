@@ -42,12 +42,12 @@ PneumaticDevice valve(
   ports: <PneumaticPort>[
     for (final (String name, PneumaticPortRole role)
         in <(String, PneumaticPortRole)>[
-      ('P', PneumaticPortRole.supply),
-      ('A', PneumaticPortRole.work),
-      ('B', PneumaticPortRole.work),
-      ('R', PneumaticPortRole.exhaust),
-      ('S', PneumaticPortRole.exhaust),
-    ])
+          ('P', PneumaticPortRole.supply),
+          ('A', PneumaticPortRole.work),
+          ('B', PneumaticPortRole.work),
+          ('R', PneumaticPortRole.exhaust),
+          ('S', PneumaticPortRole.exhaust),
+        ])
       PneumaticPort(
         id: PneumaticPortId('v52.${badPort && name == 'S' ? 'X' : name}'),
         deviceId: 'v52',
@@ -155,9 +155,13 @@ void main() {
   test('R6/G uncalibrated valve and invalid ISO ports fail closed', () {
     expect(
       () => compiler.compileWithIdealBoundaries(circuit(energized: 1)),
-      throwsA(isA<PneumaticPhysicsException>().having(
-        (e) => e.code, 'code', 'unsupported_device',
-      )),
+      throwsA(
+        isA<PneumaticPhysicsException>().having(
+          (e) => e.code,
+          'code',
+          'unsupported_device',
+        ),
+      ),
     );
     for (final PneumaticNetwork invalid in <PneumaticNetwork>[
       circuit(energized: 1, area: null),

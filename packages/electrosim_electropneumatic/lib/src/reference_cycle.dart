@@ -219,10 +219,10 @@ final class PneumaticReferenceCycle {
         ),
         cylinder: cylinder,
         routing: Valve52CylinderRouting(
-          supplyA: boundary('P/A', pressureAbsPa),
-          supplyB: boundary('P/B', pressureAbsPa),
-          exhaustA: boundary('A/R', 101325),
-          exhaustB: boundary('B/S', 101325),
+          supplyA: boundary('P.to.A', pressureAbsPa),
+          supplyB: boundary('P.to.B', pressureAbsPa),
+          exhaustA: boundary('A.to.R', 101325),
+          exhaustB: boundary('B.to.S', 101325),
         ),
         endSensor: PositionEndContact(
           strokeM: strokeM,

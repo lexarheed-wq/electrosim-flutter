@@ -28,8 +28,8 @@ abstract final class F18AmmeterControls {
 
   static String display(InstrumentInstance i, String text,
       double? measured, bool valid) {
-    if (!i.poweredOn) return 'OFF';
     if (i.fuseBlown) return 'FUSE';
+    if (!i.poweredOn) return 'OFF';
     if (held(i)) return (i.settings[heldTextKey] as String?) ?? 'ERR';
     if (!valid || measured == null || !measured.isFinite) return text;
     final index = rangeIndex(i);

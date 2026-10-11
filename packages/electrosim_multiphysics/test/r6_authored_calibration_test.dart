@@ -101,18 +101,30 @@ void main() {
         throwsA(isA<MultiphysicsContractException>()),
       );
     }
+    for (final Map<String, double> invalid in <Map<String, double>>[
+      <String, double>{'valveCd': 1.2},
+      <String, double>{'energized': .5},
+      <String, double>{'portDeadVolumeM3': -1},
+      <String, double>{'volumeM3': .002},
+    ]) {
+      expect(
+        () => state.calibrate(physicalId: 'valve', parametersSi: invalid),
+        throwsA(isA<MultiphysicsContractException>()),
+      );
+    }
+    final PneumaticWorkshopState accepted = state.calibrate(
+      physicalId: 'valve',
+      parametersSi: <String, double>{
+        'pressureAbsPa': 101325,
+        'portDeadVolumeM3': .0002,
+        'valveEffectiveAreaM2': .000001,
+        'valveCd': .8,
+        'energized': 1,
+      },
+    );
     expect(
-      () => state.calibrate(
-        physicalId: 'valve',
-        parametersSi: <String, double>{'pressureAbsPa': 101325},
-      ),
-      throwsA(
-        isA<MultiphysicsContractException>().having(
-          (e) => e.code,
-          'code',
-          'unsupported_calibration',
-        ),
-      ),
+      accepted.project.pneumaticNetwork.devices[1].parametersSi['energized'],
+      1,
     );
     expect(
       () => state.calibrate(

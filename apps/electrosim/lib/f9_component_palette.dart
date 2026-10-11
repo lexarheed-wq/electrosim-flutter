@@ -2256,7 +2256,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           // catalog and the dedicated measuring-instruments category.
           if (q.isEmpty &&
               item.searchOnlyModes.contains(widget.mode) &&
-              item.keyName != 'instrument-voltmeter') {
+              item.keyName != 'instrument-voltmeter' &&
+              (item.keyName != 'instrument-ammeter' ||
+                  !F18Ammeter3dAssets.ready)) {
             if (item.kind != F9PaletteElementKind.instrument ||
                 (_category == 'Tous' && !_expanded)) {
               return false;
@@ -2451,13 +2453,17 @@ class _PaletteDraggableTile extends StatelessWidget {
                 // Physical housings need enough pixels to show their moulding.
                 width:
                     definition.modelType == 'rcd_2p_ac1' ||
-                        definition.keyName == 'instrument-voltmeter' ||
+                        (definition.keyName == 'instrument-voltmeter' ||
+                         (definition.keyName == 'instrument-ammeter' &&
+                          F18Ammeter3dAssets.ready)) ||
                         F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 72
                     : 48,
                 height: definition.modelType == 'rcd_2p_ac1'
                     ? 108
                     : definition.keyName == 'instrument-voltmeter' ||
+                          (definition.keyName == 'instrument-ammeter' &&
+                           F18Ammeter3dAssets.ready) ||
                           F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,

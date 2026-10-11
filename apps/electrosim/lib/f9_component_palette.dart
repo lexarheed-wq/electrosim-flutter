@@ -2464,11 +2464,26 @@ class _PaletteDraggableTile extends StatelessWidget {
                     ? Tooltip(
                         key: const Key('g5-voltmeter-3d-detail-preview'),
                         waitDuration: const Duration(milliseconds: 450),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF182438),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF526477)),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x44000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10,
+                        ),
                         richMessage: WidgetSpan(
                           alignment: PlaceholderAlignment.middle,
                           child: SizedBox(
-                            width: 210,
-                            height: 292,
+                            width: 236,
+                            height: 308,
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[

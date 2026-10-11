@@ -181,3 +181,52 @@ jobs:
           path: build/pneumatics-r6-mac/
           if-no-files-found: warn
           retention-days: 30
+
+  pneumatic-r6-rendered-flutter-scale:
+    name: pneumatic-r6-rendered-flutter-scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Build actual Flutter widget tree at 30 100 200 400
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-rendered
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            flutter --version
+            uname -a
+          } | tee build/pneumatics-r6-rendered/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format test/r6_pneumatic_render_scale_test.dart
+            git diff -- test/r6_pneumatic_render_scale_test.dart | tee ../../build/pneumatics-r6-rendered/FORMAT_PATCH.diff
+            git diff --exit-code -- test/r6_pneumatic_render_scale_test.dart
+            flutter test --no-pub --concurrency=1 test/r6_pneumatic_render_scale_test.dart --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6-rendered/REAL_WIDGETS.log
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('build/pneumatics-r6-rendered/REAL_WIDGETS.log').read_text()
+          for n in (30,100,200,400):
+              assert f'R6 Flutter constructs {n} real pneumatic tiles in both views' in s
+              assert f'"deviceCount":{n}' in s, f'Missing real widget count {n}'
+          assert 'All tests passed!' in s
+          print('R6_REAL_30_100_200_400_FLUTTER_WIDGETS_PASS')
+          PY
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-real-widget-scale-${{ github.sha }}
+          path: build/pneumatics-r6-rendered/
+          retention-days: 30
+          if-no-files-found: warn

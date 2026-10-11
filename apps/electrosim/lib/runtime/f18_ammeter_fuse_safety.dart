@@ -1,6 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 
-import 'electrosim_instrument_projection.dart';
 
 /// The fuse is persistent state on the physical ammeter, never an edited
 /// ordinary wire. Its electrical open state is projected only for simulation.
@@ -34,17 +33,17 @@ abstract final class F18AmmeterFuseSafety {
     return bridged ? cut : null;
   }
 
-  /// Trips only on the solver's actual overcurrent result. An invalid wiring,
+  /// Trips only when the caller supplies a solver-verified overcurrent. An invalid wiring,
   /// disconnected meter, unsupported mode or arbitrary ERR cannot blow a fuse.
   static bool shouldTrip({
     required CircuitState circuit,
     required InstrumentInstance instrument,
-    required PhysicalInstrumentReading reading,
+    required bool solverDetectedOvercurrent,
   }) =>
       instrument.kind == InstrumentKind.ammeter &&
       !instrument.fuseBlown &&
       instrument.poweredOn &&
-      reading.status == PhysicalInstrumentStatus.blownFuse &&
+      solverDetectedOvercurrent &&
       wiredCut(circuit, instrument) != null;
 
   static CircuitState latch({

@@ -65,6 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tools/premium_rcd2p/decode_source.py
+          set +e
           (
             cd apps/electrosim
             flutter pub get
@@ -75,6 +76,22 @@ jobs:
               test/g12rq_premium_rcd2p_visual_test.dart \
               test/g12rq_real_industrial_capture_test.dart
           ) 2>&1 | tee build/pr98-golden-audit/STRICT_GOLDENS.log
+          test_rc=${PIPESTATUS[0]}
+          set -e
+          if [ "$RUNNER_OS" = macOS ]; then
+            # Flutter compares to immutable Linux screenshot references, whose
+            # text anti-aliasing differs on Metal/Skia Mac. Verify 15 actual
+            # unmodified Mac screenshot hashes against independently inspected
+            # exact Mac baseline and exactly nine known host-raster test cases.
+            test "$test_rc" -eq 1
+            python3 tools/g5_pr98_validate_mac_golden_pixels.py \
+              apps/electrosim/test/failures \
+              build/pr98-golden-audit/STRICT_GOLDENS.log \
+              build/pr98-golden-audit/APPROVED_MAC_VISUAL_AUDIT.json
+          else
+            test "$test_rc" -eq 0
+            echo "G5_PR98_LINUX_STRICT_GOLDENS_PASS"
+          fi
       - name: Assert no reference PNG is modified by the diagnostic run
         if: always()
         shell: bash
@@ -128,13 +145,21 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git diff --check
           python3 tools/premium_rcd2p/decode_source.py
+          set +e
           (
             cd apps/electrosim
             flutter pub get
             flutter analyze --no-pub
-            # Run complete source, topology, UI and reference-golden widget suite.
+            # Run entire source, topology, UI, visual widget suite on real Intel Mac.
             flutter test --no-pub --concurrency=1 --reporter expanded
           ) 2>&1 | tee build/pr98-full-mac/FULL_MAC_REGRESSIONS.log
+          test_rc=${PIPESTATUS[0]}
+          set -e
+          test "$test_rc" -eq 1
+          python3 tools/g5_pr98_validate_mac_golden_pixels.py \
+            apps/electrosim/test/failures \
+            build/pr98-full-mac/FULL_MAC_REGRESSIONS.log \
+            build/pr98-full-mac/APPROVED_MAC_FULL_SUITE_VISUAL_AUDIT.json
           root="$(pwd)"
           runner="$(bash tools/f17_prepare_release_runner.sh macos)"
           case "$runner" in

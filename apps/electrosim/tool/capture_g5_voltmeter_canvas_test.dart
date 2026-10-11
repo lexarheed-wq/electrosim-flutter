@@ -165,7 +165,7 @@ void main() {
         p.circuit?.probes.length == 2 &&
         p.voltmeter3dIds.contains('meter-v')), isTrue);
     final out = Directory('build/g5-voltmeter-real-flutter-proof');
-    await out.create(recursive: true);
+    out.createSync(recursive: true);
     final boundary =
         captureKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     print('G5PROOF: capture runAsync start');
@@ -183,7 +183,7 @@ void main() {
       }
     });
     print('G5PROOF: screenshot written');
-    await File('${out.path}/renderer-fixture.txt').writeAsString(
+    File('${out.path}/renderer-fixture.txt').writeAsStringSync(
       'Real Flutter SimulatorCanvas + F18PhysicalInstrumentReadouts. '
       'Three actual power wires; two actual probes to lamp-in and lamp-out. '
       'Runtime solved voltage: ${read.result!.reading!.value} V. '

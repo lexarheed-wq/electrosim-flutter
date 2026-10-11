@@ -1,7 +1,8 @@
 import 'r6n_network_job.dart';
 import 'r6n_worker_stub.dart'
     if (dart.library.io) 'r6n_worker_native.dart'
-    if (dart.library.html) 'r6n_worker_web.dart' as implementation;
+    if (dart.library.html) 'r6n_worker_web.dart'
+    as implementation;
 
 abstract interface class R6Worker {
   Future<R6NetworkOutcome> solve(R6NetworkJob request);

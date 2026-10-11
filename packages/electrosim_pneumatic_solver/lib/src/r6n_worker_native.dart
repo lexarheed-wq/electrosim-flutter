@@ -61,8 +61,7 @@ final class NativeR6Worker implements R6Worker {
     if (_closed || _pending.isNotEmpty) {
       throw StateError('R6/N worker closed or request already active');
     }
-    final Completer<R6NetworkOutcome> response =
-        Completer<R6NetworkOutcome>();
+    final Completer<R6NetworkOutcome> response = Completer<R6NetworkOutcome>();
     _pending[request.requestId] = response;
     final SendPort send = await _ready.future;
     if (_closed) throw StateError('R6/N worker closed');

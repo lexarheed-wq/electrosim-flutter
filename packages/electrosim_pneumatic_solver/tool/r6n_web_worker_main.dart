@@ -10,19 +10,24 @@ void main() {
   scope.onMessage.listen((html.MessageEvent event) {
     int? id;
     try {
-      final Map<String, dynamic> payload =
-          Map<String, dynamic>.from(jsonDecode(event.data as String) as Map);
+      final Map<String, dynamic> payload = Map<String, dynamic>.from(
+        jsonDecode(event.data as String) as Map,
+      );
       id = payload['requestId'] as int?;
       final R6NetworkJob job = R6NetworkJob.fromJson(payload);
-      scope.postMessage(jsonEncode(<String, Object?>{
-        'requestId': id,
-        'result': job.execute().toJson(),
-      }));
+      scope.postMessage(
+        jsonEncode(<String, Object?>{
+          'requestId': id,
+          'result': job.execute().toJson(),
+        }),
+      );
     } catch (error) {
-      scope.postMessage(jsonEncode(<String, Object?>{
-        'requestId': id,
-        'error': error.toString(),
-      }));
+      scope.postMessage(
+        jsonEncode(<String, Object?>{
+          'requestId': id,
+          'error': error.toString(),
+        }),
+      );
     }
   });
 }

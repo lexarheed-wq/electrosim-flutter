@@ -39,7 +39,8 @@ final class R6NetworkJob {
     'durationS': durationS,
     'maxStepS': maxStepS,
     'chambers': <Map<String, Object?>>[
-      for (final FixedAirChamber chamber in network.initialSnapshot.chambers.values)
+      for (final FixedAirChamber chamber
+          in network.initialSnapshot.chambers.values)
         _chamber(chamber),
     ],
     'boundaries': <Map<String, Object?>>[
@@ -74,13 +75,12 @@ final class R6NetworkJob {
     },
   };
 
-  static Map<String, Object?> _chamber(FixedAirChamber c) =>
-      <String, Object?>{
-        'id': c.id,
-        'volumeM3': c.volumeM3,
-        'massKg': c.massKg,
-        'temperatureK': c.temperatureK,
-      };
+  static Map<String, Object?> _chamber(FixedAirChamber c) => <String, Object?>{
+    'id': c.id,
+    'volumeM3': c.volumeM3,
+    'massKg': c.massKg,
+    'temperatureK': c.temperatureK,
+  };
 
   static Map<String, dynamic> _object(Object? value) =>
       Map<String, dynamic>.from(value! as Map);
@@ -123,8 +123,7 @@ final class R6NetworkJob {
               gamma: _number(_object(value), 'gamma'),
               gasConstantJPerKgK: _number(_object(value), 'gasConstantJPerKgK'),
             ),
-            reverseFlowAllowed:
-                _object(value)['reverseFlowAllowed']! as bool,
+            reverseFlowAllowed: _object(value)['reverseFlowAllowed']! as bool,
           ),
       ],
     );
@@ -141,8 +140,7 @@ final class R6NetworkJob {
             _readChamber(raw).id: _readChamber(raw),
         },
         passageMassFlowKgPerS: <String, double>{
-          for (final MapEntry<String, dynamic> e
-              in _object(b['flows']).entries)
+          for (final MapEntry<String, dynamic> e in _object(b['flows']).entries)
             e.key: (e.value as num).toDouble(),
         },
         acceptedSubsteps: b['acceptedSubsteps']! as int,
@@ -159,7 +157,8 @@ final class R6NetworkJob {
       durationS: durationS,
       maxStepS: maxStepS,
     );
-    final double residual = after.totalMassKg -
+    final double residual =
+        after.totalMassKg -
         before.totalMassKg -
         (after.externalMassAddedKg - before.externalMassAddedKg);
     if (!residual.isFinite ||
@@ -205,26 +204,24 @@ final class R6NetworkOutcome {
     'flows': snapshot.passageMassFlowKgPerS,
   };
 
-  factory R6NetworkOutcome.fromJson(Map<String, dynamic> j) =>
-      R6NetworkOutcome(
-        projectRevision: j['projectRevision']! as int,
-        requestId: j['requestId']! as int,
-        engineVersion: j['engineVersion']! as String,
-        snapshot: IsothermalAirSnapshot(
-          timeS: R6NetworkJob._number(j, 'timeS'),
-          acceptedSubsteps: j['acceptedSubsteps']! as int,
-          externalMassAddedKg:
-              R6NetworkJob._number(j, 'externalMassAddedKg'),
-          chambers: <String, FixedAirChamber>{
-            for (final dynamic c in R6NetworkJob._list(j['chambers']))
-              R6NetworkJob._readChamber(c).id:
-                  R6NetworkJob._readChamber(c),
-          },
-          passageMassFlowKgPerS: <String, double>{
-            for (final MapEntry<String, dynamic> e
-                in R6NetworkJob._object(j['flows']).entries)
-              e.key: (e.value as num).toDouble(),
-          },
-        ),
-      );
+  factory R6NetworkOutcome.fromJson(Map<String, dynamic> j) => R6NetworkOutcome(
+    projectRevision: j['projectRevision']! as int,
+    requestId: j['requestId']! as int,
+    engineVersion: j['engineVersion']! as String,
+    snapshot: IsothermalAirSnapshot(
+      timeS: R6NetworkJob._number(j, 'timeS'),
+      acceptedSubsteps: j['acceptedSubsteps']! as int,
+      externalMassAddedKg: R6NetworkJob._number(j, 'externalMassAddedKg'),
+      chambers: <String, FixedAirChamber>{
+        for (final dynamic c in R6NetworkJob._list(j['chambers']))
+          R6NetworkJob._readChamber(c).id: R6NetworkJob._readChamber(c),
+      },
+      passageMassFlowKgPerS: <String, double>{
+        for (final MapEntry<String, dynamic> e in R6NetworkJob._object(
+          j['flows'],
+        ).entries)
+          e.key: (e.value as num).toDouble(),
+      },
+    ),
+  );
 }

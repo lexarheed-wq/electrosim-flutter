@@ -11,21 +11,25 @@ final class WebR6Worker implements R6Worker {
     _listener = _worker.onMessage.listen((html.MessageEvent event) {
       final dynamic raw = event.data;
       try {
-        final Map<String, dynamic> data =
-            Map<String, dynamic>.from(jsonDecode(raw as String) as Map);
+        final Map<String, dynamic> data = Map<String, dynamic>.from(
+          jsonDecode(raw as String) as Map,
+        );
         final int id = data['requestId']! as int;
         final Completer<R6NetworkOutcome>? completer = _pending.remove(id);
         if (completer == null) return;
         if (data['error'] is String) {
           completer.completeError(StateError(data['error']! as String));
         } else {
-          completer.complete(R6NetworkOutcome.fromJson(
-            Map<String, dynamic>.from(data['result']! as Map),
-          ));
+          completer.complete(
+            R6NetworkOutcome.fromJson(
+              Map<String, dynamic>.from(data['result']! as Map),
+            ),
+          );
         }
       } catch (error, stack) {
-        final Completer<R6NetworkOutcome>? active = _pending.values
-            .isEmpty ? null : _pending.values.first;
+        final Completer<R6NetworkOutcome>? active = _pending.values.isEmpty
+            ? null
+            : _pending.values.first;
         _pending.clear();
         active?.completeError(error, stack);
       }
@@ -42,7 +46,7 @@ final class WebR6Worker implements R6Worker {
   final Map<int, Completer<R6NetworkOutcome>> _pending =
       <int, Completer<R6NetworkOutcome>>{};
   late final StreamSubscription<html.MessageEvent> _listener;
-  late final StreamSubscription<html.ErrorEvent> _errorListener;
+  late final StreamSubscription<html.Event> _errorListener;
   bool _closed = false;
 
   @override
@@ -50,8 +54,7 @@ final class WebR6Worker implements R6Worker {
     if (_closed || _pending.isNotEmpty) {
       throw StateError('R6/N Web Worker closed or already busy');
     }
-    final Completer<R6NetworkOutcome> completer =
-        Completer<R6NetworkOutcome>();
+    final Completer<R6NetworkOutcome> completer = Completer<R6NetworkOutcome>();
     _pending[job.requestId] = completer;
     _worker.postMessage(jsonEncode(job.toJson()));
     final R6NetworkOutcome result = await completer.future;

@@ -1,0 +1,90 @@
+name: PNEU R6 Deterministic Physical Scale
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6-deterministic-scale-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r3d-r4-workspace-20261010
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r6-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pneumatic-r6-physical-scale:
+    name: pneumatic-r6-physical-scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Provenance, fixed versions and no Flutter imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            dart --version
+            uname -a
+            sha256sum packages/electrosim_pneumatic_solver/benchmark/r6_scale.dart
+            sha256sum packages/electrosim_pneumatic_solver/benchmark/r6_scale_fixture.dart
+          } | tee build/pneumatics-r6/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          if grep -R -n 'package:flutter/' packages/electrosim_pneumatic_solver/lib; then
+            echo 'R6 physical solver must remain Flutter-independent'
+            exit 1
+          fi
+      - name: Full scientific regressions and formatter gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format lib test benchmark
+            git diff -- lib test benchmark | tee ../../build/pneumatics-r6/FORMAT_PATCH.diff
+            git diff --exit-code -- lib test benchmark
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6/R6_SCIENCE.log
+      - name: Observe 30 100 200 400 calibrated gas volumes
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart run benchmark/r6_scale.dart
+          ) | tee build/pneumatics-r6/OBSERVED_SCALE.jsonl
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("build/pneumatics-r6/OBSERVED_SCALE.jsonl")
+          report=json.loads(p.read_text().strip().splitlines()[-1])
+          cases=report["cases"]
+          assert report["schema"]=="electrosim.pneumatic.r6.performance.v1"
+          assert [x["fittingDevices"] for x in cases]==[30,100,200,400]
+          assert all(x["massConserved"] and x["acceptedSubsteps"]>=1 and x["p95Ms"]>=0 for x in cases)
+          assert all(x["calibratedPassages"]==x["fittingDevices"]-1 for x in cases)
+          print("R6_30_100_200_400_PHYSICAL_SCALE_PASS")
+          PY
+      - name: Reject tracked physics/golden source rewrites
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-physical-scale-${{ github.sha }}
+          path: build/pneumatics-r6/
+          if-no-files-found: warn
+          retention-days: 30

@@ -78,15 +78,17 @@ void main() {
       expect(removed.project.schematicLayout.containsKey('manifold.0'), false);
       expect(state.project.pneumaticNetwork.devices, hasLength(n));
 
-      print(jsonEncode(<String, Object>{
-        'schema': 'electrosim.pneumatic.r6.workshop.v1',
-        'kind': 'unrendered_canonical_two_view_model',
-        'deviceCount': n,
-        'createTimeUs': stopwatch.elapsedMicroseconds,
-        'identitiesPreserved': true,
-        'serializable': true,
-        'electricalInvariant': true,
-      }));
+      print(
+        jsonEncode(<String, Object>{
+          'schema': 'electrosim.pneumatic.r6.workshop.v1',
+          'kind': 'unrendered_canonical_two_view_model',
+          'deviceCount': n,
+          'createTimeUs': stopwatch.elapsedMicroseconds,
+          'identitiesPreserved': true,
+          'serializable': true,
+          'electricalInvariant': true,
+        }),
+      );
     });
   }
 }

@@ -137,7 +137,33 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     );
   }
 
-  void _portTap(PneumaticPortId port) {
+  TextFormField _physicalInput(
+    String label,
+    double? initial,
+    ValueChanged<double> save, {
+    bool allowZero = false,
+  }) => TextFormField(
+    initialValue: initial?.toString() ?? '',
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    decoration: InputDecoration(labelText: label),
+    validator: (String? value) {
+      final double? number = double.tryParse(
+        (value ?? '').trim().replaceAll(',', '.'),
+      );
+      if (number == null ||
+          !number.isFinite ||
+          (allowZero ? number < 0 : number <= 0)) {
+        return allowZero
+            ? 'Saisir un nombre positif ou nul.'
+            : 'Saisir un nombre strictement positif.';
+      }
+      return null;
+    },
+    onSaved: (String? value) =>
+        save(double.parse((value ?? '').trim().replaceAll(',', '.'))),
+  );
+
+  Future<void> _portTap(PneumaticPortId port) async {
     if (_firstPort == null) {
       setState(() => _firstPort = port);
       return;
@@ -147,17 +173,185 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       setState(() => _firstPort = null);
       return;
     }
+    final GlobalKey<FormState> key = GlobalKey<FormState>();
+    double length = 0;
+    double bore = 0;
+    double loss = 0;
+    final List<double>? calibrated = await showDialog<List<double>>(
+      context: context,
+      builder: (BuildContext dialog) => AlertDialog(
+        title: const Text('Caractéristiques réelles du tuyau'),
+        content: Form(
+          key: key,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _physicalInput('Longueur (m)', null, (double x) => length = x),
+              _physicalInput('Diamètre intérieur (m)', null, (double x) => bore = x),
+              _physicalInput(
+                'Coefficient de perte K',
+                null,
+                (double x) => loss = x,
+                allowZero: true,
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            key: const Key('air-hose-calibration-apply'),
+            onPressed: () {
+              if (!key.currentState!.validate()) return;
+              key.currentState!.save();
+              Navigator.of(dialog).pop(<double>[length, bore, loss]);
+            },
+            child: const Text('Raccorder'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _firstPort = null);
+    if (calibrated == null) return;
+    String id;
+    do {
+      id = 'hose${++_pipeSerial}';
+    } while (_state.project.pneumaticNetwork.pipes.any(
+      (PneumaticPipe p) => p.id == id,
+    ));
     _edit(
       () => _state.connect(
         PneumaticPipe(
-          id: 'hose${++_pipeSerial}',
+          id: id,
           fromPortId: from,
           toPortId: port,
-          lengthM: 1,
-          innerDiameterM: .006,
+          lengthM: calibrated[0],
+          innerDiameterM: calibrated[1],
+          lossCoefficient: calibrated[2],
         ),
       ),
     );
+  }
+
+  Future<void> _calibrateSelected(PneumaticDevice device) async {
+    final bool fitting = device.kind == PneumaticDeviceKind.tee ||
+        device.kind == PneumaticDeviceKind.manifold;
+    final bool boundary = device.kind == PneumaticDeviceKind.idealSource ||
+        device.kind == PneumaticDeviceKind.silencer;
+    if (!fitting && !boundary) return;
+    final GlobalKey<FormState> key = GlobalKey<FormState>();
+    final Map<String, double> values = <String, double>{};
+    final Map<String, double>? calibrated =
+        await showDialog<Map<String, double>>(
+      context: context,
+      builder: (BuildContext dialog) => AlertDialog(
+        title: Text('Calibrer ${device.id} — unités SI'),
+        content: Form(
+          key: key,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              _physicalInput(
+                'Pression absolue (Pa)',
+                device.parametersSi['pressureAbsPa'],
+                (double x) => values['pressureAbsPa'] = x,
+              ),
+              if (fitting)
+                _physicalInput(
+                  'Volume gazeux (m³)',
+                  device.parametersSi['volumeM3'],
+                  (double x) => values['volumeM3'] = x,
+                ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            key: const Key('air-calibration-apply'),
+            onPressed: () {
+              if (!key.currentState!.validate()) return;
+              key.currentState!.save();
+              Navigator.of(dialog).pop(values);
+            },
+            child: const Text('Appliquer'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || calibrated == null) return;
+    _edit(
+      () => _state.calibrate(
+        physicalId: device.id,
+        parametersSi: calibrated,
+      ),
+    );
+  }
+
+  Future<void> _advanceAir() async {
+    double? cd = _dischargeCoefficient;
+    if (cd == null) {
+      final GlobalKey<FormState> key = GlobalKey<FormState>();
+      double entered = 0;
+      cd = await showDialog<double>(
+        context: context,
+        builder: (BuildContext dialog) => AlertDialog(
+          title: const Text('Coefficient d’écoulement Cd'),
+          content: Form(
+            key: key,
+            child: _physicalInput(
+              'Cd (0 < Cd ≤ 1)',
+              null,
+              (double x) => entered = x,
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialog).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              key: const Key('air-cd-apply'),
+              onPressed: () {
+                if (!key.currentState!.validate()) return;
+                key.currentState!.save();
+                if (entered > 1) return;
+                Navigator.of(dialog).pop(entered);
+              },
+              child: const Text('Calculer'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || cd == null) return;
+    }
+    try {
+      final IsothermalAirNetwork solver = _airSolver ??
+          WorkshopClosedAirCompiler(
+            dischargeCoefficient: cd,
+          ).compileWithIdealBoundaries(_state.project.pneumaticNetwork);
+      final IsothermalAirSnapshot next = solver.advance(
+        _airSnapshot ?? solver.initialSnapshot,
+        durationS: .02,
+        maxStepS: .001,
+      );
+      setState(() {
+        _dischargeCoefficient = cd;
+        _airSolver = solver;
+        _airSnapshot = next;
+      });
+    } on Object catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Simulation impossible : $error')),
+      );
+    }
   }
 
   Future<void> _importClipboard() async {

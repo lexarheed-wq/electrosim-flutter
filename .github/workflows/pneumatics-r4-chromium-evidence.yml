@@ -48,16 +48,44 @@ jobs:
           done
           curl --fail http://127.0.0.1:8765/ >/dev/null
           for VIEW in physical schematic; do
-            "$CHROME" \
-              --headless=new --no-sandbox --disable-dev-shm-usage \
-              --enable-webgl --use-gl=angle --use-angle=swiftshader \
-              --enable-unsafe-swiftshader --hide-scrollbars \
-              --window-size=1600,960 --force-device-scale-factor=1 \
-              --virtual-time-budget=16000 \
-              --screenshot="$PWD/../../build/pneumatics-r4-chromium/$VIEW.png" \
-              "http://127.0.0.1:8765/?view=$([ "$VIEW" = schematic ] && echo schematic || echo physical)" \
-              >/tmp/electrosim-chromium-"$VIEW".log 2>&1
-            test -s "../../build/pneumatics-r4-chromium/$VIEW.png"
+            ACCEPTED=0
+            for ATTEMPT in 1 2 3; do
+              OUT="$PWD/../../build/pneumatics-r4-chromium/$VIEW.png"
+              BUDGET=$((18000 + ATTEMPT * 8000))
+              rm -f "$OUT"
+              if ! "$CHROME" \
+                --headless=new --no-sandbox --disable-dev-shm-usage \
+                --enable-webgl --use-gl=angle --use-angle=swiftshader \
+                --enable-unsafe-swiftshader --hide-scrollbars \
+                --window-size=1600,960 --force-device-scale-factor=1 \
+                --virtual-time-budget="$BUDGET" \
+                --screenshot="$OUT" \
+                "http://127.0.0.1:8765/?view=$VIEW" \
+                >"../../build/pneumatics-r4-chromium/$VIEW-attempt-$ATTEMPT.log" 2>&1; then
+                echo "REJECT nonzero Chromium exit: $VIEW attempt $ATTEMPT" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
+                continue
+              fi
+              if python3 - "$OUT" <<'PYCHECK'
+          import pathlib, struct, sys
+          path = pathlib.Path(sys.argv[1])
+          if not path.is_file():
+              raise SystemExit(1)
+          data = path.read_bytes()
+          if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+              raise SystemExit(2)
+          width, height = struct.unpack('>II', data[16:24])
+          if width != 1600 or height != 960 or len(data) <= 20000:
+              raise SystemExit(3)
+          PYCHECK
+              then
+                printf 'view=%s attempt=%s budget_ms=%s bytes=%s\n' "$VIEW" "$ATTEMPT" "$BUDGET" "$(stat -c%s "$OUT")" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
+                ACCEPTED=1
+                break
+              fi
+              cp -f "$OUT" "../../build/pneumatics-r4-chromium/$VIEW-rejected-$ATTEMPT.png" 2>/dev/null || true
+              echo "REJECT blank/unloaded screenshot: $VIEW attempt $ATTEMPT" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
+            done
+            test "$ACCEPTED" -eq 1 || { echo "ERROR: $VIEW never rendered a valid Chromium image"; exit 1; }
           done
           python3 - <<'PY'
           import pathlib, struct
@@ -66,7 +94,7 @@ jobs:
               data = p.read_bytes()
               assert data[:8] == b'\x89PNG\r\n\x1a\n', f'Not PNG: {p}'
               w, h = struct.unpack('>II', data[16:24])
-              assert w >= 1200 and h >= 700 and len(data) >= 10000, f'Unexpected capture: {p} {w}x{h} {len(data)} bytes'
+              assert w >= 1200 and h >= 700 and len(data) > 20000, f'Unexpected capture: {p} {w}x{h} {len(data)} bytes'
               print(f'CHROMIUM_CAPTURE {p.name} {w}x{h} {len(data)} bytes')
           PY
           git rev-parse HEAD > ../../build/pneumatics-r4-chromium/SOURCE_SHA.txt

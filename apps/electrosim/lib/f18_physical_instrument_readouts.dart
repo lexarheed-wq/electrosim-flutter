@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'f18_voltmeter_3d_assets.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_ammeter_controls.dart';
+import 'f18_ammeter_3d_assets.dart';
 
 /// LCD readouts are projected from the electrical runtime: invalid/disconnected
 /// devices never manufacture a zero. The optional Cycles body is painted by
@@ -170,7 +171,11 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
               .where((it) => it.id.value == item.key)
               .firstOrNull;
           _drawReading(
-            canvas, F18Voltmeter3dAssets.projectReadout(local), item.value,
+            canvas,
+            ammeter3dIds.contains(item.key)
+                ? F18Ammeter3dAssets.projectReadout(local)
+                : F18Voltmeter3dAssets.projectReadout(local),
+            item.value,
             illuminated: meter != null && (
               meter.kind == InstrumentKind.ammeter
                   ? F18AmmeterControls.lit(meter)

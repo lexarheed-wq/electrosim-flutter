@@ -92,6 +92,11 @@ final class PneumaticWorkshopState {
           'valveEffectiveAreaM2',
           'valveCd',
           'energized',
+          'coilNominalVoltageV',
+          'coilPickupRatio',
+          'coilDropRatio',
+          'coilPickupDelayS',
+          'coilReleaseDelayS',
         ],
         if (movingCylinder) ...<String>[
           'pistonDiameterM',
@@ -107,6 +112,8 @@ final class PneumaticWorkshopState {
           'staticBreakawayFrictionN',
           'viscousNsPerM',
           'externalLoadN',
+          'sensorTriggerPositionM',
+          'sensorReleasePositionM',
         ],
       };
       for (final MapEntry<String, double> e in parametersSi.entries) {
@@ -121,12 +128,17 @@ final class PneumaticWorkshopState {
                     'coulombFrictionN',
                     'staticBreakawayFrictionN',
                     'viscousNsPerM',
+                    'coilPickupDelayS',
+                    'coilReleaseDelayS',
+                    'sensorReleasePositionM',
                   }.contains(e.key)
                 ? value < 0
                 : e.key == 'externalLoadN'
                 ? false
                 : value <= 0) ||
-            (e.key == 'valveCd' && value > 1)) {
+            (<String>{'valveCd', 'coilPickupRatio', 'coilDropRatio'}
+                    .contains(e.key) &&
+                value > 1)) {
           throw const MultiphysicsContractException(
             'invalid_calibration',
             'Only explicit, physically valid SI parameters and spool '
@@ -145,7 +157,11 @@ final class PneumaticWorkshopState {
         final double? rodDiameter = p['rodDiameterM'];
         final double? coulomb = p['coulombFrictionN'];
         final double? breakaway = p['staticBreakawayFrictionN'];
+        final double? trigger = p['sensorTriggerPositionM'];
+        final double? release = p['sensorReleasePositionM'];
         if ((stroke != null && position != null && position > stroke) ||
+            (trigger != null && stroke != null && trigger > stroke) ||
+            (trigger != null && release != null && trigger <= release) ||
             (pistonDiameter != null &&
                 rodDiameter != null &&
                 rodDiameter >= pistonDiameter) ||

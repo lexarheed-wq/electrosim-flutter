@@ -1,0 +1,225 @@
+name: PNEU-R0 — Electrical Reference (non-mutating)
+on:
+  push:
+    branches:
+      - feat/pneumatics-r2b-canonical-ports-20261010
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r0-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts-and-science:
+    name: contracts-and-science
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Reference provenance and non-mutating preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r0
+          {
+            echo "lot=R0"
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "base_g5=054c64f5d2c74bf9a7137c730b811968834543ee"
+            echo "director_blob=$(git hash-object docs/superpowers/specs/2026-10-10-electrosim-pneumatique-document-directeur.md)"
+            echo "runner_os=$RUNNER_OS"
+            echo "runner_arch=$RUNNER_ARCH"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            flutter --version
+            dart --version 2>&1
+            uname -a
+            lscpu || true
+            free -h || true
+          } | tee build/pneumatics-r0/provenance.txt
+          test "$(git hash-object docs/superpowers/specs/2026-10-10-electrosim-pneumatique-document-directeur.md)" = "aed1b6637e71f49c0161cba146e2dbb6e82c3aa6"
+          git merge-base --is-ancestor 054c64f5d2c74bf9a7137c730b811968834543ee HEAD
+          git diff --check 054c64f5d2c74bf9a7137c730b811968834543ee HEAD
+          test -f docs/pneumatics/R0_BASELINE_PLAN.md
+          test -f docs/pneumatics/PROGRAM_STATUS.md
+          test -f docs/pneumatics/qualification/R0/BASELINE_MANIFEST.md
+          # Post-R0 integration: retain electrical baseline regression checks
+          # without rejecting the new R1+ feature packages.
+          python3 tools/core_unify_architecture_guard.py 2>&1 | tee build/pneumatics-r0/architecture.log
+          python3 tools/postv2_p1_contract.py 2>&1 | tee build/pneumatics-r0/p1-contract.log
+      - name: Verify existing Dart contracts and electrical solvers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for pkg in electrosim_domain electrosim_topology electrosim_solver_dc electrosim_solver_ac electrosim_storage; do
+            echo "::group::$pkg"
+            (cd "packages/$pkg" && dart pub get && dart test) 2>&1 | tee "build/pneumatics-r0/$pkg.log"
+            echo "::endgroup::"
+          done
+      - name: R0 DC 30/100/200/400 fixture smoke and source-current validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_solver_dc
+            dart run tool/pneumatics_r0_baseline.dart \
+              --warmup-seconds 0 --measure-seconds 1 --repeats 1 \
+              --out-dir ../../build/pneumatics-r0/dc-fixture-smoke
+          )
+          test -s build/pneumatics-r0/dc-fixture-smoke/SUMMARY.json
+      - name: Reject source/golden mutations, ignoring lock-only pub get drift
+        run: git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r0-contracts-${{ github.sha }}
+          path: build/pneumatics-r0/
+          retention-days: 21
+          if-no-files-found: warn
+
+  app-and-canvas:
+    name: app-and-canvas
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Install deterministic fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+      - name: Prepare source and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r0
+          echo "$GITHUB_SHA" > build/pneumatics-r0/SOURCE_SHA.txt
+          python3 tools/premium_rcd2p/decode_source.py
+      - name: App analysis and regression (no golden rewrite)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd apps/electrosim
+            flutter pub get
+            flutter analyze
+            flutter test --no-pub --concurrency=1
+          ) 2>&1 | tee build/pneumatics-r0/app-tests.log
+      - name: Canvas analysis and regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_canvas
+            flutter pub get
+            flutter analyze
+            flutter test --no-pub --concurrency=1
+          ) 2>&1 | tee build/pneumatics-r0/canvas-tests.log
+      - name: Reject tracked source and golden edits (pub get lock drift tracked separately)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only | tee build/pneumatics-r0/tracked-working-tree-changes.txt
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r0-app-${{ github.sha }}
+          path: build/pneumatics-r0/
+          retention-days: 21
+          if-no-files-found: warn
+
+  production-web-build:
+    name: production-web-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Compile actual production entrypoint (not a demo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/premium_rcd2p/decode_source.py
+          root="$PWD"
+          output="$(bash tools/f15_prepare_runner.sh web)"
+          case "$output" in
+            F15_RUNNER_PATH=*) runner="${output#F15_RUNNER_PATH=}" ;;
+            *) echo "INVALID_F15_RUNNER_PROTOCOL: $output"; exit 69 ;;
+          esac
+          cd "$runner/apps/electrosim"
+          flutter build web --release --target lib/main.dart --no-wasm-dry-run
+          echo "$GITHUB_SHA" > build/web/PNEU_R0_SOURCE_SHA.txt
+          mkdir -p "$root/build/pneumatics-r0-production-web"
+          cp -R build/web/. "$root/build/pneumatics-r0-production-web/"
+      - name: Check source immutability
+        run: git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: pneumatics-r0-web-build-${{ github.sha }}
+          path: build/pneumatics-r0-production-web/
+          retention-days: 14
+          if-no-files-found: error
+
+  dc-reference-benchmark:
+    name: dc-reference-benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Capture provenance for solver-only measurements
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r0/dc-full
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            flutter --version
+            dart --version 2>&1
+            uname -a
+            lscpu || true
+            free -h || true
+          } | tee build/pneumatics-r0/dc-full/PROVENANCE.txt
+      - name: Complete DC electrical reference (10 s warmup + 60 s x 3 per size)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_solver_dc
+            dart pub get
+            dart run tool/pneumatics_r0_baseline.dart \
+              --warmup-seconds 10 --measure-seconds 60 --repeats 3 \
+              --out-dir ../../build/pneumatics-r0/dc-full
+          ) > build/pneumatics-r0/dc-full/RUN.log 2>&1
+          test -s build/pneumatics-r0/dc-full/SUMMARY.json
+          (cd build/pneumatics-r0/dc-full && sha256sum *.csv SUMMARY.json PROVENANCE.txt > SHA256.txt)
+      - name: Ensure no tracked source or golden was rewritten
+        run: git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r0-dc-bench-${{ github.sha }}
+          path: build/pneumatics-r0/dc-full/
+          retention-days: 30
+          if-no-files-found: warn

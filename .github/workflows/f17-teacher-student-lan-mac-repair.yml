@@ -10,7 +10,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: f17-student-teacher-mac
+  # Concurrent PRs must not cancel each other's Mac qualification.
+  group: f17-student-teacher-mac-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   macos-intel-lan-candidate:

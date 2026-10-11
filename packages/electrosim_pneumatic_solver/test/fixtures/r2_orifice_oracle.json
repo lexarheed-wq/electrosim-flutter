@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "status": "scientific reference preparation only; not a qualified R2 model or numerical result from ElectroSim",
+  "createdUtcDate": "2026-10-10",
+  "units": {
+    "pressure": "Pa absolute",
+    "massFlow": "kg/s",
+    "area": "m2",
+    "temperature": "K",
+    "force": "N",
+    "normalizedFlow": "Nl/min (0 C and 101325 Pa)"
+  },
+  "assumptions": {
+    "fluid": "generic dry ideal air",
+    "R_J_kg_K": 287.05,
+    "gamma": 1.4,
+    "tankModel": "isothermal T=293.15 K",
+    "orificeModel": "quasisteady isentropic nozzle effective area and Cd; NOT ISO 6358 certified",
+    "upstreamPressureAbsPa": 701325,
+    "atmosphericPressureAbsPa": 101325,
+    "temperatureK": 293.15,
+    "effectiveAreaM2": 0.000001,
+    "dischargeCoefficient": 0.8,
+    "referenceTempK": 273.15,
+    "referencePressurePa": 101325,
+    "chokedPressureRatio": 0.5282817877171742,
+    "chokedMassFlowKgS": 0.0013243594116043953,
+    "chokedNormalizedFlowNlMin": 61.489258546232136
+  },
+  "oracleFormula": "For r=pd/pu: if r>=critical, Cd*A*pu*sqrt(2*gamma/(R*T*(gamma-1))*(r^(2/gamma)-r^((gamma+1)/gamma))); else Cd*A*pu*sqrt(gamma/(R*T))*(2/(gamma+1))^((gamma+1)/(2*(gamma-1))). Equal pressures -> 0. Reverse gradients invert sign for reversible pass.",
+  "pressureRatioVectors": [
+    {
+      "r": 1,
+      "expectedKgPerSecond": 0,
+      "expectedNlPerMin": 0,
+      "regime": "zero"
+    },
+    {
+      "r": 0.95,
+      "expectedKgPerSecond": 0.0005950177736190474,
+      "expectedNlPerMin": 27.62633874239733,
+      "regime": "subsonic"
+    },
+    {
+      "r": 0.9,
+      "expectedKgPerSecond": 0.0008173261779487645,
+      "expectedNlPerMin": 37.9479922384602,
+      "regime": "subsonic"
+    },
+    {
+      "r": 0.8,
+      "expectedKgPerSecond": 0.001084391100440485,
+      "expectedNlPerMin": 50.34766556265916,
+      "regime": "subsonic"
+    },
+    {
+      "r": 0.7,
+      "expectedKgPerSecond": 0.0012345882865725044,
+      "expectedNlPerMin": 57.32123597720391,
+      "regime": "subsonic"
+    },
+    {
+      "r": 0.55,
+      "expectedKgPerSecond": 0.0013229856952103518,
+      "expectedNlPerMin": 61.425477670902985,
+      "regime": "subsonic"
+    },
+    {
+      "r": 0.5282817877171742,
+      "expectedKgPerSecond": 0.0013243594116043953,
+      "expectedNlPerMin": 61.489258546232136,
+      "regime": "critical"
+    },
+    {
+      "r": 0.5,
+      "expectedKgPerSecond": 0.0013243594116043953,
+      "expectedNlPerMin": 61.489258546232136,
+      "regime": "choked"
+    },
+    {
+      "r": 0.2,
+      "expectedKgPerSecond": 0.0013243594116043953,
+      "expectedNlPerMin": 61.489258546232136,
+      "regime": "choked"
+    }
+  ],
+  "cylinderVector": {
+    "pistonDiameterM": 0.032,
+    "rodDiameterM": 0,
+    "pressureAAbsPa": 701325,
+    "pressureBAbsPa": 101325,
+    "expectedAreaPistonM2": 0.000804247719318987,
+    "expectedTheoreticalForceN": 482.5486315913922,
+    "acceptanceToleranceN": 0.5
+  },
+  "references": [
+    "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/mass-flow-rate-equations/",
+    "https://gso-sims-preview-doc-aws.s3-eu-west-1.amazonaws.com/gso-iso-6358-1-2016-en.html",
+    "https://www.iso.org/standard/75902.html"
+  ],
+  "notes": [
+    "Analytic vector only. Actual physical model and tested tolerances are fixed under decision R2-A after R1 qualification.",
+    "Do not assert ISO compliance, manufacture-specific validity, or a complete gas solver from these scalar reference data.",
+    "Reverse-flow sign, pressure ratio close to unity, fixed and moving volume balance, and tests with invalid parameters must be added to the solver corpus."
+  ]
+}

@@ -107,14 +107,11 @@ abstract final class F18AmmeterFuseSafety {
       meter.fuseBlown &&
       !meter.poweredOn &&
       circuit.sources.isEmpty &&
-      !circuit.components.any((component) {
-        final type = component.modelType.toLowerCase();
-        return type.contains('battery') ||
-            type.contains('inverter') ||
-            type.contains('generator') ||
-            type.contains('alternator') ||
-            type.contains('capacitor');
-      });
+      // Motors can regenerate and reactive elements may store energy.
+      // Prefer a conservative explicit allow-list to fragile name guessing.
+      circuit.components.every((component) =>
+          const <String>{'resistor', 'lamp', 'switch', 'switch_spst'}
+              .contains(component.modelType.toLowerCase()));
 
   static CircuitState replaceSafely({
     required CircuitState circuit,

@@ -91,7 +91,7 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
               0, 0, front.width.toDouble(), front.height.toDouble(),
             ),
             local,
-            Paint()..filterQuality = FilterQuality.medium,
+            Paint()..filterQuality = FilterQuality.high,
           );
           final InstrumentInstance? meter = circuit?.instruments
               .where((item) => item.id.value == id)

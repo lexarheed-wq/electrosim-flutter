@@ -58,9 +58,11 @@ jobs:
           if-no-files-found: error
 
       - name: Stage generated PNGs on integration branch only
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feat/g5-voltmeter-flutter-integration-20261011' }}
+        if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/feat/g5-voltmeter-flutter-integration-20261011') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/g5-voltmeter-flutter-integration-20261011' && github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           set -euo pipefail
+          git fetch origin feat/g5-voltmeter-flutter-integration-20261011
+          git checkout -B feat/g5-voltmeter-flutter-integration-20261011 FETCH_HEAD
           mkdir -p apps/electrosim/assets/g5_industrial
           cp build/g5-3d-voltmeter/front.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-front.png
           cp build/g5-3d-voltmeter/palette.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-palette.png

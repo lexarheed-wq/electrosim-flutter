@@ -1,0 +1,41 @@
+name: G5 voltmeter 3/4 real palette proof
+on:
+  pull_request:
+    paths:
+      - 'apps/electrosim/lib/f9_component_palette.dart'
+      - 'apps/electrosim/tool/capture_g5_voltmeter_palette_test.dart'
+      - '.github/workflows/g5-voltmeter-real-palette.yml'
+  push:
+    branches:
+      - feat/g5-voltmeter-flutter-integration-20261011
+    paths:
+      - 'apps/electrosim/lib/f9_component_palette.dart'
+      - 'apps/electrosim/tool/capture_g5_voltmeter_palette_test.dart'
+      - '.github/workflows/g5-voltmeter-real-palette.yml'
+permissions:
+  contents: read
+jobs:
+  verify-real-palette:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Actual Flutter palette 3/4 visibility and quick-add
+        working-directory: apps/electrosim
+        run: flutter test tool/capture_g5_voltmeter_palette_test.dart -r expanded --timeout 120s
+      - name: Publish genuine palette screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: G5-voltmeter-real-Flutter-palette-3-4
+          path: apps/electrosim/build/g5-voltmeter-real-palette-proof/
+          if-no-files-found: warn
+          retention-days: 14

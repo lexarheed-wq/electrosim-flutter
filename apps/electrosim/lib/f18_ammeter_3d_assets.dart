@@ -10,6 +10,15 @@ abstract final class F18Ammeter3dAssets {
   static ui.Image? palette;
   static Future<bool>? _pending;
   static bool get ready => front != null && palette != null;
+  /// Dedicated LCD aperture of the original ampere-specific Cycles body.
+  /// Geometry recipe: glass x31..81/y21..45; text inset x34..78/y24..42.
+  /// This is NOT copied from the voltmeter face.
+  static ui.Rect projectReadout(ui.Rect body) => ui.Rect.fromLTWH(
+    body.left + body.width * (34 / 112),
+    body.top + body.height * (24 / 152),
+    body.width * (44 / 112),
+    body.height * (18 / 152),
+  );
   static bool uses3d(InstrumentInstance i) =>
       ready && i.kind == InstrumentKind.ammeter;
   static Future<bool> preload() => _pending ??= _load();

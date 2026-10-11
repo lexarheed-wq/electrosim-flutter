@@ -58,6 +58,8 @@ def motor(h,x,y,z,d,r,m,vertical=False):
     else:
         cylinder(h,'motor_fan_cover',x+d/2+3,y,z,r+1,9,m,axis)
         for xx in (x-d*.26,x+d*.26):
+            # Cast B3 pedestals intersect both the cylindrical casing and feet.
+            h.box('motor_pedestal_'+str(xx),xx,y+r-1,12,14,z+7,18,m,r=1)
             h.box('motor_foot_'+str(xx),xx,y+r+7,15,8,z+4,21,m,r=.5)
             screw(h,'motor_anchor_'+str(xx),xx,y+r+7,z+5,1.5)
     plate(h,'motor_rating_plate',x,y-r*.15,z+r+1,20,8)
@@ -228,6 +230,7 @@ def pump(h,s,single=False):
     for i in range(6):
         a=i*math.tau/6;screw(h,'volute_bolt_'+str(i),cx+(r-7)*math.cos(a),cy+(r-7)*math.sin(a),60,1.8)
     h.bolt('drain_plug',cx-9,cy+r-10,61,3,h.brass)
+    h.box('volute_cast_pedestal',cx,cy+r-3,r*.55,17,35,34,m,r=1.5)
     h.box('volute_foot',cx,cy+r+5,r*1.4,7,40,44,m,r=.6)
     # The coupling adapter physically joins volute to the drive. Neither part
     # is a detached icon; the flange remains behind the frontal volute cover.
@@ -250,6 +253,7 @@ def solar(h,s):
     h.box('pump_base',84,257,92,21,48,52,dark,r=3)
     ring(h,'water_inlet',51,249,57,12,8,13,steel);ring(h,'water_outlet',118,249,57,12,8,13,steel)
     for x in (49,119):
+        h.box('integral_base_lug_'+str(x),x,268,19,15,44,36,dark,r=1)
         h.box('floor_foot_'+str(x),x,275,22,6,46,40,dark,r=.6)
         screw(h,'anchor_'+str(x),x,274,48,2)
     # The side terminal enclosure has an actual mounting neck into the motor.
@@ -260,22 +264,37 @@ def solar(h,s):
 def mixer(h,s):
     m=h.material('blue mixer enamel',(.035,.22,.36),roughness=.26,coat=.4)
     steel=h.material('sanitary stainless',(.55,.60,.62),.95,roughness=.17,anisotropic=.35)
-    for x in (47,152):
-        h.box('chassis_foot_'+str(x),x,279,76,7,35,48,m,r=.7)
-        for xx in (x-29,x+29):
-            cylinder(h,'castor_'+str(xx),xx,287,34,5,7,h.black)
-            h.box('castor_yoke_'+str(xx),xx,283,9,5,36,9,steel,r=.4)
+    # Welded U stand: rear crossmember, forward legs and mast baseplate.
+    # The working head hangs freely in the space reserved for a mixing vessel.
+    h.box('rear_chassis_crossmember',100,277,174,9,-8,14,m,r=.8)
+    for x in (20,180):
+        h.box('forward_chassis_leg_'+str(x),x,277,14,9,53,74,m,r=.8)
+        for zz in (-12,46):
+            tag=str(x)+'_'+str(zz)
+            h.box('castor_mount_plate_'+tag,x,282.5,16,4,zz+7,14,steel,r=.5)
+            cylinder(h,'castor_swivel_stem_'+tag,x,287,zz,2,9,steel,'y')
+            h.box('castor_fork_bridge_'+tag,x,285,10,4,zz+5,10,steel,r=.5)
+            for dx in (-4,4):
+                h.box('castor_fork_'+tag+'_'+str(dx),x+dx,290,2,9,zz+5,10,steel,r=.5)
+            cylinder(h,'castor_wheel_'+tag,x,291,zz,5,7,h.black,'x')
+            cylinder(h,'castor_axle_'+tag,x,291,zz,1.2,11,steel,'x')
+            h.box('castor_brake_'+tag,x,286,7,2,zz+9,8,steel,r=.5)
+    h.box('mast_baseplate',155,272,34,5,17,36,m,r=.6)
+    h.box('mast_welded_socket',155,269,19,15,13,20,m,r=.6)
+    # Gusset overlaps mast and baseplate, with finite depth at the welds.
+    prism(h,'mast_base_gusset',[(155,251),(174,271),(155,271)],14,8,m,.5)
     h.box('lifting_mast',155,140,13,256,12,17,m,r=.5)
     h.box('mast_guide_channel',155,140,3,237,22,1,h.black,r=.2)
     h.box('carriage',147,92,24,34,25,16,m,r=.6)
     h.box('motor_support_arm',116,45,77,8,25,16,m,r=.5)
     h.panel('triangular_gusset',[(148,46,26),(99,46,26),(148,72,26)],m,2)
     motor(h,83,85,26,57,23,m,True)
-    h.box('support_plate',83,123,79,6,31,52,m,r=.6)
+    h.box('support_plate',83,123,79,6,37,58,m,r=.6)
     for x in (57,109):
-        h.tube('sanitary_rod_'+str(x),[(x,128,35),(x,254,35)],1.5,steel)
+        h.tube('sanitary_rod_'+str(x),[(x,124,35),
+            (x,247,35),(71 if x==57 else 95,258,35)],1.5,steel)
         h.bolt('rod_nut_'+str(x),x,129,37,2,steel)
-    h.tube('drive_shaft',[(83,128,35),(83,257,35)],1.6,steel)
+    h.tube('drive_shaft',[(83,124,35),(83,257,35)],1.6,steel)
     cylinder(h,'high_shear_workhead',83,262,35,14,19,steel,'y')
     for i in range(9):h.box('workhead_port_'+str(i),72+i*2.7,264,1.3,8,48,.3,h.black,r=.3)
     ring(h,'workhead_ring',83,273,35,14,10,2,steel,'y')

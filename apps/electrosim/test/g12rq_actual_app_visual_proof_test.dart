@@ -14,7 +14,13 @@ void main() {
     tester,
   ) async {
     // Render readable typography in test mode, as in the G5 native showcase.
-    final font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    final String? home = Platform.environment['HOME'];
+    final String macFont = '${home ?? ''}/Library/Fonts/DejaVuSans.ttf';
+    final font = File(
+      home != null && File(macFont).existsSync()
+          ? macFont
+          : '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    );
     if (font.existsSync()) {
       final bytes = font.readAsBytesSync();
       await (FontLoader(

@@ -21,7 +21,7 @@ one fixture cannot be substituted for an unevaluated requirement.
 
 | Director criterion | Current harness / evidence | R6 final disposition |
 | --- | --- | --- |
-| PHY-01 to PHY-07 | R2 gas/force/orifice/cylinder tests and R6 mass fixtures | Re-run full scientific suite on integrated SHA; PHY-07 timestep sensitivity requires explicit regression |
+| PHY-01 to PHY-07 | R2 gas/force/orifice/cylinder tests and R6 mass fixtures | Re-run full scientific suite on integrated SHA; PHY-07 step-halving regression now implemented in `test/r6_convergence_test.dart`, but a single fixture does not establish convergence for all networks |
 | CPL-01 | R3 real DC S1/K1/B1/5/2 and `test/r6_integration_cycle_test.dart` | Require proof of actual reached end-switch at physical time and no auto-rearm |
 | CPL-02/03/04 | Solenoid delays, hysteresis, valve memory, supply isolation and fault suite | Verify single clock / no double advancement on integrated SHA |
 | REG-01 | G5 complete runtime, canvas, web, TP and DC reference benchmark | Mandatory success; never disable when running R6 |

@@ -167,6 +167,12 @@ def main():
     w, height = SIZE
     for view, yaw, pitch, scale in (('front', 0, 0, 1),
                                     ('palette', -24, -16, .78)):
+        # Front selector grip is a real moving UI part. Keep it OUT of the
+        # baked front PNG; show it fixed only in the static 3/4 palette image.
+        selector = bpy.data.objects.get('selector_grip')
+        if selector is None:
+            raise RuntimeError('Missing selector_grip 3D object')
+        selector.hide_render = view == 'front'
         cy, sy = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
         cp, sp = math.cos(math.radians(pitch)), math.sin(math.radians(pitch))
         right = Vector((cy, 0, sy))

@@ -1,4 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_electropneumatic/electrosim_electropneumatic.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
@@ -35,6 +36,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   IsothermalAirSnapshot? _airSnapshot;
   CoupledMovingCylinderAirNetwork? _movingSolver;
   CoupledCylinderNetworkSnapshot? _movingSnapshot;
+  AuthoredNetworkSelfHoldValve52Cycle? _linkedCycle;
+  AuthoredNetworkSelfHoldSnapshot? _linkedSnapshot;
   double? _dischargeCoefficient;
 
   void _invalidateAirRuntime() {
@@ -42,6 +45,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     _airSnapshot = null;
     _movingSolver = null;
     _movingSnapshot = null;
+    _linkedCycle = null;
+    _linkedSnapshot = null;
   }
 
   static const List<PneumaticDeviceKind> _catalog = <PneumaticDeviceKind>[
@@ -447,7 +452,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     );
   }
 
-  Future<void> _advanceAir() async {
+  Future<double?> _requestDischargeCoefficient() async {
     double? cd = _dischargeCoefficient;
     if (cd == null) {
       final GlobalKey<FormState> key = GlobalKey<FormState>();
@@ -482,7 +487,72 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           ],
         ),
       );
-      if (!mounted || cd == null) return;
+      if (!mounted || cd == null) return null;
+    }
+    return cd;
+  }
+
+  Future<void> _pulseStart() async {
+    if (_airSnapshot != null && _linkedSnapshot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Réinitialiser le réseau avant d’activer le circuit CC.'),
+        ),
+      );
+      return;
+    }
+    final double? cd = await _requestDischargeCoefficient();
+    if (!mounted || cd == null) return;
+    try {
+      final AuthoredNetworkSelfHoldValve52Cycle cycle =
+          _linkedCycle ??
+          const AuthoredSelfHoldCycleFactory().create(
+            _state.project,
+            hoseDischargeCoefficient: cd,
+          );
+      final AuthoredNetworkSelfHoldSnapshot accepted = cycle.advance(
+        _linkedSnapshot ?? cycle.initial(),
+        durationS: 0,
+        startPressed: true,
+      );
+      setState(() {
+        _dischargeCoefficient = cd;
+        _linkedCycle = cycle;
+        _linkedSnapshot = accepted;
+        _movingSnapshot = accepted.air;
+        _airSnapshot = accepted.air.air;
+        _airSolver = null;
+        _movingSolver = null;
+      });
+    } on Object catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Commande 24 V refusée : $error')),
+      );
+    }
+  }
+
+  Future<void> _advanceAir() async {
+    final double? cd = await _requestDischargeCoefficient();
+    if (!mounted || cd == null) return;
+    if (_linkedSnapshot != null && _linkedCycle != null) {
+      try {
+        final AuthoredNetworkSelfHoldSnapshot accepted =
+            _linkedCycle!.advance(
+              _linkedSnapshot!,
+              durationS: .02,
+              startPressed: false,
+            );
+        setState(() {
+          _linkedSnapshot = accepted;
+          _movingSnapshot = accepted.air;
+          _airSnapshot = accepted.air.air;
+        });
+      } on Object catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cycle 24 V interrompu : $error')),
+        );
+      }
+      return;
     }
     try {
       final PneumaticNetwork authored = _state.project.pneumaticNetwork;
@@ -560,6 +630,12 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       appBar: AppBar(
         title: const Text('Atelier pneumatique expérimental'),
         actions: <Widget>[
+          IconButton(
+            key: const Key('air-electro-start'),
+            tooltip: 'Impulsion S1 calculée par le vrai solveur CC',
+            onPressed: _pulseStart,
+            icon: const Icon(Icons.electrical_services),
+          ),
           IconButton(
             key: const Key('air-advance'),
             tooltip: 'Avancer de 20 ms le réseau physique calibré',

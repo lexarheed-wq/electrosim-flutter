@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:electrosim/main.dart';
+import 'package:electrosim/f18_workspace_page.dart';
 import 'package:electrosim/f18_physical_instrument_readouts.dart';
 import 'package:electrosim/f18_voltmeter_3d_assets.dart';
 import 'package:electrosim/runtime/electrosim_instrument_projection.dart';
@@ -91,7 +91,7 @@ void main() {
         key: captureKey,
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: F9WorkspaceDemoPage(
+          home: F18WorkspacePage(
             initialCircuit: circuit,
             initialVisualLayout: layout,
             initialSelectedElementId: meterId,

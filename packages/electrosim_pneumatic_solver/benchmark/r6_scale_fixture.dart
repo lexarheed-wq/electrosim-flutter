@@ -7,8 +7,7 @@ import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 /// pair is linked by an explicit calibrated passage. This benchmark does NOT
 /// represent a 400-widget Flutter interaction or a complete 5/2 workshop.
 final class R6PhysicalScaleCase {
-  R6PhysicalScaleCase(this.fittingCount)
-    : solver = _create(fittingCount) {
+  R6PhysicalScaleCase(this.fittingCount) : solver = _create(fittingCount) {
     if (fittingCount < 2 || fittingCount > 10000) {
       throw ArgumentError.value(
         fittingCount,

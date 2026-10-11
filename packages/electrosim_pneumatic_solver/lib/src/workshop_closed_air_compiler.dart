@@ -110,10 +110,8 @@ final class WorkshopClosedAirCompiler {
 
       // This is the standard lumped effective-area K correction, not a
       // detailed length-dependent Darcy friction calculation.
-      final double boreArea =
-          math.pi * math.pow(pipe.innerDiameterM, 2) / 4;
-      final double area =
-          boreArea / math.sqrt(1 + pipe.lossCoefficient);
+      final double boreArea = math.pi * math.pow(pipe.innerDiameterM, 2) / 4;
+      final double area = boreArea / math.sqrt(1 + pipe.lossCoefficient);
       passages.add(
         AirPassage(
           id: pipe.id,

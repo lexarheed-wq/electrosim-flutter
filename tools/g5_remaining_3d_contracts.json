@@ -1,0 +1,338 @@
+{
+  "source_ref": "feat/g5-remaining-3d-contract-guard-20261011",
+  "source_palette_blob_sha": "935a09e547da427adafb644c4833e6dc99fed7df",
+  "notice": "F9 catalogue identity baseline for 26 planned original 3D models. This does not attest physical dimensions, render completion, Blender evidence, or runtime qualification. Do not rewrite physical models to fit graphics.",
+  "items": [
+    {
+      "key": "instrument-voltmeter",
+      "electrical_model": "physical_voltmeter",
+      "visual_model": "physical_voltmeter",
+      "variant": null,
+      "kind": "instrument",
+      "terminals": [],
+      "probe_based": true
+    },
+    {
+      "key": "instrument-ammeter",
+      "electrical_model": "physical_ammeter",
+      "visual_model": "physical_ammeter",
+      "variant": null,
+      "kind": "instrument",
+      "terminals": [],
+      "probe_based": true
+    },
+    {
+      "key": "instrument-frequency",
+      "electrical_model": "physical_frequency_meter",
+      "visual_model": "physical_frequency_meter",
+      "variant": null,
+      "kind": "instrument",
+      "terminals": [],
+      "probe_based": true
+    },
+    {
+      "key": "instrument-phase-sequence",
+      "electrical_model": "physical_phase_sequence_tester",
+      "visual_model": "physical_phase_sequence_tester",
+      "variant": null,
+      "kind": "instrument",
+      "terminals": [],
+      "probe_based": true
+    },
+    {
+      "key": "external-crusher",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "crusher",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-air-conditioner",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "air-conditioner",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-compressor",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "compressor",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-freezer",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "freezer",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-conveyor",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "conveyor",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-iron",
+      "electrical_model": "resistor",
+      "visual_model": "catalog_heater",
+      "variant": "iron",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-mixer",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "mixer",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-computer",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "computer",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-pump-3p",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "pump",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-pump-ac1",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_motor_driven_2t",
+      "variant": "pump",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-solar-pump",
+      "electrical_model": "motor_dc",
+      "visual_model": "catalog_motor_driven_2t",
+      "variant": "pump",
+      "kind": "component",
+      "terminals": [
+        "+",
+        "−"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-refrigerator",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "refrigerator",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-refrigerator-dc",
+      "electrical_model": "motor_dc",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "refrigerator-dc",
+      "kind": "component",
+      "terminals": [
+        "+",
+        "−"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-tv",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_appliance_2t",
+      "variant": "television",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-fan-ac1",
+      "electrical_model": "impedance",
+      "visual_model": "catalog_motor_driven_2t",
+      "variant": "fan",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "external-fan-3p",
+      "electrical_model": "motor_3p_6t",
+      "visual_model": "catalog_motor_driven_6t",
+      "variant": "fan",
+      "kind": "component",
+      "terminals": [
+        "U1",
+        "V1",
+        "W1",
+        "U2",
+        "V2",
+        "W2"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "pv-resistive-load",
+      "electrical_model": "pv_resistive_load",
+      "visual_model": "pv_resistive_load",
+      "variant": "pv-load",
+      "kind": "component",
+      "terminals": [
+        "L",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "source-ac3-grid",
+      "electrical_model": "ac3_voltage_source",
+      "visual_model": "ac3_voltage_source",
+      "variant": "ac3-grid",
+      "kind": "source",
+      "terminals": [
+        "L1",
+        "L2",
+        "L3",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "source-ac3-alternator",
+      "electrical_model": "ac3_voltage_source",
+      "visual_model": "ac3_voltage_source",
+      "variant": "ac3-generator",
+      "kind": "source",
+      "terminals": [
+        "L1",
+        "L2",
+        "L3",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "load-wye-3p",
+      "electrical_model": "load_wye_3p",
+      "visual_model": "load_wye_3p",
+      "variant": "load-wye",
+      "kind": "component",
+      "terminals": [
+        "L1",
+        "L2",
+        "L3",
+        "N"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "load-delta-3p",
+      "electrical_model": "load_delta_3p",
+      "visual_model": "load_delta_3p",
+      "variant": "load-delta",
+      "kind": "component",
+      "terminals": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "probe_based": false
+    },
+    {
+      "key": "impedance",
+      "electrical_model": "impedance",
+      "visual_model": "impedance",
+      "variant": null,
+      "kind": "component",
+      "terminals": [
+        "1",
+        "2"
+      ],
+      "probe_based": false
+    }
+  ]
+}

@@ -52,8 +52,10 @@ final class WorkshopClosedAirCompiler {
     PneumaticNetwork network,
   ) {
     final List<PneumaticDevice> cylinders = network.devices
-        .where((PneumaticDevice d) =>
-            d.kind == PneumaticDeviceKind.doubleActingCylinder)
+        .where(
+          (PneumaticDevice d) =>
+              d.kind == PneumaticDeviceKind.doubleActingCylinder,
+        )
         .toList();
     if (cylinders.length != 1) {
       throw const PneumaticPhysicsException(
@@ -74,6 +76,7 @@ final class WorkshopClosedAirCompiler {
       }
       return value;
     }
+
     return CoupledMovingCylinderAirNetwork(
       airNetwork: _compile(
         network,
@@ -108,6 +111,7 @@ final class WorkshopClosedAirCompiler {
       }
       return value;
     }
+
     return DoubleActingCylinderGeometry(
       pistonDiameterM: required('pistonDiameterM'),
       rodDiameterM: required('rodDiameterM'),
@@ -168,8 +172,7 @@ final class WorkshopClosedAirCompiler {
       }
       kinds[device.id] = device.kind;
       if (isCylinder) {
-        final DoubleActingCylinderGeometry geometry =
-            _cylinderGeometry(device);
+        final DoubleActingCylinderGeometry geometry = _cylinderGeometry(device);
         final Map<String, double> p = device.parametersSi;
         double required(String key) {
           final double? value = p[key];
@@ -181,6 +184,7 @@ final class WorkshopClosedAirCompiler {
           }
           return value;
         }
+
         final double initialPosition = required('initialPositionM');
         requireNonnegativeFinite(initialPosition, 'initialPositionM');
         final Map<String, PneumaticPort> cylinderPorts =
@@ -193,8 +197,7 @@ final class WorkshopClosedAirCompiler {
               'A/B must be work ports owned by the double-acting cylinder.',
             );
           }
-          final String name =
-              port.id.value.substring('${device.id}.'.length);
+          final String name = port.id.value.substring('${device.id}.'.length);
           cylinderPorts[name] = port;
         }
         if (cylinderPorts.length != 2 ||

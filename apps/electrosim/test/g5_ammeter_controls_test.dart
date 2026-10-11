@@ -80,6 +80,17 @@ void main() {
     expect(a.cutConnectionId, originalCut);
   });
 
+  test('fuse hatch does not intercept ammeter selector hit region', () {
+    const size = Size(112, 152);
+    expect(F18AmmeterControls.actionAt(const Offset(53, 86), size),
+        F18VoltmeterAction.selector);
+    expect(F18AmmeterControls.actionAt(const Offset(53, 114), size), isNull);
+    expect(F18AmmeterControls.actionAt(const Offset(35, 56), size),
+        F18VoltmeterAction.hold);
+    expect(F18AmmeterControls.actionAt(const Offset(77, 56), size),
+        F18VoltmeterAction.light);
+  });
+
   test('selector never creates a new electrical terminal or meter type', () {
     var a = meter();
     a = F18AmmeterControls.apply(a, F18VoltmeterAction.selector);

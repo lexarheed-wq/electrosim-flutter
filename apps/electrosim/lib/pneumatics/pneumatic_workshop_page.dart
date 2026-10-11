@@ -26,8 +26,7 @@ class PneumaticWorkshopPage extends StatefulWidget {
 
 class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late PneumaticWorkshopState _state;
-  final List<PneumaticWorkshopState> _undo = <PneumaticWorkshopState>[];
-  final List<PneumaticWorkshopState> _redo = <PneumaticWorkshopState>[];
+  late final PneumaticWorkshopSession _session;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
@@ -68,15 +67,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             ),
           ),
     );
+    _session = PneumaticWorkshopSession(_state.project);
+    _session.switchView(_state.view);
   }
 
   void _edit(PneumaticWorkshopState Function() operation) {
     try {
       final PneumaticWorkshopState updated = operation();
+      _session.apply((PneumaticWorkshopState current) => updated);
       setState(() {
-        _undo.add(_state);
-        _redo.clear();
-        _state = updated;
+        _state = _session.state;
         _firstPort = null;
         _invalidateAirRuntime();
       });
@@ -88,12 +88,14 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   void _history(bool undo) {
-    final List<PneumaticWorkshopState> source = undo ? _undo : _redo;
-    final List<PneumaticWorkshopState> other = undo ? _redo : _undo;
-    if (source.isEmpty) return;
+    if (undo ? !_session.canUndo : !_session.canRedo) return;
     setState(() {
-      other.add(_state);
-      _state = source.removeLast();
+      if (undo) {
+        _session.undo();
+      } else {
+        _session.redo();
+      }
+      _state = _session.state;
       _firstPort = null;
       _invalidateAirRuntime();
     });
@@ -458,13 +460,13 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           ),
           IconButton(
             key: const Key('air-undo'),
-            onPressed: _undo.isEmpty ? null : () => _history(true),
+            onPressed: !_session.canUndo ? null : () => _history(true),
             icon: const Icon(Icons.undo),
             tooltip: 'Annuler',
           ),
           IconButton(
             key: const Key('air-redo'),
-            onPressed: _redo.isEmpty ? null : () => _history(false),
+            onPressed: !_session.canRedo ? null : () => _history(false),
             icon: const Icon(Icons.redo),
             tooltip: 'Rétablir',
           ),
@@ -519,7 +521,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   ],
                   selected: <PneumaticWorkshopView>{_state.view},
                   onSelectionChanged: (selection) => setState(() {
-                    _state = _state.switchView(selection.single);
+                    _session.switchView(selection.single);
+                    _state = _session.state;
                     _firstPort = null;
                   }),
                 ),
@@ -719,7 +722,10 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           }),
           child: InkWell(
             key: Key('device-${device.id}'),
-            onTap: () => setState(() => _state = _state.select(device.id)),
+            onTap: () => setState(() {
+              _session.select(device.id);
+              _state = _session.state;
+            }),
             child: Container(
               width: 170,
               height: 140,

@@ -45,6 +45,19 @@ jobs:
           done
           git diff --check
           git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Verify real two-view editor undo redo widget
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd apps/electrosim
+          flutter pub get
+          dart format lib/pneumatics/pneumatic_workshop_page.dart test/r6m_workshop_session_widget_test.dart
+          git diff --exit-code -- lib/pneumatics/pneumatic_workshop_page.dart test/r6m_workshop_session_widget_test.dart
+          flutter test test/r6m_workshop_session_widget_test.dart test/r6_workshop_authored_runtime_test.dart
       - uses: actions/upload-artifact@v4
         if: always()
         with:

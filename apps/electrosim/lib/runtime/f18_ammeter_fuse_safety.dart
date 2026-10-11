@@ -98,6 +98,63 @@ abstract final class F18AmmeterFuseSafety {
         settings: meter.settings,
       );
 
+  /// A fuse can be physically replaced only after the instrument is OFF and
+  /// EVERY electrical source/storage component has been removed from this
+  /// simulation scene. A 0 V reading across the blown fuse is not isolation.
+  /// This intentionally conservative policy cannot energize a repair scene.
+  static bool canReplace(CircuitState circuit, InstrumentInstance meter) =>
+      meter.kind == InstrumentKind.ammeter &&
+      meter.fuseBlown &&
+      !meter.poweredOn &&
+      circuit.sources.isEmpty &&
+      !circuit.components.any((component) {
+        final type = component.modelType.toLowerCase();
+        return type.contains('battery') ||
+            type.contains('inverter') ||
+            type.contains('generator') ||
+            type.contains('alternator') ||
+            type.contains('capacitor');
+      });
+
+  static CircuitState replaceSafely({
+    required CircuitState circuit,
+    required InstrumentId instrumentId,
+  }) {
+    final meter = circuit.instruments
+        .where((item) => item.id == instrumentId)
+        .firstOrNull;
+    if (meter == null || !canReplace(circuit, meter)) return circuit;
+    final replacement = InstrumentInstance(
+      id: meter.id,
+      kind: meter.kind,
+      mode: meter.mode,
+      inputImpedanceOhm: meter.inputImpedanceOhm,
+      burdenResistanceOhm: meter.burdenResistanceOhm,
+      maximumVoltageV: meter.maximumVoltageV,
+      maximumCurrentA: meter.maximumCurrentA,
+      fuseRatingA: meter.fuseRatingA,
+      fuseBlown: false,
+      poweredOn: meter.poweredOn,
+      cutConnectionId: meter.cutConnectionId,
+      settings: meter.settings,
+    );
+    return CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision + 1,
+      mode: circuit.mode,
+      sources: circuit.sources,
+      components: circuit.components,
+      connections: circuit.connections,
+      instruments: [
+        for (final item in circuit.instruments)
+          if (item.id == meter.id) replacement else item,
+      ],
+      probes: circuit.probes,
+      settings: circuit.settings,
+      metadata: circuit.metadata,
+    );
+  }
+
   /// Runtime-only open circuit. The design connections and their metadata
   /// survive untouched; the solver sees exactly the cut wire disabled.
   static CircuitState projectOpenFuses(CircuitState design) {

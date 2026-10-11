@@ -113,9 +113,18 @@ void main() {
     final hold = instrument().settings[F18VoltmeterControls.heldTextKey];
     expect(hold, isA<String>());
     expect(hold, contains('24'));
+    // HOLD release, RANGE and SELECT are tested on the real pointer surface.
+    await tap(F18VoltmeterAction.hold);
+    expect(F18VoltmeterControls.isHeld(instrument()), isFalse);
+    await tap(F18VoltmeterAction.range);
+    expect(F18VoltmeterControls.rangeLabel(instrument()), '20 V');
     await tap(F18VoltmeterAction.select);
     expect(instrument().mode, InstrumentMode.voltageAcRms);
     expect(F18VoltmeterControls.isHeld(instrument()), isFalse);
+    await tap(F18VoltmeterAction.selector);
+    expect(instrument().mode, InstrumentMode.resistance);
+    await tap(F18VoltmeterAction.selector);
+    expect(instrument().poweredOn, isFalse);
     final scene = tester.widgetList<CustomPaint>(find.byType(CustomPaint))
         .map((w) => w.painter).whereType<CircuitScenePainter>().first;
     expect(scene.circuit.connections, hasLength(3));

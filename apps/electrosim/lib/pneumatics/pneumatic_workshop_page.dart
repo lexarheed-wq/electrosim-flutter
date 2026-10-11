@@ -738,12 +738,20 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         child: GestureDetector(
           onPanStart: (_) => _dragBaseline = _state,
           onPanUpdate: (details) => setState(() {
+            // Read the latest layout on every pointer update. A captured
+            // pre-drag pose loses all but the last delta when Flutter rebuilds.
+            final Map<String, PhysicalViewPose> activeLayout =
+                _state.view == PneumaticWorkshopView.physical
+                ? _state.project.physicalLayout
+                : _state.project.schematicLayout;
+            final PhysicalViewPose currentPose =
+                activeLayout[device.id] ?? pose;
             _state = _state.move(
               physicalId: device.id,
               pose: PhysicalViewPose(
-                x: pose.x + details.delta.dx,
-                y: pose.y + details.delta.dy,
-                rotationRad: pose.rotationRad,
+                x: currentPose.x + details.delta.dx,
+                y: currentPose.y + details.delta.dy,
+                rotationRad: currentPose.rotationRad,
               ),
             );
           }),

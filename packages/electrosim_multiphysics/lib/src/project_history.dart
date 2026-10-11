@@ -4,7 +4,8 @@ import 'dart:collection';
 /// Runtime gas masses belong to the solver snapshot, never to this history.
 final class ProjectHistory<T> {
   ProjectHistory(T initial, {this.capacity = 100})
-      : assert(capacity > 0), _current = initial;
+    : assert(capacity > 0),
+      _current = initial;
   final int capacity;
   T _current;
   final List<T> _undo = <T>[];

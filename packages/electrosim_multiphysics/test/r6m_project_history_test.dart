@@ -13,28 +13,30 @@ void main() {
       ),
     );
     final PneumaticWorkshopSession session = PneumaticWorkshopSession(initial);
-    session.apply((PneumaticWorkshopState state) => state.place(
-      device: PneumaticDevice(
-        id: 'p1',
-        kind: PneumaticDeviceKind.manometer,
-        ports: <PneumaticPort>[
-          PneumaticPort(
-            id: PneumaticPortId('p1.A'),
-            deviceId: 'p1',
-            role: PneumaticPortRole.work,
-          ),
-        ],
+    session.apply(
+      (PneumaticWorkshopState state) => state.place(
+        device: PneumaticDevice(
+          id: 'p1',
+          kind: PneumaticDeviceKind.manometer,
+          ports: <PneumaticPort>[
+            PneumaticPort(
+              id: PneumaticPortId('p1.A'),
+              deviceId: 'p1',
+              role: PneumaticPortRole.work,
+            ),
+          ],
+        ),
+        physicalPose: PhysicalViewPose(x: 10, y: 20),
+        schematicPose: PhysicalViewPose(x: 30, y: 40),
       ),
-      physicalPose: PhysicalViewPose(x: 10, y: 20),
-      schematicPose: PhysicalViewPose(x: 30, y: 40),
-    ));
+    );
     expect(session.state.project.devices.single.id, 'p1');
     expect(session.state.project.physicalLayout['p1']!.x, 10);
     session.switchView(PneumaticWorkshopView.schematic);
-    session.apply((PneumaticWorkshopState state) => state.move(
-      physicalId: 'p1',
-      pose: PhysicalViewPose(x: 35, y: 45),
-    ));
+    session.apply(
+      (PneumaticWorkshopState state) =>
+          state.move(physicalId: 'p1', pose: PhysicalViewPose(x: 35, y: 45)),
+    );
     expect(session.state.project.schematicLayout['p1']!.x, 35);
     expect(session.state.project.physicalLayout['p1']!.x, 10);
     session.undo();
@@ -60,10 +62,8 @@ void main() {
     );
     expect(
       () => session.apply(
-        (PneumaticWorkshopState s) => s.move(
-          physicalId: 'missing',
-          pose: PhysicalViewPose(x: 1, y: 2),
-        ),
+        (PneumaticWorkshopState s) =>
+            s.move(physicalId: 'missing', pose: PhysicalViewPose(x: 1, y: 2)),
       ),
       throwsA(isA<MultiphysicsContractException>()),
     );

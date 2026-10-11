@@ -27,10 +27,10 @@ final class AuthoredCycleSession {
     required bool startPressed,
   }) {
     if (_paused) return _accepted;
-    if (!durationS.isFinite || durationS < 0) {
-      throw ArgumentError.value(durationS, 'durationS');
-    }
     try {
+      if (!durationS.isFinite || durationS < 0) {
+        throw ArgumentError.value(durationS, 'durationS');
+      }
       final AuthoredNetworkSelfHoldSnapshot candidate = cycle.advance(
         _accepted,
         durationS: durationS,

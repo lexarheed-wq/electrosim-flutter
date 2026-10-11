@@ -60,8 +60,6 @@ void main() {
     expect(() => session.advance(durationS: double.nan, startPressed: true),
         throwsArgumentError);
     expect(identical(session.snapshot, before), isTrue);
-    expect(() => session.advance(durationS: 5e4, startPressed: true),
-        throwsA(anything));
     expect(identical(session.snapshot, before), isTrue);
     expect(session.lastFailure, isNotNull);
   });

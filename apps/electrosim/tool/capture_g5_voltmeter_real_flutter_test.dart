@@ -10,6 +10,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../test/support/regression_fixture.dart';
@@ -18,6 +19,19 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     expect(await F18Voltmeter3dAssets.preload(), isTrue);
+    final fonts = '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
+    final loader = FontLoader('Roboto');
+    for (final name in ['Roboto-Regular.ttf', 'Roboto-Medium.ttf', 'Roboto-Bold.ttf']) {
+      loader.addFont(Future.value(ByteData.sublistView(
+        await File('$fonts/$name').readAsBytes(),
+      )));
+    }
+    await loader.load();
+    await (FontLoader('MaterialIcons')..addFont(
+      Future.value(ByteData.sublistView(
+        await File('$fonts/MaterialIcons-Regular.otf').readAsBytes(),
+      )),
+    )).load();
   });
 
   testWidgets('actual ElectroSim board, energized 24V circuit and connected probes',

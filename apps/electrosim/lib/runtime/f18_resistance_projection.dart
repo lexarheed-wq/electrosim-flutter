@@ -28,6 +28,10 @@ abstract final class F18ResistanceProjection {
       return fail(PhysicalInstrumentStatus.unsupportedMode,
           'Disconnect all sources and use only passive supported elements.');
     }
+    if (!F18OhmTestCircuit.hasConductivePath(circuit, first, second)) {
+      return fail(PhysicalInstrumentStatus.overRange,
+          'Open circuit between V/Ω and COM: OL.');
+    }
     final ElectroSimRuntimeSnapshot solved;
     try {
       solved = engine.evaluate(disposable);

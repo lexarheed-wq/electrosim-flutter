@@ -16,24 +16,24 @@ void main() {
             orifice: orifice,
           );
       final routing = Valve52CylinderRouting(
-      supplyA: boundary('supplyA', 701325),
-      supplyB: boundary('supplyB', 701325),
-      exhaustA: boundary('exhaustA', 101325),
-      exhaustB: boundary('exhaustB', 101325),
-    );
+        supplyA: boundary('supplyA', 701325),
+        supplyB: boundary('supplyB', 701325),
+        exhaustA: boundary('exhaustA', 101325),
+        exhaustB: boundary('exhaustB', 101325),
+      );
       final cylinder = MovingDoubleActingAirCylinder.fromPressure(
-      geometry: DoubleActingCylinderGeometry(
-        pistonDiameterM: .032,
-        rodDiameterM: .008,
-        strokeM: .1,
-        deadVolumeAM3: .0005,
-        deadVolumeBM3: .0005,
-      ),
-      mechanics: CylinderMechanicalCalibration(movingMassKg: 1),
-      initialPositionM: .05,
-      initialPressureAAbsPa: 201325,
-      initialPressureBAbsPa: 201325,
-    );
+        geometry: DoubleActingCylinderGeometry(
+          pistonDiameterM: .032,
+          rodDiameterM: .008,
+          strokeM: .1,
+          deadVolumeAM3: .0005,
+          deadVolumeBM3: .0005,
+        ),
+        mechanics: CylinderMechanicalCalibration(movingMassKg: 1),
+        initialPositionM: .05,
+        initialPressureAAbsPa: 201325,
+        initialPressureBAbsPa: 201325,
+      );
       final start = cylinder.initialSnapshot;
       final extended = routing.connect(
         cylinder: cylinder,

@@ -142,6 +142,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     double? initial,
     ValueChanged<double> save, {
     bool allowZero = false,
+    double? maxValue,
   }) => TextFormField(
     initialValue: initial?.toString() ?? '',
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -156,6 +157,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         return allowZero
             ? 'Saisir un nombre positif ou nul.'
             : 'Saisir un nombre strictement positif.';
+      }
+      if (maxValue != null && number > maxValue) {
+        return 'La valeur doit être inférieure ou égale à $maxValue.';
       }
       return null;
     },
@@ -310,6 +314,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               'Cd (0 < Cd ≤ 1)',
               null,
               (double x) => entered = x,
+              maxValue: 1,
             ),
           ),
           actions: <Widget>[
@@ -322,7 +327,6 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               onPressed: () {
                 if (!key.currentState!.validate()) return;
                 key.currentState!.save();
-                if (entered > 1) return;
                 Navigator.of(dialog).pop(entered);
               },
               child: const Text('Calculer'),
@@ -578,6 +582,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                         .map((e) => '${e.key}=${e.value}')
                                         .join('  '),
                                     style: const TextStyle(fontSize: 10),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 if (_airSnapshot?.chambers[selected.id] != null)
                                   Text(
@@ -599,6 +605,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                       : 'Débits calculés (kg/s) : '
                                           '${_airSnapshot!.passageMassFlowKgPerS.entries.map((e) => '${e.key}=${e.value.toStringAsExponential(2)}').join(' ; ')}',
                                   style: const TextStyle(fontSize: 11),
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
                                   key: const Key('air-measured-flows'),
                                 ),
                                 if (selected.kind == PneumaticDeviceKind.tee ||

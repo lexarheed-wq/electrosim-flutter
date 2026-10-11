@@ -3,20 +3,19 @@ import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:test/test.dart';
 
-PneumaticDevice node(String id, PneumaticDeviceKind kind) =>
-    PneumaticDevice(
-      id: id,
-      kind: kind,
-      ports: <PneumaticPort>[
-        PneumaticPort(
-          id: PneumaticPortId('$id.1'),
-          deviceId: id,
-          role: kind == PneumaticDeviceKind.idealSource
-              ? PneumaticPortRole.supply
-              : PneumaticPortRole.work,
-        ),
-      ],
-    );
+PneumaticDevice node(String id, PneumaticDeviceKind kind) => PneumaticDevice(
+  id: id,
+  kind: kind,
+  ports: <PneumaticPort>[
+    PneumaticPort(
+      id: PneumaticPortId('$id.1'),
+      deviceId: id,
+      role: kind == PneumaticDeviceKind.idealSource
+          ? PneumaticPortRole.supply
+          : PneumaticPortRole.work,
+    ),
+  ],
+);
 
 void main() {
   test('R6/F calibration preserves electrical identity and both poses', () {
@@ -49,13 +48,13 @@ void main() {
     );
     final PneumaticWorkshopState after = before.calibrate(
       physicalId: 'tee',
-      parametersSi: <String, double>{
-        'pressureAbsPa': 201325,
-        'volumeM3': .002,
-      },
+      parametersSi: <String, double>{'pressureAbsPa': 201325, 'volumeM3': .002},
     );
     expect(original.pneumaticNetwork.devices[1].parametersSi, isEmpty);
-    expect(after.project.pneumaticNetwork.devices[1].parametersSi['volumeM3'], .002);
+    expect(
+      after.project.pneumaticNetwork.devices[1].parametersSi['volumeM3'],
+      .002,
+    );
     expect(after.project.electricalCircuit.revision, 7);
     expect(after.project.physicalLayout['source']!.x, 40);
     expect(after.project.schematicLayout['source']!.x, 150);
@@ -64,7 +63,10 @@ void main() {
     final MultiphysicsProject roundtrip = MultiphysicsProject.fromJsonString(
       after.project.toJsonString(),
     );
-    expect(roundtrip.pneumaticNetwork.devices[1].parametersSi['pressureAbsPa'], 201325);
+    expect(
+      roundtrip.pneumaticNetwork.devices[1].parametersSi['pressureAbsPa'],
+      201325,
+    );
   });
 
   test('R6/F rejects missing, unphysical and unsupported calibration', () {

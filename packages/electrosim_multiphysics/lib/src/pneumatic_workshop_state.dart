@@ -130,6 +130,7 @@ final class PneumaticWorkshopState {
                     'viscousNsPerM',
                     'coilPickupDelayS',
                     'coilReleaseDelayS',
+                    'coilDropRatio',
                     'sensorReleasePositionM',
                   }.contains(e.key)
                 ? value < 0

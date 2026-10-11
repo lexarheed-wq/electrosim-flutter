@@ -158,7 +158,8 @@ void main() {
     expect(pressed.timeS, 0);
     expect(pressed.electrical!.relay.energized, isTrue);
     expect(pressed.electrical!.valveReading.voltageV, closeTo(24, 1e-9));
-    expect(pressed.spool, ValveSpoolSide.coilSide);
+    expect(pressed.spool, ValveSpoolSide.springSide);
+    expect(pressed.physical.coil.pendingEnergized, isTrue);
     expect(pressed.air.air.totalMassKg, initial.air.air.totalMassKg);
     expect(pressed.physical.pneumaticAdvances, 0);
 
@@ -197,11 +198,18 @@ void main() {
         reached = true;
         expect(snapshot.electrical!.relay.energized, false);
         expect(snapshot.electrical!.valveReading.voltageV, closeTo(0, 1e-8));
-        expect(snapshot.spool, ValveSpoolSide.springSide);
+        expect(snapshot.physical.coil.pendingEnergized, isFalse);
         break;
       }
     }
     expect(reached, isTrue, reason: 'The physical piston must reach B1.');
+    final AuthoredNetworkSelfHoldSnapshot springReturn = cycle.advance(
+      snapshot,
+      durationS: .012,
+      startPressed: false,
+    );
+    expect(springReturn.spool, ValveSpoolSide.springSide);
+    expect(cycle.massBalanceResidualKg(springReturn).abs(), lessThan(1e-8));
     final AuthoredNetworkSelfHoldSnapshot paused = cycle.advance(
       snapshot,
       durationS: .1,

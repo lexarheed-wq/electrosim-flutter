@@ -2253,7 +2253,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           // Other catalog entries retain original search-only semantics.
           // Only physical instruments become available in the expanded
           // catalog and the dedicated measuring-instruments category.
-          if (q.isEmpty && item.searchOnlyModes.contains(widget.mode)) {
+          if (q.isEmpty &&
+              item.searchOnlyModes.contains(widget.mode) &&
+              item.keyName != 'instrument-voltmeter') {
             if (item.kind != F9PaletteElementKind.instrument ||
                 (_category == 'Tous' && !_expanded)) {
               return false;
@@ -2448,12 +2450,14 @@ class _PaletteDraggableTile extends StatelessWidget {
                 // Physical housings need enough pixels to show their moulding.
                 width:
                     definition.modelType == 'rcd_2p_ac1' ||
+                        definition.keyName == 'instrument-voltmeter' ||
                         F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 72
                     : 48,
                 height: definition.modelType == 'rcd_2p_ac1'
                     ? 108
-                    : F18PhysicalPlateAssets.ready(definition.modelType)
+                    : definition.keyName == 'instrument-voltmeter' ||
+                          F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
                 child: FittedBox(

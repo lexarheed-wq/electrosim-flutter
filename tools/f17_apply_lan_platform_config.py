@@ -129,6 +129,9 @@ def apply_macos(app: Path) -> None:
         # The same binary can act as teacher (server) or student (client).
         data["com.apple.security.network.client"] = True
         data["com.apple.security.network.server"] = True
+        # P3: permit writing documents explicitly selected in the native
+        # macOS save dialog, without broad filesystem access.
+        data["com.apple.security.files.user-selected.read-write"] = True
         _write_plist(path, data)
 
 
@@ -139,6 +142,8 @@ def check_macos(app: Path) -> None:
             raise ConfigError(f"macOS network.client entitlement missing: {path.name}")
         if data.get("com.apple.security.network.server") is not True:
             raise ConfigError(f"macOS network.server entitlement missing: {path.name}")
+        if data.get("com.apple.security.files.user-selected.read-write") is not True:
+            raise ConfigError(f"macOS user-selected read-write entitlement missing: {path.name}")
 
 
 def apply(app: Path, target: str) -> None:

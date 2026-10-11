@@ -1,0 +1,80 @@
+name: PNEU-R3 — Measured 24V Event Coupling
+on:
+  push:
+    branches:
+      - feat/pneumatics-r3a-24v-event-clock-20261010
+      - feat/pneumatics-r3b-selfhold-dc-20261010
+  pull_request:
+    branches:
+      - feat/pneumatics-r2c-open-boundaries-20261010
+      - feat/pneumatics-r3a-24v-event-clock-20261010
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r3-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  electropneumatic-coupling:
+    name: electropneumatic-coupling
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Identity, source provenance, and pure-Dart separation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r3
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            echo "date_utc=$(date -u +%FT%TZ)"
+            dart --version
+            uname -a
+          } | tee build/pneumatics-r3/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --check
+          if grep -R -n "package:flutter/" packages/electrosim_electropneumatic/lib; then
+            echo 'R3 engine may not import UI framework'
+            exit 1
+          fi
+      - name: R3 24V solver coupling, event and cancellation proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_electropneumatic
+            dart pub get
+            dart format lib test
+            git diff -- lib test | tee ../../build/pneumatics-r3/FORMAT_PATCH.diff
+            git diff --exit-code -- lib test
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r3/R3_ELECTROPNEUMATIC.log
+      - name: Independent R2 scientific non-regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r3/R2_SCIENCE.log
+      - name: Verify no electrical-domain or tracked source rewrites
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r3-coupling-${{ github.sha }}
+          path: build/pneumatics-r3/
+          if-no-files-found: warn
+          retention-days: 30

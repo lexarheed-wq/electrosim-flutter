@@ -3,6 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_references.dart';
 
 enum WorkspaceRepresentation { plate, schematic }
@@ -268,6 +269,10 @@ class IndustrialSchematicPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final references = IndustrialSchematicReferences.build(circuit);
+    final industrial =
+        circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+        ? IndustrialMarkingRegistry.inspect(circuit)
+        : null;
     canvas.save();
     canvas.translate(viewport.translation.dx, viewport.translation.dy);
     canvas.scale(viewport.scale);
@@ -322,9 +327,13 @@ class IndustrialSchematicPainter extends CustomPainter {
               ..strokeWidth = 2,
           );
         }
+        final fullRef = industrial?.terminals[terminals[i].id.value];
+        final defaultRef = '${references.labelOf(id)}:${terminals[i].name}';
         label(
           canvas,
-          terminals[i].name,
+          fullRef != null && fullRef != defaultRef
+              ? fullRef
+              : terminals[i].name,
           a + Offset(a.dy == 0 ? 0 : 8, a.dy == 0 ? -9 : -a.dy.sign * 9),
           size: 9,
         );
@@ -488,6 +497,32 @@ class IndustrialSchematicPainter extends CustomPainter {
     }
     for (final c in circuit.components) {
       element(c.id.value, c.modelType, c.terminals);
+    }
+    if (industrial != null) {
+      final marks = industrial;
+      final geometry = CircuitGeometryIndex.build(circuit, layout);
+      for (final wire in circuit.connections) {
+        final from = geometry.terminalPositions[wire.fromTerminalId];
+        final to = geometry.terminalPositions[wire.toTerminalId];
+        if (from == null || to == null) continue;
+        final path = <Offset>[from, ...layout.routeFor(wire.id.value), to];
+        final midpoint = path[path.length ~/ 2];
+        label(
+          canvas,
+          marks.conductors[wire.id.value] ?? wire.id.value,
+          midpoint + const Offset(0, -10),
+          size: 9,
+          color: switch (marks.colors[wire.id.value]) {
+            IndustrialConductorColor.brown => const Color(0xFF75451F),
+            IndustrialConductorColor.black => const Color(0xFF181818),
+            IndustrialConductorColor.grey => const Color(0xFF757575),
+            IndustrialConductorColor.blue => const Color(0xFF1E62A8),
+            IndustrialConductorColor.greenYellow => const Color(0xFF13803A),
+            IndustrialConductorColor.red => const Color(0xFFC73830),
+            IndustrialConductorColor.unspecified || null => Colors.black87,
+          },
+        );
+      }
     }
     final start = pendingTerminal == null
         ? null

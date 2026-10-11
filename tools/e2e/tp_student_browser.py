@@ -19,11 +19,14 @@ def join(page):
     page.goto(url, wait_until='domcontentloaded')
     print('Loaded student document', flush=True)
     enable_accessibility(page)
+    print('Accessibility enabled', flush=True)
     page.get_by_role('textbox').click()
+    print('Student name field focused', flush=True)
     page.wait_for_timeout(150)
     page.keyboard.insert_text('Élève parcours réel')
     page.wait_for_timeout(150)
     page.get_by_role('button', name='Rejoindre la séance').click()
+    print('Join submitted', flush=True)
 
 def open_tp(page):
     page.get_by_text('Espace élève', exact=True).wait_for(timeout=30000)
@@ -42,9 +45,11 @@ def diagnostic(page, answer):
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium'), headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
     context = browser.new_context(viewport={'width': 1440, 'height': 1000})
+    context.route('https://**/*', lambda route: route.abort())
     page = context.new_page()
     errors = []
     page.on('pageerror', lambda e: (errors.append(str(e)), print('PAGE ERROR', str(e), flush=True)))
+    page.on('request', lambda r: print('EXTERNAL REQUEST', r.url, flush=True) if r.url.startswith('https://') else None)
     page.on('requestfailed', lambda r: print('REQUEST FAILED', r.url, r.failure, flush=True))
     try:
         join(page)
@@ -65,13 +70,26 @@ with sync_playwright() as p:
                 page.wait_for_timeout(150)
                 page.mouse.click(*end)
                 page.wait_for_timeout(200)
+            page.mouse.move(528, 670)
+            page.mouse.down()
+            page.mouse.move(480, 460, steps=10)
+            page.mouse.up()
+            page.wait_for_timeout(500)
             page.locator('flt-semantics-host').evaluate("e => [e, ...e.querySelectorAll('*')].forEach(n => n.style.pointerEvents = '')")
+            page.get_by_role('button', name='Rotation 90°').click()
+            page.wait_for_timeout(500)
             print('Wired canvas:', page.locator('body').inner_text(), flush=True)
         else:
             diagnostic(page, 'La lampe reste éteinte, contrôle alimentation')
             page.get_by_text('Entrées enregistrées : 1', exact=True).wait_for()
             page.get_by_role('button', name='Ajouter au centre de la platine').last.click()
         page.screenshot(path=output + '/02-progress.png')
+        saved_layouts = page.evaluate("Object.entries(localStorage).filter(([k]) => k.includes('.visual.')).map(([k,v]) => JSON.parse(v))")
+        assert len(saved_layouts) == 1, 'Student visual layout was not persisted before rescan'
+        original_layout = saved_layouts[0]
+        if wiring:
+            assert any(original_layout['layout']['quarterTurns'].values()), 'Rotation was not saved'
+            assert len(original_layout['layout']['routes']) == 2, 'Wire routes were not saved'
         signal('progress')
         # Wait until the teacher has observed the synchronized work before rescanning.
         deadline = time.monotonic() + 40
@@ -89,6 +107,11 @@ with sync_playwright() as p:
             page.get_by_text('Entrées enregistrées : 1', exact=True).wait_for()
             diagnostic(page, 'Reprise : vérification du câblage')
             page.get_by_text('Entrées enregistrées : 2', exact=True).wait_for()
+        page.wait_for_timeout(500)
+        resumed_layouts = page.evaluate("Object.entries(localStorage).filter(([k]) => k.includes('.visual.')).map(([k,v]) => JSON.parse(v))")
+        assert resumed_layouts == [original_layout], 'Visual layout changed after rescan'
+        with open(output + '/visual-resume.json', 'w') as f:
+            json.dump({'before': original_layout, 'after': resumed_layouts[0]}, f)
         page.screenshot(path=output + '/03-resumed.png')
         original_page.bring_to_front()
         original_page.screenshot(path=output + '/old-tab.png')

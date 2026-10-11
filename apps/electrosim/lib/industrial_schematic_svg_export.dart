@@ -4,6 +4,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 
+import 'industrial_marking_registry.dart';
 import 'industrial_schematic_references.dart';
 import 'industrial_workspace_representation.dart';
 
@@ -14,6 +15,10 @@ abstract final class IndustrialSchematicSvgExport {
     final layout = IndustrialSchematicProjection.derive(circuit, plate);
     final geometry = CircuitGeometryIndex.build(circuit, layout);
     final refs = IndustrialSchematicReferences.build(circuit);
+    final marks =
+        circuit.metadata.containsKey(IndustrialMarkingRegistry.metadataKey)
+        ? IndustrialMarkingRegistry.inspect(circuit)
+        : null;
     final ids = <String>[
       ...circuit.sources.map((e) => e.id.value),
       ...circuit.components.map((e) => e.id.value),
@@ -86,14 +91,54 @@ abstract final class IndustrialSchematicSvgExport {
       ..writeln('<g stroke="black" stroke-width="2" fill="none">');
     for (final wire in wires) {
       final route = paths[wire.id.value]!;
+      final ref = marks?.conductors[wire.id.value];
+      final hint = marks?.colors[wire.id.value];
+      // Coloured *hints*, only for explicitly tagged conductors.
+      // They never change the electrical connection or certify IEC wiring.
+      final stroke = switch (hint) {
+        IndustrialConductorColor.brown => '#75451F',
+        IndustrialConductorColor.black => '#181818',
+        IndustrialConductorColor.grey => '#757575',
+        IndustrialConductorColor.blue => '#1E62A8',
+        IndustrialConductorColor.greenYellow => '#13803A',
+        IndustrialConductorColor.red => '#C73830',
+        IndustrialConductorColor.unspecified || null => null,
+      };
       svg.writeln(
         '<polyline id="wire-${_xml(wire.id.value)}" '
         'data-from="${_xml(wire.fromTerminalId.value)}" '
         'data-to="${_xml(wire.toTerminalId.value)}" '
+        '${ref == null ? '' : 'data-reference="${_xml(ref)}" '}'
+        '${hint == null ? '' : 'data-color-hint="${hint.name}" '}'
+        '${stroke == null ? '' : 'stroke="$stroke" '}'
         'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
       );
+      if (hint == IndustrialConductorColor.greenYellow) {
+        svg.writeln(
+          '<polyline fill="none" stroke="#F9E33B" '
+          'stroke-width="2.6" stroke-dasharray="5 7" '
+          'points="${route.map((p) => '${_n(p.dx)},${_n(p.dy)}').join(' ')}"/>',
+        );
+      }
     }
     svg.writeln('</g>');
+    if (marks != null) {
+      svg.writeln(
+        '<g fill="black" stroke="none" font-family="sans-serif" '
+        'font-size="9" text-anchor="middle">',
+      );
+      for (final wire in wires) {
+        final ref = marks.conductors[wire.id.value]!;
+        final route = paths[wire.id.value]!;
+        final middle = route[route.length ~/ 2];
+        svg.writeln(
+          '<text data-wire-label="${_xml(wire.id.value)}" '
+          'x="${_n(middle.dx)}" y="${_n(middle.dy - 7)}">'
+          '${_xml(ref)}</text>',
+        );
+      }
+      svg.writeln('</g>');
+    }
 
     final models = <String, String>{
       for (final source in circuit.sources) source.id.value: source.modelType,
@@ -118,42 +163,131 @@ abstract final class IndustrialSchematicSvgExport {
         'stroke="black" stroke-width="1.6" fill="none">',
       );
 
-      if (glyph == SchematicGlyph.motor ||
-          glyph == SchematicGlyph.lamp ||
-          glyph == SchematicGlyph.source) {
-        svg.writeln('<circle r="22" cx="0" cy="0"/>');
-        final mark = glyph == SchematicGlyph.motor
-            ? 'M'
-            : glyph == SchematicGlyph.lamp
-            ? 'X'
-            : type.contains('ac')
-            ? '~'
-            : '+';
-        svg.writeln(
-          '<text x="0" y="6" text-anchor="middle" stroke="none" '
-          'fill="black" font-size="20">${_xml(mark)}</text>',
-        );
-      } else if (glyph == SchematicGlyph.contact && ports.length == 2) {
-        svg.writeln(
-          '<path d="M ${_n(-halfWidth)} 0 H -16 M 16 0 H ${_n(halfWidth)}"/>',
-        );
-        svg.writeln(
-          '<circle cx="-16" cy="0" r="2"/><circle cx="16" cy="0" r="2"/>',
-        );
-        svg.writeln(
-          IndustrialSchematicReferences.normallyClosed(type)
-              ? '<path d="M -16 0 H 16"/>'
-              : '<path d="M -16 0 L 12 -17"/>',
-        );
-      } else {
-        svg.writeln(
-          '<rect x="${_n(-halfWidth)}" y="-27" '
-          'width="${_n(halfWidth * 2)}" height="54" fill="white"/>',
-        );
-        svg.writeln(
-          '<text x="0" y="5" text-anchor="middle" '
-          'stroke="none" fill="black" font-size="10">${_xml(type)}</text>',
-        );
+      // Match the same IEC-inspired family geometry used by the live
+      // schematic painter. Only the canonical CircuitState owns connectivity.
+      switch (glyph) {
+        case SchematicGlyph.lamp:
+          svg.writeln('<circle cx="0" cy="0" r="21"/>');
+          svg.writeln('<path d="M -15 -15 L 15 15 M -15 15 L 15 -15"/>');
+        case SchematicGlyph.motor:
+          svg.writeln('<circle cx="0" cy="0" r="22"/>');
+          svg.writeln(
+            '<text x="0" y="7" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="23">M</text>',
+          );
+        case SchematicGlyph.source:
+          svg.writeln('<circle cx="0" cy="0" r="22"/>');
+          final mark = type.contains('ac') ? '~' : '+ -';
+          svg.writeln(
+            '<text x="0" y="6" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="17">${_xml(mark)}</text>',
+          );
+        case SchematicGlyph.contact:
+          if (ports.length <= 2) {
+            svg.writeln(
+              '<path d="M ${_n(-halfWidth)} 0 H -16 '
+              'M 16 0 H ${_n(halfWidth)}"/>',
+            );
+            svg.writeln('<circle cx="-16" cy="0" r="2"/>');
+            svg.writeln('<circle cx="16" cy="0" r="2"/>');
+            svg.writeln(
+              IndustrialSchematicReferences.normallyClosed(type)
+                  ? '<path d="M -16 0 H 16"/>'
+                  : '<path d="M -16 0 L 12 -17"/>',
+            );
+          } else {
+            final coil = type.startsWith('contactor_') && !type.contains('aux');
+            final power = coil ? ports.length - 2 : ports.length;
+            final poles = power ~/ 2;
+            for (var i = 0; i < poles; i++) {
+              final x = anchors[i].dx;
+              svg.writeln(
+                '<path d="M ${_n(x)} -27 V -10 '
+                'M ${_n(x)} 14 V 27 '
+                'M ${_n(x)} -10 L ${_n(x + 10)} 9"/>',
+              );
+              svg.writeln('<circle cx="${_n(x)}" cy="-10" r="2"/>');
+              svg.writeln('<circle cx="${_n(x)}" cy="14" r="2"/>');
+            }
+            if (coil) {
+              svg.writeln('<rect x="-17" y="-7" width="34" height="14"/>');
+              svg.writeln(
+                '<path d="M ${_n(-halfWidth)} 0 H -17 '
+                'M 17 0 H ${_n(halfWidth)}"/>',
+              );
+            }
+          }
+        case SchematicGlyph.protection:
+          svg.writeln(
+            '<rect x="${_n(-halfWidth)}" y="-27" '
+            'width="${_n(2 * halfWidth)}" height="54"/>',
+          );
+          if (ports.length == 2) {
+            svg.writeln(
+              '<path d="M ${_n(-halfWidth)} 0 '
+              'H ${_n(halfWidth)}"/>',
+            );
+          } else {
+            for (var i = 0; i < ports.length ~/ 2; i++) {
+              final x = anchors[i].dx;
+              svg.writeln('<path d="M ${_n(x)} -27 V 27"/>');
+            }
+          }
+          final mark = type.contains('fuse')
+              ? 'F'
+              : type.contains('overload')
+              ? 'theta'
+              : 'Q';
+          svg.writeln(
+            '<text x="0" y="-11" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="12">$mark</text>',
+          );
+        case SchematicGlyph.coil:
+          svg.writeln('<rect x="-25" y="-18" width="50" height="36"/>');
+          svg.writeln(
+            '<path d="M ${_n(-halfWidth)} 0 H -25 '
+            'M 25 0 H ${_n(halfWidth)}"/>',
+          );
+          svg.writeln(
+            '<text x="0" y="6" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="16">A</text>',
+          );
+        case SchematicGlyph.resistor:
+          svg.writeln('<rect x="-28" y="-10" width="56" height="20"/>');
+          svg.writeln(
+            '<path d="M ${_n(-halfWidth)} 0 H -28 '
+            'M 28 0 H ${_n(halfWidth)}"/>',
+          );
+        case SchematicGlyph.capacitor:
+          svg.writeln(
+            '<path d="M -5 -19 V 19 M 5 -19 V 19 '
+            'M ${_n(-halfWidth)} 0 H -5 '
+            'M 5 0 H ${_n(halfWidth)}"/>',
+          );
+        case SchematicGlyph.diode:
+          svg.writeln(
+            '<path d="M -16 -16 L 14 0 L -16 16 Z '
+            'M 14 -18 V 18 M ${_n(-halfWidth)} 0 H -16 '
+            'M 14 0 H ${_n(halfWidth)}"/>',
+          );
+        case SchematicGlyph.terminal:
+          svg.writeln(
+            '<rect x="${_n(-halfWidth)}" y="-27" '
+            'width="${_n(2 * halfWidth)}" height="54"/>',
+          );
+          svg.writeln(
+            '<text x="0" y="6" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="18">X</text>',
+          );
+        case SchematicGlyph.load:
+          svg.writeln(
+            '<rect x="${_n(-halfWidth)}" y="-27" '
+            'width="${_n(2 * halfWidth)}" height="54"/>',
+          );
+          svg.writeln(
+            '<text x="0" y="5" text-anchor="middle" '
+            'stroke="none" fill="black" font-size="10">${_xml(type)}</text>',
+          );
       }
       for (var i = 0; i < ports.length; i++) {
         final anchor = anchors[i];
@@ -163,20 +297,31 @@ abstract final class IndustrialSchematicSvgExport {
           '<line x1="${_n(anchor.dx)}" y1="${_n(anchor.dy)}" '
           'x2="${_n(edgeX)}" y2="${_n(edgeY)}"/>',
         );
+        final terminalRef = marks?.terminals[ports[i].id.value];
+        final simpleRef = '${refs.labelOf(id)}:${ports[i].name}';
+        final displayedTerminal =
+            terminalRef != null && terminalRef != simpleRef
+            ? terminalRef
+            : ports[i].name;
         svg.writeln(
           '<circle data-terminal-id="${_xml(ports[i].id.value)}" '
+          '${terminalRef == null ? '' : 'data-reference="${_xml(terminalRef)}" '}'
           'cx="${_n(anchor.dx)}" cy="${_n(anchor.dy)}" r="3" fill="white"/>',
         );
         svg.writeln(
           '<text x="${_n(anchor.dx + 7)}" y="${_n(anchor.dy - 9)}" '
-          'stroke="none" fill="black" font-size="9">${_xml(ports[i].name)}</text>',
+          'stroke="none" fill="black" font-size="9">'
+          '${_xml(displayedTerminal)}</text>',
         );
       }
       svg.writeln(
         '<text x="0" y="-67" text-anchor="middle" stroke="none" '
         'fill="black" font-size="12">${_xml(refs.labelOf(id))}</text>',
       );
-      final link = refs.controllingLabelFor(id);
+      final controlled = refs.contactsFor(id);
+      final link =
+          refs.controllingLabelFor(id) ??
+          (controlled.isEmpty ? null : controlled.map(refs.labelOf).join(', '));
       if (link != null) {
         svg.writeln(
           '<text x="0" y="73" text-anchor="middle" '

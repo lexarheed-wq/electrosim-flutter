@@ -19,6 +19,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
 import 'f18_voltmeter_3d_assets.dart';
+import 'f18_ammeter_3d_assets.dart';
 import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
@@ -887,9 +888,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           .toSet()
       : const <String>{};
 
+  Set<String> get _ammeter3dIds => F18Ammeter3dAssets.ready
+      ? _circuit.instruments
+          .where(F18Ammeter3dAssets.uses3d)
+          .map((i) => i.id.value)
+          .toSet()
+      : const <String>{};
+
   @override
   void initState() {
     super.initState();
+    unawaited(F18Ammeter3dAssets.preload().then((_) {
+      if (mounted) setState(() {});
+    }));
     unawaited(F18Voltmeter3dAssets.preload().then((_) {
       if (mounted) setState(() {});
     }));
@@ -1321,7 +1332,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                             wirePreviewPlanner:
                                                 _g2aWirePreviewPlanner,
                                             customInstrumentCaseIds:
-                                                _voltmeter3dIds,
+                                                <String>{
+                                                  ..._voltmeter3dIds,
+                                                  ..._ammeter3dIds,
+                                                },
                                           ),
                                           if (_representation ==
                                               WorkspaceRepresentation.plate)
@@ -1405,6 +1419,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                                 _voltmeter3dIds,
                                                             voltmeterFront:
                                                                 F18Voltmeter3dAssets.front,
+                                                            ammeter3dIds:
+                                                                _ammeter3dIds,
+                                                            ammeterFront:
+                                                                F18Ammeter3dAssets.front,
                                                             selectedElementId:
                                                                 _selected,
                                                           ),

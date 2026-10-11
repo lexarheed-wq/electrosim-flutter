@@ -68,9 +68,7 @@ final class PneumaticWorkshopState {
       'temperatureK',
     };
     for (final MapEntry<String, double> e in parametersSi.entries) {
-      if (!validKeys.contains(e.key) ||
-          !e.value.isFinite ||
-          e.value <= 0) {
+      if (!validKeys.contains(e.key) || !e.value.isFinite || e.value <= 0) {
         throw const MultiphysicsContractException(
           'invalid_calibration',
           'Physical SI pressure, volume and temperature must be positive.',
@@ -83,9 +81,11 @@ final class PneumaticWorkshopState {
         devices.add(device);
         continue;
       }
-      final bool fitting = device.kind == PneumaticDeviceKind.tee ||
+      final bool fitting =
+          device.kind == PneumaticDeviceKind.tee ||
           device.kind == PneumaticDeviceKind.manifold;
-      final bool boundary = device.kind == PneumaticDeviceKind.idealSource ||
+      final bool boundary =
+          device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
       if (!fitting && !boundary) {
         throw const MultiphysicsContractException(
@@ -153,10 +153,7 @@ final class PneumaticWorkshopState {
     }
     final MultiphysicsProject updated = _rebuild(
       air: PneumaticNetwork(
-        devices: <PneumaticDevice>[
-          ...project.pneumaticNetwork.devices,
-          device,
-        ],
+        devices: <PneumaticDevice>[...project.pneumaticNetwork.devices, device],
         pipes: project.pneumaticNetwork.pipes,
       ),
       devices: <PhysicalDeviceRecord>[
@@ -294,8 +291,7 @@ final class PneumaticWorkshopState {
         pipes: project.pneumaticNetwork.pipes
             .where(
               (PneumaticPipe p) =>
-                  !ports.contains(p.fromPortId) &&
-                  !ports.contains(p.toPortId),
+                  !ports.contains(p.fromPortId) && !ports.contains(p.toPortId),
             )
             .toList(),
       ),
@@ -308,8 +304,9 @@ final class PneumaticWorkshopState {
     return PneumaticWorkshopState(
       project: updated,
       view: view,
-      selectedPhysicalId:
-          selectedPhysicalId == physicalId ? null : selectedPhysicalId,
+      selectedPhysicalId: selectedPhysicalId == physicalId
+          ? null
+          : selectedPhysicalId,
     );
   }
 }

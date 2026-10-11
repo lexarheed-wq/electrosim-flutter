@@ -2,6 +2,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_measurements/electrosim_measurements.dart';
 
 import 'electrosim_runtime_engine.dart';
+import 'f18_resistance_projection.dart';
 import 'pv_series_burden_projection.dart';
 
 enum PhysicalInstrumentStatus {
@@ -89,6 +90,18 @@ final class ElectroSimInstrumentProjection {
         if (lead.port == port) return lead;
       }
       return null;
+    }
+
+    // Ω uses an internal test source only in a disposable DC projection.
+    // Route it before PV/AC dispatch; never measure a connected live source.
+    if (instrument.mode == InstrumentMode.resistance) {
+      return F18ResistanceProjection.read(
+        engine: engine,
+        circuit: circuit,
+        instrument: instrument,
+        first: probe(InstrumentPort.voltOhm)?.terminalId,
+        second: probe(InstrumentPort.common)?.terminalId,
+      );
     }
 
     // A probe is disconnected until its leads are placed. Do not display

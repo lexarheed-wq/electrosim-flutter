@@ -53,59 +53,67 @@ SelfHoldValve52Cycle _buildCycle() {
 }
 
 void main() {
-  test('R6/CPL-01: actual 24V S1/K1/B1 drives 5/2 to sensor and drops hold', () {
-    final SelfHoldValve52Cycle cycle = _buildCycle();
-    final SelfHoldValve52Snapshot before = cycle.initial();
-    final SelfHoldValve52Snapshot pressed = cycle.advance(
-      before,
-      durationS: 0,
-      startPressed: true,
-    );
-    expect(pressed.electrical!.relay.energized, true);
-    expect(pressed.electrical!.valveReading.voltageV, closeTo(24, 1e-9));
-    expect(pressed.air.gasMassKg, before.air.gasMassKg);
+  test(
+    'R6/CPL-01: actual 24V S1/K1/B1 drives 5/2 to sensor and drops hold',
+    () {
+      final SelfHoldValve52Cycle cycle = _buildCycle();
+      final SelfHoldValve52Snapshot before = cycle.initial();
+      final SelfHoldValve52Snapshot pressed = cycle.advance(
+        before,
+        durationS: 0,
+        startPressed: true,
+      );
+      expect(pressed.electrical!.relay.energized, true);
+      expect(pressed.electrical!.valveReading.voltageV, closeTo(24, 1e-9));
+      expect(pressed.air.gasMassKg, before.air.gasMassKg);
 
-    SelfHoldValve52Snapshot state = cycle.advance(
-      pressed,
-      durationS: .025,
-      startPressed: false,
-    );
-    expect(state.electrical!.relay.energized, true);
-    expect(state.spool, ValveSpoolSide.coilSide);
-
-    bool trip = false;
-    for (int i = 0; i < 130; i++) {
-      final SelfHoldValve52Snapshot next = cycle.advance(
-        state,
-        durationS: .005,
+      SelfHoldValve52Snapshot state = cycle.advance(
+        pressed,
+        durationS: .025,
         startPressed: false,
       );
-      expect(next.timeS, greaterThan(state.timeS));
-      expect(next.air.timeS, closeTo(next.timeS, 1e-8));
-      expect(next.physical.pneumaticAdvances,
-          greaterThan(state.physical.pneumaticAdvances));
-      expect(cycle.massResidualKg(next).abs(), lessThan(1e-8));
-      expect(next.air.positionM, inInclusiveRange(0, .06));
-      state = next;
-      if (state.endStopActuated) {
-        trip = true;
-        expect(state.electrical!.relay.energized, false);
-        expect(state.electrical!.valveReading.voltageV, closeTo(0, 1e-8));
-        break;
-      }
-    }
+      expect(state.electrical!.relay.energized, true);
+      expect(state.spool, ValveSpoolSide.coilSide);
 
-    expect(trip, true,
-        reason: 'The real moving piston must trigger B1 NC before timeout.');
-    final SelfHoldValve52Snapshot paused = cycle.advance(
-      state,
-      durationS: .05,
-      startPressed: false,
-      paused: true,
-    );
-    expect(identical(paused, state), true);
-    expect(cycle.massResidualKg(state).abs(), lessThan(1e-8));
-    expect(before.timeS, 0);
-    expect(before.air.positionM, .005);
-  });
+      bool trip = false;
+      for (int i = 0; i < 130; i++) {
+        final SelfHoldValve52Snapshot next = cycle.advance(
+          state,
+          durationS: .005,
+          startPressed: false,
+        );
+        expect(next.timeS, greaterThan(state.timeS));
+        expect(next.air.timeS, closeTo(next.timeS, 1e-8));
+        expect(
+          next.physical.pneumaticAdvances,
+          greaterThan(state.physical.pneumaticAdvances),
+        );
+        expect(cycle.massResidualKg(next).abs(), lessThan(1e-8));
+        expect(next.air.positionM, inInclusiveRange(0, .06));
+        state = next;
+        if (state.endStopActuated) {
+          trip = true;
+          expect(state.electrical!.relay.energized, false);
+          expect(state.electrical!.valveReading.voltageV, closeTo(0, 1e-8));
+          break;
+        }
+      }
+
+      expect(
+        trip,
+        true,
+        reason: 'The real moving piston must trigger B1 NC before timeout.',
+      );
+      final SelfHoldValve52Snapshot paused = cycle.advance(
+        state,
+        durationS: .05,
+        startPressed: false,
+        paused: true,
+      );
+      expect(identical(paused, state), true);
+      expect(cycle.massResidualKg(state).abs(), lessThan(1e-8));
+      expect(before.timeS, 0);
+      expect(before.air.positionM, .005);
+    },
+  );
 }

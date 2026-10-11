@@ -1,0 +1,10 @@
+{
+  "key": "external-crusher",
+  "blender_version": "4.5.3 LTS",
+  "sha256_recipe": "ca914a56afebe527b7b698c14260eac712a9574f787729311b7e45b8deb4b1fa",
+  "sha256_render_runner": "51963ded964c8d124af8c2a40bd88f30e184892ce119aba9f27da659b39fa0dd",
+  "seconds": 70.64,
+  "is_product_capture": false,
+  "integrated_in_flutter": false,
+  "qualification": "draft_preview_only"
+}

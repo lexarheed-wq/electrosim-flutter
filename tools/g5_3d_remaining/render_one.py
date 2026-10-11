@@ -19,7 +19,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 ROOT = BASE.parents[1]
-SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence')
+SUPPORTED = ('instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence', 'external-crusher')
 PNG_MAGIC = b'\x89PNG\r\n\x1a\n'
 EXPECTED_SIZE = (1120, 1520)
 
@@ -69,11 +69,17 @@ def verify_assets(folder, component):
     folder = Path(folder)
     front = folder / 'front.png'
     palette = folder / 'palette.png'
+    import importlib.util
+    recipe_path = BASE / (component.replace("-", "_") + "_recipe.py")
+    spec = importlib.util.spec_from_file_location("asset_contract", recipe_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    expected_size = tuple(round(n * getattr(module,"TEXTURE_SCALE",10)) for n in module.SIZE)
     for output in (front, palette):
         if not output.is_file():
             raise FileNotFoundError(output)
-        if png_dimensions(output) != EXPECTED_SIZE:
-            raise ValueError(f'{output}: expected {EXPECTED_SIZE} PNG texture')
+        if png_dimensions(output) != expected_size:
+            raise ValueError(f'{output}: expected {expected_size} PNG texture')
     prov = folder / 'provenance.json'
     record = json.loads(prov.read_text())
     if record.get('key') != component:

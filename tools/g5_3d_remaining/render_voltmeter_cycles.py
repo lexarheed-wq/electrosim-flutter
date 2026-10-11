@@ -62,6 +62,16 @@ class CyclesGeometry:
                                             location=(x, -y, z - depth / 2))
         return self._finish(bpy.context.object, name, material, min(.18, depth * .12))
 
+    def panel(self, name, points, material, thickness):
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata([(x,-y,z) for x,y,z in points],[],[tuple(range(len(points)))])
+        mesh.update()
+        obj = bpy.data.objects.new(name,mesh)
+        bpy.context.scene.collection.objects.link(obj)
+        solid = obj.modifiers.new('sheet thickness','SOLIDIFY')
+        solid.thickness = thickness
+        return self._finish(obj,name,material,.5)
+
     @staticmethod
     def cut(obj, cutter):
         bpy.ops.object.select_all(action='DESELECT')
@@ -107,7 +117,7 @@ def main():
     argv = sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
-    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence'], default='instrument-voltmeter')
+    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence', 'external-crusher'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
@@ -134,15 +144,23 @@ def main():
     scene.render.resolution_percentage = 100
     # Render at four times the previous texture dimensions. Logical canvas
     # and solver contracts stay unchanged: 1120x1520 texture on 112x152 box.
-    scene.render.resolution_x = round(SIZE[0] * 10)
-    scene.render.resolution_y = round(SIZE[1] * 10)
+    scene.render.resolution_x = round(SIZE[0] * getattr(recipe_module,'TEXTURE_SCALE',10))
+    scene.render.resolution_y = round(SIZE[1] * getattr(recipe_module,'TEXTURE_SCALE',10))
     scene.world.color = (.36, .40, .45)
 
     h = CyclesGeometry()
     build(h, {'kind': 'draft_preview', 'key': KEY, 'size': SIZE})
     body_d = SIZE[1] - 4.0
     body_d *= 46.0 / 167.0
-    if KEY == 'instrument-phase-sequence':
+    if KEY == 'external-crusher':
+        scene.view_settings.exposure = .85
+        scene.world.use_nodes = True
+        env = scene.world.node_tree.nodes.new('ShaderNodeTexEnvironment')
+        env.image = bpy.data.images.load(str(Path(__file__).resolve().parents[1] / 'g5_render_environment/studio_small_09_1k.hdr'))
+        background = scene.world.node_tree.nodes.get('Background')
+        scene.world.node_tree.links.new(env.outputs['Color'],background.inputs['Color'])
+        background.inputs['Strength'].default_value = .55
+    elif KEY == 'instrument-phase-sequence':
         scene.view_settings.look = 'AgX - Medium High Contrast'
         scene.view_settings.exposure = .65
         for obj in bpy.data.objects:
@@ -214,7 +232,7 @@ def main():
         # Front selector grip is a real moving UI part. Keep it OUT of the
         # baked front PNG; show it fixed only in the static 3/4 palette image.
         selector = bpy.data.objects.get('selector_grip')
-        if selector is None and KEY not in ('instrument-frequency', 'instrument-phase-sequence'):
+        if selector is None and KEY not in ('instrument-frequency', 'instrument-phase-sequence', 'external-crusher'):
             raise RuntimeError('Missing selector_grip 3D object')
         if selector is not None:
             selector.hide_render = view == 'front'

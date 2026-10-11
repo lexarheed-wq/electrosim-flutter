@@ -47,7 +47,7 @@ jobs:
           # requires a second, actual Flutter Web build in the SAME worktree.
           flutter create --platforms=web --project-name electrosim .
           flutter pub get
-          flutter build web --release --target lib/student_web_main.dart --pwa-strategy=none
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none
           test -s build/web/index.html
           test -s build/web/main.dart.js
           flutter config --enable-macos-desktop

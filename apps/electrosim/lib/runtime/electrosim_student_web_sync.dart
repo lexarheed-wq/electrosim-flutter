@@ -6,6 +6,8 @@ import 'dart:html' as html;
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:electrosim_canvas/electrosim_canvas.dart';
+import 'electrosim_layout_persistence.dart';
 
 import 'electrosim_tp_session_controller.dart';
 
@@ -335,6 +337,47 @@ final class ElectroSimBrowserSessionBridge extends ChangeNotifier {
     }
     unawaited(_detachSocket());
     super.dispose();
+  }
+
+  String? get _visualLayoutKey {
+    final session = controller.session;
+    if (session == null) return null;
+    return '$_identityKey.visual.$clientId.${session.definition.id.value}.${session.studentCircuit.circuitId.value}';
+  }
+
+  CircuitVisualLayout? loadStudentVisualLayout() {
+    final key = _visualLayoutKey;
+    final circuit = controller.studentCircuit;
+    if (key == null || circuit == null) return null;
+    try {
+      final source = html.window.localStorage[key];
+      if (source == null) return null;
+      final saved = jsonDecode(source);
+      if (saved is! Map ||
+          saved['circuitId'] != circuit.circuitId.value ||
+          saved['revision'] != circuit.revision) {
+        return null;
+      }
+      return ElectroSimLayoutPersistence.decode(saved['layout']);
+    } on Object {
+      return null;
+    }
+  }
+
+  void saveStudentVisualLayout(CircuitVisualLayout layout) {
+    if (_disposed || _replaced || _teacherEnded) return;
+    final key = _visualLayoutKey;
+    final circuit = controller.studentCircuit;
+    if (key == null || circuit == null) return;
+    try {
+      html.window.localStorage[key] = jsonEncode({
+        'circuitId': circuit.circuitId.value,
+        'revision': circuit.revision,
+        'layout': ElectroSimLayoutPersistence.encode(layout),
+      });
+    } on Object {
+      // Optional browser geometry cannot interrupt authoritative TP traffic.
+    }
   }
 
   String get _identityKey =>

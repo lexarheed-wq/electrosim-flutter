@@ -520,6 +520,10 @@ void main() {
           '${webRoot.path}/main.dart.js',
         ).writeAsString('console.log("student");');
 
+        await Directory('${webRoot.path}/canvaskit').create();
+        await File(
+          '${webRoot.path}/canvaskit/canvaskit.wasm',
+        ).writeAsString('wasm');
         final ElectroSimTpSessionController teacher =
             ElectroSimTpSessionController();
         final ElectroSimLanSyncHost host = ElectroSimLanSyncHost(
@@ -562,6 +566,23 @@ void main() {
         final String rawHttp = await utf8.decoder.bind(httpSocket).join();
         expect(rawHttp, startsWith('HTTP/1.1 200'));
         expect(rawHttp, contains('ElectroSim Élève'));
+        final wasmSocket = await Socket.connect(
+          info.preferredJoinUrl.host,
+          info.preferredJoinUrl.port,
+        );
+        wasmSocket.write(
+          'GET /canvaskit/canvaskit.wasm HTTP/1.1\r\n'
+          'Host: ${info.preferredJoinUrl.host}\r\n'
+          'Connection: close\r\n\r\n',
+        );
+        await wasmSocket.flush();
+        final wasmResponse = await utf8.decoder.bind(wasmSocket).join();
+        expect(
+          wasmResponse.toLowerCase(),
+          contains('content-type: application/wasm'),
+        );
+        expect(wasmResponse, contains('wasm'));
+        wasmSocket.destroy();
 
         final Uri socketUri = info.preferredEndpoint.replace(
           queryParameters: <String, String>{

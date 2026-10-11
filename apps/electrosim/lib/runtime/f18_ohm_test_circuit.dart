@@ -6,6 +6,47 @@ abstract final class F18OhmTestCircuit {
   static const double testVoltageV = 1;
   static const supported = <String>{'resistor', 'lamp', 'switch', 'switch_spst'};
 
+  /// A disconnected circuit is a real open-circuit OL, not an invented
+  /// numerical resistance. Only known passive conducting branches count.
+  static bool hasConductivePath(
+      CircuitState circuit, TerminalId a, TerminalId b) {
+    final neighbours = <TerminalId, Set<TerminalId>>{};
+    void connect(TerminalId x, TerminalId y) {
+      neighbours.putIfAbsent(x, () => <TerminalId>{}).add(y);
+      neighbours.putIfAbsent(y, () => <TerminalId>{}).add(x);
+    }
+    for (final wire in circuit.connections) {
+      if (wire.enabled) {
+        connect(wire.fromTerminalId, wire.toTerminalId);
+      }
+    }
+    for (final part in circuit.components) {
+      if (part.terminals.length != 2 ||
+          part.condition == ComponentCondition.disabled ||
+          part.condition == ComponentCondition.openCircuit) {
+        continue;
+      }
+      final type = part.modelType.toLowerCase();
+      if ((type == 'switch' || type == 'switch_spst') &&
+          part.controlState['closed'] != true &&
+          part.condition != ComponentCondition.shortCircuit) {
+        continue;
+      }
+      if (!supported.contains(type)) continue;
+      connect(part.terminals[0].id, part.terminals[1].id);
+    }
+    final queue = <TerminalId>[a];
+    final visited = <TerminalId>{a};
+    for (var n = 0; n < queue.length; n++) {
+      final vertex = queue[n];
+      if (vertex == b) return true;
+      for (final adjacent in neighbours[vertex] ?? const <TerminalId>{}) {
+        if (visited.add(adjacent)) queue.add(adjacent);
+      }
+    }
+    return false;
+  }
+
   static CircuitState? build(CircuitState circuit, TerminalId a, TerminalId b) {
     if (circuit.sources.isNotEmpty ||
         circuit.components.any((e) => !supported.contains(e.modelType.toLowerCase()))) {

@@ -34,7 +34,7 @@ void main() {
     expect(glass.contains(lcd.topLeft), isTrue);
     expect(glass.contains(lcd.bottomRight), isTrue);
     expect(lcd.width, lessThan(50));
-    expect(glass.height, 25);
+    expect(glass.height, closeTo(25, 1e-6));
   });
 
   test('projection respects translation and zoom without mutating probes', () {

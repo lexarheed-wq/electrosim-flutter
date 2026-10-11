@@ -1,0 +1,69 @@
+name: PNEU R6F Authored Flutter Workshop Runtime
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6f-authored-workshop-runtime-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6e-boundary-network-20261011
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r6f-authored-workshop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  r6f-authored-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+      - name: Verify immutable design calibration
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6f
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            flutter --version
+            dart --version
+          } | tee build/pneumatics-r6f/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_multiphysics
+            dart pub get
+            dart format lib/src/pneumatic_workshop_state.dart test/r6_authored_calibration_test.dart
+            git diff -- lib/src/pneumatic_workshop_state.dart test/r6_authored_calibration_test.dart | tee ../../build/pneumatics-r6f/FORMAT_DOMAIN.diff
+            git diff --exit-code -- lib/src/pneumatic_workshop_state.dart test/r6_authored_calibration_test.dart
+            dart analyze
+            dart test --concurrency=1 --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6f/DOMAIN.log
+      - name: Verify actual Flutter page and widget interactions
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format lib/pneumatics/pneumatic_workshop_page.dart test/r6_workshop_authored_runtime_test.dart
+            git diff -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_workshop_authored_runtime_test.dart | tee ../../build/pneumatics-r6f/FORMAT_FLUTTER.diff
+            git diff --exit-code -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_workshop_authored_runtime_test.dart
+            flutter analyze --no-pub lib/pneumatics/pneumatic_workshop_page.dart test/r6_workshop_authored_runtime_test.dart
+            flutter test --no-pub --reporter expanded test/r6_workshop_authored_runtime_test.dart test/pneumatic_workshop_test.dart test/r6_iso_ports_test.dart test/r6_live_reference_test.dart
+          ) 2>&1 | tee build/pneumatics-r6f/FLUTTER.log
+          grep -F "All tests passed!" build/pneumatics-r6f/FLUTTER.log
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6f-author-calibration-runtime-${{ github.sha }}
+          path: build/pneumatics-r6f/
+          if-no-files-found: warn
+          retention-days: 21

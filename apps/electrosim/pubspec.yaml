@@ -13,6 +13,8 @@ dependencies:
     path: ../../packages/electrosim_multiphysics
   electrosim_pneumatic_domain:
     path: ../../packages/electrosim_pneumatic_domain
+  electrosim_pneumatic_solver:
+    path: ../../packages/electrosim_pneumatic_solver
   electrosim_electropneumatic:
     path: ../../packages/electrosim_electropneumatic
   electrosim_controls:

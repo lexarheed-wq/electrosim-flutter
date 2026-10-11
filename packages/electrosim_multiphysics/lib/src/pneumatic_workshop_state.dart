@@ -41,6 +41,89 @@ final class PneumaticWorkshopState {
     );
   }
 
+  /// Replace only named SI parameters; preserve identities, links and both
+  /// layouts. No default pressure or component volume is fabricated.
+  PneumaticWorkshopState calibrate({
+    required String physicalId,
+    required Map<String, double> parametersSi,
+  }) {
+    if (parametersSi.isEmpty) {
+      throw const MultiphysicsContractException(
+        'empty_calibration',
+        'Provide at least one physical parameter.',
+      );
+    }
+    final bool found = project.pneumaticNetwork.devices.any(
+      (PneumaticDevice d) => d.id == physicalId,
+    );
+    if (!found) {
+      throw const MultiphysicsContractException(
+        'calibration_not_found',
+        'Physical pneumatic device was not found.',
+      );
+    }
+    final Set<String> validKeys = <String>{
+      'pressureAbsPa',
+      'volumeM3',
+      'temperatureK',
+    };
+    for (final MapEntry<String, double> e in parametersSi.entries) {
+      if (!validKeys.contains(e.key) || !e.value.isFinite || e.value <= 0) {
+        throw const MultiphysicsContractException(
+          'invalid_calibration',
+          'Physical SI pressure, volume and temperature must be positive.',
+        );
+      }
+    }
+    final List<PneumaticDevice> devices = <PneumaticDevice>[];
+    for (final PneumaticDevice device in project.pneumaticNetwork.devices) {
+      if (device.id != physicalId) {
+        devices.add(device);
+        continue;
+      }
+      final bool fitting =
+          device.kind == PneumaticDeviceKind.tee ||
+          device.kind == PneumaticDeviceKind.manifold;
+      final bool boundary =
+          device.kind == PneumaticDeviceKind.idealSource ||
+          device.kind == PneumaticDeviceKind.silencer;
+      if (!fitting && !boundary) {
+        throw const MultiphysicsContractException(
+          'unsupported_calibration',
+          'This device has no R6/F qualified parameter editor.',
+        );
+      }
+      if (!fitting && parametersSi.containsKey('volumeM3')) {
+        throw const MultiphysicsContractException(
+          'unsupported_calibration',
+          'An ideal pressure boundary has no finite chamber volume.',
+        );
+      }
+      devices.add(
+        PneumaticDevice(
+          id: device.id,
+          kind: device.kind,
+          ports: device.ports,
+          parametersSi: <String, double>{
+            ...device.parametersSi,
+            ...parametersSi,
+          },
+        ),
+      );
+    }
+    final MultiphysicsProject updated = _rebuild(
+      air: PneumaticNetwork(
+        devices: devices,
+        pipes: project.pneumaticNetwork.pipes,
+      ),
+    );
+    return PneumaticWorkshopState(
+      project: updated,
+      view: view,
+      selectedPhysicalId: selectedPhysicalId,
+    );
+  }
+
   MultiphysicsProject _rebuild({
     PneumaticNetwork? air,
     List<PhysicalDeviceRecord>? devices,
@@ -70,10 +153,7 @@ final class PneumaticWorkshopState {
     }
     final MultiphysicsProject updated = _rebuild(
       air: PneumaticNetwork(
-        devices: <PneumaticDevice>[
-          ...project.pneumaticNetwork.devices,
-          device,
-        ],
+        devices: <PneumaticDevice>[...project.pneumaticNetwork.devices, device],
         pipes: project.pneumaticNetwork.pipes,
       ),
       devices: <PhysicalDeviceRecord>[
@@ -211,8 +291,7 @@ final class PneumaticWorkshopState {
         pipes: project.pneumaticNetwork.pipes
             .where(
               (PneumaticPipe p) =>
-                  !ports.contains(p.fromPortId) &&
-                  !ports.contains(p.toPortId),
+                  !ports.contains(p.fromPortId) && !ports.contains(p.toPortId),
             )
             .toList(),
       ),
@@ -225,8 +304,9 @@ final class PneumaticWorkshopState {
     return PneumaticWorkshopState(
       project: updated,
       view: view,
-      selectedPhysicalId:
-          selectedPhysicalId == physicalId ? null : selectedPhysicalId,
+      selectedPhysicalId: selectedPhysicalId == physicalId
+          ? null
+          : selectedPhysicalId,
     );
   }
 }

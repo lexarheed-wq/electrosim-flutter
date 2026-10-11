@@ -25,6 +25,21 @@ La migration conserve les rails, placements, rotations, ancres personnalisées e
 
 Les captures de `proof/2026-10-11-native-contacts/` viennent des widgets de production dans un test Flutter, pas d’une maquette. Le manifeste contient leur SHA-256. Les photos commerciales servent de références documentées et ne sont pas redistribuées comme textures produit.
 
-Ce lot ne qualifie ni la performance à 400 composants ni une compilation macOS. Le rendu reste une représentation originale, sans garantie d’identité photographique à 100 %. La platine métallique est un chantier distinct. Aucun push ni fusion GitHub de ce lot n’a été effectué.
+Ce lot ne qualifie ni la performance à 400 composants ni une compilation macOS. Le rendu reste une représentation originale, sans garantie d’identité photographique à 100 %. La platine métallique est un chantier distinct. La consolidation est publiée dans la PR #98 vers G5 ; sa fusion est effectuée après vérification des contrôles.
 
 Si les assets ne peuvent être chargés, le rendu général garde son repli ; l’inspection du bornier arrière peut afficher une image absente. Ce cas reste à améliorer.
+
+## Validation après consolidation G5
+
+Base G5 `5e7b75c`, consolidation décrite dans `INTEGRATION_G5.md`.
+
+- Application : 590 tests réussis, deux parcours navigateur ignorés faute de configuration locale.
+- Canvas : 107 réussis ; UI kit : 24 réussis.
+- Domaine pneumatique : 9 ; solveur pneumatique : 47 ; électropneumatique : 23 ; multiphysique : 13 ; stockage : 22 ; TP : 11. Toutes ces suites et leurs analyses réussissent.
+- Analyse de l’application : aucune anomalie.
+- Compilation Web release du résultat fusionné : réussie (119 secondes).
+- Onze captures supplémentaires du workspace consolidé : `proof/g5-consolidated/`, avec empreintes dans le manifeste.
+- Les contrôles CORE_UNIFY et POSTV2_P1 passent.
+- La première CI F0/F1 a détecté une indentation dans `g5_passive_markings_test.dart`. Le fichier est formaté avec Dart 3.10.9 ; la vérification complète du formatage `lib test` passe ensuite.
+
+Ces résultats locaux ne remplacent pas les parcours de navigateur réel et les compilations natives encore exécutés par GitHub Actions.

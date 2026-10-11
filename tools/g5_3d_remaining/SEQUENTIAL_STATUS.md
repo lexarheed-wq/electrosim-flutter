@@ -122,3 +122,10 @@ Voir `docs/g5-proofs/lot-06-15/README.md` pour les trente captures réelles,
 les 57 tests locaux et les limites. Aucun de ces dix visuels n'est déclaré validé
 par l'utilisateur. Il reste 11 identités non commencées dans cet inventaire
 (16–26). Pas de merge G5 ni de campagne générale 400 composants pendant ce lot.
+
+### Correction des appuis — pompes et mélangeur
+- Photos constructeur Silverson, Pedrollo et Lorentz réexaminées. Pattes raccordées aux carters/socles ; pompe AC1 et triphasée avec plan d’appui commun.
+- Mélangeur : châssis en U continu, embase soudée du mât, roulettes fixées par platines/pivots/fourches/axes ; tiges rigides raccordées à la tête suspendue.
+- Blender : 4 contrôles structurels passent, dont alignement des appuis et dégagement de la tête entre les jambes du châssis.
+- Flutter : 31 tests ciblés passent (géométrie, migration, 4 captures interactives) ; 12 PNG réels renouvelés dans `docs/g5-proofs/lot-06-15/`.
+- Aucun changement du contrat électrique, des dimensions logiques ni des bornes. Revue esthétique utilisateur toujours en attente ; aucune fusion G5.

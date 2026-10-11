@@ -64,4 +64,8 @@ for key in ('external-mixer', 'external-pump-3p', 'external-pump-ac1', 'external
             if obj.name.startswith('motor_pedestal_'):
                 contact('cast_motor_body', obj.name)
                 contact(obj.name, obj.name.replace('pedestal', 'foot'))
+                # Pump and motor share one anchoring plane; feet must not hang
+                # higher than the volute base on an otherwise rigid assembly.
+                foot = bounds(obj.name.replace('pedestal', 'foot'))
+                assert abs(foot[1][0] - bounds('volute_foot')[1][0]) < .1
     print('STRUCTURAL CONTACT PASS: ' + key)

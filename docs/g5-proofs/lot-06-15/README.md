@@ -82,3 +82,11 @@ Les PNG d'interface sont écrits dans `apps/electrosim/build/g5-lot-06-15-proof/
 `--dart-define=G5_PROOF_KEYS=external-iron` limite la capture à une identité, sans
 changer le rendu de production. Les anciennes preuves PNG restent accessibles
 dans l'historique Git ; les nouveaux fichiers sont les preuves de ce lot.
+
+## Appuis des pompes et châssis du mélangeur
+
+Les captures du mélangeur et des trois pompes ont été renouvelées après la
+[correction des appuis](support-correction.md). Les pattes sont reliées aux
+carters ; le châssis roulant supporte le mât, et la tête de mélange reste
+suspendue. 31 tests Flutter ciblés et les contrôles structurels des quatre
+maillages passent. Les empreintes actualisées figurent dans `provenance.json`.

@@ -46,7 +46,7 @@ def plate(h,n,x,y,z,w=22,hh=10):
     for i in range(4):h.box(n+'_engraving_'+str(i),x,y-hh*.28+i*hh*.16,w*.7,.2,z+.2,.1,h.black)
 
 
-def motor(h,x,y,z,d,r,m,vertical=False):
+def motor(h,x,y,z,d,r,m,vertical=False,foot_drop=0):
     axis='y' if vertical else 'x';cylinder(h,'cast_motor_body',x,y,z,r,d,m,axis)
     for i in range(18):
         a=i*math.tau/18
@@ -59,9 +59,9 @@ def motor(h,x,y,z,d,r,m,vertical=False):
         cylinder(h,'motor_fan_cover',x+d/2+3,y,z,r+1,9,m,axis)
         for xx in (x-d*.26,x+d*.26):
             # Cast B3 pedestals intersect both the cylindrical casing and feet.
-            h.box('motor_pedestal_'+str(xx),xx,y+r-1,12,14,z+7,18,m,r=1)
-            h.box('motor_foot_'+str(xx),xx,y+r+7,15,8,z+4,21,m,r=.5)
-            screw(h,'motor_anchor_'+str(xx),xx,y+r+7,z+5,1.5)
+            h.box('motor_pedestal_'+str(xx),xx,y+r-1+foot_drop/2,12,14+foot_drop,z+7,18,m,r=1)
+            h.box('motor_foot_'+str(xx),xx,y+r+7+foot_drop,15,8,z+4,21,m,r=.5)
+            screw(h,'motor_anchor_'+str(xx),xx,y+r+7+foot_drop,z+5,1.5)
     plate(h,'motor_rating_plate',x,y-r*.15,z+r+1,20,8)
 
 
@@ -236,7 +236,8 @@ def pump(h,s,single=False):
     # is a detached icon; the flange remains behind the frontal volute cover.
     cylinder(h,'pump_motor_coupling_adapter',118 if single else 136,
         112 if single else 119,19,25 if single else 28,20 if single else 26,m,'x')
-    motor(h,173 if single else 204,112 if single else 119,19,101 if single else 117,30 if single else 34,m)
+    motor(h,173 if single else 204,112 if single else 119,19,101 if single else 117,
+        30 if single else 34,m,foot_drop=15.5 if single else 19.5)
     if not single:h.box('motor_terminal_box_mount',188,81,31,14,42,18,m,r=1.2)
     if single:h.box('capacitor_housing',175,66,56,29,37,25,m,r=5)
     terminals(h,s)
@@ -291,8 +292,12 @@ def mixer(h,s):
     motor(h,83,85,26,57,23,m,True)
     h.box('support_plate',83,123,79,6,37,58,m,r=.6)
     for x in (57,109):
-        h.tube('sanitary_rod_'+str(x),[(x,124,35),
+        rod=h.tube('sanitary_rod_'+str(x),[(x,124,35),
             (x,247,35),(71 if x==57 else 95,258,35)],1.5,steel)
+        # These are rigid stays, not flexible cables: keep the long section
+        # straight instead of letting AUTO handles bow it along its length.
+        for point in rod.data.splines[0].bezier_points:
+            point.handle_left_type='VECTOR';point.handle_right_type='VECTOR'
         h.bolt('rod_nut_'+str(x),x,129,37,2,steel)
     h.tube('drive_shaft',[(83,124,35),(83,257,35)],1.6,steel)
     cylinder(h,'high_shear_workhead',83,262,35,14,19,steel,'y')

@@ -2,7 +2,6 @@
   "source": "actual Flutter F18WorkspacePage captures",
   "is_ai_generated": false,
   "test": "apps/electrosim/tool/capture_g5_lot_06_15_test.dart",
-  "flutter_tests_passed": 57,
   "components": {
     "external-air-conditioner": {
       "mesh_provenance": {
@@ -429,21 +428,21 @@
         "key": "external-mixer",
         "images": {
           "front.png": {
-            "sha256": "9ed38ab6c3f7f967867f112e3a72af8a9403b8f14f669663bc90841068d26cc7",
+            "sha256": "b4296db2d66c9da8db725d7a9fe5525576ebff65a9199c432aa5a119343672f7",
             "size": [
               800,
               1200
             ]
           },
           "palette.png": {
-            "sha256": "54ce25336829b70becf170b0015f1badbafc41f5fe94112e58e79bf9e6377921",
+            "sha256": "27c11cf0a5a5945b2ba6bb269bff5b7ffd65b38f855d38ccb06d26d62677acb1",
             "size": [
               800,
               1200
             ]
           },
           "service.png": {
-            "sha256": "ad98833224ccba2f75cfd17b5d2b5faf06bfec7d9e2533c68e5da98b6ab7a1af",
+            "sha256": "65cb195816b8af864d5cdde23c8b43b6deaf71f3141eff84a405fbb91758f1d6",
             "size": [
               800,
               1200
@@ -452,29 +451,29 @@
         },
         "samples": 32,
         "blender": "4.5.3 LTS",
-        "seconds": 75.32,
+        "seconds": 79.48,
         "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
-        "geometry_sha256": "f4bbf29f4b012fb0aee29d78da968289038efad4e5fe4e5956ad6b3a3df9f055",
+        "geometry_sha256": "56e6f016882a6aca33c3bf4c06b227c4f6e25ffbfc18cccbadb965c2d0836d75",
         "actual_flutter_capture": false
       },
-      "recipe_version": "4501fa16060db24df5afd364edbb0dfea183836b",
+      "recipe_version": "support-correction; recipe identified by geometry_sha256",
       "assets": {
         "front": {
-          "sha256": "9ed38ab6c3f7f967867f112e3a72af8a9403b8f14f669663bc90841068d26cc7",
+          "sha256": "b4296db2d66c9da8db725d7a9fe5525576ebff65a9199c432aa5a119343672f7",
           "size": [
             800,
             1200
           ]
         },
         "palette": {
-          "sha256": "54ce25336829b70becf170b0015f1badbafc41f5fe94112e58e79bf9e6377921",
+          "sha256": "27c11cf0a5a5945b2ba6bb269bff5b7ffd65b38f855d38ccb06d26d62677acb1",
           "size": [
             800,
             1200
           ]
         },
         "service": {
-          "sha256": "ad98833224ccba2f75cfd17b5d2b5faf06bfec7d9e2533c68e5da98b6ab7a1af",
+          "sha256": "65cb195816b8af864d5cdde23c8b43b6deaf71f3141eff84a405fbb91758f1d6",
           "size": [
             800,
             1200
@@ -488,7 +487,7 @@
             2400,
             1500
           ],
-          "sha256": "ff5df87d718588cf7c4e7a2a256c54824921cf77b8e74ca79b0c7ca186ec0e1b"
+          "sha256": "b372351e8318dae65d53faebfafecc5d55ee6ea471246fdc7b2008da405c5fd5"
         },
         "maintenance": {
           "file": "external-mixer-maintenance.png",
@@ -496,7 +495,7 @@
             2400,
             1500
           ],
-          "sha256": "885c0da98fc1026a85f0135c32cb70b83b7f1786eb9d32fdd23a82b5cf75c2c6"
+          "sha256": "4c285002df6407af259f0a0f6abcf34938218ae76b2fc97394ec6e7df86640df"
         },
         "running": {
           "file": "external-mixer-running.png",
@@ -504,7 +503,7 @@
             2400,
             1500
           ],
-          "sha256": "a6733c57f62961fd76be2fd8738d698c2c83ee8ff3ec1d80fb0b34daa35927da"
+          "sha256": "197a22bfe7964aef99f8111bbd3c56c49b6cca43628011dde4b7c63163bde090"
         }
       }
     },
@@ -597,21 +596,21 @@
         "key": "external-pump-3p",
         "images": {
           "front.png": {
-            "sha256": "c5043cc870968ceb6bae582d70c356ce187f5693d8bed4ff7a1cc6f34fd10123",
+            "sha256": "3d6fff07516ba1c9993d6c1789108d38d390db2e2800e7d92dae3da02714d312",
             "size": [
               1200,
               800
             ]
           },
           "palette.png": {
-            "sha256": "bdd86ea6f714dd26939f78b5e9ba06a7c37dae6f3c0deda74d653f4e02c4466c",
+            "sha256": "a0fbb070e780c3c93705fbcea5faf5c1f773950cf774e020d4c459dabeb98358",
             "size": [
               1200,
               800
             ]
           },
           "service.png": {
-            "sha256": "37781c6fe8cb3df838c8b051292e55700ff7b53a5a1e92aa06d8461c0dbc7145",
+            "sha256": "0a4be507332420a6b0cfcfc4d6a5826fa766adfbea5756d871f8337f1fe2e9e7",
             "size": [
               1200,
               800
@@ -620,29 +619,29 @@
         },
         "samples": 32,
         "blender": "4.5.3 LTS",
-        "seconds": 99.63,
+        "seconds": 104.52,
         "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
-        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "geometry_sha256": "56e6f016882a6aca33c3bf4c06b227c4f6e25ffbfc18cccbadb965c2d0836d75",
         "actual_flutter_capture": false
       },
-      "recipe_version": "final-touchup",
+      "recipe_version": "support-correction; recipe identified by geometry_sha256",
       "assets": {
         "front": {
-          "sha256": "c5043cc870968ceb6bae582d70c356ce187f5693d8bed4ff7a1cc6f34fd10123",
+          "sha256": "3d6fff07516ba1c9993d6c1789108d38d390db2e2800e7d92dae3da02714d312",
           "size": [
             1200,
             800
           ]
         },
         "palette": {
-          "sha256": "bdd86ea6f714dd26939f78b5e9ba06a7c37dae6f3c0deda74d653f4e02c4466c",
+          "sha256": "a0fbb070e780c3c93705fbcea5faf5c1f773950cf774e020d4c459dabeb98358",
           "size": [
             1200,
             800
           ]
         },
         "service": {
-          "sha256": "37781c6fe8cb3df838c8b051292e55700ff7b53a5a1e92aa06d8461c0dbc7145",
+          "sha256": "0a4be507332420a6b0cfcfc4d6a5826fa766adfbea5756d871f8337f1fe2e9e7",
           "size": [
             1200,
             800
@@ -656,7 +655,7 @@
             2400,
             1500
           ],
-          "sha256": "3e3b02db1875a968af3bf4d7ff84f508732d9cdf5a5b41b7b3a0b8bb5895c990"
+          "sha256": "b102ba1258678632e230d3f7dc249a29d11527604d15a0bca2435806c63bd78b"
         },
         "maintenance": {
           "file": "external-pump-3p-maintenance.png",
@@ -664,7 +663,7 @@
             2400,
             1500
           ],
-          "sha256": "18ba75219c8d14d0ca827d1732cebe900286bcfaf11defc92ae032b09b6c3ce6"
+          "sha256": "87cceed3ac6606507a16173b596ebd4c073505b2ec87155676c4eba73088d755"
         },
         "running": {
           "file": "external-pump-3p-running.png",
@@ -672,7 +671,7 @@
             2400,
             1500
           ],
-          "sha256": "f9d82cec65fef47a52101f84d76b82ada6ba9df6875fbd78d7fd8f3f5260841e"
+          "sha256": "ed5ec00608e8b0b7c7c61c634f86e795b8efc47d88e8576fad500a291ca982c5"
         }
       }
     },
@@ -681,21 +680,21 @@
         "key": "external-pump-ac1",
         "images": {
           "front.png": {
-            "sha256": "333980c5943c1e92d87f83f654800026d46df3b78fd2bacc1410f01662116574",
+            "sha256": "6d053487daf1426b07b968b25024644e597f459aad58fa46b4cc9cfc8eb323d4",
             "size": [
               1040,
               720
             ]
           },
           "palette.png": {
-            "sha256": "39b3111277471b6f461aa3100c6725ddea1ad5eed63925fe37d4af456df7307c",
+            "sha256": "675fa3141a2f53b528eacd07abb7b788c1d4a556ee65112a321a451d4077ec88",
             "size": [
               1040,
               720
             ]
           },
           "service.png": {
-            "sha256": "4b753c6d55af76ded092d504df8b186349c4034c348e687c988b8de9a37787f0",
+            "sha256": "3afb14c8de8dbfcffa976b32301c5f4bde0ab51114526c6dcc3c86d42acc34e5",
             "size": [
               1040,
               720
@@ -704,29 +703,29 @@
         },
         "samples": 32,
         "blender": "4.5.3 LTS",
-        "seconds": 80.29,
+        "seconds": 85.2,
         "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
-        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "geometry_sha256": "56e6f016882a6aca33c3bf4c06b227c4f6e25ffbfc18cccbadb965c2d0836d75",
         "actual_flutter_capture": false
       },
-      "recipe_version": "final-touchup",
+      "recipe_version": "support-correction; recipe identified by geometry_sha256",
       "assets": {
         "front": {
-          "sha256": "333980c5943c1e92d87f83f654800026d46df3b78fd2bacc1410f01662116574",
+          "sha256": "6d053487daf1426b07b968b25024644e597f459aad58fa46b4cc9cfc8eb323d4",
           "size": [
             1040,
             720
           ]
         },
         "palette": {
-          "sha256": "39b3111277471b6f461aa3100c6725ddea1ad5eed63925fe37d4af456df7307c",
+          "sha256": "675fa3141a2f53b528eacd07abb7b788c1d4a556ee65112a321a451d4077ec88",
           "size": [
             1040,
             720
           ]
         },
         "service": {
-          "sha256": "4b753c6d55af76ded092d504df8b186349c4034c348e687c988b8de9a37787f0",
+          "sha256": "3afb14c8de8dbfcffa976b32301c5f4bde0ab51114526c6dcc3c86d42acc34e5",
           "size": [
             1040,
             720
@@ -740,7 +739,7 @@
             2400,
             1500
           ],
-          "sha256": "0eea0a0e7e5f4bc4c2dff66351cbde2641186c49271420303ea4aaf0474d9b7b"
+          "sha256": "50e48b041f54acea8337047d8e92483f4ddf83b3971e8dadbb6faba15ac4c933"
         },
         "maintenance": {
           "file": "external-pump-ac1-maintenance.png",
@@ -748,7 +747,7 @@
             2400,
             1500
           ],
-          "sha256": "89238486423b15a08cc007ee29598e6488d34011560467c3e9f1501eb3df2f21"
+          "sha256": "7714e2618e18cbd347e5befd01279aa3ac24c92454a0cca6762b3f83b8b3f231"
         },
         "running": {
           "file": "external-pump-ac1-running.png",
@@ -756,7 +755,7 @@
             2400,
             1500
           ],
-          "sha256": "e52347b12ed65bc8746163329773c9a1406b57f85b32e416633ac69436b82f94"
+          "sha256": "2b04a4da20991470195447c497fdfa055c830c3e12d6dfb2a8a44f99467e8c6e"
         }
       }
     },
@@ -765,21 +764,21 @@
         "key": "external-solar-pump",
         "images": {
           "front.png": {
-            "sha256": "23d84eea1cfd8f808bd916c9c1d9997cd90b6437484b2ad984fcd491f8ec0fd4",
+            "sha256": "c17e44d7db3a07c276fbb52a935c872d4c69e1015911ee85c9393d55789cd4c7",
             "size": [
               720,
               1200
             ]
           },
           "palette.png": {
-            "sha256": "b31c695180dd0658edbbbf82f9b99864acbb799e33bf300c69fdd1954cbb203a",
+            "sha256": "55d4ffcd8ba8064aeb6c943a9aeb5828c7434dc95b7720b4af8e58aba4fb9d07",
             "size": [
               720,
               1200
             ]
           },
           "service.png": {
-            "sha256": "2b8427f5889e55b4f8104fb382b2b9f508e21ad31cedc8afab80ebbc2e8354ce",
+            "sha256": "8085bbca6ee9bba0d639511d62aa6f76ccc00b6063eb703d1b02e6b5c595c93c",
             "size": [
               720,
               1200
@@ -788,29 +787,29 @@
         },
         "samples": 32,
         "blender": "4.5.3 LTS",
-        "seconds": 78.66,
+        "seconds": 76.52,
         "contract_sha256": "6218150489f38fcbcf10a9b6c20d36598211138f21111b36963bc4a2f4a77d17",
-        "geometry_sha256": "f139b8062d9a578cc95f108909437197bedd0e7dd7279456c17b63eb7de78f76",
+        "geometry_sha256": "6e1b9ba870fb0401268d65b7b3d2e924d2dfdf9806b3b7ecaf4e0ec21404beca",
         "actual_flutter_capture": false
       },
-      "recipe_version": "final-touchup",
+      "recipe_version": "928793ab",
       "assets": {
         "front": {
-          "sha256": "23d84eea1cfd8f808bd916c9c1d9997cd90b6437484b2ad984fcd491f8ec0fd4",
+          "sha256": "c17e44d7db3a07c276fbb52a935c872d4c69e1015911ee85c9393d55789cd4c7",
           "size": [
             720,
             1200
           ]
         },
         "palette": {
-          "sha256": "b31c695180dd0658edbbbf82f9b99864acbb799e33bf300c69fdd1954cbb203a",
+          "sha256": "55d4ffcd8ba8064aeb6c943a9aeb5828c7434dc95b7720b4af8e58aba4fb9d07",
           "size": [
             720,
             1200
           ]
         },
         "service": {
-          "sha256": "2b8427f5889e55b4f8104fb382b2b9f508e21ad31cedc8afab80ebbc2e8354ce",
+          "sha256": "8085bbca6ee9bba0d639511d62aa6f76ccc00b6063eb703d1b02e6b5c595c93c",
           "size": [
             720,
             1200
@@ -824,7 +823,7 @@
             2400,
             1500
           ],
-          "sha256": "0a01c28339c51d37f7fa3b0ed7ea2208c40d132c8452768abc5cd3aafe6a9f50"
+          "sha256": "3b26b03ddf6cddf334964ffdce8a193eae6b8ff4ec106a210210c45ed20a6824"
         },
         "maintenance": {
           "file": "external-solar-pump-maintenance.png",
@@ -832,7 +831,7 @@
             2400,
             1500
           ],
-          "sha256": "e3fac8259fce250a6c5e55d055a56df09d2b0b408e22c0cb2b381fcb4a7863f9"
+          "sha256": "c7faefa1fb246f1bec7088bc35798c44f51dbbee68907383b231ebb4023cd170"
         },
         "running": {
           "file": "external-solar-pump-running.png",
@@ -840,10 +839,24 @@
             2400,
             1500
           ],
-          "sha256": "60275f82d1eb6890a15f669c3f6beb60ef03491eab6b616eabd84942bc79eed9"
+          "sha256": "a647fc2c1278410c5478ffd035c108eec89aa8d5faafbc93fd742608f598dfce"
         }
       }
     }
   },
-  "qualification": "local integration verified; user visual review pending; no release/400-component qualification"
+  "qualification": "local integration verified; user visual review pending; no release/400-component qualification",
+  "support_correction_verification": {
+    "blender_structural_contacts_passed": 4,
+    "focused_flutter_capture_tests_passed": 4,
+    "scope": [
+      "external-mixer",
+      "external-pump-3p",
+      "external-pump-ac1",
+      "external-solar-pump"
+    ],
+    "electrical_contract_changed": false,
+    "focused_flutter_tests_passed": 31
+  },
+  "baseline_flutter_tests_passed": 57,
+  "baseline_git_revision": "7a3c9e93"
 }

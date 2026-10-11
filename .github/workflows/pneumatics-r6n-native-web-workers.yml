@@ -31,6 +31,9 @@ jobs:
           git diff -- lib/src/r6n_network_job.dart lib/src/r6n_worker.dart lib/src/r6n_worker_stub.dart lib/src/r6n_worker_native.dart lib/src/r6n_worker_web.dart tool/r6n_web_worker_main.dart test/r6n_worker_test.dart
           dart analyze
           dart test --concurrency=1 --reporter expanded
+          dart run benchmark/r6n_worker_transport.dart > ../../build/pneumatics-r6n/native-worker-transport.json
+          python3 -m json.tool ../../build/pneumatics-r6n/native-worker-transport.json > /dev/null
+          cat ../../build/pneumatics-r6n/native-worker-transport.json
           dart compile js -O2 -o ../../build/pneumatics-r6n/r6n_worker.dart.js tool/r6n_web_worker_main.dart
           cp tool/r6n_browser_smoke.html ../../build/pneumatics-r6n/index.html
           test -s ../../build/pneumatics-r6n/r6n_worker.dart.js

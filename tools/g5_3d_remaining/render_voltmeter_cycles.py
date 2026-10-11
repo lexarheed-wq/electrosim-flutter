@@ -5,6 +5,7 @@ tools/g5_3d_remaining/render_voltmeter_cycles.py -- --out build/g5-3d-voltmeter
 """
 import argparse
 import hashlib
+import importlib
 import json
 import math
 import sys
@@ -15,7 +16,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from instrument_voltmeter_recipe import build, KEY, SIZE
+from instrument_voltmeter_recipe import build as voltmeter_build, KEY as VOLT_KEY, SIZE as VOLT_SIZE
 
 
 class CyclesGeometry:
@@ -106,9 +107,15 @@ def main():
     argv = sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', required=True)
+    parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
+    recipe_name = 'instrument_ammeter_recipe' if opts.component == 'instrument-ammeter' else 'instrument_voltmeter_recipe'
+    recipe_module = importlib.import_module(recipe_name)
+    build = recipe_module.build
+    KEY = recipe_module.KEY
+    SIZE = recipe_module.SIZE
     out = Path(opts.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
     bpy.ops.object.select_all(action='SELECT')
@@ -144,8 +151,8 @@ def main():
         raised_legend(name, value, x, 56.0, body_d + 9.12, size, material)
     raised_legend('socket-com-label', 'COM', 42, 116.0, body_d + 9.1,
                   3.6, h.steel)
-    raised_legend('socket-voltage-label', 'V/Ohm', 70, 116.0, body_d + 9.1,
-                  3.4, h.steel)
+    raised_legend('socket-voltage-label', 'A' if KEY == 'instrument-ammeter' else 'V/Ohm',
+                  70, 116.0, body_d + 9.1, 3.4, h.steel)
     # Small moulded reference rivets and tactile relief, not extra terminals.
     for i, x in enumerate((28, 84)):
         h.cyl(f'casing-fastener-{i}', x, 137, body_d + 5.0,
@@ -184,7 +191,7 @@ def main():
         scene.render.filepath = str(out / (view + '.png'))
         bpy.ops.render.render(write_still=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(out / 'draft.blend'))
-    recipe = Path(__file__).with_name('instrument_voltmeter_recipe.py')
+    recipe = Path(__file__).with_name(recipe_name + '.py')
     (out / 'provenance.json').write_text(json.dumps({
         'key': KEY, 'blender_version': bpy.app.version_string,
         'sha256_recipe': hashlib.sha256(recipe.read_bytes()).hexdigest(),

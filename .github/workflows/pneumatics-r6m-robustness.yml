@@ -25,14 +25,16 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6m/PROVENANCE.txt
           dart --version | tee -a build/pneumatics-r6m/PROVENANCE.txt
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          for p in electrosim_multiphysics electrosim_electropneumatic; do
+          for p in electrosim_multiphysics electrosim_electropneumatic electrosim_storage; do
             (
               cd "packages/$p"
               dart pub get
               if [ "$p" = electrosim_multiphysics ]; then
                 files=(lib/src/project_history.dart lib/src/pneumatic_workshop_session.dart test/r6m_project_history_test.dart)
-              else
+              elif [ "$p" = electrosim_electropneumatic ]; then
                 files=(lib/src/self_hold_circuit.dart lib/src/authored_network_self_hold_cycle.dart lib/src/authored_cycle_session.dart test/r6m_session_test.dart)
+              else
+                files=(lib/src/multiphysics_session_storage.dart test/r6m_session_storage_test.dart)
               fi
               dart format "${files[@]}"
               git diff -- "${files[@]}"

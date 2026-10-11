@@ -75,7 +75,9 @@ final class PneumaticWorkshopState {
           device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
       final bool valve = device.kind == PneumaticDeviceKind.valve52;
-      if (!fitting && !boundary && !valve) {
+      final bool movingCylinder =
+          device.kind == PneumaticDeviceKind.doubleActingCylinder;
+      if (!fitting && !boundary && !valve && !movingCylinder) {
         throw const MultiphysicsContractException(
           'unsupported_calibration',
           'This device has no qualified pneumatic parameter editor.',
@@ -91,17 +93,67 @@ final class PneumaticWorkshopState {
           'valveCd',
           'energized',
         ],
+        if (movingCylinder) ...<String>[
+          'pistonDiameterM',
+          'rodDiameterM',
+          'strokeM',
+          'deadVolumeAM3',
+          'deadVolumeBM3',
+          'initialPositionM',
+          'initialPressureAAbsPa',
+          'initialPressureBAbsPa',
+          'movingMassKg',
+          'coulombFrictionN',
+          'staticBreakawayFrictionN',
+          'viscousNsPerM',
+          'externalLoadN',
+        ],
       };
       for (final MapEntry<String, double> e in parametersSi.entries) {
         final double value = e.value;
         if (!accepted.contains(e.key) ||
             !value.isFinite ||
-            (e.key == 'energized' ? value != 0 && value != 1 : value <= 0) ||
+            (e.key == 'energized'
+                ? value != 0 && value != 1
+                : <String>{
+                    'initialPositionM',
+                    'rodDiameterM',
+                    'coulombFrictionN',
+                    'staticBreakawayFrictionN',
+                    'viscousNsPerM',
+                  }.contains(e.key)
+                ? value < 0
+                : e.key == 'externalLoadN'
+                ? false
+                : value <= 0) ||
             (e.key == 'valveCd' && value > 1)) {
           throw const MultiphysicsContractException(
             'invalid_calibration',
             'Only explicit, physically valid SI parameters and spool '
                 'positions 0 or 1 can be saved.',
+          );
+        }
+      }
+      if (movingCylinder) {
+        final Map<String, double> p = <String, double>{
+          ...device.parametersSi,
+          ...parametersSi,
+        };
+        final double? stroke = p['strokeM'];
+        final double? position = p['initialPositionM'];
+        final double? pistonDiameter = p['pistonDiameterM'];
+        final double? rodDiameter = p['rodDiameterM'];
+        final double? coulomb = p['coulombFrictionN'];
+        final double? breakaway = p['staticBreakawayFrictionN'];
+        if ((stroke != null && position != null && position > stroke) ||
+            (pistonDiameter != null &&
+                rodDiameter != null &&
+                rodDiameter >= pistonDiameter) ||
+            (coulomb != null && breakaway != null && breakaway < coulomb)) {
+          throw const MultiphysicsContractException(
+            'inconsistent_cylinder_geometry',
+            'Cylinder position, rod/piston diameters or breakaway friction '
+                'contradict its physical geometry.',
           );
         }
       }

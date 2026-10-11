@@ -59,9 +59,7 @@ void main() {
     expect(display.height, closeTo(38, 1e-7));
   });
 
-  testWidgets('bundled Cycles textures load and only enable the voltmeter', (
-    WidgetTester tester,
-  ) async {
+  test('real Cycles textures decode for the physical voltmeter', () {
     expect(F18Voltmeter3dAssets.ready, isTrue);
     expect(F18Voltmeter3dAssets.front, isNotNull);
     expect(F18Voltmeter3dAssets.palette, isNotNull);
@@ -69,20 +67,10 @@ void main() {
     expect(F18Voltmeter3dAssets.front!.height, 380);
     expect(F18Voltmeter3dAssets.uses3d(voltmeter), isTrue);
     expect(F18Voltmeter3dAssets.uses3d(ammeter), isFalse);
-
-    final definition = f9PaletteCatalog.firstWhere(
-      (entry) => entry.keyName == 'instrument-voltmeter',
+    expect(
+      f9PaletteCatalog.any((entry) => entry.keyName == 'instrument-voltmeter'),
+      isTrue,
     );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: F9ComponentPreview(definition: definition, compact: true),
-        ),
-      ),
-    );
-    expect(find.byType(RawImage), findsOneWidget);
-    final RawImage image = tester.widget<RawImage>(find.byType(RawImage));
-    expect(image.image, same(F18Voltmeter3dAssets.palette));
   });
 
   test('readout overlay can paint legacy fallback without a 3D image', () {

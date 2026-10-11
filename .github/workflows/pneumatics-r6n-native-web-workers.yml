@@ -32,10 +32,28 @@ jobs:
           dart analyze
           dart test --concurrency=1 --reporter expanded
           dart compile js -O2 -o ../../build/pneumatics-r6n/r6n_worker.dart.js tool/r6n_web_worker_main.dart
+          cp tool/r6n_browser_smoke.html ../../build/pneumatics-r6n/index.html
+          test -s ../../build/pneumatics-r6n/r6n_worker.dart.js
           git diff --exit-code -- lib/src/r6n_network_job.dart lib/src/r6n_worker.dart lib/src/r6n_worker_stub.dart lib/src/r6n_worker_native.dart lib/src/r6n_worker_web.dart tool/r6n_web_worker_main.dart test/r6n_worker_test.dart
           cd ../..
           git diff --check
           git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - name: Exercise real worker in Chromium (DOM acceptance)
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$CHROME" || { echo "Chromium unavailable"; exit 1; }
+          python3 -m http.server 8796 --bind 127.0.0.1 --directory build/pneumatics-r6n >build/pneumatics-r6n/http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8796/ > /dev/null; then break; fi
+            sleep 1
+          done
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=20000 --dump-dom http://127.0.0.1:8796/             > build/pneumatics-r6n/chromium-worker-dom.html             2> build/pneumatics-r6n/chromium-worker-stderr.txt
+          grep -F 'R6N_WEB_WORKER_PASS' build/pneumatics-r6n/chromium-worker-dom.html
+          "$CHROME" --version | tee build/pneumatics-r6n/CHROMIUM_VERSION.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

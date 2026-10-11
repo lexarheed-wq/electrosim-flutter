@@ -33,11 +33,15 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   int _pipeSerial = 0;
   IsothermalAirNetwork? _airSolver;
   IsothermalAirSnapshot? _airSnapshot;
+  CoupledMovingCylinderAirNetwork? _movingSolver;
+  CoupledCylinderNetworkSnapshot? _movingSnapshot;
   double? _dischargeCoefficient;
 
   void _invalidateAirRuntime() {
     _airSolver = null;
     _airSnapshot = null;
+    _movingSolver = null;
+    _movingSnapshot = null;
   }
 
   static const List<PneumaticDeviceKind> _catalog = <PneumaticDeviceKind>[
@@ -381,21 +385,45 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       if (!mounted || cd == null) return;
     }
     try {
-      final IsothermalAirNetwork solver =
-          _airSolver ??
-          WorkshopClosedAirCompiler(
-            dischargeCoefficient: cd,
-          ).compileWithStaticValve52(_state.project.pneumaticNetwork);
-      final IsothermalAirSnapshot next = solver.advance(
-        _airSnapshot ?? solver.initialSnapshot,
-        durationS: .02,
-        maxStepS: .001,
+      final PneumaticNetwork authored = _state.project.pneumaticNetwork;
+      final bool moving = authored.devices.any(
+        (d) => d.kind == PneumaticDeviceKind.doubleActingCylinder,
       );
-      setState(() {
-        _dischargeCoefficient = cd;
-        _airSolver = solver;
-        _airSnapshot = next;
-      });
+      if (moving) {
+        final CoupledMovingCylinderAirNetwork solver =
+            _movingSolver ??
+            WorkshopClosedAirCompiler(
+              dischargeCoefficient: cd,
+            ).compileWithMovingCylinder(authored);
+        final CoupledCylinderNetworkSnapshot next = solver.advance(
+          _movingSnapshot ?? solver.initialSnapshot,
+          durationS: .02,
+          maxStepS: .00005,
+        );
+        setState(() {
+          _dischargeCoefficient = cd;
+          _movingSolver = solver;
+          _movingSnapshot = next;
+          _airSnapshot = next.air;
+          _airSolver = null;
+        });
+      } else {
+        final IsothermalAirNetwork solver =
+            _airSolver ??
+            WorkshopClosedAirCompiler(
+              dischargeCoefficient: cd,
+            ).compileWithStaticValve52(authored);
+        final IsothermalAirSnapshot next = solver.advance(
+          _airSnapshot ?? solver.initialSnapshot,
+          durationS: .02,
+          maxStepS: .001,
+        );
+        setState(() {
+          _dischargeCoefficient = cd;
+          _airSolver = solver;
+          _airSnapshot = next;
+        });
+      }
     } on Object catch (error) {
       ScaffoldMessenger.of(
         context,
@@ -631,6 +659,14 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                if (_movingSnapshot != null &&
+                                    selected.kind ==
+                                        PneumaticDeviceKind.doubleActingCylinder)
+                                  Text(
+                                    'x = ${(_movingSnapshot!.positionM * 1000).toStringAsFixed(2)} mm ; '
+                                    'v = ${_movingSnapshot!.velocityMPerS.toStringAsFixed(3)} m/s',
+                                    key: const Key('air-measured-position'),
+                                  ),
                                 if (_airSnapshot?.chambers[selected.id] != null)
                                   Text(
                                     'P abs = '
@@ -663,7 +699,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     selected.kind ==
                                         PneumaticDeviceKind.silencer ||
                                     selected.kind ==
-                                        PneumaticDeviceKind.valve52)
+                                        PneumaticDeviceKind.valve52 ||
+                                    selected.kind ==
+                                        PneumaticDeviceKind.doubleActingCylinder)
                                   FilledButton.tonal(
                                     key: const Key('air-calibrate-device'),
                                     onPressed: () =>
@@ -741,6 +779,12 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     schematic: !plate,
                     width: 110,
                     height: 38,
+                    pistonFraction: _movingSnapshot != null &&
+                            device.kind ==
+                                PneumaticDeviceKind.doubleActingCylinder
+                        ? _movingSnapshot!.positionM /
+                            _movingSolver!.geometry.strokeM
+                        : null,
                   ),
                   Text(
                     '${device.id} : ${device.kind.name}',

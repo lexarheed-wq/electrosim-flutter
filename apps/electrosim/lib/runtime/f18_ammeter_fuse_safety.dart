@@ -171,9 +171,35 @@ abstract final class F18AmmeterFuseSafety {
       final cut = wiredCut(design, meter);
       if (cut == null) continue;
       if (!claimed.add(cut.id)) {
-        // Duplicated series insertions from an imported circuit must never
-        // double-cut one conductor or construct an ambiguous current path.
-        return fusedRuntime;
+        // Corrupt/imported graph with two serial meters owning the same cut.
+        // Fail ELECTRICALLY OPEN, never silently restore the ideal conductor:
+        // doing so would bypass both meter burdens and could hide overload.
+        return CircuitState(
+          circuitId: fusedRuntime.circuitId,
+          revision: fusedRuntime.revision,
+          mode: fusedRuntime.mode,
+          components: fusedRuntime.components,
+          sources: fusedRuntime.sources,
+          connections: [
+            for (final connection in fusedRuntime.connections)
+              if (claimed.contains(connection.id))
+                Connection(
+                  id: connection.id,
+                  fromTerminalId: connection.fromTerminalId,
+                  toTerminalId: connection.toTerminalId,
+                  conductorType: connection.conductorType,
+                  phase: connection.phase,
+                  enabled: false,
+                  metadata: connection.metadata,
+                )
+              else
+                connection,
+          ],
+          instruments: fusedRuntime.instruments,
+          probes: fusedRuntime.probes,
+          settings: fusedRuntime.settings,
+          metadata: fusedRuntime.metadata,
+        );
       }
       connected.add((meter: meter, cut: cut));
     }

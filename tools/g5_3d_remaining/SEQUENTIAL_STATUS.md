@@ -13,7 +13,7 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 | N° | Clé | Développement et preuve |
 |---:|---|---|
 | 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; réseau ouvert désormais OL explicite ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
-| 02 | `instrument-ammeter` | Boîtier Blender A/COM/fusible, commandes/sondes Flutter codées ; 5 tests Python géométriques locaux PASS ; inscriptions A/COM déplacées hors couvercle fusible, nervures déplacées hors molette, calibrage RANGE 200 mA/2 A/10 A ; outil local PNG direct vérifiant SHA/résolution ajouté ; aucun Blender/Flutter PNG exécuté ni qualifié |
+| 02 | `instrument-ammeter` | Modèle Cycles A/COM/fusible et commandes Flutter ; 5 tests Python géométriques PASS antérieurs ; surcharge fuse désormais verrouillée dans l’instrument et liaison coupée uniquement dans la topologie runtime ; trappe avec remplacement explicite OFF/circuit sans source ; tests Dart rédigés NON exécutés ; rendu Blender/PNG ampèremètre non produit, NON qualifié |
 | 03 | `instrument-frequency` | En attente de son tour |
 | 04 | `instrument-phase-sequence` | En attente de son tour |
 | 05 | `external-crusher` | En attente de son tour |
@@ -74,3 +74,13 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - Outil local de rendu isolé `render_one.py` : contrôle **intégral** des chunks/CRC du PNG et des dimensions 1120×1520, identité et empreinte SHA-256 ; ne produit ni ZIP ni faux rendu si Blender absent.
 - 5/5 tests structurels Python exécutés localement sur la recette de géométrie de l'ampèremètre et PASS ; le contrôle de CRC a été exécuté localement sur un PNG Flutter antérieur authentique et PASS. **Aucun nouveau PNG ampèremètre** dans cette étape.
 - Limite maintenue : aucun test Dart/Flutter ou Blender Cycles courant exécuté ici faute d'outillage local. Statut de l'ampèremètre = **source en progression, visuel et fusible non qualifiés**. Prochain composant (03) non ouvert.
+
+### Rapport de développement — fusible de l’ampèremètre (11/10/2026)
+- `runtime/f18_ammeter_fuse_safety.dart` : contrôle de l’insertion série réelle A/COM, verrouillage `InstrumentInstance.fuseBlown` uniquement sur surcharge confirmée par `ElectroSimInstrumentProjection`, conservation des sources/composants/fils/sondes dans le circuit sauvegardé.
+- `ElectroSimRuntimeEngine.advance` applique `projectOpenFuses` à ses DEUX chemins de résolution (premier calcul et recalcul de panne), en désactivant uniquement la liaison série concernée dans la copie effective, **sans toucher au circuit utilisateur**.
+- `F18WorkspacePage` programme le verrouillage **après la frame Flutter** plutôt que de faire `setState` pendant un rendu, annule toute répétition via un ensemble de fusibles en attente et relance le solveur sur la révision actualisée.
+- `F18AmmeterControls` et le lecteur d’instruments affichent `FUSE` même sélecteur sur OFF ; aucun changement de mode ne remet un fusible déclenché en état.
+- Trappe de fusible séparée de la molette (sélecteur déplacé de y=91 à y=86, hit map de diamètre 40). Un clic ouvre une boîte de confirmation **uniquement** pour remplacement lorsque l’instrument est éteint, toutes les sources supprimées et le circuit composé exclusivement d’éléments résistifs connus. Les changements sont revérifiés après confirmation.
+- `test/g5_ammeter_fuse_runtime_test.dart` : tests écrits de surcharge 24 V/24 Ω avec calibre 0,5 A, absence de déclenchement pour 10 A, état persistant via sérialisation, coupure électrique en `effectiveCircuit`, mauvaise connexion, conservation des fils enregistrés, remplacement interdit sous tension et remis à zéro en condition sûre. **NON EXÉCUTÉS**, Dart/Flutter non disponible localement.
+- Les cas d’ampèremètre existants (boutons, gammes, molette, LCD, sources/résistance interne) ne sont pas encore requalifiés. Les 26 composants restent **sans nouvelle fusion**, pas de lancement de la campagne CI ou de Mac/Chromium. **Aucun PNG d’ampèremètre encore généré.**
+- Limite technique : l’ampèremètre non déclenché est mesuré avec sa résistance interne dans une projection de mesure série, tandis que la résolution globale du circuit normal n’inclut pas encore systématiquement cette résistance interne. Ne pas présenter cela comme parité physique intégrale avant correction spécifique et tests.

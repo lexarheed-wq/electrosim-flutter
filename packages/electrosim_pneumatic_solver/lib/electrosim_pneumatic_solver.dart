@@ -8,3 +8,4 @@ export 'src/open_boundary.dart';
 export 'src/dynamic_cylinder.dart';
 export 'src/valve52_cylinder_routing.dart';
 export 'src/finite_receiver.dart';
+export 'src/workshop_closed_air_compiler.dart';

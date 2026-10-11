@@ -51,30 +51,37 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
       );
     }
     final PneumaticNetwork network = electrical.project.pneumaticNetwork;
-    final int valves = network.devices.where(
-      (d) => d.id == valveDeviceId &&
-          d.kind == PneumaticDeviceKind.valve52,
-    ).length;
-    final int cylinders = network.devices.where(
-      (d) => d.id == cylinderDeviceId &&
-          d.kind == PneumaticDeviceKind.doubleActingCylinder,
-    ).length;
+    final int valves = network.devices
+        .where(
+          (d) => d.id == valveDeviceId && d.kind == PneumaticDeviceKind.valve52,
+        )
+        .length;
+    final int cylinders = network.devices
+        .where(
+          (d) =>
+              d.id == cylinderDeviceId &&
+              d.kind == PneumaticDeviceKind.doubleActingCylinder,
+        )
+        .length;
     if (valves != 1 ||
         cylinders != 1 ||
-        electrical.binding.valveSolenoidLink.pneumaticDeviceId != valveDeviceId ||
+        electrical.binding.valveSolenoidLink.pneumaticDeviceId !=
+            valveDeviceId ||
         !electrical.project.links.any(
           (ElectropneumaticLink link) =>
               link.pneumaticDeviceId == cylinderDeviceId &&
               link.role == ElectropneumaticLinkRole.positionContact &&
-              link.electricalComponentId == electrical.binding.endStopComponentId,
+              link.electricalComponentId ==
+                  electrical.binding.endStopComponentId,
         )) {
       throw const ElectropneumaticRuntimeException(
         'missing_canonical_links',
         'Y1 and B1 must link to real project physical devices.',
       );
     }
-    final CoupledMovingCylinderAirNetwork initial =
-        _compilerAt(ValveSpoolSide.springSide);
+    final CoupledMovingCylinderAirNetwork initial = _compilerAt(
+      ValveSpoolSide.springSide,
+    );
     if ((initial.geometry.strokeM - endSensor.strokeM).abs() > 1e-9) {
       throw const ElectropneumaticRuntimeException(
         'inconsistent_stroke',
@@ -133,21 +140,22 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
     cylinderPosition: (CoupledCylinderNetworkSnapshot s) => s.positionM,
     positionSensor: endSensor,
     maxStepS: maxStepS,
-    advanceAir: (
-      CoupledCylinderNetworkSnapshot before,
-      double dt,
-      ValveSpoolSide position,
-    ) {
-      final CoupledMovingCylinderAirNetwork routed = _compilerAt(position);
-      // Only the passage connectivity changes. Supply all previous gas
-      // masses, piston position/velocity, time and exchange ledger unchanged.
-      return routed.advance(
-        before,
-        durationS: dt,
-        maxStepS: mechanicalStepS,
-        stopAtFirstImpact: true,
-      );
-    },
+    advanceAir:
+        (
+          CoupledCylinderNetworkSnapshot before,
+          double dt,
+          ValveSpoolSide position,
+        ) {
+          final CoupledMovingCylinderAirNetwork routed = _compilerAt(position);
+          // Only the passage connectivity changes. Supply all previous gas
+          // masses, piston position/velocity, time and exchange ledger unchanged.
+          return routed.advance(
+            before,
+            durationS: dt,
+            maxStepS: mechanicalStepS,
+            stopAtFirstImpact: true,
+          );
+        },
   );
 
   AuthoredNetworkSelfHoldSnapshot initial() {

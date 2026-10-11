@@ -2,6 +2,7 @@ import 'package:electrosim/f18_ammeter_controls.dart';
 import 'package:electrosim/f18_ammeter_3d_assets.dart';
 import 'package:electrosim/f18_voltmeter_controls.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -14,6 +15,21 @@ void main() {
     maximumCurrentA: 10,
     cutConnectionId: ConnectionId('wire-under-test'),
   );
+  test('ammeter readout projection is inside its own physical LCD', () {
+    const body = Rect.fromLTWH(50, 60, 224, 304);
+    final display = F18Ammeter3dAssets.projectReadout(body);
+    final glass = Rect.fromLTWH(
+      body.left + 224 * (31 / 112),
+      body.top + 304 * (21 / 152),
+      224 * (50 / 112),
+      304 * (24 / 152),
+    );
+    expect(glass.contains(display.topLeft), isTrue);
+    expect(glass.contains(display.bottomRight), isTrue);
+    expect(display.width, closeTo(88, 0.00001));
+    expect(display.height, closeTo(36, 0.00001));
+  });
+
   test('physical assets cannot disguise ammeter as voltmeter', () {
     final m = meter();
     expect(F18Ammeter3dAssets.uses3d(m), F18Ammeter3dAssets.ready);

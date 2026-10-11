@@ -13,7 +13,7 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 | N° | Clé | Développement et preuve |
 |---:|---|---|
 | 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; réseau ouvert désormais OL explicite ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
-| 02 | `instrument-ammeter` | Recette Blender originale A/COM/fusible + rendu Cycles paramétré ; loader dédié, palette/frontale/câbles/contrôles et tests Dart écrits ; construction.json explicite et référence photographique marquée INCOMPLÈTE (3 douilles sur photo contre 2 A/COM dans le contrat) ; PNG non générés ; qualité visuelle/mesure réelle NON qualifiées |
+| 02 | `instrument-ammeter` | Boîtier Blender A/COM/fusible, commandes/sondes Flutter codées ; 5 tests Python géométriques locaux PASS ; inscriptions A/COM déplacées hors couvercle fusible, nervures déplacées hors molette, calibrage RANGE 200 mA/2 A/10 A ; outil local PNG direct vérifiant SHA/résolution ajouté ; aucun Blender/Flutter PNG exécuté ni qualifié |
 | 03 | `instrument-frequency` | En attente de son tour |
 | 04 | `instrument-phase-sequence` | En attente de son tour |
 | 05 | `external-crusher` | En attente de son tour |
@@ -57,3 +57,12 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - LCD de l'ampèremètre projeté selon les coordonnées de SA géométrie Cycles (et non celles du voltmètre) ; test de cadrage/zoom écrit.
 - Affichage en palette compacte conditionné au chargement des **assets originaux** de l'ampèremètre, afin de ne pas qualifier l'ancien visuel comme 3D.
 - Référence de construction : `instrument_ammeter_construction.json` ; références physiques incomplètes. Aucun PNG de l'ampèremètre généré ni prétendu validé.
+
+### Reprise autonome — étape ampèremètre 02
+- Audit de la recette Cycles : l'inscription COM était située derrière la trappe du fusible (y = 116), déplacée avec A à y = 143 ; inscription `FUSE 10 A` posée sur la trappe. Les nervures centrales chevauchant le sélecteur sont déplacées sur les flancs du holster.
+- **Tests Python locaux effectivement exécutés : 5/5 PASS** dans un banc de simulation des primitives Blender, vérifiant géométrie et couleurs des deux douilles, deux perçages, boutonnerie, cadrage LCD et absence de collision trappe/douilles. Pas un vrai rendu Cycles.
+- Fichier de tests reproductible ajouté : `tools/tests/test_g5_ammeter_mesh_contract.py` (7 assertions de groupes avec contrat du manifeste et syntaxe du moteur Cycles) ; tous les groupes n'ont pas encore été exécutés sur l'archive GitHub exacte.
+- Outil local `tools/g5_3d_remaining/render_one.py` : un appareil à la fois ; front.png + palette.png en 1120 × 1520, identité, signature PNG et SHA-256 de la recette obligatoires ; sortie **PNG directe**, aucun ZIP. Blender absent localement : **aucune image Cycles d'ampèremètre produite**.
+- Gammes de courant explicites dans l'interface : AUTO, 200 mA, 2,0 A, 10 A. Les changements de calibre ne changent pas la résistance interne du solveur ; précision matérielle des calibres à qualifier.
+- Point de vigilance non résolu : le signal `blownFuse` du résultat de simulation peut indiquer un dépassement sans que l'état `InstrumentInstance.fuseBlown` soit encore verrouillé de façon persistante. Ne pas qualifier un fusible déclenché comme complet sans ce verrouillage et la coupure réelle du courant.
+- Aucune fusion, aucun test Mac/Chromium ni campagne GitHub générale, aucune image de qualification prétendue. Composant 03 **non commencé**.

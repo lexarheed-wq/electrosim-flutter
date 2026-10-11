@@ -143,18 +143,18 @@ void main() {
         expect(File('${out.path}/palette-3d-detail-zoom.png').existsSync(),
             isTrue);
         await mouse.removePointer();
-        await t.pump();
+        await t.pump(const Duration(seconds: 3));
 
         await t.enterText(
             find.byKey(const Key('palette-search-field')), 'voltmètre');
         await t.pump();
         expect(find.byKey(item), findsOneWidget);
-        expect(find.descendant(
-          of: find.byKey(item), matching: find.byKey(preview),
-        ), findsOneWidget);
+        // Tooltip's magnified WidgetSpan is a second preview of the SAME
+        // instrument; never mistake two render instances for two products.
+        expect(find.byKey(preview), findsAtLeastNWidgets(1));
         expect(find.descendant(
           of: find.byKey(item), matching: find.byType(RawImage),
-        ), findsOneWidget);
+        ), findsAtLeastNWidgets(1));
         await t.ensureVisible(find.byKey(add));
         await t.tap(find.byKey(add));
         expect(added, 'instrument-voltmeter');

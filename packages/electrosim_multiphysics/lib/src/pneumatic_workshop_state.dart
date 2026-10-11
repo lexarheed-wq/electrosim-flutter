@@ -96,9 +96,7 @@ final class PneumaticWorkshopState {
         final double value = e.value;
         if (!accepted.contains(e.key) ||
             !value.isFinite ||
-            (e.key == 'energized'
-                ? value != 0 && value != 1
-                : value <= 0) ||
+            (e.key == 'energized' ? value != 0 && value != 1 : value <= 0) ||
             (e.key == 'valveCd' && value > 1)) {
           throw const MultiphysicsContractException(
             'invalid_calibration',

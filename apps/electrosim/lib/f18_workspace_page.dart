@@ -19,6 +19,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
 import 'f18_voltmeter_3d_assets.dart';
+import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -2061,20 +2062,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
       final double? value = reading.result?.reading?.value;
       final String? textValue = reading.result?.displayText;
-      if (reading.status == PhysicalInstrumentStatus.valid &&
-          textValue != null) {
-        results[item.id.value] = textValue;
-      } else if (reading.status == PhysicalInstrumentStatus.valid &&
-          value != null) {
+      final bool valid = reading.status == PhysicalInstrumentStatus.valid;
+      final String raw;
+      if (valid && textValue != null) {
+        raw = textValue;
+      } else if (valid && value != null) {
         final String unit = switch (item.mode) {
           InstrumentMode.currentDc || InstrumentMode.currentAcRms => 'A',
           InstrumentMode.frequency => 'Hz',
           InstrumentMode.resistance => 'Ω',
           _ => 'V',
         };
-        results[item.id.value] = '${value.toStringAsFixed(2)} $unit';
+        raw = '${value.toStringAsFixed(2)} $unit';
       } else {
-        results[item.id.value] = switch (reading.status) {
+        raw = switch (reading.status) {
           PhysicalInstrumentStatus.off => 'OFF',
           PhysicalInstrumentStatus.blownFuse => 'FUSE',
           PhysicalInstrumentStatus.overRange => 'OL',
@@ -2083,6 +2084,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           _ => '—',
         };
       }
+      results[item.id.value] = item.kind == InstrumentKind.voltmeter
+          ? F18VoltmeterControls.display(
+              meter: item,
+              computedText: raw,
+              computedValue: value,
+              validReading: valid,
+            )
+          : raw;
     }
     _meterReadoutCacheCircuit = _circuit;
     _meterReadoutCacheSnapshot = snapshot;
@@ -2670,9 +2679,87 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } else if (!_directPointerMoved &&
         _wiringPendingTerminal == null &&
         !_selectionModifierAtPointerDown) {
-      _handleDirectControlTap(event.localPosition);
+      if (!_handleVoltmeterControlTap(event.localPosition)) {
+        _handleDirectControlTap(event.localPosition);
+      }
     }
     _clearDirectPointerState();
+  }
+
+  /// Independent physical control hit testing. Image and probe sockets
+  /// never alter circuit.connections, only the selected InstrumentInstance.
+  bool _handleVoltmeterControlTap(Offset screenPosition) {
+    if (!F18Voltmeter3dAssets.ready ||
+        _representation != WorkspaceRepresentation.plate) return false;
+    final Offset world = _viewport.screenToWorld(screenPosition);
+    for (final InstrumentInstance meter in _circuit.instruments) {
+      if (meter.kind != InstrumentKind.voltmeter) continue;
+      final Offset? center = _layout.positionOf(meter.id.value);
+      if (center == null) continue;
+      final Size size = _layout.sizeOf(meter.id.value);
+      final Offset delta = world - center;
+      final int turns = _layout.quarterTurnsOf(meter.id.value) % 4;
+      final Offset unrotated = switch (turns) {
+        0 => delta,
+        1 => Offset(delta.dy, -delta.dx),
+        2 => Offset(-delta.dx, -delta.dy),
+        _ => Offset(-delta.dy, delta.dx),
+      };
+      final Offset local = Offset(
+        size.width / 2 + unrotated.dx,
+        size.height / 2 + unrotated.dy,
+      );
+      final F18VoltmeterAction? action =
+          F18VoltmeterControls.actionAt(local, size);
+      if (action == null) continue;
+      if (_blockStudentTpMutation()) return true;
+      final PhysicalInstrumentReading reading =
+          const ElectroSimInstrumentProjection().read(
+            snapshot: _simulation.snapshot,
+            instrument: meter,
+          );
+      final double? value = reading.result?.reading?.value;
+      final String? text = reading.result?.displayText ??
+          (value == null ? null : '${value.toStringAsFixed(2)} V');
+      final InstrumentInstance next = F18VoltmeterControls.apply(
+        meter: meter,
+        action: action,
+        currentReading: text,
+        currentValue: value,
+        validReading: reading.status == PhysicalInstrumentStatus.valid,
+      );
+      if (identical(next, meter)) {
+        _setStatus('Commande ${action.name} indisponible dans ce mode.');
+        return true;
+      }
+      final CircuitState candidate = CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        sources: _circuit.sources,
+        components: _circuit.components,
+        connections: _circuit.connections,
+        instruments: <InstrumentInstance>[
+          for (final InstrumentInstance item in _circuit.instruments)
+            if (item.id == meter.id) next else item,
+        ],
+        probes: _circuit.probes,
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      );
+      setState(() {
+        _circuit = candidate;
+        _selected = meter.id.value;
+        _status = 'Voltmètre : ${action.name.toUpperCase()} — '
+            '${next.poweredOn ? next.mode.name : 'OFF'} '
+            '${F18VoltmeterControls.rangeLabel(next)}';
+        _meterReadoutCacheCircuit = null;
+      });
+      _simulation.updateCircuit(candidate);
+      _syncStudentTpCircuit();
+      return true;
+    }
+    return false;
   }
 
   void _onCanvasPointerCancel(PointerCancelEvent event) {

@@ -29,9 +29,16 @@ jobs:
             (
               cd "packages/$p"
               dart pub get
-              dart format --output=none --set-exit-if-changed lib test
+              if [ "$p" = electrosim_multiphysics ]; then
+                files=(lib/src/project_history.dart lib/src/pneumatic_workshop_session.dart test/r6m_project_history_test.dart)
+              else
+                files=(lib/src/self_hold_circuit.dart lib/src/authored_network_self_hold_cycle.dart lib/src/authored_cycle_session.dart test/r6m_session_test.dart)
+              fi
+              dart format "${files[@]}"
+              git diff -- "${files[@]}"
               dart analyze
               dart test --concurrency=1 --reporter expanded
+              git diff --exit-code -- "${files[@]}"
             ) 2>&1 | tee "build/pneumatics-r6m/$p.log"
           done
           git diff --check

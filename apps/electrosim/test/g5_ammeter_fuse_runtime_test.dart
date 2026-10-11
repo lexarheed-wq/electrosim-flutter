@@ -109,6 +109,12 @@ void main() {
       restored.instruments.single, F18VoltmeterAction.selector);
     expect(toggled.fuseBlown, isTrue,
         reason: 'Power switching must not replace a physical blown fuse');
+    final poweredOff = F18AmmeterControls.apply(
+      toggled, F18VoltmeterAction.selector,
+    );
+    expect(poweredOff.poweredOn, isFalse);
+    expect(poweredOff.fuseBlown, isTrue);
+    expect(F18AmmeterControls.display(poweredOff, 'OFF', null, false), 'FUSE');
     expect(identical(
       F18AmmeterFuseSafety.latch(circuit: restored, instrumentId: meter.id),
       restored,

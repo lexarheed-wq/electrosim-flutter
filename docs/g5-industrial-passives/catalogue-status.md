@@ -1,6 +1,6 @@
 # Inventaire des rendus électriques
 
-État de la branche industrielle incluant les lots passifs et semi-conducteurs. Les entrées sont celles du catalogue de production, avec leur type visuel réel : un moteur associé à une pompe ne signifie pas que la pompe a reçu une géométrie Cycles.
+État de la branche industrielle incluant les lots passifs, semi-conducteurs et sources/PV. Les entrées sont celles du catalogue de production, avec leur type visuel réel : un moteur associé à une pompe ne signifie pas que la pompe a reçu une géométrie Cycles.
 
 « Cycles » désigne une géométrie originale en perspective et face avant ; cela ne certifie ni une identité photographique à 100 % ni une qualification fabricant. Les apparences antérieures ne sont pas toutes planes : elles nécessitent une comparaison et une qualification propres.
 
@@ -10,8 +10,8 @@
 | instrument-ammeter | Ampèremètre physique | physical_ammeter | physical_ammeter | Rendu antérieur — à comparer/améliorer |
 | instrument-frequency | Fréquencemètre physique | physical_frequency_meter | physical_frequency_meter | Rendu antérieur — à comparer/améliorer |
 | instrument-phase-sequence | Contrôleur d’ordre des phases | physical_phase_sequence_tester | physical_phase_sequence_tester | Rendu antérieur — à comparer/améliorer |
-| source-dc-24v | Source CC 24 V | dc_voltage_source | dc_voltage_source | Rendu antérieur — à comparer/améliorer |
-| switch-no | Interrupteur NO | switch | switch | Rendu antérieur — à comparer/améliorer |
+| source-dc-24v | Source CC 24 V | dc_voltage_source | dc_voltage_source | Cycles : source-dc-voltage |
+| switch-no | Interrupteur NO | switch | switch | Cycles : switch-toggle |
 | lamp | Lampe | lamp | lamp | Cycles : lamp |
 | lamp-ac1-230v | Lampe 230 V AC | lamp | lamp | Cycles : lamp |
 | resistor | Résistance | resistor | resistor | Cycles : resistor-axial |
@@ -48,18 +48,18 @@
 | external-tv | Télévision | impedance | catalog_appliance_2t | Rendu antérieur — à comparer/améliorer |
 | external-fan-ac1 | Ventilateur domestique | impedance | catalog_motor_driven_2t | Rendu antérieur — à comparer/améliorer |
 | external-fan-3p | Ventilateur industriel | motor_3p_6t | catalog_motor_driven_6t | Rendu antérieur — à comparer/améliorer |
-| source-dc-current | Source de courant CC | dc_current_source | dc_current_source | Rendu antérieur — à comparer/améliorer |
-| source-ac1-230v | Source AC 230 V | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
-| source-ac1-current | Source de courant AC | ac_current_source | ac_current_source | Rendu antérieur — à comparer/améliorer |
-| source-ac3-l1 | Réseau triphasé — L1 | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
-| source-ac3-l2 | Réseau triphasé — L2 | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
-| source-ac3-l3 | Réseau triphasé — L3 | ac_voltage_source | ac_voltage_source | Rendu antérieur — à comparer/améliorer |
-| pv-array | Champ photovoltaïque | pv_array | pv_array | Rendu antérieur — à comparer/améliorer |
-| pv-array-high-voltage | Champ photovoltaïque haute tension | pv_array | pv_array | Rendu antérieur — à comparer/améliorer |
-| pv-controller-mppt | Régulateur solaire MPPT | pv_controller | pv_controller | Rendu antérieur — à comparer/améliorer |
-| pv-controller-pwm | Régulateur solaire PWM | pv_controller | pv_controller | Rendu antérieur — à comparer/améliorer |
-| pv-battery | Batterie photovoltaïque | pv_battery | pv_battery | Rendu antérieur — à comparer/améliorer |
-| pv-inverter | Onduleur solaire 1φ | pv_inverter | pv_inverter | Rendu antérieur — à comparer/améliorer |
+| source-dc-current | Source de courant CC | dc_current_source | dc_current_source | Cycles : source-dc-current |
+| source-ac1-230v | Source AC 230 V | ac_voltage_source | ac_voltage_source | Cycles : source-ac-voltage |
+| source-ac1-current | Source de courant AC | ac_current_source | ac_current_source | Cycles : source-ac-current |
+| source-ac3-l1 | Réseau triphasé — L1 | ac_voltage_source | ac_voltage_source | Cycles : source-ac-voltage |
+| source-ac3-l2 | Réseau triphasé — L2 | ac_voltage_source | ac_voltage_source | Cycles : source-ac-voltage |
+| source-ac3-l3 | Réseau triphasé — L3 | ac_voltage_source | ac_voltage_source | Cycles : source-ac-voltage |
+| pv-array | Champ photovoltaïque | pv_array | pv_array | Cycles : solar-panel |
+| pv-array-high-voltage | Champ photovoltaïque haute tension | pv_array | pv_array | Cycles : solar-panel |
+| pv-controller-mppt | Régulateur solaire MPPT | pv_controller | pv_controller | Cycles : controller-mppt |
+| pv-controller-pwm | Régulateur solaire PWM | pv_controller | pv_controller | Cycles : controller-pwm |
+| pv-battery | Batterie photovoltaïque | pv_battery | pv_battery | Cycles : solar-battery |
+| pv-inverter | Onduleur solaire 1φ | pv_inverter | pv_inverter | Cycles : solar-inverter |
 | pv-resistive-load | Charge AC PV | pv_resistive_load | pv_resistive_load | Rendu antérieur — à comparer/améliorer |
 | source-ac3-grid | Réseau triphasé 400/230 V | ac3_voltage_source | ac3_voltage_source | Rendu antérieur — à comparer/améliorer |
 | source-ac3-alternator | Alternateur triphasé | ac3_voltage_source | ac3_voltage_source | Rendu antérieur — à comparer/améliorer |
@@ -84,4 +84,4 @@
 | terminal-block-5 | Bornier L1/L2/L3/N/PE | terminal_block_5 | terminal_block_5 | Cycles : terminal5 |
 | thermal-overload-3p | Relais thermique 3P | thermal_overload_3p | thermal_overload_3p | Cycles : overload |
 
-77 entrées de production, dont 36 entrées avec plaques Cycles ; 28 géométries partagées.
+77 entrées de production, dont 50 entrées avec plaques Cycles ; 38 géométries partagées.

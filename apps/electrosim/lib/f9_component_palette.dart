@@ -2714,6 +2714,26 @@ class F9ComponentPreview extends StatelessWidget {
             modelType: definition.renderedModelType,
             variantKey: definition.visualVariant,
             size: visualSize,
+            voltageV: F18PhysicalPlateAssets.ready(definition.renderedModelType)
+                ? ((definition.defaultParameters['voltageV'] ??
+                                  definition.defaultParameters['voltageRmsV'])
+                              as num?)
+                          ?.toDouble() ??
+                      (definition.modelType == 'dc_voltage_source' ? 24 : 0)
+                : 0,
+            currentA: F18PhysicalPlateAssets.ready(definition.renderedModelType)
+                ? ((definition.defaultParameters['currentA'] ??
+                                  definition.defaultParameters['currentRmsA'])
+                              as num?)
+                          ?.toDouble() ??
+                      0
+                : 0,
+            batterySoc:
+                F18PhysicalPlateAssets.ready(definition.renderedModelType)
+                ? (definition.defaultParameters['initialSoc'] as num?)
+                          ?.toDouble() ??
+                      0
+                : 0,
             resistanceOhm:
                 F18PhysicalPlateAssets.ready(definition.renderedModelType)
                 ? (definition.defaultParameters['resistanceOhm'] as num?)

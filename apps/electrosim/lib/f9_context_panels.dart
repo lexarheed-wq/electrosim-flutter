@@ -5,6 +5,7 @@ import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_g7_property_presenter.dart';
+import 'f18_industrial_physical_plate.dart';
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
@@ -295,6 +296,8 @@ class _PropertiesPanel extends StatelessWidget {
               F9ElementKind.connection => 'Fil',
             },
           ),
+          if (details.modelType.toLowerCase() == 'pv_array')
+            const F18PvRearJunctionAction(),
           _PropertyLine(label: 'État déclaré', value: details.stateLabel),
           _PropertyLine(
             label: 'Bornes',

@@ -685,10 +685,10 @@ final class _P {
   }
 
   void _pvControllerTerminals() {
-    final Offset pvP = Offset(c.dx - w * .20, rect.top + h * .08);
-    final Offset pvN = Offset(c.dx + w * .20, rect.top + h * .08);
-    final Offset busP = Offset(c.dx - w * .20, rect.bottom - h * .08);
-    final Offset busN = Offset(c.dx + w * .20, rect.bottom - h * .08);
+    final Offset pvP = Offset(c.dx - w * .21, rect.bottom - h * .12);
+    final Offset pvN = Offset(c.dx - w * .07, rect.bottom - h * .12);
+    final Offset busP = Offset(c.dx + w * .07, rect.bottom - h * .12);
+    final Offset busN = Offset(c.dx + w * .21, rect.bottom - h * .12);
     terminal(pvP, const Color(0xFFE65353), 'PV+');
     terminal(pvN, const Color(0xFF111827), 'PV−');
     terminal(busP, const Color(0xFFE65353), 'BAT+');
@@ -756,8 +756,8 @@ final class _P {
       color: soc > .32 ? Colors.white : const Color(0xFF26363E),
     );
 
-    final Offset pos = Offset(c.dx - w * .16, rect.bottom - h * .08);
-    final Offset neg = Offset(c.dx + w * .16, rect.bottom - h * .08);
+    final Offset pos = Offset(c.dx - w * .35, rect.top + h * .10);
+    final Offset neg = Offset(c.dx + w * .35, rect.top + h * .10);
     terminal(pos, const Color(0xFFE65353), '+');
     terminal(neg, const Color(0xFF111827), '−');
   }

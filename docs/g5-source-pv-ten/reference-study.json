@@ -1,0 +1,90 @@
+[
+  {
+    "file": "switch-spst-photo.jpg",
+    "url": "https://cdn.webshopapp.com/shops/188510/files/214266731/1000x1000x2/spst-heavy-duty-toggle-switch-with-screw-terminals.jpg",
+    "bytes": 72461,
+    "sha256": "05276433e6b25d108c5ab0bd88119212242eef979b2350be3978fc7b6fe0a468",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "mppt-photo.png",
+    "url": "https://cdnsolar.ca/cdn/shop/files/SmartSolarMPPT100-30_front.png?v=1683959159",
+    "bytes": 10041066,
+    "sha256": "73b4c37e07b11334371b27502eb355eee7051588a574ef49d14e1108d7c2b2d6",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "pwm-photo.webp",
+    "url": "https://www.solar4rvs.com.au/cdn/shop/files/12_24_5ah4.webp?v=1771376809&width=1200",
+    "bytes": 1252123,
+    "sha256": "18395fa0f1d8ab9d508c72778cefbb227878499ecfeca969104c66d79c7a41e3",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "battery-photo.jpg",
+    "url": "https://www.akkushop-schweiz.ch/thumbnail/9e/54/a3/1679500864/yuasanp1212_n001_ef1e53f63027731464cca0a7cc3796a9212ee4fe_1920x1920.jpg",
+    "bytes": 184234,
+    "sha256": "cdc217dd73d1e3a5be9941f87530c9ee25ff033bb9bc068c5144cbe897b80604",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "ac-source-photo.jpg",
+    "url": "https://rexgear.com/cdn/shop/files/it7300-series-linear-programmable-ac-power-supply-857811.jpg?v=1716254275",
+    "bytes": 26899,
+    "sha256": "c9905c85e6e56097f862fbeec2e7b307333f144be98bc31e8ad5cbb58d378ee1",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "dc-source-photo.jpg",
+    "url": "https://s.alicdn.com/%40sc04/kf/H0c861ac6898c400ea0103b7aa665dafft/New-Model-Longwei-LW3010KDS-30V-10A-Adjustable-Switching-Regulated-DC-Bench-DC-Power-Supply-Variable-with-4-Digits-Displaying.jpg",
+    "bytes": 60898,
+    "sha256": "8d01dc2b0dea499291f38bf58b7d8e40825b685a46bde47ff9192c34a5ad76e7",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "/workspace/electrosim-catalogue-photo-references/mppt-connections-0.png",
+    "url": "https://www.victronenergy.com/upload/documents/SmartSolar%20MPPT%20100-30%20%28conn%29.png",
+    "bytes": 8982310,
+    "sha256": "0ab2e2f9c7ed2b3dcdb9a0beda1acde1ea012a64c28d8595f60d968871c8f97e",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "/workspace/electrosim-catalogue-photo-references/solar-junction-open-0.jpg",
+    "url": "https://www.greentechrenewables.com/sites/default/files/styles/article_full/public/support_article/images/1.jpg.webp?itok=OO6nY8ww",
+    "bytes": 40448,
+    "sha256": "8b40eab0cc2f271bdb218afded1761ae7ba7df69c2e7cf6b94e229bb916cbd94",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "/workspace/electrosim-catalogue-photo-references/solar-junction-open-1.jpg",
+    "url": "https://www.greentechrenewables.com/sites/default/files/styles/article_full/public/support_article/images/2.jpg.webp?itok=KWN17pmq",
+    "bytes": 44998,
+    "sha256": "c03c752a01632e86ba446058f7dc21f63badf8abd07976c31e60540c52f8ab2f",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "/workspace/electrosim-catalogue-photo-references/solar-junction-open-2.jpg",
+    "url": "https://www.greentechrenewables.com/sites/default/files/styles/article_full/public/support_article/images/3.jpg.webp?itok=eFhGzTFT",
+    "bytes": 35536,
+    "sha256": "a82557e37722d8d81450596a20ce7dfcbdc930c84d6e06a239daa7db5daa53c1",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  },
+  {
+    "file": "/workspace/electrosim-catalogue-photo-references/solar-junction-rear-0.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Solar_panel_junction_box.jpg?utm_source=commons.wikimedia.org&amp%3Butm_campaign=index&amp%3Butm_content=original",
+    "bytes": 4255932,
+    "sha256": "cf555ac0a90d747f1760fb90ce2c6929da2248ba5aa924d15995355e6dea2cab",
+    "use": "study only; not bundled as application texture",
+    "license": "not verified for republication"
+  }
+]

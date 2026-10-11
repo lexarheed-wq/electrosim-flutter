@@ -141,15 +141,17 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.14, h * 0.42),
         Offset(w * 0.14, h * 0.42),
       ],
+      // Real lower four-way bank: preserve electrical terminal index order.
       'pv_controller' => <Offset>[
-        Offset(w * -0.19, h * -0.42),
-        Offset(w * 0.19, h * -0.42),
-        Offset(w * -0.19, h * 0.42),
-        Offset(w * 0.19, h * 0.42),
+        Offset(w * -0.21, h * 0.38),
+        Offset(w * -0.07, h * 0.38),
+        Offset(w * 0.07, h * 0.38),
+        Offset(w * 0.21, h * 0.38),
       ],
+      // Battery posts are on the top lid, with no remote training adapters.
       'pv_battery' => <Offset>[
-        Offset(w * -0.17, h * 0.42),
-        Offset(w * 0.17, h * 0.42),
+        Offset(w * -0.35, h * -0.40),
+        Offset(w * 0.35, h * -0.40),
       ],
       'pv_inverter' => <Offset>[
         Offset(w * -0.19, h * -0.42),

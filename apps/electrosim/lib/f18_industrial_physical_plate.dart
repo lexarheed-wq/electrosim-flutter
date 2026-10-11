@@ -68,6 +68,17 @@ abstract final class F18PhysicalPlateAssets {
     'motor_dc': 'motor-dc',
     'fan_dc': 'fan',
     'buzzer': 'buzzer',
+    'switch': 'switch-toggle',
+    'switch_spst': 'switch-toggle',
+    'dc_voltage_source': 'source-dc-voltage',
+    'voltage_source': 'source-dc-voltage',
+    'dc_current_source': 'source-dc-current',
+    'ac_voltage_source': 'source-ac-voltage',
+    'ac_current_source': 'source-ac-current',
+    'pv_array': 'solar-panel',
+    'pv_controller': 'controller-mppt',
+    'pv_battery': 'solar-battery',
+    'pv_inverter': 'solar-inverter',
     'diode': 'diode-axial',
     'resistor': 'resistor-axial',
     'capacitor': 'capacitor-film',
@@ -85,13 +96,20 @@ abstract final class F18PhysicalPlateAssets {
     'led-red': 'led-red',
     'led-green': 'led-green',
   };
+  static const controllerVariants = {
+    'pv-mppt': 'controller-mppt',
+    'pv-pwm': 'controller-pwm',
+  };
   static Set<String> get assetModels => {
     ...models.values,
     ...diodeVariants.values,
+    ...controllerVariants.values,
   };
   static String? modelFor(String type, {String? variantKey}) =>
       type.toLowerCase() == 'diode' && variantKey != null
       ? diodeVariants[variantKey.toLowerCase()]
+      : type.toLowerCase() == 'pv_controller' && variantKey != null
+      ? controllerVariants[variantKey.toLowerCase()]
       : models[type.toLowerCase()];
   static bool supports(String type) => models.containsKey(type.toLowerCase());
   static bool ready(String type, {String? variantKey}) =>
@@ -121,15 +139,21 @@ abstract final class F18PhysicalPlateAssets {
               name.startsWith('breaker') ||
               name.startsWith('isolator') ||
               name.startsWith('button-') ||
-              name == 'fan';
-          for (final camera in ['front', 'palette']) {
+              name == 'fan' ||
+              name == 'switch-toggle';
+          for (final camera in [
+            'front',
+            'palette',
+            if (name == 'solar-panel') 'rear',
+          ]) {
             for (final layer
                 in moving
                     ? [
                         '',
                         '-controls',
                         if (name.startsWith('breaker') ||
-                            name.startsWith('isolator')) ...[
+                            name.startsWith('isolator') ||
+                            name == 'switch-toggle') ...[
                           '-controls-on',
                           '-controls-trip',
                         ],
@@ -215,6 +239,7 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     this.ratedCurrentA = 0,
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
+    this.batterySoc = 0,
     this.variantKey,
   });
   final String modelType;
@@ -232,7 +257,8 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
       voltageV,
       ratedCurrentA,
       currentLimitA,
-      resistanceOhm;
+      resistanceOhm,
+      batterySoc;
   final String? variantKey;
   double get handle => tripped
       ? 0.5
@@ -269,6 +295,16 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     'diode-tvs' => 'Diode TVS unidirectionnelle',
     'led-red' => 'LED rouge',
     'led-green' => 'LED verte',
+    'switch-toggle' => 'Interrupteur à levier',
+    'source-dc-voltage' => 'Alimentation CC',
+    'source-dc-current' => 'Source de courant CC',
+    'source-ac-voltage' => 'Source de tension AC',
+    'source-ac-current' => 'Source de courant AC',
+    'solar-panel' => 'Panneau photovoltaïque',
+    'controller-mppt' => 'Régulateur MPPT',
+    'controller-pwm' => 'Régulateur PWM',
+    'solar-battery' => 'Batterie photovoltaïque',
+    'solar-inverter' => 'Onduleur photovoltaïque',
     'resistor-axial' => 'Résistance axiale',
     'capacitor-film' => 'Condensateur à film non polarisé',
     'inductor-drum' => 'Inductance sur noyau ferrite',
@@ -283,6 +319,17 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     if (shape.startsWith('auxiliary-')) {
       final contactClosed = shape == 'auxiliary-nc' ? !actuated : actuated;
       return contactClosed ? 'fermé' : 'ouvert';
+    }
+    if (shape == 'solar-battery') {
+      return batterySoc.isFinite
+          ? 'charge ${(batterySoc.clamp(0, 1) * 100).round()} %'
+          : 'charge inconnue';
+    }
+    if (shape.startsWith('source-') ||
+        shape.startsWith('controller-') ||
+        shape == 'solar-panel' ||
+        shape == 'solar-inverter') {
+      return active ? 'actif' : 'arrêté';
     }
     if (shape.startsWith('led-')) return energized ? 'allumée' : 'éteinte';
     if (shape.startsWith('diode-')) {
@@ -323,8 +370,63 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
           tween: Tween<double>(end: handle),
           duration: const Duration(milliseconds: 170),
           curve: Curves.easeOutCubic,
-          builder: (context, position, child) =>
+          builder: (context, position, child) => Stack(
+            fit: StackFit.expand,
+            children: [
               CustomPaint(painter: _PhysicalPlatePainter(this, position)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Reachable inspection action, kept outside the canvas pointer overlay.
+class F18PvRearJunctionAction extends StatelessWidget {
+  const F18PvRearJunctionAction({super.key});
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: 'Voir le bornier arrière',
+    child: TextButton.icon(
+      icon: const Icon(Icons.flip_camera_android_outlined),
+      label: const Text('Voir le bornier arrière'),
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Bornier arrière du panneau'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 440,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 340,
+                    child: Semantics(
+                      label:
+                          'Boîtier de raccordement arrière ouvert, contacts métalliques et diodes de dérivation',
+                      image: true,
+                      child: RawImage(
+                        image:
+                            F18PhysicalPlateAssets._images['solar-panel-rear'],
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    'Les deux contacts extérieurs sont les sorties + et −. Les contacts intermédiaires et les diodes sont représentés pour montrer la construction du boîtier.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+          ],
         ),
       ),
     ),
@@ -632,6 +734,101 @@ final class _PhysicalPlatePainter extends CustomPainter {
       return;
     }
     switch (name) {
+      case 'switch-toggle':
+        controlLayer(c, pose: '-on', alpha: 1 - handle);
+        controlLayer(c, alpha: handle);
+        text(
+          c,
+          v.closed ? 'ON' : 'OFF',
+          Offset(w / 2, h * .75),
+          font: h * .085,
+          z: 22,
+        );
+      case 'source-dc-voltage':
+      case 'source-dc-current':
+      case 'source-ac-voltage':
+      case 'source-ac-current':
+        text(
+          c,
+          name.endsWith('current')
+              ? (name.contains('-ac-') ? 'SOURCE I AC' : 'SOURCE I CC')
+              : (name.contains('-ac-') ? 'SOURCE U AC' : 'SOURCE U CC'),
+          Offset(w / 2, h * .11),
+          font: h * .065,
+          z: 30,
+        );
+        text(
+          c,
+          v.active && v.voltageV.isFinite
+              ? '${v.voltageV.toStringAsFixed(1)} V'
+              : '— V',
+          Offset(w / 2, h * .29),
+          font: h * .095,
+          z: 32,
+          color: const Color(0xFF7BE3C4),
+        );
+        text(
+          c,
+          v.active && v.currentA.isFinite
+              ? '${v.currentA.toStringAsFixed(2)} A'
+              : '— A',
+          Offset(w / 2, h * .43),
+          font: h * .075,
+          z: 32,
+          color: const Color(0xFF7BE3C4),
+        );
+        if (v.variantKey != null && v.variantKey!.startsWith('ac-l')) {
+          text(
+            c,
+            v.variantKey!.substring(3).toUpperCase(),
+            Offset(w / 2, h * .69),
+            font: h * .075,
+            z: 31,
+          );
+        }
+      case 'controller-mppt':
+      case 'controller-pwm':
+      case 'solar-inverter':
+        text(
+          c,
+          name == 'solar-inverter'
+              ? 'ONDULEUR'
+              : name == 'controller-pwm'
+              ? 'PWM'
+              : 'MPPT',
+          Offset(w / 2, h * .34),
+          font: h * .095,
+          z: 32,
+          color: Colors.white,
+        );
+        text(
+          c,
+          v.active ? 'ACTIF' : 'ARRÊT',
+          Offset(w / 2, h * .58),
+          font: h * .055,
+          z: 32,
+          color: Colors.white,
+        );
+      case 'solar-battery':
+        text(c, 'BATTERIE', Offset(w / 2, h * .38), font: h * .08, z: 30);
+        text(
+          c,
+          v.batterySoc.isFinite
+              ? 'SOC ${(v.batterySoc.clamp(0, 1) * 100).round()} %'
+              : '— %',
+          Offset(w / 2, h * .55),
+          font: h * .10,
+          z: 30,
+        );
+      case 'solar-panel':
+        text(
+          c,
+          'PV',
+          Offset(w / 2, h * .84),
+          font: h * .06,
+          z: 18,
+          color: Colors.white,
+        );
       case 'diode-axial':
       case 'diode-glass':
       case 'diode-tvs':
@@ -998,6 +1195,14 @@ final class _PhysicalPlatePainter extends CustomPainter {
       'diode-tvs' ||
       'led-red' ||
       'led-green' => ['A', 'K'],
+      'switch-toggle' => ['1', '2'],
+      'source-dc-voltage' ||
+      'source-dc-current' ||
+      'solar-battery' ||
+      'solar-panel' => ['+', '−'],
+      'source-ac-voltage' || 'source-ac-current' => ['L', 'N'],
+      'controller-mppt' || 'controller-pwm' => ['PV+', 'PV−', 'BAT+', 'BAT−'],
+      'solar-inverter' => ['DC+', 'DC−', 'L', 'N'],
       'supply' => ['+', '−'],
       'coil' => ['A1', 'A2'],
       'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
@@ -1039,6 +1244,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
             name.startsWith('contactor') ||
                 name == 'overload' ||
                 name == 'coil' ||
+                name == 'solar-battery' ||
+                name == 'solar-inverter' ||
+                name.startsWith('controller-') ||
                 name == 'fuse-holder' ||
                 name.startsWith('auxiliary-') ||
                 name == 'motor3'
@@ -1110,5 +1318,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
               'lamp') ||
       old.v.ratedCurrentA != v.ratedCurrentA ||
       old.v.resistanceOhm != v.resistanceOhm ||
+      old.v.batterySoc != v.batterySoc ||
+      old.v.active != v.active ||
+      (old.v.currentA != v.currentA && v.modelType.contains('source')) ||
+      (old.v.voltageV != v.voltageV && v.modelType.contains('source')) ||
       old.v.showTerminals != v.showTerminals;
 }

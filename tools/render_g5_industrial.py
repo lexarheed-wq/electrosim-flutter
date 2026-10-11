@@ -3,10 +3,12 @@ Run blender -b --factory-startup -t 4 --python tools/render_g5_industrial.py.
 Geometry JSON is exported by the Canvas-port regression test. Front projection
 is exact: one design unit is one Flutter logical pixel. Palette is a true camera.
 """
-import bpy, bmesh, math, json, os, subprocess
+import bpy, bmesh, math, json, os, subprocess, sys
 from pathlib import Path
 from mathutils import Vector, Matrix
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'tools'))
+from g5_source_pv_meshes import SOURCE_PV_MODELS, build_source_pv
 OUT = Path(os.environ.get('ELECTROSIM_RENDER_OUTPUT', str(ROOT / 'apps/electrosim/assets/g5_industrial')))
 OUT.mkdir(parents=True, exist_ok=True)
 MODELS = json.loads((ROOT / 'apps/electrosim/assets/g5_industrial/geometry.json').read_text())
@@ -211,6 +213,12 @@ def controls(name,M):
         width=ports[poles-1][0]-ports[0][0]+pw*.76
         round_housing(W/2,H*.76,width,H*.065,39,9,black,1.4)
         box('bar bevel highlight',W/2,H*.737,width*.96,H*.007,39.2,.4,black,.25)
+    elif name=='switch-toggle':
+        bpy.ops.mesh.primitive_cylinder_add(vertices=64,radius=W*.048,depth=H*.19,location=(W/2,-H*.5,39))
+        lever=bpy.context.object;lever.rotation_euler[0]=math.radians(-20)
+        finish(lever,'polished steel switch lever',chrome,.6)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=W*.052,location=(W/2,-H*.5-H*.095*math.sin(math.radians(-20)),39+H*.095*math.cos(math.radians(-20))))
+        finish(bpy.context.object,'rounded lever tip',chrome)
     elif name=='fan':fan_rotor(W,H)
     elif name in ['button-no','button-nc']:
         color=red if name=='button-nc' else green
@@ -441,7 +449,8 @@ def radial_led(W,H,ports,green_led):
 
 def build(name,M):
     W,H=M['size'];ports=M['ports'];cx,cy=W/2,H/2
-    if name in ['diode-axial','diode-glass','diode-tvs']:axial_diode(W,H,ports,name)
+    if name in SOURCE_PV_MODELS:build_source_pv(name,M,globals())
+    elif name in ['diode-axial','diode-glass','diode-tvs']:axial_diode(W,H,ports,name)
     elif name in ['led-red','led-green']:radial_led(W,H,ports,name=='led-green')
     elif name=='motor-dc':dc_motor(W,H,ports)
     elif name=='fan':axial_fan(W,H,ports)
@@ -612,10 +621,11 @@ def build(name,M):
             for y in [H*.095,H*.90]:screw(x,y,2.2,23)
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
-        if name in ['motor3','lamp']:continue
-        dark_rim=name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green']
+        if name in ['motor3','lamp','solar-panel','solar-battery','controller-mppt','controller-pwm','solar-inverter'] or name.startswith('source-'):continue
+        dark_rim=name in SOURCE_PV_MODELS or name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
-        screw(x,y,min(W,H)*.038,34 if dark_rim else 29,rim)
+        screw_radius=min(W,H)*(.022 if name in ['controller-mppt','controller-pwm','solar-battery'] else .038)
+        screw(x,y,screw_radius,34 if dark_rim else 29,rim)
 
 def area(name,loc,power,size):
     data=bpy.data.lights.new(name,'AREA');data.energy=power;data.size=size;data.shape='DISK'
@@ -637,7 +647,9 @@ for name,M in MODELS.items():
     cam=bpy.data.objects.new('industrial product camera',data);scene.collection.objects.link(cam);scene.camera=cam
     factor=1.5 if name=='motor3' else 2.5
     scene.render.resolution_x=round(W*factor);scene.render.resolution_y=round(H*factor)
-    for view,yaw,pitch,scale in [('front',0,0,1),('palette',-24,-16,.78)]:
+    views=[('front',0,0,1),('palette',-24,-16,.78)]
+    if name=='solar-panel':views.append(('rear',180,0,1))
+    for view,yaw,pitch,scale in views:
         cy,sy=math.cos(math.radians(yaw)),math.sin(math.radians(yaw))
         cp,sp=math.cos(math.radians(pitch)),math.sin(math.radians(pitch))
         right=Vector((cy,0,sy));up=Vector((-sp*sy,cp,sp*cy));back=Vector((-cp*sy,-sp,cp*cy))
@@ -657,9 +669,9 @@ for name,M in MODELS.items():
             source=temporary/f'{name}-{view}.png';target=OUT/f'{name}-controls-{view}.png'
             originals={o:o.matrix_world.copy() for o in control_objects}
             poses=[('',0)]
-            if name.startswith('breaker') or name.startswith('isolator'):poses += [('-on',-40),('-trip',-20)]
+            if name.startswith('breaker') or name.startswith('isolator') or name=='switch-toggle':poses += [('-on',-40),('-trip',-20)]
             for pose,angle in poses:
-                pivot=Vector((W/2,-H*.655,26))
+                pivot=Vector((W/2,-H*.5,27)) if name=='switch-toggle' else Vector((W/2,-H*.655,26))
                 transform=Matrix.Translation(pivot) @ Matrix.Rotation(math.radians(angle),4,'X') @ Matrix.Translation(-pivot)
                 for o in control_objects:o.matrix_world=transform @ originals[o]
                 source=temporary/f'{name}{pose}-{view}.png';target=OUT/f'{name}-controls{pose}-{view}.png'

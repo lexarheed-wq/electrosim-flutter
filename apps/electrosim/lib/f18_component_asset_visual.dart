@@ -329,6 +329,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
         ratedCurrentA: ratedCurrentA,
         currentLimitA: currentLimitA,
         resistanceOhm: resistanceOhm,
+        batterySoc: batterySoc,
         variantKey: variantKey,
       );
     }

@@ -70,3 +70,6 @@ flutter test --no-pub tool/capture_g5_industrial_test.dart
 
 Le catalogue entier n'est pas terminé : instruments, sources/PV et plusieurs
 équipements de charge conservent leurs rendus précédents.
+
+Le [lot sources/PV](../g5-source-pv-ten/README.md) poursuit cet inventaire ;
+les chiffres ci-dessus décrivent la qualification historique de ce lot.

@@ -81,3 +81,6 @@ ELECTROSIM_INDUSTRIAL_MODELS=resistor-axial,capacitor-film,inductor-drum ELECTRO
 
 Le catalogue complet n'est pas terminé. Instruments, sources/PV et
 plusieurs équipements de charge conservent leurs représentations antérieures.
+
+Le [lot sources/PV](../g5-source-pv-ten/README.md) poursuit cet inventaire ;
+les chiffres ci-dessus décrivent la qualification historique de ce lot.

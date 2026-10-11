@@ -96,6 +96,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
 
   void _history(bool undo) {
     if (undo ? !_session.canUndo : !_session.canRedo) return;
+    final MultiphysicsProject previous = _state.project;
     setState(() {
       if (undo) {
         _session.undo();
@@ -104,7 +105,13 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       }
       _state = _session.state;
       _firstPort = null;
-      _invalidateAirRuntime();
+      // Moving a glyph never changes the gas/electric graph. Keep its
+      // accepted measured snapshot on layout-only undo/redo.
+      final MultiphysicsProject restored = _state.project;
+      final bool physicalChanged =
+          !identical(previous.pneumaticNetwork, restored.pneumaticNetwork) ||
+          !identical(previous.electricalCircuit, restored.electricalCircuit);
+      if (physicalChanged) _invalidateAirRuntime();
     });
   }
 

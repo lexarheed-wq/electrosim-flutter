@@ -131,3 +131,43 @@ jobs:
           path: build/pneumatics-r6/
           if-no-files-found: warn
           retention-days: 30
+
+  pneumatic-r6-macos-intel-scale:
+    name: pneumatic-r6-macos-intel-scale
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Execute authentic Intel Mac physics and benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-mac
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            dart --version
+            uname -a
+            sw_vers
+            sysctl -n machdep.cpu.brand_string
+          } | tee build/pneumatics-r6-mac/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart test test/r6_scale_test.dart --reporter expanded
+            dart run benchmark/r6_scale.dart
+          ) 2>&1 | tee build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log
+          grep -F 'R6_30_100_200_400_PHYSICAL_SCALE_PASS' build/pneumatics-r6-mac/OBSERVED_MAC_INTEL.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-macos-intel-${{ github.sha }}
+          path: build/pneumatics-r6-mac/
+          if-no-files-found: warn
+          retention-days: 30

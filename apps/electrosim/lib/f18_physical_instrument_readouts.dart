@@ -125,8 +125,12 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       if (!original3d && !rect.overlaps(Offset.zero & size)) continue;
       if (original3d) {
         _paint3dRotated(canvas, item.key, rect, (Rect local) {
+          final InstrumentInstance? meter = circuit?.instruments
+              .where((it) => it.id.value == item.key)
+              .firstOrNull;
           _drawReading(
             canvas, F18Voltmeter3dAssets.projectReadout(local), item.value,
+            illuminated: meter != null && F18VoltmeterControls.isLit(meter),
           );
         });
       } else {
@@ -286,16 +290,15 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     }
   }
 
-  void _drawReading(Canvas canvas, Rect display, String reading) {
+  void _drawReading(Canvas canvas, Rect display, String reading, {
+    bool illuminated = false,
+  }) {
     if (display.width <= 0 || display.height <= 0) return;
       final double radius = (3 * viewport.scale).clamp(1.0, 6.0).toDouble();
       canvas.save();
       canvas.clipRRect(
         RRect.fromRectAndRadius(display, Radius.circular(radius)),
       );
-      final bool illuminated = circuit?.instruments.any((meter) =>
-          meter.kind == InstrumentKind.voltmeter &&
-          F18VoltmeterControls.isLit(meter)) ?? false;
       canvas.drawRect(
         display,
         Paint()..color = illuminated

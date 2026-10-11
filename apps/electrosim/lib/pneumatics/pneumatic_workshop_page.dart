@@ -311,8 +311,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                         ),
                       ],
                       onChanged: (double? value) {},
-                      validator: (double? value) =>
-                          value == null ? 'Choisir la position physique.' : null,
+                      validator: (double? value) => value == null
+                          ? 'Choisir la position physique.'
+                          : null,
                       onSaved: (double? value) => values['energized'] = value!,
                     ),
                   ],
@@ -529,7 +530,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                         ? 'Réseau expérimental : calcul seulement pour '
                               'sources idéales, silencieux et collecteurs '
                               'physiquement calibrés, distributeur 5/2 '
-                            'à position fixe. Vérin libre non pris en charge.'
+                              'à position fixe. Vérin libre non pris en charge.'
                         : 'Simulation réelle : t = '
                               '${_airSnapshot!.timeS.toStringAsFixed(3)} s ; '
                               'masse externe = '

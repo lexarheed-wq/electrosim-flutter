@@ -18,6 +18,7 @@ class StubGeometry:
     steel = object()
     yellow = object()
     terminal_gray = object()
+    brass = object()
 
     def __init__(self):
         self.objects = []
@@ -25,6 +26,9 @@ class StubGeometry:
     def box(self, name, x, y, width, height, z, depth, material, r=0):
         self.objects.append((name, x, y, width, height))
         return name
+
+    def cut(self, obj, tool):
+        self.objects.append(('boolean_cut', obj, tool))
 
     def cyl(self, name, x, y, z, radius, depth, material):
         self.objects.append((name, x, y, radius, depth))
@@ -42,6 +46,7 @@ class VoltmeterDraftTest(unittest.TestCase):
         body = next(part for part in g.objects if part[0] == 'body')
         self.assertAlmostEqual(body[3] / body[4], 84 / 167, places=7)
         self.assertFalse(any(name == 'contact_2' for name in names))
+        self.assertEqual(sum(p[0] == 'boolean_cut' for p in g.objects), 4)
 
     def test_cannot_reuse_other_instrument(self):
         with self.assertRaises(ValueError):

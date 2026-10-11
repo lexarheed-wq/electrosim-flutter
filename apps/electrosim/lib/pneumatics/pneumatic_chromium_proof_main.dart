@@ -11,8 +11,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final PneumaticWorkshopView view =
       Uri.base.queryParameters['view'] == 'schematic'
-          ? PneumaticWorkshopView.schematic
-          : PneumaticWorkshopView.physical;
+      ? PneumaticWorkshopView.schematic
+      : PneumaticWorkshopView.physical;
 
   final CircuitState electricity = CircuitState(
     circuitId: CircuitId('pneumatic-chromium-proof'),
@@ -62,8 +62,8 @@ void main() {
             role: label == 'P'
                 ? PneumaticPortRole.supply
                 : label == 'R' || label == 'S'
-                    ? PneumaticPortRole.exhaust
-                    : PneumaticPortRole.work,
+                ? PneumaticPortRole.exhaust
+                : PneumaticPortRole.work,
           ),
       ],
     );

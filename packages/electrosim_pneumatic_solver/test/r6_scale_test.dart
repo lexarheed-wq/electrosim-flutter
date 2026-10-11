@@ -14,13 +14,18 @@ void main() {
         final repeated = fixture.simulate();
         expect(accepted.chambers.keys.toSet(), initial.chambers.keys.toSet());
         expect(accepted.acceptedSubsteps, greaterThan(0));
-        expect(accepted.totalMassKg,
-            closeTo(initial.totalMassKg, initial.totalMassKg * 1e-9));
+        expect(
+          accepted.totalMassKg,
+          closeTo(initial.totalMassKg, initial.totalMassKg * 1e-9),
+        );
         expect(accepted.totalMassKg, repeated.totalMassKg);
         expect(accepted.timeS, .04);
         expect(initial.timeS, 0);
         expect(initial.acceptedSubsteps, 0);
-        expect(initial.chambers['fitting.0']!.pressureAbsPa, closeTo(200000, 1e-8));
+        expect(
+          initial.chambers['fitting.0']!.pressureAbsPa,
+          closeTo(200000, 1e-8),
+        );
       });
     }
 

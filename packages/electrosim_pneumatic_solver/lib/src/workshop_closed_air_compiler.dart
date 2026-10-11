@@ -76,8 +76,8 @@ final class WorkshopClosedAirCompiler {
       final bool isExternal =
           device.kind == PneumaticDeviceKind.idealSource ||
           device.kind == PneumaticDeviceKind.silencer;
-      final bool isValve = withStaticValve52 &&
-          device.kind == PneumaticDeviceKind.valve52;
+      final bool isValve =
+          withStaticValve52 && device.kind == PneumaticDeviceKind.valve52;
       if (!isFitting && (!withIdealBoundaries || !isExternal) && !isValve) {
         throw PneumaticPhysicsException(
           'unsupported_device',
@@ -89,7 +89,8 @@ final class WorkshopClosedAirCompiler {
       if (isValve) {
         final double? deadVolume = device.parametersSi['portDeadVolumeM3'];
         final double? initialPressure = device.parametersSi['pressureAbsPa'];
-        final double? effectiveArea = device.parametersSi['valveEffectiveAreaM2'];
+        final double? effectiveArea =
+            device.parametersSi['valveEffectiveAreaM2'];
         final double? valveCd = device.parametersSi['valveCd'];
         final double? spoolPosition = device.parametersSi['energized'];
         if (deadVolume == null ||
@@ -134,15 +135,16 @@ final class WorkshopClosedAirCompiler {
         }
         final Map<String, PneumaticPortRole> roles =
             <String, PneumaticPortRole>{
-          'P': PneumaticPortRole.supply,
-          'A': PneumaticPortRole.work,
-          'B': PneumaticPortRole.work,
-          'R': PneumaticPortRole.exhaust,
-          'S': PneumaticPortRole.exhaust,
-        };
+              'P': PneumaticPortRole.supply,
+              'A': PneumaticPortRole.work,
+              'B': PneumaticPortRole.work,
+              'R': PneumaticPortRole.exhaust,
+              'S': PneumaticPortRole.exhaust,
+            };
         if (byName.length != roles.length ||
-            roles.entries.any((e) =>
-                byName[e.key] == null || byName[e.key]!.role != e.value)) {
+            roles.entries.any(
+              (e) => byName[e.key] == null || byName[e.key]!.role != e.value,
+            )) {
           throw PneumaticPhysicsException(
             'invalid_valve_ports',
             'Valve ${device.id} must expose ISO P/A/B/R/S and correct roles.',

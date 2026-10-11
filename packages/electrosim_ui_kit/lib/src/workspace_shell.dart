@@ -384,6 +384,7 @@ class _ElectroSimWorkspaceShellState extends State<ElectroSimWorkspaceShell> {
                                   key: const Key('workspace-context-resizer'),
                                   axis: Axis.horizontal,
                                   semanticLabel: 'Largeur de l’inspecteur',
+                                  increaseDirection: -1,
                                   enabled: !widget.interactionLocked,
                                   onDelta: (delta) {
                                     widget.onBeforeLayoutChange?.call();

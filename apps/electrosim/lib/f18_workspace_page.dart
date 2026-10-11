@@ -60,6 +60,7 @@ class F18WorkspacePage extends StatefulWidget {
     this.tpSessionController,
     this.persistenceController,
     this.layoutPreferences,
+    this.layoutPreferencesFuture,
     this.syncClient,
     this.onSessionDashboard,
     this.onSessionHome,
@@ -80,6 +81,7 @@ class F18WorkspacePage extends StatefulWidget {
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
   final WorkspaceLayoutPreferences? layoutPreferences;
+  final Future<WorkspaceLayoutPreferences>? layoutPreferencesFuture;
   final ElectroSimLanSyncClient? syncClient;
   final VoidCallback? onSessionDashboard;
   final VoidCallback? onSessionHome;
@@ -725,6 +727,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   final WorkspaceLayoutController _workspaceLayout =
       WorkspaceLayoutController();
   WorkspaceLayoutPreferences? _layoutPreferences;
+  late final Future<WorkspaceLayoutPreferences> _layoutPreferencesReady;
+  int _layoutEditOrder = 0;
   Timer? _layoutSaveTimer;
   bool _layoutEdited = false;
   bool _restoringLayout = false;
@@ -904,6 +908,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _tpController.addListener(_onStudentTpChanged);
     }
     _workspaceLayout.addListener(_scheduleLayoutSave);
+    _layoutPreferencesReady = widget.layoutPreferences != null
+        ? Future.value(widget.layoutPreferences!)
+        : widget.layoutPreferencesFuture ??
+              WorkspaceLayoutPreferences.createDefault();
     unawaited(_restoreWorkspaceLayout());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -946,9 +954,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   Future<void> _restoreWorkspaceLayout() async {
     try {
-      final preferences =
-          widget.layoutPreferences ??
-          await WorkspaceLayoutPreferences.createDefault();
+      final preferences = await _layoutPreferencesReady;
       if (!mounted) return;
       _layoutPreferences = preferences;
       final stored = await preferences.load();
@@ -963,7 +969,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         });
         _restoringLayout = false;
       } else if (_layoutEdited) {
-        _scheduleLayoutSave();
+        _scheduleLayoutSave(recordEdit: false);
       }
     } on Object {
       // Optional UI preferences must not prevent entering a workshop when the
@@ -971,22 +977,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
   }
 
-  void _scheduleLayoutSave() {
+  void _scheduleLayoutSave({bool recordEdit = true}) {
     if (_restoringLayout) return;
     _layoutEdited = true;
+    if (recordEdit) {
+      _layoutEditOrder = WorkspaceLayoutPreferences.reserveSaveOrder();
+    }
     _layoutSaveTimer?.cancel();
     if (_layoutPreferences == null) return;
     _layoutSaveTimer = Timer(const Duration(milliseconds: 300), () {
-      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
+      unawaited(
+        _persistWorkspaceLayout(
+          _workspaceLayout.toJson(),
+          order: _layoutEditOrder,
+        ),
+      );
     });
   }
 
-  Future<void> _persistWorkspaceLayout(Map<String, Object?> state) async {
+  Future<void> _persistWorkspaceLayout(
+    Map<String, Object?> state, {
+    required int order,
+  }) async {
+    final snapshot = {...state, 'representation': _representation.name};
     try {
-      await _layoutPreferences?.save({
-        ...state,
-        'representation': _representation.name,
-      });
+      final preferences = _layoutPreferences ?? await _layoutPreferencesReady;
+      await preferences.save(snapshot, order: order);
     } on Object {
       if (mounted) {
         _setStatus('Disposition non enregistrée. L’atelier reste utilisable.');
@@ -4058,8 +4074,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _layoutSaveTimer?.cancel();
     _workspaceLayout.removeListener(_scheduleLayoutSave);
     _tpController.removeListener(_onStudentTpChanged);
-    if (_layoutEdited && _layoutPreferences != null) {
-      unawaited(_persistWorkspaceLayout(_workspaceLayout.toJson()));
+    if (_layoutEdited) {
+      unawaited(
+        _persistWorkspaceLayout(
+          _workspaceLayout.toJson(),
+          order: _layoutEditOrder,
+        ),
+      );
     }
     _workspaceLayout.dispose();
     _connectionRouter.dispose();

@@ -83,53 +83,56 @@ void main() {
     );
   });
 
-  test('R6/N worker reports a rejected solve and accepts the next job', () async {
-    final IsothermalAirNetwork network = IsothermalAirNetwork(
-      chambers: <FixedAirChamber>[
-        FixedAirChamber.fromPressure(
-          id: 'gas',
-          volumeM3: .002,
-          pressureAbsPa: 150000,
-        ),
-      ],
-      passages: <AirPassage>[],
-    );
-    final IsothermalAirSnapshot foreign = IsothermalAirSnapshot(
-      timeS: 0,
-      chambers: <String, FixedAirChamber>{
-        'foreign': FixedAirChamber.fromPressure(
-          id: 'foreign',
-          volumeM3: .002,
-          pressureAbsPa: 150000,
-        ),
-      },
-      passageMassFlowKgPerS: <String, double>{},
-      acceptedSubsteps: 0,
-    );
-    final R6Worker worker = await createR6Worker();
-    try {
-      final R6NetworkJob invalid = R6NetworkJob(
-        projectRevision: 0,
-        requestId: 1,
-        engineVersion: 'r6n-v1',
-        network: network,
-        before: foreign,
-        durationS: .02,
-        maxStepS: .002,
+  test(
+    'R6/N worker reports a rejected solve and accepts the next job',
+    () async {
+      final IsothermalAirNetwork network = IsothermalAirNetwork(
+        chambers: <FixedAirChamber>[
+          FixedAirChamber.fromPressure(
+            id: 'gas',
+            volumeM3: .002,
+            pressureAbsPa: 150000,
+          ),
+        ],
+        passages: <AirPassage>[],
       );
-      await expectLater(worker.solve(invalid), throwsStateError);
-      final R6NetworkJob valid = R6NetworkJob(
-        projectRevision: 0,
-        requestId: 2,
-        engineVersion: 'r6n-v1',
-        network: network,
-        before: network.initialSnapshot,
-        durationS: .02,
-        maxStepS: .002,
+      final IsothermalAirSnapshot foreign = IsothermalAirSnapshot(
+        timeS: 0,
+        chambers: <String, FixedAirChamber>{
+          'foreign': FixedAirChamber.fromPressure(
+            id: 'foreign',
+            volumeM3: .002,
+            pressureAbsPa: 150000,
+          ),
+        },
+        passageMassFlowKgPerS: <String, double>{},
+        acceptedSubsteps: 0,
       );
-      expect((await worker.solve(valid)).snapshot.timeS, .02);
-    } finally {
-      await worker.close();
-    }
-  });
+      final R6Worker worker = await createR6Worker();
+      try {
+        final R6NetworkJob invalid = R6NetworkJob(
+          projectRevision: 0,
+          requestId: 1,
+          engineVersion: 'r6n-v1',
+          network: network,
+          before: foreign,
+          durationS: .02,
+          maxStepS: .002,
+        );
+        await expectLater(worker.solve(invalid), throwsStateError);
+        final R6NetworkJob valid = R6NetworkJob(
+          projectRevision: 0,
+          requestId: 2,
+          engineVersion: 'r6n-v1',
+          network: network,
+          before: network.initialSnapshot,
+          durationS: .02,
+          maxStepS: .002,
+        );
+        expect((await worker.solve(valid)).snapshot.timeS, .02);
+      } finally {
+        await worker.close();
+      }
+    },
+  );
 }

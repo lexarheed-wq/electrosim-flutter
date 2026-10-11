@@ -962,7 +962,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                             device.kind ==
                                 PneumaticDeviceKind.doubleActingCylinder
                         ? _movingSnapshot!.positionM /
-                              _movingSolver!.geometry.strokeM
+                              (_movingSolver?.geometry.strokeM ??
+                                  device.parametersSi['strokeM']!)
                         : null,
                   ),
                   Text(

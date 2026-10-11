@@ -112,7 +112,8 @@ class AmmeterGeometryTest(unittest.TestCase):
         source = render.read_text()
         ast.parse(source, filename=str(render))
         self.assertIn("jack_legend_y = 143.0 if KEY == 'instrument-ammeter'", source)
-        self.assertIn("'FUSE 10 A'", source)
+        self.assertIn("'fuse-panel-legend', 'FUSE'", source)
+        self.assertNotIn("'FUSE 10 A'", source)
         self.assertIn("f'holster-grip-{side}-{i}'", source)
         self.assertNotIn("f'grip-rib-{i}'", source)
 

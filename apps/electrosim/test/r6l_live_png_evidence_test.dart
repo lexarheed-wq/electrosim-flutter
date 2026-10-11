@@ -12,10 +12,7 @@ import 'r6_moving_piston_workshop_test.dart' as fixture;
 
 /// Unretouched PNG evidence from the actual authored Flutter workshop.
 /// The piston is advanced by the real gas/cylinder solver via the UI.
-Future<void> captureWorkshop(
-  WidgetTester tester,
-  String fileName,
-) async {
+Future<void> captureWorkshop(WidgetTester tester, String fileName) async {
   final RenderRepaintBoundary boundary = tester.renderObject(
     find.byKey(const Key('r6l-live-evidence-boundary')),
   );
@@ -69,8 +66,8 @@ void main() {
       of: find.byKey(const Key('device-cyl')),
       matching: find.byType(PneumaticDeviceGlyph),
     );
-    final PneumaticDeviceGlyph beforeSwitch =
-        tester.widget<PneumaticDeviceGlyph>(physicalGlyph);
+    final PneumaticDeviceGlyph beforeSwitch = tester
+        .widget<PneumaticDeviceGlyph>(physicalGlyph);
     expect(beforeSwitch.pistonFraction, isNotNull);
     expect(beforeSwitch.pistonFraction!, inInclusiveRange(0, 1));
     expect(beforeSwitch.pistonFraction!, greaterThan(.005 / .06 + .001));
@@ -78,8 +75,9 @@ void main() {
 
     await tester.tap(find.text('Schéma'));
     await tester.pumpAndSettle();
-    final PneumaticDeviceGlyph schematic =
-        tester.widget<PneumaticDeviceGlyph>(physicalGlyph);
+    final PneumaticDeviceGlyph schematic = tester.widget<PneumaticDeviceGlyph>(
+      physicalGlyph,
+    );
     expect(schematic.pistonFraction, beforeSwitch.pistonFraction);
     expect(find.byKey(const Key('air-measured-position')), findsOneWidget);
     await captureWorkshop(tester, '03_schema_meme_etat.png');

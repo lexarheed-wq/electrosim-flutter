@@ -152,7 +152,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField).last, '0.8');
     await tester.tap(find.byKey(const Key('air-cd-apply')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('unsupported_device'), findsOneWidget);
+    expect(find.textContaining('missing_valve_calibration'), findsOneWidget);
     expect(find.textContaining('Simulation réelle'), findsNothing);
   });
 

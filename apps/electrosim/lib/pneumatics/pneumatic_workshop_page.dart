@@ -605,21 +605,25 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                 Text(
                                   _airSnapshot == null
                                       ? 'Aucune mesure disponible avant '
-                                          'simulation du réseau calibré.'
+                                            'simulation du réseau calibré.'
                                       : 'Débits calculés (kg/s) : '
-                                          '${_airSnapshot!.passageMassFlowKgPerS.entries.map((e) => '${e.key}=${e.value.toStringAsExponential(2)}').join(' ; ')}',
+                                            '${_airSnapshot!.passageMassFlowKgPerS.entries.map((e) => '${e.key}=${e.value.toStringAsExponential(2)}').join(' ; ')}',
                                   style: const TextStyle(fontSize: 11),
                                   maxLines: 4,
                                   overflow: TextOverflow.ellipsis,
                                   key: const Key('air-measured-flows'),
                                 ),
                                 if (selected.kind == PneumaticDeviceKind.tee ||
-                                    selected.kind == PneumaticDeviceKind.manifold ||
-                                    selected.kind == PneumaticDeviceKind.idealSource ||
-                                    selected.kind == PneumaticDeviceKind.silencer)
+                                    selected.kind ==
+                                        PneumaticDeviceKind.manifold ||
+                                    selected.kind ==
+                                        PneumaticDeviceKind.idealSource ||
+                                    selected.kind ==
+                                        PneumaticDeviceKind.silencer)
                                   FilledButton.tonal(
                                     key: const Key('air-calibrate-device'),
-                                    onPressed: () => _calibrateSelected(selected),
+                                    onPressed: () =>
+                                        _calibrateSelected(selected),
                                     child: const Text('Calibrer'),
                                   ),
                                 const Spacer(),

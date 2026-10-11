@@ -18,15 +18,14 @@ void main() {
       id: 'v52',
       kind: PneumaticDeviceKind.valve52,
       ports: <PneumaticPort>[
-        for (final (String name, PneumaticPortRole role) in <
-          (String, PneumaticPortRole)
-        >[
-          ('P', PneumaticPortRole.supply),
-          ('A', PneumaticPortRole.work),
-          ('B', PneumaticPortRole.work),
-          ('R', PneumaticPortRole.exhaust),
-          ('S', PneumaticPortRole.exhaust),
-        ])
+        for (final (String name, PneumaticPortRole role)
+            in <(String, PneumaticPortRole)>[
+              ('P', PneumaticPortRole.supply),
+              ('A', PneumaticPortRole.work),
+              ('B', PneumaticPortRole.work),
+              ('R', PneumaticPortRole.exhaust),
+              ('S', PneumaticPortRole.exhaust),
+            ])
           PneumaticPort(
             id: PneumaticPortId('v52.$name'),
             deviceId: 'v52',
@@ -55,26 +54,14 @@ void main() {
       MaterialApp(home: PneumaticWorkshopPage(initialProject: project)),
     );
     await tester.pump();
-    for (final String label in <String>[
-      '1/P',
-      '2/A',
-      '4/B',
-      '3/R',
-      '5/S',
-    ]) {
+    for (final String label in <String>['1/P', '2/A', '4/B', '3/R', '5/S']) {
       expect(find.text(label), findsOneWidget);
     }
     expect(find.byKey(const Key('port-v52.P')), findsOneWidget);
     expect(find.byKey(const Key('port-v52.B')), findsOneWidget);
     await tester.tap(find.text('Schéma'));
     await tester.pump();
-    for (final String label in <String>[
-      '1/P',
-      '2/A',
-      '4/B',
-      '3/R',
-      '5/S',
-    ]) {
+    for (final String label in <String>['1/P', '2/A', '4/B', '3/R', '5/S']) {
       expect(find.text(label), findsOneWidget);
     }
     expect(project.pneumaticNetwork.devices.single.id, 'v52');

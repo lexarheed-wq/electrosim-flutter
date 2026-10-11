@@ -65,8 +65,8 @@ void main() {
     expect(F18Voltmeter3dAssets.palette, isNotNull);
     final front = F18Voltmeter3dAssets.front!;
     final palette = F18Voltmeter3dAssets.palette!;
-    expect(front.width, anyOf(280, 1120));
-    expect(front.height, front.width * 19 ~/ 14);
+    expect(front.width, 1120, reason: '4x Cycles master must be embedded');
+    expect(front.height, 1520);
     expect(palette.width, front.width);
     expect(palette.height, front.height);
     expect(F18Voltmeter3dAssets.uses3d(voltmeter), isTrue);

@@ -51,3 +51,9 @@ Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender
 - Composant 02 : recette Blender A/COM/fusible, loader et rendu face/3-4 conditionnels, fonctions HOLD/RANGE/SELECT/LIGHT, cordons souples de sondes, tests non exécutés.
 - Contrat de construction : photo de référence à trois douilles, modèle logiciel ampèremètre à deux ports de mesure A/COM ; divergence documentée sans inventer de troisième borne.
 - État global : 0 fusion, 0 nouveau PNG Flutter/Blender qualifié pendant cette session, pas de lancement de qualification générale ; Mac Intel et Chromium reportés.
+
+### Avancement supplémentaire — composant 02
+- Ajout d'un essai électrique théorique de l'ampèremètre en série avec la charge 24 V / 24 Ω et la résistance interne 0,01 Ω ; cas de mauvais branchement, fusible dépassé et fusible déjà coupé ; aucun test exécuté dans cet environnement.
+- LCD de l'ampèremètre projeté selon les coordonnées de SA géométrie Cycles (et non celles du voltmètre) ; test de cadrage/zoom écrit.
+- Affichage en palette compacte conditionné au chargement des **assets originaux** de l'ampèremètre, afin de ne pas qualifier l'ancien visuel comme 3D.
+- Référence de construction : `instrument_ammeter_construction.json` ; références physiques incomplètes. Aucun PNG de l'ampèremètre généré ni prétendu validé.

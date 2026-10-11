@@ -103,7 +103,7 @@ void main() {
       );
       expect(project.electricalCircuit.toJsonString(), electricalBefore);
       expect(project.pneumaticNetwork.devices, hasLength(count));
-      print(jsonEncode(<String, Object>{
+      debugPrint(jsonEncode(<String, Object>{
         'schema': 'electrosim.pneumatic.r6.flutter-widgets.v1',
         'deviceCount': count,
         'widgetGlyphs': count + 10,

@@ -123,13 +123,12 @@ final class R6WorkerScheduler {
         !snapshot.passageMassFlowKgPerS.keys.toSet().containsAll(
           expectedPassages,
         ) ||
-        snapshot.passageMassFlowKgPerS.values.any(
-          (flow) => !flow.isFinite,
-        )) {
+        snapshot.passageMassFlowKgPerS.values.any((flow) => !flow.isFinite)) {
       throw StateError('R6/N worker returned invalid passage flows');
     }
 
-    final massResidual = snapshot.totalMassKg -
+    final massResidual =
+        snapshot.totalMassKg -
         job.before.totalMassKg -
         (snapshot.externalMassAddedKg - job.before.externalMassAddedKg);
     if (!massResidual.isFinite || massResidual.abs() > 1e-9) {

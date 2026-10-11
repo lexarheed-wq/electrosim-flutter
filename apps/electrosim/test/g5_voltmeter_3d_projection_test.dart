@@ -8,6 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    expect(await F18Voltmeter3dAssets.preload(), isTrue);
+  });
+
   final InstrumentInstance voltmeter = InstrumentInstance(
     id: InstrumentId('v-001'),
     kind: InstrumentKind.voltmeter,
@@ -25,7 +30,8 @@ void main() {
   });
 
   test('voltmeter contract never replaces other instrument kinds', () {
-    expect(F18Voltmeter3dAssets.uses3d(voltmeter), isFalse);
+    expect(F18Voltmeter3dAssets.uses3d(voltmeter),
+        F18Voltmeter3dAssets.ready);
     expect(F18Voltmeter3dAssets.uses3d(ammeter), isFalse);
   });
 
@@ -56,9 +62,7 @@ void main() {
   testWidgets('bundled Cycles textures load and only enable the voltmeter', (
     WidgetTester tester,
   ) async {
-    final bool loaded =
-        await tester.runAsync(() => F18Voltmeter3dAssets.preload()) ?? false;
-    expect(loaded, isTrue);
+    expect(F18Voltmeter3dAssets.ready, isTrue);
     expect(F18Voltmeter3dAssets.front, isNotNull);
     expect(F18Voltmeter3dAssets.palette, isNotNull);
     expect(F18Voltmeter3dAssets.front!.width, 280);

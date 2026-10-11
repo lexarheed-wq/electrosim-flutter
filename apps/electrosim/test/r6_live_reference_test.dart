@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('R6/C UI reads physical common-clock measurements, step, reset',
-      (WidgetTester tester) async {
+  testWidgets('R6/C UI reads physical common-clock measurements, step, reset', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1500, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -34,19 +35,24 @@ void main() {
     expect(find.byKey(const Key('r6-diagnostic')), findsNothing);
   });
 
-  testWidgets('R6/C demo remains isolated from freely edited pneumatic project',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1500, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MaterialApp(home: PneumaticWorkshopPage()));
-    await tester.tap(find.byKey(const Key('r6-open-reference')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('r6-live-reference-cycle')), findsOneWidget);
-    expect(find.textContaining('ne simule pas le câblage libre'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('pneumatic-r4-workshop')), findsOneWidget);
-  });
+  testWidgets(
+    'R6/C demo remains isolated from freely edited pneumatic project',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1500, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const MaterialApp(home: PneumaticWorkshopPage()));
+      await tester.tap(find.byKey(const Key('r6-open-reference')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('r6-live-reference-cycle')), findsOneWidget);
+      expect(
+        find.textContaining('ne simule pas le câblage libre'),
+        findsOneWidget,
+      );
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pneumatic-r4-workshop')), findsOneWidget);
+    },
+  );
 }

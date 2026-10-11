@@ -14,6 +14,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import zlib
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
@@ -24,11 +25,44 @@ EXPECTED_SIZE = (1120, 1520)
 
 
 def png_dimensions(path):
-    with Path(path).open('rb') as source:
-        chunk = source.read(24)
-    if len(chunk) != 24 or not chunk.startswith(PNG_MAGIC) or chunk[12:16] != b'IHDR':
-        raise ValueError(f'{path}: invalid PNG signature or IHDR')
-    return struct.unpack('>II', chunk[16:24])
+    """Validate the COMPLETE PNG stream, not just its first 24 bytes.
+
+    A truncated/invalid image must never be passed off as Flutter/Blender proof.
+    """
+    payload = Path(path).read_bytes()
+    if not payload.startswith(PNG_MAGIC):
+        raise ValueError(f'{path}: invalid PNG signature')
+    offset = len(PNG_MAGIC)
+    dimensions = None
+    has_pixels = False
+    finished = False
+    while offset < len(payload):
+        if len(payload) - offset < 12:
+            raise ValueError(f'{path}: truncated PNG chunk')
+        size = struct.unpack('>I', payload[offset:offset + 4])[0]
+        tag = payload[offset + 4:offset + 8]
+        next_offset = offset + size + 12
+        if next_offset > len(payload):
+            raise ValueError(f'{path}: PNG chunk exceeds file length')
+        body = payload[offset + 8:offset + 8 + size]
+        expected_crc = struct.unpack('>I', payload[offset + 8 + size:next_offset])[0]
+        if zlib.crc32(tag + body) & 0xffffffff != expected_crc:
+            raise ValueError(f'{path}: corrupt PNG chunk CRC {tag!r}')
+        if tag == b'IHDR':
+            if dimensions is not None or size != 13:
+                raise ValueError(f'{path}: duplicate/invalid IHDR')
+            dimensions = struct.unpack('>II', body[:8])
+        elif tag == b'IDAT':
+            has_pixels = True
+        elif tag == b'IEND':
+            if size != 0 or next_offset != len(payload):
+                raise ValueError(f'{path}: corrupt trailing PNG data')
+            finished = True
+            break
+        offset = next_offset
+    if dimensions is None or not has_pixels or not finished:
+        raise ValueError(f'{path}: PNG lacks complete IHDR/IDAT/IEND')
+    return dimensions
 
 
 def verify_assets(folder, component):
@@ -56,7 +90,7 @@ def verify_assets(folder, component):
             'sha256': hashlib.sha256(view.read_bytes()).hexdigest(),
         }
     (folder / 'PNG_PROVENANCE.json').write_text(
-        json.dumps({'key': component, 'verified_render': True,
+        json.dumps({'key': component, 'png_integrity_checked': True,
                     'flutter_qualification': False, 'images': manifest},
                    ensure_ascii=False, indent=2) + '\n')
     return front, palette

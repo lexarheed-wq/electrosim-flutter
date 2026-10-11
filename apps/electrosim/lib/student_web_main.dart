@@ -349,6 +349,8 @@ class _StudentHubPage extends StatelessWidget {
                               : 'Recherche de dérangement',
                           role: F9UserRole.student,
                           initialCircuit: controller.studentCircuit,
+                          initialVisualLayout: bridge.loadStudentVisualLayout(),
+                          onVisualLayoutChanged: bridge.saveStudentVisualLayout,
                           tpSessionController: controller,
                         ),
                       ),

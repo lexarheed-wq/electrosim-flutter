@@ -346,8 +346,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           width: displayVisualSize.width,
           height: displayVisualSize.height,
           child: Center(
-            child: Transform.rotate(
-              angle: math.pi / 2 * quarterTurns,
+            child: RotatedBox(
+              quarterTurns: quarterTurns,
               child: _F9HealthVisual(
                 healthState: healthState,
                 motionSeconds: _motionSeconds,

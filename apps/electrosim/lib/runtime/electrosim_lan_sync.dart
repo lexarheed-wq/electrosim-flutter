@@ -588,6 +588,7 @@ final class ElectroSimLanSyncHost extends ChangeNotifier {
       return ContentType('application', 'javascript', charset: 'utf-8');
     }
     if (lower.endsWith('.json')) return ContentType.json;
+    if (lower.endsWith('.wasm')) return ContentType('application', 'wasm');
     if (lower.endsWith('.css')) {
       return ContentType('text', 'css', charset: 'utf-8');
     }

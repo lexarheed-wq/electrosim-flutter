@@ -252,7 +252,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     final bool boundary =
         device.kind == PneumaticDeviceKind.idealSource ||
         device.kind == PneumaticDeviceKind.silencer;
-    if (!fitting && !boundary) return;
+    final bool valve52 = device.kind == PneumaticDeviceKind.valve52;
+    if (!fitting && !boundary && !valve52) return;
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final Map<String, double> values = <String, double>{};
     final Map<String, double>? calibrated =
@@ -276,6 +277,45 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                       device.parametersSi['volumeM3'],
                       (double x) => values['volumeM3'] = x,
                     ),
+                  if (valve52) ...<Widget>[
+                    _physicalInput(
+                      'Volume mort par orifice (m³)',
+                      device.parametersSi['portDeadVolumeM3'],
+                      (double x) => values['portDeadVolumeM3'] = x,
+                    ),
+                    _physicalInput(
+                      'Surface de passage interne (m²)',
+                      device.parametersSi['valveEffectiveAreaM2'],
+                      (double x) => values['valveEffectiveAreaM2'] = x,
+                    ),
+                    _physicalInput(
+                      'Coefficient interne Cd (≤ 1)',
+                      device.parametersSi['valveCd'],
+                      (double x) => values['valveCd'] = x,
+                      maxValue: 1,
+                    ),
+                    DropdownButtonFormField<double>(
+                      key: const Key('air-valve-static-position'),
+                      initialValue: device.parametersSi['energized'],
+                      decoration: const InputDecoration(
+                        labelText: 'Position fixe 5/2 (aucun solénoïde)',
+                      ),
+                      items: const <DropdownMenuItem<double>>[
+                        DropdownMenuItem<double>(
+                          value: 0,
+                          child: Text('Repos : P-B / A-R'),
+                        ),
+                        DropdownMenuItem<double>(
+                          value: 1,
+                          child: Text('Travail : P-A / B-S'),
+                        ),
+                      ],
+                      onChanged: (double? value) {},
+                      validator: (double? value) =>
+                          value == null ? 'Choisir la position physique.' : null,
+                      onSaved: (double? value) => values['energized'] = value!,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -344,7 +384,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           _airSolver ??
           WorkshopClosedAirCompiler(
             dischargeCoefficient: cd,
-          ).compileWithIdealBoundaries(_state.project.pneumaticNetwork);
+          ).compileWithStaticValve52(_state.project.pneumaticNetwork);
       final IsothermalAirSnapshot next = solver.advance(
         _airSnapshot ?? solver.initialSnapshot,
         durationS: .02,
@@ -488,7 +528,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     _airSnapshot == null
                         ? 'Réseau expérimental : calcul seulement pour '
                               'sources idéales, silencieux et collecteurs '
-                              'physiquement calibrés. Autres modèles refusés.'
+                              'physiquement calibrés, distributeur 5/2 '
+                            'à position fixe. Vérin libre non pris en charge.'
                         : 'Simulation réelle : t = '
                               '${_airSnapshot!.timeS.toStringAsFixed(3)} s ; '
                               'masse externe = '
@@ -619,7 +660,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     selected.kind ==
                                         PneumaticDeviceKind.idealSource ||
                                     selected.kind ==
-                                        PneumaticDeviceKind.silencer)
+                                        PneumaticDeviceKind.silencer ||
+                                    selected.kind ==
+                                        PneumaticDeviceKind.valve52)
                                   FilledButton.tonal(
                                     key: const Key('air-calibrate-device'),
                                     onPressed: () =>

@@ -67,14 +67,14 @@ jobs:
           if not path.is_file():
               raise SystemExit(1)
           data = path.read_bytes()
-          if not data.startswith(b'\\x89PNG\\r\\n\\x1a\\n'):
+          if not data.startswith(b'\x89PNG\r\n\x1a\n'):
               raise SystemExit(2)
           width, height = struct.unpack('>II', data[16:24])
           if width != 1600 or height != 960 or len(data) <= 20000:
               raise SystemExit(3)
           PYCHECK
               then
-                printf 'view=%s attempt=%s budget_ms=%s bytes=%s\\n' "$VIEW" "$ATTEMPT" "$BUDGET" "$(stat -c%s "$OUT")" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
+                printf 'view=%s attempt=%s budget_ms=%s bytes=%s\n' "$VIEW" "$ATTEMPT" "$BUDGET" "$(stat -c%s "$OUT")" | tee -a ../../build/pneumatics-r4-chromium/CAPTURE_TRACE.txt
                 ACCEPTED=1
                 break
               fi

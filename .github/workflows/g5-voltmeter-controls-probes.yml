@@ -8,6 +8,7 @@ on:
       - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
       - 'apps/electrosim/lib/f18_workspace_page.dart'
       - 'apps/electrosim/test/g5_voltmeter_controls_test.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_workspace_test.dart'
       - '.github/workflows/g5-voltmeter-controls-probes.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
       - 'apps/electrosim/lib/f18_workspace_page.dart'
       - 'apps/electrosim/test/g5_voltmeter_controls_test.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_workspace_test.dart'
       - '.github/workflows/g5-voltmeter-controls-probes.yml'
 permissions:
   contents: read
@@ -35,6 +37,9 @@ jobs:
       - name: Unit and functional contracts, source vs measurement probes
         working-directory: apps/electrosim
         run: flutter test test/g5_voltmeter_controls_test.dart -r expanded --timeout 60s
+      - name: Real Flutter workspace pointer control integration
+        working-directory: apps/electrosim
+        run: flutter test test/g5_voltmeter_controls_workspace_test.dart -r expanded --timeout 120s
       - name: Analyze updated app controls and readout drawing
         working-directory: apps/electrosim
         run: |

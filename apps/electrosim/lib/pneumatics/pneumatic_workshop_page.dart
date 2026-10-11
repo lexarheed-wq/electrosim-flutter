@@ -257,7 +257,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         device.kind == PneumaticDeviceKind.idealSource ||
         device.kind == PneumaticDeviceKind.silencer;
     final bool valve52 = device.kind == PneumaticDeviceKind.valve52;
-    if (!fitting && !boundary && !valve52) return;
+    final bool movingCylinder =
+        device.kind == PneumaticDeviceKind.doubleActingCylinder;
+    if (!fitting && !boundary && !valve52 && !movingCylinder) return;
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final Map<String, double> values = <String, double>{};
     final Map<String, double>? calibrated =
@@ -265,22 +267,76 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           context: context,
           builder: (BuildContext dialog) => AlertDialog(
             title: Text('Calibrer ${device.id} — unités SI'),
-            content: Form(
-              key: key,
-              child: Column(
+            content: SizedBox(
+              width: 380,
+              height: movingCylinder ? 390 : null,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: key,
+                  child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  _physicalInput(
-                    'Pression absolue (Pa)',
-                    device.parametersSi['pressureAbsPa'],
-                    (double x) => values['pressureAbsPa'] = x,
-                  ),
+                  if (!movingCylinder)
+                    _physicalInput(
+                      'Pression absolue (Pa)',
+                      device.parametersSi['pressureAbsPa'],
+                      (double x) => values['pressureAbsPa'] = x,
+                    ),
                   if (fitting)
                     _physicalInput(
                       'Volume gazeux (m³)',
                       device.parametersSi['volumeM3'],
                       (double x) => values['volumeM3'] = x,
                     ),
+                  if (movingCylinder) ...<Widget>[
+                    _physicalInput(
+                      'Diamètre piston (m)',
+                      device.parametersSi['pistonDiameterM'],
+                      (double x) => values['pistonDiameterM'] = x,
+                    ),
+                    _physicalInput(
+                      'Diamètre tige (m)',
+                      device.parametersSi['rodDiameterM'],
+                      (double x) => values['rodDiameterM'] = x,
+                      allowZero: true,
+                    ),
+                    _physicalInput(
+                      'Course (m)',
+                      device.parametersSi['strokeM'],
+                      (double x) => values['strokeM'] = x,
+                    ),
+                    _physicalInput(
+                      'Volume mort A (m³)',
+                      device.parametersSi['deadVolumeAM3'],
+                      (double x) => values['deadVolumeAM3'] = x,
+                    ),
+                    _physicalInput(
+                      'Volume mort B (m³)',
+                      device.parametersSi['deadVolumeBM3'],
+                      (double x) => values['deadVolumeBM3'] = x,
+                    ),
+                    _physicalInput(
+                      'Position initiale (m)',
+                      device.parametersSi['initialPositionM'],
+                      (double x) => values['initialPositionM'] = x,
+                      allowZero: true,
+                    ),
+                    _physicalInput(
+                      'Pression A initiale absolue (Pa)',
+                      device.parametersSi['initialPressureAAbsPa'],
+                      (double x) => values['initialPressureAAbsPa'] = x,
+                    ),
+                    _physicalInput(
+                      'Pression B initiale absolue (Pa)',
+                      device.parametersSi['initialPressureBAbsPa'],
+                      (double x) => values['initialPressureBAbsPa'] = x,
+                    ),
+                    _physicalInput(
+                      'Masse en mouvement (kg)',
+                      device.parametersSi['movingMassKg'],
+                      (double x) => values['movingMassKg'] = x,
+                    ),
+                  ],
                   if (valve52) ...<Widget>[
                     _physicalInput(
                       'Volume mort par orifice (m³)',
@@ -322,6 +378,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     ),
                   ],
                 ],
+              ),
+                ),
               ),
             ),
             actions: <Widget>[

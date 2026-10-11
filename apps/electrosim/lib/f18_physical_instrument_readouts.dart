@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import 'f18_voltmeter_3d_assets.dart';
 import 'f18_voltmeter_controls.dart';
+import 'f18_ammeter_controls.dart';
 
 /// LCD readouts are projected from the electrical runtime: invalid/disconnected
 /// devices never manufacture a zero. The optional Cycles body is painted by
@@ -136,6 +137,9 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
             local,
             Paint()..filterQuality = FilterQuality.high,
           );
+          final InstrumentInstance? meter = circuit?.instruments
+              .where((i) => i.id.value == id).firstOrNull;
+          if (meter != null) _paintFrontControls(canvas, local, meter);
           if (id == selectedElementId) {
             canvas.drawRRect(
               RRect.fromRectAndRadius(
@@ -167,7 +171,10 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
               .firstOrNull;
           _drawReading(
             canvas, F18Voltmeter3dAssets.projectReadout(local), item.value,
-            illuminated: meter != null && F18VoltmeterControls.isLit(meter),
+            illuminated: meter != null && (
+              meter.kind == InstrumentKind.ammeter
+                  ? F18AmmeterControls.lit(meter)
+                  : F18VoltmeterControls.isLit(meter)),
           );
         });
       } else {
@@ -186,21 +193,29 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
   }
 
   void _paintFrontControls(Canvas canvas, Rect body, InstrumentInstance meter) {
+    final bool current = meter.kind == InstrumentKind.ammeter;
     canvas.save();
     canvas.translate(body.left, body.top);
     canvas.scale(body.width / 112, body.height / 152);
     // Legacy low-resolution PNGs lack physically embossed text. 4x Cycles
     // textures already contain HOLD/RANGE/SELECT/LIGHT and COM/V-ohm labels.
-    if ((voltmeterFront?.width ?? 0) < 1000) {
+    if ((current ? ammeterFront?.width : voltmeterFront?.width ?? 0) < 1000) {
     const names = <String>['HOLD', 'RANGE', 'SELECT', 'LIGHT'];
     const xs = <double>[35, 49, 63, 77];
     for (var index = 0; index < names.length; index++) {
       final String label = names[index];
       final bool selected = switch (index) {
-        0 => F18VoltmeterControls.isHeld(meter),
-        1 => F18VoltmeterControls.rangeIndex(meter) != 0,
-        2 => meter.mode == InstrumentMode.voltageAcRms,
-        _ => F18VoltmeterControls.isLit(meter),
+        0 => current
+            ? F18AmmeterControls.held(meter)
+            : F18VoltmeterControls.isHeld(meter),
+        1 => current
+            ? F18AmmeterControls.rangeIndex(meter) != 0
+            : F18VoltmeterControls.rangeIndex(meter) != 0,
+        2 => meter.mode == InstrumentMode.voltageAcRms ||
+            meter.mode == InstrumentMode.currentAcRms,
+        _ => current
+            ? F18AmmeterControls.lit(meter)
+            : F18VoltmeterControls.isLit(meter),
       };
       final text = TextPainter(
         text: TextSpan(text: label, style: TextStyle(
@@ -215,13 +230,15 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
       text.dispose();
     }
     }
-    if ((voltmeterFront?.width ?? 0) >= 1000) {
+    if ((current ? ammeterFront?.width ?? 0 : voltmeterFront?.width ?? 0) >= 1000) {
       // High-definition front PNG intentionally has no selector grip.
       // Rotate a tactile vector grip above the shaft without rotating body,
       // LCD or connected measurement probes.
       final double turn = !meter.poweredOn ? -math.pi / 3 : switch (meter.mode) {
         InstrumentMode.voltageDc => 0.0,
         InstrumentMode.voltageAcRms => math.pi / 3,
+        InstrumentMode.currentDc => 0.0,
+        InstrumentMode.currentAcRms => math.pi / 3,
         InstrumentMode.resistance => 2 * math.pi / 3,
         _ => 0.0,
       };
@@ -259,6 +276,8 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     }
     final String mode = !meter.poweredOn ? 'OFF' : switch (meter.mode) {
       InstrumentMode.voltageDc => 'V⎓',
+      InstrumentMode.currentDc => 'A⎓',
+      InstrumentMode.currentAcRms => 'A~',
       InstrumentMode.voltageAcRms => 'V~',
       InstrumentMode.resistance => 'Ω',
       _ => 'V',
@@ -272,12 +291,17 @@ final class F18PhysicalInstrumentReadouts extends CustomPainter {
     )..layout();
     indicator.paint(canvas, Offset(53 - indicator.width / 2, 111));
     indicator.dispose();
-    if (F18VoltmeterControls.isHeld(meter) ||
-        F18VoltmeterControls.rangeIndex(meter) != 0) {
+    final bool isHeld = current
+        ? F18AmmeterControls.held(meter)
+        : F18VoltmeterControls.isHeld(meter);
+    final int rangeIndex = current
+        ? F18AmmeterControls.rangeIndex(meter)
+        : F18VoltmeterControls.rangeIndex(meter);
+    if (isHeld || rangeIndex != 0) {
       final flags = <String>[
-        if (F18VoltmeterControls.isHeld(meter)) 'H',
-        if (F18VoltmeterControls.rangeIndex(meter) != 0)
-          F18VoltmeterControls.rangeLabel(meter),
+        if (isHeld) 'H',
+        if (rangeIndex != 0)
+          current ? 'RANGE $rangeIndex' : F18VoltmeterControls.rangeLabel(meter),
       ].join(' ');
       final labels = TextPainter(
         text: TextSpan(text: flags, style: const TextStyle(

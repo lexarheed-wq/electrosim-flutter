@@ -7,7 +7,7 @@ void main() {
   testWidgets('real palette forwards the displayed 100 ohm resistor rating', (
     t,
   ) async {
-      expect(await t.runAsync(F18PhysicalPlateAssets.preload), isTrue);
+    expect(await t.runAsync(F18PhysicalPlateAssets.preload), isTrue);
     final definition = f9PaletteCatalog.firstWhere(
       (d) => d.keyName == 'resistor',
     );

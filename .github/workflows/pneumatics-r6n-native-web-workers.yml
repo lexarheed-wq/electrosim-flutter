@@ -101,3 +101,28 @@ jobs:
             build/pneumatics-r6n-mac-intel/TEST.log
             build/pneumatics-r6n-mac-intel/native-worker-transport-mac-intel.json
           retention-days: 21
+
+  integrated-flutter-web-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Assemble releasable Flutter Web with same-engine Worker asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/build_r6n_flutter_web.sh
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -s apps/electrosim/build/web/r6n_worker.dart.js
+          test -s apps/electrosim/build/web/main.dart.js
+          grep -Fx "SOURCE_SHA=$GITHUB_SHA" build/pneumatics-r6n-web-bundle/PROVENANCE.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6n-web-bundle-provenance-${{ github.sha }}
+          path: build/pneumatics-r6n-web-bundle/PROVENANCE.txt
+          retention-days: 21

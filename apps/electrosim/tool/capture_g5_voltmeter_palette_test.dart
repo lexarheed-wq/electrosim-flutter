@@ -125,7 +125,8 @@ void main() {
         await mouse.addPointer(location: const Offset(1, 1));
         await mouse.moveTo(t.getCenter(find.byKey(detailKey)));
         await t.pump(const Duration(milliseconds: 500));
-        await t.pump(const Duration(milliseconds: 100));
+        // Complete the tooltip fade-in before capturing an opaque inspection.
+        await t.pump(const Duration(milliseconds: 320));
         expect(find.text('Voltmètre — vue 3/4'), findsOneWidget);
         final expanded = rootKey.currentContext!.findRenderObject()!
             as RenderRepaintBoundary;

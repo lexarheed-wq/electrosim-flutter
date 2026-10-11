@@ -149,7 +149,9 @@ void main() {
             find.byKey(const Key('palette-search-field')), 'voltmètre');
         await t.pump();
         expect(find.byKey(item), findsOneWidget);
-        expect(find.byKey(preview), findsOneWidget);
+        expect(find.descendant(
+          of: find.byKey(item), matching: find.byKey(preview),
+        ), findsOneWidget);
         expect(find.descendant(
           of: find.byKey(item), matching: find.byType(RawImage),
         ), findsOneWidget);

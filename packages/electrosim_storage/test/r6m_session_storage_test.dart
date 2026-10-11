@@ -24,28 +24,33 @@ void main() {
     final PneumaticWorkshopSession session = PneumaticWorkshopSession(
       MultiphysicsProject(electricalCircuit: electric),
     );
-    session.apply((PneumaticWorkshopState s) => s.place(
-      device: PneumaticDevice(
-        id: 'air-device',
-        kind: PneumaticDeviceKind.manometer,
-        ports: <PneumaticPort>[
-          PneumaticPort(
-            id: PneumaticPortId('air-device.P'),
-            deviceId: 'air-device',
-            role: PneumaticPortRole.work,
-          ),
-        ],
+    session.apply(
+      (PneumaticWorkshopState s) => s.place(
+        device: PneumaticDevice(
+          id: 'air-device',
+          kind: PneumaticDeviceKind.manometer,
+          ports: <PneumaticPort>[
+            PneumaticPort(
+              id: PneumaticPortId('air-device.P'),
+              deviceId: 'air-device',
+              role: PneumaticPortRole.work,
+            ),
+          ],
+        ),
+        physicalPose: PhysicalViewPose(x: 10, y: 11),
+        schematicPose: PhysicalViewPose(x: 20, y: 21),
       ),
-      physicalPose: PhysicalViewPose(x: 10, y: 11),
-      schematicPose: PhysicalViewPose(x: 20, y: 21),
-    ));
+    );
     const MultiphysicsSessionStorage store = MultiphysicsSessionStorage();
     final String saved = store.exportProject(
-      session: session, electricalDocument: electrical,
+      session: session,
+      electricalDocument: electrical,
     );
     final PneumaticWorkshopSession imported = store.importProject(saved);
-    expect(imported.state.project.toJsonString(),
-        session.state.project.toJsonString());
+    expect(
+      imported.state.project.toJsonString(),
+      session.state.project.toJsonString(),
+    );
     expect(store.sameDesign(saved, saved), isTrue);
     expect(
       () => store.exportProject(
@@ -65,8 +70,9 @@ void main() {
       ),
       throwsFormatException,
     );
-    final Map<String, dynamic> root =
-        Map<String, dynamic>.from(jsonDecode(saved) as Map);
+    final Map<String, dynamic> root = Map<String, dynamic>.from(
+      jsonDecode(saved) as Map,
+    );
     expect(root['schemaVersion'], 3);
     expect(
       (root['pneumaticDesign'] as Map).containsKey('electricalCircuit'),
@@ -106,14 +112,19 @@ void main() {
     }
   });
 
-  test('R6/M corrupt or future project refuses import without side effects', () {
-    const MultiphysicsSessionStorage storage = MultiphysicsSessionStorage();
-    expect(() => storage.importProject('{"schemaVersion":99}'),
-        throwsFormatException);
-    expect(() => storage.importProject('invalid json'), throwsFormatException);
-    expect(
-      () => ProjectHistory<int>(0, capacity: 0),
-      throwsArgumentError,
-    );
-  });
+  test(
+    'R6/M corrupt or future project refuses import without side effects',
+    () {
+      const MultiphysicsSessionStorage storage = MultiphysicsSessionStorage();
+      expect(
+        () => storage.importProject('{"schemaVersion":99}'),
+        throwsFormatException,
+      );
+      expect(
+        () => storage.importProject('invalid json'),
+        throwsFormatException,
+      );
+      expect(() => ProjectHistory<int>(0, capacity: 0), throwsArgumentError);
+    },
+  );
 }

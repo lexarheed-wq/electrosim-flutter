@@ -14,9 +14,11 @@ abstract final class F18Ammeter3dAssets {
       ready && i.kind == InstrumentKind.ammeter;
   static Future<bool> preload() => _pending ??= _load();
   static Future<bool> _load() async {
+    ui.Image? a;
+    ui.Image? b;
     try {
-      final a = await _decode(frontPath);
-      final b = await _decode(palettePath);
+      a = await _decode(frontPath);
+      b = await _decode(palettePath);
       if (a.width != 1120 || a.height != 1520 ||
           b.width != 1120 || b.height != 1520) {
         a.dispose();
@@ -27,12 +29,14 @@ abstract final class F18Ammeter3dAssets {
       palette = b;
       return true;
     } on Object {
+      a?.dispose();
+      b?.dispose();
       return false;
     }
   }
   static Future<ui.Image> _decode(String p) async {
     final bytes = await rootBundle.load(p);
-    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
     try {
       return (await codec.getNextFrame()).image;
     } finally {

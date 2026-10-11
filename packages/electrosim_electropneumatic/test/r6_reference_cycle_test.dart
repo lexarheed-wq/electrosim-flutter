@@ -29,8 +29,11 @@ void main() {
       );
       expect(running.spool, ValveSpoolSide.coilSide);
       // During coil pickup delay the spring-side 5/2 can briefly retract.
-    // Verify real displacement without inventing an early extension.
-    expect(reference.read(running).positionMm, isNot(closeTo(begin.positionMm, .01)));
+      // Verify real displacement without inventing an early extension.
+      expect(
+        reference.read(running).positionMm,
+        isNot(closeTo(begin.positionMm, .01)),
+      );
       bool sensed = false;
       for (int i = 0; i < 140; i++) {
         final SelfHoldValve52Snapshot next = reference.cycle.advance(

@@ -1,12 +1,19 @@
 import 'package:electrosim/f9_ui_context.dart';
 import 'package:electrosim/main.dart' as app;
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
 
 void main() {
+  // Reference PNGs were recorded using the Linux Material platform.
+  // Keep this visual-only fixture deterministic on macOS Intel; native
+  // macOS behavior is validated separately by the full functional suite.
+  setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.linux);
+  tearDown(() => debugDefaultTargetPlatformOverride = null);
+
   Future<void> pumpWorkspace(
     WidgetTester tester,
     Size size, {

@@ -56,5 +56,63 @@
       "sha256": "f4fa08b250d15f7ef2718614e311e41f4ea68a82c3f0de3e443f99133323eb44",
       "bytes": 221845
     }
+  ],
+  "consolidated_base": "305adbd",
+  "consolidated_files": [
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-array-bornier-arriere.png",
+      "sha256": "a06cf58942850befb7fc1e83e645a1b03644acab3e15b43fa917acfdbc4f1310",
+      "bytes": 403561
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-array.png",
+      "sha256": "dc79967808547fd80cdca0b054633a0f5866487d4167f56424a7d21d6f7af15b",
+      "bytes": 404337
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-battery.png",
+      "sha256": "ac3d4ac2ff02b14d5db913dbd962385dd515324399568a0243eda1a996ab4a01",
+      "bytes": 288425
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-controller-mppt.png",
+      "sha256": "d19c71c0968cfbae600cb695857fb4952820e267426df1745d71809aea0a51d3",
+      "bytes": 338293
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-controller-pwm.png",
+      "sha256": "dc7195c6b94bb1bfb7437e80fca840abe7b5aaf0b2d0c218d15ccabf044e105b",
+      "bytes": 344574
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-pv-inverter.png",
+      "sha256": "6c6846d57578730f678ff15f25d031e3f7d7974ec196625687ecc8000ac6a31b",
+      "bytes": 368968
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-source-ac1-230v.png",
+      "sha256": "0e4f8ea53f8f430bc0f13b094f7022121d49c9b3bc3f4a60093d445dcd7372e1",
+      "bytes": 293602
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-source-ac1-current.png",
+      "sha256": "c97c2a47aac2d2b666a7ce65d313ca23c95486fc6118599c946deb81ad9475ef",
+      "bytes": 294248
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-source-dc-24v.png",
+      "sha256": "9d7f64bbb527aed80ac6483244846d76e14a4da5caaf2ee809085478341e7ed7",
+      "bytes": 282823
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-source-dc-current.png",
+      "sha256": "242b96d1f6a0c09b35faee414f7f0366a9940983f808e3c656b68e25fd5f7fc8",
+      "bytes": 289669
+    },
+    {
+      "file": "proof/g5-consolidated/electrosim-switch-no.png",
+      "sha256": "f4fa08b250d15f7ef2718614e311e41f4ea68a82c3f0de3e443f99133323eb44",
+      "bytes": 221845
+    }
   ]
 }

@@ -167,6 +167,90 @@ void main() {
     expect(effective.components.length, design.components.length);
   });
 
+
+  test('replacement requires OFF and a scene without live or stored sources', () {
+    Terminal t(String id) => Terminal(id: TerminalId(id), name: id);
+    final a = t('r1-a');
+    final b = t('r1-b');
+    final c = t('r2-a');
+    final d = t('r2-b');
+    final original = Connection(
+      id: ConnectionId('fuse-wire'),
+      fromTerminalId: b.id,
+      toTerminalId: c.id,
+    );
+    final meter = InstrumentInstance(
+      id: InstrumentId('amp-repair'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentDc,
+      poweredOn: false,
+      fuseBlown: true,
+      cutConnectionId: original.id,
+    );
+    final isolated = CircuitState(
+      circuitId: CircuitId('fuse-replacement-only'),
+      revision: 9,
+      mode: ElectricalMode.dc,
+      components: [
+        ComponentInstance(
+          id: ComponentId('r1'), modelType: 'resistor',
+          terminals: [a, b],
+          parameters: const {'resistanceOhm': 5.0},
+        ),
+        ComponentInstance(
+          id: ComponentId('r2'), modelType: 'resistor',
+          terminals: [c, d],
+          parameters: const {'resistanceOhm': 5.0},
+        ),
+      ],
+      connections: [original],
+      instruments: [meter],
+      probes: [
+        ProbeConnection(
+          id: ProbeId('repair-amp'), instrumentId: meter.id,
+          port: InstrumentPort.amp, terminalId: b.id,
+        ),
+        ProbeConnection(
+          id: ProbeId('repair-com'), instrumentId: meter.id,
+          port: InstrumentPort.common, terminalId: c.id,
+        ),
+      ],
+    );
+    expect(F18AmmeterFuseSafety.canReplace(isolated, meter), isTrue);
+    expect(F18AmmeterFuseSafety.projectOpenFuses(isolated)
+        .connections.single.enabled, isFalse);
+    final restored = F18AmmeterFuseSafety.replaceSafely(
+      circuit: isolated, instrumentId: meter.id,
+    );
+    expect(restored.revision, isolated.revision + 1);
+    expect(restored.instruments.single.fuseBlown, isFalse);
+    expect(restored.instruments.single.poweredOn, isFalse);
+    expect(restored.connections, orderedEquals(isolated.connections));
+    expect(F18AmmeterFuseSafety.projectOpenFuses(restored)
+        .connections.single.enabled, isTrue);
+    expect(F18AmmeterFuseSafety.replaceSafely(
+      circuit: restored, instrumentId: meter.id,
+    ), same(restored));
+
+    final enabled = InstrumentInstance(
+      id: meter.id, kind: meter.kind, mode: meter.mode,
+      fuseBlown: true, poweredOn: true, cutConnectionId: meter.cutConnectionId,
+    );
+    final notSafe = CircuitState(
+      circuitId: isolated.circuitId,
+      revision: isolated.revision,
+      mode: isolated.mode,
+      components: isolated.components,
+      connections: isolated.connections,
+      instruments: [enabled],
+      probes: isolated.probes,
+    );
+    expect(F18AmmeterFuseSafety.canReplace(notSafe, enabled), isFalse);
+    expect(F18AmmeterFuseSafety.replaceSafely(
+      circuit: notSafe, instrumentId: enabled.id,
+    ), same(notSafe));
+  });
+
   test('valid reversed lead order still corresponds to cut endpoints', () {
     final design = seriesMeter(swappedLeads: true);
     expect(F18AmmeterFuseSafety.wiredCut(

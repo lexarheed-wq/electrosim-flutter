@@ -12,8 +12,8 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 
 | N° | Clé | Développement et preuve |
 |---:|---|---|
-| 01 | `instrument-voltmeter` | Développement du voltmètre + Ω écrit ; tests globaux différés ; qualification visuelle à revoir |
-| 02 | `instrument-ammeter` | Recette Blender original ampèremètre écrite ; loader Flutter créé ; intégration à poursuivre |
+| 01 | `instrument-voltmeter` | Voltmètre 3D et boutons existants conservés ; mesure Ω codée par source 1 V / 1 kΩ TEMPORAIRE ; cas série/parallèle/ouvert/alimenté créés mais NON exécutés ; preuves utilisateur/qualification différées |
+| 02 | `instrument-ammeter` | Recette Blender originale A/COM/fusible + rendu Cycles paramétré ; loader dédié, palette/frontale/câbles/contrôles et tests Dart écrits ; PNG non générés ; qualité visuelle/mesure réelle NON qualifiées |
 | 03 | `instrument-frequency` | En attente de son tour |
 | 04 | `instrument-phase-sequence` | En attente de son tour |
 | 05 | `external-crusher` | En attente de son tour |
@@ -41,3 +41,6 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 
 ## Méthode par appareil
 Recette Blender originale → front et perspective palette → composants interactifs, bornes/sondes → raccordement solveur/runtime → tests locaux → PNG Flutter réel → passer à l'élément suivant. **Ne pas fusionner**, même si des tests techniques sont verts. Ne jamais compter une recette non rendue comme un visuel validé.
+
+### Observations d'environnement
+Sur le poste de développement de cette conversation, ni Flutter/Dart ni Blender ne sont installés. Les tests de la branche séquentielle sont rédigés mais n'ont pas été exécutés localement. La qualification de ces sources et les PNG réels seront produits sur les runners finaux ; ne jamais afficher une illustration IA comme preuve de capture Flutter.

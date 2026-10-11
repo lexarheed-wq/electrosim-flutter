@@ -51,10 +51,9 @@ jobs:
             if curl -fsS http://127.0.0.1:8796/ > /dev/null; then break; fi
             sleep 1
           done
-          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=20000 --dump-dom http://127.0.0.1:8796/             > build/pneumatics-r6n/chromium-worker-dom.html             2> build/pneumatics-r6n/chromium-worker-stderr.txt
-          grep -F '<output id="result">R6N_WEB_WORKER_PASS</output>' build/pneumatics-r6n/chromium-worker-dom.html
-          ! grep -F '<output id="result">R6N_PENDING</output>' build/pneumatics-r6n/chromium-worker-dom.html
-          ! grep -F '<output id="result">R6N_WEB_WORKER_FAIL:' build/pneumatics-r6n/chromium-worker-dom.html
+          node packages/electrosim_pneumatic_solver/tool/r6n_browser_cdp.mjs "$CHROME" http://127.0.0.1:8796/ \
+            | tee build/pneumatics-r6n/chromium-worker-proof.txt
+          grep -Fx 'R6N_WEB_WORKER_PASS' build/pneumatics-r6n/chromium-worker-proof.txt
           "$CHROME" --version | tee build/pneumatics-r6n/CHROMIUM_VERSION.txt
       - uses: actions/upload-artifact@v4
         if: always()

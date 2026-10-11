@@ -1,14 +1,16 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
+import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
 import 'pneumatic_reference_cycle_page.dart';
 
-/// Experimental two-view editor. The physical solver is NOT driven by widgets.
-/// Both presentations edit exactly one canonical MultiphysicsProject.
+/// Experimental two-view editor of one canonical MultiphysicsProject.
+/// Runtime advances an opt-in, calibrated physical subset only; unsupported
+/// devices fail visibly and no calculation is performed by the widgets.
 class PneumaticWorkshopPage extends StatefulWidget {
   const PneumaticWorkshopPage({
     super.key,
@@ -29,6 +31,14 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
+  IsothermalAirNetwork? _airSolver;
+  IsothermalAirSnapshot? _airSnapshot;
+  double? _dischargeCoefficient;
+
+  void _invalidateAirRuntime() {
+    _airSolver = null;
+    _airSnapshot = null;
+  }
 
   static const List<PneumaticDeviceKind> _catalog = <PneumaticDeviceKind>[
     PneumaticDeviceKind.idealSource,
@@ -68,6 +78,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         _redo.clear();
         _state = updated;
         _firstPort = null;
+        _invalidateAirRuntime();
       });
     } on Object catch (error) {
       ScaffoldMessenger.of(
@@ -84,6 +95,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       other.add(_state);
       _state = source.removeLast();
       _firstPort = null;
+      _invalidateAirRuntime();
     });
   }
 

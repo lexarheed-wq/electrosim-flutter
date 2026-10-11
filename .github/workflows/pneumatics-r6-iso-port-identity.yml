@@ -1,0 +1,57 @@
+name: PNEU R6 ISO Port Identity
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6b-iso-port-identity-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6-deterministic-scale-20261011
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pneu-r6-iso-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pneumatic-r6-iso-port-identity:
+    name: pneumatic-r6-iso-port-identity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Verify ISO 1219-1 port identification with real Flutter widgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6-iso
+          {
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "github_sha=$GITHUB_SHA"
+            date -u +%FT%TZ
+            flutter --version
+            uname -a
+          } | tee build/pneumatics-r6-iso/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format lib/pneumatics/pneumatic_workshop_page.dart test/r6_iso_ports_test.dart
+            git diff -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_iso_ports_test.dart | tee ../../build/pneumatics-r6-iso/FORMAT_PATCH.diff
+            git diff --exit-code -- lib/pneumatics/pneumatic_workshop_page.dart test/r6_iso_ports_test.dart
+            flutter test --no-pub test/r6_iso_ports_test.dart --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6-iso/REAL_ISO_PORTS.log
+          grep -F 'R6: 5/2 terminal numbers and IDs persist across both views' build/pneumatics-r6-iso/REAL_ISO_PORTS.log
+          grep -F 'All tests passed!' build/pneumatics-r6-iso/REAL_ISO_PORTS.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6-iso-ports-${{ github.sha }}
+          path: build/pneumatics-r6-iso/
+          if-no-files-found: warn
+          retention-days: 30

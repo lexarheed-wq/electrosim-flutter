@@ -2467,9 +2467,11 @@ class _PaletteDraggableTile extends StatelessWidget {
                           F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
-                child: definition.keyName == 'instrument-voltmeter'
+                child: (definition.keyName == 'instrument-voltmeter' ||
+                         (definition.keyName == 'instrument-ammeter' &&
+                          F18Ammeter3dAssets.ready))
                     ? Tooltip(
-                        key: const Key('g5-voltmeter-3d-detail-preview'),
+                        key: Key('g5-${definition.keyName}-3d-detail-preview'),
                         waitDuration: const Duration(milliseconds: 450),
                         decoration: BoxDecoration(
                           color: const Color(0xFF182438),
@@ -2494,9 +2496,11 @@ class _PaletteDraggableTile extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                const Text(
-                                  'Voltmètre — vue 3/4',
-                                  style: TextStyle(
+                                Text(
+                                  definition.keyName == 'instrument-ammeter'
+                                      ? 'Ampèremètre — vue 3/4'
+                                      : 'Voltmètre — vue 3/4',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                   ),

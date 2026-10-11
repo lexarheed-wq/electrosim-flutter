@@ -1,0 +1,65 @@
+name: PNEU R6L Real Workshop Piston PNG Evidence
+
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6l-physical-piston-widget-20261011
+    paths:
+      - 'apps/electrosim/test/r6l_live_png_evidence_test.dart'
+      - '.github/workflows/pneumatics-r6l-live-png-evidence.yml'
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+    paths:
+      - 'apps/electrosim/test/r6l_live_png_evidence_test.dart'
+      - '.github/workflows/pneumatics-r6l-live-png-evidence.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  actual-workshop-png:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Capture genuine physically measured piston views
+        working-directory: apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          flutter pub get
+          dart format --output=none --set-exit-if-changed test/r6l_live_png_evidence_test.dart
+          flutter test --reporter expanded test/r6l_live_png_evidence_test.dart
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          folder = Path('build/pneumatics-r6l-evidence')
+          for name in ('01_platine_initiale.png', '02_platine_mesuree.png', '03_schema_meme_etat.png'):
+              path = folder/name
+              data = path.read_bytes()
+              assert data[:8] == b'\x89PNG\r\n\x1a\n', f'Not PNG: {name}'
+              w, h = struct.unpack('>II', data[16:24])
+              assert (w, h) == (1600, 960) and len(data) > 20000, f'Invalid real capture: {name}'
+              print(f'R6L_REAL_CAPTURE {name} {w}x{h} {len(data)} bytes')
+          assert (folder/'01_platine_initiale.png').read_bytes() != (folder/'02_platine_mesuree.png').read_bytes(), 'Piston did not change the actual Flutter view'
+          PY
+          {
+            echo "SOURCE_SHA=$(git rev-parse HEAD)"
+            flutter --version | head -n 1
+          } > build/pneumatics-r6l-evidence/PROVENANCE.txt
+          (cd build/pneumatics-r6l-evidence && sha256sum *.png > SHA256SUMS.txt)
+          git diff --check
+          git diff --exit-code -- test/r6l_live_png_evidence_test.dart
+      - name: Archive unchanged PNG pixels and source SHA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pneumatics-r6l-real-workshop-${{ github.sha }}
+          path: apps/electrosim/build/pneumatics-r6l-evidence/
+          retention-days: 21

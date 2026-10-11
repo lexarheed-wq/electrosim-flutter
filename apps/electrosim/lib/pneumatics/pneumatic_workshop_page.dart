@@ -274,111 +274,112 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                 child: Form(
                   key: key,
                   child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (!movingCylinder)
-                    _physicalInput(
-                      'Pression absolue (Pa)',
-                      device.parametersSi['pressureAbsPa'],
-                      (double x) => values['pressureAbsPa'] = x,
-                    ),
-                  if (fitting)
-                    _physicalInput(
-                      'Volume gazeux (m³)',
-                      device.parametersSi['volumeM3'],
-                      (double x) => values['volumeM3'] = x,
-                    ),
-                  if (movingCylinder) ...<Widget>[
-                    _physicalInput(
-                      'Diamètre piston (m)',
-                      device.parametersSi['pistonDiameterM'],
-                      (double x) => values['pistonDiameterM'] = x,
-                    ),
-                    _physicalInput(
-                      'Diamètre tige (m)',
-                      device.parametersSi['rodDiameterM'],
-                      (double x) => values['rodDiameterM'] = x,
-                      allowZero: true,
-                    ),
-                    _physicalInput(
-                      'Course (m)',
-                      device.parametersSi['strokeM'],
-                      (double x) => values['strokeM'] = x,
-                    ),
-                    _physicalInput(
-                      'Volume mort A (m³)',
-                      device.parametersSi['deadVolumeAM3'],
-                      (double x) => values['deadVolumeAM3'] = x,
-                    ),
-                    _physicalInput(
-                      'Volume mort B (m³)',
-                      device.parametersSi['deadVolumeBM3'],
-                      (double x) => values['deadVolumeBM3'] = x,
-                    ),
-                    _physicalInput(
-                      'Position initiale (m)',
-                      device.parametersSi['initialPositionM'],
-                      (double x) => values['initialPositionM'] = x,
-                      allowZero: true,
-                    ),
-                    _physicalInput(
-                      'Pression A initiale absolue (Pa)',
-                      device.parametersSi['initialPressureAAbsPa'],
-                      (double x) => values['initialPressureAAbsPa'] = x,
-                    ),
-                    _physicalInput(
-                      'Pression B initiale absolue (Pa)',
-                      device.parametersSi['initialPressureBAbsPa'],
-                      (double x) => values['initialPressureBAbsPa'] = x,
-                    ),
-                    _physicalInput(
-                      'Masse en mouvement (kg)',
-                      device.parametersSi['movingMassKg'],
-                      (double x) => values['movingMassKg'] = x,
-                    ),
-                  ],
-                  if (valve52) ...<Widget>[
-                    _physicalInput(
-                      'Volume mort par orifice (m³)',
-                      device.parametersSi['portDeadVolumeM3'],
-                      (double x) => values['portDeadVolumeM3'] = x,
-                    ),
-                    _physicalInput(
-                      'Surface de passage interne (m²)',
-                      device.parametersSi['valveEffectiveAreaM2'],
-                      (double x) => values['valveEffectiveAreaM2'] = x,
-                    ),
-                    _physicalInput(
-                      'Coefficient interne Cd (≤ 1)',
-                      device.parametersSi['valveCd'],
-                      (double x) => values['valveCd'] = x,
-                      maxValue: 1,
-                    ),
-                    DropdownButtonFormField<double>(
-                      key: const Key('air-valve-static-position'),
-                      initialValue: device.parametersSi['energized'],
-                      decoration: const InputDecoration(
-                        labelText: 'Position fixe 5/2 (aucun solénoïde)',
-                      ),
-                      items: const <DropdownMenuItem<double>>[
-                        DropdownMenuItem<double>(
-                          value: 0,
-                          child: Text('Repos : P-B / A-R'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (!movingCylinder)
+                        _physicalInput(
+                          'Pression absolue (Pa)',
+                          device.parametersSi['pressureAbsPa'],
+                          (double x) => values['pressureAbsPa'] = x,
                         ),
-                        DropdownMenuItem<double>(
-                          value: 1,
-                          child: Text('Travail : P-A / B-S'),
+                      if (fitting)
+                        _physicalInput(
+                          'Volume gazeux (m³)',
+                          device.parametersSi['volumeM3'],
+                          (double x) => values['volumeM3'] = x,
+                        ),
+                      if (movingCylinder) ...<Widget>[
+                        _physicalInput(
+                          'Diamètre piston (m)',
+                          device.parametersSi['pistonDiameterM'],
+                          (double x) => values['pistonDiameterM'] = x,
+                        ),
+                        _physicalInput(
+                          'Diamètre tige (m)',
+                          device.parametersSi['rodDiameterM'],
+                          (double x) => values['rodDiameterM'] = x,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Course (m)',
+                          device.parametersSi['strokeM'],
+                          (double x) => values['strokeM'] = x,
+                        ),
+                        _physicalInput(
+                          'Volume mort A (m³)',
+                          device.parametersSi['deadVolumeAM3'],
+                          (double x) => values['deadVolumeAM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Volume mort B (m³)',
+                          device.parametersSi['deadVolumeBM3'],
+                          (double x) => values['deadVolumeBM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Position initiale (m)',
+                          device.parametersSi['initialPositionM'],
+                          (double x) => values['initialPositionM'] = x,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Pression A initiale absolue (Pa)',
+                          device.parametersSi['initialPressureAAbsPa'],
+                          (double x) => values['initialPressureAAbsPa'] = x,
+                        ),
+                        _physicalInput(
+                          'Pression B initiale absolue (Pa)',
+                          device.parametersSi['initialPressureBAbsPa'],
+                          (double x) => values['initialPressureBAbsPa'] = x,
+                        ),
+                        _physicalInput(
+                          'Masse en mouvement (kg)',
+                          device.parametersSi['movingMassKg'],
+                          (double x) => values['movingMassKg'] = x,
                         ),
                       ],
-                      onChanged: (double? value) {},
-                      validator: (double? value) => value == null
-                          ? 'Choisir la position physique.'
-                          : null,
-                      onSaved: (double? value) => values['energized'] = value!,
-                    ),
-                  ],
-                ],
-              ),
+                      if (valve52) ...<Widget>[
+                        _physicalInput(
+                          'Volume mort par orifice (m³)',
+                          device.parametersSi['portDeadVolumeM3'],
+                          (double x) => values['portDeadVolumeM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Surface de passage interne (m²)',
+                          device.parametersSi['valveEffectiveAreaM2'],
+                          (double x) => values['valveEffectiveAreaM2'] = x,
+                        ),
+                        _physicalInput(
+                          'Coefficient interne Cd (≤ 1)',
+                          device.parametersSi['valveCd'],
+                          (double x) => values['valveCd'] = x,
+                          maxValue: 1,
+                        ),
+                        DropdownButtonFormField<double>(
+                          key: const Key('air-valve-static-position'),
+                          initialValue: device.parametersSi['energized'],
+                          decoration: const InputDecoration(
+                            labelText: 'Position fixe 5/2 (aucun solénoïde)',
+                          ),
+                          items: const <DropdownMenuItem<double>>[
+                            DropdownMenuItem<double>(
+                              value: 0,
+                              child: Text('Repos : P-B / A-R'),
+                            ),
+                            DropdownMenuItem<double>(
+                              value: 1,
+                              child: Text('Travail : P-A / B-S'),
+                            ),
+                          ],
+                          onChanged: (double? value) {},
+                          validator: (double? value) => value == null
+                              ? 'Choisir la position physique.'
+                              : null,
+                          onSaved: (double? value) =>
+                              values['energized'] = value!,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -719,7 +720,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                   ),
                                 if (_movingSnapshot != null &&
                                     selected.kind ==
-                                        PneumaticDeviceKind.doubleActingCylinder)
+                                        PneumaticDeviceKind
+                                            .doubleActingCylinder)
                                   Text(
                                     'x = ${(_movingSnapshot!.positionM * 1000).toStringAsFixed(2)} mm ; '
                                     'v = ${_movingSnapshot!.velocityMPerS.toStringAsFixed(3)} m/s',
@@ -759,7 +761,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     selected.kind ==
                                         PneumaticDeviceKind.valve52 ||
                                     selected.kind ==
-                                        PneumaticDeviceKind.doubleActingCylinder)
+                                        PneumaticDeviceKind
+                                            .doubleActingCylinder)
                                   FilledButton.tonal(
                                     key: const Key('air-calibrate-device'),
                                     onPressed: () =>
@@ -837,11 +840,12 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     schematic: !plate,
                     width: 110,
                     height: 38,
-                    pistonFraction: _movingSnapshot != null &&
+                    pistonFraction:
+                        _movingSnapshot != null &&
                             device.kind ==
                                 PneumaticDeviceKind.doubleActingCylinder
                         ? _movingSnapshot!.positionM /
-                            _movingSolver!.geometry.strokeM
+                              _movingSolver!.geometry.strokeM
                         : null,
                   ),
                   Text(

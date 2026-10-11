@@ -103,13 +103,13 @@ void main() {
                   color: Color(0xFF25354B),
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 26),
-                    child: Row(children: [
-                      Text('ElectroSim • Platine électrique CC',
-                        style: TextStyle(color: Colors.white, fontSize: 20)),
-                      Spacer(),
-                      Text('Circuit de test 24 V — sondes V / COM',
-                        style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    ]),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('ElectroSim — Platine CC 24 V • Mesure V/COM',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ),
                   ),
                 ),
               ),

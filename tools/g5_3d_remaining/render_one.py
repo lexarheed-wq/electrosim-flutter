@@ -108,6 +108,8 @@ def main():
     parser.add_argument('--blender', default=None)
     parser.add_argument('--samples', type=int, default=96)
     parser.add_argument('--verify-existing', action='store_true')
+    parser.add_argument('--denoise', action='store_true',
+                        help='Requires a Blender build with OpenImageDenoise')
     args = parser.parse_args()
     folder = Path(args.output_root) / args.component
     if args.verify_existing:
@@ -120,11 +122,14 @@ def main():
         if not 16 <= args.samples <= 256:
             parser.error('--samples must be 16..256')
         runner = BASE / 'render_voltmeter_cycles.py'
-        subprocess.run([
-            blender, '-b', '--factory-startup', '-t', '4', '--python', str(runner),
+        command = [
+            blender, '-b', '--factory-startup', '-t', '4', '--python-exit-code', '1', '--python', str(runner),
             '--', '--out', str(folder), '--component', args.component,
             '--samples', str(args.samples),
-        ], cwd=ROOT, check=True)
+        ]
+        if args.denoise:
+            command.append('--denoise')
+        subprocess.run(command, cwd=ROOT, check=True)
         verify_assets(folder, args.component)
     print(f'Original front Cycles PNG: {folder / "front.png"}')
     print(f'Original 3/4 Cycles PNG: {folder / "palette.png"}')

@@ -31,13 +31,16 @@ class CyclesGeometry:
         self.brass = self.material('socket inner metal', (.59, .41, .12), .82)
 
     @staticmethod
-    def material(name, rgb, metallic=0):
+    def material(name, rgb, metallic=0, roughness=None, coat=0, anisotropic=0):
         mat = bpy.data.materials.new(name)
         mat.use_nodes = True
         node = mat.node_tree.nodes.get('Principled BSDF')
         node.inputs['Base Color'].default_value = (*rgb, 1)
-        node.inputs['Roughness'].default_value = .28 if metallic else .42
+        node.inputs['Roughness'].default_value = roughness if roughness is not None else (.28 if metallic else .42)
         node.inputs['Metallic'].default_value = metallic
+        node.inputs['Coat Weight'].default_value = coat
+        node.inputs['Coat Roughness'].default_value = .2
+        node.inputs['Anisotropic'].default_value = anisotropic
         return mat
 
     @staticmethod
@@ -71,6 +74,62 @@ class CyclesGeometry:
         solid = obj.modifiers.new('sheet thickness','SOLIDIFY')
         solid.thickness = thickness
         return self._finish(obj,name,material,.5)
+
+    def tube(self, name, points, radius, material):
+        """Physical cable/conduit mesh, using coordinates of the recipe."""
+        curve = bpy.data.curves.new(name, 'CURVE')
+        curve.dimensions = '3D'
+        curve.resolution_u = 16
+        curve.bevel_depth = radius
+        curve.bevel_resolution = 4
+        spline = curve.splines.new('BEZIER')
+        spline.bezier_points.add(len(points)-1)
+        for point, (x,y,z) in zip(spline.bezier_points, points):
+            point.co = (x,-y,z)
+            point.handle_left_type = 'AUTO'
+            point.handle_right_type = 'AUTO'
+        obj = bpy.data.objects.new(name,curve)
+        bpy.context.scene.collection.objects.link(obj)
+        obj.data.materials.append(material)
+        return obj
+
+    def domed_panel(self, name, points, material, thickness, bulge):
+        """Closed pressed cover with a gently convex face for studio reflections."""
+        count = len(points)
+        cx = sum(p[0] for p in points)/count
+        cy = sum(p[1] for p in points)/count
+        z = points[0][2]
+        vertices=[]
+        for scale in (1,.85,.65,.4,.15):
+            vertices.extend((cx+(x-cx)*scale,-(cy+(y-cy)*scale),
+                             z+bulge*(1-scale*scale)) for x,y,_ in points)
+        center = len(vertices)
+        vertices.append((cx,-cy,z+bulge))
+        rear = len(vertices)
+        vertices.extend((x,-y,z-thickness) for x,y,_ in points)
+        faces=[]
+        for ring in range(4):
+            for i in range(count):
+                j=(i+1)%count
+                faces.append((ring*count+i,ring*count+j,(ring+1)*count+j,(ring+1)*count+i))
+        for i in range(count):
+            j=(i+1)%count
+            faces.append((4*count+i,4*count+j,center))
+            faces.append((j,i,rear+i,rear+j))
+        faces.append(tuple(reversed(range(rear,rear+count))))
+        mesh=bpy.data.meshes.new(name)
+        mesh.from_pydata(vertices,[],faces)
+        mesh.update()
+        obj=bpy.data.objects.new(name,mesh)
+        bpy.context.scene.collection.objects.link(obj)
+        for polygon in mesh.polygons:
+            polygon.use_smooth = len(polygon.vertices) < count
+        return self._finish(obj,name,material)
+
+    def bolt(self, name, x, y, z, radius, material):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=radius,
+            depth=radius*.6, location=(x,-y,z-radius*.3))
+        return self._finish(bpy.context.object,name,material,.12)
 
     @staticmethod
     def cut(obj, cutter):
@@ -111,6 +170,15 @@ def area(name, location, power, size):
     obj = bpy.data.objects.new(name, data)
     bpy.context.scene.collection.objects.link(obj)
     obj.location = location
+    return obj
+
+
+def studio_softbox(name, location, power, width, height):
+    obj = area(name,location,power,width)
+    obj.data.shape = 'RECTANGLE'
+    obj.data.size_y = height
+    direction = Vector((110,-110,40))-obj.location
+    obj.rotation_euler = direction.to_track_quat('-Z','Y').to_euler()
 
 
 def main():
@@ -119,6 +187,7 @@ def main():
     parser.add_argument('--out', required=True)
     parser.add_argument('--component', choices=['instrument-voltmeter', 'instrument-ammeter', 'instrument-frequency', 'instrument-phase-sequence', 'external-crusher'], default='instrument-voltmeter')
     parser.add_argument('--samples', type=int, default=64)
+    parser.add_argument('--denoise', action='store_true')
     opts = parser.parse_args(argv)
     assert 16 <= opts.samples <= 256
     recipe_name = opts.component.replace('-', '_') + '_recipe'
@@ -134,10 +203,12 @@ def main():
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = opts.samples
     # Ubuntu apt Blender builds can be compiled without OpenImageDenoiser.
-    scene.cycles.use_denoising = False
+    scene.cycles.use_denoising = opts.denoise
+    if opts.denoise:
+        scene.cycles.denoiser = 'OPENIMAGEDENOISE'
     for layer in scene.view_layers:
         if hasattr(layer, 'cycles'):
-            layer.cycles.use_denoising = False
+            layer.cycles.use_denoising = opts.denoise
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = 'PNG'
     scene.render.image_settings.color_mode = 'RGBA'
@@ -153,13 +224,26 @@ def main():
     body_d = SIZE[1] - 4.0
     body_d *= 46.0 / 167.0
     if KEY == 'external-crusher':
-        scene.view_settings.exposure = .85
+        scene.view_settings.exposure = .25
         scene.world.use_nodes = True
         env = scene.world.node_tree.nodes.new('ShaderNodeTexEnvironment')
         env.image = bpy.data.images.load(str(Path(__file__).resolve().parents[1] / 'g5_render_environment/studio_small_09_1k.hdr'))
         background = scene.world.node_tree.nodes.get('Background')
         scene.world.node_tree.links.new(env.outputs['Color'],background.inputs['Color'])
         background.inputs['Strength'].default_value = .55
+        for obj in bpy.data.objects:
+            if obj.type == 'MESH':
+                for modifier in obj.modifiers:
+                    if modifier.type == 'BEVEL':
+                        modifier.segments = 8
+                        modifier.harden_normals = True
+                normal = obj.modifiers.new('machined edge normals', 'WEIGHTED_NORMAL')
+                normal.keep_sharp = True
+        raised_legend('gap_scale_units', 'mm', 103, 130, 63, 2.2, h.black)
+        for i in range(11):
+            x = 88+i*2.5
+            h.box('gap_scale_tick_'+str(i),x,134, .22, 2.5 if i%5==0 else 1.5,
+                  63, .12, h.black)
     elif KEY == 'instrument-phase-sequence':
         scene.view_settings.look = 'AgX - Medium High Contrast'
         scene.view_settings.exposure = .65
@@ -215,9 +299,15 @@ def main():
                 h.box(
                     f'holster-grip-{side}-{i}', x, 76 + i * 6.5,
                     2.0, 4.2, body_d + 7.0, 0.9, h.yellow, r=0.35)
-    area('diffused studio left', (-70, 60, 190), 100000, 150)
-    area('diffused studio right', (190, -60, 170), 75000, 100)
-    area('soft rim reflection', (48, -130, 120), 45000, 130)
+    if KEY == 'external-crusher':
+        studio_softbox('large key softbox',(-45,-45,230),110000,70,150)
+        studio_softbox('vertical reflection strip',(230,-125,170),65000,25,170)
+        studio_softbox('upper rim softbox',(115,-260,145),90000,100,40)
+        studio_softbox('front fill softbox',(110,10,200),25000,130,100)
+    else:
+        area('diffused studio left', (-70, 60, 190), 100000, 150)
+        area('diffused studio right', (190, -60, 170), 75000, 100)
+        area('soft rim reflection', (48, -130, 120), 45000, 130)
 
     data = bpy.data.cameras.new('orthographic geometry camera')
     data.type = 'ORTHO'
@@ -250,6 +340,7 @@ def main():
     recipe = Path(__file__).with_name(recipe_name + '.py')
     (out / 'provenance.json').write_text(json.dumps({
         'key': KEY, 'blender_version': bpy.app.version_string,
+        'samples': opts.samples, 'denoised': opts.denoise,
         'sha256_recipe': hashlib.sha256(recipe.read_bytes()).hexdigest(),
         'sha256_render_runner': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'seconds': round(time.monotonic() - t0, 2),

@@ -1,0 +1,50 @@
+name: G5 physical voltmeter Flutter integration
+
+on:
+  push:
+    branches:
+      - 'feat/g5-voltmeter-flutter-integration-20261011'
+    paths:
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - 'apps/electrosim/lib/f18_voltmeter_3d_assets.dart'
+      - 'apps/electrosim/lib/f18_workspace_page.dart'
+      - 'apps/electrosim/test/g5_voltmeter_3d_projection_test.dart'
+      - 'packages/electrosim_canvas/lib/src/circuit_scene_painter.dart'
+      - 'packages/electrosim_canvas/lib/src/simulator_canvas.dart'
+      - 'apps/electrosim/assets/g5_industrial/instrument-voltmeter-*.png'
+      - '.github/workflows/g5-voltmeter-flutter.yml'
+  pull_request:
+    paths:
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - 'apps/electrosim/lib/f18_voltmeter_3d_assets.dart'
+      - 'apps/electrosim/lib/f18_workspace_page.dart'
+      - 'apps/electrosim/test/g5_voltmeter_3d_projection_test.dart'
+      - 'packages/electrosim_canvas/lib/src/circuit_scene_painter.dart'
+      - 'packages/electrosim_canvas/lib/src/simulator_canvas.dart'
+      - 'apps/electrosim/assets/g5_industrial/instrument-voltmeter-*.png'
+      - '.github/workflows/g5-voltmeter-flutter.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve app dependencies
+        run: flutter pub get
+        working-directory: apps/electrosim
+      - name: Verify instrument projection and legacy fallback
+        run: flutter test test/g5_voltmeter_3d_projection_test.dart -r expanded
+        working-directory: apps/electrosim
+      - name: Check compilation and style of changed sources
+        run: |
+          dart analyze lib/f18_physical_instrument_readouts.dart lib/f18_voltmeter_3d_assets.dart test/g5_voltmeter_3d_projection_test.dart
+        working-directory: apps/electrosim

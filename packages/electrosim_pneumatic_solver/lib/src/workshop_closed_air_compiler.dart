@@ -2,8 +2,11 @@ import 'dart:math' as math;
 
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 
+import 'cylinder_physics.dart';
+import 'dynamic_cylinder.dart';
 import 'ideal_gas.dart';
 import 'isothermal_network.dart';
+import 'moving_cylinder_network.dart';
 
 /// An intentionally narrow first bridge from physically connected workshop
 /// ports to the *actual* conservative, isothermal solver.
@@ -54,11 +57,87 @@ final class WorkshopClosedAirCompiler {
         withStaticValve32: true,
       );
 
+  /// R6/I experimental dynamic coupling for exactly one double-acting
+  /// cylinder. It reuses the ISO 5/2 network and its signed gas ledger.
+  CoupledMovingCylinderAirNetwork compileWithMovingCylinder(
+    PneumaticNetwork network,
+  ) {
+    final List<PneumaticDevice> cylinders = network.devices
+        .where(
+          (PneumaticDevice d) =>
+              d.kind == PneumaticDeviceKind.doubleActingCylinder,
+        )
+        .toList();
+    if (cylinders.length != 1) {
+      throw const PneumaticPhysicsException(
+        'unsupported_cylinder_count',
+        'R6/I requires exactly one calibrated double-acting cylinder.',
+      );
+    }
+    final PneumaticDevice device = cylinders.single;
+    final DoubleActingCylinderGeometry geometry = _cylinderGeometry(device);
+    final Map<String, double> p = device.parametersSi;
+    double required(String key) {
+      final double? value = p[key];
+      if (value == null) {
+        throw PneumaticPhysicsException(
+          'missing_cylinder_calibration',
+          'Double-acting cylinder ${device.id} requires $key.',
+        );
+      }
+      return value;
+    }
+
+    return CoupledMovingCylinderAirNetwork(
+      airNetwork: _compile(
+        network,
+        withIdealBoundaries: true,
+        withStaticValve52: true,
+        withMovingCylinder: true,
+      ),
+      geometry: geometry,
+      mechanics: CylinderMechanicalCalibration(
+        movingMassKg: required('movingMassKg'),
+        viscousNsPerM: p['viscousNsPerM'] ?? 0,
+        coulombFrictionN: p['coulombFrictionN'] ?? 0,
+        staticBreakawayFrictionN: p['staticBreakawayFrictionN'] ?? 0,
+        externalLoadN: p['externalLoadN'] ?? 0,
+      ),
+      chamberAId: '${device.id}.A',
+      chamberBId: '${device.id}.B',
+      initialPositionM: required('initialPositionM'),
+      initialVelocityMPerS: p['initialVelocityMPerS'] ?? 0,
+    );
+  }
+
+  DoubleActingCylinderGeometry _cylinderGeometry(PneumaticDevice device) {
+    final Map<String, double> p = device.parametersSi;
+    double required(String key) {
+      final double? value = p[key];
+      if (value == null) {
+        throw PneumaticPhysicsException(
+          'missing_cylinder_calibration',
+          'Double-acting cylinder ${device.id} requires $key.',
+        );
+      }
+      return value;
+    }
+
+    return DoubleActingCylinderGeometry(
+      pistonDiameterM: required('pistonDiameterM'),
+      rodDiameterM: required('rodDiameterM'),
+      strokeM: required('strokeM'),
+      deadVolumeAM3: required('deadVolumeAM3'),
+      deadVolumeBM3: required('deadVolumeBM3'),
+    );
+  }
+
   IsothermalAirNetwork _compile(
     PneumaticNetwork network, {
     required bool withIdealBoundaries,
     bool withStaticValve52 = false,
     bool withStaticValve32 = false,
+    bool withMovingCylinder = false,
   }) {
     requirePositiveFinite(dischargeCoefficient, 'dischargeCoefficient');
     if (dischargeCoefficient > 1) {
@@ -92,10 +171,14 @@ final class WorkshopClosedAirCompiler {
           withStaticValve52 && device.kind == PneumaticDeviceKind.valve52;
       final bool isValve32 =
           withStaticValve32 && device.kind == PneumaticDeviceKind.valve32;
+      final bool isCylinder =
+          withMovingCylinder &&
+          device.kind == PneumaticDeviceKind.doubleActingCylinder;
       if (!isFitting &&
           (!withIdealBoundaries || !isExternal) &&
           !isValve &&
-          !isValve32) {
+          !isValve32 &&
+          !isCylinder) {
         throw PneumaticPhysicsException(
           'unsupported_device',
           'The physical workshop compiler has no accepted dynamic model for '
@@ -103,6 +186,63 @@ final class WorkshopClosedAirCompiler {
         );
       }
       kinds[device.id] = device.kind;
+      if (isCylinder) {
+        final DoubleActingCylinderGeometry geometry = _cylinderGeometry(device);
+        final Map<String, double> p = device.parametersSi;
+        double required(String key) {
+          final double? value = p[key];
+          if (value == null) {
+            throw PneumaticPhysicsException(
+              'missing_cylinder_calibration',
+              'Double-acting cylinder ${device.id} requires $key.',
+            );
+          }
+          return value;
+        }
+
+        final double initialPosition = required('initialPositionM');
+        requireNonnegativeFinite(initialPosition, 'initialPositionM');
+        final Map<String, PneumaticPort> cylinderPorts =
+            <String, PneumaticPort>{};
+        for (final PneumaticPort port in device.ports) {
+          if (port.role != PneumaticPortRole.work ||
+              !port.id.value.startsWith('${device.id}.')) {
+            throw const PneumaticPhysicsException(
+              'invalid_cylinder_ports',
+              'A/B must be work ports owned by the double-acting cylinder.',
+            );
+          }
+          final String name = port.id.value.substring('${device.id}.'.length);
+          cylinderPorts[name] = port;
+        }
+        if (cylinderPorts.length != 2 ||
+            !cylinderPorts.containsKey('A') ||
+            !cylinderPorts.containsKey('B')) {
+          throw const PneumaticPhysicsException(
+            'invalid_cylinder_ports',
+            'A double-acting cylinder requires exactly ports A and B.',
+          );
+        }
+        final double aPressure = required('initialPressureAAbsPa');
+        final double bPressure = required('initialPressureBAbsPa');
+        chambers.add(
+          FixedAirChamber.fromPressure(
+            id: '${device.id}.A',
+            volumeM3: geometry.volumeAM3(initialPosition),
+            pressureAbsPa: aPressure,
+          ),
+        );
+        chambers.add(
+          FixedAirChamber.fromPressure(
+            id: '${device.id}.B',
+            volumeM3: geometry.volumeBM3(initialPosition),
+            pressureAbsPa: bPressure,
+          ),
+        );
+        chamberByPort[cylinderPorts['A']!.id] = '${device.id}.A';
+        chamberByPort[cylinderPorts['B']!.id] = '${device.id}.B';
+        continue;
+      }
       if (isValve || isValve32) {
         final double? deadVolume = device.parametersSi['portDeadVolumeM3'];
         final double? initialPressure = device.parametersSi['pressureAbsPa'];

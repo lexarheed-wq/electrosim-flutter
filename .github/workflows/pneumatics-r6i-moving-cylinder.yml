@@ -1,0 +1,48 @@
+name: PNEU R6I Moving Cylinder Physical Network
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6i-moving-cylinder-network-20261011
+  pull_request:
+    branches:
+      - feat/pneumatics-r6g-static-iso52-network-20261011
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  r6i-coupled-mass-mechanics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Qualify moving piston and graph on a single physical clock
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6i
+          echo "sha=$(git rev-parse HEAD)" | tee build/pneumatics-r6i/PROVENANCE.txt
+          dart --version | tee -a build/pneumatics-r6i/PROVENANCE.txt
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          (
+            cd packages/electrosim_pneumatic_solver
+            dart pub get
+            dart format lib/src/moving_cylinder_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_coupled_moving_cylinder_network_test.dart
+            git diff -- lib/src/moving_cylinder_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_coupled_moving_cylinder_network_test.dart | tee ../../build/pneumatics-r6i/FORMAT_PATCH.diff
+            git diff --exit-code -- lib/src/moving_cylinder_network.dart lib/src/workshop_closed_air_compiler.dart test/r6_coupled_moving_cylinder_network_test.dart
+            dart analyze
+            dart test --concurrency=1 --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6i/SCIENCE.log
+          grep -F 'R6/I real hoses valve and moving piston share mass and clock' build/pneumatics-r6i/SCIENCE.log
+          grep -F 'R6/I physically stopped piston localizes impact without mass loss' build/pneumatics-r6i/SCIENCE.log
+          grep -F 'All tests passed!' build/pneumatics-r6i/SCIENCE.log
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pneumatics-r6i-shared-physics-${{ github.sha }}
+          path: build/pneumatics-r6i/
+          retention-days: 21

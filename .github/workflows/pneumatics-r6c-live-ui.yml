@@ -1,0 +1,74 @@
+name: PNEU R6C Live Measured Cycle UI
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6c-reference-live-ui-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: r6c-live-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  r6c-live-reference-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.10.9'
+      - name: Physically observed 24V, valve 5/2, B1 and mass closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6c
+          echo "$GITHUB_SHA" > build/pneumatics-r6c/HEAD.txt
+          (
+            cd packages/electrosim_electropneumatic
+            dart pub get
+            dart format lib/src/reference_cycle.dart test/r6_reference_cycle_test.dart
+            git diff --exit-code -- lib/src/reference_cycle.dart test/r6_reference_cycle_test.dart
+            dart analyze
+            dart test --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6c/PHYSICS.log
+          git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r6c-physics-${{ github.sha }}
+          path: build/pneumatics-r6c/
+          retention-days: 14
+  r6c-live-flutter-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Run live page and workshop navigation widgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/pneumatics-r6c
+          echo "$GITHUB_SHA" > build/pneumatics-r6c/HEAD.txt
+          (
+            cd apps/electrosim
+            flutter pub get
+            dart format lib/pneumatics/pneumatic_reference_cycle_page.dart lib/pneumatics/pneumatic_workshop_page.dart test/r6_live_reference_test.dart
+            git diff --exit-code -- lib/pneumatics/pneumatic_reference_cycle_page.dart lib/pneumatics/pneumatic_workshop_page.dart test/r6_live_reference_test.dart
+            flutter analyze --no-pub
+            flutter test --no-pub test/r6_live_reference_test.dart --reporter expanded
+          ) 2>&1 | tee build/pneumatics-r6c/UI.log
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r6c-live-ui-${{ github.sha }}
+          path: build/pneumatics-r6c/
+          retention-days: 14

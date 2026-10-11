@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
+import 'pneumatic_reference_cycle_page.dart';
 
 /// Experimental two-view editor. The physical solver is NOT driven by widgets.
 /// Both presentations edit exactly one canonical MultiphysicsProject.
@@ -176,6 +177,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       appBar: AppBar(
         title: const Text('Atelier pneumatique expérimental'),
         actions: <Widget>[
+          IconButton(
+            key: const Key('r6-open-reference'),
+            tooltip: 'Ouvrir le cycle physique de référence 24 V / 5/2',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const PneumaticReferenceCyclePage(),
+              ),
+            ),
+            icon: const Icon(Icons.play_circle_outline),
+          ),
           IconButton(
             key: const Key('air-undo'),
             onPressed: _undo.isEmpty ? null : () => _history(true),

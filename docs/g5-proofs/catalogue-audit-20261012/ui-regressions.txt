@@ -1,0 +1,115 @@
+
+00:00 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart                                                                                
+00:01 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart                                                                                
+00:02 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart                                                                                
+00:02 +0: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: F18 palette exposes exactly five quick components                                     
+00:03 +0: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: F18 palette exposes exactly five quick components                                     
+00:04 +0: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: F18 palette exposes exactly five quick components                                     
+00:04 +1: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: F18 palette exposes exactly five quick components                                     
+00:04 +1: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: Voir tous expands once and never becomes a Voir moins toggle                          
+00:05 +1: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: Voir tous expands once and never becomes a Voir moins toggle                          
+00:05 +2: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: Voir tous expands once and never becomes a Voir moins toggle                          
+00:05 +2: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: search exposes non-quick component without requiring Voir tous                        
+00:06 +2: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: search exposes non-quick component without requiring Voir tous                        
+00:06 +3: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: search exposes non-quick component without requiring Voir tous                        
+00:06 +3: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: quick add preserves visual model and variant on the board component                   
+00:07 +3: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: quick add preserves visual model and variant on the board component                   
+00:07 +4: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: quick add preserves visual model and variant on the board component                   
+00:07 +4: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: restored workspace keeps the visual-model board size                                  
+00:07 +5: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point05_palette_contract_test.dart: restored workspace keeps the visual-model board size                                  
+00:07 +5: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart                                                                     
+00:08 +5: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart                                                                     
+00:08 +5: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: design workspace starts on a truly blank board                             
+00:09 +5: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: design workspace starts on a truly blank board                             
+00:10 +5: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: design workspace starts on a truly blank board                             
+00:10 +6: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: design workspace starts on a truly blank board                             
+00:10 +6: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: compact blank workspace remains usable without overflow                    
+00:10 +7: /workspace/electrosim-g5-integration/apps/electrosim/test/f18_g3r1_point10_integrated_visible_contract_test.dart: compact blank workspace remains usable without overflow                    
+00:10 +7: loading /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart                                                                        
+00:11 +7: loading /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart                                                                        
+00:11 +7: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in dc           
+00:12 +7: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in dc           
+00:12 +8: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in dc           
+00:12 +8: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in dc                          
+00:13 +8: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in dc                          
+00:13 +9: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in dc                          
+00:13 +9: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in ac1          
+00:13 +10: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in ac1         
+00:13 +10: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in ac1                        
+00:13 +11: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in ac1                        
+00:13 +11: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in ac3         
+00:13 +12: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in ac3         
+00:13 +12: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in ac3                        
+00:13 +13: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in ac3                        
+00:13 +13: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in pv          
+00:13 +14: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: voltmeter is quick access and ammeter appears under Voir tous in pv          
+00:13 +14: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in pv                         
+00:14 +14: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in pv                         
+00:14 +15: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: instrument category exists without text search in pv                         
+00:14 +15: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: Voir tous places physical voltmeter on the actual board                      
+00:14 +16: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: Voir tous places physical voltmeter on the actual board                      
+00:14 +16: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: Voir tous places physical ammeter on the actual board                        
+00:15 +16: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: Voir tous places physical ammeter on the actual board                        
+00:15 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/sim_r1_instrument_palette_discoverability_test.dart: Voir tous places physical ammeter on the actual board                        
+00:15 +17: loading /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart                                                                                                        
+00:15 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: home exposes exactly the three validated first-level entries                                                  
+00:16 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: home exposes exactly the three validated first-level entries                                                  
+00:16 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: home exposes exactly the three validated first-level entries                                                  
+00:16 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: medium home keeps first two actions on the same row                                                           
+00:16 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: medium home keeps first two actions on the same row                                                           
+00:16 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: active session opens persistent dashboard before simulator                                                    
+00:17 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: active session opens persistent dashboard before simulator                                                    
+00:17 +20: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: active session opens persistent dashboard before simulator                                                    
+00:17 +20: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: dashboard groups wiring troubleshooting and supervision                                                       
+00:17 +21: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: dashboard groups wiring troubleshooting and supervision                                                       
+00:17 +21: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: maintenance requires explicit troubleshooting choice before simulator                                         
+00:17 +22: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: maintenance requires explicit troubleshooting choice before simulator                                         
+00:17 +22: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: workspace keeps validated F8 Canvas interactions mounted                                                      
+00:18 +22: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: workspace keeps validated F8 Canvas interactions mounted                                                      
+00:18 +23: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: workspace keeps validated F8 Canvas interactions mounted                                                      
+00:18 +23: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: compact workspace has no permanent side panels                                                                
+00:18 +24: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: compact workspace has no permanent side panels                                                                
+00:18 +24: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette search and one-way show-all remain deterministic                                                      
+00:18 +25: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette search and one-way show-all remain deterministic                                                      
+00:18 +25: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette quick add creates a real CircuitState element and selects it                                          
+00:19 +25: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette quick add creates a real CircuitState element and selects it                                          
+00:19 +26: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette quick add creates a real CircuitState element and selects it                                          
+00:19 +26: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette allocation never collides with an existing element id                                                 
+00:19 +27: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: palette allocation never collides with an existing element id                                                 
+00:19 +27: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: drag from palette drops a component on the canvas                                                             
+00:20 +27: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: drag from palette drops a component on the canvas                                                             
+00:20 +28: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: drag from palette drops a component on the canvas                                                             
+00:20 +28: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: switch actuates only from a double-click on its physical rocker                                               
+00:20 +29: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: switch actuates only from a double-click on its physical rocker                                               
+00:20 +29: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: push button double-click produces a momentary press and release                                               
+00:20 +30: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: push button double-click produces a momentary press and release                                               
+00:20 +30: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breaker handle double-click opens and recloses the breaker                                                    
+00:21 +30: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breaker handle double-click opens and recloses the breaker                                                    
+00:21 +31: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breaker handle double-click opens and recloses the breaker                                                    
+00:21 +31: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected wire is deletable from the topbar without deleting components                                        
+00:21 +32: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected wire is deletable from the topbar without deleting components                                        
+00:21 +32: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected wire is described in Properties and Delete key removes it                                            
+00:21 +33: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected wire is described in Properties and Delete key removes it                                            
+00:21 +33: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: diagnostic sheet exists only for student troubleshooting                                                      
+00:22 +33: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: diagnostic sheet exists only for student troubleshooting                                                      
+00:22 +34: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: diagnostic sheet exists only for student troubleshooting                                                      
+00:22 +34: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: keyboard selector provides an alternative to pointer-only selection                                           
+00:22 +35: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: keyboard selector provides an alternative to pointer-only selection                                           
+00:22 +35: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: escape shortcut resets canvas interaction without mutating circuit revision                                   
+00:22 +36: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: escape shortcut resets canvas interaction without mutating circuit revision                                   
+00:22 +36: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breakpoint transition does not mutate CircuitState                                                            
+00:23 +36: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breakpoint transition does not mutate CircuitState                                                            
+00:23 +37: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: breakpoint transition does not mutate CircuitState                                                            
+00:23 +37: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected component can be replaced without losing its identity                                                
+00:23 +38: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: selected component can be replaced without losing its identity                                                
+00:23 +38: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: compact layout tolerates increased text scale without overflow                                                
+00:23 +39: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: compact layout tolerates increased text scale without overflow                                                
+00:23 +39: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: F9 component moves immediately with pointer drag and canvas is clipped                                        
+00:23 +40: /workspace/electrosim-g5-integration/apps/electrosim/test/f9_shell_test.dart: F9 component moves immediately with pointer drag and canvas is clipped                                        
+00:23 +40: loading /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart                                                                                
+00:24 +40: loading /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart                                                                                
+00:24 +40: /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart: insertion and pointer-up never invoke global routing synchronously                    
+00:24 +41: /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart: insertion and pointer-up never invoke global routing synchronously                    
+00:24 +41: /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart: worker reroutes moved terminal endpoints without changing the circuit                 
+00:24 +42: /workspace/electrosim-g5-integration/apps/electrosim/test/audit_canvas_routing_performance_test.dart: worker reroutes moved terminal endpoints without changing the circuit                 
+00:24 +42: All tests passed!                                                                                                                                                                           

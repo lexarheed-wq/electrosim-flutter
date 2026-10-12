@@ -1,0 +1,32 @@
+{
+  "key": "power_socket_dc",
+  "images": {
+    "front.png": {
+      "sha256": "e48ccca7569029203a4c2af1cbc5e5667b43e9351f47e5fcbe751224ae95deb2",
+      "size": [
+        480,
+        480
+      ]
+    },
+    "palette.png": {
+      "sha256": "85ee4cf2cdcf72ffafc01c2c6b22a03fc33639b10b3dbcf3a0e8cb8ef61e1345",
+      "size": [
+        480,
+        480
+      ]
+    },
+    "service.png": {
+      "sha256": "5f87e455ee42ce21271107ffd585b89263eec7b9e5249c488de7fcb671a80a8b",
+      "size": [
+        480,
+        480
+      ]
+    }
+  },
+  "samples": 32,
+  "blender": "4.5.3 LTS",
+  "seconds": 36.31,
+  "contract_sha256": "44dabe64e1c24b13a1e4a951175c7875831367e249569630161d4c0dfac60cea",
+  "geometry_sha256": "4a88d5a8c238cee1f771e71338b110b959bb37ee10caa1c6a0c31e641d63ec88",
+  "actual_flutter_capture": false
+}

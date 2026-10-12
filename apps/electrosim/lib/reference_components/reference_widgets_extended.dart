@@ -273,7 +273,8 @@ class _ExtendedReferencePainter extends CustomPainter {
         ..strokeWidth = 3.2
         ..strokeCap = StrokeCap.square,
     );
-    _screw(canvas, center, radius: 7);
+    // A bare electronic lead has no screw terminal. Interaction targets
+    // are supplied by the workspace overlay, independently of this artwork.
   }
 
   @override

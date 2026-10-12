@@ -276,9 +276,41 @@ abstract final class CoreComponentPhysicsContracts {
               ComponentDynamicBehavior.protectiveTrip,
             },
           ),
+          'energy_meter_ac1': const ComponentPhysicsContract(
+            modelType: 'energy_meter_ac1',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'energy_meter_ac3': const ComponentPhysicsContract(
+            modelType: 'energy_meter_ac3',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'power_socket_ac': const ComponentPhysicsContract(
+            modelType: 'power_socket_ac',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'power_socket_dc': const ComponentPhysicsContract(
+            modelType: 'power_socket_dc',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'earthed_resistor': const ComponentPhysicsContract(
+            modelType: 'earthed_resistor',
+            electricalLaw: ComponentElectricalLaw.resistive,
+          ),
+          'earthed_impedance': const ComponentPhysicsContract(
+            modelType: 'earthed_impedance',
+            electricalLaw: ComponentElectricalLaw.acImpedance,
+          ),
           'terminal_block_5': const ComponentPhysicsContract(
             modelType: 'terminal_block_5',
             electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'earthed_machine_3p_7t': const ComponentPhysicsContract(
+            modelType: 'earthed_machine_3p_7t',
+            electricalLaw: ComponentElectricalLaw.motorThreePhase,
+            dynamicBehaviors: <ComponentDynamicBehavior>{
+              ComponentDynamicBehavior.thermalStress,
+              ComponentDynamicBehavior.rotational,
+            },
           ),
           'motor_3p_6t': const ComponentPhysicsContract(
             modelType: 'motor_3p_6t',

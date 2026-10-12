@@ -1,0 +1,54 @@
+{
+  "source": "actual Flutter F18WorkspacePage widget captures",
+  "test": "apps/electrosim/tool/capture_g5_crusher_test.dart",
+  "is_ai_generated": false,
+  "images": {
+    "motor-delta.png": {
+      "size": [
+        2400,
+        1500
+      ],
+      "sha256": "7251ff6509293fa3b319319c9bb16b6161832d0349dcc08d5cf18bb6a4ccd8a0"
+    },
+    "maintenance.png": {
+      "size": [
+        2400,
+        1500
+      ],
+      "sha256": "9c3d32f872349d307bc06c49b7816dffec91279683addbedf740e4e4384b9b86"
+    },
+    "motor-star.png": {
+      "size": [
+        2400,
+        1500
+      ],
+      "sha256": "b12a527e5cc72d91a8d025fecb5ed136bc3c00d26eabe39fadf7221113772a78"
+    },
+    "closed.png": {
+      "size": [
+        2400,
+        1500
+      ],
+      "sha256": "129b08b9bc7d8095f8bd0157e8d7509289e61ce19c970f5304f8b77030b638ec"
+    }
+  },
+  "asset_sha256": {
+    "external-crusher-service.png": "b35fe5b0604102f41c982fad89980da912a740f46818bd74f1842728e5c1a34a",
+    "external-crusher-front.png": "b40ccbe0d91d365db20f52435a7b13753f23ba3aab2b4e84b5bbcc78f9b7c886",
+    "external-crusher-palette.png": "9172388b0e9b0257e63de64fa20c721809f10454c5112f57fbb93ee6c7b6e74d"
+  },
+  "service_mesh_provenance": {
+    "key": "external-crusher",
+    "blender_version": "4.5.3 LTS",
+    "samples": 32,
+    "denoised": true,
+    "service_open": true,
+    "sha256_recipe": "1b8213251e0817689d6d9ea185842125d8d1e00bbc9af53f4a0b91e959cc9803",
+    "sha256_render_runner": "ee00bba4255594afa673d1fffaec4ef3a45df3e169d396b1f0f2fff730909bf2",
+    "seconds": 134.85,
+    "is_product_capture": false,
+    "integrated_in_flutter": false,
+    "qualification": "draft_preview_only"
+  },
+  "qualification": "local integration checked; user visual validation pending; no release qualification"
+}

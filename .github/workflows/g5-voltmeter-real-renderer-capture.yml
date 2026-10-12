@@ -1,0 +1,41 @@
+name: G5 voltmeter real Flutter renderer capture
+on:
+  push:
+    branches:
+      - feat/g5-voltmeter-flutter-integration-20261011
+    paths:
+      - 'apps/electrosim/tool/capture_g5_voltmeter_canvas_test.dart'
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - '.github/workflows/g5-voltmeter-real-renderer-capture.yml'
+  pull_request:
+    paths:
+      - 'apps/electrosim/tool/capture_g5_voltmeter_canvas_test.dart'
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - '.github/workflows/g5-voltmeter-real-renderer-capture.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve Flutter dependencies
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Render actual solved electrical canvas
+        working-directory: apps/electrosim
+        run: flutter test tool/capture_g5_voltmeter_canvas_test.dart -r expanded --timeout 120s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: G5-voltmeter-Flutter-canvas-connected-24v
+          path: apps/electrosim/build/g5-voltmeter-real-flutter-proof/
+          retention-days: 14
+          if-no-files-found: warn

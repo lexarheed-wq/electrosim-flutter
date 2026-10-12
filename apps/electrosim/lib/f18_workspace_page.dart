@@ -1,3 +1,5 @@
+import 'runtime/energy_meter_runtime.dart';
+import 'f18_native_appliance_assets.dart';
 // Shared electrical workspace for desktop and browser frontends.
 // The student browser must import this module, never the Mac application entrypoint.
 import 'dart:async';
@@ -18,6 +20,14 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
+import 'f18_voltmeter_3d_assets.dart';
+import 'f18_ammeter_3d_assets.dart';
+import 'f18_ammeter_controls.dart';
+import 'f18_frequency_3d_assets.dart';
+import 'f18_phase_sequence_3d_assets.dart';
+import 'f18_crusher_3d_assets.dart';
+import 'f18_frequency_controls.dart';
+import 'f18_voltmeter_controls.dart';
 import 'f18_physical_layout_migration.dart';
 import 'f18_selection_state.dart';
 import 'f18_workspace_wire_safety.dart';
@@ -39,6 +49,7 @@ import 'f9_canvas_interaction.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
 import 'runtime/electrosim_instrument_projection.dart';
+import 'runtime/f18_ammeter_fuse_safety.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
@@ -737,6 +748,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   late CircuitState _circuit;
   late CircuitVisualLayout _layout;
   bool _soundEnabled = true;
+  bool _showAllTerminals = false;
   final ElectroSimConnectionRouter _connectionRouter =
       ElectroSimConnectionRouter();
   final ViewportController _viewport = ViewportController(
@@ -878,9 +890,67 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   bool get _studentTpReadOnly =>
       widget.role == F9UserRole.student && _tpController.readOnly;
 
+  Set<String> get _voltmeter3dIds => F18Voltmeter3dAssets.ready
+      ? _circuit.instruments
+            .where(F18Voltmeter3dAssets.uses3d)
+            .map((InstrumentInstance instrument) => instrument.id.value)
+            .toSet()
+      : const <String>{};
+
+  Set<String> get _ammeter3dIds => F18Ammeter3dAssets.ready
+      ? _circuit.instruments
+            .where(F18Ammeter3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
+      : const <String>{};
+
+  Set<String> get _frequency3dIds => F18Frequency3dAssets.ready
+      ? _circuit.instruments
+            .where(F18Frequency3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
+      : const <String>{};
+
+  Set<String> get _phaseSequence3dIds => F18PhaseSequence3dAssets.ready
+      ? _circuit.instruments
+            .where(F18PhaseSequence3dAssets.uses3d)
+            .map((i) => i.id.value)
+            .toSet()
+      : const <String>{};
+
   @override
   void initState() {
     super.initState();
+    unawaited(
+      F18NativeApplianceAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18Crusher3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18PhaseSequence3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18Frequency3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18Ammeter3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
+    unawaited(
+      F18Voltmeter3dAssets.preload().then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     _circuit = widget.initialCircuit ?? _buildBlankCircuit();
     _workspace = widget.initialWorkspace;
     _selected = widget.initialSelectedElementId;
@@ -899,7 +969,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Câblage'
           : 'Recherche de dérangement';
     }
+    if (tp == null) {
+      _circuit = AppliancePowerConnection.addProtectiveEarth(_circuit);
+    }
     _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
+    _layout = migrateCrusherPhysicalLayout(
+      _circuit,
+      _layout,
+      router: _g2aWireLayoutEngine,
+    );
+    _layout = migrateNativeApplianceLayout(
+      _circuit,
+      _layout,
+      router: _g2aWireLayoutEngine,
+    );
     if (widget.initialCabinetLayout != null) {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
@@ -1146,6 +1229,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       electricalMode: _circuit.mode,
                       onSelectElectricalMode: _requestElectricalModeChange,
                       soundEnabled: _soundEnabled,
+                      showAllTerminals: _showAllTerminals,
+                      onToggleTerminals: () => setState(
+                        () => _showAllTerminals = !_showAllTerminals,
+                      ),
                       onToggleSound: () =>
                           setState(() => _soundEnabled = !_soundEnabled),
                       simulationRunning: _simulation.running,
@@ -1179,6 +1266,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       builder: (BuildContext context, Widget? child) =>
                           F9ContextPanels(
                             circuit: _circuit,
+                            onPowerConnectionChanged: _studentTpReadOnly
+                                ? null
+                                : _configureSelectedPower,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -1240,160 +1330,200 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                       width: 2,
                                     ),
                             ),
-                            child: Listener(
-                              behavior: HitTestBehavior.opaque,
-                              onPointerDown: _onCanvasPointerDown,
-                              onPointerMove: _onCanvasPointerMove,
-                              onPointerUp: _onCanvasPointerUp,
-                              onPointerCancel: _onCanvasPointerCancel,
-                              onPointerHover: _onCanvasPointerHover,
-                              onPointerSignal: _onCanvasPointerSignal,
-                              onPointerPanZoomStart:
-                                  _onCanvasPointerPanZoomStart,
-                              onPointerPanZoomUpdate:
-                                  _onCanvasPointerPanZoomUpdate,
-                              onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
-                              child: ValueListenableBuilder<CircuitVisualLayout?>(
-                                valueListenable: _dragPreviewLayout,
-                                builder:
-                                    (
-                                      BuildContext context,
-                                      CircuitVisualLayout? dragLayout,
-                                      Widget? child,
-                                    ) {
-                                      final CircuitVisualLayout canvasLayout =
-                                          _displayLayout(dragLayout ?? _layout);
-                                      return Stack(
-                                        clipBehavior: Clip.hardEdge,
-                                        fit: StackFit.expand,
-                                        children: <Widget>[
-                                          SimulatorCanvas(
-                                            key: ValueKey<int>(
-                                              _canvasInteractionEpoch,
-                                            ),
-                                            circuit: _circuit,
-                                            layout: canvasLayout,
-                                            viewportController: _viewport,
-                                            selectedElementId: _selected,
-                                            onSelectionChanged: (String? id) {
-                                              setState(() {
-                                                _selected = id;
-                                                _status = id == null
-                                                    ? 'Sélection effacée'
-                                                    : 'Sélection : $id';
-                                              });
-                                            },
-                                            onElementMoved:
-                                                (String id, Offset position) {
-                                                  _commitElementMoveIfSafe(
-                                                    id,
-                                                    position,
-                                                  );
-                                                },
-                                            onConnectionRequested:
-                                                _handleConnectionRequested,
-                                            onContextAction: (CanvasHitResult hit) {
-                                              setState(() {
-                                                _status =
-                                                    'Action contextuelle : ${hit.kind.name}. '
-                                                    'Les mêmes actions sont disponibles dans Propriétés.';
-                                              });
-                                            },
-                                            enableInteraction: false,
-                                            paintElementChrome: false,
-                                            schematicPresentation:
-                                                _representation ==
-                                                WorkspaceRepresentation
-                                                    .schematic,
-                                            smartWireSemantics: true,
-                                            wirePreviewPlanner:
-                                                _g2aWirePreviewPlanner,
-                                          ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.plate)
-                                            AnimatedBuilder(
-                                              animation: _simulation,
-                                              builder:
-                                                  (
-                                                    BuildContext context,
-                                                    Widget? child,
-                                                  ) => F9CanvasVisualOverlay(
-                                                    circuit: _circuit,
-                                                    layout: canvasLayout,
-                                                    viewport: _viewport,
-                                                    selectedElementIds:
-                                                        _selectedIds,
-                                                    pendingTerminalId:
-                                                        _wiringPendingTerminal,
-                                                    hoverTerminalId:
-                                                        _wiringHoverTerminal,
-                                                    pointerWorldPositionListenable:
-                                                        _wiringPointerWorld,
-                                                    wirePreviewPlanner:
-                                                        _g2aWirePreviewPlanner,
-                                                    runtimeSnapshot:
-                                                        _simulation.snapshot,
-                                                    soundEnabled: _soundEnabled,
-                                                    simulationRunning:
-                                                        _simulation.running,
-                                                  ),
-                                            ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.schematic)
-                                            IndustrialSchematicOverlay(
+                            child: MouseRegion(
+                              onExit: (_) {
+                                if (_wiringHoverTerminal != null && mounted) {
+                                  setState(() => _wiringHoverTerminal = null);
+                                }
+                              },
+                              child: Listener(
+                                behavior: HitTestBehavior.opaque,
+                                onPointerDown: _onCanvasPointerDown,
+                                onPointerMove: _onCanvasPointerMove,
+                                onPointerUp: _onCanvasPointerUp,
+                                onPointerCancel: _onCanvasPointerCancel,
+                                onPointerHover: _onCanvasPointerHover,
+                                onPointerSignal: _onCanvasPointerSignal,
+                                onPointerPanZoomStart:
+                                    _onCanvasPointerPanZoomStart,
+                                onPointerPanZoomUpdate:
+                                    _onCanvasPointerPanZoomUpdate,
+                                onPointerPanZoomEnd: _onCanvasPointerPanZoomEnd,
+                                child: ValueListenableBuilder<CircuitVisualLayout?>(
+                                  valueListenable: _dragPreviewLayout,
+                                  builder:
+                                      (
+                                        BuildContext context,
+                                        CircuitVisualLayout? dragLayout,
+                                        Widget? child,
+                                      ) {
+                                        final CircuitVisualLayout canvasLayout =
+                                            _displayLayout(
+                                              dragLayout ?? _layout,
+                                            );
+                                        return Stack(
+                                          clipBehavior: Clip.hardEdge,
+                                          fit: StackFit.expand,
+                                          children: <Widget>[
+                                            SimulatorCanvas(
+                                              key: ValueKey<int>(
+                                                _canvasInteractionEpoch,
+                                              ),
                                               circuit: _circuit,
                                               layout: canvasLayout,
-                                              viewport: _viewport,
-                                              selectedIds: _selectedIds,
-                                              pointer: _wiringPointerWorld,
-                                              pendingTerminal:
-                                                  _wiringPendingTerminal,
-                                              hoverTerminal:
-                                                  _wiringHoverTerminal,
-                                            ),
-                                          if (_representation ==
-                                              WorkspaceRepresentation.plate)
-                                            IgnorePointer(
-                                              child: CustomPaint(
-                                                painter: _CabinetSelectionPainter(
-                                                  fixture: canvasLayout
-                                                      .cabinetLayout
-                                                      .fixture(
-                                                        _selectedCabinetFixtureId ??
-                                                            '',
-                                                      ),
-                                                  viewport: _viewport,
-                                                ),
-                                                size: Size.infinite,
-                                              ),
-                                            ),
-                                          if (_representation ==
+                                              viewportController: _viewport,
+                                              selectedElementId: _selected,
+                                              onSelectionChanged: (String? id) {
+                                                setState(() {
+                                                  _selected = id;
+                                                  _status = id == null
+                                                      ? 'Sélection effacée'
+                                                      : 'Sélection : $id';
+                                                });
+                                              },
+                                              onElementMoved:
+                                                  (String id, Offset position) {
+                                                    _commitElementMoveIfSafe(
+                                                      id,
+                                                      position,
+                                                    );
+                                                  },
+                                              onConnectionRequested:
+                                                  _handleConnectionRequested,
+                                              onContextAction: (CanvasHitResult hit) {
+                                                setState(() {
+                                                  _status =
+                                                      'Action contextuelle : ${hit.kind.name}. '
+                                                      'Les mêmes actions sont disponibles dans Propriétés.';
+                                                });
+                                              },
+                                              enableInteraction: false,
+                                              paintElementChrome: false,
+                                              schematicPresentation:
+                                                  _representation ==
                                                   WorkspaceRepresentation
-                                                      .plate &&
-                                              _circuit.instruments.isNotEmpty)
-                                            AnimatedBuilder(
-                                              animation: _simulation,
-                                              builder:
-                                                  (
-                                                    BuildContext context,
-                                                    Widget? child,
-                                                  ) => IgnorePointer(
-                                                    child: CustomPaint(
-                                                      painter:
-                                                          F18PhysicalInstrumentReadouts(
-                                                            layout:
-                                                                canvasLayout,
-                                                            viewport: _viewport,
-                                                            readouts:
-                                                                _physicalMeterReadouts(),
-                                                          ),
-                                                      size: Size.infinite,
-                                                    ),
-                                                  ),
+                                                      .schematic,
+                                              smartWireSemantics: true,
+                                              wirePreviewPlanner:
+                                                  _g2aWirePreviewPlanner,
+                                              customInstrumentCaseIds: <String>{
+                                                ..._voltmeter3dIds,
+                                                ..._ammeter3dIds,
+                                                ..._frequency3dIds,
+                                                ..._phaseSequence3dIds,
+                                              },
                                             ),
-                                        ],
-                                      );
-                                    },
+                                            if (_representation ==
+                                                WorkspaceRepresentation.plate)
+                                              AnimatedBuilder(
+                                                animation: _simulation,
+                                                builder:
+                                                    (
+                                                      BuildContext context,
+                                                      Widget? child,
+                                                    ) => F9CanvasVisualOverlay(
+                                                      showAllTerminals:
+                                                          _showAllTerminals,
+                                                      circuit: _circuit,
+                                                      layout: canvasLayout,
+                                                      viewport: _viewport,
+                                                      selectedElementIds:
+                                                          _selectedIds,
+                                                      pendingTerminalId:
+                                                          _wiringPendingTerminal,
+                                                      hoverTerminalId:
+                                                          _wiringHoverTerminal,
+                                                      pointerWorldPositionListenable:
+                                                          _wiringPointerWorld,
+                                                      wirePreviewPlanner:
+                                                          _g2aWirePreviewPlanner,
+                                                      runtimeSnapshot:
+                                                          _simulation.snapshot,
+                                                      soundEnabled:
+                                                          _soundEnabled,
+                                                      simulationRunning:
+                                                          _simulation.running,
+                                                    ),
+                                              ),
+                                            if (_representation ==
+                                                WorkspaceRepresentation
+                                                    .schematic)
+                                              IndustrialSchematicOverlay(
+                                                circuit: _circuit,
+                                                layout: canvasLayout,
+                                                viewport: _viewport,
+                                                selectedIds: _selectedIds,
+                                                pointer: _wiringPointerWorld,
+                                                pendingTerminal:
+                                                    _wiringPendingTerminal,
+                                                hoverTerminal:
+                                                    _wiringHoverTerminal,
+                                              ),
+                                            if (_representation ==
+                                                WorkspaceRepresentation.plate)
+                                              IgnorePointer(
+                                                child: CustomPaint(
+                                                  painter: _CabinetSelectionPainter(
+                                                    fixture: canvasLayout
+                                                        .cabinetLayout
+                                                        .fixture(
+                                                          _selectedCabinetFixtureId ??
+                                                              '',
+                                                        ),
+                                                    viewport: _viewport,
+                                                  ),
+                                                  size: Size.infinite,
+                                                ),
+                                              ),
+                                            if (_representation ==
+                                                    WorkspaceRepresentation
+                                                        .plate &&
+                                                _circuit.instruments.isNotEmpty)
+                                              AnimatedBuilder(
+                                                animation: _simulation,
+                                                builder:
+                                                    (
+                                                      BuildContext context,
+                                                      Widget? child,
+                                                    ) => IgnorePointer(
+                                                      child: CustomPaint(
+                                                        painter: F18PhysicalInstrumentReadouts(
+                                                          layout: canvasLayout,
+                                                          viewport: _viewport,
+                                                          readouts:
+                                                              _physicalMeterReadouts(),
+                                                          circuit: _circuit,
+                                                          voltmeter3dIds:
+                                                              _voltmeter3dIds,
+                                                          voltmeterFront:
+                                                              F18Voltmeter3dAssets
+                                                                  .front,
+                                                          ammeter3dIds:
+                                                              _ammeter3dIds,
+                                                          ammeterFront:
+                                                              F18Ammeter3dAssets
+                                                                  .front,
+                                                          frequency3dIds:
+                                                              _frequency3dIds,
+                                                          frequencyFront:
+                                                              F18Frequency3dAssets
+                                                                  .front,
+                                                          phaseSequence3dIds:
+                                                              _phaseSequence3dIds,
+                                                          phaseSequenceFront:
+                                                              F18PhaseSequence3dAssets
+                                                                  .front,
+                                                          selectedElementId:
+                                                              _selected,
+                                                        ),
+                                                        size: Size.infinite,
+                                                      ),
+                                                    ),
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                ),
                               ),
                             ),
                           ),
@@ -1465,7 +1595,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _saveInProgress = true;
     try {
       final saved = await persistence.saveWorkspace(
-        circuit: _circuit,
+        circuit: EnergyMeterRuntime.persist(
+          _circuit,
+          _simulation.snapshot.energyMeters,
+        ),
         workspace: _workspace,
         visualLayout: _layout,
         tpController: _tpController,
@@ -1496,7 +1629,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         return;
       }
       setState(() {
-        _circuit = restored.circuit;
+        _circuit = AppliancePowerConnection.addProtectiveEarth(
+          restored.circuit,
+        );
         _workspace = restored.workspace;
         _selected = null;
         final savedLayout = restored.visualLayout;
@@ -1510,6 +1645,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             : _routeWithG2A(_circuit, migrated);
         _status =
             'Session reprise : révision ${_circuit.revision} — ${restored.saveId}';
+        _layout = migrateCrusherPhysicalLayout(
+          _circuit,
+          _layout,
+          router: _g2aWireLayoutEngine,
+        );
+        _layout = migrateNativeApplianceLayout(
+          _circuit,
+          _layout,
+          router: _g2aWireLayoutEngine,
+        );
       });
       _simulation.updateCircuit(_circuit);
     } catch (error) {
@@ -1801,6 +1946,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         : F18ReferenceComponentVisuals.supports(definition.renderedModelType)
         ? F18ReferenceComponentMetrics.boardSizeFor(
             definition.renderedModelType,
+            variantKey: definition.visualVariant,
           )
         : _layout.defaultElementSize;
     Offset? position = F9AutoPlacement.findPosition(
@@ -1944,6 +2090,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           };
         }
       }
+      if (const {
+        'catalog_appliance_2t',
+        'catalog_heater',
+        'catalog_motor_driven_2t',
+      }.contains(definition.visualModelType)) {
+        parameters = {
+          ...parameters,
+          'powerConnectionMode':
+              (definition.visualVariant == 'refrigerator-dc' ||
+                  definition.modelType == 'motor_dc')
+              ? 'dc'
+              : const {
+                  'computer',
+                  'television',
+                  'iron',
+                  'freezer',
+                  'refrigerator',
+                }.contains(definition.visualVariant)
+              ? 'plug'
+              : 'fixed',
+        };
+      }
       components.add(
         ComponentInstance(
           id: ComponentId(elementId),
@@ -1955,7 +2123,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       );
     }
 
-    final CircuitState nextCircuit = _continueIndustrialMarking(
+    var nextCircuit = _continueIndustrialMarking(
       CircuitState(
         circuitId: _circuit.circuitId,
         revision: _circuit.revision + 1,
@@ -1970,6 +2138,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       ),
     );
 
+    if (_tpController.session == null) {
+      nextCircuit = AppliancePowerConnection.addProtectiveEarth(nextCircuit);
+    }
     final CircuitVisualLayout moved = _layout.moveElement(
       elementId,
       worldPosition,
@@ -1978,6 +2149,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (F18ReferenceComponentVisuals.supports(definition.renderedModelType)) {
       sizes[elementId] = F18ReferenceComponentMetrics.boardSizeFor(
         definition.renderedModelType,
+        variantKey: definition.visualVariant,
       );
     }
     var proposed = CircuitVisualLayout(
@@ -2018,6 +2190,34 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
   }
 
+  final Set<InstrumentId> _pendingAmmeterFuseTrips = <InstrumentId>{};
+
+  /// Never mutate a circuit from inside a CustomPainter/build. A solver-
+  /// verified overcurrent queues one post-frame transition, which stays
+  /// latched in InstrumentInstance until a fuse is explicitly replaced.
+  void _scheduleAmmeterFuseTrip(InstrumentId id) {
+    if (!_pendingAmmeterFuseTrips.add(id)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pendingAmmeterFuseTrips.remove(id);
+      if (!mounted) return;
+      final CircuitState before = _circuit;
+      final CircuitState after = F18AmmeterFuseSafety.latch(
+        circuit: before,
+        instrumentId: id,
+      );
+      if (identical(before, after)) return;
+      setState(() {
+        _circuit = after;
+        _meterReadoutCacheCircuit = null;
+        _status =
+            'Ampèremètre : fusible déclenché. '
+            'Circuit de mesure ouvert. Remplacement requis.';
+      });
+      _simulation.updateCircuit(after);
+      _syncStudentTpCircuit();
+    });
+  }
+
   Map<String, String> _physicalMeterReadouts() {
     if (_circuit.instruments.isEmpty) return const <String, String>{};
     final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
@@ -2039,22 +2239,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         snapshot: snapshot,
         instrument: item,
       );
+      if (F18AmmeterFuseSafety.shouldTrip(
+        circuit: _circuit,
+        instrument: item,
+        solverDetectedOvercurrent:
+            reading.status == PhysicalInstrumentStatus.blownFuse ||
+            (projection.dcSeriesCurrent(snapshot, item)?.abs() ?? 0) >
+                item.fuseRatingA,
+      )) {
+        _scheduleAmmeterFuseTrip(item.id);
+      }
       final double? value = reading.result?.reading?.value;
       final String? textValue = reading.result?.displayText;
-      if (reading.status == PhysicalInstrumentStatus.valid &&
-          textValue != null) {
-        results[item.id.value] = textValue;
-      } else if (reading.status == PhysicalInstrumentStatus.valid &&
-          value != null) {
+      final bool valid = reading.status == PhysicalInstrumentStatus.valid;
+      final String raw;
+      if (valid && textValue != null) {
+        raw = textValue;
+      } else if (valid && value != null) {
         final String unit = switch (item.mode) {
           InstrumentMode.currentDc || InstrumentMode.currentAcRms => 'A',
           InstrumentMode.frequency => 'Hz',
           InstrumentMode.resistance => 'Ω',
           _ => 'V',
         };
-        results[item.id.value] = '${value.toStringAsFixed(2)} $unit';
+        raw = '${value.toStringAsFixed(2)} $unit';
       } else {
-        results[item.id.value] = switch (reading.status) {
+        raw = switch (reading.status) {
           PhysicalInstrumentStatus.off => 'OFF',
           PhysicalInstrumentStatus.blownFuse => 'FUSE',
           PhysicalInstrumentStatus.overRange => 'OL',
@@ -2063,6 +2273,18 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           _ => '—',
         };
       }
+      results[item.id.value] = item.kind == InstrumentKind.ammeter
+          ? F18AmmeterControls.display(item, raw, value, valid)
+          : item.kind == InstrumentKind.voltmeter
+          ? F18VoltmeterControls.display(
+              meter: item,
+              computedText: raw,
+              computedValue: value,
+              validReading: valid,
+            )
+          : item.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.display(item, raw, valid)
+          : raw;
     }
     _meterReadoutCacheCircuit = _circuit;
     _meterReadoutCacheSnapshot = snapshot;
@@ -2633,6 +2855,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _clearDirectPointerState();
       return;
     }
+    // The generic hit tester may classify an instrument as background.
+    // Dispatch its physical controls BEFORE background deselection.
+    if (!_directPointerMoved &&
+        _wiringPendingTerminal == null &&
+        !_selectionModifierAtPointerDown &&
+        _handleVoltmeterControlTap(event.localPosition)) {
+      _resetDirectControlTapTracking();
+      _clearDirectPointerState();
+      return;
+    }
     final String? movedId = _directDragElementId;
     final bool moved = _directPointerMoved && movedId != null;
     if (moved) {
@@ -2653,6 +2885,187 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _handleDirectControlTap(event.localPosition);
     }
     _clearDirectPointerState();
+  }
+
+  /// Independent physical control hit testing. Image and probe sockets
+  /// never alter circuit.connections, only the selected InstrumentInstance.
+  bool _handleVoltmeterControlTap(Offset screenPosition) {
+    if ((!F18Voltmeter3dAssets.ready &&
+            !F18Ammeter3dAssets.ready &&
+            !F18Frequency3dAssets.ready) ||
+        _representation != WorkspaceRepresentation.plate) {
+      return false;
+    }
+    final Offset world = _viewport.screenToWorld(screenPosition);
+    for (final InstrumentInstance meter in _circuit.instruments) {
+      if (meter.kind == InstrumentKind.voltmeter) {
+        if (!F18Voltmeter3dAssets.ready) continue;
+      } else if (meter.kind == InstrumentKind.ammeter) {
+        if (!F18Ammeter3dAssets.ready) continue;
+      } else if (meter.kind == InstrumentKind.frequencyMeter) {
+        if (!F18Frequency3dAssets.ready) continue;
+      } else {
+        continue;
+      }
+      final Offset? center = _layout.positionOf(meter.id.value);
+      if (center == null) continue;
+      final Size size = _layout.sizeOf(meter.id.value);
+      final Offset delta = world - center;
+      final int turns = _layout.quarterTurnsOf(meter.id.value) % 4;
+      final Offset unrotated = switch (turns) {
+        0 => delta,
+        1 => Offset(delta.dy, -delta.dx),
+        2 => Offset(-delta.dx, -delta.dy),
+        _ => Offset(-delta.dy, delta.dx),
+      };
+      final Offset local = Offset(
+        size.width / 2 + unrotated.dx,
+        size.height / 2 + unrotated.dy,
+      );
+      // The fuse hatch is not a mode button. A click on its actual
+      // 3D front rectangle opens a separate, guarded replacement dialog.
+      if (meter.kind == InstrumentKind.ammeter &&
+          meter.fuseBlown &&
+          size.width > 0 &&
+          size.height > 0) {
+        final double hx = local.dx * 112 / size.width;
+        final double hy = local.dy * 152 / size.height;
+        if (hx >= 39 && hx <= 67 && hy >= 109.75 && hy <= 118.25) {
+          if (_blockStudentTpMutation()) return true;
+          unawaited(_confirmAmmeterFuseReplacement(meter.id));
+          return true;
+        }
+      }
+      final F18VoltmeterAction? action = meter.kind == InstrumentKind.ammeter
+          ? F18AmmeterControls.actionAt(local, size)
+          : meter.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.actionAt(local, size)
+          : F18VoltmeterControls.actionAt(local, size);
+      if (action == null) continue;
+      if (_blockStudentTpMutation()) return true;
+      final PhysicalInstrumentReading reading =
+          const ElectroSimInstrumentProjection().read(
+            snapshot: _simulation.snapshot,
+            instrument: meter,
+          );
+      final double? value = reading.result?.reading?.value;
+      final String unit = switch (meter.mode) {
+        InstrumentMode.resistance => 'Ω',
+        InstrumentMode.currentDc || InstrumentMode.currentAcRms => 'A',
+        InstrumentMode.frequency => 'Hz',
+        _ => 'V',
+      };
+      final String? text =
+          reading.result?.displayText ??
+          (value == null ? null : '${value.toStringAsFixed(2)} $unit');
+      final bool valid = reading.status == PhysicalInstrumentStatus.valid;
+      final InstrumentInstance next = meter.kind == InstrumentKind.ammeter
+          ? F18AmmeterControls.apply(
+              meter,
+              action,
+              text: text,
+              value: value,
+              valid: valid,
+            )
+          : meter.kind == InstrumentKind.frequencyMeter
+          ? F18FrequencyControls.apply(
+              meter,
+              action,
+              text: text,
+              value: value,
+              valid: valid,
+            )
+          : F18VoltmeterControls.apply(
+              meter: meter,
+              action: action,
+              currentReading: text,
+              currentValue: value,
+              validReading: valid,
+            );
+      if (identical(next, meter)) {
+        _setStatus('Commande ${action.name} indisponible dans ce mode.');
+        return true;
+      }
+      final CircuitState candidate = CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        sources: _circuit.sources,
+        components: _circuit.components,
+        connections: _circuit.connections,
+        instruments: <InstrumentInstance>[
+          for (final InstrumentInstance item in _circuit.instruments)
+            if (item.id == meter.id) next else item,
+        ],
+        probes: _circuit.probes,
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      );
+      setState(() {
+        _circuit = candidate;
+        _selected = meter.id.value;
+        _status =
+            '${meter.kind == InstrumentKind.ammeter ? 'Ampèremètre' : 'Voltmètre'} : '
+            '${action.name.toUpperCase()} — '
+            '${next.poweredOn ? next.mode.name : 'OFF'}';
+        _meterReadoutCacheCircuit = null;
+      });
+      _simulation.updateCircuit(candidate);
+      _syncStudentTpCircuit();
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _confirmAmmeterFuseReplacement(InstrumentId id) async {
+    final InstrumentInstance? meter = _circuit.instruments
+        .where((item) => item.id == id)
+        .firstOrNull;
+    if (meter == null || !F18AmmeterFuseSafety.canReplace(_circuit, meter)) {
+      _setStatus(
+        'Remplacement du fusible refusé : éteindre '
+        'l’ampèremètre et retirer/isoler toutes les sources.',
+      );
+      return;
+    }
+    final bool? approved = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Remplacer le fusible de l’ampèremètre'),
+        content: Text(
+          'Instrument hors tension et sources retirées. '
+          'Remplacer le fusible ${meter.fuseRatingA} A ?',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remplacer le fusible'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || approved != true) return;
+    final CircuitState old = _circuit;
+    // Recheck AFTER dialog; the circuit may have changed while it was open.
+    final CircuitState next = F18AmmeterFuseSafety.replaceSafely(
+      circuit: old,
+      instrumentId: id,
+    );
+    if (identical(next, old)) {
+      _setStatus('Remplacement refusé : circuit modifié ou non isolé.');
+      return;
+    }
+    setState(() {
+      _circuit = next;
+      _meterReadoutCacheCircuit = null;
+      _status = 'Fusible remplacé. Ampèremètre encore hors tension.';
+    });
+    _simulation.updateCircuit(next);
+    _syncStudentTpCircuit();
   }
 
   void _onCanvasPointerCancel(PointerCancelEvent event) {
@@ -3040,9 +3453,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _updateWiringHover(Offset localPosition) {
-    if (_wiringPendingTerminal == null) return;
     final Offset worldPoint = _viewport.screenToWorld(localPosition);
-    _wiringPointerWorld.value = worldPoint;
+    if (_wiringPendingTerminal != null) {
+      _wiringPointerWorld.value = worldPoint;
+    }
     final CanvasHitResult hit = _hitTest.hitTestTerminalPrepared(
       worldPoint: worldPoint,
       session: _preparedHitTestSession(),
@@ -3058,6 +3472,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }
 
   void _handleConnectionRequested(TerminalId from, TerminalId to) {
+    if (_circuit.components.any(
+      (c) =>
+          AppliancePowerConnection.isExternal(c) &&
+          AppliancePowerConnection.mode(c) != 'fixed' &&
+          c.terminals.any((t) => t.id == from || t.id == to),
+    )) {
+      _setStatus(
+        'Raccorder la prise, puis brancher la fiche depuis les propriétés de l’appareil.',
+      );
+      return;
+    }
     if (_blockStudentTpMutation()) return;
     final F9WiringDecision decision = F9WiringPolicy.evaluateAndBuild(
       _circuit,
@@ -3080,7 +3505,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     );
     final bool backgroundRouting =
         nextCircuit.components.length + nextCircuit.sources.length >= 30;
-    final CircuitVisualLayout nextLayout = backgroundRouting
+    var nextLayout = backgroundRouting
         ? provisionalConnectionLayout(
             circuit: nextCircuit,
             layout: _layout,
@@ -3091,6 +3516,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             layout: _layout,
             connectionId: connection.id,
           );
+    if (!backgroundRouting) {
+      nextLayout = migrateNativeApplianceLayout(
+        nextCircuit,
+        nextLayout,
+        router: _g2aWireLayoutEngine,
+      );
+    }
     final bool routeRenderable = F18WorkspaceWireSafety.isRenderable(
       circuit: nextCircuit,
       layout: nextLayout,
@@ -3424,6 +3856,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (F18ReferenceComponentVisuals.supports(replacement.renderedModelType)) {
       sizes[selected] = F18ReferenceComponentMetrics.boardSizeFor(
         replacement.renderedModelType,
+        variantKey: replacement.visualVariant,
       );
     } else {
       sizes.remove(selected);
@@ -3494,6 +3927,50 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     });
     _simulation.updateCircuit(_circuit);
     _syncStudentTpCircuit();
+  }
+
+  void _configureSelectedPower(String mode, String? socketId) {
+    if (_blockStudentTpMutation() || _selected == null) return;
+    try {
+      final next = mode == 'fault-on' || mode == 'fault-off'
+          ? AppliancePowerConnection.setInsulationFault(
+              _circuit,
+              _selected!,
+              mode == 'fault-on',
+            )
+          : AppliancePowerConnection.configure(
+              _circuit,
+              _selected!,
+              mode,
+              socketId: socketId,
+            );
+      var nextLayout = _layout;
+      for (final wire in next.connections) {
+        if (!mode.startsWith('fault-') &&
+            wire.metadata[AppliancePowerConnection.cableTag] == _selected) {
+          nextLayout = _g2aWireLayoutEngine.routeConnection(
+            circuit: next,
+            layout: nextLayout,
+            connectionId: wire.id,
+          );
+        }
+      }
+      setState(() {
+        _circuit = next;
+        _layout = nextLayout;
+        _status = mode.startsWith('fault-')
+            ? (mode == 'fault-on'
+                  ? 'Défaut d’isolement activé.'
+                  : 'Défaut d’isolement supprimé.')
+            : socketId == null
+            ? 'Raccordement modifié — fiche débranchée si présente.'
+            : 'Fiche branchée dans $socketId';
+      });
+      _simulation.updateCircuit(next);
+      _syncStudentTpCircuit();
+    } on ArgumentError catch (error) {
+      _setStatus(error.message.toString());
+    }
   }
 
   void _rotateSelectedElement() {
@@ -3863,6 +4340,16 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
       ),
     ];
+    final variants = {
+      for (final source in circuit.sources)
+        source.id.value:
+            NativeApplianceGeometry.forSource(source)?.variant ??
+            source.parameters['_visualVariant'] as String?,
+      for (final c in circuit.components)
+        c.id.value:
+            NativeApplianceGeometry.forComponent(c)?.variant ??
+            c.parameters['_visualVariant'] as String?,
+    };
     double rowTop = 96;
     for (var start = 0; start < elements.length; start += 3) {
       final row = elements.skip(start).take(3).toList();
@@ -3872,7 +4359,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         final size = modelType == 'physical-instrument'
             ? const Size(112, 152)
             : F18ReferenceComponentVisuals.supports(modelType)
-            ? F18ReferenceComponentMetrics.boardSizeFor(modelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(
+                modelType,
+                variantKey: variants[id],
+              )
             : const Size(104, 64);
         if (modelType == 'physical-instrument' ||
             F18ReferenceComponentVisuals.supports(modelType)) {
@@ -4159,6 +4649,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     this.cabinetSnapEnabled = false,
     required this.electricalMode,
     required this.onSelectElectricalMode,
+    this.showAllTerminals = false,
+    this.onToggleTerminals,
     this.soundEnabled = true,
     this.onToggleSound,
     required this.simulationRunning,
@@ -4199,6 +4691,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final bool cabinetSnapEnabled;
   final ElectricalMode electricalMode;
   final ValueChanged<ElectricalMode> onSelectElectricalMode;
+  final bool showAllTerminals;
+  final VoidCallback? onToggleTerminals;
   final bool soundEnabled;
   final VoidCallback? onToggleSound;
   final bool simulationRunning;
@@ -4243,6 +4737,17 @@ class _WorkspaceTopBar extends StatelessWidget {
               child: Text(
                 view == WorkspaceRepresentation.plate ? 'Platine' : 'Schéma',
               ),
+            ),
+          if (representation == WorkspaceRepresentation.plate)
+            IconButton(
+              key: const Key('workspace-toggle-terminals'),
+              tooltip: showAllTerminals
+                  ? 'Masquer les bornes'
+                  : 'Afficher les bornes',
+              isSelected: showAllTerminals,
+              onPressed: onToggleTerminals,
+              icon: const Icon(Icons.adjust_outlined),
+              selectedIcon: const Icon(Icons.adjust, color: Color(0xFF2563EB)),
             ),
           _modeMenu(compact),
           if (!compact)

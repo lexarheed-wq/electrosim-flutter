@@ -53,7 +53,10 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
         .where((Ac3BranchResult item) => _belongsTo(component.id, item.id))
         .toList(growable: false);
     if (branches.isEmpty) return _missingBranch(component);
-    if (component.modelType == 'motor_3p_6t') {
+    if (const {
+      'motor_3p_6t',
+      'earthed_machine_3p_7t',
+    }.contains(component.modelType)) {
       final MotorThreePhaseCouplingAssessment coupling =
           MotorThreePhaseCouplingEvaluator.evaluate(circuit, component);
       if (!coupling.isValid) {
@@ -83,7 +86,11 @@ extension DeviceStateDomainExtensions on DeviceStateEngine {
       powers: branches.map((Ac3BranchResult item) => item.activePowerW),
       evidenceIds: branches.map((Ac3BranchResult item) => 'branch:${item.id}'),
     );
-    if (component.modelType != 'motor_3p_6t') return operating;
+    if (!const {
+      'motor_3p_6t',
+      'earthed_machine_3p_7t',
+    }.contains(component.modelType))
+      return operating;
 
     // Every winding has the same permissible voltage whether the external
     // links are star or delta. A 230Δ/400Y motor on a 400 V line must NOT

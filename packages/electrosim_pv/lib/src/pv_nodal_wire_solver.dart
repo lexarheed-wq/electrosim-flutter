@@ -14,8 +14,11 @@ final class PvNodalWireReading {
     required this.voltageDropV,
     required this.lossW,
     required this.evidence,
+    this.signedCurrentA,
   });
   final double currentA;
+  /// Signed RMS reference along the authored conductor, not instantaneous AC direction.
+  final double? signedCurrentA;
   final double voltageDropV;
   final double lossW;
   final String evidence;
@@ -473,11 +476,13 @@ final class _WireNetwork {
     final candidates = _edges.where((e) => e.wire == meterWire.id).toList();
     if (candidates.length != 1) return null;
     final edge = candidates.single;
-    final currentA = ((solution.voltage(edge.a) -
-            solution.voltage(edge.b)) / edge.resistanceOhm * scale).abs();
+    final signedCurrentA = (solution.voltage(edge.a) -
+            solution.voltage(edge.b)) / edge.resistanceOhm * scale;
+    final currentA = signedCurrentA.abs();
     if (!currentA.isFinite) return null;
     return PvNodalWireReading(
       currentA: currentA,
+      signedCurrentA: signedCurrentA,
       voltageDropV: currentA * burdenOhm,
       lossW: currentA * currentA * burdenOhm,
       evidence: '$evidence:wire:${meterWire.id.value}',

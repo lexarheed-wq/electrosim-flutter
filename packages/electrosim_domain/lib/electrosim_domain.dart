@@ -13,3 +13,6 @@ export 'src/motor_three_phase_coupling.dart';
 export 'src/source.dart';
 export 'src/terminal.dart';
 export 'src/instrument.dart';
+
+export 'src/series_meter_wiring.dart';
+export 'src/appliance_power_connection.dart';

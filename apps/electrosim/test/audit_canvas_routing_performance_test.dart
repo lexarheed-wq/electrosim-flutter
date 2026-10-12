@@ -23,15 +23,13 @@ void main() {
       expect(movePath, isNot(contains('_routeWithG2A(')));
       expect(movePath, contains('routeChangedElement('));
 
-      final int insertStart = source.indexOf(
-        'final CircuitState nextCircuit = _continueIndustrialMarking(',
-        source.indexOf('void _add'),
-      );
+      final int insertStart = source.indexOf('void _addPaletteDefinition(');
       expect(insertStart, greaterThan(0));
       final int insertEnd = source.indexOf(
-        'List<Terminal> _buildPaletteTerminals(',
+        'void _addPhysicalInstrument(',
         insertStart,
       );
+      expect(insertEnd, greaterThan(insertStart));
       final String insertPath = source.substring(insertStart, insertEnd);
       expect(insertPath, isNot(contains('_routeWithG2A(')));
       expect(insertPath, contains('_finishElementRoute('));

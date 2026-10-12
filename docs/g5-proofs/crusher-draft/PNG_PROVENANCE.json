@@ -1,0 +1,21 @@
+{
+  "key": "external-crusher",
+  "png_integrity_checked": true,
+  "flutter_qualification": false,
+  "images": {
+    "front.png": {
+      "size": [
+        1440,
+        1320
+      ],
+      "sha256": "b40ccbe0d91d365db20f52435a7b13753f23ba3aab2b4e84b5bbcc78f9b7c886"
+    },
+    "palette.png": {
+      "size": [
+        1440,
+        1320
+      ],
+      "sha256": "9172388b0e9b0257e63de64fa20c721809f10454c5112f57fbb93ee6c7b6e74d"
+    }
+  }
+}

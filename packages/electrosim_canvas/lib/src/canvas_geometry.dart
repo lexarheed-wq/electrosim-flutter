@@ -5,6 +5,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 
 import 'circuit_visual_layout.dart';
 import 'motor_terminal_geometry.dart';
+import 'native_appliance_geometry.dart';
 import 'premium_rcd2p_terminal_geometry.dart';
 
 /// Presentation-only terminal anchors for component drawings.
@@ -186,6 +187,33 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.17, h * 0.42),
         Offset(w * 0.17, h * 0.42),
       ],
+      'catalog_crusher_6t' || 'catalog_crusher_7t' => <Offset>[
+        for (final point in const [
+          Offset(97, 174),
+          Offset(107, 174),
+          Offset(117, 174),
+          Offset(107, 187),
+          Offset(117, 187),
+          Offset(97, 187),
+        ])
+          Offset(w * (point.dx / 240 - .5), h * (point.dy / 220 - .5)),
+        if (modelType == 'catalog_crusher_7t')
+          Offset(w * (130 / 240 - .5), h * (187 / 220 - .5)),
+      ],
+      'catalog_earthed_6t' => <Offset>[
+        Offset(w * -.20, h * -.42),
+        Offset(0, h * -.42),
+        Offset(w * .20, h * -.42),
+        Offset(w * -.20, h * .42),
+        Offset(0, h * .42),
+        Offset(w * .20, h * .42),
+        Offset(w * -.38, 0),
+      ],
+      'catalog_earthed_2t' => <Offset>[
+        Offset(w * -.17, h * .42),
+        Offset(w * .17, h * .42),
+        Offset(0, h * .42),
+      ],
       'catalog_motor_driven_6t' => <Offset>[
         Offset(w * -0.20, h * -0.42),
         Offset(0, h * -0.42),
@@ -211,6 +239,20 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.0925, h * 0.425),
         Offset(w * 0.0925, h * 0.425),
         Offset(w * 0.2775, h * 0.425),
+      ],
+      'power_socket_ac' => <Offset>[
+        Offset(w * -.24, h * -.4),
+        Offset(0, h * -.4),
+        Offset(w * .24, h * -.4),
+        Offset(w * -.18, h * .15),
+        Offset(w * .18, h * .15),
+        Offset(0, h * -.05),
+      ],
+      'power_socket_dc' => <Offset>[
+        Offset(w * -0.12, h * -0.4),
+        Offset(w * 0.12, h * -0.4),
+        Offset(w * -0.12, h * 0.25),
+        Offset(w * 0.12, h * 0.25),
       ],
       'terminal_block_5' => <Offset>[
         Offset(w * -0.328, h * -0.425),
@@ -372,7 +414,12 @@ final class CircuitGeometryIndex {
     final Map<TerminalId, String> terminalOwners = <TerminalId, String>{};
     final Set<String> seenElementIds = <String>{};
 
-    void indexElement(String id, String modelType, List<Terminal> terminals) {
+    void indexElement(
+      String id,
+      String modelType,
+      List<Terminal> terminals, {
+      NativeApplianceGeometry? native,
+    }) {
       if (!seenElementIds.add(id)) {
         throw StateError(
           'Canvas requires globally unique source/component visual IDs; duplicate: $id',
@@ -393,20 +440,31 @@ final class CircuitGeometryIndex {
         height: displaySize.height,
       );
       elementRects[id] = rect;
+      final nativeOffsets = native?.offsets(baseSize, terminals.length);
       for (var index = 0; index < terminals.length; index++) {
         final Terminal terminal = terminals[index];
-        final Offset physicalLocal = TerminalVisualProfile.terminalOffset(
-          modelType: modelType,
-          size: baseSize,
-          index: index,
-          count: terminals.length,
-        );
-        final Offset routingLocal = TerminalVisualProfile.routingOffset(
-          modelType: modelType,
-          size: baseSize,
-          index: index,
-          count: terminals.length,
-        );
+        final Offset physicalLocal =
+            nativeOffsets != null && index < nativeOffsets.length
+            ? nativeOffsets[index]
+            : TerminalVisualProfile.terminalOffset(
+                modelType: modelType,
+                size: baseSize,
+                index: index,
+                count: terminals.length,
+              );
+        final Offset routingLocal =
+            nativeOffsets != null && index < nativeOffsets.length
+            ? _nativeRoutingDock(
+                physicalLocal,
+                baseSize,
+                incoming: index < (native!.threePhase ? 3 : 2),
+              )
+            : TerminalVisualProfile.routingOffset(
+                modelType: modelType,
+                size: baseSize,
+                index: index,
+                count: terminals.length,
+              );
         terminalPositions[terminal.id] =
             center +
             _rotateQuarterTurns(
@@ -428,14 +486,30 @@ final class CircuitGeometryIndex {
         source.id.value,
         (source.parameters['_visualModelType'] as String?) ?? source.modelType,
         source.terminals,
+        native: NativeApplianceGeometry.forSource(source),
       );
     }
     for (final ComponentInstance component in circuit.components) {
       indexElement(
         component.id.value,
-        (component.parameters['_visualModelType'] as String?) ??
-            component.modelType,
+        component.parameters['_visualModelType'] == 'catalog_motor_driven_6t' &&
+                component.parameters['_visualVariant'] == 'crusher' &&
+                (component.terminals.length == 6 ||
+                    component.terminals.length == 7)
+            ? (component.terminals.length == 7
+                  ? 'catalog_crusher_7t'
+                  : 'catalog_crusher_6t')
+            : component.modelType == 'earthed_machine_3p_7t'
+            ? 'catalog_earthed_6t'
+            : const {
+                'earthed_resistor',
+                'earthed_impedance',
+              }.contains(component.modelType)
+            ? 'catalog_earthed_2t'
+            : (component.parameters['_visualModelType'] as String?) ??
+                  component.modelType,
         component.terminals,
+        native: NativeApplianceGeometry.forComponent(component),
       );
     }
     for (final InstrumentInstance instrument in circuit.instruments) {
@@ -489,4 +563,21 @@ final class CircuitGeometryIndex {
       _ => Offset(offset.dy, -offset.dx),
     };
   }
+}
+
+Offset _nativeRoutingDock(Offset p, Size size, {required bool incoming}) {
+  if (incoming) return Offset(p.dx, -size.height / 2);
+  final distances = [
+    p.dx + size.width / 2,
+    size.width / 2 - p.dx,
+    p.dy + size.height / 2,
+    size.height / 2 - p.dy,
+  ];
+  final index = distances.indexOf(distances.reduce(math.min));
+  return switch (index) {
+    0 => Offset(-size.width / 2, p.dy),
+    1 => Offset(size.width / 2, p.dy),
+    2 => Offset(p.dx, -size.height / 2),
+    _ => Offset(p.dx, size.height / 2),
+  };
 }

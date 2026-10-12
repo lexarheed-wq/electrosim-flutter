@@ -1,0 +1,1345 @@
+{
+  "entries": [
+    {
+      "key": "power_socket_dc",
+      "title": "Connecteur alimentation CC",
+      "model": "power_socket_dc",
+      "visualModel": "power_socket_dc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "power_socket_ac",
+      "title": "Prise alimentation L/N/PE",
+      "model": "power_socket_ac",
+      "visualModel": "power_socket_ac",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 6,
+      "modes": [
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "instrument-voltmeter",
+      "title": "Voltmètre physique",
+      "model": "physical_voltmeter",
+      "visualModel": "physical_voltmeter",
+      "variant": null,
+      "kind": "instrument",
+      "palettePorts": 0,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": null
+    },
+    {
+      "key": "instrument-ammeter",
+      "title": "Ampèremètre physique",
+      "model": "physical_ammeter",
+      "visualModel": "physical_ammeter",
+      "variant": null,
+      "kind": "instrument",
+      "palettePorts": 0,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": null
+    },
+    {
+      "key": "instrument-frequency",
+      "title": "Fréquencemètre physique",
+      "model": "physical_frequency_meter",
+      "visualModel": "physical_frequency_meter",
+      "variant": null,
+      "kind": "instrument",
+      "palettePorts": 0,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": null
+    },
+    {
+      "key": "instrument-phase-sequence",
+      "title": "Contrôleur d’ordre des phases",
+      "model": "physical_phase_sequence_tester",
+      "visualModel": "physical_phase_sequence_tester",
+      "variant": null,
+      "kind": "instrument",
+      "palettePorts": 0,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": null
+    },
+    {
+      "key": "source-dc-24v",
+      "title": "Source CC 24 V",
+      "model": "dc_voltage_source",
+      "visualModel": "dc_voltage_source",
+      "variant": null,
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "switch-no",
+      "title": "Interrupteur NO",
+      "model": "switch",
+      "visualModel": "switch",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "lamp",
+      "title": "Lampe",
+      "model": "lamp",
+      "visualModel": "lamp",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "lamp-ac1-230v",
+      "title": "Lampe 230 V AC",
+      "model": "lamp",
+      "visualModel": "lamp",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1",
+        "ac3",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "resistor",
+      "title": "Résistance",
+      "model": "resistor",
+      "visualModel": "resistor",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "breaker",
+      "title": "Disjoncteur",
+      "model": "breaker_dc",
+      "visualModel": "breaker_dc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "lamp-dc-48v",
+      "title": "Lampe 48 V CC",
+      "model": "lamp",
+      "visualModel": "lamp",
+      "variant": "dc-48v",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "push-button-no",
+      "title": "Bouton-poussoir NO",
+      "model": "push_button_no",
+      "visualModel": "push_button_no",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "push-button-nc",
+      "title": "Bouton-poussoir NC",
+      "model": "push_button_nc",
+      "visualModel": "push_button_nc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "buzzer",
+      "title": "Buzzer",
+      "model": "buzzer",
+      "visualModel": "buzzer",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "fuse",
+      "title": "Fusible",
+      "model": "fuse_dc",
+      "visualModel": "fuse_dc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "diode",
+      "title": "Diode redresseuse",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "rectifier",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "diode-schottky",
+      "title": "Diode Schottky",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "schottky",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "led-red",
+      "title": "LED rouge",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "led-red",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "led-green",
+      "title": "LED verte",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "led-green",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "zener-5v1",
+      "title": "Diode Zener 5,1 V",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "zener",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "tvs-12v",
+      "title": "Diode TVS 12 V",
+      "model": "diode",
+      "visualModel": "diode",
+      "variant": "tvs",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "fan-dc",
+      "title": "Ventilateur CC",
+      "model": "fan_dc",
+      "visualModel": "fan_dc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "motor-dc",
+      "title": "Moteur CC",
+      "model": "motor_dc",
+      "visualModel": "motor_dc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "relay-coil",
+      "title": "Bobine relais 24 V CC",
+      "model": "relay_coil",
+      "visualModel": "relay_coil",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "relay-contact-no",
+      "title": "Contact relais NO",
+      "model": "relay_contact_no",
+      "visualModel": "relay_contact_no",
+      "variant": "relay-no",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "relay-contact-nc",
+      "title": "Contact relais NC",
+      "model": "relay_contact_nc",
+      "visualModel": "relay_contact_nc",
+      "variant": "relay-nc",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "external-crusher",
+      "title": "Broyeur industriel",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "crusher",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18CrusherVisual"
+    },
+    {
+      "key": "external-air-conditioner",
+      "title": "Climatiseur",
+      "model": "impedance",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "air-conditioner",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-compressor",
+      "title": "Compresseur industriel",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "compressor",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 7,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-freezer",
+      "title": "Congélateur",
+      "model": "impedance",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "freezer",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-conveyor",
+      "title": "Convoyeur",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "conveyor",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 7,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-iron",
+      "title": "Fer à repasser",
+      "model": "resistor",
+      "visualModel": "catalog_heater",
+      "variant": "iron",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-mixer",
+      "title": "Mélangeur industriel",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "mixer",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 7,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-computer",
+      "title": "Ordinateur",
+      "model": "impedance",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "computer",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-pump-3p",
+      "title": "Pompe industrielle",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "pump",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 7,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-pump-ac1",
+      "title": "Pompe monophasée",
+      "model": "impedance",
+      "visualModel": "catalog_motor_driven_2t",
+      "variant": "pump-ac1",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-solar-pump",
+      "title": "Pompe solaire DC",
+      "model": "motor_dc",
+      "visualModel": "catalog_motor_driven_2t",
+      "variant": "solar-pump",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 2,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-refrigerator",
+      "title": "Réfrigérateur",
+      "model": "impedance",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "refrigerator",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-refrigerator-dc",
+      "title": "Réfrigérateur solaire DC",
+      "model": "motor_dc",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "refrigerator-dc",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 2,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-tv",
+      "title": "Télévision",
+      "model": "impedance",
+      "visualModel": "catalog_appliance_2t",
+      "variant": "television",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 2,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-fan-ac1",
+      "title": "Ventilateur domestique",
+      "model": "impedance",
+      "visualModel": "catalog_motor_driven_2t",
+      "variant": "fan",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "external-fan-3p",
+      "title": "Ventilateur industriel",
+      "model": "motor_3p_6t",
+      "visualModel": "catalog_motor_driven_6t",
+      "variant": "fan",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": 7,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "source-dc-current",
+      "title": "Source de courant CC",
+      "model": "dc_current_source",
+      "visualModel": "dc_current_source",
+      "variant": "dc-current",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "source-ac1-230v",
+      "title": "Source AC 230 V",
+      "model": "ac_voltage_source",
+      "visualModel": "ac_voltage_source",
+      "variant": "ac-1p",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "source-ac1-current",
+      "title": "Source de courant AC",
+      "model": "ac_current_source",
+      "visualModel": "ac_current_source",
+      "variant": "ac-current",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "source-ac3-l1",
+      "title": "Réseau triphasé — L1",
+      "model": "ac_voltage_source",
+      "visualModel": "ac_voltage_source",
+      "variant": "ac-l1",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "source-ac3-l2",
+      "title": "Réseau triphasé — L2",
+      "model": "ac_voltage_source",
+      "visualModel": "ac_voltage_source",
+      "variant": "ac-l2",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "source-ac3-l3",
+      "title": "Réseau triphasé — L3",
+      "model": "ac_voltage_source",
+      "visualModel": "ac_voltage_source",
+      "variant": "ac-l3",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-array",
+      "title": "Champ photovoltaïque",
+      "model": "pv_array",
+      "visualModel": "pv_array",
+      "variant": "pv-array",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-array-high-voltage",
+      "title": "Champ photovoltaïque haute tension",
+      "model": "pv_array",
+      "visualModel": "pv_array",
+      "variant": "pv-array-360v",
+      "kind": "source",
+      "palettePorts": 2,
+      "contractPorts": null,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-controller-mppt",
+      "title": "Régulateur solaire MPPT",
+      "model": "pv_controller",
+      "visualModel": "pv_controller",
+      "variant": "pv-mppt",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-controller-pwm",
+      "title": "Régulateur solaire PWM",
+      "model": "pv_controller",
+      "visualModel": "pv_controller",
+      "variant": "pv-pwm",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-battery",
+      "title": "Batterie photovoltaïque",
+      "model": "pv_battery",
+      "visualModel": "pv_battery",
+      "variant": "pv-battery",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-inverter",
+      "title": "Onduleur solaire 1φ",
+      "model": "pv_inverter",
+      "visualModel": "pv_inverter",
+      "variant": "pv-inverter-1p",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "pv-resistive-load",
+      "title": "Charge AC PV",
+      "model": "pv_resistive_load",
+      "visualModel": "pv_resistive_load",
+      "variant": "pv-load",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 2,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "source-ac3-grid",
+      "title": "Réseau triphasé 400/230 V",
+      "model": "ac3_voltage_source",
+      "visualModel": "ac3_voltage_source",
+      "variant": "ac3-grid",
+      "kind": "source",
+      "palettePorts": 4,
+      "contractPorts": null,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "source-ac3-alternator",
+      "title": "Alternateur triphasé",
+      "model": "ac3_voltage_source",
+      "visualModel": "ac3_voltage_source",
+      "variant": "ac3-generator",
+      "kind": "source",
+      "palettePorts": 4,
+      "contractPorts": null,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "motor-3p-6t",
+      "title": "Moteur triphasé 6 bornes",
+      "model": "motor_3p_6t",
+      "visualModel": "motor_3p_6t",
+      "variant": "motor-3p",
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "load-wye-3p",
+      "title": "Charge triphasée Y (3 impédances)",
+      "model": "load_wye_3p",
+      "visualModel": "load_wye_3p",
+      "variant": "load-wye",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "load-delta-3p",
+      "title": "Charge triphasée Δ (3 impédances)",
+      "model": "load_delta_3p",
+      "visualModel": "load_delta_3p",
+      "variant": "load-delta",
+      "kind": "component",
+      "palettePorts": 3,
+      "contractPorts": 3,
+      "nativePhysicalPorts": 3,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "energy-meter-ac1",
+      "title": "Compteur énergie AC",
+      "model": "energy_meter_ac1",
+      "visualModel": "energy_meter_ac1",
+      "variant": "meter-ac1",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "energy-meter-ac3",
+      "title": "Compteur énergie triphasé",
+      "model": "energy_meter_ac3",
+      "visualModel": "energy_meter_ac3",
+      "variant": "meter-ac3",
+      "kind": "component",
+      "palettePorts": 8,
+      "contractPorts": 8,
+      "nativePhysicalPorts": 8,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "energy-meter-pv",
+      "title": "Compteur énergie PV",
+      "model": "energy_meter_ac1",
+      "visualModel": "energy_meter_ac1",
+      "variant": "meter-pv",
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": 4,
+      "modes": [
+        "pv"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "capacitor",
+      "title": "Condensateur",
+      "model": "capacitor",
+      "visualModel": "capacitor",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "inductor",
+      "title": "Inductance",
+      "model": "inductor",
+      "visualModel": "inductor",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc",
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "impedance",
+      "title": "Impédance",
+      "model": "impedance",
+      "visualModel": "impedance",
+      "variant": "impedance",
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": 2,
+      "modes": [
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18NativeApplianceVisual"
+    },
+    {
+      "key": "rcd-2p-ac1",
+      "title": "Différentiel 2P AC",
+      "model": "rcd_2p_ac1",
+      "visualModel": "rcd_2p_ac1",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Dart perspective painter",
+      "boardWidget": "Disjoncteur3D"
+    },
+    {
+      "key": "breaker-ac1",
+      "title": "Disjoncteur AC 1φ",
+      "model": "breaker_ac1",
+      "visualModel": "breaker_ac1",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "fuse-ac1",
+      "title": "Fusible AC 1φ",
+      "model": "fuse_ac1",
+      "visualModel": "fuse_ac1",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "aux-contact-no",
+      "title": "Contact auxiliaire NO",
+      "model": "contactor_aux_no",
+      "visualModel": "contactor_aux_no",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "aux-contact-nc",
+      "title": "Contact auxiliaire NC",
+      "model": "contactor_aux_nc",
+      "visualModel": "contactor_aux_nc",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 2,
+      "contractPorts": 2,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1",
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "contactor-ac1",
+      "title": "Contacteur AC 1φ",
+      "model": "contactor_ac1",
+      "visualModel": "contactor_ac1",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 4,
+      "contractPorts": 4,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac1"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "contactor-3p",
+      "title": "Contacteur 3P",
+      "model": "contactor_3p",
+      "visualModel": "contactor_3p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 8,
+      "contractPorts": 8,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "breaker-3p",
+      "title": "Disjoncteur 3P",
+      "model": "breaker_3p",
+      "visualModel": "breaker_3p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "isolator-3p",
+      "title": "Sectionneur 3P",
+      "model": "isolator_3p",
+      "visualModel": "isolator_3p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "isolator-4p",
+      "title": "Sectionneur 4P",
+      "model": "isolator_4p",
+      "visualModel": "isolator_4p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 8,
+      "contractPorts": 8,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "breaker-4p",
+      "title": "Disjoncteur 4P",
+      "model": "breaker_4p",
+      "visualModel": "breaker_4p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 8,
+      "contractPorts": 8,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "terminal-block-dc-5",
+      "title": "Bornier CC +/−/PE",
+      "model": "terminal_block_5",
+      "visualModel": "terminal_block_5",
+      "variant": "dc",
+      "kind": "component",
+      "palettePorts": 10,
+      "contractPorts": 10,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "dc"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "terminal-block-5",
+      "title": "Bornier L1/L2/L3/N/PE",
+      "model": "terminal_block_5",
+      "visualModel": "terminal_block_5",
+      "variant": "ac3",
+      "kind": "component",
+      "palettePorts": 10,
+      "contractPorts": 10,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    },
+    {
+      "key": "thermal-overload-3p",
+      "title": "Relais thermique 3P",
+      "model": "thermal_overload_3p",
+      "visualModel": "thermal_overload_3p",
+      "variant": null,
+      "kind": "component",
+      "palettePorts": 6,
+      "contractPorts": 6,
+      "nativePhysicalPorts": null,
+      "modes": [
+        "ac3"
+      ],
+      "rendering": "Cycles mesh",
+      "boardWidget": "F18IndustrialPhysicalPlate"
+    }
+  ],
+  "errors": []
+}

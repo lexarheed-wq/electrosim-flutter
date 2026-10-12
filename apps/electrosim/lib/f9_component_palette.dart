@@ -1,3 +1,4 @@
+import 'f18_native_appliance_assets.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,11 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f18_industrial_physical_plate.dart';
+import 'f18_voltmeter_3d_assets.dart';
+import 'f18_ammeter_3d_assets.dart';
+import 'f18_frequency_3d_assets.dart';
+import 'f18_phase_sequence_3d_assets.dart';
+import 'f18_crusher_3d_assets.dart';
 import 'reference_components/disjoncteur_3d.dart';
 
 enum F9PaletteElementKind { source, component, instrument }
@@ -130,6 +136,94 @@ const List<F9PaletteTerminalSpec> f9Motor3p6tTerminals =
     ];
 
 const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
+  F9PaletteDefinition(
+    keyName: 'power_socket_dc',
+    title: 'Connecteur alimentation CC',
+    category: 'Raccordements',
+    modelType: 'power_socket_dc',
+    icon: Icons.power,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    terminalLabels: <String>[],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        '+ IN',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: '0-in',
+      ),
+      F9PaletteTerminalSpec(
+        '− IN',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: '1-in',
+      ),
+      F9PaletteTerminalSpec(
+        '+ OUT',
+        role: TerminalRole.positive,
+        phase: PhaseTag.dcPositive,
+        idSuffix: '0-out',
+      ),
+      F9PaletteTerminalSpec(
+        '− OUT',
+        role: TerminalRole.negative,
+        phase: PhaseTag.dcNegative,
+        idSuffix: '1-out',
+      ),
+    ],
+    subtitle: 'Entrées câblées / sortie pour fiche',
+  ),
+
+  F9PaletteDefinition(
+    keyName: 'power_socket_ac',
+    title: 'Prise alimentation L/N/PE',
+    category: 'Raccordements',
+    modelType: 'power_socket_ac',
+    icon: Icons.power,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3},
+    terminalLabels: <String>[],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L IN',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+        idSuffix: '0-in',
+      ),
+      F9PaletteTerminalSpec(
+        'N IN',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: '1-in',
+      ),
+      F9PaletteTerminalSpec(
+        'PE IN',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.none,
+        idSuffix: '2-in',
+      ),
+      F9PaletteTerminalSpec(
+        'L OUT',
+        role: TerminalRole.line,
+        phase: PhaseTag.l1,
+        idSuffix: '0-out',
+      ),
+      F9PaletteTerminalSpec(
+        'N OUT',
+        role: TerminalRole.neutral,
+        phase: PhaseTag.neutral,
+        idSuffix: '1-out',
+      ),
+      F9PaletteTerminalSpec(
+        'PE OUT',
+        role: TerminalRole.protectiveEarth,
+        phase: PhaseTag.none,
+        idSuffix: '2-out',
+      ),
+    ],
+    subtitle: 'Entrées câblées / sortie pour fiche',
+  ),
+
   F9PaletteDefinition(
     keyName: 'instrument-voltmeter',
     title: 'Voltmètre physique',
@@ -744,7 +838,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     category: 'Appareils externes',
     modelType: 'impedance',
     visualModelType: 'catalog_motor_driven_2t',
-    visualVariant: 'pump',
+    visualVariant: 'pump-ac1',
     displayLabel: 'Pompe 1φ',
     icon: Icons.water_drop_outlined,
     kind: F9PaletteElementKind.component,
@@ -762,7 +856,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     category: 'Appareils externes',
     modelType: 'motor_dc',
     visualModelType: 'catalog_motor_driven_2t',
-    visualVariant: 'pump',
+    visualVariant: 'solar-pump',
     displayLabel: 'Pompe DC',
     icon: Icons.solar_power_outlined,
     kind: F9PaletteElementKind.component,
@@ -1483,6 +1577,101 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: '3 branches entre phases · sans neutre',
   ),
 
+  F9PaletteDefinition(
+    keyName: 'energy-meter-ac1',
+    title: 'Compteur énergie AC',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac1',
+    visualVariant: 'meter-ac1',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L entrée', phase: PhaseTag.l1, idSuffix: 'l_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec('L sortie', phase: PhaseTag.l1, idSuffix: 'l_out'),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.ac1},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+  F9PaletteDefinition(
+    keyName: 'energy-meter-ac3',
+    title: 'Compteur énergie triphasé',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac3',
+    visualVariant: 'meter-ac3',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L1 entrée', phase: PhaseTag.l1, idSuffix: 'l1_in'),
+      F9PaletteTerminalSpec('L2 entrée', phase: PhaseTag.l2, idSuffix: 'l2_in'),
+      F9PaletteTerminalSpec('L3 entrée', phase: PhaseTag.l3, idSuffix: 'l3_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec(
+        'L1 sortie',
+        phase: PhaseTag.l1,
+        idSuffix: 'l1_out',
+      ),
+      F9PaletteTerminalSpec(
+        'L2 sortie',
+        phase: PhaseTag.l2,
+        idSuffix: 'l2_out',
+      ),
+      F9PaletteTerminalSpec(
+        'L3 sortie',
+        phase: PhaseTag.l3,
+        idSuffix: 'l3_out',
+      ),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.ac3},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+  F9PaletteDefinition(
+    keyName: 'energy-meter-pv',
+    title: 'Compteur énergie PV',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac1',
+    visualVariant: 'meter-pv',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L entrée', phase: PhaseTag.l1, idSuffix: 'l_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec('L sortie', phase: PhaseTag.l1, idSuffix: 'l_out'),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.pv},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+
   // C14 Wave 1 — canonical models already supported by the V2 electrical core.
   F9PaletteDefinition(
     keyName: 'capacitor',
@@ -1508,6 +1697,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'impedance',
+    visualVariant: 'impedance',
     title: 'Impédance',
     category: 'Passifs',
     modelType: 'impedance',
@@ -2252,7 +2442,9 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           // Other catalog entries retain original search-only semantics.
           // Only physical instruments become available in the expanded
           // catalog and the dedicated measuring-instruments category.
-          if (q.isEmpty && item.searchOnlyModes.contains(widget.mode)) {
+          if (q.isEmpty &&
+              item.searchOnlyModes.contains(widget.mode) &&
+              item.keyName != 'instrument-voltmeter') {
             if (item.kind != F9PaletteElementKind.instrument ||
                 (_category == 'Tous' && !_expanded)) {
               return false;
@@ -2281,8 +2473,26 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               .length
         : filtered.length;
     final bool canExpand = filtered.length > _collapsedLimit;
+    // Catalogue additions and asynchronous asset loads must not displace
+    // the approved DC quick controls.
+    const dcQuickKeys = [
+      'source-dc-24v',
+      'switch-no',
+      'lamp',
+      'instrument-voltmeter',
+      'breaker',
+    ];
+    final quick =
+        widget.mode == ElectricalMode.dc &&
+            _query.trim().isEmpty &&
+            _category == 'Tous'
+        ? [
+            for (final key in dcQuickKeys)
+              ...filtered.where((entry) => entry.keyName == key),
+          ]
+        : filtered.take(_collapsedLimit).toList(growable: false);
     final List<F9PaletteDefinition> visible = !_expanded && canExpand
-        ? filtered.take(_collapsedLimit).toList(growable: false)
+        ? quick
         : filtered;
 
     return ColoredBox(
@@ -2447,21 +2657,99 @@ class _PaletteDraggableTile extends StatelessWidget {
                 // Physical housings need enough pixels to show their moulding.
                 width:
                     definition.modelType == 'rcd_2p_ac1' ||
+                        (definition.keyName == 'instrument-voltmeter' ||
+                            (definition.keyName == 'instrument-ammeter' &&
+                                F18Ammeter3dAssets.ready)) ||
                         F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 72
                     : 48,
                 height: definition.modelType == 'rcd_2p_ac1'
                     ? 108
-                    : F18PhysicalPlateAssets.ready(definition.modelType)
+                    : definition.keyName == 'instrument-voltmeter' ||
+                          (definition.keyName == 'instrument-ammeter' &&
+                              F18Ammeter3dAssets.ready) ||
+                          F18PhysicalPlateAssets.ready(definition.modelType)
                     ? 96
                     : 56,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: F9ComponentPreview(
-                    definition: definition,
-                    compact: true,
-                  ),
-                ),
+                child:
+                    (definition.keyName == 'instrument-voltmeter' ||
+                        (definition.keyName == 'instrument-ammeter' &&
+                            F18Ammeter3dAssets.ready))
+                    ? Tooltip(
+                        key: Key(
+                          definition.keyName == 'instrument-voltmeter'
+                              ? 'g5-voltmeter-3d-detail-preview'
+                              : 'g5-ammeter-3d-detail-preview',
+                        ),
+                        waitDuration: const Duration(milliseconds: 450),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF182438),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF526477)),
+                          boxShadow: const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x44000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        richMessage: WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: SizedBox(
+                            width: 236,
+                            height: 308,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  definition.keyName == 'instrument-ammeter'
+                                      ? 'Ampèremètre — vue 3/4'
+                                      : 'Voltmètre — vue 3/4',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: F9ComponentPreview(
+                                      definition: definition,
+                                    ),
+                                  ),
+                                ),
+                                const Text(
+                                  'HOLD  RANGE  SELECT  LIGHT',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: F9ComponentPreview(
+                            definition: definition,
+                            compact: true,
+                          ),
+                        ),
+                      )
+                    : FittedBox(
+                        fit: BoxFit.contain,
+                        child: F9ComponentPreview(
+                          definition: definition,
+                          compact: true,
+                        ),
+                      ),
               ),
               const SizedBox(width: ElectroSimSpacing.sm),
               Expanded(
@@ -2682,6 +2970,89 @@ class F9ComponentPreview extends StatelessWidget {
         bounds.height / design.height,
       );
       visualSize = Size(design.width * scale, design.height * scale);
+    }
+
+    // The original Cycles perspective is baked once. Never apply the
+    // generic 3/4 transformation again to an instrument texture.
+    final nativeImages = F18NativeApplianceAssets.images(definition.keyName);
+    if (nativeImages != null) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: compact ? 116 : 190,
+        height: compact ? 107 : 175,
+        child: RawImage(
+          image: nativeImages.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+    if (definition.keyName == 'external-crusher' && F18Crusher3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: compact ? 116 : 190,
+        height: compact ? 107 : 175,
+        child: RawImage(
+          image: F18Crusher3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+    if (definition.keyName == 'instrument-voltmeter' &&
+        F18Voltmeter3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Voltmeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
+    if (definition.keyName == 'instrument-ammeter' &&
+        F18Ammeter3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Ammeter3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
+    if (definition.keyName == 'instrument-phase-sequence' &&
+        F18PhaseSequence3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18PhaseSequence3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+
+    if (definition.keyName == 'instrument-frequency' &&
+        F18Frequency3dAssets.ready) {
+      return SizedBox(
+        key: Key('component-identity-preview-${definition.keyName}'),
+        width: visualSize.width,
+        height: visualSize.height,
+        child: RawImage(
+          image: F18Frequency3dAssets.palette,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      );
     }
 
     if (definition.modelType == 'rcd_2p_ac1') {

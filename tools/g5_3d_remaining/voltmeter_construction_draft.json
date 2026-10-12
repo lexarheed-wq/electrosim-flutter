@@ -1,0 +1,83 @@
+{
+  "key": "instrument-voltmeter",
+  "verified": false,
+  "reference_model": "Handheld Fluke 117 proportions for an ORIGINAL ElectroSim appearance; no logo or proprietary texture",
+  "reference_urls": [
+    "https://www.fluke.com/en/product/electrical-testing/digital-multimeters/fluke-117",
+    "https://assets.fluke.com/manuals/114_____umeng0000.pdf"
+  ],
+  "physical_mm": {
+    "width": 84,
+    "height": 167,
+    "depth": 46
+  },
+  "logical_units_per_mm": null,
+  "measurement_method": "Manufacturer external dimensions; body and controls draft; rear, side and socket positions not dimensionally certified",
+  "ports": [
+    {
+      "name": "COM",
+      "kind": "instrument_probe_socket",
+      "position_logical_draft": [
+        42,
+        128
+      ],
+      "verified": false
+    },
+    {
+      "name": "V_ohm",
+      "kind": "instrument_probe_socket",
+      "position_logical_draft": [
+        70,
+        128
+      ],
+      "verified": false
+    }
+  ],
+  "moving_parts": [
+    "selector_shaft",
+    "selector_grip"
+  ],
+  "unknowns": [
+    "Rear/side detail and dimensioned jack coordinates",
+    "Exact runtime probe hit regions and dynamic readout geometry relative to 112x152 Canvas",
+    "Revalidate size and appearance with target SHA before application integration",
+    "Digital text layer currently uses a 0.10/0.11/0.80/0.38 normalized canvas rectangle; should use this instance-specific glass rectangle instead."
+  ],
+  "qualification_state": "reference_incomplete",
+  "reviewer": null,
+  "canvas_contract": {
+    "size_logical": [
+      112,
+      152
+    ],
+    "lcd_glass_bounds_logical": {
+      "x": 31.278443113772454,
+      "y": 19.5,
+      "width": 49.44311377245509,
+      "height": 25
+    },
+    "lcd_glass_bounds_normalized": {
+      "left": 0.2792718135158255,
+      "top": 0.12828947368421054,
+      "width": 0.44145637296834905,
+      "height": 0.16447368421052633
+    },
+    "recommended_dynamic_text_inset_logical": {
+      "x": 34.278443113772454,
+      "y": 22.5,
+      "width": 43.44311377245509,
+      "height": 19
+    },
+    "probe_socket_centers_logical": {
+      "COM": [
+        42,
+        128
+      ],
+      "V_ohm": [
+        70,
+        128
+      ]
+    },
+    "verification_note": "Derived analytically from original mesh recipe on 112x152 canvas, not yet tested with Flutter worldToScreen. Preserve per-component fallback."
+  }
+}

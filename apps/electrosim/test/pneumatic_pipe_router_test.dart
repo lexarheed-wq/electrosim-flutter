@@ -78,10 +78,14 @@ void main() {
         );
     expect(connect(const Offset(59, 218), const Offset(835, 218)), isNull);
     expect(connect(const Offset(145, 218), const Offset(951, 218)), isNull);
-    expect(connect(const Offset(double.nan, 218), const Offset(835, 218)),
-        isNull);
-    expect(connect(const Offset(145, 218), const Offset(double.infinity, 218)),
-        isNull);
+    expect(
+      connect(const Offset(double.nan, 218), const Offset(835, 218)),
+      isNull,
+    );
+    expect(
+      connect(const Offset(145, 218), const Offset(double.infinity, 218)),
+      isNull,
+    );
   });
 
   test('R6/L+M invalid footprint fails closed', () {

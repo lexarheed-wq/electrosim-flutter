@@ -163,7 +163,7 @@ void main() {
       final PneumaticDeviceGlyph reset = tester.widget<PneumaticDeviceGlyph>(
         actualGlyph,
       );
-      expect(reset.pistonFraction, isNull);
+      expect(reset.pistonFraction, closeTo(.005 / .06, 1e-9));
       expect(find.byKey(const Key('air-measured-position')), findsNothing);
     },
   );

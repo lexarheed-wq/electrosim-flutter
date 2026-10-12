@@ -114,10 +114,12 @@ void main() {
   ) async {
     await setSize(tester);
     await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(
+      MaterialApp(
+        home: PneumaticWorkshopPage(
           initialProject: project(),
           workerFactory: createInlineCanonicalTestWorker,
-        )),
+        ),
+      ),
     );
     await tester.tap(find.byKey(const Key('device-middle')));
     await tester.pump();
@@ -167,10 +169,12 @@ void main() {
   ) async {
     await setSize(tester);
     await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(
+      MaterialApp(
+        home: PneumaticWorkshopPage(
           initialProject: project(),
           workerFactory: createInlineCanonicalTestWorker,
-        )),
+        ),
+      ),
     );
     await tester.tap(find.byKey(const Key('device-middle')));
     await tester.pumpAndSettle();

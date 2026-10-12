@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:electrosim/pneumatics/pneumatic_pipe_router.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -138,6 +140,38 @@ void main() {
     );
     expect(resolved, 380);
     // This structural microbenchmark is not release-frame PERF-01 evidence.
+  });
+
+  test('R6/L+M uses a clear lane instead of crossing an existing hose', () {
+    // A direct lane at y=257 is slightly shorter but crosses this existing
+    // vertical hose. The unobstructed y=281 lane must take precedence.
+    final List<Offset>? route = PneumaticPipeRouter.route(
+      start: const Offset(145, 218),
+      end: const Offset(835, 218),
+      fromTile: source,
+      toTile: valve,
+      tiles: const <Rect>[source, valve],
+      previousRoutes: const <List<Offset>>[
+        <Offset>[Offset(500, 240), Offset(500, 274)],
+      ],
+    );
+    expect(route, isNotNull);
+    expect(route!.first, const Offset(145, 218));
+    expect(route.last, const Offset(835, 218));
+    for (int i = 1; i < route.length; i++) {
+      final Offset a = route[i - 1];
+      final Offset b = route[i];
+      expect(a.dx == b.dx || a.dy == b.dy, isTrue);
+      if (a.dy == b.dy) {
+        final double left = math.min(a.dx, b.dx);
+        final double right = math.max(a.dx, b.dx);
+        expect(
+          a.dy > 240 && a.dy < 274 && left < 500 && right > 500,
+          isFalse,
+          reason: 'The path must bypass the existing vertical hose',
+        );
+      }
+    }
   });
 
   test('R6/L+M reserved lanes are deterministic for adjacent circuits', () {

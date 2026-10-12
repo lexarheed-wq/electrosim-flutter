@@ -521,6 +521,64 @@ void main() {
     },
   );
 
+  testWidgets('direct control double-click expires after the gesture window', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: app.F9WorkspaceDemoPage(
+          initialCircuit: _seriesControlCircuit(
+            modelType: 'push_button_no',
+            elementId: 'push-1',
+            controlState: const <String, Object?>{'pressed': false},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Rect rect = tester.getRect(
+      find.byKey(const ValueKey<String>('board-v1-visual-push-1')),
+    );
+    final Offset head = Offset(
+      rect.left + rect.width * .5,
+      rect.top + rect.height * (58 / 140),
+    );
+    await tester.tapAt(head);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tapAt(head);
+    await tester.pump(const Duration(milliseconds: 20));
+    SimulatorCanvas canvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
+    ComponentInstance button = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'push-1',
+    );
+    expect(button.controlState['pressed'], isFalse);
+
+    // The second tap starts a new gesture; a third, prompt tap actuates.
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(head);
+    await tester.pump(const Duration(milliseconds: 20));
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    button = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'push-1',
+    );
+    expect(button.controlState['pressed'], isTrue);
+    await tester.pump(const Duration(milliseconds: 300));
+    canvas = tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+    button = canvas.circuit.components.firstWhere(
+      (ComponentInstance item) => item.id.value == 'push-1',
+    );
+    expect(button.controlState['pressed'], isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('breaker handle double-click opens and recloses the breaker', (
     WidgetTester tester,
   ) async {

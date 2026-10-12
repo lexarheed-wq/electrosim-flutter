@@ -84,6 +84,10 @@ final class PneumaticPipeRouter {
 
     List<Offset>? selected;
     double best = double.infinity;
+    // A short route must never win merely because it was visited before a
+    // non-crossing alternative. Optimize interference lexicographically,
+    // then distance/bends. Existing shared-port stems remain a fallback.
+    double leastInterference = double.infinity;
     // A clean, almost-Manhattan route does not benefit from enumerating the
     // outside-board detours. This matters when editing 400-device layouts.
     final double lowerBound =
@@ -108,14 +112,24 @@ final class PneumaticPipeRouter {
           }
           // Prefer simpler routes when two routes are equally short.
           score += (path.length - 2) * 11;
+          double interference = 0;
           for (final List<Offset> previous in previousRoutes) {
-            score += _interference(path, previous);
+            interference += _interference(path, previous);
           }
+          if (interference > leastInterference) continue;
+          if (interference < leastInterference) {
+            leastInterference = interference;
+            best = double.infinity;
+            selected = null;
+          }
+          score += interference;
           if (score < best) {
             best = score;
             selected = path;
           }
-          if (score <= lowerBound + 120 && path.length <= 5) {
+          if (interference == 0 &&
+              score <= lowerBound + 120 &&
+              path.length <= 5) {
             return path;
           }
         }

@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/services.dart';
 
 import 'package:electrosim/pneumatics/pneumatic_workshop_page.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
@@ -6,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'r6_workshop_authored_runtime_test.dart' as fixture;
+import 'r6l_live_png_evidence_test.dart' as evidence;
 
 /// A controllable transport witness. It never solves until the test releases
 /// the worker response, proving the Flutter UI does not calculate the result
@@ -64,18 +68,47 @@ Future<void> _startSimulation(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<void> _loadProofFont(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    final File font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+    if (!font.existsSync()) return;
+    final FontLoader loader = FontLoader('R6NProofFont')
+      ..addFont(Future<ByteData>.value(
+        ByteData.sublistView(await font.readAsBytes()),
+      ));
+    await loader.load();
+    final String? root = Platform.environment['FLUTTER_ROOT'];
+    if (root == null) return;
+    final File icons = File(
+      '$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
+    if (icons.existsSync()) {
+      final FontLoader iconLoader = FontLoader('MaterialIcons')
+        ..addFont(Future<ByteData>.value(
+          ByteData.sublistView(await icons.readAsBytes()),
+        ));
+      await iconLoader.load();
+    }
+  });
+}
+
 void main() {
   testWidgets('R6/N Flutter UI completes using a real native isolate', (
     WidgetTester tester,
   ) async {
     await fixture.setSize(tester);
     final Completer<void> resultReceived = Completer<void>();
+    await _loadProofFont(tester);
     await tester.pumpWidget(
       MaterialApp(
-        home: PneumaticWorkshopPage(
-          initialProject: fixture.project(),
-          workerFactory: () async =>
-              RealIsolateWitness(await createR6Worker(), resultReceived),
+        theme: ThemeData(fontFamily: 'R6NProofFont'),
+        home: RepaintBoundary(
+          key: const Key('r6l-live-evidence-boundary'),
+          child: PneumaticWorkshopPage(
+            initialProject: fixture.project(),
+            workerFactory: () async =>
+                RealIsolateWitness(await createR6Worker(), resultReceived),
+          ),
         ),
       ),
     );
@@ -92,6 +125,7 @@ void main() {
       find.text('R6/N : résultat accepté depuis worker isolé'),
       findsOneWidget,
     );
+    await evidence.captureWorkshop(tester, '04_platine_reseau_worker_natif.png');
     await tester.pumpWidget(const SizedBox());
   });
 

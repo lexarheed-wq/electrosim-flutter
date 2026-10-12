@@ -107,8 +107,8 @@ void main() {
       of: find.byKey(const Key('device-cyl')),
       matching: find.byType(PneumaticDeviceGlyph),
     );
-    final PneumaticDeviceGlyph initialGlyph =
-        tester.widget<PneumaticDeviceGlyph>(initialGlyphFinder);
+    final PneumaticDeviceGlyph initialGlyph = tester
+        .widget<PneumaticDeviceGlyph>(initialGlyphFinder);
     expect(initialGlyph.pistonFraction, closeTo(.005 / .06, 1e-9));
     await captureWorkshop(tester, '01_platine_initiale.png');
 

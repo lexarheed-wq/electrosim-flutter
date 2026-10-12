@@ -98,10 +98,7 @@ Future<void> _loadProofFont(WidgetTester tester) async {
 
 /// Drive the test clock until its scheduled zero-delay dispatch has run.
 /// No fake response or arbitrary wall-clock delay is involved.
-Future<void> _pumpUntil(
-  WidgetTester tester,
-  bool Function() done,
-) async {
+Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {
   for (int tick = 0; tick < 30 && !done(); tick++) {
     await tester.pump(const Duration(milliseconds: 1));
   }

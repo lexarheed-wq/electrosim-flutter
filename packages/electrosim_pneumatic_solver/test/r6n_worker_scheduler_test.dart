@@ -241,7 +241,7 @@ void main() {
         durationS: .02,
         maxStepS: .002,
       );
-  
+
       final Future<R6NetworkOutcome> result = scheduler.submit(build: build);
       await Future<void>.delayed(Duration.zero);
       underlying.replies.single.complete(underlying.started.single.execute());

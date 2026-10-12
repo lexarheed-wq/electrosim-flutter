@@ -7,10 +7,21 @@ import 'r6n_worker.dart';
 /// Only one calculation runs; the most recent pending edit supersedes older
 /// pending edits. An obsolete answer is rejected, never shown by the UI.
 final class R6WorkerScheduler {
-  R6WorkerScheduler(this.worker, {required this.engineVersion});
+  R6WorkerScheduler(
+    this.worker, {
+    required this.engineVersion,
+    this.requestTimeout = const Duration(seconds: 30),
+  }) {
+    if (requestTimeout <= Duration.zero) {
+      throw ArgumentError.value(requestTimeout, 'requestTimeout', 'Must be positive');
+    }
+  }
 
   final R6Worker worker;
   final String engineVersion;
+  /// Upper bound on a single solver response, independent of the UI clock.
+  /// A timeout closes the transport rather than reusing an unresponsive worker.
+  final Duration requestTimeout;
   int _revision = 0;
   int _nextRequestId = 0;
   bool _closed = false;
@@ -53,7 +64,9 @@ final class R6WorkerScheduler {
     _active = calculation;
     Future<void>(() async {
       try {
-        final R6NetworkOutcome answer = await worker.solve(calculation.job);
+        final R6NetworkOutcome answer = await worker
+            .solve(calculation.job)
+            .timeout(requestTimeout);
         if (_closed ||
             calculation.job.projectRevision != _revision ||
             answer.projectRevision != calculation.job.projectRevision ||
@@ -63,6 +76,19 @@ final class R6WorkerScheduler {
         } else {
           _validatePhysicalOutcome(calculation.job, answer);
           calculation.accept(answer);
+        }
+      } on TimeoutException catch (error, stack) {
+        // Failing closed prevents a wedged worker from blocking all subsequent
+        // edits or silently applying its eventual stale response.
+        calculation.reject(
+          StateError('R6/N solver exceeded request timeout: $requestTimeout'),
+          stack,
+        );
+        try {
+          await close();
+        } catch (_) {
+          // The request has already been rejected; the session stays closed.
+          // Transport teardown errors must not turn timeout into a success.
         }
       } catch (error, stack) {
         calculation.reject(error, stack);

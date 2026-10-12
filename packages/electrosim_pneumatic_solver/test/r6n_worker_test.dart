@@ -1,5 +1,5 @@
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
-import 'package:electrosim_pneumatic_solver/src/r6n_worker_native.dart';
+import 'package:electrosim_pneumatic_solver/src/r6n_worker_native.dart' show NativeR6Worker;
 import 'package:test/test.dart';
 
 void main() {

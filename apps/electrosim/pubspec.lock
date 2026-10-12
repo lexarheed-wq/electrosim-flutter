@@ -181,6 +181,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  electrosim_electropneumatic:
+    dependency: "direct main"
+    description:
+      path: "../../packages/electrosim_electropneumatic"
+      relative: true
+    source: path
+    version: "0.1.0"
   electrosim_energy:
     dependency: "direct main"
     description:
@@ -206,6 +213,13 @@ packages:
     dependency: "direct main"
     description:
       path: "../../packages/electrosim_pneumatic_domain"
+      relative: true
+    source: path
+    version: "0.1.0"
+  electrosim_pneumatic_solver:
+    dependency: "direct main"
+    description:
+      path: "../../packages/electrosim_pneumatic_solver"
       relative: true
     source: path
     version: "0.1.0"

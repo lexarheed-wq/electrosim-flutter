@@ -9,57 +9,58 @@ import 'support/regression_fixture.dart';
 
 void main() {
   for (final ElectricalMode mode in ElectricalMode.values) {
-    testWidgets('physical instruments appear under Voir tous in ${mode.name}', (
-      WidgetTester tester,
-    ) async {
-      tester.view.physicalSize = const Size(1440, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'voltmeter is quick access and ammeter appears under Voir tous in ${mode.name}',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1440, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final List<String> chosen = <String>[];
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 320,
-              child: F9ComponentPalette(
-                mode: mode,
-                onStatus: (_) {},
-                onQuickAdd: (definition) => chosen.add(definition.keyName),
+        final List<String> chosen = <String>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 320,
+                child: F9ComponentPalette(
+                  mode: mode,
+                  onStatus: (_) {},
+                  onQuickAdd: (definition) => chosen.add(definition.keyName),
+                ),
               ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // In the compact quick list the default five stay unchanged.
-      expect(
-        find.byKey(const Key('palette-item-instrument-voltmeter')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('palette-item-instrument-ammeter')),
-        findsNothing,
-      );
-      await tester.tap(find.byKey(const Key('palette-show-all')));
-      await tester.pumpAndSettle();
+        // The approved quick list includes the voltmeter; ammeter remains discoverable under Voir tous.
+        expect(
+          find.byKey(const Key('palette-item-instrument-voltmeter')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('palette-item-instrument-ammeter')),
+          findsNothing,
+        );
+        await tester.tap(find.byKey(const Key('palette-show-all')));
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const Key('palette-item-instrument-voltmeter')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('palette-item-instrument-ammeter')),
-        findsOneWidget,
-      );
-      await tester.tap(
-        find.byKey(const Key('palette-quick-add-instrument-voltmeter')),
-      );
-      await tester.pumpAndSettle();
-      expect(chosen, <String>['instrument-voltmeter']);
-    });
+        expect(
+          find.byKey(const Key('palette-item-instrument-voltmeter')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('palette-item-instrument-ammeter')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('palette-quick-add-instrument-voltmeter')),
+        );
+        await tester.pumpAndSettle();
+        expect(chosen, <String>['instrument-voltmeter']);
+      },
+    );
 
     testWidgets(
       'instrument category exists without text search in ${mode.name}',

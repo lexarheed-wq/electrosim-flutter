@@ -1,3 +1,4 @@
+import 'package:electrosim/f18_native_appliance_visual.dart';
 import 'package:electrosim/f15_source_pv_components.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/f23_distribution_components.dart';
@@ -392,7 +393,7 @@ void main() {
       ('ac_current_source', 'ac-current', F15SourcePvComponentView),
       ('pv_array', 'pv-array', F15SourcePvComponentView),
       ('pv_inverter', 'pv-inverter-1p', F15SourcePvComponentView),
-      ('pv_resistive_load', 'pv-load', F15SourcePvComponentView),
+      ('pv_resistive_load', 'pv-load', F18NativeApplianceVisual),
     ];
     for (final (String modelType, String? variant, Type widgetType) in cases) {
       await tester.pumpWidget(
@@ -411,6 +412,13 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(widgetType), findsOneWidget, reason: modelType);
+      if (modelType == 'pv_resistive_load') {
+        final native = tester.widget<F18NativeApplianceVisual>(
+          find.byType(widgetType),
+        );
+        expect(native.spec.key, 'pv-resistive-load');
+        expect(native.spec.ports.length, 2);
+      }
       expect(tester.takeException(), isNull, reason: modelType);
     }
   });

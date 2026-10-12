@@ -26,7 +26,12 @@ abstract final class MotorThreePhaseCouplingEvaluator {
     CircuitState circuit,
     ComponentInstance motor,
   ) {
-    if (motor.modelType != 'motor_3p_6t' || motor.terminals.length != 6) {
+    if (!const {
+          'motor_3p_6t',
+          'earthed_machine_3p_7t',
+        }.contains(motor.modelType) ||
+        motor.terminals.length !=
+            (motor.modelType == 'earthed_machine_3p_7t' ? 7 : 6)) {
       return const MotorThreePhaseCouplingAssessment(
         kind: MotorThreePhaseCouplingKind.invalid,
         message:
@@ -35,7 +40,7 @@ abstract final class MotorThreePhaseCouplingEvaluator {
     }
 
     final _TerminalUnionFind wires = _TerminalUnionFind();
-    for (final terminal in motor.terminals) {
+    for (final terminal in motor.terminals.take(6)) {
       wires.add(terminal.id.value);
     }
     for (final connection in circuit.connections) {
@@ -48,7 +53,8 @@ abstract final class MotorThreePhaseCouplingEvaluator {
     }
 
     final List<String> roots = <String>[
-      for (final terminal in motor.terminals) wires.find(terminal.id.value),
+      for (final terminal in motor.terminals.take(6))
+        wires.find(terminal.id.value),
     ];
     final List<String> starts = roots.sublist(0, 3);
     final List<String> ends = roots.sublist(3, 6);
@@ -73,9 +79,7 @@ abstract final class MotorThreePhaseCouplingEvaluator {
       groups.putIfAbsent(roots[index], () => <int>[]).add(index);
     }
     final bool everyWindingRemainsDistinct =
-        roots[0] != roots[3] &&
-        roots[1] != roots[4] &&
-        roots[2] != roots[5];
+        roots[0] != roots[3] && roots[1] != roots[4] && roots[2] != roots[5];
     final bool delta =
         groups.length == 3 &&
         everyWindingRemainsDistinct &&

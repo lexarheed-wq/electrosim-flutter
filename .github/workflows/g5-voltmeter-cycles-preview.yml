@@ -1,0 +1,72 @@
+name: G5 voltmeter Cycles preview
+
+on:
+  push:
+    branches:
+      - 'feat/g5-3d-voltmeter-draft-20261011'
+      - 'feat/g5-voltmeter-flutter-integration-20261011'
+      - 'feat/g5-voltmeter-controls-probes-20261011'
+    paths:
+      - 'tools/g5_3d_remaining/**'
+      - '.github/workflows/g5-voltmeter-cycles-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  blender-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cycles rendering environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+      - name: Render two true volumetric cameras (NOT app screenshots)
+        run: |
+          set -euo pipefail
+          blender -b --factory-startup -t 4 --python tools/g5_3d_remaining/render_voltmeter_cycles.py -- --out build/g5-3d-voltmeter --samples 64
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import struct
+          output = Path('build/g5-3d-voltmeter')
+          for view in ('front', 'palette'):
+              data = (output / (view + '.png')).read_bytes()
+              assert data[:8] == b'\x89PNG\r\n\x1a\n', view
+              width, height = struct.unpack('>II', data[16:24])
+              assert (width, height) == (1120, 1520), (view, width, height)
+          meta = json.loads((output / 'provenance.json').read_text())
+          assert not meta['is_product_capture']
+          assert not meta['integrated_in_flutter']
+          assert (output / 'draft.blend').stat().st_size > 1000
+          PY
+          printf '%s\n' "$GITHUB_SHA" > build/g5-3d-voltmeter/SOURCE_SHA.txt
+          (cd build/g5-3d-voltmeter && sha256sum front.png palette.png draft.blend provenance.json > SHA256.txt)
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: G5-voltmeter-Cycles-DRAFT-only
+          path: build/g5-3d-voltmeter/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Stage high-definition Cycles PNGs on selected development branch
+        if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/feat/g5-voltmeter-flutter-integration-20261011' || github.ref == 'refs/heads/feat/g5-voltmeter-controls-probes-20261011') }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$GITHUB_REF_NAME"
+          git checkout -B "$GITHUB_REF_NAME" FETCH_HEAD
+          mkdir -p apps/electrosim/assets/g5_industrial
+          cp build/g5-3d-voltmeter/front.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-front.png
+          cp build/g5-3d-voltmeter/palette.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-palette.png
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/electrosim/assets/g5_industrial/instrument-voltmeter-front.png apps/electrosim/assets/g5_industrial/instrument-voltmeter-palette.png
+          if ! git diff --cached --quiet; then
+            git commit -m "assets(g5): stage 4x Cycles meter with button legends (unqualified)"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi

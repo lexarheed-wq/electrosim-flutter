@@ -5,6 +5,7 @@ import 'package:electrosim_tp/electrosim_tp.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_g7_property_presenter.dart';
+import 'f18_power_connection_panel.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
@@ -24,6 +25,7 @@ class F9ContextPanels extends StatefulWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.onPowerConnectionChanged,
     this.tpSessionController,
   });
 
@@ -36,6 +38,7 @@ class F9ContextPanels extends StatefulWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final void Function(String mode, String? socketId)? onPowerConnectionChanged;
   final ElectroSimTpSessionController? tpSessionController;
 
   bool get showEie => role == F9UserRole.teacher;
@@ -152,6 +155,7 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
                   runtimeSnapshot: widget.runtimeSnapshot,
+                  onPowerConnectionChanged: widget.onPowerConnectionChanged,
                 ),
                 _MeasurementsPanel(
                   circuit: widget.circuit,
@@ -188,6 +192,7 @@ class _PropertiesPanel extends StatelessWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.onPowerConnectionChanged,
   });
 
   final CircuitState circuit;
@@ -197,6 +202,7 @@ class _PropertiesPanel extends StatelessWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final void Function(String mode, String? socketId)? onPowerConnectionChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +272,15 @@ class _PropertiesPanel extends StatelessWidget {
             ),
           ),
         ),
+        for (final component in circuit.components)
+          if (component.id.value == selectedId &&
+              AppliancePowerConnection.isExternal(component))
+            F18PowerConnectionPanel(
+              circuit: circuit,
+              component: component,
+              runtimeSnapshot: runtimeSnapshot,
+              onChanged: onPowerConnectionChanged,
+            ),
         const SizedBox(height: ElectroSimSpacing.md),
         if (details == null) ...<Widget>[
           Text('Sélection', style: Theme.of(context).textTheme.labelLarge),

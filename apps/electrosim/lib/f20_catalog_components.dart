@@ -50,7 +50,7 @@ abstract final class F20CatalogVisualIdentity {
 
   static F20MotorSilhouette motorSilhouette(String? variantKey) =>
       switch (variantKey) {
-        'pump' => F20MotorSilhouette.pump,
+        'pump' || 'pump-ac1' || 'solar-pump' => F20MotorSilhouette.pump,
         'fan' => F20MotorSilhouette.fan,
         'compressor' => F20MotorSilhouette.compressor,
         'conveyor' => F20MotorSilhouette.conveyor,
@@ -74,6 +74,7 @@ final class F20CatalogState {
     this.voltageV = 0,
     this.animationValue = 0,
     this.variantKey,
+    this.powerConnectionMode = 'fixed',
   });
 
   final bool energized;
@@ -82,6 +83,7 @@ final class F20CatalogState {
   final double voltageV;
   final double animationValue;
   final String? variantKey;
+  final String powerConnectionMode;
 }
 
 abstract final class F20CatalogGeometry {
@@ -168,7 +170,8 @@ final class _F20Painter extends CustomPainter {
       oldDelegate.state.currentA != state.currentA ||
       oldDelegate.state.voltageV != state.voltageV ||
       oldDelegate.state.animationValue != state.animationValue ||
-      oldDelegate.state.variantKey != state.variantKey;
+      oldDelegate.state.variantKey != state.variantKey ||
+      oldDelegate.state.powerConnectionMode != state.powerConnectionMode;
 }
 
 final class _P {
@@ -221,6 +224,26 @@ final class _P {
     double? size,
     Color color = const Color(0xFF273943),
   }) {
+    // Names belong to the palette/inspector, not to physical housings or
+    // captions around them. Keep actual terminal labels and technical values.
+    const componentCaptions = <String>{
+      'CLIM',
+      'CONGÉL.',
+      'PC',
+      'FRIGO',
+      'FRIGO DC',
+      'TV',
+      'FER',
+      'POMPE',
+      'COMP.',
+      'CONVOYEUR',
+      'CONVOY.',
+      'MÉLANGEUR',
+      'BROYEUR',
+      'VENTIL.',
+      'VENTIL. 3φ',
+    };
+    if (componentCaptions.contains(value)) return;
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: value,
@@ -262,6 +285,30 @@ final class _P {
     Offset(c.dx - w * .17, rect.bottom - h * .08),
     Offset(c.dx + w * .17, rect.bottom - h * .08),
   ];
+
+  void _supplyConnection() {
+    final t = bottomPair();
+    if (state.powerConnectionMode != 'fixed') {
+      final origin = (t[0] + t[1]) / 2;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: origin, width: w * .075, height: h * .045),
+          const Radius.circular(3),
+        ),
+        Paint()..color = const Color(0xFF343C3E),
+      );
+      return;
+    }
+    final body = Rect.fromLTRB(
+      t[0].dx - w * .05,
+      t[0].dy - h * .05,
+      t[1].dx + w * .05,
+      t[1].dy + h * .04,
+    );
+    box(body, top: const Color(0xFFE1E4DD), bottom: const Color(0xFF8C9694));
+    terminal(t[0], variant == 'refrigerator-dc' ? '+' : 'L');
+    terminal(t[1], variant == 'refrigerator-dc' ? '−' : 'N');
+  }
 
   String shortLabel() => switch (variant) {
     'air-conditioner' => 'CLIM',
@@ -371,9 +418,7 @@ final class _P {
         _genericAppliance();
         break;
     }
-    final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
+    _supplyConnection();
   }
 
   void _statusLed(Offset position) {
@@ -671,9 +716,7 @@ final class _P {
       }
       return;
     }
-    final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
+    _supplyConnection();
   }
 
   void _motorBody(Rect body) {
@@ -1086,9 +1129,7 @@ final class _P {
         _genericHeater();
         break;
     }
-    final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
+    _supplyConnection();
   }
 
   void _iron() {

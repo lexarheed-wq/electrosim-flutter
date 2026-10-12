@@ -1,0 +1,51 @@
+name: G5 voltmeter controls and measurement leads
+on:
+  push:
+    branches:
+      - feat/g5-voltmeter-controls-probes-20261011
+    paths:
+      - 'apps/electrosim/lib/f18_voltmeter_controls.dart'
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - 'apps/electrosim/lib/f18_workspace_page.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_test.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_workspace_test.dart'
+      - '.github/workflows/g5-voltmeter-controls-probes.yml'
+  pull_request:
+    paths:
+      - 'apps/electrosim/lib/f18_voltmeter_controls.dart'
+      - 'apps/electrosim/lib/f18_physical_instrument_readouts.dart'
+      - 'apps/electrosim/lib/f18_workspace_page.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_test.dart'
+      - 'apps/electrosim/test/g5_voltmeter_controls_workspace_test.dart'
+      - '.github/workflows/g5-voltmeter-controls-probes.yml'
+permissions:
+  contents: read
+jobs:
+  functional-instrument-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Resolve Flutter packages
+        working-directory: apps/electrosim
+        run: flutter pub get
+      - name: Unit and functional contracts, source vs measurement probes
+        working-directory: apps/electrosim
+        run: flutter test test/g5_voltmeter_controls_test.dart -r expanded --timeout 60s
+      - name: Real Flutter workspace pointer control integration
+        working-directory: apps/electrosim
+        run: flutter test test/g5_voltmeter_controls_workspace_test.dart -r expanded --timeout 120s
+      - name: Analyze updated app controls and readout drawing
+        working-directory: apps/electrosim
+        run: |
+          dart analyze lib/f18_voltmeter_controls.dart
+          dart analyze lib/f18_physical_instrument_readouts.dart
+          dart analyze lib/f18_workspace_page.dart
+      - name: Regression of the prior physical 3D voltmeter projection
+        working-directory: apps/electrosim
+        run: flutter test test/g5_voltmeter_3d_projection_test.dart -r expanded --timeout 60s

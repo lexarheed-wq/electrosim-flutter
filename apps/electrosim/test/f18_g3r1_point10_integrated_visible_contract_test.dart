@@ -36,7 +36,11 @@ void main() {
     expect(find.byType(app.F18WorkspacePage), findsOneWidget);
     expect(find.byType(app.F9WorkspaceDemoPage), findsNothing);
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
-    expect(find.byType(F18ComponentAssetVisual), findsAtLeastNWidgets(5));
+    expect(find.byType(F18ComponentAssetVisual), findsNWidgets(4));
+    expect(
+      find.byKey(const Key('palette-item-instrument-voltmeter')),
+      findsOneWidget,
+    );
 
     expect(canvas.circuit.sources, isEmpty);
     expect(canvas.circuit.components, isEmpty);

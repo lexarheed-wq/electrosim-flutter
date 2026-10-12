@@ -1,6 +1,6 @@
 import 'domain_error.dart';
-import 'electrical_types.dart';
 import 'electrical_ratings.dart';
+import 'electrical_types.dart';
 import 'ids.dart';
 import 'json_support.dart';
 import 'terminal.dart';

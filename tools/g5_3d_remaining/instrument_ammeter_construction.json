@@ -1,0 +1,97 @@
+{
+  "component_key": "instrument-ammeter",
+  "catalogue_model": "physical_ammeter",
+  "development_branch": "feat/g5-3d-sequential-26-components",
+  "status": "reference_incomplete",
+  "reference": {
+    "source_file": "ElectroSim_Kit_Agent_3D/references/photos/instrument-fluke117.jpg",
+    "purpose": "silhouette / construction study only, not a texture",
+    "reference_has_three_visible_sockets": true,
+    "electrosim_ammeter_has_two_probe_ports": true,
+    "difference": "Source photograph shows A / COM / VΩ on a multimeter, while physical_ammeter uses only A and COM. Model must remain generic and unbranded; third jack must not be invented electrically.",
+    "scale_verified": false,
+    "dimensions_mm_verified": false
+  },
+  "logical_canvas": {
+    "width": 112,
+    "height": 152,
+    "unit": "Flutter logical coordinates"
+  },
+  "blender_geometry_nominal": {
+    "body_width": 75,
+    "body_height": 148,
+    "body_depth": 41,
+    "unit": "Blender script arbitrary geometry units; NOT manufacturer mm"
+  },
+  "connectors": [
+    {
+      "port": "COM",
+      "instrument_port": "InstrumentPort.common",
+      "canvas_anchor": [
+        42,
+        128
+      ],
+      "role": "measurement return",
+      "wire_type": "black flexible probe, not circuit wire"
+    },
+    {
+      "port": "A",
+      "instrument_port": "InstrumentPort.amp",
+      "canvas_anchor": [
+        70,
+        128
+      ],
+      "role": "fused series current input",
+      "wire_type": "red flexible probe, not circuit wire"
+    }
+  ],
+  "physics": {
+    "kind": "InstrumentKind.ammeter",
+    "mode_dc": "InstrumentMode.currentDc",
+    "mode_ac": "InstrumentMode.currentAcRms",
+    "series_wire_cut": "InstrumentInstance.cutConnectionId",
+    "burden": "InstrumentInstance.burdenResistanceOhm",
+    "fuse": "InstrumentInstance.fuseRatingA",
+    "fuse_state": "InstrumentInstance.fuseBlown",
+    "ports_as_circuit_terminals": false
+  },
+  "visual_state_map": [
+    {
+      "command": "HOLD",
+      "source": "InstrumentInstance.settings",
+      "state": "captured last valid solver result",
+      "unsafe_state": "no capture on ERR"
+    },
+    {
+      "command": "RANGE",
+      "source": "instrument + measured current",
+      "state": "AUTO, 0.2, 2, 10 A",
+      "unsafe_state": "OL on overrange"
+    },
+    {
+      "command": "SELECT",
+      "source": "InstrumentInstance.mode",
+      "state": "currentDc/currentAcRms",
+      "unsafe_state": "N/A for physically unsupported domain"
+    },
+    {
+      "command": "LIGHT",
+      "source": "InstrumentInstance.settings",
+      "state": "LCD backlight"
+    },
+    {
+      "command": "selector",
+      "source": "InstrumentInstance.poweredOn/mode",
+      "state": "OFF/A DC/A AC"
+    }
+  ],
+  "blocking_before_visual_validation": [
+    "Obtain separate A/COM real socket reference or approved generic industrial drawing",
+    "Confirm accurate physical millimeter dimensions if product fidelity is required",
+    "Render true Blender Cycles front + 3/4 PNGs from this recipe",
+    "Inspect wiring probe sockets align to model under rotation and zoom",
+    "Verify fused current projection and actual runtime value in Flutter; provide direct PNGs"
+  ],
+  "merge_allowed": false,
+  "mac_chromium_qualification": "deferred until all 26 components"
+}

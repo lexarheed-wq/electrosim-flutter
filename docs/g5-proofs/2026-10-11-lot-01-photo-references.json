@@ -1,0 +1,86 @@
+[
+  {
+    "family": "instrument-phase-sequence",
+    "model": "Fluke 9040",
+    "source": "https://www.fluke.com/en-us/product/electrical-testing/basic-testers/fluke-9040",
+    "url": "https://media.fluke.com/05e8e370-c526-47e7-9bbe-b108002bdba9_original__size.jpg",
+    "download_date": "2026-10-11",
+    "file": "build/g5-photo-references/lot-01/fluke-9040-front.jpg",
+    "sha256": "17cec77594b3eda95624de5f84f2fdc8dbb13dc25f0a716fa0344b502f640792",
+    "model_recency": "Official product page retrieved on check date; release date not verified. No claim of newest model.",
+    "observations": "Three permanently wired upper exits, yellow impact housing, tall LCD, no lower jacks or selector."
+  },
+  {
+    "file": "compressor-automan-ac100.jpg",
+    "url": "https://www.atlascopco-kompressoren.de/media/ed/96/2d/1733298991/S2%2BB%2B4116026019%2BAUTOMAN%2BAC100-BM%2BSIL_S2_01.jpg",
+    "family": "external-compressor",
+    "source": "https://www.atlascopco-kompressoren.de/de/p/automan-af-ac-ah-oelgeschmierte-und-oelfreie-kolbenkompressoren-fuer-die-werkstatt/4116026322",
+    "download_date": "2026-10-11",
+    "bytes": 1264412,
+    "sha256": "8e0ea980c68ce9ac522bb5f41b38bc722519d34de80aad49356f6e4424d2becf",
+    "last_modified": "Wed, 04 Dec 2024 07:56:31 GMT",
+    "model_recency": "candidate; exact current range must be checked, download date is not model date",
+    "status": "downloaded"
+  },
+  {
+    "file": "air-conditioner-daikin-ftxfd.jpg",
+    "url": "https://www.daikin.de/content/dam/MDM/Pictures/Split/IndoorUnits/Packshots/FTXF-D.tif/jcr%3Acontent/renditions/cq5dam.web.1280.1280.jpeg",
+    "family": "external-air-conditioner indoor split unit",
+    "source": "https://www.daikin.de/de_de/produkte/product.html/FTXF-D---RXF-C.html",
+    "download_date": "2026-10-11",
+    "bytes": 41970,
+    "sha256": "0a59852934f06c6ab5a7e49087ed1c8ad4a85fdf7e386125cbeb177384814ee0",
+    "last_modified": "Mon, 12 Sep 2022 17:24:29 GMT",
+    "model_recency": "candidate; exact current range must be checked, download date is not model date",
+    "status": "downloaded"
+  },
+  {
+    "file": "iron-tefal-fv9844.png",
+    "url": "https://shop.tefal.gr/cdn/shop/files/A9B3CFE82855A6DAF9E5223A05683F470A3F74D88F699AF749A298028122DE32.png?v=1771845867&width=500",
+    "family": "external-iron",
+    "source": "https://shop.tefal.gr/products/ultimate-pure-sidero-atmoy-fv9844",
+    "download_date": "2026-10-11",
+    "bytes": 108305,
+    "sha256": "996f3818edf478ae90861ed0cc95cc873fad57b4b1e037a38863b80f0cd46e18",
+    "last_modified": "Fri, 09 Oct 2026 17:16:02 GMT",
+    "model_recency": "candidate; exact current range must be checked, download date is not model date",
+    "status": "downloaded"
+  },
+  {
+    "file": "conveyor-dorner2200-current-catalogue.jpg",
+    "family": "external-conveyor",
+    "source": "https://www.dornerconveyors.com/products/2200-series/2200-belted-conveyor",
+    "url": "https://www.dornerconveyors.com/wp-content/uploads/2017/08/2200-Belted-Updated-Frame-Design-2048x1365.jpg",
+    "download_date": "2026-10-11",
+    "bytes": 96722,
+    "sha256": "74395b8c2e4e8b4d7a91ee6e4ea82e8aea074fe94ac29ecd28508a45bc015dc8",
+    "last_modified": "Mon, 12 Dec 2022 19:33:50 GMT",
+    "model_recency": "candidate; exact current range must be checked, download date is not model date",
+    "status": "downloaded"
+  },
+  {
+    "family": "external-freezer",
+    "rejected_reference": "Liebherr GN3735",
+    "reason": "Historic photo retained in earlier archive; current model status not established. Do not use as current range by default."
+  },
+  {
+    "family": "external-crusher",
+    "file": "build/g5-photo-references/lot-01/crusher-bb300-current.png",
+    "url": "https://www.retsch.com/assets/images/c/main_bb300-32z9pkjepempwf9.png",
+    "source": "https://www.retsch.com/products/milling/jaw-crusher/bb-300/",
+    "sha256": "6ab82c7ee337b8f76e28c51001813642cf9ca93313fc72797085de09cb0c1164",
+    "download_date": "2026-10-11",
+    "observations": "Current official product page retrieved: wide upper hopper, enclosed jaw chamber, lateral belt guard, heavy pedestal. No exposed rotating rollers.",
+    "model_recency": "Present on manufacturer product page on consultation date; no assertion about release date."
+  },
+  {
+    "family": "external-iron",
+    "file": "build/g5-photo-references/lot-01/iron-tefal-fv9844-body.png",
+    "url": "https://shop.tefal.gr/cdn/shop/files/FE2A945783CAE00CE9A163CD0D702B1EA65E9E3E7068560C6F2940E96EE92877.png?v=1771845861",
+    "source": "https://shop.tefal.gr/products/ultimate-pure-sidero-atmoy-fv9844",
+    "sha256": "64e8b67a51e9763eb86310b1bf6ffb89b42cd142b95a87ef12b888e6efefdb04",
+    "download_date": "2026-10-11",
+    "observations": "Official shop product page retrieved: arched hollow handle, translucent reservoir, pointed soleplate and rear upper cable strain relief; soleplate-only photo insufficient.",
+    "model_recency": "Present on manufacturer product page on consultation date; no assertion about release date."
+  }
+]

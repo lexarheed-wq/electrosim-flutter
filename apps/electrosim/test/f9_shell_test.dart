@@ -302,6 +302,14 @@ void main() {
         contains('3 éléments · 1 source'),
       );
 
+      await tester.enterText(
+        find.byKey(const Key('palette-search-field')),
+        'résistance',
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('palette-quick-add-resistor')),
+      );
       await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
       await tester.pumpAndSettle();
 
@@ -336,6 +344,8 @@ void main() {
       ),
     );
     await _openPalette(tester);
+    await tester.ensureVisible(find.byKey(const Key('palette-quick-add-lamp')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('palette-quick-add-lamp')));
     await tester.pumpAndSettle();
 
@@ -367,6 +377,11 @@ void main() {
       ),
     );
     await _openPalette(tester);
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'résistance',
+    );
+    await tester.pumpAndSettle();
     final Finder item = find.byKey(const Key('palette-item-resistor'));
     final Finder dropRegion = find.byKey(const Key('f18-canvas-drop-region'));
     expect(item, findsOneWidget);

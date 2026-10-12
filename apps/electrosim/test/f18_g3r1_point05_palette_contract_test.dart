@@ -30,7 +30,11 @@ void main() {
     expect(find.byKey(const Key('palette-item-source-dc-24v')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-switch-no')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-lamp')), findsOneWidget);
-    expect(find.byKey(const Key('palette-item-resistor')), findsOneWidget);
+    expect(
+      find.byKey(const Key('palette-item-instrument-voltmeter')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('palette-item-resistor')), findsNothing);
     expect(find.byKey(const Key('palette-item-breaker')), findsOneWidget);
     expect(find.byKey(const Key('palette-item-push-button-no')), findsNothing);
     expect(find.byKey(const Key('palette-show-all')), findsOneWidget);
@@ -121,10 +125,13 @@ void main() {
         component.parameters['_visualModelType'],
         'catalog_motor_driven_2t',
       );
-      expect(component.parameters['_visualVariant'], 'pump');
+      expect(component.parameters['_visualVariant'], 'solar-pump');
       expect(
         canvas.layout.sizeOf(component.id.value),
-        F18ReferenceComponentMetrics.boardSizeFor('catalog_motor_driven_2t'),
+        F18ReferenceComponentMetrics.boardSizeFor(
+          'catalog_motor_driven_2t',
+          variantKey: 'solar-pump',
+        ),
       );
     },
   );
@@ -169,7 +176,10 @@ void main() {
     );
     expect(
       canvas.layout.sizeOf('restored-tv'),
-      F18ReferenceComponentMetrics.boardSizeFor('catalog_appliance_2t'),
+      F18ReferenceComponentMetrics.boardSizeFor(
+        'catalog_appliance_2t',
+        variantKey: 'television',
+      ),
     );
   });
 }

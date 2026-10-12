@@ -1,0 +1,32 @@
+{
+  "key": "power_socket_ac",
+  "images": {
+    "front.png": {
+      "sha256": "7177460f93b595a5948b25aa393521918962de5b0ad1fc490af488f87f735a5b",
+      "size": [
+        480,
+        480
+      ]
+    },
+    "palette.png": {
+      "sha256": "54e0fc61edbd9fc38dae65c41d36b44a1a82a2b4c106efef1c5852fc2bcd3005",
+      "size": [
+        480,
+        480
+      ]
+    },
+    "service.png": {
+      "sha256": "20226b05853cb08dc5a7d1500f54126653bb23d16666ec66f0955c1d26bcddc5",
+      "size": [
+        480,
+        480
+      ]
+    }
+  },
+  "samples": 32,
+  "blender": "4.5.3 LTS",
+  "seconds": 38.22,
+  "contract_sha256": "44dabe64e1c24b13a1e4a951175c7875831367e249569630161d4c0dfac60cea",
+  "geometry_sha256": "4a88d5a8c238cee1f771e71338b110b959bb37ee10caa1c6a0c31e641d63ec88",
+  "actual_flutter_capture": false
+}

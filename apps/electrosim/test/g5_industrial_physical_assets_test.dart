@@ -169,6 +169,42 @@ void main() {
                   );
               final x = (p.dx / size.width * image.width).round();
               final y = (p.dy / size.height * image.height).round();
+              // Bare electronic parts have a narrow metal lead, not a dark
+              // screw well. Verify actual metal at the port within one logical
+              // pixel; retain the strict opening checks for real connectors.
+              if (const {
+                'resistor',
+                'capacitor',
+                'inductor',
+                'diode',
+              }.contains(entry.key)) {
+                var foundLead = false;
+                final radius = (image.width / size.width).ceil();
+                for (var dy = -radius; dy <= radius; dy++) {
+                  for (var dx = -radius; dx <= radius; dx++) {
+                    final px = x + dx, py = y + dy;
+                    if (px < 0 ||
+                        py < 0 ||
+                        px >= image.width ||
+                        py >= image.height) {
+                      continue;
+                    }
+                    final at = (py * image.width + px) * 4;
+                    if (pixels.getUint8(at + 3) > 200 &&
+                        pixels.getUint8(at) > 90 &&
+                        pixels.getUint8(at + 1) > 90 &&
+                        pixels.getUint8(at + 2) > 90) {
+                      foundLead = true;
+                    }
+                  }
+                }
+                expect(
+                  foundLead,
+                  isTrue,
+                  reason: '${entry.key} port $i must touch its metal lead',
+                );
+                continue;
+              }
               final index = (y * image.width + x) * 4;
               expect(pixels.getUint8(index + 3), greaterThan(240));
               final luminance =

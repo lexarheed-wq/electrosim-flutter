@@ -32,6 +32,7 @@ final class SimulatorCanvas extends StatefulWidget {
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
     this.schematicPresentation = false,
+    this.customInstrumentCaseIds = const <String>{},
   });
 
   final CircuitState circuit;
@@ -49,6 +50,7 @@ final class SimulatorCanvas extends StatefulWidget {
   final bool smartWireSemantics;
   final bool paintElementChrome;
   final bool schematicPresentation;
+  final Set<String> customInstrumentCaseIds;
 
   @override
   State<SimulatorCanvas> createState() => _SimulatorCanvasState();
@@ -422,6 +424,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                           widget.wireLayoutEngine != null,
                       paintElementChrome: widget.paintElementChrome,
                       schematicPresentation: widget.schematicPresentation,
+                      customInstrumentCaseIds: widget.customInstrumentCaseIds,
                     ),
                     size: Size.infinite,
                   ),

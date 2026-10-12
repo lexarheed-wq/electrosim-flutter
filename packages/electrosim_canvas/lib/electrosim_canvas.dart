@@ -19,3 +19,4 @@ export 'src/cabinet_duct_wire_planner.dart';
 export 'src/cabinet_fixture_painter.dart';
 export 'src/motor_terminal_geometry.dart';
 export 'src/cabinet_physical_model.dart';
+export 'src/native_appliance_geometry.dart';

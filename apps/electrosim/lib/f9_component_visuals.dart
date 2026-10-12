@@ -1,3 +1,4 @@
+import 'runtime/energy_meter_runtime.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -10,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'f18_component_archetypes.dart';
+import 'f18_terminal_affordances.dart';
+import 'f18_appliance_power_cords.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
@@ -27,6 +30,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.selectedElementIds = const <String>{},
     this.pendingTerminalId,
     this.hoverTerminalId,
+    this.showAllTerminals = false,
     this.pointerWorldPosition,
     this.pointerWorldPositionListenable,
     this.wirePreviewPlanner,
@@ -41,6 +45,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final bool showAllTerminals;
   final Offset? pointerWorldPosition;
   final ValueListenable<Offset?>? pointerWorldPositionListenable;
   final WirePreviewPlanner? wirePreviewPlanner;
@@ -239,6 +244,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     selectedElementIds: widget.selectedElementIds,
                     pendingTerminalId: widget.pendingTerminalId,
                     hoverTerminalId: widget.hoverTerminalId,
+                    showAllTerminals: widget.showAllTerminals,
                     pointerWorldPosition: null,
                     wirePreviewPlanner: widget.wirePreviewPlanner,
                     wirePreviewSession: wirePreviewSession,
@@ -265,6 +271,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                               selectedElementIds: widget.selectedElementIds,
                               pendingTerminalId: widget.pendingTerminalId,
                               hoverTerminalId: widget.hoverTerminalId,
+                              showAllTerminals: widget.showAllTerminals,
                               pointerWorldPosition: pointer,
                               wirePreviewPlanner: widget.wirePreviewPlanner,
                               wirePreviewSession: wirePreviewSession,
@@ -275,6 +282,18 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                             size: Size.infinite,
                           ),
                         ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: F18AppliancePowerCords(
+                      circuit: widget.circuit,
+                      layout: widget.layout,
+                      viewport: widget.viewport,
+                      geometry: geometry,
+                    ),
+                  ),
+                ),
               ),
             ],
           );
@@ -306,6 +325,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required String modelType,
       String? visualModelType,
       String? visualVariant,
+      String powerConnectionMode = 'fixed',
       required bool enabled,
       required bool energized,
       required bool closed,
@@ -321,6 +341,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double currentLimitA,
       required double resistanceOhm,
       double? angularSpeedRadS,
+      MeterEnergyReading? meterReading,
       double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
     }) {
@@ -354,7 +375,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                 child: _F9ReferenceAsset(
                   key: ValueKey<String>('board-v1-visual-$elementId'),
                   modelType: renderedModelType,
+                  meterReading: meterReading,
                   variantKey: visualVariant,
+                  powerConnectionMode: powerConnectionMode,
                   size: baseVisualSize,
                   active: enabled,
                   energized: energized,
@@ -365,11 +388,18 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   motionSeconds: _motionSeconds,
                   angularSpeedRadS: angularSpeedRadS,
                   animate:
+                      !renderedModelType.startsWith('energy_meter_') &&
                       (angularSpeedRadS != null
                           ? angularSpeedRadS.abs() > 1e-8
                           : energized) &&
-                      requiresContinuousAnimation(renderedModelType),
+                      (requiresContinuousAnimation(renderedModelType) ||
+                          NativeApplianceGeometry.forVisual(
+                                renderedModelType,
+                                visualVariant,
+                              ) !=
+                              null),
                   showTerminals: true,
+                  serviceOpen: widget.selectedElementIds.contains(elementId),
                   currentA: currentA,
                   voltageV: voltageV,
                   batterySoc: batterySoc,
@@ -446,11 +476,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
           componentState?.code == ComponentOperatingCode.overloaded;
+      final meterReading = runtime?.energyMeters[component.id];
       final bool energized =
           widget.simulationRunning &&
           (runtime?.solved ?? false) &&
-          stateAllowsEnergy &&
-          currentA.abs() > 1e-6;
+          (meterReading != null
+              ? meterReading.available
+              : stateAllowsEnergy && currentA.abs() > 1e-6);
       final String type = component.modelType.toLowerCase();
       final bool pressed = component.controlState['pressed'] == true;
       final bool closed = switch (type) {
@@ -476,6 +508,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: component.id.value,
         modelType: component.modelType,
+        meterReading: meterReading,
         angularSpeedRadS: rotorVelocity(
           runtime,
           component,
@@ -488,7 +521,10 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
               24,
         ),
         visualModelType: component.parameters['_visualModelType'] as String?,
-        visualVariant: component.parameters['_visualVariant'] as String?,
+        visualVariant:
+            NativeApplianceGeometry.forComponent(component)?.variant ??
+            component.parameters['_visualVariant'] as String?,
+        powerConnectionMode: AppliancePowerConnection.mode(component),
         enabled: component.condition != ComponentCondition.disabled,
         energized: energized,
         closed: closed,
@@ -711,6 +747,8 @@ class _F9ReferenceAsset extends StatefulWidget {
     required this.motionSeconds,
     required this.animate,
     this.angularSpeedRadS,
+    this.meterReading,
+    this.powerConnectionMode = 'fixed',
     this.variantKey,
     this.active = true,
     this.energized = false,
@@ -720,6 +758,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     this.actuated = false,
     this.batterySoc = 0,
     this.showTerminals = true,
+    this.serviceOpen = false,
     this.currentA = 0,
     this.voltageV = 0,
     this.ratedCurrentA = 1,
@@ -735,6 +774,8 @@ class _F9ReferenceAsset extends StatefulWidget {
   final ValueListenable<double> motionSeconds;
   final bool animate;
   final double? angularSpeedRadS;
+  final MeterEnergyReading? meterReading;
+  final String powerConnectionMode;
   final String? variantKey;
   final bool active;
   final bool energized;
@@ -744,6 +785,7 @@ class _F9ReferenceAsset extends StatefulWidget {
   final bool actuated;
   final double batterySoc;
   final bool showTerminals;
+  final bool serviceOpen;
   final double currentA;
   final double voltageV;
   final double ratedCurrentA;
@@ -761,7 +803,9 @@ class _F9ReferenceAsset extends StatefulWidget {
     presentation: F18IndustrialPresentation.boardFront,
     child: F18ComponentAssetVisual(
       modelType: modelType,
+      meterReading: meterReading,
       variantKey: variantKey,
+      powerConnectionMode: powerConnectionMode,
       size: size,
       active: active,
       energized: energized,
@@ -772,6 +816,7 @@ class _F9ReferenceAsset extends StatefulWidget {
       animationValue: phase,
       batterySoc: batterySoc,
       showTerminals: showTerminals,
+      serviceOpen: serviceOpen,
       currentA: currentA,
       voltageV: voltageV,
       ratedCurrentA: ratedCurrentA,
@@ -964,6 +1009,9 @@ class _F9CurrentFlowPainter extends CustomPainter {
     if (!simulationRunning || runtime == null || !runtime.solved) return;
 
     for (final Connection connection in circuit.connections) {
+      if (connection.metadata.containsKey(AppliancePowerConnection.cableTag)) {
+        continue;
+      }
       if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
         continue;
       }
@@ -1086,6 +1134,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
     required this.wirePreviewPlanner,
     required this.wirePreviewSession,
     required this.wiringDecisions,
+    this.showAllTerminals = false,
     this.paintStaticChrome = true,
     this.paintInteraction = true,
   });
@@ -1097,6 +1146,7 @@ class _F9StaticOverlayPainter extends CustomPainter {
   final Set<String> selectedElementIds;
   final TerminalId? pendingTerminalId;
   final TerminalId? hoverTerminalId;
+  final bool showAllTerminals;
   final Offset? pointerWorldPosition;
   final WirePreviewPlanner? wirePreviewPlanner;
   final WirePreviewSession? wirePreviewSession;
@@ -1122,7 +1172,6 @@ class _F9StaticOverlayPainter extends CustomPainter {
         (source.parameters['_visualModelType'] as String?) ?? source.modelType,
         source.enabled,
         layout.quarterTurnsOf(source.id.value),
-        displayLabel: source.parameters['_displayLabel'] as String?,
       );
     }
     for (final ComponentInstance component in circuit.components) {
@@ -1138,11 +1187,116 @@ class _F9StaticOverlayPainter extends CustomPainter {
             component.modelType,
         active,
         layout.quarterTurnsOf(component.id.value),
-        displayLabel: component.parameters['_displayLabel'] as String?,
       );
     }
 
+    _paintCrusherMaintenanceWires(canvas);
     _paintSelection(canvas, geometry);
+  }
+
+  void _paintCrusherMaintenanceWires(Canvas canvas) {
+    for (final c in circuit.components) {
+      final standalone =
+          (c.parameters['_visualModelType'] ?? c.modelType) == 'motor_3p_6t';
+      final native = NativeApplianceGeometry.forComponent(c);
+      final crusher =
+          c.parameters['_visualModelType'] == 'catalog_motor_driven_6t' &&
+          c.parameters['_visualVariant'] == 'crusher';
+      if (!standalone &&
+          (!(crusher || native != null) ||
+              !selectedElementIds.contains(c.id.value))) {
+        continue;
+      }
+      final rect = geometry.elementRects[c.id.value];
+      if (rect == null) continue;
+      final ports = c.terminals.map((t) => t.id).toSet();
+      canvas.save();
+      if (native != null) {
+        final size = layout.sizeOf(c.id.value);
+        Offset project(Offset point) {
+          var p = Offset(
+            (point.dx / native.designSize.width - .5) * size.width,
+            (point.dy / native.designSize.height - .5) * size.height,
+          );
+          for (var q = 0; q < layout.quarterTurnsOf(c.id.value); q++) {
+            p = Offset(-p.dy, p.dx);
+          }
+          return viewport.worldToScreen(rect.center + p);
+        }
+
+        canvas.clipRect(
+          Rect.fromPoints(
+            project(native.serviceBox.topLeft),
+            project(native.serviceBox.bottomRight),
+          ),
+        );
+      } else {
+        final a = viewport.worldToScreen(rect.topLeft);
+        final b = viewport.worldToScreen(rect.bottomRight);
+        canvas.clipRect(Rect.fromPoints(a, b));
+      }
+      for (final wire in circuit.connections) {
+        if (wire.metadata.containsKey(AppliancePowerConnection.cableTag)) {
+          continue;
+        }
+        if (!ports.contains(wire.fromTerminalId) &&
+            !ports.contains(wire.toTerminalId)) {
+          continue;
+        }
+        final internal =
+            ports.contains(wire.fromTerminalId) &&
+            ports.contains(wire.toTerminalId);
+        if (standalone && !internal) continue;
+        final start = geometry.terminalPositions[wire.fromTerminalId];
+        final end = geometry.terminalPositions[wire.toTerminalId];
+        if (start == null || end == null) continue;
+        final points = [start, ...layout.routeFor(wire.id.value), end];
+        final path = Path();
+        for (var i = 0; i < points.length; i++) {
+          final p = viewport.worldToScreen(points[i]);
+          if (i == 0) {
+            path.moveTo(p.dx, p.dy);
+          } else {
+            path.lineTo(p.dx, p.dy);
+          }
+        }
+        final earth = c.terminals.any(
+          (t) =>
+              t.name == 'PE' &&
+              (t.id == wire.fromTerminalId || t.id == wire.toTerminalId),
+        );
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = earth
+                ? const Color(0xff258945)
+                : internal
+                ? const Color(0xffae8b3c)
+                : switch (wire.phase) {
+                    PhaseTag.l1 => const Color(0xff92400e),
+                    PhaseTag.l2 => const Color(0xff111827),
+                    PhaseTag.l3 => const Color(0xff6b7280),
+                    PhaseTag.neutral => const Color(0xff2563eb),
+                    PhaseTag.dcPositive => const Color(0xffdc2626),
+                    _ => const Color(0xff202b35),
+                  }
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3.5 * viewport.scale
+            ..strokeJoin = StrokeJoin.round
+            ..strokeCap = StrokeCap.round,
+        );
+        if (earth) {
+          canvas.drawPath(
+            path,
+            Paint()
+              ..color = const Color(0xffeacf33)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.2 * viewport.scale,
+          );
+        }
+      }
+      canvas.restore();
+    }
   }
 
   void _paintSelection(Canvas canvas, CircuitGeometryIndex geometry) {
@@ -1244,102 +1398,35 @@ class _F9StaticOverlayPainter extends CustomPainter {
   }
 
   void _paintTerminals(Canvas canvas, CircuitGeometryIndex geometry) {
-    for (final MapEntry<TerminalId, Offset> entry
-        in geometry.terminalPositions.entries) {
-      final Offset p = viewport.worldToScreen(entry.value);
-      final bool pending = entry.key == pendingTerminalId;
-      final bool hovered = entry.key == hoverTerminalId;
-      final double radius = pending || hovered ? 6.4 : 5.2;
-      final bool referenceTerminal = _isReferenceTerminal(entry.key);
-
-      if (referenceTerminal) {
-        if (pending || hovered) {
-          canvas.drawCircle(
-            p,
-            radius + 4,
-            Paint()
-              ..color = ElectroSimColors.primary.withValues(alpha: 45 / 255),
-          );
-          canvas.drawCircle(
-            p,
-            radius + 1.5,
-            Paint()
-              ..color = ElectroSimColors.primary
-              ..strokeWidth = 2
-              ..style = PaintingStyle.stroke,
-          );
-        }
+    final descriptors = F18TerminalAffordances.descriptors(circuit);
+    final plugTerminalIds = {
+      for (final c in circuit.components)
+        if (AppliancePowerConnection.isExternal(c) &&
+            AppliancePowerConnection.mode(c) != 'fixed')
+          ...c.terminals.map((t) => t.id),
+    };
+    for (final entry in geometry.terminalPositions.entries) {
+      if (plugTerminalIds.contains(entry.key)) continue;
+      final descriptor = descriptors[entry.key];
+      final pending = entry.key == pendingTerminalId;
+      final hovered = entry.key == hoverTerminalId;
+      final selected = selectedElementIds.contains(descriptor?.owner);
+      if (!F18TerminalAffordances.visible(
+        hovered: hovered,
+        pending: pending,
+        selected: selected,
+        showAll: showAllTerminals,
+      )) {
         continue;
       }
-
-      if (pending || hovered) {
-        canvas.drawCircle(
-          p,
-          radius + 3,
-          Paint()..color = ElectroSimColors.primary.withValues(alpha: 52 / 255),
-        );
-      }
-      canvas.drawCircle(
-        p.translate(0, 1),
-        radius,
-        Paint()..color = const Color(0x33000000),
-      );
-      final Rect metal = Rect.fromCircle(center: p, radius: radius);
-      canvas.drawCircle(
-        p,
-        radius,
-        Paint()
-          ..shader = const RadialGradient(
-            center: Alignment(-.35, -.35),
-            colors: <Color>[
-              Color(0xFFFFF2BF),
-              Color(0xFFD4A44B),
-              Color(0xFF7C5927),
-            ],
-          ).createShader(metal),
-      );
-      canvas.drawCircle(
-        p,
-        radius,
-        Paint()
-          ..color = pending || hovered
-              ? ElectroSimColors.primary
-              : const Color(0xFF49371F)
-          ..strokeWidth = pending || hovered ? 2.2 : 1.4
-          ..style = PaintingStyle.stroke,
-      );
-      canvas.drawCircle(
-        p,
-        math.max(1.5, radius * .30),
-        Paint()..color = const Color(0xFF4D3A22),
+      F18TerminalAffordances.paint(
+        canvas,
+        viewport.worldToScreen(entry.value),
+        hovered: hovered,
+        pending: pending,
+        name: descriptor?.name ?? '',
       );
     }
-  }
-
-  bool _isReferenceTerminal(TerminalId terminalId) {
-    for (final SourceInstance source in circuit.sources) {
-      final String rendered =
-          (source.parameters['_visualModelType'] as String?) ??
-          source.modelType;
-      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (source.terminals.any(
-        (Terminal terminal) => terminal.id == terminalId,
-      )) {
-        return true;
-      }
-    }
-    for (final ComponentInstance component in circuit.components) {
-      final String rendered =
-          (component.parameters['_visualModelType'] as String?) ??
-          component.modelType;
-      if (!F18ReferenceComponentVisuals.supports(rendered)) continue;
-      if (component.terminals.any(
-        (Terminal terminal) => terminal.id == terminalId,
-      )) {
-        return true;
-      }
-    }
-    return false;
   }
 
   void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {
@@ -1388,9 +1475,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
     Rect worldRect,
     String modelType,
     bool active,
-    int quarterTurns, {
-    String? displayLabel,
-  }) {
+    int quarterTurns,
+  ) {
     final Offset center = viewport.worldToScreen(worldRect.center);
     final Size visualSize = F18ReferenceComponentVisuals.supports(modelType)
         ? Size(
@@ -1419,56 +1505,8 @@ class _F9StaticOverlayPainter extends CustomPainter {
       canvas.restore();
     }
 
-    if (viewport.scale >= 0.72) {
-      final TextPainter painter = TextPainter(
-        text: TextSpan(
-          text: displayLabel ?? _boardLabel(modelType),
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            color: ElectroSimColors.textPrimary,
-            fontSize: (11.5 * viewport.scale).clamp(10.0, 14.0).toDouble(),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-      )..layout(maxWidth: visualSize.width + 40);
-      painter.paint(
-        canvas,
-        Offset(
-          center.dx - painter.width / 2,
-          center.dy + visualSize.height / 2 + 7,
-        ),
-      );
-    }
-  }
-
-  String _boardLabel(String modelType) {
-    return switch (modelType.toLowerCase()) {
-      'dc_voltage_source' || 'voltage_source' => 'Alim. 24 V',
-      'push_button_no' => 'BP NO',
-      'switch' || 'switch_spst' => 'Interrupteur',
-      'lamp' => 'Lampe',
-      'resistor' => 'Résistance',
-      'breaker_dc' || 'breaker_ac1' || 'breaker' => 'Disjoncteur',
-      'fuse_dc' || 'fuse_ac1' || 'fuse' => 'Fusible',
-      'motor_dc' => 'Moteur CC',
-      'fan_dc' => 'Ventilateur',
-      'relay_coil' => 'Bobine',
-      'buzzer' => 'Buzzer',
-      'capacitor' => 'Condensateur',
-      'inductor' => 'Inductance',
-      'impedance' => 'Impédance',
-      'contactor_aux_no' => 'Aux. NO',
-      'contactor_aux_nc' => 'Aux. NC',
-      'relay_contact_no' => 'Relais NO',
-      'relay_contact_nc' => 'Relais NC',
-      'contactor_ac1' => 'Contacteur 1φ',
-      'contactor_3p' => 'Contacteur 3P',
-      'breaker_3p' => 'Disjoncteur 3P',
-      'thermal_overload_3p' => 'Relais thermique',
-      _ => modelType.replaceAll('_', ' '),
-    };
+    // Physical device markings remain on the body; palette and inspector
+    // provide component names without duplicating captions on the plate.
   }
 
   @override

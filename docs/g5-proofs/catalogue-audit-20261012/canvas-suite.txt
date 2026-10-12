@@ -1,0 +1,285 @@
+
+00:00 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:01 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:02 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:03 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:04 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:05 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:06 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:07 +0: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart
+00:07 +0: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview snaps to a nearby compatible geometric terminal position
+00:07 +1: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview snaps to a nearby compatible geometric terminal position
+00:07 +1: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview detours around a component obstacle
+00:07 +2: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview detours around a component obstacle
+00:07 +2: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview detours around a long finite wall instead of crossing it
+00:07 +3: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: preview detours around a long finite wall instead of crossing it
+00:07 +3: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: prepared preview preserves routing result while reusing stable context
+00:07 +4: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: prepared preview preserves routing result while reusing stable context
+00:07 +4: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: prepared preview hot path stays inside frame budget on 200 elements
+00:07 +5: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_preview_planner_test.dart: prepared preview hot path stays inside frame budget on 200 elements
+00:07 +5: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart
+00:08 +5: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart
+00:08 +5: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: compact canvas golden
+00:08 +6: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: compact canvas golden
+00:08 +6: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: medium canvas golden
+00:09 +6: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: medium canvas golden
+00:09 +7: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: medium canvas golden
+00:09 +7: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: expanded canvas golden
+00:09 +8: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_golden_test.dart: expanded canvas golden
+00:09 +8: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart
+00:09 +8: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: uploaded V2 physical terminals match exact Dart design coordinates
+00:09 +9: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: uploaded V2 physical terminals match exact Dart design coordinates
+00:09 +9: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: all additional V2 components keep terminals on their physical lugs
+00:09 +10: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: all additional V2 components keep terminals on their physical lugs
+00:09 +10: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: uploaded V2 routing ports follow each physical terminal exit side
+00:09 +11: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: uploaded V2 routing ports follow each physical terminal exit side
+00:09 +11: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: CircuitGeometryIndex rotates V2 switch anchors with the component
+00:09 +12: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: CircuitGeometryIndex rotates V2 switch anchors with the component
+00:09 +12: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: unknown two-terminal models keep generic box-edge anchors
+00:09 +13: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_terminal_profile_test.dart: unknown two-terminal models keep generic box-edge anchors
+00:09 +13: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart
+00:10 +13: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart
+00:10 +13: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 rails and ducts are geometry-only and support move/resize/remove
+00:10 +14: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 rails and ducts are geometry-only and support move/resize/remove
+00:10 +14: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 invalid fixtures and duplicates are explicitly rejected
+00:10 +15: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 invalid fixtures and duplicates are explicitly rejected
+00:10 +15: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 assisted DIN snaps onto nearby rail, free mode does not
+00:10 +16: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 assisted DIN snaps onto nearby rail, free mode does not
+00:10 +16: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 placement reports collisions with devices, ducts and terminal zones
+00:10 +17: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 placement reports collisions with devices, ducts and terminal zones
+00:10 +17: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 snap never creates an electrical constraint or unexpected relocation
+00:10 +18: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 snap never creates an electrical constraint or unexpected relocation
+00:10 +18: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 viewport coordinates only affect paint, not stored world geometry
+00:10 +19: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 viewport coordinates only affect paint, not stored world geometry
+00:10 +19: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 fixture movement clamps to bounded cabinet, not to electric ports
+00:10 +20: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 fixture movement clamps to bounded cabinet, not to electric ports
+00:10 +20: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 orthogonal duct routing traverses centerline and preserves endpoints
+00:10 +21: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 orthogonal duct routing traverses centerline and preserves endpoints
+00:10 +21: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 duct routing falls back safely when there is no cable duct
+00:10 +22: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/postv2_p2_cabinet_layout_test.dart: P2 duct routing falls back safely when there is no cable duct
+00:10 +22: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_semantics_test.dart
+00:10 +22: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_semantics_test.dart: detects a manual non-junction crossing
+00:10 +23: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_semantics_test.dart: detects a manual non-junction crossing
+00:10 +23: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_semantics_test.dart: shared terminal is an explicit electrical junction, not a crossing
+00:10 +24: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_semantics_test.dart: shared terminal is an explicit electrical junction, not a crossing
+00:10 +24: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart
+00:11 +24: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart
+00:11 +24: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: router is deterministic across 100 seeded obstacle fixtures
+00:11 +25: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: router is deterministic across 100 seeded obstacle fixtures
+00:11 +25: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: different-net barriers are never crossed in 60 seeded fixtures
+00:11 +26: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: different-net barriers are never crossed in 60 seeded fixtures
+00:11 +26: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: resolved route rerouting is stable when reused as a visual constraint
+00:11 +27: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_routing_robustness_test.dart: resolved route rerouting is stable when reused as a visual constraint
+00:11 +27: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/pv_terminal_bank_hit_test.dart
+00:11 +27: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/pv_terminal_bank_hit_test.dart: compact PV bank chooses the nearest terminal when zoomed hit areas overlap
+00:11 +28: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/pv_terminal_bank_hit_test.dart: compact PV bank chooses the nearest terminal when zoomed hit areas overlap
+00:11 +28: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart
+00:12 +28: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart
+00:12 +28: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: click selects component without moving it
+00:12 +29: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: click selects component without moving it
+00:12 +29: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: long press plus drag requests a graphical move
+00:12 +30: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: long press plus drag requests a graphical move
+00:12 +30: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: two terminal taps request a connection and do not mutate CircuitState
+00:12 +31: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: two terminal taps request a connection and do not mutate CircuitState
+00:12 +31: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: background drag pans viewport but leaves layout unchanged
+00:12 +32: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: background drag pans viewport but leaves layout unchanged
+00:12 +32: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: double tap on a component emits contextual action
+00:12 +33: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: double tap on a component emits contextual action
+00:12 +33: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: background tap cancels pending wiring before another terminal tap
+00:12 +34: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: background tap cancels pending wiring before another terminal tap
+00:12 +34: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: clicking a wire selects its connection id
+00:12 +35: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: clicking a wire selects its connection id
+00:12 +35: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: smart routing opt-in supplies routed geometry to the painter
+00:12 +36: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: smart routing opt-in supplies routed geometry to the painter
+00:12 +36: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: wheel zoom changes viewport around pointer
+00:12 +37: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/simulator_canvas_test.dart: wheel zoom changes viewport around pointer
+00:12 +37: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart
+00:13 +37: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart
+00:13 +37: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 25 elements
+00:13 +37: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 25 elements
+CANVAS_PERF01_JSON:{"phase":"CANVAS-PERF01","sceneElements":25,"sceneConnections":24,"iterations":80,"medianMicroseconds":320,"p95Microseconds":782,"maxMicroseconds":3079,"frameBudgetMicroseconds":16667}
+
+00:13 +38: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 25 elements
+00:13 +38: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 50 elements
+00:13 +38: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 50 elements
+CANVAS_PERF01_JSON:{"phase":"CANVAS-PERF01","sceneElements":50,"sceneConnections":49,"iterations":80,"medianMicroseconds":318,"p95Microseconds":776,"maxMicroseconds":1387,"frameBudgetMicroseconds":16667}
+
+00:13 +39: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 50 elements
+00:13 +39: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 100 elements
+00:13 +39: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 100 elements
+CANVAS_PERF01_JSON:{"phase":"CANVAS-PERF01","sceneElements":100,"sceneConnections":99,"iterations":80,"medianMicroseconds":289,"p95Microseconds":711,"maxMicroseconds":2327,"frameBudgetMicroseconds":16667}
+
+00:13 +40: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 100 elements
+00:13 +40: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 200 elements
+00:13 +40: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 200 elements
+CANVAS_PERF01_JSON:{"phase":"CANVAS-PERF01","sceneElements":200,"sceneConnections":199,"iterations":80,"medianMicroseconds":554,"p95Microseconds":921,"maxMicroseconds":1009,"frameBudgetMicroseconds":16667}
+
+00:13 +41: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_performance_test.dart: scene painter p95 stays inside 60 fps budget with 200 elements
+00:13 +41: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart
+00:13 +41: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routes all connections without mutating CircuitState
+00:14 +41: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routes all connections without mutating CircuitState
+00:14 +42: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routes all connections without mutating CircuitState
+00:14 +42: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routeAll is idempotent
+00:14 +43: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routeAll is idempotent
+00:14 +43: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: finite wall is rerouted around instead of preserving an invalid visual route
+00:14 +44: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: finite wall is rerouted around instead of preserving an invalid visual route
+00:14 +44: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routeAll prefers a clean pass over an earlier bridged pass
+00:14 +45: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: routeAll prefers a clean pass over an earlier bridged pass
+00:14 +45: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: rotated terminal exits owner body through an outward orthogonal stub
+00:14 +46: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/circuit_wire_layout_engine_test.dart: rotated terminal exits owner body through an outward orthogonal stub
+00:14 +46: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart
+00:14 +46: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: AC1 preserves L N PE order as parallel lanes
+00:14 +47: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: AC1 preserves L N PE order as parallel lanes
+00:14 +47: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: AC3 preserves L1 L2 L3 N PE order without crossings
+00:14 +48: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: AC3 preserves L1 L2 L3 N PE order without crossings
+00:14 +48: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: PV keeps DC positive and negative as an ordered pair
+00:14 +49: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: PV keeps DC positive and negative as an ordered pair
+00:14 +49: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: PV visual zones keep DC and AC on opposite sides of conversion
+00:14 +50: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/conductor_bundle_planner_test.dart: PV visual zones keep DC and AC on opposite sides of conversion
+00:14 +50: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/incremental_connection_routing_test.dart
+00:14 +50: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/incremental_connection_routing_test.dart: adding a connection preserves the existing hand-positioned wire
+00:15 +50: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/incremental_connection_routing_test.dart: adding a connection preserves the existing hand-positioned wire
+00:15 +51: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/incremental_connection_routing_test.dart: adding a connection preserves the existing hand-positioned wire
+00:15 +51: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart
+00:15 +51: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: end-to-corner joint stays in connected duct rectangles
+00:15 +52: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: end-to-corner joint stays in connected duct rectangles
+00:15 +52: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: joined perpendicular ducts preserve endpoints and deterministic centerlines
+00:15 +53: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: joined perpendicular ducts preserve endpoints and deterministic centerlines
+00:15 +53: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: perpendicular ducts joined at their rectangle boundaries connect
+00:15 +54: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: perpendicular ducts joined at their rectangle boundaries connect
+00:15 +54: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: disconnected nearest ducts reject routing
+00:15 +55: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: disconnected nearest ducts reject routing
+00:15 +55: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: corner contact keeps every network segment inside the duct union
+00:15 +56: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: corner contact keeps every network segment inside the duct union
+00:15 +56: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: device blocking duct centerline rejects the route
+00:15 +57: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: device blocking duct centerline rejects the route
+00:15 +57: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: lead chooses an unobstructed elbow and rejects both blocked elbows
+00:15 +58: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: lead chooses an unobstructed elbow and rejects both blocked elbows
+00:15 +58: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: collision validator allows boundary travel but rejects interior travel
+00:15 +59: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/cabinet_duct_wire_planner_test.dart: collision validator allows boundary travel but rejects interior travel
+00:15 +59: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart
+00:15 +59: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: simple DC loop places source and load at vertical midpoints
+00:15 +60: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: simple DC loop places source and load at vertical midpoints
+00:15 +60: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: series devices are symmetric around the top branch midpoint
+00:15 +61: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: series devices are symmetric around the top branch midpoint
+00:15 +61: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: inline devices stay outside bend keep-out zones
+00:15 +62: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: inline devices stay outside bend keep-out zones
+00:15 +62: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: undersized rectangle returns unresolved instead of placing on bends
+00:15 +63: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/dc_rectangular_arrange_test.dart: undersized rectangle returns unresolved instead of placing on bends
+00:15 +63: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart
+00:16 +63: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart
+00:16 +63: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 30 components
+00:16 +63: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 30 components
+CONNECTION_COMMIT_PERF {"components":30,"connections":15,"medianUs":2633,"maxUs":3221}
+
+00:16 +64: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 30 components
+00:16 +64: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 60 components
+00:16 +64: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 60 components
+CONNECTION_COMMIT_PERF {"components":60,"connections":30,"medianUs":2827,"maxUs":10709}
+
+00:16 +65: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 60 components
+00:16 +65: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 100 components
+00:16 +65: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 100 components
+CONNECTION_COMMIT_PERF {"components":100,"connections":50,"medianUs":2608,"maxUs":4145}
+
+00:16 +66: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 100 components
+00:16 +66: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 200 components
+00:17 +66: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 200 components
+00:17 +66: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 200 components
+CONNECTION_COMMIT_PERF {"components":200,"connections":100,"medianUs":6206,"maxUs":6796}
+
+00:17 +67: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/connection_commit_performance_test.dart: connection commit benchmark with 200 components
+00:17 +67: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart
+00:18 +67: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart
+00:18 +67: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 25 components
+00:18 +68: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 25 components
+00:18 +68: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 50 components
+00:18 +69: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 50 components
+00:18 +69: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 100 components
+00:18 +70: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 100 components
+00:18 +70: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 200 components
+00:18 +71: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/canvas_interaction_performance_test.dart: CANVAS-PERF03 prepared terminal hover remains sub-frame for 200 components
+00:18 +71: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart
+00:18 +71: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: uses a direct straight route when it is clean
+00:18 +72: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: uses a direct straight route when it is clean
+00:18 +72: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: detours orthogonally around a component obstacle
+00:18 +73: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: detours orthogonally around a component obstacle
+00:18 +73: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routes around an occupied different-net path without crossing it
+00:18 +74: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routes around an occupied different-net path without crossing it
+00:18 +74: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: detours beyond a long finite conductor barrier instead of refusing a valid connection
+00:18 +75: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: detours beyond a long finite conductor barrier instead of refusing a valid connection
+00:18 +75: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routes a staggered corridor with a valid orthogonal detour
+00:18 +76: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routes a staggered corridor with a valid orthogonal detour
+00:18 +76: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: ... an explicit bridged crossing only when a different-net barrier cannot be bypassed
+00:18 +77: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: ... an explicit bridged crossing only when a different-net barrier cannot be bypassed
+00:18 +77: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routing is deterministic for identical inputs
+00:18 +78: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/orthogonal_wire_router_test.dart: routing is deterministic for identical inputs
+00:18 +78: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart
+00:18 +78: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart: six motor terminals occupy a single accessible terminal box
+00:19 +78: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart: six motor terminals occupy a single accessible terminal box
+00:19 +79: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/motor_terminal_geometry_test.dart: six motor terminals occupy a single accessible terminal box
+00:19 +79: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart
+00:19 +79: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: world/screen transforms are inverse and zoom stays centered
+00:19 +80: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: world/screen transforms are inverse and zoom stays centered
+00:19 +80: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: pan and reset affect only viewport coordinates
+00:19 +81: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: pan and reset affect only viewport coordinates
+00:19 +81: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: resize preserves world center without changing scale
+00:19 +82: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/viewport_controller_test.dart: resize preserves world center without changing scale
+00:19 +82: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart
+00:19 +82: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: the 2P RCD gets a visible DIN support without moving its geometry
+00:19 +83: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: the 2P RCD gets a visible DIN support without moving its geometry
+00:19 +83: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: an aligned thermal relay and panel adapters share the lower support
+00:19 +84: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: an aligned thermal relay and panel adapters share the lower support
+00:19 +84: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: aligned housings share a rail without moving their bounds
+00:19 +85: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: aligned housings share a rail without moving their bounds
+00:19 +85: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: different rows and distant devices retain separate supports
+00:19 +86: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/din_rail_layout_test.dart: different rows and distant devices retain separate supports
+00:19 +86: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart
+00:20 +86: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart
+00:20 +86: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: rounding keeps endpoints and bounds without editing saved routes
+00:20 +87: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: rounding keeps endpoints and bounds without editing saved routes
+00:20 +87: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: short segments and duplicate points remain finite
+00:20 +88: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: short segments and duplicate points remain finite
+00:20 +88: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: a reversal keeps its full route length
+00:20 +89: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/physical_wire_path_test.dart: a reversal keeps its full route length
+00:20 +89: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart
+00:20 +89: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: single component is centered on a straight host segment
+00:20 +90: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: single component is centered on a straight host segment
+00:20 +90: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: two components are placed symmetrically around branch midpoint
+00:20 +91: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: two components are placed symmetrically around branch midpoint
+00:20 +91: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: placement refuses a segment that cannot respect bend keep-out
+00:20 +92: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: placement refuses a segment that cannot respect bend keep-out
+00:20 +92: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: vertical placement stays collinear with the host
+00:20 +93: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/inline_component_placement_test.dart: vertical placement stays collinear with the host
+00:20 +93: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart
+00:21 +93: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart
+00:21 +93: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: prepared hit-test session matches compatibility path
+00:21 +94: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: prepared hit-test session matches compatibility path
+00:21 +94: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal-only prepared path avoids unrelated component and wire hits
+00:21 +95: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal-only prepared path avoids unrelated component and wire hits
+00:21 +95: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal hit has priority over its owning element
+00:21 +96: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal hit has priority over its owning element
+00:21 +96: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: component and wire are detected by centralized hit testing
+00:21 +97: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: component and wire are detected by centralized hit testing
+00:21 +97: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: preview position is used during drag hit testing
+00:21 +98: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: preview position is used during drag hit testing
+00:21 +98: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal and wire hit tolerances remain screen-stable across zoom
+00:21 +99: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: terminal and wire hit tolerances remain screen-stable across zoom
+00:21 +99: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: cross-type visual id collision fails explicitly instead of overwriting geometry
+00:21 +100: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: cross-type visual id collision fails explicitly instead of overwriting geometry
+00:21 +100: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: element and connection visual id collision fails explicitly
+00:21 +101: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/hit_test_engine_test.dart: element and connection visual id collision fails explicitly
+00:21 +101: loading /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart
+00:21 +101: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath accepts horizontal and vertical segments only
+00:21 +102: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath accepts horizontal and vertical segments only
+00:21 +102: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath rejects diagonal automatic geometry
+00:21 +103: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath rejects diagonal automatic geometry
+00:21 +103: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath rejects zero-length segments
+00:21 +104: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalWirePath rejects zero-length segments
+00:21 +104: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalSegment intersection detects perpendicular crossing
+00:21 +105: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalSegment intersection detects perpendicular crossing
+00:21 +105: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalSegment intersection does not report separated segments
+00:21 +106: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: OrthogonalSegment intersection does not report separated segments
+00:21 +106: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: routing obstacle expands by component keep-out
+00:21 +107: /workspace/electrosim-g5-integration/packages/electrosim_canvas/test/wire_geometry_test.dart: routing obstacle expands by component keep-out
+00:21 +107: All tests passed!

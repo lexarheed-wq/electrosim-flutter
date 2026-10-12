@@ -1,4 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'canvas_geometry.dart';
@@ -25,6 +26,7 @@ final class CircuitScenePainter extends CustomPainter {
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
     this.schematicPresentation = false,
+    this.customInstrumentCaseIds = const <String>{},
   }) : viewportScaleAtBuild = viewport.scale,
        viewportTranslationAtBuild = viewport.translation,
        geometryAtBuild = CircuitGeometryIndex.build(
@@ -53,6 +55,10 @@ final class CircuitScenePainter extends CustomPainter {
   final Offset viewportTranslationAtBuild;
   final bool paintElementChrome;
   final bool schematicPresentation;
+
+  /// IDs of instruments whose 3D front texture is rendered by the app overlay.
+  /// Only their legacy case is skipped. Hit testing and probes are unchanged.
+  final Set<String> customInstrumentCaseIds;
   Color get backgroundColor =>
       schematicPresentation ? Colors.white : boardColor;
   final CircuitGeometryIndex geometryAtBuild;
@@ -194,7 +200,12 @@ final class CircuitScenePainter extends CustomPainter {
   }
 
   void _paintWires(Canvas canvas, CircuitGeometryIndex geometry) {
+    final opened = schematicPresentation
+        ? const <ConnectionId>{}
+        : SeriesMeterWiring.openConnectionIds(circuit);
     for (final Connection connection in circuit.connections) {
+      if (opened.contains(connection.id)) continue;
+      if (!schematicPresentation && connection.metadata.containsKey(AppliancePowerConnection.cableTag)) continue;
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
@@ -282,6 +293,7 @@ final class CircuitScenePainter extends CustomPainter {
 
   void _paintInstruments(Canvas canvas, CircuitGeometryIndex geometry) {
     for (final InstrumentInstance instrument in circuit.instruments) {
+      if (customInstrumentCaseIds.contains(instrument.id.value)) continue;
       final Rect? worldRect = geometry.elementRects[instrument.id.value];
       if (worldRect == null) continue;
       final Rect rect = Rect.fromCenter(
@@ -528,6 +540,10 @@ final class CircuitScenePainter extends CustomPainter {
       oldDelegate.smartWireSemantics != smartWireSemantics ||
       oldDelegate.paintElementChrome != paintElementChrome ||
       oldDelegate.schematicPresentation != schematicPresentation ||
+      !setEquals(
+        oldDelegate.customInstrumentCaseIds,
+        customInstrumentCaseIds,
+      ) ||
       oldDelegate.viewportScaleAtBuild != viewportScaleAtBuild ||
       oldDelegate.viewportTranslationAtBuild != viewportTranslationAtBuild;
 }

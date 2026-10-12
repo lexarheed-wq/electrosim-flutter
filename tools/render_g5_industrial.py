@@ -365,8 +365,9 @@ def axial_surface(name,y,z,points,material):
     for poly in me.polygons:poly.use_smooth=True
 
 def passive_terminal(x,y,H):
-    round_housing(x,y,H*.19,H*.23,27,10,terminal_gray,2)
-    cyl('nickel clamp washer',x,y,29,H*.065,2,chrome)
+    # Bare electronic parts terminate in tinned leads, not training clamps.
+    # The application paints interactive targets separately.
+    pass
 
 def axial_resistor(W,H,ports):
     coat=mat('red brown vitreous resistor coating',(.40,.035,.018),rough=.30,grain=.006)
@@ -440,7 +441,7 @@ def radial_led(W,H,ports,green_led):
         x=cx+side*r*.36
         box('LED lead frame',x,H*.47,r*.17,H*.22,z+1,3,chrome,.25)
         end=ports[0 if side<0 else 1]
-        wire('formed LED lead to training clamp',[(x,-H*.54,z),(x,-H*.80,z),(end[0],-H*.80,27),(end[0],-end[1],27)],1.25,chrome)
+        wire('straight tinned LED lead',[(x,-H*.54,z),(end[0],-end[1],27)],1.25,chrome)
     # Die cup on cathode support and fine bond wire to anode.
     cyl('cathode reflector cup',cx+r*.28,H*.38,z+2,r*.22,2,chrome)
     box('semiconductor emitting die',cx+r*.28,H*.38,r*.09,r*.09,z+3,.8,porcelain,.1)
@@ -621,7 +622,7 @@ def build(name,M):
             for y in [H*.095,H*.90]:screw(x,y,2.2,23)
         for i in range(6):box('housing ventilation',W*.15+i*W*.055,H*.63,W*.026,H*.04,22,.6,well,.3)
     for j,(x,y) in enumerate(ports):
-        if name in ['motor3','lamp','solar-panel','solar-battery','controller-mppt','controller-pwm','solar-inverter'] or name.startswith('source-'):continue
+        if name in ['motor3','lamp','solar-panel','solar-battery','controller-mppt','controller-pwm','solar-inverter','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green'] or name.startswith('source-'):continue
         dark_rim=name in SOURCE_PV_MODELS or name.startswith('contactor') or name in ['overload','coil','fuse-holder','auxiliary-no','auxiliary-nc','motor-dc','fan','buzzer','resistor-axial','capacitor-film','inductor-drum','diode-axial','diode-glass','diode-tvs','led-red','led-green']
         rim=(pe_green if j%5==4 else terminal_gray) if name=='terminal5' else black if dark_rim else white
         screw_radius=min(W,H)*(.022 if name in ['controller-mppt','controller-pwm','solar-battery'] else .038)

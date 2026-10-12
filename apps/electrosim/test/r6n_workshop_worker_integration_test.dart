@@ -32,6 +32,30 @@ final class WitnessWorker implements R6Worker {
   }
 }
 
+/// Executes the real native isolate and makes its completion observable
+/// without pretending that a mocked worker is release-platform evidence.
+final class RealIsolateWitness implements R6Worker {
+  RealIsolateWitness(this.delegate, this.resultReceived);
+
+  final R6Worker delegate;
+  final Completer<void> resultReceived;
+
+  @override
+  Future<R6NetworkOutcome> solve(R6NetworkJob job) async {
+    try {
+      final R6NetworkOutcome answer = await delegate.solve(job);
+      resultReceived.complete();
+      return answer;
+    } catch (error, stack) {
+      resultReceived.completeError(error, stack);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> close() => delegate.close();
+}
+
 Future<void> _startSimulation(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('air-advance')));
   await tester.pumpAndSettle();
@@ -42,6 +66,38 @@ Future<void> _startSimulation(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('R6/N Flutter UI completes using a real native isolate', (
+    WidgetTester tester,
+  ) async {
+    await fixture.setSize(tester);
+    final Completer<void> resultReceived = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PneumaticWorkshopPage(
+          initialProject: fixture.project(),
+          workerFactory: () async => RealIsolateWitness(
+            await createR6Worker(),
+            resultReceived,
+          ),
+        ),
+      ),
+    );
+    await _startSimulation(tester);
+    await tester.runAsync(
+      () => resultReceived.future.timeout(const Duration(seconds: 20)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Simulation réelle : t = 0.020 s'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('R6/N : résultat accepté depuis worker isolé'),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('R6/N Flutter UI uses worker answer, not synchronous solve', (
     WidgetTester tester,
   ) async {

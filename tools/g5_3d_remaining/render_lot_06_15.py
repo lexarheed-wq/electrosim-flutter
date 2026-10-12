@@ -17,9 +17,16 @@ def light(scene,name,loc,target,power,w,hh):
     o.rotation_euler=(Vector(target)-o.location).to_track_quat('-Z','Y').to_euler()
 
 def main():
-    a=argparse.ArgumentParser();a.add_argument('--out',required=True);a.add_argument('--only');a.add_argument('--samples',type=int,default=32);opts=a.parse_args(sys.argv[sys.argv.index('--')+1:])
+    a=argparse.ArgumentParser();a.add_argument('--out',required=True);a.add_argument('--only');a.add_argument('--samples',type=int,default=32);a.add_argument('--lot',default='06_15',choices=['06_15','16_26']);opts=a.parse_args(sys.argv[sys.argv.index('--')+1:])
     assert 16<=opts.samples<=256
-    for key,s in CONTRACT.items():
+    contract_file=BASE/f'lot_{opts.lot}_contract.json'
+    geometry_file=BASE/f'lot_{opts.lot}_geometry.py'
+    contract=json.loads(contract_file.read_text())
+    builder=build
+    if opts.lot=='16_26':
+        from lot_16_26_geometry import build as builder
+    geometry_sha=hashlib.sha256(geometry_file.read_bytes()).hexdigest()
+    for key,s in contract.items():
         if opts.only and key not in opts.only.split(','):continue
         folder=Path(opts.out)/key;folder.mkdir(parents=True,exist_ok=True);start=time.monotonic();records={}
         for view,service in [('front',False),('palette',False),('service',True)]:
@@ -35,7 +42,7 @@ def main():
             scene.world.use_nodes=True;nodes=scene.world.node_tree.nodes;bg=nodes.get('Background')
             env=nodes.get('lot HDR') or nodes.new('ShaderNodeTexEnvironment');env.name='lot HDR';env.image=bpy.data.images.load(str(BASE.parent/'g5_render_environment/studio_small_09_1k.hdr'),check_existing=True)
             scene.world.node_tree.links.new(env.outputs['Color'],bg.inputs['Color']);bg.inputs['Strength'].default_value=.42
-            h=CyclesGeometry();build(h,key,s,service)
+            h=CyclesGeometry();builder(h,key,s,service)
             for o in bpy.data.objects:
                 if o.type=='MESH':
                     for mod in o.modifiers:
@@ -55,6 +62,6 @@ def main():
             data.ortho_scale=max(w,hh)*(1.18 if view=='palette' else 1)
             scene.render.filepath=str(folder/(view+'.png'));bpy.ops.render.render(write_still=True)
             records[view+'.png']={'sha256':hashlib.sha256((folder/(view+'.png')).read_bytes()).hexdigest(),'size':[w*4,hh*4]}
-        (folder/'provenance.json').write_text(json.dumps({'key':key,'images':records,'samples':opts.samples,'blender':bpy.app.version_string,'seconds':round(time.monotonic()-start,2),'contract_sha256':hashlib.sha256((BASE/'lot_06_15_contract.json').read_bytes()).hexdigest(),'geometry_sha256':hashlib.sha256((BASE/'lot_06_15_geometry.py').read_bytes()).hexdigest(),'actual_flutter_capture':False},indent=2)+'\n')
+        (folder/'provenance.json').write_text(json.dumps({'key':key,'images':records,'samples':opts.samples,'blender':bpy.app.version_string,'seconds':round(time.monotonic()-start,2),'contract_sha256':hashlib.sha256(contract_file.read_bytes()).hexdigest(),'geometry_sha256':geometry_sha,'actual_flutter_capture':False},indent=2)+'\n')
         print('COMPLETED '+key,flush=True)
 if __name__=='__main__':main()

@@ -106,8 +106,15 @@ final class PneumaticPipeRouter {
       while (result.length >= 2) {
         final Offset a = result[result.length - 2];
         final Offset b = result.last;
-        if ((a.dx == b.dx && b.dx == point.dx) ||
-            (a.dy == b.dy && b.dy == point.dy)) {
+        // Only drop an intermediate point when travel is monotonic.
+        // Removing a U-turn would turn a safe bypass into a straight line
+        // through a component while the route still appeared orthogonal.
+        if ((a.dx == b.dx &&
+                b.dx == point.dx &&
+                (b.dy - a.dy) * (point.dy - b.dy) >= 0) ||
+            (a.dy == b.dy &&
+                b.dy == point.dy &&
+                (b.dx - a.dx) * (point.dx - b.dx) >= 0)) {
           result.removeLast();
         } else {
           break;

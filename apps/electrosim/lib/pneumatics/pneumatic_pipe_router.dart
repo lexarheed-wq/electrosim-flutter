@@ -161,11 +161,13 @@ final class PneumaticPipeRouter {
         final Offset c = previous[j - 1];
         final Offset d = previous[j];
         if (a.dy == b.dy && c.dy == d.dy && a.dy == c.dy) {
-          final double common = math.min(math.max(a.dx, b.dx), math.max(c.dx, d.dx)) -
+          final double common =
+              math.min(math.max(a.dx, b.dx), math.max(c.dx, d.dx)) -
               math.max(math.min(a.dx, b.dx), math.min(c.dx, d.dx));
           if (common > 0) penalty += common * 3;
         } else if (a.dx == b.dx && c.dx == d.dx && a.dx == c.dx) {
-          final double common = math.min(math.max(a.dy, b.dy), math.max(c.dy, d.dy)) -
+          final double common =
+              math.min(math.max(a.dy, b.dy), math.max(c.dy, d.dy)) -
               math.max(math.min(a.dy, b.dy), math.min(c.dy, d.dy));
           if (common > 0) penalty += common * 3;
         } else if (a.dy == b.dy && c.dx == d.dx) {

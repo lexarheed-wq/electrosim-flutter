@@ -75,9 +75,9 @@ Future<void> _loadProofFont(WidgetTester tester) async {
     final File font = File('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
     if (!font.existsSync()) return;
     final FontLoader loader = FontLoader('R6NProofFont')
-      ..addFont(Future<ByteData>.value(
-        ByteData.sublistView(await font.readAsBytes()),
-      ));
+      ..addFont(
+        Future<ByteData>.value(ByteData.sublistView(await font.readAsBytes())),
+      );
     await loader.load();
     final String? root = Platform.environment['FLUTTER_ROOT'];
     if (root == null) return;
@@ -86,9 +86,11 @@ Future<void> _loadProofFont(WidgetTester tester) async {
     );
     if (icons.existsSync()) {
       final FontLoader iconLoader = FontLoader('MaterialIcons')
-        ..addFont(Future<ByteData>.value(
-          ByteData.sublistView(await icons.readAsBytes()),
-        ));
+        ..addFont(
+          Future<ByteData>.value(
+            ByteData.sublistView(await icons.readAsBytes()),
+          ),
+        );
       await iconLoader.load();
     }
   });
@@ -148,7 +150,10 @@ void main() {
       find.text('R6/N : résultat accepté depuis worker isolé'),
       findsOneWidget,
     );
-    await evidence.captureWorkshop(tester, '04_platine_reseau_worker_natif.png');
+    await evidence.captureWorkshop(
+      tester,
+      '04_platine_reseau_worker_natif.png',
+    );
     await tester.pumpWidget(const SizedBox());
   });
 

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:electrosim/pneumatics/pneumatic_device_glyph.dart';

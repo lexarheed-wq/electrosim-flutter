@@ -8,6 +8,7 @@ final class ControlledWorker implements R6Worker {
   final List<Completer<R6NetworkOutcome>> replies =
       <Completer<R6NetworkOutcome>>[];
   bool closed = false;
+  Completer<void>? closeGate;
 
   @override
   Future<R6NetworkOutcome> solve(R6NetworkJob request) {
@@ -20,6 +21,8 @@ final class ControlledWorker implements R6Worker {
   @override
   Future<void> close() async {
     closed = true;
+    final Completer<void>? gate = closeGate;
+    if (gate != null) await gate.future;
   }
 }
 
@@ -312,6 +315,29 @@ void main() {
       expect(scheduler.isBusy, isFalse);
     },
   );
+
+  test('R6/N concurrent shutdown waits for physical worker teardown', () async {
+    final ControlledWorker underlying = ControlledWorker()
+      ..closeGate = Completer<void>();
+    final R6WorkerScheduler scheduler = R6WorkerScheduler(
+      underlying,
+      engineVersion: 'r6n',
+    );
+
+    final Future<void> first = scheduler.close();
+    final Future<void> second = scheduler.close();
+    expect(identical(first, second), isTrue);
+    expect(underlying.closed, isTrue);
+
+    bool secondCompleted = false;
+    second.then((_) => secondCompleted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(secondCompleted, isFalse);
+
+    underlying.closeGate!.complete();
+    await Future.wait(<Future<void>>[first, second]);
+    expect(secondCompleted, isTrue);
+  });
 
   test('R6/N rejects a nonpositive solver response timeout', () {
     final ControlledWorker underlying = ControlledWorker();

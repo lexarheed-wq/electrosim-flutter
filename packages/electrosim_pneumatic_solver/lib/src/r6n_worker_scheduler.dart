@@ -30,6 +30,7 @@ final class R6WorkerScheduler {
   int _revision = 0;
   int _nextRequestId = 0;
   bool _closed = false;
+  Future<void>? _closing;
   _QueuedCalculation? _active;
   _QueuedCalculation? _pending;
 
@@ -183,13 +184,17 @@ final class R6WorkerScheduler {
     }
   }
 
-  Future<void> close() async {
-    if (_closed) return;
+  Future<void> close() {
+    // Every concurrent shutdown caller must observe the same pending
+    // teardown; returning early can falsely report that an isolate/worker
+    // has already been released during a close/reopen sequence.
+    final Future<void>? closing = _closing;
+    if (closing != null) return closing;
     _closed = true;
     _pending?.reject(StateError('Solver session closed'));
     _pending = null;
     _active?.reject(StateError('Solver session closed'));
-    await worker.close();
+    return _closing = worker.close();
   }
 
   void _ensureOpen() {

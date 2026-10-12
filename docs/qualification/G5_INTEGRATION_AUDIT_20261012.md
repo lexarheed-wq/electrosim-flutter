@@ -92,6 +92,11 @@ Le workflow PR98 compile maintenant le véritable client élève depuis le même
 SHA, avec moteur et polices locales, l'embarque dans les ressources de l'app,
 valide l'app et le ZIP final et refait/vérifie la signature après ajout des
 ressources. Une CI native verte seule n'est plus présentée comme preuve du QR.
+Les trois workflows électriques historiques passifs, semi-conducteurs et
+sources/PV présents dans G5 utilisaient le même emballage natif incomplet.
+Leurs recettes de livraison embarquent maintenant également le Web élève,
+valident l'app et son ZIP et vérifient la signature ; cette modification ne
+fusionne pas leurs anciennes branches ni leurs assets.
 
 Le parcours Chromium a également exposé un défaut du script de qualification :
 après un glissement, il supprimait les styles `pointer-events` des couches

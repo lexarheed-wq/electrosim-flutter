@@ -39,10 +39,19 @@ jobs:
           flutter analyze
           flutter test --concurrency=1
           flutter test tool/capture_g5_industrial_test.dart
+          flutter create --platforms=web --project-name electrosim .
+          flutter pub get
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$app"
+          web_dest="$app/Contents/Resources/electrosim_student_web"
+          mkdir -p "$web_dest"
+          cp -R build/web/. "$web_dest/"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$app"
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
           executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
           test -n "$executable"
           output="$base/g5-passives-macOS"
@@ -52,6 +61,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
           printf '%s\n' 'G5 passive realism — physical Mac acceptance pending user validation.' > "$output/READ_ME_FIRST.txt"
           ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_G5_Passives_Mac_Intel.zip"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$output/ElectroSim_G5_Passives_Mac_Intel.zip"
           (cd "$output" && shasum -a 256 ElectroSim_G5_Passives_Mac_Intel.zip > SHA256.txt)
           (cd "$output" && unzip -t ElectroSim_G5_Passives_Mac_Intel.zip | tail -1)
       - uses: actions/upload-artifact@v4

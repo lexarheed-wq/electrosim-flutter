@@ -20,8 +20,7 @@ final class WitnessWorker implements R6Worker {
   Future<R6NetworkOutcome> solve(R6NetworkJob job) {
     if (closed) throw StateError('witness worker already closed');
     requests.add(job);
-    final Completer<R6NetworkOutcome> response =
-        Completer<R6NetworkOutcome>();
+    final Completer<R6NetworkOutcome> response = Completer<R6NetworkOutcome>();
     replies.add(response);
     return response.future;
   }
@@ -75,10 +74,8 @@ void main() {
       MaterialApp(
         home: PneumaticWorkshopPage(
           initialProject: fixture.project(),
-          workerFactory: () async => RealIsolateWitness(
-            await createR6Worker(),
-            resultReceived,
-          ),
+          workerFactory: () async =>
+              RealIsolateWitness(await createR6Worker(), resultReceived),
         ),
       ),
     );

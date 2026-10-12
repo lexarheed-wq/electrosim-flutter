@@ -31,17 +31,20 @@ jobs:
           dart format --output=none --set-exit-if-changed \
             lib/pneumatics/pneumatic_workshop_page.dart \
             test/r6lmn_integrated_workshop_test.dart \
-            test/r6l_live_png_evidence_test.dart
+            test/r6l_live_png_evidence_test.dart \
+            test/r6n_workshop_worker_integration_test.dart
           flutter analyze --no-pub \
             lib/pneumatics/pneumatic_workshop_page.dart \
             test/r6lmn_integrated_workshop_test.dart \
-            test/r6l_live_png_evidence_test.dart
+            test/r6l_live_png_evidence_test.dart \
+            test/r6n_workshop_worker_integration_test.dart
           flutter test --no-pub --reporter expanded \
             test/r6lmn_integrated_workshop_test.dart \
             test/pneumatic_pipe_router_test.dart \
             test/r6_moving_piston_workshop_test.dart \
             test/r6m_workshop_session_widget_test.dart \
             test/r6_workshop_authored_runtime_test.dart \
+            test/r6n_workshop_worker_integration_test.dart \
             | tee ../../build/pneumatics-r6lmn/FLUTTER.log
           grep -F 'All tests passed!' ../../build/pneumatics-r6lmn/FLUTTER.log
           git diff --check

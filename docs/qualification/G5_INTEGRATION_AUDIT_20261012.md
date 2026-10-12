@@ -103,6 +103,11 @@ dans l'historique. Après chaque réconciliation, vérifier le contenu et les te
 du SHA final, puis la provenance des captures et du paquet distribué au SHA
 fusionné ; ne pas assimiler CI historique verte et contenu actuel.
 
+Le workflow exige aussi explicitement la présence des dix fichiers de
+régression livrés (métal, armoire, représentations, goulottes, PDF, repérage et
+TP). Une fusion qui supprime l'un de ces tests échoue avant de lancer les suites,
+au lieu de réduire silencieusement la couverture et de rester verte.
+
 Les dix références Mac F9 ont également été inspectées sur le rendu CI exact
 `0547ff31350c678e7b41a062a02bfd6fb553a566`, dont l'arbre correspond au commit
 de restauration `743cbb09`. Les cinq autres captures Mac et leurs masters Linux

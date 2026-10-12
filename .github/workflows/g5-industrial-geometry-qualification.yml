@@ -18,6 +18,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Require retained industrial and TP regression contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A full-suite wildcard cannot detect a regression file lost in a
+          # merge. Require these delivered contracts before running the suites.
+          for contract in \
+            packages/electrosim_canvas/test/metal_mounting_plate_test.dart \
+            apps/electrosim/test/g5_p2_layout_preservation_test.dart \
+            apps/electrosim/test/industrial_representation_workspace_test.dart \
+            apps/electrosim/test/industrial_duct_workspace_test.dart \
+            apps/electrosim/test/industrial_cabinet_workspace_test.dart \
+            apps/electrosim/test/postv2_p3_pdf_export_test.dart \
+            apps/electrosim/test/postv2_p4_marking_workspace_test.dart \
+            apps/electrosim/test/tp_student_visual_resume_test.dart \
+            apps/electrosim/test/g5_teacher_tp_publication_navigation_test.dart \
+            apps/electrosim/test/tp_real_browser_journey_test.dart; do
+            test -s "$contract" || { echo "Missing retained delivery contract: $contract"; exit 1; }
+          done
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.38.10'

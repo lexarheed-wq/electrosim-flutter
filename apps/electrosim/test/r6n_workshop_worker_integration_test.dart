@@ -38,13 +38,15 @@ final class WitnessWorker implements R6Worker {
 /// Executes the real native isolate and makes its completion observable
 /// without pretending that a mocked worker is release-platform evidence.
 final class RealIsolateWitness implements R6Worker {
-  RealIsolateWitness(this.delegate, this.resultReceived);
+  RealIsolateWitness(this.delegate, this.requestSent, this.resultReceived);
 
   final R6Worker delegate;
+  final Completer<void> requestSent;
   final Completer<void> resultReceived;
 
   @override
   Future<R6NetworkOutcome> solve(R6NetworkJob job) async {
+    requestSent.complete();
     try {
       final R6NetworkOutcome answer = await delegate.solve(job);
       resultReceived.complete();
@@ -92,11 +94,25 @@ Future<void> _loadProofFont(WidgetTester tester) async {
   });
 }
 
+/// Drive the test clock until its scheduled zero-delay dispatch has run.
+/// No fake response or arbitrary wall-clock delay is involved.
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  bool Function() done,
+) async {
+  for (int tick = 0; tick < 30 && !done(); tick++) {
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+  expect(done(), isTrue, reason: 'The Flutter worker dispatch never started');
+}
+
 void main() {
   testWidgets('R6/N Flutter UI completes using a real native isolate', (
     WidgetTester tester,
   ) async {
     await fixture.setSize(tester);
+    final Completer<void> workerReady = Completer<void>();
+    final Completer<void> requestSent = Completer<void>();
     final Completer<void> resultReceived = Completer<void>();
     await _loadProofFont(tester);
     await tester.pumpWidget(
@@ -106,13 +122,20 @@ void main() {
           key: const Key('r6l-live-evidence-boundary'),
           child: PneumaticWorkshopPage(
             initialProject: fixture.project(),
-            workerFactory: () async =>
-                RealIsolateWitness(await createR6Worker(), resultReceived),
+            workerFactory: () async {
+              final R6Worker actual = await createR6Worker();
+              workerReady.complete();
+              return RealIsolateWitness(actual, requestSent, resultReceived);
+            },
           ),
         ),
       ),
     );
     await _startSimulation(tester);
+    await tester.runAsync(
+      () => workerReady.future.timeout(const Duration(seconds: 20)),
+    );
+    await _pumpUntil(tester, () => requestSent.isCompleted);
     await tester.runAsync(
       () => resultReceived.future.timeout(const Duration(seconds: 20)),
     );
@@ -147,6 +170,7 @@ void main() {
       ),
     );
     await _startSimulation(tester);
+    await _pumpUntil(tester, () => transport.requests.isNotEmpty);
     expect(factoryCalls, 1);
     expect(transport.requests, hasLength(1));
     expect(transport.requests.single.durationS, .02);
@@ -168,8 +192,7 @@ void main() {
     expect(find.byKey(const Key('air-measured-pressure')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('air-advance')));
-    await tester.pump();
-    await tester.pump();
+    await _pumpUntil(tester, () => transport.requests.length == 2);
     expect(factoryCalls, 1);
     expect(transport.requests, hasLength(2));
     expect(transport.requests.last.before.timeS, closeTo(.02, 1e-12));
@@ -199,6 +222,7 @@ void main() {
       ),
     );
     await _startSimulation(tester);
+    await _pumpUntil(tester, () => transport.requests.isNotEmpty);
     expect(transport.requests, hasLength(1));
     expect(find.textContaining('Simulation réelle :'), findsNothing);
 

@@ -59,9 +59,7 @@ void main() {
       }
       final Uint8List fontBytes = await systemFont.readAsBytes();
       final ui.FontLoader loader = ui.FontLoader('DejaVu Sans')
-        ..addFont(
-          Future<ByteData>.value(ByteData.sublistView(fontBytes)),
-        );
+        ..addFont(Future<ByteData>.value(ByteData.sublistView(fontBytes)));
       await loader.load();
     });
 

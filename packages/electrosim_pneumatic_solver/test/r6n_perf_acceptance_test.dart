@@ -4,19 +4,26 @@ import 'package:test/test.dart';
 void main() {
   const R6PerfQualification audit = R6PerfQualification();
   const String sha = '1234567890abcdef1234567890abcdef12345678';
-  const String artifact =
-      '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+  String cellHash(
+    R6PerfScenario scenario,
+    R6PerfPlatform platform,
+    int count,
+    String kind,
+  ) => '$kind${platform.index}${scenario.index}$count'.padLeft(64, '0');
 
   R6PerfObservation fixture(
     R6PerfScenario scenario,
     R6PerfPlatform platform,
     int count, {
     double latencyMs = 25,
+    String? rawArtifactSha256,
+    String? productPngSha256,
   }) => R6PerfObservation(
     sourceSha: sha,
     runner: 'test-fixture-not-real-runner',
     toolchain: 'synthetic-unit-test-data',
-    rawArtifactSha256: artifact,
+    rawArtifactSha256:
+        rawArtifactSha256 ?? cellHash(scenario, platform, count, 'a'),
     scenario: scenario,
     platform: platform,
     activeComponents: count,
@@ -30,7 +37,8 @@ void main() {
     nativeOrWebWorkerMeasured: true,
     memoryTrendLeakFree: true,
     iso1219Reviewed: true,
-    productPngSha256: artifact,
+    productPngSha256:
+        productPngSha256 ?? cellHash(scenario, platform, count, 'b'),
   );
 
   test('R6/N PERF-01 missing 23 real runner cells is fail closed', () {
@@ -67,5 +75,37 @@ void main() {
       contains(contains('Performance threshold failed')),
     );
     expect(audit.errors(synthetic, integratedG5Sha: 'other'), isNotEmpty);
+  });
+
+  test('R6/N rejects recycled telemetry and PNG-as-telemetry', () {
+    final R6PerfObservation first = fixture(
+      R6PerfScenario.pneumatic,
+      R6PerfPlatform.chromium,
+      30,
+    );
+    final List<String> reused = audit.errors(<R6PerfObservation>[
+      first,
+      fixture(
+        R6PerfScenario.pneumatic,
+        R6PerfPlatform.chromium,
+        100,
+        rawArtifactSha256: first.rawArtifactSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(reused, contains(contains('Reused PERF-01 raw artifact')));
+
+    final List<String> wrongType = audit.errors(<R6PerfObservation>[
+      fixture(
+        R6PerfScenario.pneumatic,
+        R6PerfPlatform.chromium,
+        30,
+        productPngSha256: first.rawArtifactSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(
+      wrongType,
+      contains(contains('Raw telemetry and product PNG are identical')),
+    );
+
   });
 }

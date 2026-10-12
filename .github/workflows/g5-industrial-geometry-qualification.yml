@@ -141,7 +141,7 @@ jobs:
             apps/electrosim/build/industrial-workspace-proof/
           retention-days: 14
   macos-intel:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
     needs: [runtime-regression, visual-evidence, tp-browser-journey]
     runs-on: macos-15-intel
     timeout-minutes: 120

@@ -55,10 +55,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-        MaterialApp(home: PneumaticWorkshopPage(
-          initialProject: singleValve(),
-          workerFactory: createInlineCanonicalTestWorker,
-        )),
+        MaterialApp(
+          home: PneumaticWorkshopPage(
+            initialProject: singleValve(),
+            workerFactory: createInlineCanonicalTestWorker,
+          ),
+        ),
       );
       await tester.tap(find.byKey(const Key('device-v52')));
       await tester.pumpAndSettle();

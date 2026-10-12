@@ -17,10 +17,30 @@ final class PneumaticPipeRouter {
     required Iterable<Rect> tiles,
     Iterable<List<Offset>> previousRoutes = const <List<Offset>>[],
   }) {
+    // Do not render a connection whose endpoints do not belong to their
+    // component footprints, or whose geometry is not finite.
+    bool validRect(Rect rect) =>
+        !rect.isEmpty &&
+        rect.left.isFinite &&
+        rect.top.isFinite &&
+        rect.right.isFinite &&
+        rect.bottom.isFinite;
+    if (!start.dx.isFinite ||
+        !start.dy.isFinite ||
+        !end.dx.isFinite ||
+        !end.dy.isFinite ||
+        !validRect(fromTile) ||
+        !validRect(toTile) ||
+        !fromTile.contains(start) ||
+        !toTile.contains(end)) {
+      return null;
+    }
     const double clearance = 10;
-    final List<Rect> obstacles = tiles
-        .map((Rect tile) => tile.inflate(6))
-        .toList(growable: false);
+    final List<Rect> obstacles = <Rect>[];
+    for (final Rect tile in tiles) {
+      if (!validRect(tile)) return null;
+      obstacles.add(tile.inflate(6));
+    }
     final Offset out = Offset(start.dx, fromTile.bottom + clearance);
     final Offset incoming = Offset(end.dx, toTile.bottom + clearance);
     final double baseline = math.max(out.dy, incoming.dy) + 12;

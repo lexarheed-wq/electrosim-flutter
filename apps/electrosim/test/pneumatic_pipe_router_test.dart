@@ -67,6 +67,38 @@ void main() {
     expect(result, isNull);
   });
 
+  test('R6/L+M orphan port anchors fail closed', () {
+    List<Offset>? connect(Offset start, Offset end) =>
+        PneumaticPipeRouter.route(
+          start: start,
+          end: end,
+          fromTile: source,
+          toTile: valve,
+          tiles: const <Rect>[source, valve],
+        );
+    expect(connect(const Offset(59, 218), const Offset(835, 218)), isNull);
+    expect(connect(const Offset(145, 218), const Offset(951, 218)), isNull);
+    expect(connect(const Offset(double.nan, 218), const Offset(835, 218)),
+        isNull);
+    expect(connect(const Offset(145, 218), const Offset(double.infinity, 218)),
+        isNull);
+  });
+
+  test('R6/L+M invalid footprint fails closed', () {
+    final List<Offset>? route = PneumaticPipeRouter.route(
+      start: const Offset(145, 218),
+      end: const Offset(835, 218),
+      fromTile: source,
+      toTile: valve,
+      tiles: const <Rect>[
+        source,
+        valve,
+        Rect.fromLTWH(320, 260, double.nan, 140),
+      ],
+    );
+    expect(route, isNull);
+  });
+
   test('R6/L+M 400-device orthogonal pipe microbenchmark', () {
     final List<Rect> devices = <Rect>[
       for (int row = 0; row < 20; row++)

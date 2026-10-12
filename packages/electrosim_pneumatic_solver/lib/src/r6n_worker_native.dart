@@ -15,7 +15,16 @@ final class NativeR6Worker implements R6Worker {
   StreamSubscription<dynamic>? _subscription;
   bool _closed = false;
 
-  static Future<NativeR6Worker> start() async {
+  static Future<NativeR6Worker> start({
+    Duration startupTimeout = const Duration(seconds: 10),
+  }) async {
+    if (startupTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        startupTimeout,
+        'startupTimeout',
+        'Must be positive',
+      );
+    }
     final NativeR6Worker worker = NativeR6Worker._();
     worker._subscription = worker._messages.listen(worker._onMessage);
     try {
@@ -23,7 +32,9 @@ final class NativeR6Worker implements R6Worker {
         _workerMain,
         worker._messages.sendPort,
       );
-      await worker._ready.future;
+      // Isolate startup must not leave the UI awaiting an unresponsive port.
+      // The catch path terminates the spawned isolate and closes the port.
+      await worker._ready.future.timeout(startupTimeout);
       return worker;
     } catch (_) {
       await worker.close();

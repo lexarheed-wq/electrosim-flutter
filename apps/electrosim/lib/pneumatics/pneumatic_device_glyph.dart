@@ -10,6 +10,7 @@ class PneumaticDeviceGlyph extends StatelessWidget {
     required this.schematic,
     this.width = 118,
     this.height = 42,
+    this.pistonFraction,
   });
 
   final PneumaticDeviceKind kind;
@@ -17,21 +18,34 @@ class PneumaticDeviceGlyph extends StatelessWidget {
   final double width;
   final double height;
 
+  /// Position is passed only from an accepted physical snapshot.
+  /// Null preserves legacy/static glyph rendering and golden parity.
+  final double? pistonFraction;
+
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
     height: height,
     child: CustomPaint(
-      painter: _GlyphPainter(kind: kind, schematic: schematic),
+      painter: _GlyphPainter(
+        kind: kind,
+        schematic: schematic,
+        pistonFraction: pistonFraction,
+      ),
     ),
   );
 }
 
 class _GlyphPainter extends CustomPainter {
-  const _GlyphPainter({required this.kind, required this.schematic});
+  const _GlyphPainter({
+    required this.kind,
+    required this.schematic,
+    required this.pistonFraction,
+  });
 
   final PneumaticDeviceKind kind;
   final bool schematic;
+  final double? pistonFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -83,8 +97,12 @@ class _GlyphPainter extends CustomPainter {
       case PneumaticDeviceKind.singleActingCylinder:
         canvas.drawRect(const Rect.fromLTWH(-39, -15, 66, 30), fill);
         canvas.drawRect(const Rect.fromLTWH(-39, -15, 66, 30), line);
-        canvas.drawLine(const Offset(8, -15), const Offset(8, 15), line);
-        canvas.drawLine(const Offset(8, 0), const Offset(49, 0), line);
+        final double acceptedX = pistonFraction == null
+            ? 8
+            : -27 + 42 * pistonFraction!.clamp(0.0, 1.0);
+        final double tipX = pistonFraction == null ? 49 : acceptedX + 34;
+        canvas.drawLine(Offset(acceptedX, -15), Offset(acceptedX, 15), line);
+        canvas.drawLine(Offset(acceptedX, 0), Offset(tipX, 0), line);
         canvas.drawLine(const Offset(-25, 15), const Offset(-25, 21), line);
         if (kind == PneumaticDeviceKind.doubleActingCylinder) {
           canvas.drawLine(const Offset(21, 15), const Offset(21, 21), line);
@@ -143,5 +161,7 @@ class _GlyphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GlyphPainter previous) =>
-      previous.kind != kind || previous.schematic != schematic;
+      previous.kind != kind ||
+      previous.schematic != schematic ||
+      previous.pistonFraction != pistonFraction;
 }

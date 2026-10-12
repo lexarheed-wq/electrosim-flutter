@@ -5,6 +5,7 @@ import 'f18_native_appliance_assets.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:clock/clock.dart' show clock;
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
@@ -3175,7 +3176,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final DateTime now = DateTime.now();
+    // Read the zone-aware clock used by fake_async in Flutter widget tests.
+    // DateTime.now() measures slow CI runner wall time between synthetic taps,
+    // incorrectly rejecting real double taps that were only 80 ms apart.
+    final DateTime now = clock.now();
     final bool sameTarget = _lastDirectControlTapElementId == target.id;
     final bool withinTime =
         _lastDirectControlTapTime != null &&

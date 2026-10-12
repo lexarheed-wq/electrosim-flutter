@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>R6N dedicated worker real Chromium contract</title></head>
+<body><output id="result">R6N_PENDING</output>
+<script>
+'use strict';
+// Actual Dart-compiled network worker. This is a browser transport contract,
+// NOT the Flutter FPS / PERF-01 acceptance test.
+const box = document.getElementById('result');
+const chamber = (id, p) => ({
+  id, volumeM3: .002, massKg: p * .002 / (287.05 * 293.15),
+  temperatureK: 293.15
+});
+const first = chamber('alpha', 250000);
+const second = chamber('beta', 100000);
+const initialMass = first.massKg + second.massKg;
+const request = {
+  projectRevision: 9, requestId: 57, engineVersion: 'r6n-real-web',
+  durationS: .04, maxStepS: .001,
+  chambers: [first, second],
+  boundaries: [],
+  passages: [{
+    id: 'tube', from: 'alpha', to: 'beta', areaM2: 1e-7, cd: .8,
+    gamma: 1.4, gasConstantJPerKgK: 287.05,
+    reverseFlowAllowed: true
+  }],
+  before: {
+    timeS: 0, acceptedSubsteps: 0, externalMassAddedKg: 0,
+    chambers: [first, second], flows: {tube: 0}
+  }
+};
+const worker = new Worker('r6n_worker.dart.js');
+let finished = false;
+function done(status) {
+  if (finished) return;
+  finished = true;
+  box.textContent = status;
+  worker.terminate();
+}
+worker.onmessage = event => {
+  try {
+    const packet = JSON.parse(event.data);
+    if (packet.error) throw new Error(packet.error);
+    const result = packet.result;
+    if (!result || result.requestId !== 57 ||
+        result.projectRevision !== 9 || result.engineVersion !== 'r6n-real-web' ||
+        Math.abs(result.timeS - .04) > 1e-10 || result.acceptedSubsteps < 1) {
+      throw new Error('Version, revision, time or steps mismatch');
+    }
+    const masses = result.chambers.map(c => c.massKg);
+    if (masses.length !== 2 || masses.some(x => !Number.isFinite(x) || x <= 0) ||
+        Math.abs(masses.reduce((a,b) => a+b, 0) - initialMass) > 1e-10) {
+      throw new Error('Finite chamber mass balance mismatch');
+    }
+    done('R6N_WEB_WORKER_PASS');
+  } catch (error) {
+    done('R6N_WEB_WORKER_FAIL: ' + String(error));
+  }
+};
+worker.onerror = e => done('R6N_WEB_WORKER_FAIL: ' + e.message);
+worker.postMessage(JSON.stringify(request));
+</script></body></html>

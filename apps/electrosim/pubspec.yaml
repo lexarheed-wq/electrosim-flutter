@@ -45,6 +45,7 @@ dependencies:
     path: ../../packages/electrosim_tp
   electrosim_storage:
     path: ../../packages/electrosim_storage
+  clock: ^1.1.2
   path_provider: ^2.1.5
   qr_flutter: ^4.1.0
   pdf: ">=3.12.0 <3.13.0"

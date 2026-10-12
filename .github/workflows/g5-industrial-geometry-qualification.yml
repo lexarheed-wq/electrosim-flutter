@@ -112,14 +112,16 @@ jobs:
         working-directory: apps/electrosim
         run: |
           flutter pub get
-          flutter test --update-goldens test/g12rq_premium_rcd2p_visual_test.dart
-          flutter test --update-goldens test/g12rq_actual_app_visual_proof_test.dart
-          flutter test --update-goldens test/g5_industrial_states_visual_test.dart
+          flutter test --no-pub --concurrency=1 test/g12rq_premium_rcd2p_visual_test.dart
+          flutter test --no-pub --concurrency=1 test/g12rq_actual_app_visual_proof_test.dart
+          flutter test --no-pub --concurrency=1 test/g5_industrial_states_visual_test.dart
           flutter test --no-pub tool/capture_g5_reference_test.dart
           flutter test --no-pub tool/capture_g5_industrial_test.dart
           test -s test/goldens/g12rq_premium_rcd2p_palette_board.png
           test -s test/goldens/g12rq_actual_widgets_palette_board.png
           test -s test/goldens/g5_industrial_off_on_trip.png
+          # Verify stored references were compared, never regenerated.
+          git diff --exit-code -- test/goldens/
       - name: Capture synchronized industrial workspace at exact source SHA
         working-directory: apps/electrosim
         run: |
@@ -139,7 +141,7 @@ jobs:
             apps/electrosim/build/industrial-workspace-proof/
           retention-days: 14
   macos-intel:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
     needs: [runtime-regression, visual-evidence, tp-browser-journey]
     runs-on: macos-15-intel
     timeout-minutes: 120

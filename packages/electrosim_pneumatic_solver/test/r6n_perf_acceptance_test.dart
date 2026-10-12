@@ -1,0 +1,121 @@
+import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:test/test.dart';
+
+void main() {
+  const R6PerfQualification audit = R6PerfQualification();
+  const String sha = '1234567890abcdef1234567890abcdef12345678';
+  String cellHash(
+    R6PerfScenario scenario,
+    R6PerfPlatform platform,
+    int count,
+    String kind,
+  ) => '$kind${platform.index}${scenario.index}$count'.padLeft(64, '0');
+
+  R6PerfObservation fixture(
+    R6PerfScenario scenario,
+    R6PerfPlatform platform,
+    int count, {
+    double latencyMs = 25,
+    String? rawArtifactSha256,
+    String? productPngSha256,
+  }) => R6PerfObservation(
+    sourceSha: sha,
+    runner: 'test-fixture-not-real-runner',
+    toolchain: 'synthetic-unit-test-data',
+    rawArtifactSha256:
+        rawArtifactSha256 ?? cellHash(scenario, platform, count, 'a'),
+    scenario: scenario,
+    platform: platform,
+    activeComponents: count,
+    warmupSeconds: 10,
+    measuredSeconds: <int>[60, 60, 60],
+    connectionP95Ms: latencyMs,
+    fractionFramesAt16ms7: .99,
+    clockDriftMsPer60s: 5,
+    solveP95MsPer100ms: 30,
+    electricalRegressionFraction: .03,
+    nativeOrWebWorkerMeasured: true,
+    memoryTrendLeakFree: true,
+    iso1219Reviewed: true,
+    productPngSha256:
+        productPngSha256 ?? cellHash(scenario, platform, count, 'b'),
+  );
+
+  test('R6/N PERF-01 missing 23 real runner cells is fail closed', () {
+    final List<String> problems = audit.errors(<R6PerfObservation>[
+      fixture(R6PerfScenario.pneumatic, R6PerfPlatform.chromium, 30),
+    ], integratedG5Sha: sha);
+    expect(
+      problems.where((String p) => p.contains('Missing release')).length,
+      23,
+    );
+  });
+
+  test('R6/N proof validator enforces all 24 scenario/platform cells', () {
+    final List<R6PerfObservation> synthetic = <R6PerfObservation>[
+      for (final R6PerfPlatform platform in R6PerfPlatform.values)
+        for (final R6PerfScenario scenario in R6PerfScenario.values)
+          for (final int count in <int>[30, 100, 200, 400])
+            fixture(scenario, platform, count),
+    ];
+    // This test verifies only the schema's acceptance logic; these are
+    // synthetic fixtures and never constitute real PERF-01 evidence.
+    expect(audit.errors(synthetic, integratedG5Sha: sha), isEmpty);
+    final List<R6PerfObservation> bad = <R6PerfObservation>[
+      ...synthetic.take(23),
+      fixture(
+        R6PerfScenario.mixed,
+        R6PerfPlatform.macIntel,
+        400,
+        latencyMs: 101,
+      ),
+    ];
+    expect(
+      audit.errors(bad, integratedG5Sha: sha),
+      contains(contains('Performance threshold failed')),
+    );
+    expect(audit.errors(synthetic, integratedG5Sha: 'other'), isNotEmpty);
+  });
+
+  test('R6/N rejects recycled telemetry and PNG-as-telemetry', () {
+    final R6PerfObservation first = fixture(
+      R6PerfScenario.pneumatic,
+      R6PerfPlatform.chromium,
+      30,
+    );
+    final List<String> reused = audit.errors(<R6PerfObservation>[
+      first,
+      fixture(
+        R6PerfScenario.pneumatic,
+        R6PerfPlatform.chromium,
+        100,
+        rawArtifactSha256: first.rawArtifactSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(reused, contains(contains('Reused PERF-01 raw artifact')));
+
+    final List<String> recycledPng = audit.errors(<R6PerfObservation>[
+      first,
+      fixture(
+        R6PerfScenario.mixed,
+        R6PerfPlatform.macIntel,
+        400,
+        productPngSha256: first.productPngSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(recycledPng, contains(contains('Reused PERF-01 product PNG')));
+
+    final List<String> wrongType = audit.errors(<R6PerfObservation>[
+      fixture(
+        R6PerfScenario.pneumatic,
+        R6PerfPlatform.chromium,
+        30,
+        productPngSha256: first.rawArtifactSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(
+      wrongType,
+      contains(contains('Raw telemetry and product PNG are identical')),
+    );
+  });
+}

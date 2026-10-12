@@ -5,6 +5,8 @@ import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'r6n_inline_test_worker.dart';
+
 MultiphysicsProject singleValve() {
   final PneumaticDevice valve = PneumaticDevice(
     id: 'v52',
@@ -53,7 +55,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
-        MaterialApp(home: PneumaticWorkshopPage(initialProject: singleValve())),
+        MaterialApp(
+          home: PneumaticWorkshopPage(
+            initialProject: singleValve(),
+            workerFactory: createInlineCanonicalTestWorker,
+          ),
+        ),
       );
       await tester.tap(find.byKey(const Key('device-v52')));
       await tester.pumpAndSettle();

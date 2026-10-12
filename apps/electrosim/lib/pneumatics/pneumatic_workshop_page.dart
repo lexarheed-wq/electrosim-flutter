@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
+import 'pneumatic_pipe_router.dart';
 import 'pneumatic_reference_cycle_page.dart';
 
 /// Experimental two-view editor of one canonical MultiphysicsProject.
@@ -16,9 +21,14 @@ class PneumaticWorkshopPage extends StatefulWidget {
     super.key,
     this.initialProject,
     this.initialView = PneumaticWorkshopView.physical,
+    this.workerFactory = createR6Worker,
   });
   final MultiphysicsProject? initialProject;
   final PneumaticWorkshopView initialView;
+
+  /// Injected only in tests. Production uses a real native isolate or
+  /// dedicated Web Worker; neither is replaced by compute on the UI isolate.
+  final Future<R6Worker> Function() workerFactory;
 
   @override
   State<PneumaticWorkshopPage> createState() => _PneumaticWorkshopPageState();
@@ -26,18 +36,80 @@ class PneumaticWorkshopPage extends StatefulWidget {
 
 class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late PneumaticWorkshopState _state;
-  final List<PneumaticWorkshopState> _undo = <PneumaticWorkshopState>[];
-  final List<PneumaticWorkshopState> _redo = <PneumaticWorkshopState>[];
+  late final PneumaticWorkshopSession _session;
+  final DateTime _createdAtUtc = DateTime.now().toUtc();
+  PneumaticWorkshopState? _dragBaseline;
+  Offset? _dragStartGlobal;
+  PhysicalViewPose? _dragStartPose;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
   IsothermalAirNetwork? _airSolver;
   IsothermalAirSnapshot? _airSnapshot;
+  CoupledMovingCylinderAirNetwork? _movingSolver;
+  CoupledCylinderNetworkSnapshot? _movingSnapshot;
   double? _dischargeCoefficient;
+  Future<R6WorkerScheduler>? _airWorker;
+  int _runtimeEpoch = 0;
+  bool _advancingAir = false;
+  bool _lastStaticSolveUsedWorker = false;
 
+  // A delayed worker reply cannot resurrect a project after edit/reset/dispose.
+  // Closing is asynchronous; the old worker is never reused by a new epoch.
   void _invalidateAirRuntime() {
+    _runtimeEpoch++;
+    final Future<R6WorkerScheduler>? previous = _airWorker;
+    _airWorker = null;
+    unawaited(_closeWorker(previous));
+    _lastStaticSolveUsedWorker = false;
     _airSolver = null;
     _airSnapshot = null;
+    _movingSolver = null;
+    _movingSnapshot = null;
+  }
+
+  Future<void> _closeWorker(Future<R6WorkerScheduler>? pending) async {
+    if (pending == null) return;
+    try {
+      await (await pending).close();
+    } catch (_) {
+      // A startup failure has no usable worker to close. The simulation
+      // still fails closed and never restores an invalid accepted snapshot.
+    }
+  }
+
+  Future<R6WorkerScheduler> _ensureAirWorker() {
+    final Future<R6WorkerScheduler>? cached = _airWorker;
+    if (cached != null) return cached;
+    final int epoch = _runtimeEpoch;
+    final Future<R6WorkerScheduler> starting = () async {
+      final R6Worker transport = await widget.workerFactory();
+      final R6WorkerScheduler scheduler = R6WorkerScheduler(
+        transport,
+        engineVersion: 'electrosim-r6n-flutter-workshop',
+      );
+      if (!mounted || epoch != _runtimeEpoch) {
+        await scheduler.close();
+        throw StateError('Pneumatic project changed during worker startup');
+      }
+      return scheduler;
+    }();
+    _airWorker = starting;
+    unawaited(
+      starting.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace __) {
+          if (identical(_airWorker, starting)) _airWorker = null;
+        },
+      ),
+    );
+    return starting;
+  }
+
+  @override
+  void dispose() {
+    _invalidateAirRuntime();
+    super.dispose();
   }
 
   static const List<PneumaticDeviceKind> _catalog = <PneumaticDeviceKind>[
@@ -68,17 +140,23 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             ),
           ),
     );
+    _session = PneumaticWorkshopSession(_state.project);
+    _session.switchView(_state.view);
   }
 
   void _edit(PneumaticWorkshopState Function() operation) {
     try {
       final PneumaticWorkshopState updated = operation();
+      final MultiphysicsProject previous = _state.project;
+      _session.apply((PneumaticWorkshopState current) => updated);
       setState(() {
-        _undo.add(_state);
-        _redo.clear();
-        _state = updated;
+        _state = _session.state;
         _firstPort = null;
-        _invalidateAirRuntime();
+        final MultiphysicsProject current = _state.project;
+        if (!identical(previous.pneumaticNetwork, current.pneumaticNetwork) ||
+            !identical(previous.electricalCircuit, current.electricalCircuit)) {
+          _invalidateAirRuntime();
+        }
       });
     } on Object catch (error) {
       ScaffoldMessenger.of(
@@ -88,14 +166,23 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   void _history(bool undo) {
-    final List<PneumaticWorkshopState> source = undo ? _undo : _redo;
-    final List<PneumaticWorkshopState> other = undo ? _redo : _undo;
-    if (source.isEmpty) return;
+    if (undo ? !_session.canUndo : !_session.canRedo) return;
+    final MultiphysicsProject previous = _state.project;
     setState(() {
-      other.add(_state);
-      _state = source.removeLast();
+      if (undo) {
+        _session.undo();
+      } else {
+        _session.redo();
+      }
+      _state = _session.state;
       _firstPort = null;
-      _invalidateAirRuntime();
+      // Moving a glyph never changes the gas/electric graph. Keep its
+      // accepted measured snapshot on layout-only undo/redo.
+      final MultiphysicsProject restored = _state.project;
+      final bool physicalChanged =
+          !identical(previous.pneumaticNetwork, restored.pneumaticNetwork) ||
+          !identical(previous.electricalCircuit, restored.electricalCircuit);
+      if (physicalChanged) _invalidateAirRuntime();
     });
   }
 
@@ -253,7 +340,9 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
         device.kind == PneumaticDeviceKind.idealSource ||
         device.kind == PneumaticDeviceKind.silencer;
     final bool valve52 = device.kind == PneumaticDeviceKind.valve52;
-    if (!fitting && !boundary && !valve52) return;
+    final bool movingCylinder =
+        device.kind == PneumaticDeviceKind.doubleActingCylinder;
+    if (!fitting && !boundary && !valve52 && !movingCylinder) return;
     final GlobalKey<FormState> key = GlobalKey<FormState>();
     final Map<String, double> values = <String, double>{};
     final Map<String, double>? calibrated =
@@ -261,63 +350,120 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           context: context,
           builder: (BuildContext dialog) => AlertDialog(
             title: Text('Calibrer ${device.id} — unités SI'),
-            content: Form(
-              key: key,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _physicalInput(
-                    'Pression absolue (Pa)',
-                    device.parametersSi['pressureAbsPa'],
-                    (double x) => values['pressureAbsPa'] = x,
-                  ),
-                  if (fitting)
-                    _physicalInput(
-                      'Volume gazeux (m³)',
-                      device.parametersSi['volumeM3'],
-                      (double x) => values['volumeM3'] = x,
-                    ),
-                  if (valve52) ...<Widget>[
-                    _physicalInput(
-                      'Volume mort par orifice (m³)',
-                      device.parametersSi['portDeadVolumeM3'],
-                      (double x) => values['portDeadVolumeM3'] = x,
-                    ),
-                    _physicalInput(
-                      'Surface de passage interne (m²)',
-                      device.parametersSi['valveEffectiveAreaM2'],
-                      (double x) => values['valveEffectiveAreaM2'] = x,
-                    ),
-                    _physicalInput(
-                      'Coefficient interne Cd (≤ 1)',
-                      device.parametersSi['valveCd'],
-                      (double x) => values['valveCd'] = x,
-                      maxValue: 1,
-                    ),
-                    DropdownButtonFormField<double>(
-                      key: const Key('air-valve-static-position'),
-                      initialValue: device.parametersSi['energized'],
-                      decoration: const InputDecoration(
-                        labelText: 'Position fixe 5/2 (aucun solénoïde)',
-                      ),
-                      items: const <DropdownMenuItem<double>>[
-                        DropdownMenuItem<double>(
-                          value: 0,
-                          child: Text('Repos : P-B / A-R'),
+            content: SizedBox(
+              width: 380,
+              height: movingCylinder ? 390 : null,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: key,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (!movingCylinder)
+                        _physicalInput(
+                          'Pression absolue (Pa)',
+                          device.parametersSi['pressureAbsPa'],
+                          (double x) => values['pressureAbsPa'] = x,
                         ),
-                        DropdownMenuItem<double>(
-                          value: 1,
-                          child: Text('Travail : P-A / B-S'),
+                      if (fitting)
+                        _physicalInput(
+                          'Volume gazeux (m³)',
+                          device.parametersSi['volumeM3'],
+                          (double x) => values['volumeM3'] = x,
+                        ),
+                      if (movingCylinder) ...<Widget>[
+                        _physicalInput(
+                          'Diamètre piston (m)',
+                          device.parametersSi['pistonDiameterM'],
+                          (double x) => values['pistonDiameterM'] = x,
+                        ),
+                        _physicalInput(
+                          'Diamètre tige (m)',
+                          device.parametersSi['rodDiameterM'],
+                          (double x) => values['rodDiameterM'] = x,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Course (m)',
+                          device.parametersSi['strokeM'],
+                          (double x) => values['strokeM'] = x,
+                        ),
+                        _physicalInput(
+                          'Volume mort A (m³)',
+                          device.parametersSi['deadVolumeAM3'],
+                          (double x) => values['deadVolumeAM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Volume mort B (m³)',
+                          device.parametersSi['deadVolumeBM3'],
+                          (double x) => values['deadVolumeBM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Position initiale (m)',
+                          device.parametersSi['initialPositionM'],
+                          (double x) => values['initialPositionM'] = x,
+                          allowZero: true,
+                        ),
+                        _physicalInput(
+                          'Pression A initiale absolue (Pa)',
+                          device.parametersSi['initialPressureAAbsPa'],
+                          (double x) => values['initialPressureAAbsPa'] = x,
+                        ),
+                        _physicalInput(
+                          'Pression B initiale absolue (Pa)',
+                          device.parametersSi['initialPressureBAbsPa'],
+                          (double x) => values['initialPressureBAbsPa'] = x,
+                        ),
+                        _physicalInput(
+                          'Masse en mouvement (kg)',
+                          device.parametersSi['movingMassKg'],
+                          (double x) => values['movingMassKg'] = x,
                         ),
                       ],
-                      onChanged: (double? value) {},
-                      validator: (double? value) => value == null
-                          ? 'Choisir la position physique.'
-                          : null,
-                      onSaved: (double? value) => values['energized'] = value!,
-                    ),
-                  ],
-                ],
+                      if (valve52) ...<Widget>[
+                        _physicalInput(
+                          'Volume mort par orifice (m³)',
+                          device.parametersSi['portDeadVolumeM3'],
+                          (double x) => values['portDeadVolumeM3'] = x,
+                        ),
+                        _physicalInput(
+                          'Surface de passage interne (m²)',
+                          device.parametersSi['valveEffectiveAreaM2'],
+                          (double x) => values['valveEffectiveAreaM2'] = x,
+                        ),
+                        _physicalInput(
+                          'Coefficient interne Cd (≤ 1)',
+                          device.parametersSi['valveCd'],
+                          (double x) => values['valveCd'] = x,
+                          maxValue: 1,
+                        ),
+                        DropdownButtonFormField<double>(
+                          key: const Key('air-valve-static-position'),
+                          initialValue: device.parametersSi['energized'],
+                          decoration: const InputDecoration(
+                            labelText: 'Position fixe 5/2 (aucun solénoïde)',
+                          ),
+                          items: const <DropdownMenuItem<double>>[
+                            DropdownMenuItem<double>(
+                              value: 0,
+                              child: Text('Repos : P-B / A-R'),
+                            ),
+                            DropdownMenuItem<double>(
+                              value: 1,
+                              child: Text('Travail : P-A / B-S'),
+                            ),
+                          ],
+                          onChanged: (double? value) {},
+                          validator: (double? value) => value == null
+                              ? 'Choisir la position physique.'
+                              : null,
+                          onSaved: (double? value) =>
+                              values['energized'] = value!,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
             actions: <Widget>[
@@ -344,6 +490,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   Future<void> _advanceAir() async {
+    if (_advancingAir) return;
     double? cd = _dischargeCoefficient;
     if (cd == null) {
       final GlobalKey<FormState> key = GlobalKey<FormState>();
@@ -380,26 +527,74 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       );
       if (!mounted || cd == null) return;
     }
+    final int epoch = _runtimeEpoch;
+    setState(() => _advancingAir = true);
     try {
-      final IsothermalAirNetwork solver =
-          _airSolver ??
-          WorkshopClosedAirCompiler(
-            dischargeCoefficient: cd,
-          ).compileWithStaticValve52(_state.project.pneumaticNetwork);
-      final IsothermalAirSnapshot next = solver.advance(
-        _airSnapshot ?? solver.initialSnapshot,
-        durationS: .02,
-        maxStepS: .001,
+      final PneumaticNetwork authored = _state.project.pneumaticNetwork;
+      final bool moving = authored.devices.any(
+        (d) => d.kind == PneumaticDeviceKind.doubleActingCylinder,
       );
-      setState(() {
-        _dischargeCoefficient = cd;
-        _airSolver = solver;
-        _airSnapshot = next;
-      });
+      if (moving) {
+        // R6/L moving-volume physics still runs locally. Do NOT label
+        // this route worker-backed until moving-state transport exists.
+        final CoupledMovingCylinderAirNetwork solver =
+            _movingSolver ??
+            WorkshopClosedAirCompiler(
+              dischargeCoefficient: cd,
+            ).compileWithMovingCylinder(authored);
+        final CoupledCylinderNetworkSnapshot next = solver.advance(
+          _movingSnapshot ?? solver.initialSnapshot,
+          durationS: .02,
+          maxStepS: .00005,
+        );
+        if (!mounted || epoch != _runtimeEpoch) return;
+        setState(() {
+          _dischargeCoefficient = cd;
+          _movingSolver = solver;
+          _movingSnapshot = next;
+          _airSnapshot = next.air;
+          _airSolver = null;
+          _lastStaticSolveUsedWorker = false;
+        });
+      } else {
+        // Real Flutter -> scheduler -> Web Worker/native isolate -> canonical
+        // solver -> accepted UI snapshot; no synchronous advance fallback.
+        final IsothermalAirNetwork solver =
+            _airSolver ??
+            WorkshopClosedAirCompiler(
+              dischargeCoefficient: cd,
+            ).compileWithStaticValve52(authored);
+        final IsothermalAirSnapshot before =
+            _airSnapshot ?? solver.initialSnapshot;
+        final R6WorkerScheduler transport = await _ensureAirWorker();
+        if (!mounted || epoch != _runtimeEpoch) return;
+        final R6NetworkOutcome outcome = await transport.submit(
+          build: (int revision, int requestId) => R6NetworkJob(
+            projectRevision: revision,
+            requestId: requestId,
+            engineVersion: transport.engineVersion,
+            network: solver,
+            before: before,
+            durationS: .02,
+            maxStepS: .001,
+          ),
+        );
+        if (!mounted || epoch != _runtimeEpoch) return;
+        setState(() {
+          _dischargeCoefficient = cd;
+          _airSolver = solver;
+          _airSnapshot = outcome.snapshot;
+          _lastStaticSolveUsedWorker = true;
+        });
+      }
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Simulation impossible : $error')));
+      if (mounted && epoch == _runtimeEpoch) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Simulation impossible : $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _advancingAir = false);
     }
   }
 
@@ -407,11 +602,24 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     try {
       final ClipboardData? clipboard = await Clipboard.getData('text/plain');
       if (!mounted) return;
-      _edit(
-        () => PneumaticWorkshopState(
-          project: MultiphysicsProject.fromJsonString(clipboard?.text ?? ''),
-        ),
-      );
+      final String source = clipboard?.text ?? '';
+      final Object? decoded = jsonDecode(source);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid project object');
+      }
+      // Earlier R4 workshop clipboard exports were raw design-only v1.
+      // Use that reader only when its canonical fields are present.
+      final bool rawR4 =
+          decoded['schemaVersion'] == 1 &&
+          decoded.containsKey('electricalCircuit') &&
+          decoded.containsKey('pneumaticNetwork');
+      final MultiphysicsProject incoming = rawR4
+          ? MultiphysicsProject.fromJsonString(source)
+          : const MultiphysicsSessionStorage()
+                .importProject(source)
+                .state
+                .project;
+      _edit(() => PneumaticWorkshopState(project: incoming));
     } on Object catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -435,8 +643,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           IconButton(
             key: const Key('air-advance'),
             tooltip: 'Avancer de 20 ms le réseau physique calibré',
-            onPressed: _advanceAir,
-            icon: const Icon(Icons.speed),
+            onPressed: _advancingAir ? null : _advanceAir,
+            icon: _advancingAir
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      key: Key('air-worker-running'),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.speed),
           ),
           IconButton(
             key: const Key('air-reset-physics'),
@@ -458,13 +675,13 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           ),
           IconButton(
             key: const Key('air-undo'),
-            onPressed: _undo.isEmpty ? null : () => _history(true),
+            onPressed: !_session.canUndo ? null : () => _history(true),
             icon: const Icon(Icons.undo),
             tooltip: 'Annuler',
           ),
           IconButton(
             key: const Key('air-redo'),
-            onPressed: _redo.isEmpty ? null : () => _history(false),
+            onPressed: !_session.canRedo ? null : () => _history(false),
             icon: const Icon(Icons.redo),
             tooltip: 'Rétablir',
           ),
@@ -493,7 +710,19 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           IconButton(
             key: const Key('air-export'),
             onPressed: () => Clipboard.setData(
-              ClipboardData(text: _state.project.toJsonString()),
+              ClipboardData(
+                text: const MultiphysicsSessionStorage().exportProject(
+                  session: _session,
+                  electricalDocument: SavedCircuitDocument(
+                    saveId: _state.project.electricalCircuit.circuitId.value,
+                    title: 'Atelier pneumatique',
+                    createdAtUtc: _createdAtUtc,
+                    updatedAtUtc: DateTime.now().toUtc(),
+                    circuit: _state.project.electricalCircuit,
+                    engineVersion: 'electrosim-g5-r6m',
+                  ),
+                ),
+              ),
             ),
             icon: const Icon(Icons.copy_all),
             tooltip: 'Copier le projet multiphysique',
@@ -519,7 +748,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   ],
                   selected: <PneumaticWorkshopView>{_state.view},
                   onSelectionChanged: (selection) => setState(() {
-                    _state = _state.switchView(selection.single);
+                    _session.switchView(selection.single);
+                    _state = _session.state;
                     _firstPort = null;
                   }),
                 ),
@@ -542,6 +772,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ],
             ),
           ),
+          if (_airSnapshot != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                _lastStaticSolveUsedWorker
+                    ? 'R6/N : résultat accepté depuis worker isolé'
+                    : 'R6/L : vérin mobile calculé localement (worker non prouvé)',
+                key: const Key('air-solver-transport-status'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           SizedBox(
             height: 52,
             child: ListView(
@@ -631,6 +872,15 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                if (_movingSnapshot != null &&
+                                    selected.kind ==
+                                        PneumaticDeviceKind
+                                            .doubleActingCylinder)
+                                  Text(
+                                    'x = ${(_movingSnapshot!.positionM * 1000).toStringAsFixed(2)} mm ; '
+                                    'v = ${_movingSnapshot!.velocityMPerS.toStringAsFixed(3)} m/s',
+                                    key: const Key('air-measured-position'),
+                                  ),
                                 if (_airSnapshot?.chambers[selected.id] != null)
                                   Text(
                                     'P abs = '
@@ -663,7 +913,10 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                                     selected.kind ==
                                         PneumaticDeviceKind.silencer ||
                                     selected.kind ==
-                                        PneumaticDeviceKind.valve52)
+                                        PneumaticDeviceKind.valve52 ||
+                                    selected.kind ==
+                                        PneumaticDeviceKind
+                                            .doubleActingCylinder)
                                   FilledButton.tonal(
                                     key: const Key('air-calibrate-device'),
                                     onPressed: () =>
@@ -691,6 +944,31 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     );
   }
 
+  // Calibrated piston position before a solve and after runtime reset.
+  // Legacy uncalibrated glyphs remain static.
+  double? _cylinderFraction(PneumaticDevice device) {
+    if (device.kind != PneumaticDeviceKind.doubleActingCylinder) return null;
+    final CoupledCylinderNetworkSnapshot? accepted = _movingSnapshot;
+    final CoupledMovingCylinderAirNetwork? solver = _movingSolver;
+    if (accepted != null && solver != null) {
+      return (accepted.positionM / solver.geometry.strokeM)
+          .clamp(0.0, 1.0)
+          .toDouble();
+    }
+    final double? initial = device.parametersSi['initialPositionM'];
+    final double? stroke = device.parametersSi['strokeM'];
+    if (initial == null ||
+        stroke == null ||
+        !initial.isFinite ||
+        !stroke.isFinite ||
+        stroke <= 0 ||
+        initial < 0 ||
+        initial > stroke) {
+      return null;
+    }
+    return initial / stroke;
+  }
+
   PneumaticDevice? _selected() {
     for (final PneumaticDevice d in _state.project.pneumaticNetwork.devices) {
       if (d.id == _state.selectedPhysicalId) return d;
@@ -698,92 +976,126 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     return null;
   }
 
-  Widget _tile(PneumaticDevice device, PhysicalViewPose pose, bool plate) =>
-      Positioned(
-        left: pose.x,
-        top: pose.y,
-        child: GestureDetector(
-          onPanStart: (_) {
-            _undo.add(_state);
-            _redo.clear();
-          },
-          onPanUpdate: (details) => setState(() {
-            _state = _state.move(
-              physicalId: device.id,
-              pose: PhysicalViewPose(
-                x: pose.x + details.delta.dx,
-                y: pose.y + details.delta.dy,
-                rotationRad: pose.rotationRad,
-              ),
-            );
-          }),
-          child: InkWell(
-            key: Key('device-${device.id}'),
-            onTap: () => setState(() => _state = _state.select(device.id)),
-            child: Container(
-              width: 170,
-              height: 140,
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: plate ? const Color(0xfff4f5f6) : Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _state.selectedPhysicalId == device.id
-                      ? Colors.blue
-                      : Colors.blueGrey,
-                  width: _state.selectedPhysicalId == device.id ? 3 : 1,
-                ),
-              ),
-              child: Column(
-                children: <Widget>[
-                  PneumaticDeviceGlyph(
-                    kind: device.kind,
-                    schematic: !plate,
-                    width: 110,
-                    height: 38,
-                  ),
-                  Text(
-                    '${device.id} : ${device.kind.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    height: 27,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        for (final PneumaticPort port in device.ports)
-                          InkWell(
-                            key: Key('port-${port.id.value}'),
-                            onTap: () => _portTap(port.id),
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _firstPort == port.id
-                                    ? Colors.amber.shade100
-                                    : Colors.blueGrey.shade100,
-                                border: Border.all(color: Colors.blueGrey),
-                              ),
-                              child: Text(
-                                _displayPortLabel(device.kind, port),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+  Widget _tile(
+    PneumaticDevice device,
+    PhysicalViewPose pose,
+    bool plate,
+  ) => Positioned(
+    left: pose.x,
+    top: pose.y,
+    child: GestureDetector(
+      onPanDown: (details) {
+        // Capture the pointer before pan-slop is consumed by the recognizer.
+        _dragStartGlobal = details.globalPosition;
+        _dragStartPose = pose;
+      },
+      onPanStart: (details) {
+        _dragBaseline = _state;
+        _dragStartGlobal ??= details.globalPosition;
+        _dragStartPose ??= pose;
+      },
+      onPanUpdate: (details) => setState(() {
+        final Offset origin = _dragStartGlobal ?? details.globalPosition;
+        final PhysicalViewPose initial = _dragStartPose ?? pose;
+        final Offset distance = details.globalPosition - origin;
+        _state = _state.move(
+          physicalId: device.id,
+          pose: PhysicalViewPose(
+            x: initial.x + distance.dx,
+            y: initial.y + distance.dy,
+            rotationRad: initial.rotationRad,
+          ),
+        );
+      }),
+      onPanEnd: (_) {
+        if (_dragBaseline != null) {
+          final PneumaticWorkshopState accepted = _state;
+          _session.apply((PneumaticWorkshopState current) => accepted);
+          setState(() => _state = _session.state);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      onPanCancel: () {
+        if (_dragBaseline != null) {
+          setState(() => _state = _dragBaseline!);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      child: InkWell(
+        key: Key('device-${device.id}'),
+        onTap: () => setState(() {
+          _session.select(device.id);
+          _state = _session.state;
+        }),
+        child: Container(
+          width: 170,
+          height: 140,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: plate ? const Color(0xfff4f5f6) : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _state.selectedPhysicalId == device.id
+                  ? Colors.blue
+                  : Colors.blueGrey,
+              width: _state.selectedPhysicalId == device.id ? 3 : 1,
             ),
           ),
+          child: Column(
+            children: <Widget>[
+              PneumaticDeviceGlyph(
+                kind: device.kind,
+                schematic: !plate,
+                width: 110,
+                height: 38,
+                pistonFraction: _cylinderFraction(device),
+              ),
+              Text(
+                '${device.id} : ${device.kind.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              ),
+              const Spacer(),
+              SizedBox(
+                height: 27,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    for (final PneumaticPort port in device.ports)
+                      InkWell(
+                        key: Key('port-${port.id.value}'),
+                        onTap: () => _portTap(port.id),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _firstPort == port.id
+                                ? Colors.amber.shade100
+                                : Colors.blueGrey.shade100,
+                            border: Border.all(color: Colors.blueGrey),
+                          ),
+                          child: Text(
+                            _displayPortLabel(device.kind, port),
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _PipePainter extends CustomPainter {
@@ -803,6 +1115,7 @@ class _PipePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     final Map<String, Offset> terminals = <String, Offset>{};
+    final Map<String, String> portOwners = <String, String>{};
     for (final PneumaticDevice device in project.pneumaticNetwork.devices) {
       final PhysicalViewPose? pose = poses[device.id];
       if (pose == null) continue;
@@ -813,23 +1126,52 @@ class _PipePainter extends CustomPainter {
           pose.x + 5 + (i + 1) * gap + (i + .5) * 24,
           pose.y + 123,
         );
+        portOwners[device.ports[i].id.value] = device.id;
       }
     }
+    final Map<String, Rect> boxes = <String, Rect>{
+      for (final MapEntry<String, PhysicalViewPose> item in poses.entries)
+        item.key: Rect.fromLTWH(item.value.x, item.value.y, 170, 140),
+    };
+    final List<List<Offset>> occupied = <List<Offset>>[];
     for (final PneumaticPipe pipe in project.pneumaticNetwork.pipes) {
       final Offset? start = terminals[pipe.fromPortId.value];
       final Offset? end = terminals[pipe.toPortId.value];
-      if (start == null || end == null) continue;
-      final double middle = (start.dy + end.dy) / 2;
-      canvas.drawPath(
-        Path()
-          ..moveTo(start.dx, start.dy)
-          ..lineTo(start.dx, middle)
-          ..lineTo(end.dx, middle)
-          ..lineTo(end.dx, end.dy),
-        pen,
+      // Resolve actual authored port ownership. Splitting on a period
+      // corrupts IDs of components that themselves contain periods.
+      final String? sourceId = portOwners[pipe.fromPortId.value];
+      final String? targetId = portOwners[pipe.toPortId.value];
+      final Rect? origin = boxes[sourceId];
+      final Rect? destination = boxes[targetId];
+      if (start == null ||
+          end == null ||
+          origin == null ||
+          destination == null) {
+        continue;
+      }
+      final List<Offset>? route = PneumaticPipeRouter.route(
+        start: start,
+        end: end,
+        fromTile: origin,
+        toTile: destination,
+        tiles: boxes.values,
+        previousRoutes: occupied,
       );
+      if (route == null) {
+        // Fail visibly, never draw a deceptively connected straight pipe
+        // through a pneumatic component.
+        canvas.drawCircle(start, 5, Paint()..color = Colors.deepOrange);
+        canvas.drawCircle(end, 5, Paint()..color = Colors.deepOrange);
+        continue;
+      }
+      final Path path = Path()..moveTo(route.first.dx, route.first.dy);
+      for (final Offset point in route.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      canvas.drawPath(path, pen);
       canvas.drawCircle(start, 3, pen);
       canvas.drawCircle(end, 3, pen);
+      occupied.add(route);
     }
   }
 

@@ -490,6 +490,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   Future<void> _advanceAir() async {
+    if (_advancingAir) return;
     double? cd = _dischargeCoefficient;
     if (cd == null) {
       final GlobalKey<FormState> key = GlobalKey<FormState>();
@@ -526,12 +527,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
       );
       if (!mounted || cd == null) return;
     }
+    final int epoch = _runtimeEpoch;
+    setState(() => _advancingAir = true);
     try {
       final PneumaticNetwork authored = _state.project.pneumaticNetwork;
       final bool moving = authored.devices.any(
         (d) => d.kind == PneumaticDeviceKind.doubleActingCylinder,
       );
       if (moving) {
+        // R6/L moving-volume physics still runs locally. Do NOT label
+        // this route worker-backed until moving-state transport exists.
         final CoupledMovingCylinderAirNetwork solver =
             _movingSolver ??
             WorkshopClosedAirCompiler(
@@ -542,34 +547,54 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           durationS: .02,
           maxStepS: .00005,
         );
+        if (!mounted || epoch != _runtimeEpoch) return;
         setState(() {
           _dischargeCoefficient = cd;
           _movingSolver = solver;
           _movingSnapshot = next;
           _airSnapshot = next.air;
           _airSolver = null;
+          _lastStaticSolveUsedWorker = false;
         });
       } else {
+        // Real Flutter -> scheduler -> Web Worker/native isolate -> canonical
+        // solver -> accepted UI snapshot; no synchronous advance fallback.
         final IsothermalAirNetwork solver =
             _airSolver ??
             WorkshopClosedAirCompiler(
               dischargeCoefficient: cd,
             ).compileWithStaticValve52(authored);
-        final IsothermalAirSnapshot next = solver.advance(
-          _airSnapshot ?? solver.initialSnapshot,
-          durationS: .02,
-          maxStepS: .001,
+        final IsothermalAirSnapshot before =
+            _airSnapshot ?? solver.initialSnapshot;
+        final R6WorkerScheduler transport = await _ensureAirWorker();
+        if (!mounted || epoch != _runtimeEpoch) return;
+        final R6NetworkOutcome outcome = await transport.submit(
+          build: (int revision, int requestId) => R6NetworkJob(
+            projectRevision: revision,
+            requestId: requestId,
+            engineVersion: transport.engineVersion,
+            network: solver,
+            before: before,
+            durationS: .02,
+            maxStepS: .001,
+          ),
         );
+        if (!mounted || epoch != _runtimeEpoch) return;
         setState(() {
           _dischargeCoefficient = cd;
           _airSolver = solver;
-          _airSnapshot = next;
+          _airSnapshot = outcome.snapshot;
+          _lastStaticSolveUsedWorker = true;
         });
       }
     } on Object catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Simulation impossible : $error')));
+      if (mounted && epoch == _runtimeEpoch) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Simulation impossible : $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _advancingAir = false);
     }
   }
 
@@ -618,8 +643,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           IconButton(
             key: const Key('air-advance'),
             tooltip: 'Avancer de 20 ms le réseau physique calibré',
-            onPressed: _advanceAir,
-            icon: const Icon(Icons.speed),
+            onPressed: _advancingAir ? null : _advanceAir,
+            icon: _advancingAir
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      key: Key('air-worker-running'),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.speed),
           ),
           IconButton(
             key: const Key('air-reset-physics'),
@@ -738,6 +772,17 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ],
             ),
           ),
+          if (_airSnapshot != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                _lastStaticSolveUsedWorker
+                    ? 'R6/N : résultat accepté depuis worker isolé'
+                    : 'R6/L : vérin mobile calculé localement (worker non prouvé)',
+                key: const Key('air-solver-transport-status'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           SizedBox(
             height: 52,
             child: ListView(

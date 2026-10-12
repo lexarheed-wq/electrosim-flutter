@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,8 +29,11 @@ class PneumaticWorkshopPage extends StatefulWidget {
 
 class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   late PneumaticWorkshopState _state;
-  final List<PneumaticWorkshopState> _undo = <PneumaticWorkshopState>[];
-  final List<PneumaticWorkshopState> _redo = <PneumaticWorkshopState>[];
+  late final PneumaticWorkshopSession _session;
+  final DateTime _createdAtUtc = DateTime.now().toUtc();
+  PneumaticWorkshopState? _dragBaseline;
+  Offset? _dragStartGlobal;
+  PhysicalViewPose? _dragStartPose;
   PneumaticPortId? _firstPort;
   int _deviceSerial = 0;
   int _pipeSerial = 0;
@@ -68,15 +74,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
             ),
           ),
     );
+    _session = PneumaticWorkshopSession(_state.project);
+    _session.switchView(_state.view);
   }
 
   void _edit(PneumaticWorkshopState Function() operation) {
     try {
       final PneumaticWorkshopState updated = operation();
+      _session.apply((PneumaticWorkshopState current) => updated);
       setState(() {
-        _undo.add(_state);
-        _redo.clear();
-        _state = updated;
+        _state = _session.state;
         _firstPort = null;
         _invalidateAirRuntime();
       });
@@ -88,14 +95,23 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   }
 
   void _history(bool undo) {
-    final List<PneumaticWorkshopState> source = undo ? _undo : _redo;
-    final List<PneumaticWorkshopState> other = undo ? _redo : _undo;
-    if (source.isEmpty) return;
+    if (undo ? !_session.canUndo : !_session.canRedo) return;
+    final MultiphysicsProject previous = _state.project;
     setState(() {
-      other.add(_state);
-      _state = source.removeLast();
+      if (undo) {
+        _session.undo();
+      } else {
+        _session.redo();
+      }
+      _state = _session.state;
       _firstPort = null;
-      _invalidateAirRuntime();
+      // Moving a glyph never changes the gas/electric graph. Keep its
+      // accepted measured snapshot on layout-only undo/redo.
+      final MultiphysicsProject restored = _state.project;
+      final bool physicalChanged =
+          !identical(previous.pneumaticNetwork, restored.pneumaticNetwork) ||
+          !identical(previous.electricalCircuit, restored.electricalCircuit);
+      if (physicalChanged) _invalidateAirRuntime();
     });
   }
 
@@ -407,11 +423,24 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     try {
       final ClipboardData? clipboard = await Clipboard.getData('text/plain');
       if (!mounted) return;
-      _edit(
-        () => PneumaticWorkshopState(
-          project: MultiphysicsProject.fromJsonString(clipboard?.text ?? ''),
-        ),
-      );
+      final String source = clipboard?.text ?? '';
+      final Object? decoded = jsonDecode(source);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid project object');
+      }
+      // Earlier R4 workshop clipboard exports were raw design-only v1.
+      // Use that reader only when its canonical fields are present.
+      final bool rawR4 =
+          decoded['schemaVersion'] == 1 &&
+          decoded.containsKey('electricalCircuit') &&
+          decoded.containsKey('pneumaticNetwork');
+      final MultiphysicsProject incoming = rawR4
+          ? MultiphysicsProject.fromJsonString(source)
+          : const MultiphysicsSessionStorage()
+                .importProject(source)
+                .state
+                .project;
+      _edit(() => PneumaticWorkshopState(project: incoming));
     } on Object catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -458,13 +487,13 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           ),
           IconButton(
             key: const Key('air-undo'),
-            onPressed: _undo.isEmpty ? null : () => _history(true),
+            onPressed: !_session.canUndo ? null : () => _history(true),
             icon: const Icon(Icons.undo),
             tooltip: 'Annuler',
           ),
           IconButton(
             key: const Key('air-redo'),
-            onPressed: _redo.isEmpty ? null : () => _history(false),
+            onPressed: !_session.canRedo ? null : () => _history(false),
             icon: const Icon(Icons.redo),
             tooltip: 'Rétablir',
           ),
@@ -493,7 +522,19 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
           IconButton(
             key: const Key('air-export'),
             onPressed: () => Clipboard.setData(
-              ClipboardData(text: _state.project.toJsonString()),
+              ClipboardData(
+                text: const MultiphysicsSessionStorage().exportProject(
+                  session: _session,
+                  electricalDocument: SavedCircuitDocument(
+                    saveId: _state.project.electricalCircuit.circuitId.value,
+                    title: 'Atelier pneumatique',
+                    createdAtUtc: _createdAtUtc,
+                    updatedAtUtc: DateTime.now().toUtc(),
+                    circuit: _state.project.electricalCircuit,
+                    engineVersion: 'electrosim-g5-r6m',
+                  ),
+                ),
+              ),
             ),
             icon: const Icon(Icons.copy_all),
             tooltip: 'Copier le projet multiphysique',
@@ -519,7 +560,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                   ],
                   selected: <PneumaticWorkshopView>{_state.view},
                   onSelectionChanged: (selection) => setState(() {
-                    _state = _state.switchView(selection.single);
+                    _session.switchView(selection.single);
+                    _state = _session.state;
                     _firstPort = null;
                   }),
                 ),
@@ -698,92 +740,125 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     return null;
   }
 
-  Widget _tile(PneumaticDevice device, PhysicalViewPose pose, bool plate) =>
-      Positioned(
-        left: pose.x,
-        top: pose.y,
-        child: GestureDetector(
-          onPanStart: (_) {
-            _undo.add(_state);
-            _redo.clear();
-          },
-          onPanUpdate: (details) => setState(() {
-            _state = _state.move(
-              physicalId: device.id,
-              pose: PhysicalViewPose(
-                x: pose.x + details.delta.dx,
-                y: pose.y + details.delta.dy,
-                rotationRad: pose.rotationRad,
-              ),
-            );
-          }),
-          child: InkWell(
-            key: Key('device-${device.id}'),
-            onTap: () => setState(() => _state = _state.select(device.id)),
-            child: Container(
-              width: 170,
-              height: 140,
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: plate ? const Color(0xfff4f5f6) : Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _state.selectedPhysicalId == device.id
-                      ? Colors.blue
-                      : Colors.blueGrey,
-                  width: _state.selectedPhysicalId == device.id ? 3 : 1,
-                ),
-              ),
-              child: Column(
-                children: <Widget>[
-                  PneumaticDeviceGlyph(
-                    kind: device.kind,
-                    schematic: !plate,
-                    width: 110,
-                    height: 38,
-                  ),
-                  Text(
-                    '${device.id} : ${device.kind.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    height: 27,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        for (final PneumaticPort port in device.ports)
-                          InkWell(
-                            key: Key('port-${port.id.value}'),
-                            onTap: () => _portTap(port.id),
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _firstPort == port.id
-                                    ? Colors.amber.shade100
-                                    : Colors.blueGrey.shade100,
-                                border: Border.all(color: Colors.blueGrey),
-                              ),
-                              child: Text(
-                                _displayPortLabel(device.kind, port),
-                                style: const TextStyle(fontSize: 10),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+  Widget _tile(
+    PneumaticDevice device,
+    PhysicalViewPose pose,
+    bool plate,
+  ) => Positioned(
+    left: pose.x,
+    top: pose.y,
+    child: GestureDetector(
+      onPanDown: (details) {
+        // Capture the pointer before pan-slop is consumed by the recognizer.
+        _dragStartGlobal = details.globalPosition;
+        _dragStartPose = pose;
+      },
+      onPanStart: (details) {
+        _dragBaseline = _state;
+        _dragStartGlobal ??= details.globalPosition;
+        _dragStartPose ??= pose;
+      },
+      onPanUpdate: (details) => setState(() {
+        final Offset origin = _dragStartGlobal ?? details.globalPosition;
+        final PhysicalViewPose initial = _dragStartPose ?? pose;
+        final Offset distance = details.globalPosition - origin;
+        _state = _state.move(
+          physicalId: device.id,
+          pose: PhysicalViewPose(
+            x: initial.x + distance.dx,
+            y: initial.y + distance.dy,
+            rotationRad: initial.rotationRad,
+          ),
+        );
+      }),
+      onPanEnd: (_) {
+        if (_dragBaseline != null) {
+          final PneumaticWorkshopState accepted = _state;
+          _session.apply((PneumaticWorkshopState current) => accepted);
+          setState(() => _state = _session.state);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      onPanCancel: () {
+        if (_dragBaseline != null) {
+          setState(() => _state = _dragBaseline!);
+        }
+        _dragBaseline = null;
+        _dragStartGlobal = null;
+        _dragStartPose = null;
+      },
+      child: InkWell(
+        key: Key('device-${device.id}'),
+        onTap: () => setState(() {
+          _session.select(device.id);
+          _state = _session.state;
+        }),
+        child: Container(
+          width: 170,
+          height: 140,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: plate ? const Color(0xfff4f5f6) : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _state.selectedPhysicalId == device.id
+                  ? Colors.blue
+                  : Colors.blueGrey,
+              width: _state.selectedPhysicalId == device.id ? 3 : 1,
             ),
           ),
+          child: Column(
+            children: <Widget>[
+              PneumaticDeviceGlyph(
+                kind: device.kind,
+                schematic: !plate,
+                width: 110,
+                height: 38,
+              ),
+              Text(
+                '${device.id} : ${device.kind.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              ),
+              const Spacer(),
+              SizedBox(
+                height: 27,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    for (final PneumaticPort port in device.ports)
+                      InkWell(
+                        key: Key('port-${port.id.value}'),
+                        onTap: () => _portTap(port.id),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _firstPort == port.id
+                                ? Colors.amber.shade100
+                                : Colors.blueGrey.shade100,
+                            border: Border.all(color: Colors.blueGrey),
+                          ),
+                          child: Text(
+                            _displayPortLabel(device.kind, port),
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _PipePainter extends CustomPainter {

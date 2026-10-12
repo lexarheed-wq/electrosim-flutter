@@ -121,6 +121,7 @@ final class SelfHold24vElectricalCycle {
     required bool pressed,
     required bool holding,
     required bool endStopActuated,
+    required bool powerEnabled,
   }) {
     final CircuitState original = project.electricalCircuit;
     final List<ComponentInstance> parts = <ComponentInstance>[
@@ -152,7 +153,22 @@ final class SelfHold24vElectricalCycle {
       mode: original.mode,
       components: parts,
       connections: original.connections,
-      sources: original.sources,
+      sources: <SourceInstance>[
+        for (final SourceInstance source in original.sources)
+          if (!powerEnabled && source.modelType == 'dc_voltage_source')
+            SourceInstance(
+              id: source.id,
+              modelType: source.modelType,
+              terminals: source.terminals,
+              parameters: <String, Object?>{
+                ...source.parameters,
+                'voltageV': 0.0,
+              },
+              enabled: source.enabled,
+            )
+          else
+            source,
+      ],
       instruments: original.instruments,
       probes: original.probes,
       settings: original.settings,
@@ -173,6 +189,7 @@ final class SelfHold24vElectricalCycle {
     required double timeS,
     required bool startPressed,
     required bool endStopActuated,
+    bool powerEnabled = true,
     Solenoid24vSnapshot previousRelay = const Solenoid24vSnapshot(
       energized: false,
       measuredVoltageV: 0,
@@ -184,6 +201,15 @@ final class SelfHold24vElectricalCycle {
         'Self holding cycle requires a nonnegative physical time.',
       );
     }
+    if (!powerEnabled &&
+        project.electricalCircuit.sources.any(
+          (SourceInstance source) => source.modelType != 'dc_voltage_source',
+        )) {
+      throw const ElectropneumaticRuntimeException(
+        'unsupported_power_disconnect',
+        'Power isolation needs an explicitly supported DC voltage source.',
+      );
+    }
     Solenoid24vSnapshot relay = previousRelay;
     for (int iteration = 0; iteration < maxIterations; iteration++) {
       final CircuitState circuit = _controlledCircuit(
@@ -191,6 +217,7 @@ final class SelfHold24vElectricalCycle {
         pressed: startPressed,
         holding: relay.energized,
         endStopActuated: endStopActuated,
+        powerEnabled: powerEnabled,
       );
       final DcSolveResult solved = const SolverDC().solve(
         circuit,

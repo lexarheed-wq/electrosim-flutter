@@ -102,7 +102,10 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
   final double mechanicalStepS;
   late final CoupledCylinderNetworkSnapshot _initial;
 
-  CoupledMovingCylinderAirNetwork _compilerAt(ValveSpoolSide spool) {
+  CoupledMovingCylinderAirNetwork _compilerAt(
+    ValveSpoolSide spool, {
+    bool airSupplyEnabled = true,
+  }) {
     final List<PneumaticDevice> devices = <PneumaticDevice>[];
     for (final PneumaticDevice device
         in electrical.project.pneumaticNetwork.devices) {
@@ -122,17 +125,30 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
         ),
       );
     }
+    final Set<PneumaticPortId> sourcePorts = <PneumaticPortId>{
+      for (final PneumaticDevice device in devices)
+        if (device.kind == PneumaticDeviceKind.idealSource)
+          for (final PneumaticPort port in device.ports) port.id,
+    };
     return compiler.compileWithMovingCylinder(
       PneumaticNetwork(
         devices: devices,
-        pipes: electrical.project.pneumaticNetwork.pipes,
+        pipes: <PneumaticPipe>[
+          for (final PneumaticPipe pipe
+              in electrical.project.pneumaticNetwork.pipes)
+            if (airSupplyEnabled ||
+                (!sourcePorts.contains(pipe.fromPortId) &&
+                    !sourcePorts.contains(pipe.toPortId)))
+              pipe,
+        ],
       ),
     );
   }
 
   ElectropneumaticEventClock<CoupledCylinderNetworkSnapshot> _clock(
-    SolveCoilAt<CoupledCylinderNetworkSnapshot> solve,
-  ) => ElectropneumaticEventClock<CoupledCylinderNetworkSnapshot>(
+    SolveCoilAt<CoupledCylinderNetworkSnapshot> solve, {
+    bool airSupplyEnabled = true,
+  }) => ElectropneumaticEventClock<CoupledCylinderNetworkSnapshot>(
     solenoid: solenoid,
     valveMemory: valveMemory,
     solveElectrical: solve,
@@ -146,7 +162,10 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
           double dt,
           ValveSpoolSide position,
         ) {
-          final CoupledMovingCylinderAirNetwork routed = _compilerAt(position);
+          final CoupledMovingCylinderAirNetwork routed = _compilerAt(
+            position,
+            airSupplyEnabled: airSupplyEnabled,
+          );
           // Only the passage connectivity changes. Supply all previous gas
           // masses, piston position/velocity, time and exchange ledger unchanged.
           return routed.advance(
@@ -179,6 +198,8 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
     required double durationS,
     required bool startPressed,
     bool paused = false,
+    bool powerEnabled = true,
+    bool airSupplyEnabled = true,
   }) {
     if (paused) return before;
     Solenoid24vSnapshot relay =
@@ -192,10 +213,11 @@ final class AuthoredNetworkSelfHoldValve52Cycle {
             startPressed: startPressed,
             endStopActuated: !sensorClosed,
             previousRelay: relay,
+            powerEnabled: powerEnabled,
           );
           relay = feedback!.relay;
           return feedback!.valveReading;
-        });
+        }, airSupplyEnabled: airSupplyEnabled);
     final CoupledRuntimeSnapshot<CoupledCylinderNetworkSnapshot> accepted =
         clock.advance(before.physical, durationS: durationS);
     return AuthoredNetworkSelfHoldSnapshot(

@@ -56,7 +56,9 @@ def validate(failure_dir: Path, log_path: Path, output_path: Path) -> None:
     text = log_path.read_text(encoding="utf-8")
     failures = re.findall(r"^\d\d:\d\d [^\n]* \[E\]$", text, re.MULTILINE)
     golden_names = re.findall(r'Golden "goldens/([^"]+)": Pixel test failed', text)
-    expected_failing_widget_cases = 9
+    # Ten widget tests now exercise the already-reviewed, exact Mac raster set.
+    # Each image remains SHA-256 pinned below; this is not a pixel tolerance.
+    expected_failing_widget_cases = 10
     assert len(failures) == expected_failing_widget_cases, (
         f"Unexpected widget failures: {len(failures)}; expected "
         f"{expected_failing_widget_cases} previously reviewed Mac raster cases."
@@ -80,7 +82,7 @@ def validate(failure_dir: Path, log_path: Path, output_path: Path) -> None:
         encoding="utf-8"
     )
     print("G5_PR98_MAC_EXACT_APPROVED_PIXELS_PASS: 15/15")
-    print("The 9 observed Flutter golden mismatches are exactly the reviewed")
+    print("The 10 observed Flutter golden mismatches are exactly the reviewed")
     print("host typography raster variants, not waived functional failures.")
 
 

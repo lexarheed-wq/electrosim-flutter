@@ -102,6 +102,11 @@ jobs:
           cd "$base/apps/electrosim"
           flutter pub get
           export ELECTROSIM_STUDENT_WEB_ROOT="$runner/apps/electrosim/build/web"
+          # Use the Playwright-managed Chromium installed above; system Chromium can hang on hosted runners.
+          export CHROMIUM_EXECUTABLE="$(python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          mkdir -p "$RUNNER_TEMP/cache" "$RUNNER_TEMP/fontconfig-cache"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/cache"
+          export FONTCONFIG_PATH=/etc/fonts
           flutter test --no-pub test/tp_real_browser_journey_test.dart --reporter expanded
           printf '%s\n' "$GITHUB_SHA" > build/tp-browser-proof/SOURCE_SHA.txt
           (cd build/tp-browser-proof && sha256sum troubleshooting/*.png wiring/*.png > SHA256.txt)

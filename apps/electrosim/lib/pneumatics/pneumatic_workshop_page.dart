@@ -6,11 +6,10 @@ import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
-
-import 'pneumatic_pipe_router.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
+import 'pneumatic_pipe_router.dart';
 import 'pneumatic_reference_cycle_page.dart';
 
 /// Experimental two-view editor of one canonical MultiphysicsProject.

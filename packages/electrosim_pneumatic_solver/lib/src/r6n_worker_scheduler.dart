@@ -13,12 +13,17 @@ final class R6WorkerScheduler {
     this.requestTimeout = const Duration(seconds: 30),
   }) {
     if (requestTimeout <= Duration.zero) {
-      throw ArgumentError.value(requestTimeout, 'requestTimeout', 'Must be positive');
+      throw ArgumentError.value(
+        requestTimeout,
+        'requestTimeout',
+        'Must be positive',
+      );
     }
   }
 
   final R6Worker worker;
   final String engineVersion;
+
   /// Upper bound on a single solver response, independent of the UI clock.
   /// A timeout closes the transport rather than reusing an unresponsive worker.
   final Duration requestTimeout;
@@ -64,6 +69,7 @@ final class R6WorkerScheduler {
     _active = calculation;
     Future<void>(() async {
       try {
+        if (_closed) throw StateError('Solver session closed');
         final R6NetworkOutcome answer = await worker
             .solve(calculation.job)
             .timeout(requestTimeout);

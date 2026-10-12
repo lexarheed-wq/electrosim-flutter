@@ -1,4 +1,5 @@
 import 'package:electrosim/pneumatics/pneumatic_pipe_router.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -64,6 +65,43 @@ void main() {
       ],
     );
     expect(result, isNull);
+  });
+
+  test('R6/L+M 400-device orthogonal pipe microbenchmark', () {
+    final List<Rect> devices = <Rect>[
+      for (int row = 0; row < 20; row++)
+        for (int col = 0; col < 20; col++)
+          Rect.fromLTWH(col * 210.0, row * 180.0, 170, 140),
+    ];
+    int resolved = 0;
+    final Stopwatch timer = Stopwatch()..start();
+    for (int row = 0; row < 20; row++) {
+      for (int col = 0; col < 19; col++) {
+        final Rect origin = devices[row * 20 + col];
+        final Rect destination = devices[row * 20 + col + 1];
+        final Offset start = Offset(origin.left + 85, origin.top + 123);
+        final Offset end = Offset(destination.left + 85, destination.top + 123);
+        final List<Offset>? path = PneumaticPipeRouter.route(
+          start: start,
+          end: end,
+          fromTile: origin,
+          toTile: destination,
+          tiles: devices,
+        );
+        expect(path, isNotNull);
+        expect(path!.first, start);
+        expect(path.last, end);
+        resolved++;
+      }
+    }
+    timer.stop();
+    debugPrint(
+      'R6LMN_DEVELOPMENT_ROUTING_BENCHMARK '
+      'activeTiles=${devices.length} connectedPipes=$resolved '
+      'durationMicroseconds=${timer.elapsedMicroseconds}',
+    );
+    expect(resolved, 380);
+    // This structural microbenchmark is not release-frame PERF-01 evidence.
   });
 
   test('R6/L+M reserved lanes are deterministic for adjacent circuits', () {

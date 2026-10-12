@@ -64,6 +64,10 @@ final class PneumaticPipeRouter {
 
     List<Offset>? selected;
     double best = double.infinity;
+    // A clean, almost-Manhattan route does not benefit from enumerating the
+    // outside-board detours. This matters when editing 400-device layouts.
+    final double lowerBound =
+        (end.dx - start.dx).abs() + (end.dy - start.dy).abs();
     for (final double y in lanes.toSet()) {
       for (final double sx in startXs.toSet()) {
         for (final double ex in endXs.toSet()) {
@@ -90,6 +94,9 @@ final class PneumaticPipeRouter {
           if (score < best) {
             best = score;
             selected = path;
+          }
+          if (score <= lowerBound + 120 && path.length <= 5) {
+            return path;
           }
         }
       }

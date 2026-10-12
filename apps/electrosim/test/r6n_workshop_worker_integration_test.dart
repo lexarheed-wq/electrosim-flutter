@@ -110,9 +110,11 @@ void main() {
     WidgetTester tester,
   ) async {
     await fixture.setSize(tester);
-    final Completer<void> workerReady = Completer<void>();
     final Completer<void> requestSent = Completer<void>();
     final Completer<void> resultReceived = Completer<void>();
+    // Native isolate startup runs in real async outside Flutter's fake clock.
+    // The UI still dispatches and receives the actual isolated solver job.
+    final R6Worker native = (await tester.runAsync(createR6Worker))!;
     await _loadProofFont(tester);
     await tester.pumpWidget(
       MaterialApp(
@@ -121,23 +123,26 @@ void main() {
           key: const Key('r6l-live-evidence-boundary'),
           child: PneumaticWorkshopPage(
             initialProject: fixture.project(),
-            workerFactory: () async {
-              final R6Worker actual = await createR6Worker();
-              workerReady.complete();
-              return RealIsolateWitness(actual, requestSent, resultReceived);
-            },
+            workerFactory: () async =>
+                RealIsolateWitness(native, requestSent, resultReceived),
           ),
         ),
       ),
     );
+    await tester.tap(find.byKey(const Key('device-middle')));
+    await tester.pump();
     await _startSimulation(tester);
-    await tester.runAsync(
-      () => workerReady.future.timeout(const Duration(seconds: 20)),
-    );
     await _pumpUntil(tester, () => requestSent.isCompleted);
-    await tester.runAsync(
-      () => resultReceived.future.timeout(const Duration(seconds: 20)),
-    );
+    // Let the real isolate deliver its answer; pump the test clock between
+    // short wall-clock yields so neither clock can starve the other.
+    for (int tick = 0; tick < 40 && !resultReceived.isCompleted; tick++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+    expect(resultReceived.isCompleted, isTrue);
+    await resultReceived.future;
     await tester.pumpAndSettle();
     expect(
       find.textContaining('Simulation réelle : t = 0.020 s'),
@@ -171,6 +176,8 @@ void main() {
         ),
       ),
     );
+    await tester.tap(find.byKey(const Key('device-middle')));
+    await tester.pump();
     await _startSimulation(tester);
     await _pumpUntil(tester, () => transport.requests.isNotEmpty);
     expect(factoryCalls, 1);

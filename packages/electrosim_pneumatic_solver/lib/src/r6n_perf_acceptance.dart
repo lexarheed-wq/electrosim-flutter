@@ -60,6 +60,7 @@ final class R6PerfQualification {
     final List<String> problems = <String>[];
     final Map<String, R6PerfObservation> byKey = <String, R6PerfObservation>{};
     final Set<String> rawEvidenceHashes = <String>{};
+    final Set<String> productPngHashes = <String>{};
     final RegExp hash = RegExp(r'^[0-9a-f]{40}$');
     final RegExp checksum = RegExp(r'^[0-9a-f]{64}$');
     if (!hash.hasMatch(integratedG5Sha)) {
@@ -74,6 +75,12 @@ final class R6PerfQualification {
       // Reusing one microbenchmark artifact across 24 cells is not evidence.
       if (!rawEvidenceHashes.add(result.rawArtifactSha256)) {
         problems.add('Reused PERF-01 raw artifact: ${result.key}');
+      }
+      // Each observed cell needs its own unmodified product screenshot.
+      // Reusing one image across different scales/platforms obscures which
+      // configuration was actually exercised.
+      if (!productPngHashes.add(result.productPngSha256)) {
+        problems.add('Reused PERF-01 product PNG: ${result.key}');
       }
       if (result.rawArtifactSha256 == result.productPngSha256) {
         problems.add(

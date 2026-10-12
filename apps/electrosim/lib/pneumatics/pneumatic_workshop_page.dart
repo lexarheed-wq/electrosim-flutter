@@ -917,8 +917,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                 height: 38,
                 pistonFraction:
                     _movingSnapshot != null &&
-                        device.kind ==
-                            PneumaticDeviceKind.doubleActingCylinder
+                        device.kind == PneumaticDeviceKind.doubleActingCylinder
                     ? _movingSnapshot!.positionM /
                           _movingSolver!.geometry.strokeM
                     : null,

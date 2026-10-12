@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:electrosim_domain/electrosim_domain.dart';
@@ -20,9 +21,14 @@ class PneumaticWorkshopPage extends StatefulWidget {
     super.key,
     this.initialProject,
     this.initialView = PneumaticWorkshopView.physical,
+    this.workerFactory = createR6Worker,
   });
   final MultiphysicsProject? initialProject;
   final PneumaticWorkshopView initialView;
+
+  /// Injected only in tests. Production uses a real native isolate or
+  /// dedicated Web Worker; neither is replaced by compute on the UI isolate.
+  final Future<R6Worker> Function() workerFactory;
 
   @override
   State<PneumaticWorkshopPage> createState() => _PneumaticWorkshopPageState();
@@ -43,12 +49,67 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   CoupledMovingCylinderAirNetwork? _movingSolver;
   CoupledCylinderNetworkSnapshot? _movingSnapshot;
   double? _dischargeCoefficient;
+  Future<R6WorkerScheduler>? _airWorker;
+  int _runtimeEpoch = 0;
+  bool _advancingAir = false;
+  bool _lastStaticSolveUsedWorker = false;
 
+  // A delayed worker reply cannot resurrect a project after edit/reset/dispose.
+  // Closing is asynchronous; the old worker is never reused by a new epoch.
   void _invalidateAirRuntime() {
+    _runtimeEpoch++;
+    final Future<R6WorkerScheduler>? previous = _airWorker;
+    _airWorker = null;
+    unawaited(_closeWorker(previous));
+    _lastStaticSolveUsedWorker = false;
     _airSolver = null;
     _airSnapshot = null;
     _movingSolver = null;
     _movingSnapshot = null;
+  }
+
+  Future<void> _closeWorker(Future<R6WorkerScheduler>? pending) async {
+    if (pending == null) return;
+    try {
+      await (await pending).close();
+    } catch (_) {
+      // A startup failure has no usable worker to close. The simulation
+      // still fails closed and never restores an invalid accepted snapshot.
+    }
+  }
+
+  Future<R6WorkerScheduler> _ensureAirWorker() {
+    final Future<R6WorkerScheduler>? cached = _airWorker;
+    if (cached != null) return cached;
+    final int epoch = _runtimeEpoch;
+    final Future<R6WorkerScheduler> starting = () async {
+      final R6Worker transport = await widget.workerFactory();
+      final R6WorkerScheduler scheduler = R6WorkerScheduler(
+        transport,
+        engineVersion: 'electrosim-r6n-flutter-workshop',
+      );
+      if (!mounted || epoch != _runtimeEpoch) {
+        await scheduler.close();
+        throw StateError('Pneumatic project changed during worker startup');
+      }
+      return scheduler;
+    }();
+    _airWorker = starting;
+    unawaited(
+      starting.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace __) {
+          if (identical(_airWorker, starting)) _airWorker = null;
+        },
+      ),
+    );
+    return starting;
+  }
+
+  @override
+  void dispose() {
+    _invalidateAirRuntime();
+    super.dispose();
   }
 
   static const List<PneumaticDeviceKind> _catalog = <PneumaticDeviceKind>[
@@ -86,11 +147,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
   void _edit(PneumaticWorkshopState Function() operation) {
     try {
       final PneumaticWorkshopState updated = operation();
+      final MultiphysicsProject previous = _state.project;
       _session.apply((PneumaticWorkshopState current) => updated);
       setState(() {
         _state = _session.state;
         _firstPort = null;
-        _invalidateAirRuntime();
+        final MultiphysicsProject current = _state.project;
+        if (!identical(previous.pneumaticNetwork, current.pneumaticNetwork) ||
+            !identical(previous.electricalCircuit, current.electricalCircuit)) {
+          _invalidateAirRuntime();
+        }
       });
     } on Object catch (error) {
       ScaffoldMessenger.of(

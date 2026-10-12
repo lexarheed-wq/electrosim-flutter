@@ -201,53 +201,56 @@ void main() {
     await scheduler.close();
   });
 
-  test('R6/N accepts real boundary exchange from the canonical solver', () async {
-    final ControlledWorker underlying = ControlledWorker();
-    final R6WorkerScheduler scheduler = R6WorkerScheduler(
-      underlying,
-      engineVersion: 'r6n',
-    );
-    final IsothermalAirNetwork network = IsothermalAirNetwork(
-      chambers: <FixedAirChamber>[
-        FixedAirChamber.fromPressure(
-          id: 'c',
-          volumeM3: .001,
-          pressureAbsPa: 100000,
-        ),
-      ],
-      boundaries: <FixedPressureAirNode>[
-        FixedPressureAirNode(id: 'supply', pressureAbsPa: 200000),
-      ],
-      passages: <AirPassage>[
-        AirPassage(
-          id: 'supply_pipe',
-          firstChamberId: 'supply',
-          secondChamberId: 'c',
-          orifice: IsentropicOrifice(
-            effectiveAreaM2: 1e-7,
-            dischargeCoefficient: .8,
+  test(
+    'R6/N accepts real boundary exchange from the canonical solver',
+    () async {
+      final ControlledWorker underlying = ControlledWorker();
+      final R6WorkerScheduler scheduler = R6WorkerScheduler(
+        underlying,
+        engineVersion: 'r6n',
+      );
+      final IsothermalAirNetwork network = IsothermalAirNetwork(
+        chambers: <FixedAirChamber>[
+          FixedAirChamber.fromPressure(
+            id: 'c',
+            volumeM3: .001,
+            pressureAbsPa: 100000,
           ),
-        ),
-      ],
-    );
-    R6NetworkJob build(int revision, int requestId) => R6NetworkJob(
-      projectRevision: revision,
-      requestId: requestId,
-      engineVersion: 'r6n',
-      network: network,
-      before: network.initialSnapshot,
-      durationS: .02,
-      maxStepS: .002,
-    );
-
-    final Future<R6NetworkOutcome> result = scheduler.submit(build: build);
-    await Future<void>.delayed(Duration.zero);
-    underlying.replies.single.complete(underlying.started.single.execute());
-    final R6NetworkOutcome accepted = await result;
-    expect(accepted.snapshot.externalMassAddedKg, greaterThan(0));
-    expect(accepted.snapshot.timeS, .02);
-    await scheduler.close();
-  });
+        ],
+        boundaries: <FixedPressureAirNode>[
+          FixedPressureAirNode(id: 'supply', pressureAbsPa: 200000),
+        ],
+        passages: <AirPassage>[
+          AirPassage(
+            id: 'supply.pipe',
+            firstChamberId: 'supply',
+            secondChamberId: 'c',
+            orifice: IsentropicOrifice(
+              effectiveAreaM2: 1e-7,
+              dischargeCoefficient: .8,
+            ),
+          ),
+        ],
+      );
+      R6NetworkJob build(int revision, int requestId) => R6NetworkJob(
+        projectRevision: revision,
+        requestId: requestId,
+        engineVersion: 'r6n',
+        network: network,
+        before: network.initialSnapshot,
+        durationS: .02,
+        maxStepS: .002,
+      );
+  
+      final Future<R6NetworkOutcome> result = scheduler.submit(build: build);
+      await Future<void>.delayed(Duration.zero);
+      underlying.replies.single.complete(underlying.started.single.execute());
+      final R6NetworkOutcome accepted = await result;
+      expect(accepted.snapshot.externalMassAddedKg, greaterThan(0));
+      expect(accepted.snapshot.timeS, .02);
+      await scheduler.close();
+    },
+  );
 
   test('R6/N scheduler accepts a physically valid worker snapshot', () async {
     final ControlledWorker underlying = ControlledWorker();

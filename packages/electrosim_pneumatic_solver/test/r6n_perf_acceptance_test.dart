@@ -94,6 +94,17 @@ void main() {
     ], integratedG5Sha: sha);
     expect(reused, contains(contains('Reused PERF-01 raw artifact')));
 
+    final List<String> recycledPng = audit.errors(<R6PerfObservation>[
+      first,
+      fixture(
+        R6PerfScenario.mixed,
+        R6PerfPlatform.macIntel,
+        400,
+        productPngSha256: first.productPngSha256,
+      ),
+    ], integratedG5Sha: sha);
+    expect(recycledPng, contains(contains('Reused PERF-01 product PNG')));
+
     final List<String> wrongType = audit.errors(<R6PerfObservation>[
       fixture(
         R6PerfScenario.pneumatic,

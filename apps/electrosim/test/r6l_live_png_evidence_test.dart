@@ -47,8 +47,27 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    // Widget tests use the Ahem font by default; its block glyphs are
+    // unsuitable as human visual evidence. Load an installed real system
+    // typeface without adding font files or changing production assets.
+    await tester.runAsync(() async {
+      final File systemFont = File(
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      );
+      if (!systemFont.existsSync()) {
+        throw StateError('A readable system font is required for PNG evidence');
+      }
+      final Uint8List fontBytes = await systemFont.readAsBytes();
+      final ui.FontLoader loader = ui.FontLoader('DejaVu Sans')
+        ..addFont(
+          Future<ByteData>.value(ByteData.sublistView(fontBytes)),
+        );
+      await loader.load();
+    });
+
     await tester.pumpWidget(
       MaterialApp(
+        theme: ThemeData(fontFamily: 'DejaVu Sans'),
         home: RepaintBoundary(
           key: const Key('r6l-live-evidence-boundary'),
           child: PneumaticWorkshopPage(initialProject: fixture.actualProject()),

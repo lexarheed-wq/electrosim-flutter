@@ -6,6 +6,8 @@ import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
+
+import 'pneumatic_pipe_router.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
@@ -1015,21 +1017,47 @@ class _PipePainter extends CustomPainter {
         );
       }
     }
+    final Map<String, Rect> boxes = <String, Rect>{
+      for (final MapEntry<String, PhysicalViewPose> item in poses.entries)
+        item.key: Rect.fromLTWH(item.value.x, item.value.y, 170, 140),
+    };
+    final List<List<Offset>> occupied = <List<Offset>>[];
     for (final PneumaticPipe pipe in project.pneumaticNetwork.pipes) {
       final Offset? start = terminals[pipe.fromPortId.value];
       final Offset? end = terminals[pipe.toPortId.value];
-      if (start == null || end == null) continue;
-      final double middle = (start.dy + end.dy) / 2;
-      canvas.drawPath(
-        Path()
-          ..moveTo(start.dx, start.dy)
-          ..lineTo(start.dx, middle)
-          ..lineTo(end.dx, middle)
-          ..lineTo(end.dx, end.dy),
-        pen,
+      final String sourceId = pipe.fromPortId.value.split('.').first;
+      final String targetId = pipe.toPortId.value.split('.').first;
+      final Rect? origin = boxes[sourceId];
+      final Rect? destination = boxes[targetId];
+      if (start == null ||
+          end == null ||
+          origin == null ||
+          destination == null) {
+        continue;
+      }
+      final List<Offset>? route = PneumaticPipeRouter.route(
+        start: start,
+        end: end,
+        fromTile: origin,
+        toTile: destination,
+        tiles: boxes.values,
+        previousRoutes: occupied,
       );
+      if (route == null) {
+        // Fail visibly, never draw a deceptively connected straight pipe
+        // through a pneumatic component.
+        canvas.drawCircle(start, 5, Paint()..color = Colors.deepOrange);
+        canvas.drawCircle(end, 5, Paint()..color = Colors.deepOrange);
+        continue;
+      }
+      final Path path = Path()..moveTo(route.first.dx, route.first.dy);
+      for (final Offset point in route.skip(1)) {
+        path.lineTo(point.dx, point.dy);
+      }
+      canvas.drawPath(path, pen);
       canvas.drawCircle(start, 3, pen);
       canvas.drawCircle(end, 3, pen);
+      occupied.add(route);
     }
   }
 

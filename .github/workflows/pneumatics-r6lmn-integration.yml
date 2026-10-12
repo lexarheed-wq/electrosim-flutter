@@ -38,6 +38,7 @@ jobs:
             test/r6l_live_png_evidence_test.dart
           flutter test --no-pub --reporter expanded \
             test/r6lmn_integrated_workshop_test.dart \
+            test/pneumatic_pipe_router_test.dart \
             test/r6_moving_piston_workshop_test.dart \
             test/r6m_workshop_session_widget_test.dart \
             test/r6_workshop_authored_runtime_test.dart \

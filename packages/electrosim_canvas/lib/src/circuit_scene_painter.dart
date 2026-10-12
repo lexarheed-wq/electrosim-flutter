@@ -11,6 +11,7 @@ import 'physical_wire_path.dart';
 import 'din_rail_visual.dart';
 import 'cabinet_layout.dart';
 import 'cabinet_fixture_painter.dart';
+import 'metal_mounting_plate.dart';
 
 final class CircuitScenePainter extends CustomPainter {
   CircuitScenePainter({
@@ -59,11 +60,43 @@ final class CircuitScenePainter extends CustomPainter {
   /// IDs of instruments whose 3D front texture is rendered by the app overlay.
   /// Only their legacy case is skipped. Hit testing and probes are unchanged.
   final Set<String> customInstrumentCaseIds;
-  Color get backgroundColor =>
-      schematicPresentation ? Colors.white : boardColor;
+  Color get backgroundColor => schematicPresentation
+      ? Colors.white
+      : paintElementChrome
+      ? boardColor
+      : metalWorkspaceColor;
   final CircuitGeometryIndex geometryAtBuild;
   final WireSemantics? semanticsAtBuild;
   late final List<Rect> dinSupportsAtBuild = _buildDinSupports();
+  late final Rect mountingPlateBoundsAtBuild =
+      layout.cabinetLayout.envelope?.plateBounds ??
+      mountingPlateBounds([
+        ...geometryAtBuild.elementRects.values,
+        ...layout.cabinetLayout.fixtures.map((fixture) => fixture.bounds),
+      ]);
+
+  Rect _screenRect(Rect world) => Rect.fromLTWH(
+    viewport.worldToScreen(world.topLeft).dx,
+    viewport.worldToScreen(world.topLeft).dy,
+    world.width * viewport.scale,
+    world.height * viewport.scale,
+  );
+
+  Paint _backgroundPaintAt(Offset screenPoint) {
+    if (schematicPresentation || paintElementChrome) {
+      return Paint()..color = backgroundColor;
+    }
+    final plate = _screenRect(mountingPlateBoundsAtBuild);
+    if (plate.contains(screenPoint)) return mountingPlateSurfacePaint(plate);
+    final envelope = layout.cabinetLayout.envelope;
+    if (envelope != null) {
+      final bounds = _screenRect(envelope.bounds);
+      if (bounds.contains(screenPoint)) {
+        return cabinetEnvelopeSurfacePaint(bounds);
+      }
+    }
+    return Paint()..color = metalWorkspaceColor;
+  }
 
   static const Color boardColor = Color(0xFFF6F8FB);
   static const Color gridColor = Color(0xFFE3E8EF);
@@ -78,7 +111,18 @@ final class CircuitScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor);
-    if (!schematicPresentation) _paintGrid(canvas, size);
+    if (!schematicPresentation) {
+      if (paintElementChrome) {
+        _paintGrid(canvas, size);
+      } else if (layout.cabinetLayout.envelope == null) {
+        paintMetalMountingPlate(
+          canvas,
+          viewportSize: size,
+          screenBounds: _screenRect(mountingPlateBoundsAtBuild),
+          scale: viewport.scale,
+        );
+      }
+    }
 
     final CircuitGeometryIndex geometry = geometryAtBuild;
     final WireSemantics? semantics = semanticsAtBuild;
@@ -88,6 +132,7 @@ final class CircuitScenePainter extends CustomPainter {
         cabinet: layout.cabinetLayout,
         worldToScreen: viewport.worldToScreen,
         scale: viewport.scale,
+        viewportSize: size,
       );
       paintCabinetFixtures(
         canvas,
@@ -205,7 +250,10 @@ final class CircuitScenePainter extends CustomPainter {
         : SeriesMeterWiring.openConnectionIds(circuit);
     for (final Connection connection in circuit.connections) {
       if (opened.contains(connection.id)) continue;
-      if (!schematicPresentation && connection.metadata.containsKey(AppliancePowerConnection.cableTag)) continue;
+      if (!schematicPresentation &&
+          connection.metadata.containsKey(AppliancePowerConnection.cableTag)) {
+        continue;
+      }
       final Offset? start =
           geometry.terminalPositions[connection.fromTerminalId];
       final Offset? end = geometry.terminalPositions[connection.toTerminalId];
@@ -411,7 +459,7 @@ final class CircuitScenePainter extends CustomPainter {
       canvas.drawCircle(
         viewport.worldToScreen(crossing.point),
         radius,
-        Paint()..color = backgroundColor,
+        _backgroundPaintAt(viewport.worldToScreen(crossing.point)),
       );
     }
   }

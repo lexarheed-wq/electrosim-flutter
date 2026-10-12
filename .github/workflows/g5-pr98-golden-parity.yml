@@ -143,6 +143,7 @@ jobs:
             sysctl -n machdep.cpu.brand_string
             flutter --version
           } | tee build/pr98-full-mac/PROVENANCE.txt
+          printf '%s\n' "$GITHUB_SHA" > build/pr98-full-mac/SOURCE_SHA.txt
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           git diff --check
           python3 tools/premium_rcd2p/decode_source.py
@@ -172,15 +173,29 @@ jobs:
           esac
           cd "$target/apps/electrosim"
           flutter pub get
+          # This archive is downloaded as a classroom candidate. Its QR must
+          # serve the actual student application from the same source SHA.
+          flutter create --platforms=web --project-name electrosim .
+          flutter pub get
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
+          test -s build/web/index.html
+          test -s build/web/main.dart.js
           flutter config --enable-macos-desktop
           flutter build macos --release
           app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
           test -n "$app"
+          web_dest="$app/Contents/Resources/electrosim_student_web"
+          mkdir -p "$web_dest"
+          cp -R build/web/. "$web_dest/"
+          python3 "$root/tools/f17_validate_student_mac_bundle.py" "$app"
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
           bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
           test -n "$bin"
           file "$bin" | tee "$root/build/pr98-full-mac/ARCHITECTURE.txt"
           grep -qi x86_64 "$root/build/pr98-full-mac/ARCHITECTURE.txt"
           ditto -c -k --sequesterRsrc --keepParent "$app" "$root/build/pr98-full-mac/ElectroSim_PR98_Requalified_Mac_Intel.zip"
+          python3 "$root/tools/f17_validate_student_mac_bundle.py" "$root/build/pr98-full-mac/ElectroSim_PR98_Requalified_Mac_Intel.zip"
           (cd "$root/build/pr98-full-mac" && shasum -a 256 *.zip > SHA256.txt)
       - uses: actions/upload-artifact@v4
         if: always()

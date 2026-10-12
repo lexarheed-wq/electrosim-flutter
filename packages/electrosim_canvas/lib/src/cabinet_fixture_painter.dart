@@ -1,8 +1,8 @@
-
 import 'package:flutter/painting.dart';
 
 import 'cabinet_layout.dart';
 import 'din_rail_visual.dart';
+import 'metal_mounting_plate.dart';
 
 /// Draws cabinet furniture beneath wires and physical devices.
 /// Furniture has no terminals, current, voltage or solver identity.
@@ -118,12 +118,18 @@ void paintCabinetSelection(
   );
 }
 
+Paint cabinetEnvelopeSurfacePaint(Rect rect) => Paint()
+  ..shader = const LinearGradient(
+    colors: [Color(0xFF9DAAB6), Color(0xFFE2E8EF), Color(0xFF98A7B5)],
+  ).createShader(rect);
+
 /// Frontal open enclosure and its usable mounting plate, in authored mm.
 void paintCabinetEnvelope(
   Canvas canvas, {
   required CabinetLayout cabinet,
   required Offset Function(Offset) worldToScreen,
   required double scale,
+  required Size viewportSize,
 }) {
   final envelope = cabinet.envelope;
   if (envelope == null) return;
@@ -138,13 +144,7 @@ void paintCabinetEnvelope(
     r.shift(Offset(5 * scale, 5 * scale)),
     Paint()..color = const Color(0x350F172A),
   );
-  canvas.drawRect(
-    r,
-    Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF9DAAB6), Color(0xFFE2E8EF), Color(0xFF98A7B5)],
-      ).createShader(r),
-  );
+  canvas.drawRect(r, cabinetEnvelopeSurfacePaint(r));
   canvas.drawRect(
     r,
     Paint()
@@ -152,20 +152,10 @@ void paintCabinetEnvelope(
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2 * scale,
   );
-  canvas.drawRect(plate, Paint()..color = const Color(0xFFF2F4F6));
-  canvas.drawRect(
-    plate,
-    Paint()
-      ..color = const Color(0xFFBAC5CF)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = scale,
+  paintMetalMountingSurface(
+    canvas,
+    viewportSize: viewportSize,
+    screenBounds: plate,
+    scale: scale,
   );
-  for (final p in [
-    plate.topLeft,
-    plate.topRight,
-    plate.bottomLeft,
-    plate.bottomRight,
-  ]) {
-    canvas.drawCircle(p, 3 * scale, Paint()..color = const Color(0xFF64748B));
-  }
 }

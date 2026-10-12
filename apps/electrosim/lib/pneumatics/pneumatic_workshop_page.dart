@@ -1004,6 +1004,7 @@ class _PipePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     final Map<String, Offset> terminals = <String, Offset>{};
+    final Map<String, String> portOwners = <String, String>{};
     for (final PneumaticDevice device in project.pneumaticNetwork.devices) {
       final PhysicalViewPose? pose = poses[device.id];
       if (pose == null) continue;
@@ -1014,6 +1015,7 @@ class _PipePainter extends CustomPainter {
           pose.x + 5 + (i + 1) * gap + (i + .5) * 24,
           pose.y + 123,
         );
+        portOwners[device.ports[i].id.value] = device.id;
       }
     }
     final Map<String, Rect> boxes = <String, Rect>{
@@ -1024,8 +1026,10 @@ class _PipePainter extends CustomPainter {
     for (final PneumaticPipe pipe in project.pneumaticNetwork.pipes) {
       final Offset? start = terminals[pipe.fromPortId.value];
       final Offset? end = terminals[pipe.toPortId.value];
-      final String sourceId = pipe.fromPortId.value.split('.').first;
-      final String targetId = pipe.toPortId.value.split('.').first;
+      // Resolve actual authored port ownership. Splitting on a period
+      // corrupts IDs of components that themselves contain periods.
+      final String? sourceId = portOwners[pipe.fromPortId.value];
+      final String? targetId = portOwners[pipe.toPortId.value];
       final Rect? origin = boxes[sourceId];
       final Rect? destination = boxes[targetId];
       if (start == null ||

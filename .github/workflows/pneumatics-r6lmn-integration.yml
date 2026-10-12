@@ -28,7 +28,17 @@ jobs:
           flutter --version | head -n 1 | tee -a build/pneumatics-r6lmn/PROVENANCE.txt
           cd apps/electrosim
           flutter pub get
-          dart format --output=none --set-exit-if-changed \
+          dart format \
+            lib/pneumatics/pneumatic_workshop_page.dart \
+            test/r6lmn_integrated_workshop_test.dart \
+            test/r6l_live_png_evidence_test.dart \
+            test/r6n_workshop_worker_integration_test.dart
+          git diff -- \
+            lib/pneumatics/pneumatic_workshop_page.dart \
+            test/r6lmn_integrated_workshop_test.dart \
+            test/r6l_live_png_evidence_test.dart \
+            test/r6n_workshop_worker_integration_test.dart | tee ../../build/pneumatics-r6lmn/FORMAT.diff
+          git diff --exit-code -- \
             lib/pneumatics/pneumatic_workshop_page.dart \
             test/r6lmn_integrated_workshop_test.dart \
             test/r6l_live_png_evidence_test.dart \

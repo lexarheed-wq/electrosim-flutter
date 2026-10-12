@@ -832,6 +832,31 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     );
   }
 
+  // Calibrated piston position before a solve and after runtime reset.
+  // Legacy uncalibrated glyphs remain static.
+  double? _cylinderFraction(PneumaticDevice device) {
+    if (device.kind != PneumaticDeviceKind.doubleActingCylinder) return null;
+    final CoupledCylinderNetworkSnapshot? accepted = _movingSnapshot;
+    final CoupledMovingCylinderAirNetwork? solver = _movingSolver;
+    if (accepted != null && solver != null) {
+      return (accepted.positionM / solver.geometry.strokeM)
+          .clamp(0.0, 1.0)
+          .toDouble();
+    }
+    final double? initial = device.parametersSi['initialPositionM'];
+    final double? stroke = device.parametersSi['strokeM'];
+    if (initial == null ||
+        stroke == null ||
+        !initial.isFinite ||
+        !stroke.isFinite ||
+        stroke <= 0 ||
+        initial < 0 ||
+        initial > stroke) {
+      return null;
+    }
+    return initial / stroke;
+  }
+
   PneumaticDevice? _selected() {
     for (final PneumaticDevice d in _state.project.pneumaticNetwork.devices) {
       if (d.id == _state.selectedPhysicalId) return d;
@@ -915,12 +940,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                 schematic: !plate,
                 width: 110,
                 height: 38,
-                pistonFraction:
-                    _movingSnapshot != null &&
-                        device.kind == PneumaticDeviceKind.doubleActingCylinder
-                    ? _movingSnapshot!.positionM /
-                          _movingSolver!.geometry.strokeM
-                    : null,
+                pistonFraction: _cylinderFraction(device),
               ),
               Text(
                 '${device.id} : ${device.kind.name}',

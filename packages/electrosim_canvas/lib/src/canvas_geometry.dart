@@ -486,6 +486,7 @@ final class CircuitGeometryIndex {
         source.id.value,
         (source.parameters['_visualModelType'] as String?) ?? source.modelType,
         source.terminals,
+        native: NativeApplianceGeometry.forSource(source),
       );
     }
     for (final ComponentInstance component in circuit.components) {

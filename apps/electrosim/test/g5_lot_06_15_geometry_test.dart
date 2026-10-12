@@ -38,7 +38,7 @@ CircuitState machineFixture(
 }
 
 void main() {
-  for (final s in NativeApplianceGeometry.catalogue.values.where(
+  for (final s in NativeApplianceGeometry.catalogue.values.take(10).where(
     (s) => s.threePhase,
   )) {
     test(

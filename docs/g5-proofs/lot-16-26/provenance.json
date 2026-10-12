@@ -1,0 +1,822 @@
+{
+  "external-refrigerator": {
+    "key": "external-refrigerator",
+    "images": {
+      "front.png": {
+        "sha256": "920ba71022515f246d855c4e4ea9abbace0f96b905e9d1e4e15eaee67ccfbf6a",
+        "size": [
+          800,
+          1280
+        ]
+      },
+      "palette.png": {
+        "sha256": "91bc530985a61c3f6858c6a9be5a8ab8c156849d68cd8179a00020620feeed2b",
+        "size": [
+          800,
+          1280
+        ]
+      },
+      "service.png": {
+        "sha256": "d6a197477b1edf140df776a83104790bc0923ceed111a694677c67d88cd8d323",
+        "size": [
+          800,
+          1280
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 179.76,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "e2de4ae24431e29ee100e27e722737ea49fbd1482f5b083279c559852ea8694f",
+    "actual_flutter_capture": false,
+    "recipe_revision": "working-tree final material correction",
+    "captures": {
+      "closed": {
+        "sha256": "4f65f040fef4d7a3e30451aed1305b14157216176a81952cfa1b1dbaa3aa561d",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "41a9dfe76dd98a93b543957bb56cd2c67c5ff3ccd34418b6dae72ebce5bb9ab2",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "e34387984d6badc9ef4c9933071ba3ced8b62b9139df2a4230b95dc19080c6b9",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "external-refrigerator-dc": {
+    "key": "external-refrigerator-dc",
+    "images": {
+      "front.png": {
+        "sha256": "acfff70c010149cb8715af7b41dcc00a3cc00d08f23ee282fcd8241645591506",
+        "size": [
+          720,
+          960
+        ]
+      },
+      "palette.png": {
+        "sha256": "f3f564068e94c344593a4edcdeff7d61b6ed9b87f070ba2f6f3c7649f0f51e31",
+        "size": [
+          720,
+          960
+        ]
+      },
+      "service.png": {
+        "sha256": "155800a76195f0bb91a99fcfe1c614052c1fb64ae6f4a855beb962066ba0de3c",
+        "size": [
+          720,
+          960
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 132.83,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "e2de4ae24431e29ee100e27e722737ea49fbd1482f5b083279c559852ea8694f",
+    "actual_flutter_capture": false,
+    "recipe_revision": "working-tree final material correction",
+    "captures": {
+      "closed": {
+        "sha256": "98c66c0a0678a749abf0fc5f1f7a97a6945cb01708ce455b1df52a15c816908a",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "e2d3d4a7f4320b7718c217b458da281cf3b859c02b6c43980bc762b1e9394188",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "fbb8216d49e8f84e1646341fa087a6611114ed6f6b178fe8b41183afb0fbc799",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "external-tv": {
+    "key": "external-tv",
+    "images": {
+      "front.png": {
+        "sha256": "a7a2cebdb0bb7922588899aa318f1f5cfa4ca7005bbb19cd0a5224809b138b6e",
+        "size": [
+          1440,
+          960
+        ]
+      },
+      "palette.png": {
+        "sha256": "929eca7d9e833e408d20b3ea0b1da2f670ee2faf5318e37efd373716fb0a25d5",
+        "size": [
+          1440,
+          960
+        ]
+      },
+      "service.png": {
+        "sha256": "5af900ebd24281498aa205aa40868b1ea5902c4ee5687475aeb0f4e8fecf7011",
+        "size": [
+          1440,
+          960
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 192.0,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "953d792b83312736be6b34dc59aa674cd6aaf694545ec52ca4abb371408ec499",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "34a56d45f2d8d29686ccb70f538d6fe1aeb0c87fcc4651424a8d47a193675873",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "17080939fab61f58c2c7ae764f50643a4b7be367e843db634bef7a12d6c60f98",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "external-fan-ac1": {
+    "key": "external-fan-ac1",
+    "images": {
+      "front.png": {
+        "sha256": "41fe4462ba1706e0a1793f7d17c0b9a3ca4483de8d796594f14f73ce2429fea9",
+        "size": [
+          800,
+          960
+        ]
+      },
+      "palette.png": {
+        "sha256": "2485f4f635a901d37d2e46e3ba0e102af10c96b9404da6b3b746f237e05a9128",
+        "size": [
+          800,
+          960
+        ]
+      },
+      "service.png": {
+        "sha256": "1e4e053b9886a0a9e5d067d90f339373d9907019f02844a3654c8870605d72eb",
+        "size": [
+          800,
+          960
+        ]
+      },
+      "rotor.png": {
+        "sha256": "d5a1422e3309dde4e06b3beb012df6f52a644afedc426a74c6e31b76540283f8",
+        "size": [
+          800,
+          960
+        ]
+      },
+      "guard.png": {
+        "sha256": "4c76c54d22566a2eea83140446b20f9e01711a74dd8c69ea3849c4ea44714f93",
+        "size": [
+          800,
+          960
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 97.13,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "b5fea1b3204bb5a9d9eb73ee852ff082135a972eb346635e459ff85bfd7d3436",
+    "actual_flutter_capture": false,
+    "recipe_revision": "6755453c",
+    "captures": {
+      "closed": {
+        "sha256": "8b3958d9f2ae2be0bd32f516bb671630a98077ac8227878d8427e64105892051",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "4daad6ce3d36a4dcd3f942b6c9ff753a6092bd70f34be79b0b7a034d6bfd3a20",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "30ca54fcc64cc02bd768c2e23598ad0c68b7af9555864026a132e5bb3b73258c",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "external-fan-3p": {
+    "key": "external-fan-3p",
+    "images": {
+      "front.png": {
+        "sha256": "f56e924763f7d42af77b9bd65511e24f3aa4cac30992c682963871583b11a251",
+        "size": [
+          1120,
+          1120
+        ]
+      },
+      "palette.png": {
+        "sha256": "b0bdf5357f0df5584a581648c89a968d83535b398491a74c5f49e4d13f7c12d6",
+        "size": [
+          1120,
+          1120
+        ]
+      },
+      "service.png": {
+        "sha256": "32893319bd4bab1282f796f7ff5136074f051085ac76c7fb05d8bdcc673b8af4",
+        "size": [
+          1120,
+          1120
+        ]
+      },
+      "rotor.png": {
+        "sha256": "ed1d94e3a67f4509460b12ef01bddbc2567b5335cbcb00d9100fc1766934eb5e",
+        "size": [
+          1120,
+          1120
+        ]
+      },
+      "guard.png": {
+        "sha256": "df027a3626a07b7b8b5d65199f5a30e6030af6bb6a74b3271969d284aa388392",
+        "size": [
+          1120,
+          1120
+        ]
+      },
+      "guard-service.png": {
+        "sha256": "d487bd7ff01dec41576c31409de7894e6fc126aa5356ac81ed30bfd8ae979ee3",
+        "size": [
+          1120,
+          1120
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 210.78,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "b5fea1b3204bb5a9d9eb73ee852ff082135a972eb346635e459ff85bfd7d3436",
+    "actual_flutter_capture": false,
+    "recipe_revision": "6755453c",
+    "captures": {
+      "closed": {
+        "sha256": "f2cd1aa5ff3b21a1b72bc9cd08e9e67dd1426385c9c5b384d317fcd118b72fb6",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "d0a0ca215850c51e6bb94062e984a4fc58e9cbecf0985a4a677318596288525c",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "b1a84431989be2434ae4dc3666b1f150636a72653d26d926ce7343757eefa521",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    },
+    "animation_status": "Actual Flutter rotor transform changes after powered time step. Capture campaign passed, 18 tests including audio/motion."
+  },
+  "pv-resistive-load": {
+    "key": "pv-resistive-load",
+    "images": {
+      "front.png": {
+        "sha256": "59153f693663c59aba36c628cb0be979e87990fc89f605c537f4395080f24761",
+        "size": [
+          880,
+          720
+        ]
+      },
+      "palette.png": {
+        "sha256": "78e3d32d652469f8bb01ea944c657c4f28185b70f18f93d6f13ddec54f41255f",
+        "size": [
+          880,
+          720
+        ]
+      },
+      "service.png": {
+        "sha256": "69ef125cbd8988ffb519e423c1446ac9543cd821ea3583e7fc48c491aa7a17bf",
+        "size": [
+          880,
+          720
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 64.92,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "b5fea1b3204bb5a9d9eb73ee852ff082135a972eb346635e459ff85bfd7d3436",
+    "actual_flutter_capture": false,
+    "recipe_revision": "6755453c",
+    "captures": {
+      "closed": {
+        "sha256": "1d38cb90b5bb54711300783e45a093740e7ca18b39edffc8058cfadab3c85e21",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "48241c6138b0e738ef2e0d5e441c20f95ac3b4757945298c452fcc4474ccc182",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "e152c0f87daa70cc5999f0a6b3a990d5c3a17cbf46972232797c67f2e4d298c1",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "source-ac3-grid": {
+    "key": "source-ac3-grid",
+    "images": {
+      "front.png": {
+        "sha256": "5dbd276a98c6f999c68ec22ca50c21651d6414ebf5c323d22a819fefef75bb59",
+        "size": [
+          800,
+          1120
+        ]
+      },
+      "palette.png": {
+        "sha256": "c1e33bca159b172aad1f7d088648633510c5b75bdf5c8d8adb00eb09ab4a5767",
+        "size": [
+          800,
+          1120
+        ]
+      },
+      "service.png": {
+        "sha256": "57ffb86ae4903f8467e475048c0e742632c37dcb83eca84e2f25bbef18a88a5b",
+        "size": [
+          800,
+          1120
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 128.11,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "fc09574c7c9894cf0314b352aa9f6579b19b301c4dfa1e864a074a1e6fd84dfe",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "418278b588066fb09e535713d5c3c9337125f8599262d428f7da1654cef634dc",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "aac86ba33baf70e5ca578565818352f61f5955b0104834c61dd146a8caba425e",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "source-ac3-alternator": {
+    "key": "source-ac3-alternator",
+    "images": {
+      "front.png": {
+        "sha256": "6a65c9da2ace30320a79d024d9b2259aeeb960e700f6ae4c0f5106a5cc190760",
+        "size": [
+          1440,
+          1040
+        ]
+      },
+      "palette.png": {
+        "sha256": "3f1fb3b7c9fe9bcde06e5d327fc58b78b0d089d1b98200dffeb40133455d50a7",
+        "size": [
+          1440,
+          1040
+        ]
+      },
+      "service.png": {
+        "sha256": "f4a728d970b382aa321a5471b76040fee196ec953e49edd4a0db152217207587",
+        "size": [
+          1440,
+          1040
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 160.62,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "6a87ce9ac91a8ebf06394f24cd86cf85f14627269b5c92246d28a396c1d948cf",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "fe017d3f5a60903a48c1058b5efe3e300a8a88a06ff436499ce84b811edd8093",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "22732918e73cca0cc0369e497e89e841633cd413f2a65e72d5c1c39f110165f7",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "load-wye-3p": {
+    "key": "load-wye-3p",
+    "images": {
+      "front.png": {
+        "sha256": "34b6cb98bd31eba3d89bce6de104c20e74a3a66cafc897b54e87924db2a6af85",
+        "size": [
+          880,
+          880
+        ]
+      },
+      "palette.png": {
+        "sha256": "fc0b38dd77a49c2e0b565208e688577b7c6d1f83ff694d4ccc1fcafe1f5fc0c3",
+        "size": [
+          880,
+          880
+        ]
+      },
+      "service.png": {
+        "sha256": "2a17a14600422868c919c3370392c76eb4f6c7b70ae269d8d456a1138ec61161",
+        "size": [
+          880,
+          880
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 108.01,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "b5fea1b3204bb5a9d9eb73ee852ff082135a972eb346635e459ff85bfd7d3436",
+    "actual_flutter_capture": false,
+    "recipe_revision": "6755453c",
+    "captures": {
+      "closed": {
+        "sha256": "6aef5794081a3e88929c9d9f08980fb19cb8693a526784ced16a61d9ebfdc783",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "c622bdf4cd4eb2a07cdbc9f10c2ac4dd50f58be1c7f2b46239bf63f19b9a1d74",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "15035d62113760c749edff41808712740098ab0df4dbfc5b2c053b777f6178e2",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "load-delta-3p": {
+    "key": "load-delta-3p",
+    "images": {
+      "front.png": {
+        "sha256": "b0e7ceea766caec3014fd09897895e9ae24d343612d8da90bdac137fd182882b",
+        "size": [
+          880,
+          880
+        ]
+      },
+      "palette.png": {
+        "sha256": "fbf7bb2c3de9503e7fa2cac17c5175205e6ecfe2eaf6c5d72f9995af3be6ec26",
+        "size": [
+          880,
+          880
+        ]
+      },
+      "service.png": {
+        "sha256": "1c186cf118edb8fe321303f052f7d7f3b25664debebefd6307917e4ff79739f9",
+        "size": [
+          880,
+          880
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 103.25,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "b5fea1b3204bb5a9d9eb73ee852ff082135a972eb346635e459ff85bfd7d3436",
+    "actual_flutter_capture": false,
+    "recipe_revision": "6755453c",
+    "captures": {
+      "closed": {
+        "sha256": "151bb1393da2473653d0928e7b52be541f8a2a074716188e5e40dd73ead4592e",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "d2c7ff49c2970703822d7efae2c11d4abd929c73af852e7370a6ed86a3f6b149",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "c7facc6048e26bea9fc68e1dd9986a82498a7ff39974972b80bdb1029fd61387",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "impedance": {
+    "key": "impedance",
+    "images": {
+      "front.png": {
+        "sha256": "94a65b6e956b093c373042ea0c69668db2950964041bea9a64ab06effd7612db",
+        "size": [
+          720,
+          520
+        ]
+      },
+      "palette.png": {
+        "sha256": "f7c8c4ccf55a9c2f2a2402b12c7da19f6c694e16283e4f3d33b8816c22d9b24d",
+        "size": [
+          720,
+          520
+        ]
+      },
+      "service.png": {
+        "sha256": "1ec6f0a98daad2be97a7962e51e3844342d8abadad92d0c87282ddfff99045a0",
+        "size": [
+          720,
+          520
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 48.76,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "da5f444744b31428d7b01645f721ea5fbf18f7a98d38c8438ae29e583503e7b1",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "dcb04f5ac1400b5c00886cb9592b369406501878b224654f5eb05822b538b797",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "e4d883a17d4da5142b6737de3f4a0e7dfabc8a70b054612b97271b4afd7fd8b6",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "energy-meter-ac1": {
+    "key": "energy-meter-ac1",
+    "images": {
+      "front.png": {
+        "sha256": "6cb1da9187173127840da850feb7af09b69f397b3d8caa5c2c677265a5b713c4",
+        "size": [
+          240,
+          720
+        ]
+      },
+      "palette.png": {
+        "sha256": "bd41572cb66c3584554fdb9e6feffab59dcdeb6e216f8b0ac7fbd7eecafcfe5f",
+        "size": [
+          240,
+          720
+        ]
+      },
+      "service.png": {
+        "sha256": "a479ee8319a1a901b42645ef75a43b2568009f9859adc1a08d282d3ccfc6bb60",
+        "size": [
+          240,
+          720
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 30.91,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "a6f24ef3c04ca9fae35175b433cc914b2e0e66a650fb7421c39e06849997f5a6",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "fc51e3fd72f70d8fc62d72e2b76cf2b4d5c113e079158fb8c6f2d39c9b6d8c1b",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "4356a79eaed2bdd440839cd5ee89e3da21035ffb2fcfde13cf5104dc984cbc2e",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "energy-meter-ac3": {
+    "key": "energy-meter-ac3",
+    "images": {
+      "front.png": {
+        "sha256": "fe94a511ca316f38ca761e30d541639892b9b505c652623e627c811eb60141a5",
+        "size": [
+          640,
+          720
+        ]
+      },
+      "palette.png": {
+        "sha256": "be097613a6b85d7eaac31264d7e17b94ad10099c3ce4520d1e1fe744131df4a1",
+        "size": [
+          640,
+          720
+        ]
+      },
+      "service.png": {
+        "sha256": "bb84e6e2fafa915fc5f6f1fc6a1a30b47bd2f56d950caef8107d397181d41d12",
+        "size": [
+          640,
+          720
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 78.19,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "0a47aa2ffdd464ed1a894f8fbd75dc40acf3976ee2bad0c46dd6363adc08e971",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "aac054c56b254d0b1b312fc304068aacd58515768a84b5572048dcd8f517bca1",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "983b4eb40f511bf3a6435173551fe560902e26543bb2b6edb55fb8429cda336a",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  },
+  "energy-meter-pv": {
+    "key": "energy-meter-pv",
+    "images": {
+      "front.png": {
+        "sha256": "b1daf85824d81d85aa7323cb4bba1dc6c8f8ae8320c8274284a4e3b0e8f154c5",
+        "size": [
+          240,
+          720
+        ]
+      },
+      "palette.png": {
+        "sha256": "627c9fd6058606e55bdbce2dfa7747c140783acbedd81edb075fe4d32340d94a",
+        "size": [
+          240,
+          720
+        ]
+      },
+      "service.png": {
+        "sha256": "ffe611385154714991bf7d871442ffe863cb87640aebb0637d615559de375de5",
+        "size": [
+          240,
+          720
+        ]
+      }
+    },
+    "samples": 32,
+    "blender": "4.5.3 LTS",
+    "seconds": 30.91,
+    "contract_sha256": "a292dd9887872ca1c3e5f42c8ed4c7f5495b0fb0d2b3963d39941bc4726acd21",
+    "geometry_sha256": "8df6598a0cbe5bf3f2849338a340757f0f8fa75a0e97c149906de7b1d1c0e79c",
+    "actual_flutter_capture": false,
+    "recipe_revision": "d16e236c",
+    "captures": {
+      "closed": {
+        "sha256": "6ee4a6bd65c63223e73217f5d91c468126fe18e113ef0768400b5fa5b8e0cf44",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "maintenance": {
+        "sha256": "e6e00347ebb852a2cacf826e9b8e95b136d941041e417edc5123bc1d8c1b44ba",
+        "size": [
+          2400,
+          1500
+        ]
+      },
+      "running": {
+        "sha256": "11083804b4c663a5294c9b0123cebf5ded3731de93bdd0169a9d12ceb00c2aa9",
+        "size": [
+          2400,
+          1500
+        ]
+      }
+    }
+  }
+}

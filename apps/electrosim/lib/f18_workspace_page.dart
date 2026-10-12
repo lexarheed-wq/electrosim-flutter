@@ -1,3 +1,4 @@
+import 'runtime/energy_meter_runtime.dart';
 import 'f18_native_appliance_assets.dart';
 // Shared electrical workspace for desktop and browser frontends.
 // The student browser must import this module, never the Mac application entrypoint.
@@ -1594,7 +1595,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _saveInProgress = true;
     try {
       final saved = await persistence.saveWorkspace(
-        circuit: _circuit,
+        circuit: EnergyMeterRuntime.persist(
+          _circuit,
+          _simulation.snapshot.energyMeters,
+        ),
         workspace: _workspace,
         visualLayout: _layout,
         tpController: _tpController,
@@ -4337,6 +4341,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       ),
     ];
     final variants = {
+      for (final source in circuit.sources)
+        source.id.value:
+            NativeApplianceGeometry.forSource(source)?.variant ??
+            source.parameters['_visualVariant'] as String?,
       for (final c in circuit.components)
         c.id.value:
             NativeApplianceGeometry.forComponent(c)?.variant ??

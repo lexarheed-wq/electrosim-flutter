@@ -318,6 +318,28 @@ CircuitVisualLayout migrateNativeApplianceLayout(
       }
     }
   }
+
+  for (final source in circuit.sources) {
+    final spec = NativeApplianceGeometry.forSource(source);
+    if (spec == null) continue;
+    specs[source.id.value] = spec;
+    final size = layout.sizeOf(source.id.value);
+    for (var i = 0; i < source.terminals.length; i++) {
+      final id = source.terminals[i].id;
+      ports.add(id);
+      final legacy = TerminalVisualProfile.terminalOffset(
+        modelType: source.modelType,
+        size: size,
+        index: i,
+        count: source.terminals.length,
+      );
+      final old = anchors[id.value];
+      if (old != null && (old - legacy).distance < .001) {
+        anchors.remove(id.value);
+        changed = true;
+      }
+    }
+  }
   if (specs.isEmpty) return layout;
   CircuitVisualLayout copy(Map<String, List<Offset>> routes) =>
       CircuitVisualLayout(

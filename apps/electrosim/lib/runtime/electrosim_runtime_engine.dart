@@ -10,6 +10,7 @@ import 'package:electrosim_solver_dc/electrosim_solver_dc.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 
 import 'f18_ammeter_fuse_safety.dart';
+import 'energy_meter_runtime.dart';
 
 enum ElectroSimRuntimeSolverKind { dc, ac1, ac3, pv }
 
@@ -63,6 +64,7 @@ final class ElectroSimRuntimeSnapshot {
     this.measurementEngine = const MeasurementEngine(),
     this.deviceStateEngine = const DeviceStateEngine(),
     this.energyEngine = const EnergyEngine(),
+    this.energyMeters = const {},
   });
 
   /// User-authored circuit. Runtime failures never mutate this design model.
@@ -92,6 +94,7 @@ final class ElectroSimRuntimeSnapshot {
   final MeasurementEngine measurementEngine;
   final DeviceStateEngine deviceStateEngine;
   final EnergyEngine energyEngine;
+  final Map<ComponentId, MeterEnergyReading> energyMeters;
 
   DcSolveResult get dc =>
       dcResult ?? (throw StateError('Current runtime result is not DC.'));
@@ -225,6 +228,72 @@ final class ElectroSimRuntimeSnapshot {
       }
     }
     if (component == null) return null;
+    final metered = energyMeters[componentId];
+    if (metered != null) {
+      double? voltage;
+      double? current;
+      if (pvResult != null) {
+        voltage = pvResult!.inverterOutputVoltageRmsV;
+        if (metered.available && voltage > 1e-12) {
+          current = metered.powerW.abs() / voltage;
+        }
+      } else {
+        final poles = component.modelType == 'energy_meter_ac3' ? 4 : 2;
+        final nodes = ac1Result?.nodeVoltages ?? ac3Result?.nodeVoltages;
+        if (nodes != null && component.terminals.length == poles * 2) {
+          final neutral =
+              nodes[topology.terminalToNode[component.terminals[poles - 1].id]];
+          if (neutral != null) {
+            for (var i = 0; i < poles - 1; i++) {
+              final v =
+                  nodes[topology.terminalToNode[component.terminals[i].id]];
+              if (v != null) {
+                final rms = (v - neutral).magnitude;
+                if (voltage == null || rms > voltage) voltage = rms;
+              }
+              final id = 'component:${component.id.value}:pole:$i';
+              final a =
+                  ac1Result?.branchResults
+                      .where((b) => b.id == id)
+                      .firstOrNull
+                      ?.current
+                      ?.magnitude ??
+                  ac3Result?.branchResults
+                      .where((b) => b.id == id)
+                      .firstOrNull
+                      ?.current
+                      ?.magnitude;
+              if (a != null && (current == null || a > current)) current = a;
+            }
+          }
+        }
+      }
+      final available = metered.available && voltage != null;
+      return ComponentOperatingState(
+        componentId: componentId,
+        code: component.condition == ComponentCondition.disabled
+            ? ComponentOperatingCode.disabled
+            : component.condition == ComponentCondition.openCircuit
+            ? ComponentOperatingCode.open
+            : !available
+            ? ComponentOperatingCode.undetermined
+            : voltage > 1e-6
+            ? ComponentOperatingCode.energized
+            : ComponentOperatingCode.deenergized,
+        voltageV: available ? voltage : null,
+        currentA: available ? current : null,
+        powerW: available ? metered.powerW : null,
+        warnings: available
+            ? []
+            : [
+                const OperatingWarning(
+                  code: OperatingWarningCode.currentIndeterminate,
+                  message: 'Mesure du compteur indisponible.',
+                ),
+              ],
+        evidenceIds: ['meter:${componentId.value}:active-power'],
+      );
+    }
 
     switch (solverKind) {
       case ElectroSimRuntimeSolverKind.dc:
@@ -263,8 +332,9 @@ final class ElectroSimRuntimeSnapshot {
   }
 
   ElectroSimRuntimeSnapshot withComponentHealthStates(
-    Map<ComponentId, ComponentHealthState> states,
-  ) => ElectroSimRuntimeSnapshot(
+    Map<ComponentId, ComponentHealthState> states, {
+    Map<ComponentId, MeterEnergyReading>? meterReadings,
+  }) => ElectroSimRuntimeSnapshot(
     circuit: circuit,
     effectiveCircuit: effectiveCircuit,
     topology: topology,
@@ -286,6 +356,7 @@ final class ElectroSimRuntimeSnapshot {
     measurementEngine: measurementEngine,
     deviceStateEngine: deviceStateEngine,
     energyEngine: energyEngine,
+    energyMeters: meterReadings ?? energyMeters,
   );
 
   MeasurementResult measureVoltage({
@@ -324,7 +395,9 @@ final class ElectroSimRuntimeSnapshot {
     }
     return measurementEngine.measure(
       request: MeasurementRequest.current(branchId: branchId),
-      circuit: circuit,
+      // The measured branch belongs to the solved runtime projection,
+      // including autonomous PV storage resolved as DC and meter shunts.
+      circuit: effectiveCircuit,
       topology: topology,
       simulation: result,
     );
@@ -717,6 +790,7 @@ final class ElectroSimRuntimeEngine {
   ElectroSimRuntimeSnapshot advance(
     CircuitState circuit, {
     required Duration elapsed,
+    Map<ComponentId, MeterEnergyReading> previousEnergyMeters = const {},
     ProtectionRuntimeState? previousProtectionState,
     Map<ComponentId, bool> previousContactorStates =
         const <ComponentId, bool>{},
@@ -744,14 +818,16 @@ final class ElectroSimRuntimeEngine {
     final CircuitState firstEffective =
         F18AmmeterFuseSafety.projectDcSeriesBurden(
           design: circuit,
-          fusedRuntime: _projectRuntimeFailures(
-            fusedEffective,
-            previousComponentHealthStates,
+          fusedRuntime: _projectAutonomousStorageDc(
+            _projectRuntimeFailures(
+              fusedEffective,
+              previousComponentHealthStates,
+            ),
           ),
         );
     ElectroSimRuntimeSnapshot snapshot = _solveOnce(
       designCircuit: circuit,
-      effectiveCircuit: firstEffective,
+      effectiveCircuit: EnergyMeterRuntime.projectPvPoles(firstEffective),
       elapsed: elapsed,
       previousProtectionState: previousProtectionState,
       previousContactorStates: previousContactorStates,
@@ -778,31 +854,44 @@ final class ElectroSimRuntimeEngine {
       final bool isFailed = nextHealth[component.id]?.failedOpen ?? false;
       return !wasFailed && isFailed;
     });
-    if (!newFailure) return snapshot;
+    ElectroSimRuntimeSnapshot metered(ElectroSimRuntimeSnapshot result) =>
+        result.withComponentHealthStates(
+          result.componentHealthStates,
+          meterReadings: EnergyMeterRuntime.advance(
+            result,
+            previousEnergyMeters,
+            elapsed,
+          ),
+        );
+    if (!newFailure) return metered(snapshot);
 
     // A newly destroyed receiver is opened electrically in the same runtime
     // tick. The second solve is zero-time: dynamics are not integrated twice.
     final CircuitState failedEffective =
         F18AmmeterFuseSafety.projectDcSeriesBurden(
           design: circuit,
-          fusedRuntime: _projectRuntimeFailures(fusedEffective, nextHealth),
+          fusedRuntime: _projectAutonomousStorageDc(
+            _projectRuntimeFailures(fusedEffective, nextHealth),
+          ),
         );
-    return _solveOnce(
-      designCircuit: circuit,
-      effectiveCircuit: failedEffective,
-      elapsed: Duration.zero,
-      previousProtectionState: snapshot.protectionState,
-      previousContactorStates: <ComponentId, bool>{
-        for (final MapEntry<ComponentId, ContactorActuationState> entry
-            in snapshot.contactorStates.entries)
-          entry.key: entry.value.actuated,
-      },
-      previousPvBatterySoc: snapshot.pvResult?.batteryPresent == true
-          ? snapshot.pvResult!.batterySoc
-          : previousPvBatterySoc,
-      previousDcBatterySocs: snapshot.dcBatterySocs,
-      previousMotorAngularSpeedsRadS: snapshot.motorAngularSpeedsRadS,
-      componentHealthStates: nextHealth,
+    return metered(
+      _solveOnce(
+        designCircuit: circuit,
+        effectiveCircuit: EnergyMeterRuntime.projectPvPoles(failedEffective),
+        elapsed: Duration.zero,
+        previousProtectionState: snapshot.protectionState,
+        previousContactorStates: <ComponentId, bool>{
+          for (final MapEntry<ComponentId, ContactorActuationState> entry
+              in snapshot.contactorStates.entries)
+            entry.key: entry.value.actuated,
+        },
+        previousPvBatterySoc: snapshot.pvResult?.batteryPresent == true
+            ? snapshot.pvResult!.batterySoc
+            : previousPvBatterySoc,
+        previousDcBatterySocs: snapshot.dcBatterySocs,
+        previousMotorAngularSpeedsRadS: snapshot.motorAngularSpeedsRadS,
+        componentHealthStates: nextHealth,
+      ),
     );
   }
 

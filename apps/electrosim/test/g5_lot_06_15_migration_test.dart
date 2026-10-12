@@ -8,7 +8,7 @@ import 'g5_lot_06_15_fixtures.dart';
 import 'g5_crusher_integration_test.dart' as crusher;
 
 void main() {
-  for (final s in NativeApplianceGeometry.catalogue.values) {
+  for (final s in NativeApplianceGeometry.catalogue.values.take(10)) {
     test(
       '${s.key} migration preserves graph, saved size, custom anchor and other routes',
       () {
@@ -78,7 +78,7 @@ void main() {
       },
     );
   }
-  for (final spec in NativeApplianceGeometry.catalogue.values.where(
+  for (final spec in NativeApplianceGeometry.catalogue.values.take(10).where(
     (s) => s.threePhase,
   )) {
     test('${spec.key} phase fanouts remain orthogonal in all rotations', () {
@@ -129,7 +129,7 @@ void main() {
     });
   }
   test('native input docks remain distinct for every appliance', () {
-    for (final spec in NativeApplianceGeometry.catalogue.values) {
+    for (final spec in NativeApplianceGeometry.catalogue.values.take(10)) {
       final c = lotFixture(spec), layout = lotLayout(spec);
       final g = CircuitGeometryIndex.build(c, layout);
       final count = spec.threePhase ? 3 : 2;

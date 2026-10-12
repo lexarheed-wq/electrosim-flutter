@@ -28,20 +28,36 @@ class NativeApplianceGeometry {
   static NativeApplianceGeometry? forVisual(String type, String? variant) {
     final normalized = type == 'catalog_motor_driven_2t' && variant == 'pump'
         ? 'pump-ac1'
-        : variant;
+        : variant ??
+              (type == 'power_socket_ac'
+                  ? 'socket-ac'
+                  : type == 'power_socket_dc'
+                  ? 'socket-dc'
+                  : null);
     for (final entry in catalogue.values) {
       if (entry.visualType == type && entry.variant == normalized) return entry;
     }
     return null;
   }
 
+  static NativeApplianceGeometry? forSource(SourceInstance c) => forVisual(
+    (c.parameters['_visualModelType'] as String?) ?? c.modelType,
+    c.parameters['_visualVariant'] as String?,
+  );
   static NativeApplianceGeometry? forComponent(ComponentInstance c) {
-    final type = c.parameters['_visualModelType'] as String?;
+    final type = (c.parameters['_visualModelType'] as String?) ?? c.modelType;
     var variant = c.parameters['_visualVariant'] as String?;
     if (type == 'catalog_motor_driven_2t' && variant == 'pump') {
       variant = c.modelType == 'motor_dc' ? 'solar-pump' : 'pump-ac1';
     }
-    return type == null ? null : forVisual(type, variant);
+    variant ??= type == 'impedance'
+        ? 'impedance'
+        : type == 'load_wye_3p'
+        ? 'load-wye'
+        : type == 'load_delta_3p'
+        ? 'load-delta'
+        : null;
+    return forVisual(type, variant);
   }
 
   static const catalogue = <String, NativeApplianceGeometry>{
@@ -175,6 +191,210 @@ class NativeApplianceGeometry {
       boardSize: Size(270, 450),
       ports: [Offset(132, 86), Offset(144, 86)],
       serviceBox: Rect.fromLTWH(122.0, 74.5, 32, 23),
+      threePhase: false,
+    ),
+    'external-refrigerator': NativeApplianceGeometry(
+      key: 'external-refrigerator',
+      visualType: 'catalog_appliance_2t',
+      variant: 'refrigerator',
+      designSize: Size(200, 320),
+      boardSize: Size(300, 480),
+      ports: [Offset(151, 287), Offset(161, 287), Offset(171, 287)],
+      serviceBox: Rect.fromLTWH(141.0, 276.0, 40, 22),
+      threePhase: false,
+    ),
+    'external-refrigerator-dc': NativeApplianceGeometry(
+      key: 'external-refrigerator-dc',
+      visualType: 'catalog_appliance_2t',
+      variant: 'refrigerator-dc',
+      designSize: Size(180, 240),
+      boardSize: Size(270, 360),
+      ports: [Offset(133, 209), Offset(145, 209)],
+      serviceBox: Rect.fromLTWH(123.0, 198.5, 32, 21),
+      threePhase: false,
+    ),
+    'external-tv': NativeApplianceGeometry(
+      key: 'external-tv',
+      visualType: 'catalog_appliance_2t',
+      variant: 'television',
+      designSize: Size(360, 240),
+      boardSize: Size(540, 360),
+      ports: [Offset(270, 205), Offset(282, 205)],
+      serviceBox: Rect.fromLTWH(260.0, 194.0, 32, 22),
+      threePhase: false,
+    ),
+    'external-fan-ac1': NativeApplianceGeometry(
+      key: 'external-fan-ac1',
+      visualType: 'catalog_motor_driven_2t',
+      variant: 'fan',
+      designSize: Size(200, 240),
+      boardSize: Size(250, 300),
+      ports: [Offset(136, 220), Offset(146, 220), Offset(156, 220)],
+      serviceBox: Rect.fromLTWH(128.0, 210.0, 36, 20),
+      threePhase: false,
+    ),
+    'external-fan-3p': NativeApplianceGeometry(
+      key: 'external-fan-3p',
+      visualType: 'catalog_motor_driven_6t',
+      variant: 'fan',
+      designSize: Size(280, 280),
+      boardSize: Size(420, 420),
+      ports: [
+        Offset(127, 42),
+        Offset(135, 42),
+        Offset(143, 42),
+        Offset(135, 52.4),
+        Offset(143, 52.4),
+        Offset(127, 52.4),
+        Offset(153.4, 52.4),
+      ],
+      serviceBox: Rect.fromLTWH(118.4, 33.6, 43.2, 28.8),
+      threePhase: true,
+    ),
+    'pv-resistive-load': NativeApplianceGeometry(
+      key: 'pv-resistive-load',
+      visualType: 'pv_resistive_load',
+      variant: 'pv-load',
+      designSize: Size(220, 180),
+      boardSize: Size(330, 270),
+      ports: [Offset(154, 148), Offset(169, 148)],
+      serviceBox: Rect.fromLTWH(142.0, 136.0, 39, 24),
+      threePhase: false,
+    ),
+    'source-ac3-grid': NativeApplianceGeometry(
+      key: 'source-ac3-grid',
+      visualType: 'ac3_voltage_source',
+      variant: 'ac3-grid',
+      designSize: Size(200, 280),
+      boardSize: Size(300, 420),
+      ports: [
+        Offset(65, 237),
+        Offset(88, 237),
+        Offset(111, 237),
+        Offset(134, 237),
+      ],
+      serviceBox: Rect.fromLTWH(54.0, 223.0, 92, 28),
+      threePhase: false,
+    ),
+    'source-ac3-alternator': NativeApplianceGeometry(
+      key: 'source-ac3-alternator',
+      visualType: 'ac3_voltage_source',
+      variant: 'ac3-generator',
+      designSize: Size(360, 260),
+      boardSize: Size(540, 390),
+      ports: [
+        Offset(216, 64),
+        Offset(233, 64),
+        Offset(250, 64),
+        Offset(267, 64),
+      ],
+      serviceBox: Rect.fromLTWH(204.0, 50.0, 75, 28),
+      threePhase: false,
+    ),
+    'load-wye-3p': NativeApplianceGeometry(
+      key: 'load-wye-3p',
+      visualType: 'load_wye_3p',
+      variant: 'load-wye',
+      designSize: Size(220, 220),
+      boardSize: Size(330, 330),
+      ports: [
+        Offset(65, 180),
+        Offset(90, 180),
+        Offset(115, 180),
+        Offset(140, 180),
+      ],
+      serviceBox: Rect.fromLTWH(53.0, 166.0, 100, 28),
+      threePhase: false,
+    ),
+    'load-delta-3p': NativeApplianceGeometry(
+      key: 'load-delta-3p',
+      visualType: 'load_delta_3p',
+      variant: 'load-delta',
+      designSize: Size(220, 220),
+      boardSize: Size(330, 330),
+      ports: [Offset(70, 180), Offset(100, 180), Offset(130, 180)],
+      serviceBox: Rect.fromLTWH(57.0, 166.0, 86, 28),
+      threePhase: false,
+    ),
+    'impedance': NativeApplianceGeometry(
+      key: 'impedance',
+      visualType: 'impedance',
+      variant: 'impedance',
+      designSize: Size(180, 130),
+      boardSize: Size(216, 156),
+      ports: [Offset(36, 104), Offset(144, 104)],
+      serviceBox: Rect.fromLTWH(24.0, 92.0, 132, 24),
+      threePhase: false,
+    ),
+    'energy-meter-ac1': NativeApplianceGeometry(
+      key: 'energy-meter-ac1',
+      visualType: 'energy_meter_ac1',
+      variant: 'meter-ac1',
+      designSize: Size(60, 180),
+      boardSize: Size(72, 216),
+      ports: [Offset(18, 23), Offset(42, 23), Offset(18, 157), Offset(42, 157)],
+      serviceBox: Rect.fromLTWH(4.0, 9.0, 52, 162),
+      threePhase: false,
+    ),
+    'energy-meter-ac3': NativeApplianceGeometry(
+      key: 'energy-meter-ac3',
+      visualType: 'energy_meter_ac3',
+      variant: 'meter-ac3',
+      designSize: Size(160, 180),
+      boardSize: Size(192, 216),
+      ports: [
+        Offset(30, 23),
+        Offset(63, 23),
+        Offset(96, 23),
+        Offset(129, 23),
+        Offset(30, 157),
+        Offset(63, 157),
+        Offset(96, 157),
+        Offset(129, 157),
+      ],
+      serviceBox: Rect.fromLTWH(7.0, 9.0, 146, 162),
+      threePhase: false,
+    ),
+    'energy-meter-pv': NativeApplianceGeometry(
+      key: 'energy-meter-pv',
+      visualType: 'energy_meter_ac1',
+      variant: 'meter-pv',
+      designSize: Size(60, 180),
+      boardSize: Size(72, 216),
+      ports: [Offset(18, 23), Offset(42, 23), Offset(18, 157), Offset(42, 157)],
+      serviceBox: Rect.fromLTWH(4.0, 9.0, 52, 162),
+      threePhase: false,
+    ),
+    'power_socket_ac': NativeApplianceGeometry(
+      key: 'power_socket_ac',
+      visualType: 'power_socket_ac',
+      variant: 'socket-ac',
+      designSize: Size(120, 120),
+      boardSize: Size(120, 120),
+      ports: [
+        Offset(31.2, 12),
+        Offset(60, 12),
+        Offset(88.8, 12),
+        Offset(38.4, 78),
+        Offset(81.6, 78),
+        Offset(60, 54),
+      ],
+      serviceBox: Rect.fromLTWH(7.5, 1.0, 105, 108),
+      threePhase: false,
+    ),
+    'power_socket_dc': NativeApplianceGeometry(
+      key: 'power_socket_dc',
+      visualType: 'power_socket_dc',
+      variant: 'socket-dc',
+      designSize: Size(120, 120),
+      boardSize: Size(120, 120),
+      ports: [
+        Offset(45.6, 12),
+        Offset(74.4, 12),
+        Offset(45.6, 90),
+        Offset(74.4, 90),
+      ],
+      serviceBox: Rect.fromLTWH(7.5, 1.0, 105, 108),
       threePhase: false,
     ),
   };

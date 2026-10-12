@@ -103,7 +103,12 @@ final class ElectroSimInstrumentProjection {
             snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
             snapshot.dcResult != null &&
             snapshot.pvResult == null
-        ? snapshot.effectiveCircuit
+        ? CircuitState.fromJson({
+            ...snapshot.circuit.toJson(),
+            // Validate leads against authored wires, not the cut conductor
+            // disabled internally when the finite meter shunt is inserted.
+            'mode': ElectricalMode.dc.name,
+          })
         : snapshot.circuit;
     if (!circuit.instruments.any((item) => item.id == instrument.id)) {
       return error(

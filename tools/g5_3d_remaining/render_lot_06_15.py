@@ -17,7 +17,7 @@ def light(scene,name,loc,target,power,w,hh):
     o.rotation_euler=(Vector(target)-o.location).to_track_quat('-Z','Y').to_euler()
 
 def main():
-    a=argparse.ArgumentParser();a.add_argument('--out',required=True);a.add_argument('--only');a.add_argument('--samples',type=int,default=32);a.add_argument('--lot',default='06_15',choices=['06_15','16_26']);opts=a.parse_args(sys.argv[sys.argv.index('--')+1:])
+    a=argparse.ArgumentParser();a.add_argument('--out',required=True);a.add_argument('--only');a.add_argument('--samples',type=int,default=32);a.add_argument('--lot',default='06_15',choices=['06_15','16_26','sockets']);opts=a.parse_args(sys.argv[sys.argv.index('--')+1:])
     assert 16<=opts.samples<=256
     contract_file=BASE/f'lot_{opts.lot}_contract.json'
     geometry_file=BASE/f'lot_{opts.lot}_geometry.py'
@@ -25,6 +25,8 @@ def main():
     builder=build
     if opts.lot=='16_26':
         from lot_16_26_geometry import build as builder
+    if opts.lot=='sockets':
+        from lot_sockets_geometry import build as builder
     geometry_sha=hashlib.sha256(geometry_file.read_bytes()).hexdigest()
     for key,s in contract.items():
         if opts.only and key not in opts.only.split(','):continue

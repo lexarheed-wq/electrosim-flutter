@@ -169,7 +169,10 @@ void main() {
     );
     expect(
       canvas.layout.sizeOf('restored-tv'),
-      F18ReferenceComponentMetrics.boardSizeFor('catalog_appliance_2t'),
+      F18ReferenceComponentMetrics.boardSizeFor(
+        'catalog_appliance_2t',
+        variantKey: 'television',
+      ),
     );
   });
 }

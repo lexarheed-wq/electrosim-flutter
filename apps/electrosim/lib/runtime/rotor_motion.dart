@@ -70,12 +70,23 @@ double? rotorVelocity(
       frequency <= 0) {
     return 0;
   }
-  final observations = ac.phaseOrderObservations.where(
-    (o) => o.componentId == component.id,
-  );
-  final sequence = observations.isEmpty
-      ? Ac3PhaseSequence.indeterminate
-      : observations.first.sequence;
+  // Motor owners are not phase-sequence probes. Read their actual winding
+  // voltages, which also removes a floating star-point common-mode voltage.
+  final voltages = <AcComplex>[];
+  if (component.terminals.length < 6) return 0;
+  for (var i = 0; i < 3; i++) {
+    final first =
+        ac.nodeVoltages[snapshot.topology.terminalToNode[component
+            .terminals[i]
+            .id]];
+    final last =
+        ac.nodeVoltages[snapshot.topology.terminalToNode[component
+            .terminals[i + 3]
+            .id]];
+    if (first == null || last == null) return 0;
+    voltages.add(first - last);
+  }
+  final sequence = _windingSequence(voltages);
   if (sequence == Ac3PhaseSequence.indeterminate) return 0;
   final rawPoles = component.parameters['motorPoles'];
   final poles =
@@ -91,4 +102,20 @@ double? rotorVelocity(
         frequency /
         poles,
   );
+}
+
+Ac3PhaseSequence _windingSequence(List<AcComplex> voltages) {
+  if (voltages.any((v) => !v.isFinite || v.magnitude <= 1e-8)) {
+    return Ac3PhaseSequence.indeterminate;
+  }
+  double normalized(double angle) => (angle + 180) % 360 - 180;
+  final d12 = normalized(voltages[1].angleDegrees - voltages[0].angleDegrees);
+  final d23 = normalized(voltages[2].angleDegrees - voltages[1].angleDegrees);
+  if ((d12 + 120).abs() <= 5 && (d23 + 120).abs() <= 5) {
+    return Ac3PhaseSequence.positive;
+  }
+  if ((d12 - 120).abs() <= 5 && (d23 - 120).abs() <= 5) {
+    return Ac3PhaseSequence.negative;
+  }
+  return Ac3PhaseSequence.indeterminate;
 }

@@ -1,0 +1,123 @@
+{
+  "primary_photos": {
+    "fridge-front.webp": {
+      "url": "https://media3.bsh-group.com/Product_Shots/MCSA03216720_3_Straight_On_Doors_Closed_Fridge_B36CT80SNS_def.webp",
+      "final_url": "https://media3.bsh-group.com/Product_Shots/MCSA03216720_3_Straight_On_Doors_Closed_Fridge_B36CT80SNS_def.webp",
+      "last_modified": "Wed Sep 25 2024 17:11:55 GMT+0000 (Coordinated Universal Time)",
+      "content_type": "image/webp",
+      "page": "https://www.bosch-home.com/us/en/mkt-product/refrigerators/fridge-freezers/free-standing-fridge-freezers-with-freezer-at-bottom/B36CT80SNS",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "980a2666d0a0d2028016d1e953f7680549230433e0dd4e9995693b8ea6ebb830",
+      "bytes": 179772
+    },
+    "fridge-back.webp": {
+      "url": "https://media3.bsh-group.com/Product_Shots/20145359_B36CT80SNS_Back_def.webp",
+      "final_url": "https://media3.bsh-group.com/Product_Shots/20145359_B36CT80SNS_Back_def.webp",
+      "last_modified": "Wed Sep 25 2024 17:11:56 GMT+0000 (Coordinated Universal Time)",
+      "content_type": "image/webp",
+      "page": "https://www.bosch-home.com/us/en/mkt-product/refrigerators/fridge-freezers/free-standing-fridge-freezers-with-freezer-at-bottom/B36CT80SNS",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "df7eb65fca4caae8df65e3a79b5aa843cc10819885e2d9f9b6ec6eebb2162f05",
+      "bytes": 53830
+    },
+    "dc-fridge.png": {
+      "url": "https://www.dometic.com/media/catalog/product/cache/5e86c224dde0af116b83ea127ee979a6/9/9/99085-primary_1_4.png",
+      "final_url": "https://www.dometic.com/media/catalog/product/cache/5e86c224dde0af116b83ea127ee979a6/9/9/99085-primary_1_4.png",
+      "last_modified": null,
+      "content_type": "image/png",
+      "page": "https://www.dometic.com/en-us/product/dometic-nrx-80s-9620017096",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "6232fbe622455a2b3a9d622df08275f958eac3a8e5af52149856c95f0f4fb25a",
+      "bytes": 312328
+    },
+    "tv-front.jpg": {
+      "url": "https://media.us.lg.com/transform/ecomm-PDPGalleryZoom-1600x1062/d5c53949-7059-42de-9381-da7cf17ca71b/TV_OLED55C5PUA_gallery_01_3000x3000",
+      "final_url": "https://media.us.lg.com/transform/ecomm-PDPGalleryZoom-1600x1062/d5c53949-7059-42de-9381-da7cf17ca71b/TV_OLED55C5PUA_gallery_01_3000x3000",
+      "last_modified": "Thu, 11 Jun 2026 06:09:21 GMT",
+      "content_type": "image/jpeg",
+      "page": "https://www.lg.com/us/tvs/lg-oled55c5pua-oled-4k-tv",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "4724f988c9c05df171cbb5393f9225c5bccac14b47ab505be8d893cdf8fe5f81",
+      "bytes": 182110
+    },
+    "alternator.png": {
+      "url": "https://moen.nidec.com/power/-/media/Project/Nidec/LeroySomerAlternators/Products/LSA-443.png",
+      "final_url": "https://moen.nidec.com/power/-/media/Project/Nidec/LeroySomerAlternators/Products/LSA-443.png",
+      "last_modified": "Thu, 14 Aug 2025 15:21:35 GMT",
+      "content_type": "image/webp",
+      "page": "https://moen.nidec.com/en/power/Products/industrial/lsa",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "1c6e8021ae2bf44b03ded1e0f2f6bbfad60d8e94b9c9a1c7db312017f13a5fe3",
+      "bytes": 34450
+    },
+    "loadbank.jpg": {
+      "url": "https://www.cressall.com/wp-content/uploads/2019/12/dbr-range-light2.jpg",
+      "final_url": "https://www.cressall.com/wp-content/uploads/2019/12/dbr-range-light2.jpg",
+      "last_modified": "Tue, 10 Oct 2023 16:28:10 GMT",
+      "content_type": "image/jpeg",
+      "page": "https://www.cressall.com/standard-dynamic-braking-resistors/",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "8131a79f8158765e2f3d248036b51e3b4e609109a4abc26d9956566898503f7f",
+      "bytes": 194604
+    },
+    "impedance.png": {
+      "url": "https://www.ohmite.com/assets/images/content/rheostat3.png",
+      "final_url": "https://www.ohmite.com/assets/images/content/rheostat3.png",
+      "last_modified": "Mon, 01 Dec 2025 21:07:08 GMT",
+      "content_type": "image/png",
+      "page": "https://www.ohmite.com/rheostats/",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "ac5b3a1b47acac02407d0c8d5cff5ca641567dfdb8cd1820745280cd19e651f8",
+      "bytes": 3253109
+    },
+    "fan3.png": {
+      "url": "https://a.storyblok.com/f/108972/1d8d569786/product-main-image_axc.png",
+      "final_url": "https://a.storyblok.com/f/108972/1d8d569786/product-main-image_axc.png",
+      "last_modified": "Fri, 10 Apr 2026 10:16:06 GMT",
+      "content_type": "image/png",
+      "page": "https://www.systemair.com/en/products/fans/axial-fans/axc",
+      "downloaded_utc": "2026-10-11",
+      "sha256": "82af774f4ed61708968b3b04d2cee82cd9ec08f2ea9886cebacf04606a9cccfc",
+      "bytes": 1225982
+    }
+  },
+  "additional_downloads": {
+    "meter1.pdf": {
+      "url": "https://www.gavazziautomation.com/images/PIM/DATASHEET/ENG/EM112_DS_ENG.pdf",
+      "sha256": "30d37a46cc9c327267be0bfa496e021dbfe513b6f240f2049245de12415924c5",
+      "last_modified": null,
+      "bytes": 493372,
+      "downloaded_utc": "2026-10-12"
+    },
+    "meter3.pdf": {
+      "url": "https://www.gavazziautomation.com/images/PIM/DATASHEET/ENG/EM340_DS_ENG.pdf",
+      "sha256": "4914e9640fef67ecfd3791b61ad94d11aee732b6060c1a980559dbed46ef83e5",
+      "last_modified": null,
+      "bytes": 447035,
+      "downloaded_utc": "2026-10-12"
+    },
+    "fan-search.json": {
+      "url": "https://vornado.com/search/suggest.json?q=660&resources%5Btype%5D=product",
+      "sha256": "dde5316741148eca8b88377da8244d77878c75c56a33f622b62eacc5d12e59b8",
+      "last_modified": null,
+      "bytes": 8009,
+      "downloaded_utc": "2026-10-12"
+    },
+    "grid-search.html": {
+      "url": "https://www.abb.com/global/en/areas/electrification/low-voltage/power-distribution-systems/main-distribution-boards/system-pro-e-power-top-busbar-system",
+      "sha256": "fc11ec08313edb58edc1ab6a6f91db2a939c22e3786c22c88d503c41e93b85a4",
+      "last_modified": null,
+      "bytes": 35308,
+      "downloaded_utc": "2026-10-12"
+    }
+  },
+  "floor_fan": {
+    "url": "https://cdn.shopify.com/s/files/1/0603/0114/8254/files/138097.jpg?v=1781289115",
+    "page": "https://vornado.com/products/660-parent?_pos=1&_psq=660&_psid=b31558b98&_ss=e",
+    "last_modified": null,
+    "sha256": "1c53281a2064f8ca696a7fa2a52ef7bd9199760bf450380e6986fd1afa7e58e0",
+    "bytes": 443248,
+    "downloaded_utc": "2026-10-12"
+  },
+  "grid_cabinet": "Manufacturer photo comparison not completed; pedagogical enclosure, not a branded clone."
+}

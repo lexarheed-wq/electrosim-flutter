@@ -1,3 +1,4 @@
+import 'runtime/energy_meter_runtime.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'f18_native_appliance_visual.dart';
 import 'dart:math' as math;
@@ -27,6 +28,8 @@ import 'reference_components/reference_widgets_extended.dart';
 /// the visual layer never advances electrical physics.
 abstract final class F18ReferenceComponentVisuals {
   static const Set<String> coveredModelTypes = <String>{
+    'energy_meter_ac1',
+    'energy_meter_ac3',
     'power_socket_ac',
     'power_socket_dc',
     'dc_voltage_source',
@@ -290,6 +293,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.variantKey,
     this.powerConnectionMode = 'fixed',
     this.serviceOpen = false,
+    this.meterReading,
     this.active = true,
     this.energized = false,
     this.closed,
@@ -314,6 +318,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final String? variantKey;
   final String powerConnectionMode;
   final bool serviceOpen;
+  final MeterEnergyReading? meterReading;
   final bool active;
   final bool energized;
   final bool? closed;
@@ -339,6 +344,7 @@ class F18ComponentAssetVisual extends StatelessWidget {
     if (native != null) {
       return F18NativeApplianceVisual(
         spec: native,
+        meterReading: meterReading,
         size: size,
         serviceOpen: serviceOpen,
         energized: energized && active,

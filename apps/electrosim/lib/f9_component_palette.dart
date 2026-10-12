@@ -1577,6 +1577,101 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     subtitle: '3 branches entre phases · sans neutre',
   ),
 
+  F9PaletteDefinition(
+    keyName: 'energy-meter-ac1',
+    title: 'Compteur énergie AC',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac1',
+    visualVariant: 'meter-ac1',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L entrée', phase: PhaseTag.l1, idSuffix: 'l_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec('L sortie', phase: PhaseTag.l1, idSuffix: 'l_out'),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.ac1},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+  F9PaletteDefinition(
+    keyName: 'energy-meter-ac3',
+    title: 'Compteur énergie triphasé',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac3',
+    visualVariant: 'meter-ac3',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L1 entrée', phase: PhaseTag.l1, idSuffix: 'l1_in'),
+      F9PaletteTerminalSpec('L2 entrée', phase: PhaseTag.l2, idSuffix: 'l2_in'),
+      F9PaletteTerminalSpec('L3 entrée', phase: PhaseTag.l3, idSuffix: 'l3_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec(
+        'L1 sortie',
+        phase: PhaseTag.l1,
+        idSuffix: 'l1_out',
+      ),
+      F9PaletteTerminalSpec(
+        'L2 sortie',
+        phase: PhaseTag.l2,
+        idSuffix: 'l2_out',
+      ),
+      F9PaletteTerminalSpec(
+        'L3 sortie',
+        phase: PhaseTag.l3,
+        idSuffix: 'l3_out',
+      ),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.ac3},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+  F9PaletteDefinition(
+    keyName: 'energy-meter-pv',
+    title: 'Compteur énergie PV',
+    category: 'Mesure énergie',
+    modelType: 'energy_meter_ac1',
+    visualVariant: 'meter-pv',
+    icon: Icons.electric_meter_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: [],
+    terminals: [
+      F9PaletteTerminalSpec('L entrée', phase: PhaseTag.l1, idSuffix: 'l_in'),
+      F9PaletteTerminalSpec(
+        'N entrée',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_in',
+      ),
+      F9PaletteTerminalSpec('L sortie', phase: PhaseTag.l1, idSuffix: 'l_out'),
+      F9PaletteTerminalSpec(
+        'N sortie',
+        phase: PhaseTag.neutral,
+        idSuffix: 'n_out',
+      ),
+    ],
+    supportedModes: {ElectricalMode.pv},
+    subtitle: 'W · kWh sens direct et inverse',
+  ),
+
   // C14 Wave 1 — canonical models already supported by the V2 electrical core.
   F9PaletteDefinition(
     keyName: 'capacitor',
@@ -1602,6 +1697,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'impedance',
+    visualVariant: 'impedance',
     title: 'Impédance',
     category: 'Passifs',
     modelType: 'impedance',

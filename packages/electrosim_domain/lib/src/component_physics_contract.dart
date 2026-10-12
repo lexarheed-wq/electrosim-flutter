@@ -276,6 +276,14 @@ abstract final class CoreComponentPhysicsContracts {
               ComponentDynamicBehavior.protectiveTrip,
             },
           ),
+          'energy_meter_ac1': const ComponentPhysicsContract(
+            modelType: 'energy_meter_ac1',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'energy_meter_ac3': const ComponentPhysicsContract(
+            modelType: 'energy_meter_ac3',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
           'power_socket_ac': const ComponentPhysicsContract(
             modelType: 'power_socket_ac',
             electricalLaw: ComponentElectricalLaw.feedThrough,

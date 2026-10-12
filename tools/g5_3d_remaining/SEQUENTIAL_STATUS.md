@@ -2,7 +2,7 @@
 
 Date d'origine : 11 octobre 2026.
 Branche de travail unique : `feat/g5-3d-sequential-26-components`.
-**INTERDICTION DE FUSION** dans G5/main avant validation humaine des **26/26 visuels et preuves PNG**. Cette interdiction inclut les PR #103 et #107.
+**Autorisation actualisée le 12/10/2026 :** l’utilisateur demande explicitement le contrôle complet et la fusion des composants dans G5. Cette instruction remplace l’ancien gel de fusion des 26 visuels et des PR #103/#107. Le contrôle technique, le maintien des changements récents et la publication des limites restent requis.
 **Preuves** : toujours fichiers PNG directs (deux vues et captures réelles Flutter), jamais envoyer de ZIP comme preuve.
 **Organisation actualisée par le chef de projet** : lots de 10 (01–10, 11–20, puis 21–26). Chaque composant conserve ses contrôles propres ; recherches photo regroupées par lot. Aucun développement parallèle imposé. Modèles actuellement commercialisés recherchés chez les fabricants ; date de téléchargement et date du modèle distinguées.
 **Qualification** : garder les essais Mac Intel et Chromium, ainsi que la campagne GitHub de qualification générale, pour la fin des 26. Les captures sont uniquement de vrais rendus logiciels, pas des images IA.
@@ -27,17 +27,17 @@ Branche de travail unique : `feat/g5-3d-sequential-26-components`.
 | 13 | `external-pump-3p` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
 | 14 | `external-pump-ac1` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
 | 15 | `external-solar-pump` | Développé et intégré : perspective palette, face platine, bornier natif et état alimenté testés. Captures réelles dans `docs/g5-proofs/lot-06-15/`. Revue esthétique utilisateur en attente. |
-| 16 | `external-refrigerator` | En attente de son tour |
-| 17 | `external-refrigerator-dc` | En attente de son tour |
-| 18 | `external-tv` | En attente de son tour |
-| 19 | `external-fan-ac1` | En attente de son tour |
-| 20 | `external-fan-3p` | En attente de son tour |
-| 21 | `pv-resistive-load` | En attente de son tour |
-| 22 | `source-ac3-grid` | En attente de son tour |
-| 23 | `source-ac3-alternator` | En attente de son tour |
-| 24 | `load-wye-3p` | En attente de son tour |
-| 25 | `load-delta-3p` | En attente de son tour |
-| 26 | `impedance` | En attente de son tour |
+| 16 | `external-refrigerator` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 17 | `external-refrigerator-dc` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 18 | `external-tv` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 19 | `external-fan-ac1` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 20 | `external-fan-3p` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. Rotation validée par les contrôles Dart et Flutter ; captures réelles disponibles. |
+| 21 | `pv-resistive-load` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 22 | `source-ac3-grid` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 23 | `source-ac3-alternator` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 24 | `load-wye-3p` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 25 | `load-delta-3p` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
+| 26 | `impedance` | Développé localement ; vues et captures réelles dans `docs/g5-proofs/lot-16-26/`. Revue esthétique en attente. |
 
 ## Méthode par appareil
 Recette Blender originale → front et perspective palette → composants interactifs, bornes/sondes → raccordement solveur/runtime → tests locaux → PNG Flutter réel → passer à l'élément suivant. **Ne pas fusionner**, même si des tests techniques sont verts. Ne jamais compter une recette non rendue comme un visuel validé.
@@ -129,3 +129,7 @@ par l'utilisateur. Il reste 11 identités non commencées dans cet inventaire
 - Blender : 4 contrôles structurels passent, dont alignement des appuis et dégagement de la tête entre les jambes du châssis.
 - Flutter : 31 tests ciblés passent (géométrie, migration, 4 captures interactives) ; 12 PNG réels renouvelés dans `docs/g5-proofs/lot-06-15/`.
 - Aucun changement du contrat électrique, des dimensions logiques ni des bornes. Revue esthétique utilisateur toujours en attente ; aucune fusion G5.
+
+### Ajouts hors inventaire initial — 12 octobre 2026
+
+Trois compteurs AC, AC3 et PV (sortie AC d'onduleur autonome) développés localement avec puissance active, registres E+/E− et persistance. Preuves dans `docs/g5-proofs/lot-16-26/`. Aucun atelier mixte ni secours réseau ajouté à ce stade ; voir la proposition architecturale dans ce dossier. Contrôle Flutter de rotation passé ; fusion des composants dans G5 explicitement autorisée par l’utilisateur après audit complet.

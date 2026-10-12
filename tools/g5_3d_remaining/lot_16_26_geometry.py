@@ -43,7 +43,7 @@ def block(h,s,labels=None,always=False):
 
 
 def refrigerator(h,s,dc=False):
-    metal=h.material('brushed door stainless',(.61,.64,.66),.87,roughness=.25,anisotropic=.6)
+    metal=h.material('brushed door stainless',(.61,.64,.66),.87,roughness=.32,anisotropic=0)
     dark=h.material('refrigerator graphite trim',(.025,.03,.034),roughness=.32)
     if dc:
         h.box('insulated_cabinet',90,116,152,198,48,76,dark,r=2)

@@ -608,6 +608,24 @@ final class CoreComponentModelContracts {
       supportedModes: <ElectricalMode>{ElectricalMode.ac3},
       branches: _fourPowerPoles,
     ),
+    for (final poles in [2, 4])
+      ComponentModelContract(
+        modelType: poles == 2 ? 'energy_meter_ac1' : 'energy_meter_ac3',
+        family: ComponentFamily.passive,
+        terminalCount: poles * 2,
+        supportedModes: poles == 2
+            ? {ElectricalMode.ac1, ElectricalMode.pv}
+            : {ElectricalMode.ac3},
+        branches: [
+          for (var i = 0; i < poles; i++)
+            ComponentBranchDefinition(
+              id: 'pole:$i',
+              fromTerminalIndex: i,
+              toTerminalIndex: i + poles,
+              role: ElectricalBranchRole.main,
+            ),
+        ],
+      ),
     ComponentModelContract(
       modelType: 'power_socket_ac',
       family: ComponentFamily.passive,

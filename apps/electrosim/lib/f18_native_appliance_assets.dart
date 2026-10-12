@@ -3,8 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 
 class F18NativeApplianceImages {
-  const F18NativeApplianceImages(this.front, this.palette, this.service);
+  const F18NativeApplianceImages(
+    this.front,
+    this.palette,
+    this.service, {
+    this.rotor,
+    this.guard,
+    this.serviceGuard,
+  });
   final ui.Image front, palette, service;
+  final ui.Image? rotor, guard, serviceGuard;
 }
 
 /// Shared by all instances; publish one component only when all three views decode.
@@ -25,7 +33,14 @@ abstract final class F18NativeApplianceAssets {
     if (spec == null) return false;
     final decoded = <ui.Image>[];
     try {
-      for (final view in ['front', 'palette', 'service']) {
+      final movingFan = key == 'external-fan-ac1' || key == 'external-fan-3p';
+      for (final view in [
+        'front',
+        'palette',
+        'service',
+        if (movingFan) ...['rotor', 'guard'],
+        if (key == 'external-fan-3p') 'guard-service',
+      ]) {
         final bytes = await rootBundle.load(
           'assets/g5_industrial/$key-$view.png',
         );
@@ -47,6 +62,9 @@ abstract final class F18NativeApplianceAssets {
         decoded[0],
         decoded[1],
         decoded[2],
+        rotor: movingFan ? decoded[3] : null,
+        guard: movingFan ? decoded[4] : null,
+        serviceGuard: key == 'external-fan-3p' ? decoded[5] : null,
       );
       return true;
     } on Object {

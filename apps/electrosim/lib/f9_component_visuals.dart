@@ -1,3 +1,4 @@
+import 'runtime/energy_meter_runtime.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -340,6 +341,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       required double currentLimitA,
       required double resistanceOhm,
       double? angularSpeedRadS,
+      MeterEnergyReading? meterReading,
       double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
     }) {
@@ -373,6 +375,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                 child: _F9ReferenceAsset(
                   key: ValueKey<String>('board-v1-visual-$elementId'),
                   modelType: renderedModelType,
+                  meterReading: meterReading,
                   variantKey: visualVariant,
                   powerConnectionMode: powerConnectionMode,
                   size: baseVisualSize,
@@ -385,6 +388,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   motionSeconds: _motionSeconds,
                   angularSpeedRadS: angularSpeedRadS,
                   animate:
+                      !renderedModelType.startsWith('energy_meter_') &&
                       (angularSpeedRadS != null
                           ? angularSpeedRadS.abs() > 1e-8
                           : energized) &&
@@ -472,11 +476,13 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
           componentState?.code == ComponentOperatingCode.overloaded;
+      final meterReading = runtime?.energyMeters[component.id];
       final bool energized =
           widget.simulationRunning &&
           (runtime?.solved ?? false) &&
-          stateAllowsEnergy &&
-          currentA.abs() > 1e-6;
+          (meterReading != null
+              ? meterReading.available
+              : stateAllowsEnergy && currentA.abs() > 1e-6);
       final String type = component.modelType.toLowerCase();
       final bool pressed = component.controlState['pressed'] == true;
       final bool closed = switch (type) {
@@ -502,6 +508,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       addVisual(
         elementId: component.id.value,
         modelType: component.modelType,
+        meterReading: meterReading,
         angularSpeedRadS: rotorVelocity(
           runtime,
           component,
@@ -740,6 +747,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     required this.motionSeconds,
     required this.animate,
     this.angularSpeedRadS,
+    this.meterReading,
     this.powerConnectionMode = 'fixed',
     this.variantKey,
     this.active = true,
@@ -766,6 +774,7 @@ class _F9ReferenceAsset extends StatefulWidget {
   final ValueListenable<double> motionSeconds;
   final bool animate;
   final double? angularSpeedRadS;
+  final MeterEnergyReading? meterReading;
   final String powerConnectionMode;
   final String? variantKey;
   final bool active;
@@ -794,6 +803,7 @@ class _F9ReferenceAsset extends StatefulWidget {
     presentation: F18IndustrialPresentation.boardFront,
     child: F18ComponentAssetVisual(
       modelType: modelType,
+      meterReading: meterReading,
       variantKey: variantKey,
       powerConnectionMode: powerConnectionMode,
       size: size,

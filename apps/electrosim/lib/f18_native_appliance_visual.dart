@@ -1,3 +1,4 @@
+import 'runtime/energy_meter_runtime.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -12,11 +13,13 @@ class F18NativeApplianceVisual extends StatelessWidget {
     this.serviceOpen = false,
     this.energized = false,
     this.phase = 0,
+    this.meterReading,
   });
   final NativeApplianceGeometry spec;
   final Size size;
   final bool serviceOpen, energized;
   final double phase;
+  final MeterEnergyReading? meterReading;
   @override
   Widget build(BuildContext context) {
     final images = F18NativeApplianceAssets.images(spec.key);
@@ -36,7 +39,81 @@ class F18NativeApplianceVisual extends StatelessWidget {
               )
             else
               CustomPaint(painter: _NativeFallback(spec, serviceOpen)),
+            if (images?.rotor != null)
+              ClipRect(
+                child: Transform.rotate(
+                  key: Key('native-fan-rotor-${spec.key}'),
+                  angle: phase * math.pi * 2,
+                  alignment: Alignment(
+                    2 *
+                            (spec.key == 'external-fan-ac1' ? 100 : 140) /
+                            spec.designSize.width -
+                        1,
+                    2 *
+                            (spec.key == 'external-fan-ac1' ? 94 : 148) /
+                            spec.designSize.height -
+                        1,
+                  ),
+                  child: RawImage(
+                    image: images!.rotor,
+                    fit: BoxFit.fill,
+                    filterQuality: FilterQuality.high,
+                  ),
+                ),
+              ),
+            if (images?.guard != null)
+              RawImage(
+                image: serviceOpen
+                    ? (images!.serviceGuard ?? images.guard)
+                    : images!.guard,
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.high,
+              ),
             CustomPaint(painter: _OperatingDetails(spec, energized, phase)),
+            if (spec.key.startsWith('energy-meter-'))
+              Positioned(
+                left: 12.5 * size.width / spec.designSize.width,
+                top: 56 * size.height / spec.designSize.height,
+                width:
+                    (spec.designSize.width - 25) *
+                    size.width /
+                    spec.designSize.width,
+                height: 38 * size.height / spec.designSize.height,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'E+ ${(meterReading?.importKwh ?? 0).toStringAsFixed(4)}',
+                        key: Key('meter-import-${spec.key}'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xff112820),
+                        ),
+                      ),
+                      Text(
+                        'E− ${(meterReading?.exportKwh ?? 0).toStringAsFixed(4)}',
+                        key: Key('meter-export-${spec.key}'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xff112820),
+                        ),
+                      ),
+                      Text(
+                        meterReading?.available == true
+                            ? '${meterReading!.powerW.toStringAsFixed(1)} W'
+                            : '— W',
+                        key: Key('meter-power-${spec.key}'),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: Color(0xff112820),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -146,6 +223,23 @@ class _OperatingDetails extends CustomPainter {
             const Radius.circular(1),
           ),
           paint..color = const Color(0xffec9952),
+        );
+      case 'external-tv':
+        final screen = const Rect.fromLTWH(18, 14, 324, 180);
+        c.drawRect(
+          screen,
+          paint
+            ..shader = const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xff10384b), Color(0xff296675), Color(0xff182c50)],
+            ).createShader(screen),
+        );
+        paint.shader = null;
+        c.drawCircle(
+          const Offset(180, 199),
+          .8,
+          paint..color = const Color(0xff76caba),
         );
       case 'external-computer':
         final screen = const Rect.fromLTWH(23, 29, 232, 126);

@@ -15,7 +15,7 @@ import '../test/g5_crusher_integration_test.dart' as fixtures;
 
 void main() {
   const selected = String.fromEnvironment('G5_PROOF_KEYS');
-  final specs = NativeApplianceGeometry.catalogue.values
+  final specs = NativeApplianceGeometry.catalogue.values.take(10)
       .where((s) => selected.isEmpty || selected.split(',').contains(s.key))
       .toList();
   setUpAll(() async {

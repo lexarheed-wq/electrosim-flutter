@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:electrosim/f18_workspace_page.dart';
-import 'package:electrosim/f18_power_socket_visual.dart';
+import 'package:electrosim/f18_native_appliance_visual.dart';
+import 'package:electrosim/f18_native_appliance_assets.dart';
 import 'package:electrosim/f18_appliance_power_cords.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
@@ -15,6 +16,7 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await F18PhysicalPlateAssets.preload();
+    await F18NativeApplianceAssets.preload();
     final fonts =
         '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
     for (final e in {
@@ -80,7 +82,12 @@ void main() {
     await t.pump(const Duration(milliseconds: 800));
     await t.pump();
     expect(t.takeException(), isNull);
-    expect(find.byType(F18PowerSocketVisual), findsWidgets);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is F18NativeApplianceVisual && w.spec.key == 'power_socket_ac',
+      ),
+      findsWidgets,
+    );
     final painters = find
         .byType(CustomPaint)
         .evaluate()

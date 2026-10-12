@@ -1,7 +1,15 @@
 import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:electrosim_pneumatic_solver/src/r6n_worker_native.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('R6/N rejects a nonpositive native isolate startup deadline', () async {
+    await expectLater(
+      NativeR6Worker.start(startupTimeout: Duration.zero),
+      throwsArgumentError,
+    );
+  });
+
   test(
     'R6/N native isolate executes canonical physics and preserves mass',
     () async {

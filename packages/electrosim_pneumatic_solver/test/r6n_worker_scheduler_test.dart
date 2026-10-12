@@ -177,4 +177,50 @@ void main() {
     expect((await result).snapshot.timeS, .02);
     await scheduler.close();
   });
+
+  test('R6/N unresponsive worker times out, closes and rejects queued work', () async {
+    final ControlledWorker underlying = ControlledWorker();
+    final R6WorkerScheduler scheduler = R6WorkerScheduler(
+      underlying,
+      engineVersion: 'r6n',
+      requestTimeout: const Duration(milliseconds: 25),
+    );
+    final IsothermalAirNetwork network = smallNetwork();
+    R6NetworkJob build(int revision, int requestId) => R6NetworkJob(
+      projectRevision: revision,
+      requestId: requestId,
+      engineVersion: 'r6n',
+      network: network,
+      before: network.initialSnapshot,
+      durationS: .02,
+      maxStepS: .002,
+    );
+
+    final Future<R6NetworkOutcome> first = scheduler.submit(build: build);
+    final Future<R6NetworkOutcome> queued = scheduler.submit(build: build);
+    final Future<void> firstRejected = expectLater(first, throwsStateError);
+    final Future<void> queuedRejected = expectLater(queued, throwsStateError);
+
+    await Future.wait(<Future<void>>[firstRejected, queuedRejected]);
+    expect(underlying.closed, isTrue);
+    expect(underlying.started.length, 1);
+    expect(() => scheduler.submit(build: build), throwsStateError);
+
+    // A later worker completion cannot resurrect the rejected snapshot.
+    underlying.replies.single.complete(underlying.started.single.execute());
+    await Future<void>.delayed(Duration.zero);
+    expect(scheduler.isBusy, isFalse);
+  });
+
+  test('R6/N rejects a nonpositive solver response timeout', () {
+    final ControlledWorker underlying = ControlledWorker();
+    expect(
+      () => R6WorkerScheduler(
+        underlying,
+        engineVersion: 'r6n',
+        requestTimeout: Duration.zero,
+      ),
+      throwsArgumentError,
+    );
+  });
 }

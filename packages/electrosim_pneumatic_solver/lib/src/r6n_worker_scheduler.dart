@@ -159,6 +159,21 @@ final class R6WorkerScheduler {
       throw StateError('R6/N worker returned invalid passage flows');
     }
 
+    // A worker must not invent boundary exchange in a sealed circuit.
+    // An unconnected boundary node does not create a physical gas source.
+    final Set<String> boundaryIds = job.network.boundaries
+        .map((boundary) => boundary.id)
+        .toSet();
+    final bool hasBoundaryPassage = job.network.passages.any(
+      (passage) =>
+          boundaryIds.contains(passage.firstChamberId) ||
+          boundaryIds.contains(passage.secondChamberId),
+    );
+    if (!hasBoundaryPassage &&
+        snapshot.externalMassAddedKg != job.before.externalMassAddedKg) {
+      throw StateError('R6/N worker invented gas exchange in a sealed circuit');
+    }
+
     final massResidual =
         snapshot.totalMassKg -
         job.before.totalMassKg -

@@ -40,6 +40,43 @@ void main() {
     }
   });
 
+  test('R6/L+M top escape recovers a blocked lower port stem', () {
+    const Rect lowerBlocker = Rect.fromLTWH(115, 238, 60, 80);
+    final List<Offset>? route = PneumaticPipeRouter.route(
+      start: const Offset(145, 218),
+      end: const Offset(835, 218),
+      fromTile: source,
+      toTile: valve,
+      tiles: const <Rect>[source, valve, lowerBlocker],
+    );
+    expect(route, isNotNull);
+    expect(route!.first, const Offset(145, 218));
+    expect(route.last, const Offset(835, 218));
+    expect(route[1].dy, lessThan(source.top));
+    for (int i = 1; i < route.length; i++) {
+      final Offset a = route[i - 1];
+      final Offset b = route[i];
+      expect(a.dx == b.dx || a.dy == b.dy, isTrue);
+      if (a.dx == b.dx) {
+        expect(
+          a.dx > lowerBlocker.left &&
+              a.dx < lowerBlocker.right &&
+              math.min(a.dy, b.dy) < lowerBlocker.bottom &&
+              math.max(a.dy, b.dy) > lowerBlocker.top,
+          isFalse,
+        );
+      } else {
+        expect(
+          a.dy > lowerBlocker.top &&
+              a.dy < lowerBlocker.bottom &&
+              math.min(a.dx, b.dx) < lowerBlocker.right &&
+              math.max(a.dx, b.dx) > lowerBlocker.left,
+          isFalse,
+        );
+      }
+    }
+  });
+
   test('R6/L+M deterministic route and ports remain physically identical', () {
     List<Offset>? connect() => PneumaticPipeRouter.route(
       start: const Offset(835, 218),

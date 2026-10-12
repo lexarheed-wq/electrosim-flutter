@@ -41,103 +41,114 @@ final class PneumaticPipeRouter {
       if (!validRect(tile)) return null;
       obstacles.add(tile.inflate(6));
     }
-    final Offset out = Offset(start.dx, fromTile.bottom + clearance);
-    final Offset incoming = Offset(end.dx, toTile.bottom + clearance);
-    final double baseline = math.max(out.dy, incoming.dy) + 12;
     final double outsideLeft = obstacles.isEmpty
-        ? math.min(out.dx, incoming.dx) - 24
+        ? math.min(start.dx, end.dx) - 24
         : obstacles.map((Rect r) => r.left).reduce(math.min) - 24;
     final double outsideRight = obstacles.isEmpty
-        ? math.max(out.dx, incoming.dx) + 24
+        ? math.max(start.dx, end.dx) + 24
         : obstacles.map((Rect r) => r.right).reduce(math.max) + 24;
-    final double outsideBottom = obstacles.isEmpty
-        ? baseline + 24
-        : math.max(
-            baseline,
-            obstacles.map((Rect r) => r.bottom).reduce(math.max) + 18,
-          );
 
-    // Common case: three bends below the relevant row, with a choice of
-    // independent horizontal lanes. Fallback: escape around tiles on either
-    // side, without permitting a segment through an occupied tile.
-    final List<double> lanes = <double>[
-      baseline,
-      baseline + 12,
-      baseline + 24,
-      outsideBottom,
-      outsideBottom + 12,
-    ];
-    final List<double> startXs = <double>[
-      out.dx,
-      fromTile.left - 14,
-      fromTile.right + 14,
-      outsideLeft,
-      outsideRight,
-    ];
-    final List<double> endXs = <double>[
-      incoming.dx,
-      toTile.left - 14,
-      toTile.right + 14,
-      outsideLeft,
-      outsideRight,
-    ];
+    // Prefer the existing lower exit. If another device blocks that stem,
+    // retry above both components rather than depicting a broken connection.
+    // Every candidate is checked against all occupied component footprints.
+    for (final bool escapeAbove in <bool>[false, true]) {
+      final Offset out = Offset(
+        start.dx,
+        escapeAbove ? fromTile.top - clearance : fromTile.bottom + clearance,
+      );
+      final Offset incoming = Offset(
+        end.dx,
+        escapeAbove ? toTile.top - clearance : toTile.bottom + clearance,
+      );
+      final double baseline = escapeAbove
+          ? math.min(out.dy, incoming.dy) - 12
+          : math.max(out.dy, incoming.dy) + 12;
+      final double outsideVertical = obstacles.isEmpty
+          ? baseline + (escapeAbove ? -24 : 24)
+          : escapeAbove
+          ? math.min(
+              baseline,
+              obstacles.map((Rect r) => r.top).reduce(math.min) - 18,
+            )
+          : math.max(
+              baseline,
+              obstacles.map((Rect r) => r.bottom).reduce(math.max) + 18,
+            );
 
-    List<Offset>? selected;
-    double best = double.infinity;
-    // A short route must never win merely because it was visited before a
-    // non-crossing alternative. Optimize interference lexicographically,
-    // then distance/bends. Existing shared-port stems remain a fallback.
-    double leastInterference = double.infinity;
-    // A clean, almost-Manhattan route does not benefit from enumerating the
-    // outside-board detours. This matters when editing 400-device layouts.
-    final double lowerBound =
-        (end.dx - start.dx).abs() + (end.dy - start.dy).abs();
-    for (final double y in lanes.toSet()) {
-      for (final double sx in startXs.toSet()) {
-        for (final double ex in endXs.toSet()) {
-          final List<Offset> path = _compress(<Offset>[
-            start,
-            out,
-            Offset(sx, out.dy),
-            Offset(sx, y),
-            Offset(ex, y),
-            Offset(ex, incoming.dy),
-            incoming,
-            end,
-          ]);
-          if (!_isClear(path, obstacles, fromTile, toTile)) continue;
-          double score = 0;
-          for (int i = 1; i < path.length; i++) {
-            score += (path[i] - path[i - 1]).distance;
-          }
-          // Prefer simpler routes when two routes are equally short.
-          score += (path.length - 2) * 11;
-          double interference = 0;
-          for (final List<Offset> previous in previousRoutes) {
-            interference += _interference(path, previous);
-          }
-          if (interference > leastInterference) continue;
-          if (interference < leastInterference) {
-            leastInterference = interference;
-            best = double.infinity;
-            selected = null;
-          }
-          score += interference;
-          if (score < best) {
-            best = score;
-            selected = path;
-          }
-          if (interference == 0 &&
-              score <= lowerBound + 120 &&
-              path.length <= 5) {
-            return path;
+      final List<double> lanes = <double>[
+        baseline,
+        baseline + (escapeAbove ? -12 : 12),
+        baseline + (escapeAbove ? -24 : 24),
+        outsideVertical,
+        outsideVertical + (escapeAbove ? -12 : 12),
+      ];
+      final List<double> startXs = <double>[
+        out.dx,
+        fromTile.left - 14,
+        fromTile.right + 14,
+        outsideLeft,
+        outsideRight,
+      ];
+      final List<double> endXs = <double>[
+        incoming.dx,
+        toTile.left - 14,
+        toTile.right + 14,
+        outsideLeft,
+        outsideRight,
+      ];
+
+      List<Offset>? selected;
+      double best = double.infinity;
+      // Prioritize crossings/overlap with existing hoses over path length.
+      double leastInterference = double.infinity;
+      final double lowerBound =
+          (end.dx - start.dx).abs() + (end.dy - start.dy).abs();
+      for (final double y in lanes.toSet()) {
+        for (final double sx in startXs.toSet()) {
+          for (final double ex in endXs.toSet()) {
+            final List<Offset> path = _compress(<Offset>[
+              start,
+              out,
+              Offset(sx, out.dy),
+              Offset(sx, y),
+              Offset(ex, y),
+              Offset(ex, incoming.dy),
+              incoming,
+              end,
+            ]);
+            if (!_isClear(path, obstacles, fromTile, toTile)) continue;
+            double score = 0;
+            for (int i = 1; i < path.length; i++) {
+              score += (path[i] - path[i - 1]).distance;
+            }
+            score += (path.length - 2) * 11;
+            double interference = 0;
+            for (final List<Offset> previous in previousRoutes) {
+              interference += _interference(path, previous);
+            }
+            if (interference > leastInterference) continue;
+            if (interference < leastInterference) {
+              leastInterference = interference;
+              best = double.infinity;
+              selected = null;
+            }
+            score += interference;
+            if (score < best) {
+              best = score;
+              selected = path;
+            }
+            if (interference == 0 &&
+                score <= lowerBound + 120 &&
+                path.length <= 5) {
+              return path;
+            }
           }
         }
       }
+      if (selected != null) return selected;
     }
-    // A missing route must not be replaced with an apparently connected,
-    // but physically misleading, straight line through another device.
-    return selected;
+    // No valid geometry: do not invent a line through another component.
+    return null;
   }
 
   static List<Offset> _compress(List<Offset> points) {

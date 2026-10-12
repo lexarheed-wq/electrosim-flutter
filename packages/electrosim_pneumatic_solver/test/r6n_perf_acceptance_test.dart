@@ -106,6 +106,5 @@ void main() {
       wrongType,
       contains(contains('Raw telemetry and product PNG are identical')),
     );
-
   });
 }

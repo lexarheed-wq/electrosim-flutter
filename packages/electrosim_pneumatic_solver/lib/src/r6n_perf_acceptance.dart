@@ -76,7 +76,9 @@ final class R6PerfQualification {
         problems.add('Reused PERF-01 raw artifact: ${result.key}');
       }
       if (result.rawArtifactSha256 == result.productPngSha256) {
-        problems.add('Raw telemetry and product PNG are identical: ${result.key}');
+        problems.add(
+          'Raw telemetry and product PNG are identical: ${result.key}',
+        );
       }
       if (result.sourceSha != integratedG5Sha ||
           result.runner.trim().isEmpty ||

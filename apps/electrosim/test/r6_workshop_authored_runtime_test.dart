@@ -5,6 +5,8 @@ import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'r6n_inline_test_worker.dart';
+
 PneumaticDevice device(
   String id,
   PneumaticDeviceKind kind,
@@ -112,7 +114,10 @@ void main() {
   ) async {
     await setSize(tester);
     await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(initialProject: project())),
+      MaterialApp(home: PneumaticWorkshopPage(
+          initialProject: project(),
+          workerFactory: createInlineCanonicalTestWorker,
+        )),
     );
     await tester.tap(find.byKey(const Key('device-middle')));
     await tester.pump();
@@ -144,6 +149,7 @@ void main() {
       MaterialApp(
         home: PneumaticWorkshopPage(
           initialProject: project(unsupportedValve: true),
+          workerFactory: createInlineCanonicalTestWorker,
         ),
       ),
     );
@@ -161,7 +167,10 @@ void main() {
   ) async {
     await setSize(tester);
     await tester.pumpWidget(
-      MaterialApp(home: PneumaticWorkshopPage(initialProject: project())),
+      MaterialApp(home: PneumaticWorkshopPage(
+          initialProject: project(),
+          workerFactory: createInlineCanonicalTestWorker,
+        )),
     );
     await tester.tap(find.byKey(const Key('device-middle')));
     await tester.pumpAndSettle();

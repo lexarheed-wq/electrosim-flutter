@@ -76,6 +76,29 @@ GitHub liés à la PR de restauration ; les preuves produites enregistrent leur
 
 ## État des autres travaux et limites
 
+### Candidat QR fourni par l'utilisateur
+
+L'archive utilisateur SHA256
+`288d7586623a20ee16720533d7e670779aae992945026cdb4787339ad1c12044`
+est l'artefact `11747234988`, run `38249490948`, source
+`7f8ad9c976f98ba73add32f9903269653d569dd7`.
+Son ZIP natif `ElectroSim_PR98_Requalified_Mac_Intel.zip` porte l'empreinte
+`763a2839f64f274c9ac81f31cdf72a439f22fe0c7a348becc4267e077be59579`.
+Le validateur d'archive reproduit `F17_WEB_BUNDLE_MISSING: index.html` :
+ce candidat PR98 compilait seulement l'application Mac, sans client élève,
+contrairement aux candidats G5 Industrial et F17.
+
+Le workflow PR98 compile maintenant le véritable client élève depuis le même
+SHA, avec moteur et polices locales, l'embarque dans les ressources de l'app,
+valide l'app et le ZIP final et refait/vérifie la signature après ajout des
+ressources. Une CI native verte seule n'est plus présentée comme preuve du QR.
+
+Le parcours Chromium a également exposé un défaut du script de qualification :
+après un glissement, il supprimait les styles `pointer-events` des couches
+d'accessibilité, créant un conteneur qui interceptait Rotation. Il conserve
+et restaure désormais les styles d'origine ; les deux parcours complets passent
+localement après correction, sans cliquer de force ni supprimer d'assertion.
+
 Les passifs, diodes/LED, sources/PV, instruments et lots électriques récents sont
 maintenant inclus via les intégrations de G5, dont #140. L'inventaire actuel
 `docs/g5-proofs/catalogue-audit-20261012/catalogue.json` couvre 82 entrées :

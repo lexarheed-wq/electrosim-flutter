@@ -85,7 +85,11 @@ with sync_playwright() as p:
             page.wait_for_timeout(500)
             # Let pointer events reach the rendered canvas while accessibility
             # remains enabled for the surrounding form controls.
-            page.locator('flt-semantics-host').evaluate("e => [e, ...e.querySelectorAll('*')].forEach(n => n.style.pointerEvents = 'none')")
+            page.locator('flt-semantics-host').evaluate("""host => {
+                host.__electrosimPointerStyles = [host, ...host.querySelectorAll('*')].map(node =>
+                    [node, node.style.getPropertyValue('pointer-events'), node.style.getPropertyPriority('pointer-events')]);
+                for (const [node] of host.__electrosimPointerStyles) node.style.setProperty('pointer-events', 'none');
+            }""")
             # Connect the physical terminal anchors on the production canvas.
             for start, end in [((672, 727), (506, 769)), ((724, 727), (551, 769))]:
                 page.mouse.click(*start)
@@ -97,7 +101,16 @@ with sync_playwright() as p:
             page.mouse.move(480, 460, steps=10)
             page.mouse.up()
             page.wait_for_timeout(500)
-            page.locator('flt-semantics-host').evaluate("e => [e, ...e.querySelectorAll('*')].forEach(n => n.style.pointerEvents = '')")
+            # Restore Flutter's actual style values. Removing every inline
+            # pointer-events value makes noninteractive semantics containers
+            # intercept the toolbar on some browser/rendering schedules.
+            page.locator('flt-semantics-host').evaluate("""host => {
+                for (const [node, value, priority] of host.__electrosimPointerStyles) {
+                    if (value) node.style.setProperty('pointer-events', value, priority);
+                    else node.style.removeProperty('pointer-events');
+                }
+                delete host.__electrosimPointerStyles;
+            }""")
             page.get_by_role('button', name='Rotation 90°').click()
             page.wait_for_timeout(500)
             print('Wired canvas:', page.locator('body').inner_text(), flush=True)

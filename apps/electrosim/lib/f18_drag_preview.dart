@@ -99,6 +99,8 @@ final class F18DragSession {
       wireRoutes: routes,
       elementQuarterTurns: moved.elementQuarterTurns,
       defaultElementSize: moved.defaultElementSize,
+      cabinetLayout: moved.cabinetLayout,
+      terminalAnchorOffsets: moved.terminalAnchorOffsets,
     );
   }
 

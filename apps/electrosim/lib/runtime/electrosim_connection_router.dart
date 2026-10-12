@@ -168,6 +168,8 @@ CircuitVisualLayout provisionalConnectionLayout({
     elementSizes: layout.elementSizes,
     elementQuarterTurns: layout.elementQuarterTurns,
     defaultElementSize: layout.defaultElementSize,
+    cabinetLayout: layout.cabinetLayout,
+    terminalAnchorOffsets: layout.terminalAnchorOffsets,
     wireRoutes: {
       ...layout.wireRoutes,
       connection.id.value: start.dx == end.dx || start.dy == end.dy

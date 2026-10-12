@@ -6,6 +6,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:electrosim/main.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
+import 'package:electrosim/f18_native_appliance_assets.dart';
+import 'package:electrosim/f18_crusher_3d_assets.dart';
+import 'package:electrosim/f18_voltmeter_3d_assets.dart';
+import 'package:electrosim/f18_ammeter_3d_assets.dart';
+import 'package:electrosim/f18_frequency_3d_assets.dart';
+import 'package:electrosim/f18_phase_sequence_3d_assets.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +30,21 @@ void main() {
     await output.create(recursive: true);
     expect(await Disjoncteur3D.prechargerTextures(), isTrue);
     expect(await F18PhysicalPlateAssets.preload(), isTrue);
+    // A capture cannot settle on transient fallbacks while current catalogue
+    // textures are still loading asynchronously in the workspace.
+    expect(await F18Crusher3dAssets.preload(), isTrue);
+    expect(await F18Voltmeter3dAssets.preload(), isTrue);
+    expect(await F18Ammeter3dAssets.preload(), isTrue);
+    expect(await F18Frequency3dAssets.preload(), isTrue);
+    expect(await F18PhaseSequence3dAssets.preload(), isTrue);
+    await F18NativeApplianceAssets.preload();
+    for (final spec in NativeApplianceGeometry.catalogue.values) {
+      expect(
+        F18NativeApplianceAssets.images(spec.key),
+        isNotNull,
+        reason: 'Capture requires current native textures for ${spec.key}',
+      );
+    }
     for (final type in [
       'motor_3p_6t',
       'contactor_3p',

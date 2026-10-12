@@ -1,50 +1,50 @@
 {
   "schema": "g5.pr98.mac-intel-approved-pixel-v1",
-  "source_sha": "2e797e6b84748578a1774605e3d616495932646d",
+  "source_sha": "0547ff31350c678e7b41a062a02bfd6fb553a566",
   "flutter": "3.38.10",
   "runner": "macos-15-intel",
   "font": "DejaVuSans.ttf 2.37",
-  "scope": "15 actual Mac Intel screenshots manually reviewed against the current Linux masters, including an independent reviewer. Changes are host glyph/Ahem/icon rasterization; no new geometry, port, conductor or layout regression observed. F9 fixtures use Ahem and do not certify production typography. Pixel-exact SHA256 validation remains required; no tolerance or functional failure waived.",
+  "scope": "15 actual Mac Intel screenshots reviewed against current Linux masters, including independent visual review. Ten F9 backgrounds intentionally restore satin metal; five other Mac screenshots and their Linux masters are byte-identical to previous approved references. No component, terminal, conductor or layout regression observed. F9 uses Ahem fixtures and does not certify production typography. Pixel-exact SHA256 checks remain mandatory; no tolerance or functional failure waived.",
   "approved": {
     "f9_compact_base": {
-      "mac_png_sha256": "e920f98ceedab7d1427fff37008ca715069d9419d59cf6e1d03ce4444f42bd6d",
-      "linux_png_sha256": "3aca4a16f2dba633387afb7907bbcda68e9da6d5acf9287051182a58d7b17c44"
+      "mac_png_sha256": "00aa5052751c697b380febe192e7b99932bca0d9e08c9bc5b5d1a6d1f125c439",
+      "linux_png_sha256": "fb79a21436e323a5bad6857c8be8859606b45251a8da56841b4aed95d1a248d5"
     },
     "f9_compact_palette": {
-      "mac_png_sha256": "bdbf439475a08db1ca126a308ce7fc7bf042358d0ffe5ee284c45fb3b6468390",
-      "linux_png_sha256": "4ff60561091c327daf5923626613067791d407f11850b95d1ccf5d224a463558"
+      "mac_png_sha256": "37dd54835662fbe6653a21eada2f065f0c47d5c943a975193ecb06c538f6bc53",
+      "linux_png_sha256": "724d67f6e2ac954fa75cc473814cfe67f657bd23e5fb7a093d003ce7bbfcbd9d"
     },
     "f9_compact_properties": {
-      "mac_png_sha256": "5eda6ae81d0404aa926668615ee7b07bc1ee94edb35eca50d6dcfeba03143969",
-      "linux_png_sha256": "2e4b092983e0299d03298d4ded307ed87299627e269ddfb35ff550dad1682a1b"
+      "mac_png_sha256": "88921f3ba311f4fc6b243d978ba1d88df5a697f4c1b58aa32d75466f4aea6b44",
+      "linux_png_sha256": "0d4fe07ead6185a9bdaf2472d4190511cee11ac251a84743582367048a7f94f9"
     },
     "f9_compact_student_diagnostic": {
-      "mac_png_sha256": "be2e00772460fe93afefa9f73dc480da33559d3cb4965522f4047d74c231caa7",
-      "linux_png_sha256": "91a0442fbb9ab21f26dff21504bcfda8957ad49227fe5f5bf63c51bc341722bd"
+      "mac_png_sha256": "d0f530c36946dc26a0d0e4b844a7b90b57973baf4479f644ae1dc036cc0b2f5a",
+      "linux_png_sha256": "567c0f9504d59bcad6d7c1337bf088884bb141c1733a896ccc47ec90c4f9f3e1"
     },
     "f9_expanded_base": {
-      "mac_png_sha256": "585c61003585e4ba367ca75a6e11474d15cd1602c7b6d8b2747ed43c37221255",
-      "linux_png_sha256": "0fa48ed73b1352074cfb2a416b1f9e799c56d6027461a0b93591c1306f485e5a"
+      "mac_png_sha256": "fe21d9d3334f16391b5299a1292999a64c743f0ea8b3e59c9010a2859a98e630",
+      "linux_png_sha256": "525618af94b8a762debf753c69944fee088b98ebe513e39f9181d218c60201d0"
     },
     "f9_expanded_palette": {
-      "mac_png_sha256": "6f58d4690c11e1a08c131cf39fcd2b43e0df47e308cedcdffbe6fbbe88a26179",
-      "linux_png_sha256": "9aa5e28a72e93cb03a2dd6a51752e42c1adee1310ca5984f1a8fa8d21b9d43c6"
+      "mac_png_sha256": "4e2cd5ae86d094f2d9d2ab0d4a0d80470201a7a6a1921ded838f043733c6fc04",
+      "linux_png_sha256": "b6c77da3027c41a4df1f66ed3761ae94406847cde3044e29a6840c320df26597"
     },
     "f9_expanded_properties": {
-      "mac_png_sha256": "5fd8efa06f3f8ee65edc117cd75d7ee5e003a3c8dec1286bf25bb16386953ac7",
-      "linux_png_sha256": "12e824ce9088327838314372cbecb6ae024446026d2a3373287f428ce7a54981"
+      "mac_png_sha256": "cbc8e4abf96cab4cbd877c3e26bf423d1670ad3bde6ce58e40488f4939042112",
+      "linux_png_sha256": "188a9b027337bd1383d1df259fd9cee7743aa736fd63fa8e90f1131c3029448f"
     },
     "f9_medium_base": {
-      "mac_png_sha256": "e4f83319a8acde4e871c222b2a06ed612a8396bfac5bb62c870063dc7b173bb6",
-      "linux_png_sha256": "09156c762cf6574400359aea3ec946a19fda8c58bb62d71408e79e80eb8606f3"
+      "mac_png_sha256": "3dfab7a9b5196dd7dfbed11ca275287942d542e295e6aedc50ab4386881ecae3",
+      "linux_png_sha256": "a0393b3c17037ffe4ca07ba200b3ccd11bcbb203498ccf28709ef5181d602aef"
     },
     "f9_medium_palette": {
-      "mac_png_sha256": "f6b92aa6902ad7a632e15b9c07d8872f7672e5a955b9d714cb29fa70343216f9",
-      "linux_png_sha256": "32393ac946bea9623ee54fd8de8ae5a5f3c7c5210df925eb8a4c7a24bcd83730"
+      "mac_png_sha256": "71057556b660949ce8517c2b492f53ab83e7a81c2abee5fdb029f135fc7facc2",
+      "linux_png_sha256": "90eca1d4fa86c0f49ddbac07ac06cd3dc2dbe3baeb374ca59d8ee3efa58412cf"
     },
     "f9_medium_properties": {
-      "mac_png_sha256": "959900500c687f0316128d9c87fe3841de8372f27b8134cdea4264b541fdda61",
-      "linux_png_sha256": "297740af9562b4af47eaba75fc3d7084beed1614bd1ed375361d4df6fd338844"
+      "mac_png_sha256": "fc24350a1c286fa7454f38dd785cb6937e6e6289d148c31a97f1c76c233937a6",
+      "linux_png_sha256": "b996709ae92949d28b80238d0f0ec11c66c970843b6725eb92d7a09ef25ac556"
     },
     "g12rq_actual_widgets_palette_board": {
       "mac_png_sha256": "0b9d265931247d1cfbf21e7408767130b4b169150803415f1570f9a7671aba69",
@@ -66,5 +66,11 @@
       "mac_png_sha256": "ec7dbf02a42dd8bbd4cf14501db1481b0eafb472804f6f1d27139c824298ddb7",
       "linux_png_sha256": "e477340ceacdf77b5e95f165f13396d7df583a0ce75ca9b08d5a04eca4769149"
     }
+  },
+  "previous_source_sha": "2e797e6b84748578a1774605e3d616495932646d",
+  "review_artifact": {
+    "run_id": 38262040133,
+    "artifact_id": 11752713618,
+    "sha256": "38835a03376354c00fdbd0e8f5d51d3c416f659e30a0332176d9dd3198d15a19"
   }
 }

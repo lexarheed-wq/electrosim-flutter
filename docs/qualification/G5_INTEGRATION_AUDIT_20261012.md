@@ -102,3 +102,10 @@ sans métal ne peut plus passer simplement parce que les anciens commits sont
 dans l'historique. Après chaque réconciliation, vérifier le contenu et les tests
 du SHA final, puis la provenance des captures et du paquet distribué au SHA
 fusionné ; ne pas assimiler CI historique verte et contenu actuel.
+
+Les dix références Mac F9 ont également été inspectées sur le rendu CI exact
+`0547ff31350c678e7b41a062a02bfd6fb553a566`, dont l'arbre correspond au commit
+de restauration `743cbb09`. Les cinq autres captures Mac et leurs masters Linux
+restent byte-identiques aux références précédentes. Le validateur existant
+accepte les quinze empreintes après mise à jour de la liste approuvée ; aucune
+tolérance supplémentaire ni échec fonctionnel n'est masqué.

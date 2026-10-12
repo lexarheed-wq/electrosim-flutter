@@ -1,0 +1,133 @@
+import 'dart:async';
+
+import 'package:electrosim/pneumatics/pneumatic_workshop_page.dart';
+import 'package:electrosim_pneumatic_solver/electrosim_pneumatic_solver.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'r6_workshop_authored_runtime_test.dart' as fixture;
+
+/// A controllable transport witness. It never solves until the test releases
+/// the worker response, proving the Flutter UI does not calculate the result
+/// synchronously or substitute an untested direct-solver fallback.
+final class WitnessWorker implements R6Worker {
+  final List<R6NetworkJob> requests = <R6NetworkJob>[];
+  final List<Completer<R6NetworkOutcome>> replies =
+      <Completer<R6NetworkOutcome>>[];
+  bool closed = false;
+
+  @override
+  Future<R6NetworkOutcome> solve(R6NetworkJob job) {
+    if (closed) throw StateError('witness worker already closed');
+    requests.add(job);
+    final Completer<R6NetworkOutcome> response =
+        Completer<R6NetworkOutcome>();
+    replies.add(response);
+    return response.future;
+  }
+
+  @override
+  Future<void> close() async {
+    closed = true;
+  }
+}
+
+Future<void> _startSimulation(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('air-advance')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextFormField).last, '0.8');
+  await tester.tap(find.byKey(const Key('air-cd-apply')));
+  await tester.pump();
+  await tester.pump();
+}
+
+void main() {
+  testWidgets('R6/N Flutter UI uses worker answer, not synchronous solve', (
+    WidgetTester tester,
+  ) async {
+    await fixture.setSize(tester);
+    final WitnessWorker transport = WitnessWorker();
+    int factoryCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PneumaticWorkshopPage(
+          initialProject: fixture.project(),
+          workerFactory: () async {
+            factoryCalls++;
+            return transport;
+          },
+        ),
+      ),
+    );
+    await _startSimulation(tester);
+    expect(factoryCalls, 1);
+    expect(transport.requests, hasLength(1));
+    expect(transport.requests.single.durationS, .02);
+    expect(find.byKey(const Key('air-worker-running')), findsOneWidget);
+    expect(find.textContaining('Simulation réelle :'), findsNothing);
+
+    // Only the response from the canonical job advances the accepted state.
+    transport.replies.single.complete(transport.requests.single.execute());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('air-worker-running')), findsNothing);
+    expect(
+      find.textContaining('Simulation réelle : t = 0.020 s'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('R6/N : résultat accepté depuis worker isolé'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('air-measured-pressure')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('air-advance')));
+    await tester.pump();
+    await tester.pump();
+    expect(factoryCalls, 1);
+    expect(transport.requests, hasLength(2));
+    expect(transport.requests.last.before.timeS, closeTo(.02, 1e-12));
+    transport.replies.last.complete(transport.requests.last.execute());
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Simulation réelle : t = 0.040 s'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+    expect(transport.closed, isTrue);
+  });
+
+  testWidgets('R6/N edit discards in-flight result and releases transport', (
+    WidgetTester tester,
+  ) async {
+    await fixture.setSize(tester);
+    final WitnessWorker transport = WitnessWorker();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PneumaticWorkshopPage(
+          initialProject: fixture.project(),
+          workerFactory: () async => transport,
+        ),
+      ),
+    );
+    await _startSimulation(tester);
+    expect(transport.requests, hasLength(1));
+    expect(find.textContaining('Simulation réelle :'), findsNothing);
+
+    // Modify the physical graph while the worker is still busy.
+    await tester.tap(find.byKey(const Key('add-idealSource')));
+    await tester.pump();
+    await tester.pump();
+    expect(transport.closed, isTrue);
+
+    // An obsolete completion must never become the visible accepted state.
+    transport.replies.single.complete(transport.requests.single.execute());
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Simulation réelle :'), findsNothing);
+    expect(
+      find.text('R6/N : résultat accepté depuis worker isolé'),
+      findsNothing,
+    );
+  });
+}

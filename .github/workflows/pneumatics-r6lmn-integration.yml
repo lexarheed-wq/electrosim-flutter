@@ -1,0 +1,54 @@
+name: PNEU R6LMN Cross-Lot Flutter Integration
+on:
+  push:
+    branches:
+      - feat/pneumatics-r6lmn-staging-20261011
+  pull_request:
+    branches:
+      - feat/g5-industrial-geometry-20261009
+permissions:
+  contents: read
+jobs:
+  coupled-physical-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+      - name: Enforce original R6/L piston and R6/M editor on the same accepted state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p build/pneumatics-r6lmn
+          printf 'sourceSha=%s\n' "$GITHUB_SHA" > build/pneumatics-r6lmn/PROVENANCE.txt
+          flutter --version | head -n 1 | tee -a build/pneumatics-r6lmn/PROVENANCE.txt
+          cd apps/electrosim
+          flutter pub get
+          dart format --output=none --set-exit-if-changed \
+            lib/pneumatics/pneumatic_workshop_page.dart \
+            test/r6lmn_integrated_workshop_test.dart \
+            test/r6l_live_png_evidence_test.dart
+          flutter analyze --no-pub \
+            lib/pneumatics/pneumatic_workshop_page.dart \
+            test/r6lmn_integrated_workshop_test.dart \
+            test/r6l_live_png_evidence_test.dart
+          flutter test --no-pub --reporter expanded \
+            test/r6lmn_integrated_workshop_test.dart \
+            test/r6_moving_piston_workshop_test.dart \
+            test/r6m_workshop_session_widget_test.dart \
+            test/r6_workshop_authored_runtime_test.dart \
+            | tee ../../build/pneumatics-r6lmn/FLUTTER.log
+          grep -F 'All tests passed!' ../../build/pneumatics-r6lmn/FLUTTER.log
+          git diff --check
+          git diff --exit-code -- . ':(exclude)**/pubspec.lock'
+      - name: Preserve exact-source integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pneumatics-r6lmn-crosslot-${{ github.sha }}
+          path: build/pneumatics-r6lmn/
+          retention-days: 21

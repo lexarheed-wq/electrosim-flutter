@@ -57,6 +57,10 @@ jobs:
             test/r6n_workshop_worker_integration_test.dart \
             | tee ../../build/pneumatics-r6lmn/FLUTTER.log
           grep -F 'All tests passed!' ../../build/pneumatics-r6lmn/FLUTTER.log
+          test -s build/pneumatics-r6l-evidence/04_platine_reseau_worker_natif.png
+          cp build/pneumatics-r6l-evidence/04_platine_reseau_worker_natif.png ../../build/pneumatics-r6lmn/
+          sha256sum ../../build/pneumatics-r6lmn/04_platine_reseau_worker_natif.png \
+            | tee ../../build/pneumatics-r6lmn/WORKER_UI_PNG_SHA256.txt
           git diff --check
           git diff --exit-code -- . ':(exclude)**/pubspec.lock'
       - name: Preserve exact-source integration evidence

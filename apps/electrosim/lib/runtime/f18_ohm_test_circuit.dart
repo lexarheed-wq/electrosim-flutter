@@ -4,17 +4,26 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 abstract final class F18OhmTestCircuit {
   static const double referenceOhm = 1000;
   static const double testVoltageV = 1;
-  static const supported = <String>{'resistor', 'lamp', 'switch', 'switch_spst'};
+  static const supported = <String>{
+    'resistor',
+    'lamp',
+    'switch',
+    'switch_spst',
+  };
 
   /// A disconnected circuit is a real open-circuit OL, not an invented
   /// numerical resistance. Only known passive conducting branches count.
   static bool hasConductivePath(
-      CircuitState circuit, TerminalId a, TerminalId b) {
+    CircuitState circuit,
+    TerminalId a,
+    TerminalId b,
+  ) {
     final neighbours = <TerminalId, Set<TerminalId>>{};
     void connect(TerminalId x, TerminalId y) {
       neighbours.putIfAbsent(x, () => <TerminalId>{}).add(y);
       neighbours.putIfAbsent(y, () => <TerminalId>{}).add(x);
     }
+
     for (final wire in circuit.connections) {
       if (wire.enabled) {
         connect(wire.fromTerminalId, wire.toTerminalId);
@@ -49,7 +58,9 @@ abstract final class F18OhmTestCircuit {
 
   static CircuitState? build(CircuitState circuit, TerminalId a, TerminalId b) {
     if (circuit.sources.isNotEmpty ||
-        circuit.components.any((e) => !supported.contains(e.modelType.toLowerCase()))) {
+        circuit.components.any(
+          (e) => !supported.contains(e.modelType.toLowerCase()),
+        )) {
       return null;
     }
     final terminals = <TerminalId>{
@@ -80,7 +91,10 @@ abstract final class F18OhmTestCircuit {
         ComponentInstance(
           id: ComponentId('$m-ref'),
           modelType: 'resistor',
-          terminals: [Terminal(id: rp, name: 'A'), Terminal(id: rn, name: 'B')],
+          terminals: [
+            Terminal(id: rp, name: 'A'),
+            Terminal(id: rn, name: 'B'),
+          ],
           parameters: const {'resistanceOhm': referenceOhm},
         ),
       ],
@@ -97,12 +111,21 @@ abstract final class F18OhmTestCircuit {
       ],
       connections: [
         ...circuit.connections,
-        Connection(id: ConnectionId('$m-wire-1'),
-          fromTerminalId: sp, toTerminalId: rp),
-        Connection(id: ConnectionId('$m-wire-2'),
-          fromTerminalId: rn, toTerminalId: a),
-        Connection(id: ConnectionId('$m-wire-3'),
-          fromTerminalId: b, toTerminalId: sn),
+        Connection(
+          id: ConnectionId('$m-wire-1'),
+          fromTerminalId: sp,
+          toTerminalId: rp,
+        ),
+        Connection(
+          id: ConnectionId('$m-wire-2'),
+          fromTerminalId: rn,
+          toTerminalId: a,
+        ),
+        Connection(
+          id: ConnectionId('$m-wire-3'),
+          fromTerminalId: b,
+          toTerminalId: sn,
+        ),
       ],
       settings: circuit.settings,
       metadata: circuit.metadata,

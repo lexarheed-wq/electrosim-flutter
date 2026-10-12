@@ -5,11 +5,13 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 /// Component 02: independent fused ammeter render and safe 2D fallback.
 abstract final class F18Ammeter3dAssets {
   static const frontPath = 'assets/g5_industrial/instrument-ammeter-front.png';
-  static const palettePath = 'assets/g5_industrial/instrument-ammeter-palette.png';
+  static const palettePath =
+      'assets/g5_industrial/instrument-ammeter-palette.png';
   static ui.Image? front;
   static ui.Image? palette;
   static Future<bool>? _pending;
   static bool get ready => front != null && palette != null;
+
   /// Dedicated LCD aperture of the original ampere-specific Cycles body.
   /// Geometry recipe: glass x31..81/y21..45; text inset x34..78/y24..42.
   /// This is NOT copied from the voltmeter face.
@@ -28,8 +30,10 @@ abstract final class F18Ammeter3dAssets {
     try {
       a = await _decode(frontPath);
       b = await _decode(palettePath);
-      if (a.width != 1120 || a.height != 1520 ||
-          b.width != 1120 || b.height != 1520) {
+      if (a.width != 1120 ||
+          a.height != 1520 ||
+          b.width != 1120 ||
+          b.height != 1520) {
         a.dispose();
         b.dispose();
         return false;
@@ -43,9 +47,12 @@ abstract final class F18Ammeter3dAssets {
       return false;
     }
   }
+
   static Future<ui.Image> _decode(String p) async {
     final bytes = await rootBundle.load(p);
-    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+    final codec = await ui.instantiateImageCodec(
+      bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+    );
     try {
       return (await codec.getNextFrame()).image;
     } finally {

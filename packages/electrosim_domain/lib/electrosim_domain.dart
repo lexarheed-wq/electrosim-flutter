@@ -1,18 +1,17 @@
 library electrosim_domain;
 
+export 'src/appliance_power_connection.dart';
 export 'src/circuit_state.dart';
 export 'src/component.dart';
 export 'src/component_model_contract.dart';
 export 'src/component_physics_contract.dart';
 export 'src/connection.dart';
 export 'src/domain_error.dart';
-export 'src/electrical_types.dart';
 export 'src/electrical_ratings.dart';
+export 'src/electrical_types.dart';
 export 'src/ids.dart';
+export 'src/instrument.dart';
 export 'src/motor_three_phase_coupling.dart';
+export 'src/series_meter_wiring.dart';
 export 'src/source.dart';
 export 'src/terminal.dart';
-export 'src/instrument.dart';
-
-export 'src/series_meter_wiring.dart';
-export 'src/appliance_power_connection.dart';

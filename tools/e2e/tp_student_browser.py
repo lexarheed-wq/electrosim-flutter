@@ -1,11 +1,21 @@
 """Drive the production student UI; teacher actions run in the Flutter test."""
-import json, sys, os, time, shutil
-from playwright.sync_api import sync_playwright
+import faulthandler
+import json
+import os
+import shutil
+import sys
+import time
 url, output = sys.argv[1:3]
 wiring = len(sys.argv) > 3 and sys.argv[3] == 'wiring'
 os.makedirs(output, exist_ok=True)
 sys.stdout = open(output + '/browser.log', 'w', buffering=1)
 sys.stderr = sys.stdout
+# Startup must fail or expose its blocked Python stack before the teacher's
+# 45-second join deadline; no student action is retried.
+faulthandler.dump_traceback_later(25, file=sys.stderr)
+print('Importing Playwright driver', flush=True)
+from playwright.sync_api import sync_playwright
+print('Starting Playwright driver', flush=True)
 
 def signal(phase):
     with open(output + '/' + phase + '.json', 'w') as f:
@@ -43,10 +53,22 @@ def diagnostic(page, answer):
     page.get_by_role('button', name='Enregistrer dans le TP').click()
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium'), headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+    executable = os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium')
+    print('Launching Chromium', executable or 'Playwright-managed', flush=True)
+    browser = p.chromium.launch(
+        timeout=20000,
+        executable_path=executable,
+        headless=True,
+        args=['--no-sandbox', '--disable-dev-shm-usage'],
+    )
+    print('Chromium launched; creating browser context', flush=True)
     context = browser.new_context(viewport={'width': 1440, 'height': 1000})
+    print('Browser context created; blocking external HTTPS', flush=True)
     context.route('https://**/*', lambda route: route.abort())
+    print('Creating student page', flush=True)
     page = context.new_page()
+    print('Student page created', flush=True)
+    faulthandler.cancel_dump_traceback_later()
     errors = []
     page.on('pageerror', lambda e: (errors.append(str(e)), print('PAGE ERROR', str(e), flush=True)))
     page.on('request', lambda r: print('EXTERNAL REQUEST', r.url, flush=True) if r.url.startswith('https://') else None)

@@ -120,3 +120,9 @@ L'affirmation « tous les équipements de G5 sont en 3D » serait donc fausse si
 | Bornier CC +/−/PE | terminal-block-dc-5 | Cycles mesh | 10 | dc |
 | Bornier L1/L2/L3/N/PE | terminal-block-5 | Cycles mesh | 10 | ac3 |
 | Relais thermique 3P | thermal-overload-3p | Cycles mesh | 6 | ac3 |
+
+## Consolidation des contrôles GitHub
+
+41 tests ciblés de raccordement, terre, défaut d’isolement et coupure série ajoutés au package domaine : 82 tests réussis, couverture 1085/1183 lignes (91,72 %, seuil 90 %). Fixtures DC corrigées à quatre ports et mode DC. Format Dart vérifié ; analyse du domaine sans diagnostic. Les journaux de preuve sont normalisés uniquement pour supprimer les espaces terminaux et retours de progression console incompatibles avec `git diff --check` ; les résultats sont conservés.
+
+Revue des 15 captures Mac et manifeste exact mis à jour après inspection indépendante : [preuves Mac](mac-review/README.md). Les contrôles GitHub doivent encore être rejoués sur la nouvelle tête avant fusion.

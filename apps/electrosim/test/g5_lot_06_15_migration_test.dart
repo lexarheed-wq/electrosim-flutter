@@ -78,9 +78,10 @@ void main() {
       },
     );
   }
-  for (final spec in NativeApplianceGeometry.catalogue.values.take(10).where(
-    (s) => s.threePhase,
-  )) {
+  for (final spec
+      in NativeApplianceGeometry.catalogue.values
+          .take(10)
+          .where((s) => s.threePhase)) {
     test('${spec.key} phase fanouts remain orthogonal in all rotations', () {
       final circuit = lotFixture(spec);
       for (var q = 0; q < 4; q++) {

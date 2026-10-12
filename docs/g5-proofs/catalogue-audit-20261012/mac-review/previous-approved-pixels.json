@@ -1,0 +1,70 @@
+{
+  "schema": "g5.pr98.mac-intel-approved-pixel-v1",
+  "source_sha": "2de5d1a0cd5030b550d7eaf1836fb2397a4a2007",
+  "flutter": "3.38.10",
+  "runner": "macos-15-intel",
+  "font": "DejaVuSans.ttf 2.37",
+  "scope": "Reviewed Mac screenshots compared manually to existing unmodified Linux goldens; typography and anti-aliasing differences, no component geometry or terminal displacement identified. Each Mac PNG must reproduce this exact SHA256. Does not replace goldens or excuse any functional failure.",
+  "approved": {
+    "f9_compact_base": {
+      "mac_png_sha256": "bfe33013d5475c4282a3b8586a2d49974c6e26fe29068121b4946ab16d51e081",
+      "linux_png_sha256": "657239717b9fc21ca649d36f801f58b21c611f53a7bdaba2b6c77e8bff9be9b9"
+    },
+    "f9_compact_palette": {
+      "mac_png_sha256": "b2bf3adcc0591486d7a2fd4a50b352e387778ea7239b408a1558aefc29d9afbb",
+      "linux_png_sha256": "f4035fab6484c5eb3bbc445cea411d5b0a1274812c91139b93e47911df9aa8cb"
+    },
+    "f9_compact_properties": {
+      "mac_png_sha256": "f90494460d8092418f155c422747be7719a682b52ea7214b76c19fe51bd75df8",
+      "linux_png_sha256": "f2de1a31fc66d99a27fbd502a3d559925637da8fcaf9dfac9a0634d48e18dc48"
+    },
+    "f9_compact_student_diagnostic": {
+      "mac_png_sha256": "fb20a4e91be4c2899b0320a09d19de9001c028eba59a9f4a91b928ec3eaf09d3",
+      "linux_png_sha256": "626e7649baf908f394fadc8bccc2b3e95b984f0d3e3f069a55e6711e646a6f03"
+    },
+    "f9_expanded_base": {
+      "mac_png_sha256": "77b61d84e3c1d66c466fde86102ca470c596bcbdeaabf6b2fbf5555a1219ae08",
+      "linux_png_sha256": "786e85f42f46a6b37ecbac9ceb272dc5d5305160b962990e887c58803695db80"
+    },
+    "f9_expanded_palette": {
+      "mac_png_sha256": "3219d7a318a1dc538e23ddb454e31e38bcc272633e02068cf2b639dbd70ad44f",
+      "linux_png_sha256": "7372fef4e32c1ce4bffb76118120f04ff22263f9efe42cbb4c0428d07c9e40f8"
+    },
+    "f9_expanded_properties": {
+      "mac_png_sha256": "90a21a8fb242720ec723ed61b2d9c9aa18da748daabcf490306e8cea5f0f5b29",
+      "linux_png_sha256": "8e6a5018e7fe8ca470949f45d8473eb7402832b0526c7d19194f8bb1e5e919e4"
+    },
+    "f9_medium_base": {
+      "mac_png_sha256": "babb954e4bbd89ff9bda0573d2ec6fb93e4a58a4278ac08c0aed0a83e9b52b54",
+      "linux_png_sha256": "c3ddb969ace61beb71207d82d52712fcb97cf0e22aef4ced013716a19fca02e7"
+    },
+    "f9_medium_palette": {
+      "mac_png_sha256": "1b4f32f10b5dc21a43842dd2d728456734ad68946d313a985f2780bf8bae4119",
+      "linux_png_sha256": "6328dbe28b2bb4a9db3ddc66366f0698bbdf16c5012bb001bca1339bf1016b2f"
+    },
+    "f9_medium_properties": {
+      "mac_png_sha256": "3d59c8229c2c73257e0dde8f50538b44da8481bdbbecf3a1a234fbe21ec64dec",
+      "linux_png_sha256": "3b21eeeed12a29721f3408d1f01219d2b875a46118a279c2054e629b559d8c4c"
+    },
+    "g12rq_actual_widgets_palette_board": {
+      "mac_png_sha256": "0b9d265931247d1cfbf21e7408767130b4b169150803415f1570f9a7671aba69",
+      "linux_png_sha256": "c7099e93a91f2a207a92407072a9cc3e8cba030d48098cba8b5222e36785b278"
+    },
+    "g12rq_premium_rcd2p_palette_board": {
+      "mac_png_sha256": "910a918a76cec9b7b2844e2129009f9cbb5c2992260467bbc9f2a2b2e7794232",
+      "linux_png_sha256": "7a8ecf441b6a6c71bd803af0000bd962b94837bbecbba17114c3fb8d1fdb150b"
+    },
+    "g12rq_real_industrial_set0": {
+      "mac_png_sha256": "aecbf820b8f21372e2ce6cc0bbeaef3901a68436dc3543d37f45de10a1bb2c26",
+      "linux_png_sha256": "afc141fd3273572751889dfea5e0fd412a8e9f87da11a437f9e85f7aad17fc50"
+    },
+    "g12rq_real_industrial_set1": {
+      "mac_png_sha256": "0334c128ab5e7692d77a2b68f59ae361b36dfca49e2455a796bca59e671dc17d",
+      "linux_png_sha256": "d98da71587c2aa1f84039ad2cda5761890f45c86e62b25bc2df2b1bbd126adb1"
+    },
+    "g5_industrial_off_on_trip": {
+      "mac_png_sha256": "ec7dbf02a42dd8bbd4cf14501db1481b0eafb472804f6f1d27139c824298ddb7",
+      "linux_png_sha256": "e477340ceacdf77b5e95f165f13396d7df583a0ce75ca9b08d5a04eca4769149"
+    }
+  }
+}

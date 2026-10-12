@@ -26,8 +26,12 @@ abstract final class F18AmmeterControls {
         : '${amperes.toStringAsFixed(amperes == 10 ? 0 : 1)} A';
   }
 
-  static String display(InstrumentInstance i, String text,
-      double? measured, bool valid) {
+  static String display(
+    InstrumentInstance i,
+    String text,
+    double? measured,
+    bool valid,
+  ) {
     if (i.fuseBlown) return 'FUSE';
     if (!i.poweredOn) return 'OFF';
     if (held(i)) return (i.settings[heldTextKey] as String?) ?? 'ERR';
@@ -57,9 +61,13 @@ abstract final class F18AmmeterControls {
     return null;
   }
 
-  static InstrumentInstance apply(InstrumentInstance meter,
-      F18VoltmeterAction action, {String? text, double? value,
-      bool valid = false}) {
+  static InstrumentInstance apply(
+    InstrumentInstance meter,
+    F18VoltmeterAction action, {
+    String? text,
+    double? value,
+    bool valid = false,
+  }) {
     if (meter.kind != InstrumentKind.ammeter) return meter;
     final state = <String, Object?>{...meter.settings};
     var mode = meter.mode;
@@ -82,7 +90,8 @@ abstract final class F18AmmeterControls {
       case F18VoltmeterAction.select:
         if (!powered) return meter;
         mode = mode == InstrumentMode.currentAcRms
-            ? InstrumentMode.currentDc : InstrumentMode.currentAcRms;
+            ? InstrumentMode.currentDc
+            : InstrumentMode.currentAcRms;
         state.remove(holdKey);
         state.remove(heldTextKey);
       case F18VoltmeterAction.light:
@@ -102,7 +111,9 @@ abstract final class F18AmmeterControls {
         state[rangeKey] = 0;
     }
     return InstrumentInstance(
-      id: meter.id, kind: meter.kind, mode: mode,
+      id: meter.id,
+      kind: meter.kind,
+      mode: mode,
       inputImpedanceOhm: meter.inputImpedanceOhm,
       burdenResistanceOhm: meter.burdenResistanceOhm,
       maximumVoltageV: meter.maximumVoltageV,

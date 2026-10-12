@@ -1,87 +1,87 @@
 
-00:00 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart                                                                                               
-00:01 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart                                                                                               
-00:02 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart                                                                                               
-00:02 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:03 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:04 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:05 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:06 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:06 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding                                                  
-00:06 +1: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart                                                                                             
-00:07 +1: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart                                                                                             
-00:07 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (setUpAll)                                                                                         
-00:08 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (setUpAll)                                                                                         
-00:09 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:10 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:11 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:12 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:13 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:13 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof                           
-00:13 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof                        
-00:14 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof                        
-00:14 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof                        
-00:14 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof                                     
-00:15 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof                                     
-00:16 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof                                     
-00:17 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof                                     
-00:17 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof                                     
-00:17 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof                                
-00:18 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof                                
-00:18 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof                                
-00:18 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof                                 
-00:19 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof                                 
-00:20 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof                                 
-00:20 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof                                 
-00:20 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof                               
-00:21 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof                               
-00:21 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof                               
-00:21 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof                                 
-00:22 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof                                 
-00:23 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof                                 
-00:23 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof                                 
-00:23 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof                           
-00:24 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof                           
-00:24 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof                           
-00:24 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof                                     
-00:25 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof                                     
-00:25 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof                                    
-00:25 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof                                  
-00:26 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof                                  
-00:27 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof                                  
-00:27 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof                                  
-00:27 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof                                      
-00:28 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof                                      
-00:28 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof                                      
-00:28 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof                               
-00:29 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof                               
-00:29 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof                               
-00:29 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof                               
-00:30 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof                               
-00:31 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof                               
-00:31 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof                               
-00:31 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof                                
-00:32 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof                                
-00:32 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof                                
-00:32 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (tearDownAll)                                                                                     
-00:32 +15: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart                                                                                    
-00:33 +15: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart                                                                                    
-00:33 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (setUpAll)                                                                                
-00:34 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (setUpAll)                                                                                
-00:34 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:35 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:36 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:37 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:38 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug                                    
-00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (tearDownAll)                                                                             
-00:38 +16: loading /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart                                                                                         
-00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: alarms require solved powered circuit and running unmuted simulation                           
-00:38 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: alarms require solved powered circuit and running unmuted simulation                           
-00:38 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: sound stops after a delayed play and does not restart on disposal                              
-00:38 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: sound stops after a delayed play and does not restart on disposal                              
-00:38 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: DC animation uses mechanical speed and reverses with supply polarity                           
-00:38 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: DC animation uses mechanical speed and reverses with supply polarity                           
-00:38 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: phase makes full rotations, reverses and changes speed without jumps                           
-00:38 +20: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: phase makes full rotations, reverses and changes speed without jumps                           
-00:38 +20: All tests passed!                                                                                                                                                                           
+00:00 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart
+00:01 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart
+00:02 +0: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart
+00:02 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:03 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:04 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:05 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:06 +0: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:06 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/audit_g5_catalogue_test.dart: audit every palette entry after real asset decoding
+00:06 +1: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart
+00:07 +1: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart
+00:07 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (setUpAll)
+00:08 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (setUpAll)
+00:09 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:10 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:11 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:12 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:13 +1: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:13 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator actual palette, front and native maintenance proof
+00:13 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof
+00:14 +2: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof
+00:14 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-refrigerator-dc actual palette, front and native maintenance proof
+00:14 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof
+00:15 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof
+00:16 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof
+00:17 +3: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof
+00:17 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-tv actual palette, front and native maintenance proof
+00:17 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof
+00:18 +4: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof
+00:18 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-ac1 actual palette, front and native maintenance proof
+00:18 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof
+00:19 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof
+00:20 +5: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof
+00:20 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: external-fan-3p actual palette, front and native maintenance proof
+00:20 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof
+00:21 +6: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof
+00:21 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: pv-resistive-load actual palette, front and native maintenance proof
+00:21 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof
+00:22 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof
+00:23 +7: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof
+00:23 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-grid actual palette, front and native maintenance proof
+00:23 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof
+00:24 +8: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof
+00:24 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: source-ac3-alternator actual palette, front and native maintenance proof
+00:24 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof
+00:25 +9: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof
+00:25 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-wye-3p actual palette, front and native maintenance proof
+00:25 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof
+00:26 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof
+00:27 +10: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof
+00:27 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: load-delta-3p actual palette, front and native maintenance proof
+00:27 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof
+00:28 +11: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof
+00:28 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: impedance actual palette, front and native maintenance proof
+00:28 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof
+00:29 +12: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof
+00:29 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac1 actual palette, front and native maintenance proof
+00:29 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof
+00:30 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof
+00:31 +13: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof
+00:31 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-ac3 actual palette, front and native maintenance proof
+00:31 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof
+00:32 +14: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof
+00:32 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: energy-meter-pv actual palette, front and native maintenance proof
+00:32 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_lot_16_26_test.dart: (tearDownAll)
+00:32 +15: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart
+00:33 +15: loading /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart
+00:33 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (setUpAll)
+00:34 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (setUpAll)
+00:34 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:35 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:36 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:37 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:38 +15: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: real workspace: independent socket, PE cord and unplug
+00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/tool/capture_g5_power_connections_test.dart: (tearDownAll)
+00:38 +16: loading /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart
+00:38 +16: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: alarms require solved powered circuit and running unmuted simulation
+00:38 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: alarms require solved powered circuit and running unmuted simulation
+00:38 +17: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: sound stops after a delayed play and does not restart on disposal
+00:38 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: sound stops after a delayed play and does not restart on disposal
+00:38 +18: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: DC animation uses mechanical speed and reverses with supply polarity
+00:38 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: DC animation uses mechanical speed and reverses with supply polarity
+00:38 +19: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: phase makes full rotations, reverses and changes speed without jumps
+00:38 +20: /workspace/electrosim-g5-integration/apps/electrosim/test/industrial_audio_motion_test.dart: phase makes full rotations, reverses and changes speed without jumps
+00:38 +20: All tests passed!

@@ -1,0 +1,14 @@
+source_sha=2e797e6b84748578a1774605e3d616495932646d
+github_sha=2e797e6b84748578a1774605e3d616495932646d
+2026-10-12T12:04:29Z
+Darwin sjc20-cw753-e3f9d0ae-860b-464e-819e-162be56f03ff-16ED48E9CE66.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Jul 21 20:50:07 PDT 2026; root:xnu-11417.140.69.711.44~1/RELEASE_X86_64 x86_64
+Flutter 3.38.10 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision c6f67dede3 (8 months ago) • 2026-02-10 11:05:04 -0800
+Engine • hash 3c25ef829c74f0f39fbb8df093d9a6b9f941ea6b (revision cafcda5721) (8 months ago) • 2026-02-06 18:51:35.000Z
+Tools • Dart 3.10.9 • DevTools 2.51.1
+runner_os=macOS
+runner_arch=X64
+ProductName:		macOS
+ProductVersion:		15.7.9
+BuildVersion:		24G830
+      15

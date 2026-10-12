@@ -34,7 +34,8 @@ void main() {
     final m = meter();
     expect(F18Ammeter3dAssets.uses3d(m), F18Ammeter3dAssets.ready);
     final v = InstrumentInstance(
-      id: InstrumentId('voltage'), kind: InstrumentKind.voltmeter,
+      id: InstrumentId('voltage'),
+      kind: InstrumentKind.voltmeter,
       mode: InstrumentMode.voltageDc,
     );
     expect(F18Ammeter3dAssets.uses3d(v), isFalse);
@@ -44,12 +45,25 @@ void main() {
 
   test('HOLD only freezes valid current; FUSE overrides HOLD', () {
     var a = meter();
-    expect(identical(F18AmmeterControls.apply(
-      a, F18VoltmeterAction.hold, text: 'ERR',
-      valid: false,
-    ), a), isTrue);
-    a = F18AmmeterControls.apply(a, F18VoltmeterAction.hold,
-      text: '0.98 A', value: 0.98, valid: true);
+    expect(
+      identical(
+        F18AmmeterControls.apply(
+          a,
+          F18VoltmeterAction.hold,
+          text: 'ERR',
+          valid: false,
+        ),
+        a,
+      ),
+      isTrue,
+    );
+    a = F18AmmeterControls.apply(
+      a,
+      F18VoltmeterAction.hold,
+      text: '0.98 A',
+      value: 0.98,
+      valid: true,
+    );
     expect(F18AmmeterControls.display(a, '1.01 A', 1.01, true), '0.98 A');
     a = F18AmmeterControls.apply(a, F18VoltmeterAction.hold);
     expect(F18AmmeterControls.held(a), isFalse);
@@ -82,13 +96,19 @@ void main() {
 
   test('fuse hatch does not intercept ammeter selector hit region', () {
     const size = Size(112, 152);
-    expect(F18AmmeterControls.actionAt(const Offset(53, 86), size),
-        F18VoltmeterAction.selector);
+    expect(
+      F18AmmeterControls.actionAt(const Offset(53, 86), size),
+      F18VoltmeterAction.selector,
+    );
     expect(F18AmmeterControls.actionAt(const Offset(53, 114), size), isNull);
-    expect(F18AmmeterControls.actionAt(const Offset(35, 56), size),
-        F18VoltmeterAction.hold);
-    expect(F18AmmeterControls.actionAt(const Offset(77, 56), size),
-        F18VoltmeterAction.light);
+    expect(
+      F18AmmeterControls.actionAt(const Offset(35, 56), size),
+      F18VoltmeterAction.hold,
+    );
+    expect(
+      F18AmmeterControls.actionAt(const Offset(77, 56), size),
+      F18VoltmeterAction.light,
+    );
   });
 
   test('selector never creates a new electrical terminal or meter type', () {

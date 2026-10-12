@@ -30,8 +30,7 @@ void main() {
   });
 
   test('voltmeter contract never replaces other instrument kinds', () {
-    expect(F18Voltmeter3dAssets.uses3d(voltmeter),
-        F18Voltmeter3dAssets.ready);
+    expect(F18Voltmeter3dAssets.uses3d(voltmeter), F18Voltmeter3dAssets.ready);
     expect(F18Voltmeter3dAssets.uses3d(ammeter), isFalse);
   });
 
@@ -83,12 +82,11 @@ void main() {
       elementSizes: const <String, Size>{'v-001': Size(112, 152)},
     );
     final ViewportController viewport = ViewportController();
-    final F18PhysicalInstrumentReadouts painter =
-        F18PhysicalInstrumentReadouts(
-          layout: layout,
-          viewport: viewport,
-          readouts: const <String, String>{'v-001': 'ERR'},
-        );
+    final F18PhysicalInstrumentReadouts painter = F18PhysicalInstrumentReadouts(
+      layout: layout,
+      viewport: viewport,
+      readouts: const <String, String>{'v-001': 'ERR'},
+    );
     expect(painter.voltmeterFront, isNull);
     expect(painter.voltmeter3dIds, isEmpty);
     expect(painter.screenRect('v-001'), isNotNull);

@@ -38,9 +38,10 @@ CircuitState machineFixture(
 }
 
 void main() {
-  for (final s in NativeApplianceGeometry.catalogue.values.take(10).where(
-    (s) => s.threePhase,
-  )) {
+  for (final s
+      in NativeApplianceGeometry.catalogue.values
+          .take(10)
+          .where((s) => s.threePhase)) {
     test(
       '${s.key} places terminals in its own enclosure in four rotations',
       () {

@@ -72,7 +72,7 @@ void main() {
         return;
       }
       final Uint8List fontBytes = await systemFont.readAsBytes();
-      final ui.FontLoader loader = ui.FontLoader('EvidenceFont')
+      final FontLoader loader = FontLoader('EvidenceFont')
         ..addFont(Future<ByteData>.value(ByteData.sublistView(fontBytes)));
       await loader.load();
       final String? flutterRoot = Platform.environment['FLUTTER_ROOT'];
@@ -82,7 +82,7 @@ void main() {
         );
         if (iconFont.existsSync()) {
           final Uint8List icons = await iconFont.readAsBytes();
-          final ui.FontLoader iconLoader = ui.FontLoader('MaterialIcons')
+          final FontLoader iconLoader = FontLoader('MaterialIcons')
             ..addFont(Future<ByteData>.value(ByteData.sublistView(icons)));
           await iconLoader.load();
         }

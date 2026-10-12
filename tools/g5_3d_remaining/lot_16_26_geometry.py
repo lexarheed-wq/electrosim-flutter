@@ -55,7 +55,7 @@ def refrigerator(h,s,dc=False):
         for x in (24,156):
             for y in (23,210):screw(h,f'mount_{x}_{y}',x,y,51,1.3)
         for x in range(31,153,6):h.box('compressor_vent_'+str(x),x,212,3,10,50,1,dark,r=.5)
-        for x in (31,149):h.box('base_foot_'+str(x),x,218,14,5,29,38,dark,r=1)
+        for x in (31,149):h.box('base_foot_'+str(x),x,217,14,6,29,38,dark,r=1)
         if s['open']:block(h,s,['+','−'])
         return
     h.box('insulated_body',100,159,174,280,56,80,h.terminal_gray,r=2.5)
@@ -152,11 +152,14 @@ def resistor_bank(h,s,branches=1):
             coil.append((34+(w-68)*j/659,yy+10*math.cos(a),17+10*math.sin(a)))
         h.tube('resistance_winding_'+str(i),coil,.5,h.steel)
         for xx in (31,w-31):
-            h.box(f'ceramic_bracket_{i}_{xx}',xx,yy,6,29,27,39,metal,r=.5)
-    for x in (23,w-23):h.box('side_guard_'+str(x),x,hh/2-8,2,hh-65,48,62,metal,r=.5)
+            h.box(f'ceramic_bracket_{i}_{xx}',xx,yy,18,29,27,39,metal,r=.5)
+    for x in (23,w-23):
+        h.box('side_guard_'+str(x),x,hh/2-2,2,hh-48,48,62,metal,r=.5)
+        h.box('grille_side_frame_'+str(x),x,hh/2-13,3,hh-73,51,5,metal,r=.5)
+    for yy in (24,hh-52):h.box('grille_frame_'+str(yy),cx,yy,w-44,3,51,5,metal,r=.5)
     # Ventilated grille above the hot elements; no glowing fake temperature.
     for x in range(30,w-26,7):h.box('vent_guard_'+str(x),x,hh/2-13,.65,hh-73,50,.7,metal,r=.15)
-    for y in range(25,hh-46,9):h.box('guard_crossbar_'+str(y),cx,y,w-50,.65,50,.7,metal,r=.15)
+    for y in range(25,hh-46,9):h.box('guard_crossbar_'+str(y),cx,y,w-44,.65,50,.7,metal,r=.15)
     h.box('electrical_connection_compartment',s['box'][0],s['box'][1],s['box'][2]+8,s['box'][3]+6,s['box'][4]-2,17,metal,r=.8)
     if not s['open']:h.box('connection_lid',s['box'][0],s['box'][1],s['box'][2]+6,s['box'][3]+4,s['box'][4],1,metal,r=.7)
     block(h,s)

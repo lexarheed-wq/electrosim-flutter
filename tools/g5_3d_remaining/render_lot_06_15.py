@@ -29,7 +29,11 @@ def main():
     for key,s in contract.items():
         if opts.only and key not in opts.only.split(','):continue
         folder=Path(opts.out)/key;folder.mkdir(parents=True,exist_ok=True);start=time.monotonic();records={}
-        for view,service in [('front',False),('palette',False),('service',True)]:
+        views=[('front',False),('palette',False),('service',True)]
+        moving_fan=opts.lot=='16_26' and key in ('external-fan-ac1','external-fan-3p')
+        if moving_fan:views.extend([('rotor',False),('guard',False)])
+        if moving_fan and key=='external-fan-3p':views.append(('guard-service',True))
+        for view,service in views:
             bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
             # Reset orphaned datablocks between components to bound memory.
             for collection in (bpy.data.meshes,bpy.data.curves,bpy.data.materials,bpy.data.cameras,bpy.data.lights):
@@ -43,6 +47,19 @@ def main():
             env=nodes.get('lot HDR') or nodes.new('ShaderNodeTexEnvironment');env.name='lot HDR';env.image=bpy.data.images.load(str(BASE.parent/'g5_render_environment/studio_small_09_1k.hdr'),check_existing=True)
             scene.world.node_tree.links.new(env.outputs['Color'],bg.inputs['Color']);bg.inputs['Strength'].default_value=.42
             h=CyclesGeometry();builder(h,key,s,service)
+            if opts.lot=='16_26':
+                # Explicit brushing direction avoids the star-shaped tangent
+                # singularity in the centre of broad flat stainless panels.
+                for mat in bpy.data.materials:
+                    if mat.use_nodes:
+                        node=mat.node_tree.nodes.get('Principled BSDF')
+                        if node and node.inputs['Anisotropic'].default_value>0:
+                            node.inputs['Tangent'].default_value=(0,1,0)
+            if moving_fan and view!='palette':
+                for obj in bpy.data.objects:
+                    rotor=obj.name.startswith('impeller_') or obj.name=='hub_cap'
+                    guard=(obj.name.startswith('guard_') or obj.name=='circular_cage_rim') if key=='external-fan-ac1' else not(rotor or obj.name=='enclosed_motor' or obj.name.startswith('motor_bracket_'))
+                    obj.hide_render=rotor if view in ('front','service') else not rotor if view=='rotor' else not guard
             for o in bpy.data.objects:
                 if o.type=='MESH':
                     for mod in o.modifiers:

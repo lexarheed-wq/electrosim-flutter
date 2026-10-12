@@ -6,6 +6,7 @@ import 'package:electrosim/pneumatics/pneumatic_device_glyph.dart';
 import 'package:electrosim/pneumatics/pneumatic_workshop_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'r6_moving_piston_workshop_test.dart' as fixture;

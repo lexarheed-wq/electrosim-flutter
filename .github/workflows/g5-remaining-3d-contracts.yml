@@ -1,0 +1,33 @@
+name: G5 remaining 3D catalogue contracts
+
+on:
+  pull_request:
+    paths:
+      - 'apps/electrosim/lib/f9_component_palette.dart'
+      - 'tools/g5_remaining_3d_contract_guard.py'
+      - 'tools/g5_remaining_3d_contracts.json'
+      - 'tools/tests/test_g5_remaining_3d_contract_guard.py'
+      - '.github/workflows/g5-remaining-3d-contracts.yml'
+  push:
+    branches:
+      - 'feat/g5-remaining-3d-contract-guard-20261011'
+    paths:
+      - 'apps/electrosim/lib/f9_component_palette.dart'
+      - 'tools/g5_remaining_3d_contract_guard.py'
+      - 'tools/g5_remaining_3d_contracts.json'
+      - 'tools/tests/test_g5_remaining_3d_contract_guard.py'
+      - '.github/workflows/g5-remaining-3d-contracts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  catalogue-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify electrical and visual identities (26 devices)
+        run: python3 tools/g5_remaining_3d_contract_guard.py
+      - name: Execute offline guard regressions
+        run: python3 -m unittest discover -s tools/tests -p 'test_g5_remaining_3d_contract_guard.py' -v

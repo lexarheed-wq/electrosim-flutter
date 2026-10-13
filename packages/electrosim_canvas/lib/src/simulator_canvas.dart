@@ -31,6 +31,7 @@ final class SimulatorCanvas extends StatefulWidget {
     this.wirePreviewPlanner,
     this.smartWireSemantics = false,
     this.paintElementChrome = true,
+    this.industrialPlatePresentation = false,
     this.schematicPresentation = false,
     this.customInstrumentCaseIds = const <String>{},
   });
@@ -49,6 +50,9 @@ final class SimulatorCanvas extends StatefulWidget {
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool smartWireSemantics;
   final bool paintElementChrome;
+  /// Forces the metallic industrial plate renderer, even if a caller's generic
+  /// element-chrome setting would otherwise enable the legacy grid.
+  final bool industrialPlatePresentation;
   final bool schematicPresentation;
   final Set<String> customInstrumentCaseIds;
 
@@ -422,7 +426,9 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
                       smartWireSemantics:
                           widget.smartWireSemantics ||
                           widget.wireLayoutEngine != null,
-                      paintElementChrome: widget.paintElementChrome,
+                      paintElementChrome: widget.industrialPlatePresentation
+                          ? false
+                          : widget.paintElementChrome,
                       schematicPresentation: widget.schematicPresentation,
                       customInstrumentCaseIds: widget.customInstrumentCaseIds,
                     ),

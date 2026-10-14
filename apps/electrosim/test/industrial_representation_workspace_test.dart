@@ -126,6 +126,34 @@ void main() {
       expect(identical(canvas().circuit, circuit), isTrue);
     },
   );
+  testWidgets('production plate mode explicitly disables legacy grid chrome', (
+    tester,
+  ) async {
+    final circuit = buildRegressionFixtureCircuit();
+    await tester.pumpWidget(
+      MaterialApp(home: F9WorkspaceDemoPage(initialCircuit: circuit)),
+    );
+    await tester.pumpAndSettle();
+
+    SimulatorCanvas canvas() =>
+        tester.widget<SimulatorCanvas>(find.byType(SimulatorCanvas));
+
+    expect(canvas().industrialPlatePresentation, isTrue);
+    expect(canvas().paintElementChrome, isFalse);
+    expect(canvas().schematicPresentation, isFalse);
+
+    await tester.tap(find.byKey(const Key('workspace-view-schematic')));
+    await tester.pumpAndSettle();
+    expect(canvas().industrialPlatePresentation, isFalse);
+    expect(canvas().schematicPresentation, isTrue);
+
+    await tester.tap(find.byKey(const Key('workspace-view-plate')));
+    await tester.pumpAndSettle();
+    expect(canvas().industrialPlatePresentation, isTrue);
+    expect(canvas().schematicPresentation, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final size in [const Size(1440, 900), const Size(390, 844)]) {
     testWidgets(
       'plate and white schematic share electrical identities at $size',

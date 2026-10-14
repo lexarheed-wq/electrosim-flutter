@@ -1,0 +1,146 @@
+name: G5 Mac Intel candidate package
+
+on:
+  push:
+    branches:
+      - fix/g5-metal-plate-no-grid-20261013-clean
+    paths:
+      - '.github/workflows/g5-macos-intel-package.yml'
+      - 'apps/electrosim/**'
+      - 'packages/**'
+      - 'tools/f17_*'
+      - 'tools/f15_*'
+      - 'tools/premium_rcd2p/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: g5-macos-intel-package-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-macos-intel:
+    runs-on: macos-15-intel
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Verify exact candidate and restore qualified source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 tools/premium_rcd2p/decode_source.py
+
+      - name: Prepare isolated Mac release runner
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) echo "runner=${output#F17_RUNNER_PATH=}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "F17_RUNNER_PATH_PROTOCOL_ERROR: $output" >&2; exit 69 ;;
+          esac
+
+      - name: Analyze and qualify industrial visuals
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test test/g5_physical_housing_assets_test.dart test/g5_native_housing_fallback_test.dart
+          flutter test test/g5_industrial_physical_assets_test.dart test/g5_industrial_rendering_test.dart test/g5_industrial_asset_fallback_test.dart test/g5_physical_layout_migration_test.dart
+          flutter test test/industrial_duct_workspace_test.dart test/industrial_representation_workspace_test.dart test/industrial_cabinet_workspace_test.dart test/industrial_cabinet_model_test.dart
+
+      - name: Build student Web client inside the Mac app
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --platforms=web --project-name electrosim .
+          flutter pub get
+          flutter build web --release --target lib/student_web_main.dart --no-web-resources-cdn --pwa-strategy=none --no-wasm-dry-run
+          test -s build/web/index.html
+          test -s build/web/main.dart.js
+
+      - name: Build, sign, package and verify Intel app
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${{ steps.prepare.outputs.runner }}"
+          app_root="$root/apps/electrosim"
+          base="$GITHUB_WORKSPACE"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          web_dest="$app/Contents/Resources/electrosim_student_web"
+          mkdir -p "$web_dest"
+          cp -R build/web/. "$web_dest/"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$app"
+
+          codesign --force --sign - --entitlements macos/Runner/Release.entitlements "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+          bin="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$bin"
+          out="$base/g5-industrial-macos"
+          mkdir -p "$out"
+          file "$bin" | tee "$out/ARCH.txt"
+          grep -qi x86_64 "$out/ARCH.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$out/SOURCE_SHA.txt"
+
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out/ElectroSim_G5_Industrial_macOS_Intel.zip"
+          python3 "$base/tools/f17_validate_student_mac_bundle.py" "$out/ElectroSim_G5_Industrial_macOS_Intel.zip"
+          python3 - "$out/ElectroSim_G5_Industrial_macOS_Intel.zip" <<'PY'
+          import sys
+          from zipfile import ZipFile
+          path = sys.argv[1]
+          with ZipFile(path) as archive:
+              names = archive.namelist()
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP_CORRUPT: {bad}")
+              roots = {
+                  n.split("/", 1)[0]
+                  for n in names
+                  if n.count("/") == 2 and n.endswith(".app/Contents/Info.plist")
+              }
+              if len(roots) != 1:
+                  raise SystemExit(f"APP_BUNDLE_ROOTS_INVALID: {sorted(roots)}")
+              root = next(iter(roots))
+              info = f"{root}/Contents/Info.plist"
+              bins = [
+                  n for n in names
+                  if n.startswith(f"{root}/Contents/MacOS/") and n.count("/") == 3
+              ]
+              if info not in names or archive.getinfo(info).file_size == 0:
+                  raise SystemExit("APP_INFO_PLIST_MISSING")
+              if not bins or any(archive.getinfo(n).file_size == 0 for n in bins):
+                  raise SystemExit("APP_EXECUTABLE_MISSING")
+              print(f"MAC_APP_ARCHIVE_PASS root={root} executables={len(bins)} entries={len(names)}")
+          PY
+          (cd "$out" && shasum -a 256 ElectroSim_G5_Industrial_macOS_Intel.zip > SHA256.txt)
+          test -s "$out/SHA256.txt"
+          rm -rf "$root"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G5-Industrial-macOS-Intel-Candidate
+          path: g5-industrial-macos/
+          retention-days: 14
+          if-no-files-found: error

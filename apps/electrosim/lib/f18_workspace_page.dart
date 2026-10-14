@@ -1398,6 +1398,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                 });
                                               },
                                               enableInteraction: false,
+                                              industrialPlatePresentation:
+                                                  _representation ==
+                                                  WorkspaceRepresentation.plate,
                                               paintElementChrome: false,
                                               schematicPresentation:
                                                   _representation ==

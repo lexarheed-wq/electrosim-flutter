@@ -1,0 +1,76 @@
+name: Export ElectroSim G5 source archive
+
+on:
+  push:
+    branches:
+      - fix/g5-metal-plate-no-grid-20261013-clean
+    paths:
+      - '.github/workflows/export-g5-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Export exact source used for the Mac Intel candidate
+        shell: bash
+        env:
+          SOURCE_SHA: 88435010e4dd8de93e2c0592da4d18ce89025fa9
+        run: |
+          set -euo pipefail
+          git cat-file -e "${SOURCE_SHA}^{commit}"
+          out="$GITHUB_WORKSPACE/source-export"
+          root="ElectroSim_G5_Source_${SOURCE_SHA:0:12}"
+          mkdir -p "$out" "$RUNNER_TEMP/electrosim-source"
+          git archive --format=tar --prefix="$root/" "$SOURCE_SHA" |
+            tar -xf - -C "$RUNNER_TEMP/electrosim-source"
+
+          cat > "$RUNNER_TEMP/electrosim-source/$root/SOURCE_README.txt" <<'EOF'
+          ElectroSim G5 — source archive
+
+          This archive contains the tracked source tree at the exact commit used
+          by the verified Mac Intel candidate.
+
+          Source commit: 88435010e4dd8de93e2c0592da4d18ce89025fa9
+          Mac build qualification:
+          https://github.com/lexarheed-wq/electrosim-flutter/actions/runs/38614253429
+
+          Locked toolchain:
+          Flutter 3.38.10
+          Dart 3.10.9
+
+          Open apps/electrosim/pubspec.yaml as the Flutter application package.
+          From apps/electrosim, run:
+            flutter pub get
+            flutter analyze
+            flutter test --no-pub --concurrency=1
+
+          To build the macOS app on a Mac with Xcode installed:
+            flutter config --enable-macos-desktop
+            flutter build macos --release
+
+          This is the source snapshot; it does not include Git history or build outputs.
+          EOF
+
+          cd "$RUNNER_TEMP/electrosim-source"
+          zip -qr "$out/${root}.zip" "$root"
+          printf '%s\n' "$SOURCE_SHA" > "$out/SOURCE_SHA.txt"
+          cd "$out"
+          shasum -a 256 "${root}.zip" > SHA256.txt
+          unzip -t "${root}.zip" | tail -1
+          test -s "${root}.zip"
+          test -s SHA256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-G5-Source-Archive
+          path: source-export/
+          retention-days: 14
+          if-no-files-found: error

@@ -3,7 +3,7 @@
 Date : 2026-10-16 (Africa/Ouagadougou)  
 État : **candidat source non qualifié**  
 Base : `5da025d5`  
-Commits d’implémentation : `72ff2113`, `839e899d`, `c1ecf46e`, `e46c2ecb`, `8a4f0dde`
+Commits d’implémentation : `72ff2113`, `839e899d`, `c1ecf46e`, `e46c2ecb`, `8a4f0dde`, `572bfecc`
 
 ## Livré dans le candidat source
 
@@ -28,4 +28,4 @@ L’analyse Dart/Flutter, les tests Flutter ciblés et complets, la compilation 
 
 ## Candidat de livraison
 
-Les cinq commits ci-dessus sont le candidat source révisable. Aucun `.app`, archive Mac Intel ni empreinte de binaire n’est fourni : la procédure de compilation macOS active repérée dans le dépôt vise une autre branche de fonctionnalité et ne peut pas certifier ces commits. Il faut relancer analyse, tests, build et lancement sur un runner Mac Intel propre, puis effectuer une recette sur le Mac cible.
+Les six commits ci-dessus sont le candidat source révisable. Aucun `.app`, archive Mac Intel ni empreinte de binaire n’est fourni : la procédure de compilation macOS active repérée dans le dépôt vise une autre branche de fonctionnalité et ne peut pas certifier ces commits. Il faut relancer analyse, tests, build et lancement sur un runner Mac Intel propre, puis effectuer une recette sur le Mac cible.

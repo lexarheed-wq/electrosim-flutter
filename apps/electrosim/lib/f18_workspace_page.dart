@@ -4096,7 +4096,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   }) {
     return Row(children: <Widget>[
       Expanded(flex: 3, child: DropdownButtonFormField<String>(
-        value: types.contains(step['type']) ? step['type'] as String : types.first,
+        initialValue: types.contains(step['type']) ? step['type'] as String : types.first,
         decoration: const InputDecoration(isDense: true, labelText: 'Élément'),
         items: <DropdownMenuItem<String>>[
           for (int index = 0; index < types.length; index++)
@@ -4104,11 +4104,23 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 !<String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(types[index]))
               DropdownMenuItem(value: types[index], child: Text(typeLabels[index])),
         ],
-        onChanged: (String? value) { if (value != null) { step['type'] = value; if (value == 'TON') step['address'] = 'T0'; else if (<String>['coil', 'coil_set', 'coil_reset'].contains(value)) step['address'] = 'Q0'; else if ((step['address'] as String? ?? '').startsWith('T')) step['address'] = 'I0'; onChanged(); } },
+        onChanged: (String? value) {
+          if (value != null) {
+            step['type'] = value;
+            if (value == 'TON') {
+              step['address'] = 'T0';
+            } else if (<String>['coil', 'coil_set', 'coil_reset'].contains(value)) {
+              step['address'] = 'Q0';
+            } else if ((step['address'] as String? ?? '').startsWith('T')) {
+              step['address'] = 'I0';
+            }
+            onChanged();
+          }
+        },
       )),
       const SizedBox(width: 8),
       Expanded(flex: 2, child: DropdownButtonFormField<String>(
-        value: addresses.contains(step['address']) ? step['address'] as String : addresses.first,
+        initialValue: addresses.contains(step['address']) ? step['address'] as String : addresses.first,
         decoration: const InputDecoration(isDense: true, labelText: 'Adresse'),
         items: addresses.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
         onChanged: (isLastStep && <String>['coil', 'coil_set', 'coil_reset'].contains(step['type'])) || step['type'] == 'TON'

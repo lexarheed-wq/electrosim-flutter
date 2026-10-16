@@ -182,9 +182,11 @@ final class ElectricalProjectRuntimeEngine {
       snapshot?.contactorStates.map((ComponentId id, ContactorActuationState state) => MapEntry<ComponentId, bool>(id, state.actuated)) ?? const <ComponentId, bool>{};
 
   static List<Map<String, Object?>> _program(Object? raw) {
-    if (raw is! List) return const <Map<String, Object?>>[
-      <String, Object?>{'steps': <Object?>[]},
-    ];
+    if (raw is! List) {
+      return const <Map<String, Object?>>[
+        <String, Object?>{'steps': <Object?>[]},
+      ];
+    }
     try {
       return raw.map((Object? row) => row is Map
           ? Map<String, Object?>.from(row)

@@ -992,7 +992,6 @@ final class SolverDC {
             ),
           );
         case ComponentElectricalLaw.converter:
-        case ComponentElectricalLaw.programmableController:
         case ComponentElectricalLaw.unsupported:
           diagnostics.add(
             DcSolverDiagnostic(

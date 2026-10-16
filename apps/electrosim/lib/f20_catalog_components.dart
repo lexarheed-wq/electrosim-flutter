@@ -334,6 +334,8 @@ final class _P {
     'electromagnet' => 'ÉLECTRO.',
     'ldr' => 'LDR',
     'sensor-proximity' => 'PROX.',
+    'limit-switch-no' => 'FDC NO',
+    'limit-switch-nc' => 'FDC NC',
     'ntc' => 'NTC',
     'ptc' => 'PTC',
     'shunt' => 'SHUNT',

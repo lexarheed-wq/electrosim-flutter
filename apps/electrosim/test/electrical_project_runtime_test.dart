@@ -123,7 +123,8 @@ void main() {
     const ElectricalProjectRuntimeEngine engine = ElectricalProjectRuntimeEngine();
     final first = engine.advance(_relayProject(sourceEnabled: true), elapsed: const Duration(milliseconds: 20));
     expect(first.relayBridgeStates['k1-bridge'], isTrue);
-    final linkedContact = first.networks['power']!.effectiveCircuit.components.single;
+    final linkedContact = first.networks['power']!.effectiveCircuit.components
+        .singleWhere((component) => component.id == ComponentId('interface-contact'));
     expect(linkedContact.controlState['externalLinkResolved'], isTrue);
     expect(linkedContact.controlState['actuated'], isTrue);
     expect(first.networks['power']!.contactorActuated(ComponentId('k1')), isFalse,
@@ -131,6 +132,8 @@ void main() {
 
     final failed = engine.advance(_relayProject(sourceEnabled: false), elapsed: const Duration(milliseconds: 20), previous: first);
     expect(failed.relayBridgeStates['k1-bridge'], isFalse);
-    expect(failed.networks['power']!.effectiveCircuit.components.single.controlState['actuated'], isFalse);
+    final failedContact = failed.networks['power']!.effectiveCircuit.components
+        .singleWhere((component) => component.id == ComponentId('interface-contact'));
+    expect(failedContact.controlState['actuated'], isFalse);
   });
 }

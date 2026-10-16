@@ -1,0 +1,105 @@
+name: Mixed electrical project — Mac Intel qualification
+
+on:
+  push:
+    branches:
+      - codex/mixed-electrical-mac-qualification
+    paths:
+      - '.github/workflows/mixed-electrical-macos-intel.yml'
+      - 'apps/electrosim/**'
+      - 'packages/**'
+      - 'tools/f15_*'
+      - 'tools/f17_*'
+      - 'docs/f18/mixed-electrical/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mixed-electrical-macos-intel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify-macos-intel:
+    runs-on: macos-15-intel
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Confirm exact source revision
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Prepare isolated macOS app workspace
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) echo "runner=${output#F17_RUNNER_PATH=}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $output" >&2; exit 69 ;;
+          esac
+
+      - name: Analyze app and run complete app tests
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+          flutter test --concurrency=1
+
+      - name: Run mixed-project package tests and analysis
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${{ steps.prepare.outputs.runner }}"
+          for package in electrosim_domain electrosim_controls electrosim_solver_dc electrosim_multiphysics electrosim_storage; do
+            cd "$root/packages/$package"
+            dart pub get
+            dart analyze
+            dart test
+          done
+
+      - name: Build and verify Intel macOS candidate
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.prepare.outputs.runner }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          codesign --force --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          output="$GITHUB_WORKSPACE/mixed-electrical-macos-intel"
+          mkdir -p "$output"
+          file "$executable" | tee "$output/ARCHITECTURE.txt"
+          grep -qi x86_64 "$output/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
+          printf '%s\n' 'Mixed AC3 / 24 V DC project — Mac Intel test candidate; physical Mac acceptance pending.' > "$output/READ_ME_FIRST.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_Mixed_Electrical_Mac_Intel.zip"
+          (cd "$output" && shasum -a 256 ElectroSim_Mixed_Electrical_Mac_Intel.zip > SHA256.txt)
+          unzip -t "$output/ElectroSim_Mixed_Electrical_Mac_Intel.zip" | tail -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Mixed-Electrical-Mac-Intel
+          path: mixed-electrical-macos-intel/
+          retention-days: 14
+          if-no-files-found: error

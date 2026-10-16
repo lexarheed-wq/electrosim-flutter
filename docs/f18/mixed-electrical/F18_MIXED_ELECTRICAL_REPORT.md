@@ -29,3 +29,5 @@ L’analyse Dart/Flutter, les tests Flutter ciblés et complets, la compilation 
 ## Candidat de livraison
 
 Les six commits ci-dessus sont le candidat source révisable. Aucun `.app`, archive Mac Intel ni empreinte de binaire n’est fourni : la procédure de compilation macOS active repérée dans le dépôt vise une autre branche de fonctionnalité et ne peut pas certifier ces commits. Il faut relancer analyse, tests, build et lancement sur un runner Mac Intel propre, puis effectuer une recette sur le Mac cible.
+
+Une workflow dédiée, `.github/workflows/mixed-electrical-macos-intel.yml`, a été ajoutée pour exécuter ces contrôles et produire l’archive sur `macos-15-intel`. Son lancement exige que cette branche source soit publiée sur GitHub; l’exécution et le téléchargement de l’artefact restent à confirmer.

@@ -25,6 +25,7 @@ enum ElectricalBranchRole {
   auxiliaryNormallyOpen,
   auxiliaryNormallyClosed,
   measurement,
+  plcOutput,
 }
 
 /// Defines one internal two-terminal branch of a component model.
@@ -341,6 +342,38 @@ final class CoreComponentModelContracts {
           toTerminalIndex: 1,
           role: ElectricalBranchRole.main,
         ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'proximity_sensor_24v',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'output',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'limit_switch_no',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(id: 'main', fromTerminalIndex: 0, toTerminalIndex: 1, role: ElectricalBranchRole.main),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'limit_switch_nc',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac1, ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(id: 'main', fromTerminalIndex: 0, toTerminalIndex: 1, role: ElectricalBranchRole.main),
       ],
     ),
     ComponentModelContract(
@@ -784,6 +817,54 @@ final class CoreComponentModelContracts {
           fromTerminalIndex: 6,
           toTerminalIndex: 7,
           role: ElectricalBranchRole.controlCoil,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'plc_ac3',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 10,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: const <ComponentBranchDefinition>[],
+    ),
+    ComponentModelContract(
+      modelType: 'plc_dc',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 10,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        for (int output = 0; output < 4; output++)
+          ComponentBranchDefinition(
+            id: 'output:Q$output',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 6 + output,
+            role: ElectricalBranchRole.plcOutput,
+          ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'timer_star_delta',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 5,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'coil',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.controlCoil,
+        ),
+        ComponentBranchDefinition(
+          id: 'contact:nc',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.auxiliaryNormallyClosed,
+        ),
+        ComponentBranchDefinition(
+          id: 'contact:no',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.auxiliaryNormallyOpen,
         ),
       ],
     ),

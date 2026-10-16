@@ -52,15 +52,24 @@ jobs:
             *) echo "INVALID_F17_RUNNER_PROTOCOL: $output" >&2; exit 69 ;;
           esac
 
-      - name: Analyze app and run complete app tests
+      - name: Analyze app
         working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
         run: |
           set -euo pipefail
           flutter pub get
           flutter analyze
+
+      - name: Run complete app tests
+        id: app_tests
+        continue-on-error: true
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        run: |
+          set -euo pipefail
           flutter test --concurrency=1
 
       - name: Run mixed-project package tests and analysis
+        id: package_tests
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -98,8 +107,20 @@ jobs:
           unzip -t "$output/ElectroSim_Mixed_Electrical_Mac_Intel.zip" | tail -1
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: ElectroSim-Mixed-Electrical-Mac-Intel
           path: mixed-electrical-macos-intel/
           retention-days: 14
           if-no-files-found: error
+
+      - name: Enforce test qualification gates
+        if: always()
+        env:
+          APP_TESTS_OUTCOME: ${{ steps.app_tests.outcome }}
+          PACKAGE_TESTS_OUTCOME: ${{ steps.package_tests.outcome }}
+        run: |
+          if [[ "$APP_TESTS_OUTCOME" != "success" || "$PACKAGE_TESTS_OUTCOME" != "success" ]]; then
+            echo "QUALIFICATION_FAILED: app tests=$APP_TESTS_OUTCOME; package checks=$PACKAGE_TESTS_OUTCOME" >&2
+            exit 1
+          fi

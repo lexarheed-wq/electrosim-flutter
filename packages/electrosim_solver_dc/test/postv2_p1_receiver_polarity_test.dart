@@ -47,6 +47,30 @@ void main() {
       expect(forward.currentA!.sign, equals(-reverse.currentA!.sign));
     });
 
+    test('DC motor time step includes back EMF and mechanical damping', () {
+      final DcSolveResult steady = solve(
+        _singleReceiver(modelType: 'motor_dc', reversed: false),
+      );
+      final DcSolveResult moving = solve(
+        _singleReceiver(
+          modelType: 'motor_dc',
+          reversed: false,
+          parameters: const <String, Object?>{
+            'motorAngularSpeedRadS': 30.0,
+            'motorTimeStepSeconds': 0.1,
+            'motorLoadTorqueNm': 0.02,
+          },
+        ),
+      );
+
+      expect(steady.status, DcSolveStatus.solved);
+      expect(moving.status, DcSolveStatus.solved);
+      expect(
+        moving.branch('component:load').currentA!.abs(),
+        lessThan(steady.branch('component:load').currentA!.abs()),
+      );
+    });
+
     test('P1-RX-COIL-SIMPLE simple DC relay coil is electrically reversible', () {
       final DcBranchResult normal = solve(
         _singleReceiver(modelType: 'relay_coil', reversed: false),
@@ -99,6 +123,7 @@ void main() {
 CircuitState _singleReceiver({
   required String modelType,
   required bool reversed,
+  Map<String, Object?> parameters = const <String, Object?>{},
 }) {
   final Terminal sourcePositive = _terminal(
     'vp',
@@ -124,7 +149,7 @@ CircuitState _singleReceiver({
         id: ComponentId('load'),
         modelType: modelType,
         terminals: <Terminal>[a, b],
-        parameters: const <String, Object?>{'resistanceOhm': 24.0},
+        parameters: <String, Object?>{'resistanceOhm': 24.0, ...parameters},
       ),
     ],
     connections: reversed

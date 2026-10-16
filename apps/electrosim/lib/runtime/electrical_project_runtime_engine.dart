@@ -76,7 +76,6 @@ final class ElectricalProjectRuntimeEngine {
     final ElectroSimRuntimeSnapshot dcFirst = networkEngine.advance(
       dcBefore, elapsed: elapsed,
       previousContactorStates: _previousActuators(previous?.networks[dcNetwork.id]),
-      previousControlStates: previous?.networks[dcNetwork.id]?.controlRuntimeStates ?? const <ComponentId, Map<String, Object?>>{},
     );
     final Set<String> isolatedInputs = project.signalLinks
         .where((CrossNetworkSignalLink l) => l.dcNetworkId == dcNetwork.id)
@@ -140,7 +139,6 @@ final class ElectricalProjectRuntimeEngine {
     final ElectroSimRuntimeSnapshot dcFinal = networkEngine.advance(
       dcAfter, elapsed: Duration.zero,
       previousContactorStates: _previousActuators(dcFirst),
-      previousControlStates: dcFirst.controlRuntimeStates,
       previousComponentHealthStates: dcFirst.componentHealthStates,
     );
 
@@ -158,7 +156,6 @@ final class ElectricalProjectRuntimeEngine {
     final ElectroSimRuntimeSnapshot acFinal = networkEngine.advance(
       acProjected, elapsed: elapsed,
       previousContactorStates: _previousActuators(previous?.networks[acNetwork.id]),
-      previousControlStates: previous?.networks[acNetwork.id]?.controlRuntimeStates ?? const <ComponentId, Map<String, Object?>>{},
     );
     final Map<String, bool> feedback = <String, bool>{};
     for (final CrossNetworkSignalLink link in project.signalLinks) {

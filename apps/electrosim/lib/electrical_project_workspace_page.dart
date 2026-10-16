@@ -61,7 +61,7 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
       for (final ElectricalNetwork n in _project.networks)
         if (n.id == networkId) ElectricalNetwork(id: n.id, circuit: circuit) else n,
     ];
-    final bool hasComponent(String netId, String id) => networks
+    bool hasComponent(String netId, String id) => networks
         .where((ElectricalNetwork n) => n.id == netId)
         .firstOrNull?.circuit.components.any((ComponentInstance c) => c.id.value == id) ?? false;
     try {

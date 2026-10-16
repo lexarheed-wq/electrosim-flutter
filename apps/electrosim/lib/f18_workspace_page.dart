@@ -4176,7 +4176,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       circuitId: _circuit.circuitId, revision: _circuit.revision + 1, mode: _circuit.mode,
       components: _circuit.components.map((ComponentInstance c) => c.id.value != componentId ? c : ComponentInstance(
         id: c.id, modelType: c.modelType, terminals: c.terminals, parameters: <String, Object?>{...c.parameters, ...updates}, condition: c.condition, controlState: c.controlState,
-      )), sources: _circuit.sources, connections: _circuit.connections, instruments: _circuit.instruments, probes: _circuit.probes, settings: _circuit.settings, metadata: _circuit.metadata,
+      )).toList(growable: false), sources: _circuit.sources, connections: _circuit.connections, instruments: _circuit.instruments, probes: _circuit.probes, settings: _circuit.settings, metadata: _circuit.metadata,
     );
   }
 

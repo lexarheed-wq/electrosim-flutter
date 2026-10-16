@@ -1950,8 +1950,14 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec('L+', role: TerminalRole.positive, idSuffix: 'lplus'),
       F9PaletteTerminalSpec('M', role: TerminalRole.common, idSuffix: 'm'),
-      for (int i = 0; i < 4; i++) F9PaletteTerminalSpec('I$i', role: TerminalRole.input, idSuffix: 'i$i'),
-      for (int i = 0; i < 4; i++) F9PaletteTerminalSpec('Q$i', role: TerminalRole.output, idSuffix: 'q$i'),
+      F9PaletteTerminalSpec('I0', role: TerminalRole.input, idSuffix: 'i0'),
+      F9PaletteTerminalSpec('I1', role: TerminalRole.input, idSuffix: 'i1'),
+      F9PaletteTerminalSpec('I2', role: TerminalRole.input, idSuffix: 'i2'),
+      F9PaletteTerminalSpec('I3', role: TerminalRole.input, idSuffix: 'i3'),
+      F9PaletteTerminalSpec('Q0', role: TerminalRole.output, idSuffix: 'q0'),
+      F9PaletteTerminalSpec('Q1', role: TerminalRole.output, idSuffix: 'q1'),
+      F9PaletteTerminalSpec('Q2', role: TerminalRole.output, idSuffix: 'q2'),
+      F9PaletteTerminalSpec('Q3', role: TerminalRole.output, idSuffix: 'q3'),
     ],
     defaultParameters: <String, Object?>{
       'ladderProgram': <Object?>[

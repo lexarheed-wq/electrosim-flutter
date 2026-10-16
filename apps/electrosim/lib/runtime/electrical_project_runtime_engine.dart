@@ -78,7 +78,13 @@ final class ElectricalProjectRuntimeEngine {
       previousContactorStates: _previousActuators(previous?.networks[dcNetwork.id]),
       previousControlStates: previous?.networks[dcNetwork.id]?.controlRuntimeStates ?? const <ComponentId, Map<String, Object?>>{},
     );
-    final Map<String, bool> inputs = _readInputs(dcNetwork.circuit, dcFirst, diagnostics);
+    final Set<String> isolatedInputs = project.signalLinks
+        .where((CrossNetworkSignalLink l) => l.dcNetworkId == dcNetwork.id)
+        .map((CrossNetworkSignalLink l) => l.inputAddress)
+        .toSet();
+    final Map<String, bool> inputs = _readInputs(
+      dcNetwork.circuit, dcFirst, diagnostics, isolatedInputs: isolatedInputs,
+    );
     for (final CrossNetworkSignalLink link in project.signalLinks) {
       if (link.dcNetworkId == dcNetwork.id) {
         inputs[link.inputAddress] = previous?.feedbackSignalStates[link.id] ?? false;
@@ -87,15 +93,22 @@ final class ElectricalProjectRuntimeEngine {
 
     bool supplyValid = true;
     final Map<String, bool> plcSupply = <String, bool>{};
+    final Map<String, double> plcSupplyVoltages = <String, double>{};
+    final Map<String, bool> plcProgramErrors = <String, bool>{};
+    final Map<String, Map<String, bool>> plcInputs = <String, Map<String, bool>>{};
     for (final ComponentInstance plc in dcNetwork.circuit.components.where((ComponentInstance c) => c.modelType == 'plc_dc')) {
       final double? voltage = _terminalVoltage(dcFirst, plc.terminals[0].id, plc.terminals[1].id);
       final bool valid = voltage != null && voltage >= 20.4 && voltage <= 28.8 && plc.condition == ComponentCondition.normal;
       plcSupply[plc.id.value] = valid;
+      if (voltage != null) plcSupplyVoltages[plc.id.value] = voltage;
       supplyValid = supplyValid && valid;
       if (!valid) diagnostics.add('PLC ${plc.id.value}: alimentation 24 V absente ou hors plage.');
       final Object? rawProgram = plc.parameters['ladderProgram'];
       final List<Map<String, Object?>> program = _program(rawProgram);
       final String key = '${dcNetwork.id}/${plc.id.value}';
+      plcInputs[plc.id.value] = <String, bool>{
+        for (int i = 0; i < 4; i++) 'I$i': inputs['I$i'] ?? false,
+      };
       final LadderScanResult scan = ladderEngine.scan(
         program: program,
         inputs: valid ? inputs : const <String, bool>{},
@@ -103,6 +116,7 @@ final class ElectricalProjectRuntimeEngine {
         elapsed: elapsed,
       );
       ladder[key] = scan.state;
+      plcProgramErrors[plc.id.value] = scan.programError;
       if (scan.programError) diagnostics.add('PLC ${plc.id.value}: programme Ladder invalide; sorties désactivées.');
       if (!valid) {
         ladder[key] = LadderRuntimeState(
@@ -119,6 +133,9 @@ final class ElectricalProjectRuntimeEngine {
       dcNetwork.id, dcNetwork.circuit, ladder,
       supplyValid: supplyValid,
       perPlcSupply: plcSupply,
+      perPlcVoltage: plcSupplyVoltages,
+      perPlcInputs: plcInputs,
+      perPlcProgramError: plcProgramErrors,
     );
     final ElectroSimRuntimeSnapshot dcFinal = networkEngine.advance(
       dcAfter, elapsed: Duration.zero,
@@ -176,13 +193,18 @@ final class ElectricalProjectRuntimeEngine {
           ? Map<String, Object?>.from(row)
           : <String, Object?>{'steps': <Object?>[]}).toList(growable: false);
     } on Object {
-      return const <Map<String, Object?>>[];
+      return const <Map<String, Object?>>[
+        <String, Object?>{'steps': <Object?>[]},
+      ];
     }
   }
 
   static CircuitState _projectPlcState(String networkId, CircuitState circuit,
       Map<String, LadderRuntimeState> ladder, {required bool supplyValid,
-      Map<String, bool> perPlcSupply = const <String, bool>{}}) => CircuitState(
+      Map<String, bool> perPlcSupply = const <String, bool>{},
+      Map<String, double> perPlcVoltage = const <String, double>{},
+      Map<String, Map<String, bool>> perPlcInputs = const <String, Map<String, bool>>{},
+      Map<String, bool> perPlcProgramError = const <String, bool>{}}) => CircuitState(
     circuitId: circuit.circuitId, revision: circuit.revision, mode: circuit.mode,
     components: circuit.components.map((ComponentInstance component) {
       if (component.modelType != 'plc_dc') return component;
@@ -193,8 +215,12 @@ final class ElectricalProjectRuntimeEngine {
         parameters: component.parameters, condition: component.condition,
         controlState: <String, Object?>{
           ...component.controlState,
+          for (int i = 0; i < 4; i++) 'I$i': perPlcInputs[component.id.value]?['I$i'] ?? false,
           for (int i = 0; i < 4; i++) 'Q$i': valid && state.outputs['Q$i'] == true,
           'plcSupplyValid': valid,
+          'supplyValid': valid,
+          'supplyVoltageV': perPlcVoltage[component.id.value] ?? 0.0,
+          'programError': perPlcProgramError[component.id.value] ?? false,
         },
       );
     }).toList(growable: false),
@@ -220,13 +246,14 @@ final class ElectricalProjectRuntimeEngine {
     settings: circuit.settings, metadata: circuit.metadata,
   );
 
-  static Map<String, bool> _readInputs(CircuitState circuit, ElectroSimRuntimeSnapshot snapshot, List<String> diagnostics) {
+  static Map<String, bool> _readInputs(CircuitState circuit, ElectroSimRuntimeSnapshot snapshot, List<String> diagnostics, {Set<String> isolatedInputs = const <String>{}}) {
     final DcSolveResult? result = snapshot.dcResult;
     if (result == null || !result.isSolved) return <String, bool>{};
     final Map<String, bool> inputs = <String, bool>{};
     for (final ComponentInstance plc in circuit.components.where((ComponentInstance c) => c.modelType == 'plc_dc')) {
       for (int i = 0; i < 4; i++) {
         final String address = 'I$i';
+        if (isolatedInputs.contains(address)) continue;
         final TerminalId terminal = plc.terminals[2 + i].id;
         final String? node = snapshot.topology.terminalToNode[terminal];
         final double? value = node == null ? null : result.nodeVoltages[node];

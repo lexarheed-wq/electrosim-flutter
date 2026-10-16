@@ -62,7 +62,22 @@ CircuitState _powerCircuit() => CircuitState(
       terminals: <Terminal>[
         Terminal(id: TerminalId('interface-1'), name: '13'),
         Terminal(id: TerminalId('interface-2'), name: '14'),
-      ]),
+      ], parameters: const <String, Object?>{'linkedContactorId': 'k1'}),
+    ComponentInstance(id: ComponentId('k1'), modelType: 'contactor_3p',
+      terminals: <Terminal>[
+        Terminal(id: TerminalId('k1-l1'), name: '1L1', role: TerminalRole.lineL1),
+        Terminal(id: TerminalId('k1-t1'), name: '2T1', role: TerminalRole.loadT1),
+        Terminal(id: TerminalId('k1-l2'), name: '3L2', role: TerminalRole.lineL2),
+        Terminal(id: TerminalId('k1-t2'), name: '4T2', role: TerminalRole.loadT2),
+        Terminal(id: TerminalId('k1-l3'), name: '5L3', role: TerminalRole.lineL3),
+        Terminal(id: TerminalId('k1-t3'), name: '6T3', role: TerminalRole.loadT3),
+        Terminal(id: TerminalId('k1-a1'), name: 'A1', role: TerminalRole.coilA1),
+        Terminal(id: TerminalId('k1-a2'), name: 'A2', role: TerminalRole.coilA2),
+      ], parameters: const <String, Object?>{
+        'coilResistanceOhm': 1000.0,
+        'coilPickupVoltageV': 180.0,
+        'coilDropoutVoltageV': 100.0,
+      }),
   ],
 );
 
@@ -111,6 +126,8 @@ void main() {
     final linkedContact = first.networks['power']!.effectiveCircuit.components.single;
     expect(linkedContact.controlState['externalLinkResolved'], isTrue);
     expect(linkedContact.controlState['actuated'], isTrue);
+    expect(first.networks['power']!.contactorActuated(ComponentId('k1')), isFalse,
+        reason: 'The DC bridge closes a dry contact, but cannot energize an unwired AC3 coil.');
 
     final failed = engine.advance(_relayProject(sourceEnabled: false), elapsed: const Duration(milliseconds: 20), previous: first);
     expect(failed.relayBridgeStates['k1-bridge'], isFalse);

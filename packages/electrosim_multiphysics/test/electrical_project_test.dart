@@ -114,4 +114,35 @@ void main() {
     expect(project.networks, hasLength(1));
     expect(project.networks.single.circuit.toJson(), equals(circuit.toJson()));
   });
+
+  test('rejects more than one DC PLC in a mixed project', () {
+    final CircuitState base = _circuit('dc', ElectricalMode.dc, <String>['plc_dc', 'relay_coil']);
+    final CircuitState withSecondPlc = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      components: <ComponentInstance>[
+        ...base.components,
+        ComponentInstance(
+          id: ComponentId('plc-2'),
+          modelType: 'plc_dc',
+          terminals: <Terminal>[
+            for (int i = 0; i < 10; i++)
+              Terminal(id: TerminalId('plc-2-$i'), name: 'T$i'),
+          ],
+        ),
+      ],
+    );
+    expect(
+      () => ElectricalProject(networks: <ElectricalNetwork>[
+        ElectricalNetwork(id: 'control', circuit: withSecondPlc),
+        ElectricalNetwork(id: 'power', circuit: _circuit('ac3', ElectricalMode.ac3, <String>['contactor_aux_no'])),
+      ]),
+      throwsA(isA<ElectricalProjectException>().having(
+        (ElectricalProjectException error) => error.code,
+        'code',
+        'unsupported_plc_count',
+      )),
+    );
+  });
 }

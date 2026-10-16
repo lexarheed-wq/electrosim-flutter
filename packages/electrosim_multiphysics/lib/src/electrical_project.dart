@@ -159,6 +159,10 @@ final class ElectricalProject {
       if (networks.length != 2 || !networks.any((n) => n.circuit.mode == ElectricalMode.dc) || !networks.any((n) => n.circuit.mode == ElectricalMode.ac3)) {
         _fail('unsupported_network_shape', 'This release supports one DC control network and one AC3 power network.');
       }
+      final ElectricalNetwork control = networks.firstWhere((ElectricalNetwork n) => n.circuit.mode == ElectricalMode.dc);
+      if (control.circuit.components.where((ComponentInstance c) => c.modelType == 'plc_dc').length > 1) {
+        _fail('unsupported_plc_count', 'This release supports one DC PLC per project.');
+      }
     }
     final Set<String> linkIds = <String>{};
     final Set<String> usedAddresses = <String>{};

@@ -67,6 +67,9 @@ class F18WorkspacePage extends StatefulWidget {
     this.initialCabinetLayout,
     this.initialVisualLayout,
     this.onVisualLayoutChanged,
+    this.onCircuitChanged,
+    this.compositeNetworkMode = false,
+    this.externalRuntimeSnapshot,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
@@ -88,6 +91,9 @@ class F18WorkspacePage extends StatefulWidget {
   final CabinetLayout? initialCabinetLayout;
   final CircuitVisualLayout? initialVisualLayout;
   final ValueChanged<CircuitVisualLayout>? onVisualLayoutChanged;
+  final ValueChanged<CircuitState>? onCircuitChanged;
+  final bool compositeNetworkMode;
+  final ElectroSimRuntimeSnapshot? externalRuntimeSnapshot;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
@@ -115,6 +121,20 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   String? _studentTpIdValue;
   CircuitVisualLayout? _lastReportedVisualLayout;
   bool _visualLayoutReportScheduled = false;
+  CircuitState? _lastReportedCircuit;
+  bool _circuitReportScheduled = false;
+
+  void _scheduleCircuitReport() {
+    final ValueChanged<CircuitState>? callback = widget.onCircuitChanged;
+    if (callback == null || identical(_circuit, _lastReportedCircuit) || _circuitReportScheduled) return;
+    _circuitReportScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _circuitReportScheduled = false;
+      if (!mounted || identical(_circuit, _lastReportedCircuit)) return;
+      _lastReportedCircuit = _circuit;
+      widget.onCircuitChanged?.call(_circuit);
+    });
+  }
 
   bool get _visualLayoutMatchesSession {
     if (widget.role != F9UserRole.student) return true;
@@ -819,6 +839,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanHostInfo;
   late final ElectroSimSimulationController _simulation;
+  ElectroSimRuntimeSnapshot get _runtimeSnapshot =>
+      widget.externalRuntimeSnapshot ?? _simulation.snapshot;
 
   CabinetFixture? _cabinetFixtureAt(Offset local) {
     if (_representation != WorkspaceRepresentation.plate) return null;
@@ -1096,6 +1118,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     _scheduleVisualLayoutReport();
+    _scheduleCircuitReport();
     final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
       _circuit,
       _selected,
@@ -1250,6 +1273,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       onRedo: _redoHistory.isEmpty || _studentTpReadOnly
                           ? null
                           : _redoEdit,
+                      showSimulationControls: !widget.compositeNetworkMode,
+                      showModeSelector: !widget.compositeNetworkMode,
                     ),
               ),
               palette: F9ComponentPalette(
@@ -1269,6 +1294,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             onPowerConnectionChanged: _studentTpReadOnly
                                 ? null
                                 : _configureSelectedPower,
+                            onConfigurePlc: _studentTpReadOnly ? null : _editPlcLadder,
+                            onLinkPlcOutput: _studentTpReadOnly ? null : _linkPlcOutput,
+                            onConfigureTimer: _studentTpReadOnly ? null : _editStarDeltaTimer,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -1291,7 +1319,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                     : 'Sélection clavier : $id';
                               });
                             },
-                            runtimeSnapshot: _simulation.snapshot,
+                            runtimeSnapshot: _runtimeSnapshot,
                             tpSessionController:
                                 widget.sessionNavigation ||
                                     widget.tpSessionController != null
@@ -1441,7 +1469,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                       wirePreviewPlanner:
                                                           _g2aWirePreviewPlanner,
                                                       runtimeSnapshot:
-                                                          _simulation.snapshot,
+                                                          _runtimeSnapshot,
                                                       soundEnabled:
                                                           _soundEnabled,
                                                       simulationRunning:
@@ -1600,7 +1628,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final saved = await persistence.saveWorkspace(
         circuit: EnergyMeterRuntime.persist(
           _circuit,
-          _simulation.snapshot.energyMeters,
+          _runtimeSnapshot.energyMeters,
         ),
         workspace: _workspace,
         visualLayout: _layout,
@@ -2224,7 +2252,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   Map<String, String> _physicalMeterReadouts() {
     if (_circuit.instruments.isEmpty) return const <String, String>{};
     final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
-    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
+    final ElectroSimRuntimeSnapshot snapshot = _runtimeSnapshot;
     // The authored circuit identity invalidates cache on wiring edits.
     // Recalculate immediately if solve status changes (ERR -> valid) while
     // retaining one-second throttling during steady-state simulation; each
@@ -2948,7 +2976,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       if (_blockStudentTpMutation()) return true;
       final PhysicalInstrumentReading reading =
           const ElectroSimInstrumentProjection().read(
-            snapshot: _simulation.snapshot,
+            snapshot: _runtimeSnapshot,
             instrument: meter,
           );
       final double? value = reading.result?.reading?.value;
@@ -3212,6 +3240,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'switch_spst' ||
         'push_button_no' ||
         'push_button_nc' ||
+        'proximity_sensor_24v' ||
+        'limit_switch_no' ||
+        'limit_switch_nc' ||
         'breaker_dc' ||
         'breaker_ac1' ||
         'rcd_2p_ac1' ||
@@ -3279,6 +3310,30 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
+    if (type == 'proximity_sensor_24v' ||
+        type == 'limit_switch_no' ||
+        type == 'limit_switch_nc') {
+      final ComponentInstance? sensor = _circuit.components
+          .where((ComponentInstance item) => item.id.value == elementId)
+          .firstOrNull;
+      if (sensor == null) return;
+      final bool oldState = sensor.controlState['closed'] == true;
+      final CircuitState next = F9ElementEditor.setComponentClosed(
+        _circuit,
+        elementId,
+        closed: !oldState,
+      );
+      if (identical(next, _circuit)) return;
+      setState(() {
+        _circuit = next;
+        _selected = elementId;
+        _status = 'Capteur $elementId — ${!oldState ? 'actionné' : 'au repos'}';
+      });
+      _simulation.updateCircuit(next);
+      _syncStudentTpCircuit();
+      return;
+    }
+
     final bool isProtectionReset =
         type == 'breaker_dc' ||
         type == 'breaker_ac1' ||
@@ -3288,7 +3343,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         type == 'breaker_4p' ||
         type == 'thermal_overload_3p';
     if (isProtectionReset &&
-        _simulation.snapshot.protectionTripped(ComponentId(elementId))) {
+        _runtimeSnapshot.protectionTripped(ComponentId(elementId))) {
       final CircuitState closed = F9ElementEditor.setComponentClosed(
         _circuit,
         elementId,
@@ -3929,6 +3984,238 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
     });
     _simulation.updateCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
+  Future<void> _editPlcLadder(String componentId) async {
+    final ComponentInstance plc = _circuit.components.firstWhere(
+      (ComponentInstance c) => c.id.value == componentId,
+    );
+    final Object? rawProgram = plc.parameters['ladderProgram'];
+    final List<Map<String, Object?>> savedRungs = rawProgram is List
+        ? rawProgram.whereType<Map>().map((Map row) {
+            final Object? rawSteps = row['steps'];
+            return <String, Object?>{
+              'steps': rawSteps is List
+                  ? rawSteps
+                        .whereType<Map>()
+                        .map((Map step) => Map<String, Object?>.from(step))
+                        .toList()
+                  : <Map<String, Object?>>[],
+            };
+          }).toList()
+        : <Map<String, Object?>>[];
+    final List<Map<String, Object?>> rungs = rawProgram is List &&
+            rawProgram.isNotEmpty &&
+            rawProgram.whereType<Map>().every((Map row) => row.containsKey('steps'))
+        ? savedRungs
+        : <Map<String, Object?>>[
+            <String, Object?>{
+              'steps': rawProgram is List
+                  ? rawProgram
+                        .whereType<Map>()
+                        .map((Map step) => Map<String, Object?>.from(step))
+                        .toList()
+                  : <Map<String, Object?>>[],
+            },
+          ];
+    if (rungs.isEmpty) rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]});
+    final List<String> addresses = <String>[
+      'I0', 'I1', 'I2', 'I3', 'Q0', 'Q1', 'Q2', 'Q3',
+      for (int i = 0; i < 16; i++) 'M$i',
+      for (int i = 0; i < 16; i++) 'T$i',
+    ];
+    final List<String> types = <String>['contact_no', 'contact_nc', 'TON', 'timer_done', 'coil', 'coil_set', 'coil_reset'];
+    final List<String> typeLabels = <String>['Contact NO', 'Contact NC', 'TON', 'TON terminé', 'Bobine Q/M', 'SET', 'RESET'];
+    final List<dynamic>? result = await showDialog<List<dynamic>>(
+      context: context,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) => AlertDialog(
+          title: const Text('Programme Ladder'),
+          content: SizedBox(
+            width: 620,
+            height: 430,
+            child: Column(children: <Widget>[
+              const Text('Les entrées I lisent les boutons/capteurs raccordés. Chaque rung est évalué de gauche à droite; TON temporise puis active son bit DN.'),
+              Expanded(child: ListView.builder(
+                itemCount: rungs.length,
+                itemBuilder: (BuildContext context, int rungIndex) {
+                  final List<Map<String, Object?>> steps = rungs[rungIndex]['steps']! as List<Map<String, Object?>>;
+                  return Card(child: Padding(padding: const EdgeInsets.all(8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                    Row(children: <Widget>[Text('Rung ${rungIndex + 1}', style: Theme.of(context).textTheme.titleSmall), const Spacer(), IconButton(tooltip: 'Supprimer le rung', onPressed: rungs.length <= 1 ? null : () => setDialogState(() => rungs.removeAt(rungIndex)), icon: const Icon(Icons.delete_outline))]),
+                    for (int stepIndex = 0; stepIndex < steps.length; stepIndex++) _ladderStepEditor(
+                      context: context,
+                      step: steps[stepIndex],
+                      types: types,
+                      typeLabels: typeLabels,
+                      addresses: switch (steps[stepIndex]['type']) {
+                        'contact_no' || 'contact_nc' => addresses.where((String address) => !address.startsWith('T')).toList(),
+                        'TON' || 'timer_done' => addresses.where((String address) => address.startsWith('T')).toList(),
+                        _ => addresses.where((String address) => address.startsWith('Q') || address.startsWith('M')).toList(),
+                      },
+                      onChanged: () => setDialogState(() {}),
+                      onDelete: () => setDialogState(() => steps.removeAt(stepIndex)),
+                      isLastStep: stepIndex == steps.length - 1,
+                    ),
+                    Wrap(spacing: 6, children: <Widget>[
+                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'contact_no', 'address': 'I0'})), icon: const Icon(Icons.add), label: const Text('Contact')),
+                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'TON', 'address': 'T0', 'presetSeconds': 1.0})), icon: const Icon(Icons.timer_outlined), label: const Text('TON')),
+                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'coil', 'address': 'Q0'})), icon: const Icon(Icons.electrical_services), label: const Text('Bobine')),
+                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'contact_nc', 'address': 'I1'})), icon: const Icon(Icons.sync_alt), label: const Text('Contact NC')),
+                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'timer_done', 'address': 'T0'})), icon: const Icon(Icons.timer), label: const Text('TON terminé')),
+                    ]),
+                  ])));
+                },
+              )),
+              Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: () => setDialogState(() => rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]})), icon: const Icon(Icons.add), label: const Text('Ajouter un rung'))),
+            ]),
+          ),
+          actions: <Widget>[
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, rungs), child: const Text('Enregistrer')),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    final CircuitState next = _replaceComponentParameters(componentId, <String, Object?>{'ladderProgram': result});
+    setState(() { _circuit = next; _status = 'Programme Ladder enregistré'; });
+    _simulation.updateCircuit(next);
+    _syncStudentTpCircuit();
+  }
+
+  Widget _ladderStepEditor({
+    required BuildContext context,
+    required Map<String, Object?> step,
+    required List<String> types,
+    required List<String> typeLabels,
+    required List<String> addresses,
+    required VoidCallback onChanged,
+    required VoidCallback onDelete,
+    required bool isLastStep,
+  }) {
+    return Row(children: <Widget>[
+      Expanded(flex: 3, child: DropdownButtonFormField<String>(
+        value: types.contains(step['type']) ? step['type'] as String : types.first,
+        decoration: const InputDecoration(isDense: true, labelText: 'Élément'),
+        items: <DropdownMenuItem<String>>[
+          for (int index = 0; index < types.length; index++)
+            if (isLastStep || types[index] == step['type'] ||
+                !<String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(types[index]))
+              DropdownMenuItem(value: types[index], child: Text(typeLabels[index])),
+        ],
+        onChanged: (String? value) { if (value != null) { step['type'] = value; if (value == 'TON') step['address'] = 'T0'; else if (<String>['coil', 'coil_set', 'coil_reset'].contains(value)) step['address'] = 'Q0'; else if ((step['address'] as String? ?? '').startsWith('T')) step['address'] = 'I0'; onChanged(); } },
+      )),
+      const SizedBox(width: 8),
+      Expanded(flex: 2, child: DropdownButtonFormField<String>(
+        value: addresses.contains(step['address']) ? step['address'] as String : addresses.first,
+        decoration: const InputDecoration(isDense: true, labelText: 'Adresse'),
+        items: addresses.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
+        onChanged: (isLastStep && <String>['coil', 'coil_set', 'coil_reset'].contains(step['type'])) || step['type'] == 'TON'
+            ? null
+            : (String? value) { if (value != null) { step['address'] = value; onChanged(); } },
+      )),
+      if (step['type'] == 'TON') SizedBox(width: 88, child: TextFormField(
+        initialValue: '${step['presetSeconds'] ?? 1}',
+        decoration: const InputDecoration(isDense: true, labelText: 's'),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        onChanged: (String value) {
+          final double? parsed = double.tryParse(value.replaceAll(',', '.'));
+          if (parsed != null && parsed.isFinite && parsed > 0 && parsed <= 3600) {
+            step['presetSeconds'] = parsed;
+          }
+        },
+      )),
+      IconButton(tooltip: 'Supprimer l’élément', onPressed: onDelete, icon: const Icon(Icons.close)),
+    ]);
+  }
+
+  Future<void> _editStarDeltaTimer(String componentId) async {
+    final ComponentInstance timer = _circuit.components.firstWhere(
+      (ComponentInstance c) => c.id.value == componentId,
+    );
+    final TextEditingController delayController = TextEditingController(
+      text: '${(timer.parameters['delaySeconds'] as num?)?.toDouble() ?? 5}',
+    );
+    final TextEditingController deadTimeController = TextEditingController(
+      text: '${(timer.parameters['deadTimeSeconds'] as num?)?.toDouble() ?? 0.05}',
+    );
+    final (String, String)? value = await showDialog<(String, String)>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+      title: const Text('Retard étoile-triangle'),
+      content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+        TextField(controller: delayController, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Retard étoile (secondes)', helperText: 'Valeur entre 0,1 s et 300 s')),
+        TextField(controller: deadTimeController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Temps mort avant triangle', helperText: 'Valeur entre 0 et 5 s')),
+      ]),
+      actions: <Widget>[
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+        FilledButton(onPressed: () => Navigator.pop(context, (delayController.text, deadTimeController.text)), child: const Text('Enregistrer')),
+      ],
+    ));
+    delayController.dispose();
+    deadTimeController.dispose();
+    if (!mounted || value == null) return;
+    final double? delay = double.tryParse(value.$1.replaceAll(',', '.'));
+    final double? deadTime = double.tryParse(value.$2.replaceAll(',', '.'));
+    if (delay == null || !delay.isFinite || delay < 0.1 || delay > 300 ||
+        deadTime == null || !deadTime.isFinite || deadTime < 0 || deadTime > 5) {
+      _setStatus('Réglages invalides : retard de 0,1 à 300 s et temps mort de 0 à 5 s.');
+      return;
+    }
+    final CircuitState next = _replaceComponentParameters(componentId, <String, Object?>{
+      'delaySeconds': delay,
+      'deadTimeSeconds': deadTime,
+    });
+    setState(() { _circuit = next; _status = 'Temporisateur réglé à ${delay.toStringAsFixed(2)} s'; });
+    _simulation.updateCircuit(next);
+  }
+
+  CircuitState _replaceComponentParameters(String componentId, Map<String, Object?> updates) {
+    return CircuitState(
+      circuitId: _circuit.circuitId, revision: _circuit.revision + 1, mode: _circuit.mode,
+      components: _circuit.components.map((ComponentInstance c) => c.id.value != componentId ? c : ComponentInstance(
+        id: c.id, modelType: c.modelType, terminals: c.terminals, parameters: <String, Object?>{...c.parameters, ...updates}, condition: c.condition, controlState: c.controlState,
+      )), sources: _circuit.sources, connections: _circuit.connections, instruments: _circuit.instruments, probes: _circuit.probes, settings: _circuit.settings, metadata: _circuit.metadata,
+    );
+  }
+
+  void _linkPlcOutput(String plcId, String output, String? targetId) {
+    final ComponentInstance? plc = _circuit.components
+        .where((ComponentInstance c) => c.id.value == plcId && c.modelType == 'plc_ac3')
+        .firstOrNull;
+    if (plc == null) return;
+    final Map<String, Object?> links = <String, Object?>{
+      if (plc.parameters['outputLinks'] is Map)
+        ...(plc.parameters['outputLinks'] as Map).cast<String, Object?>(),
+    };
+    if (targetId == null || targetId.isEmpty) {
+      links.remove(output);
+    } else {
+      final bool validTarget = _circuit.components.any((ComponentInstance c) =>
+          c.id.value == targetId && c.modelType == 'contactor_3p');
+      if (!validTarget) {
+        _setStatus('La sortie PLC AC3 doit cibler un contacteur triphasé existant.');
+        return;
+      }
+      for (final MapEntry<String, Object?> entry in links.entries.toList()) {
+        if (entry.key != output && entry.value == targetId) {
+          _setStatus('Ce contacteur est déjà lié à ${entry.key}.');
+          return;
+        }
+      }
+      links[output] = targetId;
+    }
+    final CircuitState next = _replaceComponentParameters(plcId, <String, Object?>{
+      'outputLinks': links,
+    });
+    setState(() {
+      _circuit = next;
+      _status = targetId == null || targetId.isEmpty
+          ? '$output déliée'
+          : '$output commande le contacteur $targetId';
+    });
+    _simulation.updateCircuit(next);
     _syncStudentTpCircuit();
   }
 
@@ -4665,6 +4952,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onCancelAdvance,
     required this.onUndo,
     required this.onRedo,
+    this.showSimulationControls = true,
+    this.showModeSelector = true,
   });
 
   final String entryLabel;
@@ -4707,6 +4996,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback onCancelAdvance;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final bool showSimulationControls;
+  final bool showModeSelector;
 
   @override
   Widget build(BuildContext context) {
@@ -4752,8 +5043,8 @@ class _WorkspaceTopBar extends StatelessWidget {
               icon: const Icon(Icons.adjust_outlined),
               selectedIcon: const Icon(Icons.adjust, color: Color(0xFF2563EB)),
             ),
-          _modeMenu(compact),
-          if (!compact)
+          if (showModeSelector) _modeMenu(compact),
+          if (showSimulationControls && !compact)
             PopupMenuButton<Duration>(
               key: const Key('workspace-time-advance'),
               tooltip: 'Avancer le temps simulé',
@@ -4804,7 +5095,7 @@ class _WorkspaceTopBar extends StatelessWidget {
             onPressed: onDeleteSelected,
             icon: const Icon(Icons.delete_outline),
           ),
-          Tooltip(
+          if (showSimulationControls) Tooltip(
             message: simulationAdvancing
                 ? 'Annuler l’avance temporelle'
                 : simulationRunning

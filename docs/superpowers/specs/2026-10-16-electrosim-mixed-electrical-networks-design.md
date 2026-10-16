@@ -28,11 +28,11 @@ La première tranche produit accepte exactement le couple `power: ac3` et `contr
 
 ### 2.2 Couplage par relais d’interface
 
-Le PLC commande une bobine de relais 24 V CC dans le réseau de contrôle. Cette bobine est résolue normalement par le solveur DC et son état découle de la tension réelle, du seuil de collage et du seuil de retombée. Le contact sec correspondant est un composant du réseau AC3 et agit sur le circuit de bobine du contacteur. Un `CrossNetworkRelayLink` associe explicitement les deux sous-parties qui représentent le même relais physique.
+Le PLC commande une bobine de relais 24 V CC dans le réseau de contrôle. Cette bobine est résolue normalement par le solveur DC et son état découle de la tension réelle, du seuil de collage et du seuil de retombée. Le contact sec correspondant est un composant du réseau AC3 et agit sur le circuit de bobine du contacteur. Un `CrossNetworkRelayLink` associe explicitement le PLC et son adresse Q, la bobine DC et le contact AC3 qui représentent le même relais physique.
 
 La sortie PLC n’est pas reliée directement à une bobine 230 V AC3. Le modèle pédagogique impose un relais d’interface isolé : c’est le montage sûr et réaliste pour transférer un ordre 24 V CC vers une commande AC3. La commande électrique AC3 du contacteur reste câblée dans son réseau; le relais d’interface n’invente pas une tension.
 
-Les retours auxiliaires NO/NC du contacteur AC3 vers le PLC sont traités comme des signaux isolés explicites du projet. Leur état est l’état calculé du contacteur, tandis que l’entrée PLC est comparée au commun et à la plage logique DC configurée. Le premier palier peut fournir des liens de retour directs; il ne crée pas de fil physique entre les graphes.
+Les retours auxiliaires NO/NC du contacteur AC3 vers une entrée PLC sont traités par un second type `CrossNetworkSignalLink`, qui relie un contact auxiliaire AC3 à une adresse I0–I3 du PLC DC. Leur état est l’état calculé du contacteur, tandis que l’entrée PLC est comparée au commun et à la plage logique DC configurée. Le lien de projet représente une isolation galvanique de signal; il ne crée pas de fil physique ni de nœud électrique entre les graphes.
 
 ### 2.3 Runtime à horloge commune et scans séquencés
 
@@ -63,7 +63,7 @@ Les variantes existantes `plc_ac3` et `timer_star_delta` restent lisibles pour c
 
 ## 4. Validation et erreurs
 
-La validation du projet vérifie : identifiants uniques par réseau et références complètes; modes réseau conformes; compatibilité des modèles dans chaque réseau; relais lié de type bobine DC et contact AC; liens non ambigus; tension PLC et seuils finis/positifs; absence de liaisons qui confondent des nœuds AC et DC; et absence d’export destructif vers le format simple.
+La validation du projet vérifie : identifiants uniques par réseau et références complètes; modes réseau conformes; compatibilité des modèles dans chaque réseau; Q PLC, bobine DC et contact AC correctement liés; source auxiliaire AC3 et entrée PLC I valides pour chaque lien de retour; absence de liens ambigus ou de liaison galvanique implicite entre nœuds AC et DC; seuils finis/positifs; et absence d’export destructif vers le format simple.
 
 Un réseau invalide garde son résultat/diagnostic propre et ne corrompt pas les autres réseaux. Une perte d’alimentation de commande fait tomber les sorties Q et relais DC, puis le contact AC3 associé s’ouvre. Un cycle de simulation en erreur ne conserve jamais une sortie excitée par un scan antérieur.
 

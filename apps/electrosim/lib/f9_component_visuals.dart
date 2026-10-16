@@ -344,6 +344,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       MeterEnergyReading? meterReading,
       double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
+      Map<String, Object?> controlState = const <String, Object?>{},
+      Map<String, Object?> componentParameters = const <String, Object?>{},
     }) {
       final String renderedModelType = visualModelType ?? modelType;
       if (!F18ReferenceComponentVisuals.supports(renderedModelType)) return;
@@ -409,6 +411,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   currentLimitA: currentLimitA,
                   resistanceOhm: resistanceOhm,
                   residualTripCurrentA: residualTripCurrentA,
+                  controlState: controlState,
+                  componentParameters: componentParameters,
                 ),
               ),
             ),
@@ -472,6 +476,12 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           : runtime?.dcBatterySocs[component.id] ??
                 (component.parameters['initialSoc'] as num?)?.toDouble() ??
                 0.0;
+      final ComponentInstance? runtimeComponent = runtime?.effectiveCircuit
+          .components
+          .where((ComponentInstance candidate) => candidate.id == component.id)
+          .firstOrNull;
+      final Map<String, Object?> visualControlState =
+          runtimeComponent?.controlState ?? component.controlState;
       final componentState = runtime?.componentOperatingState(component.id);
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
@@ -554,6 +564,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     as num?)
                 ?.toDouble() ??
             0,
+        controlState: visualControlState,
+        componentParameters: component.parameters,
         healthState:
             runtime?.componentHealthState(component.id) ??
             const ComponentHealthState.normal(),
@@ -767,6 +779,8 @@ class _F9ReferenceAsset extends StatefulWidget {
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
     this.residualTripCurrentA = 0,
+    this.controlState = const <String, Object?>{},
+    this.componentParameters = const <String, Object?>{},
   });
 
   final String modelType;
@@ -794,6 +808,8 @@ class _F9ReferenceAsset extends StatefulWidget {
   final double currentLimitA;
   final double resistanceOhm;
   final double residualTripCurrentA;
+  final Map<String, Object?> controlState;
+  final Map<String, Object?> componentParameters;
 
   // Board camera is locked to zero yaw/pitch. The same canonical device
   // painter continues to own all terminal and state geometry.
@@ -825,6 +841,8 @@ class _F9ReferenceAsset extends StatefulWidget {
       currentLimitA: currentLimitA,
       resistanceOhm: resistanceOhm,
       residualTripCurrentA: residualTripCurrentA,
+      controlState: controlState,
+      componentParameters: componentParameters,
     ),
   );
 

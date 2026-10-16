@@ -1906,6 +1906,12 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'coilPickupVoltageV': 180.0,
       'coilDropoutVoltageV': 100.0,
     },
+    defaultControlState: <String, Object?>{
+      'timerActuated': false,
+      'timerNcClosed': true,
+      'timerNoClosed': false,
+      'elapsedSeconds': 0.0,
+    },
     subtitle: 'A1/A2 · sortie 15–16/18 temporisée',
   ),
   F9PaletteDefinition(
@@ -1941,6 +1947,18 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ],
       'inputAddresses': <String>['I0', 'I1', 'I2', 'I3'],
       'outputAddresses': <String>['Q0', 'Q1', 'Q2', 'Q3'],
+    },
+    defaultControlState: <String, Object?>{
+      'supplyValid': false,
+      'programError': false,
+      'I0': false,
+      'I1': false,
+      'I2': false,
+      'I3': false,
+      'Q0': false,
+      'Q1': false,
+      'Q2': false,
+      'Q3': false,
     },
     subtitle: 'Alimentation logique interne 24 V CC · Ladder · Q commande contacteurs',
   ),
@@ -3276,6 +3294,8 @@ class F9ComponentPreview extends StatelessWidget {
                           ?.toDouble() ??
                       0
                 : 0,
+            controlState: definition.defaultControlState,
+            componentParameters: definition.defaultParameters,
           );
 
     // Every family including physical meters uses the same appearance rule.

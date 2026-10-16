@@ -98,6 +98,27 @@ abstract final class TerminalVisualProfile {
       'contactor_aux_nc' ||
       'relay_contact_no' ||
       'relay_contact_nc' => <Offset>[Offset(0, h * -0.38), Offset(0, h * 0.38)],
+      // AC3 control modules: control power and timer-coil terminals are at
+      // the top; dry contacts and PLC output terminals are at the bottom.
+      'timer_star_delta' => <Offset>[
+        Offset(w * -0.18, h * -0.39),
+        Offset(w * 0.18, h * -0.39),
+        Offset(w * -0.28, h * 0.39),
+        Offset(0, h * 0.39),
+        Offset(w * 0.28, h * 0.39),
+      ],
+      'plc_ac3' => <Offset>[
+        Offset(w * -0.38, h * -0.39),
+        Offset(w * -0.23, h * -0.39),
+        Offset(w * -0.08, h * -0.39),
+        Offset(w * 0.08, h * -0.39),
+        Offset(w * 0.23, h * -0.39),
+        Offset(w * 0.38, h * -0.39),
+        Offset(w * -0.30, h * 0.39),
+        Offset(w * -0.10, h * 0.39),
+        Offset(w * 0.10, h * 0.39),
+        Offset(w * 0.30, h * 0.39),
+      ],
       'contactor_ac1' => <Offset>[
         Offset(w * -0.1224, h * -0.42),
         Offset(w * -0.1224, h * 0.42),

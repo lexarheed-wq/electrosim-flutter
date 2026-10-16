@@ -14,6 +14,7 @@ import 'f18_crusher_3d_assets.dart';
 import 'f18_crusher_visual.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
+import 'f18_control_modules_visual.dart';
 import 'f18_industrial_physical_devices.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'reference_components/reference_models.dart';
@@ -88,6 +89,8 @@ abstract final class F18ReferenceComponentVisuals {
     'isolator_4p',
     'breaker_4p',
     'terminal_block_5',
+    'timer_star_delta',
+    'plc_ac3',
   };
 
   static bool supports(String modelType) =>
@@ -240,6 +243,8 @@ abstract final class F18ReferenceComponentMetrics {
               'terminal_block_5' => F23DistributionGeometry.boardSizeFor(
                 F23DistributionDevice.terminalBlock5,
               ),
+              'timer_star_delta' => const Size(180, 260),
+              'plc_ac3' => const Size(300, 220),
               _ => const Size(104, 64),
             });
 
@@ -311,6 +316,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
     this.residualTripCurrentA = 0,
+    this.controlState = const <String, Object?>{},
+    this.componentParameters = const <String, Object?>{},
   });
 
   final String modelType;
@@ -336,10 +343,22 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final double currentLimitA;
   final double resistanceOhm;
   final double residualTripCurrentA;
+  final Map<String, Object?> controlState;
+  final Map<String, Object?> componentParameters;
 
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (type == 'timer_star_delta' || type == 'plc_ac3') {
+      return F18ControlModuleVisual(
+        modelType: type,
+        size: size,
+        controlState: controlState,
+        parameters: componentParameters,
+        active: active,
+        showTerminals: showTerminals,
+      );
+    }
     final native = NativeApplianceGeometry.forVisual(type, variantKey);
     if (native != null) {
       return F18NativeApplianceVisual(

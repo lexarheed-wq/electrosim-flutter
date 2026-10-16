@@ -128,8 +128,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final ValueChanged<CircuitState>? callback = widget.onCircuitChanged;
     if (callback == null ||
         identical(_circuit, _lastReportedCircuit) ||
-        _circuitReportScheduled)
+        _circuitReportScheduled) {
       return;
+    }
     _circuitReportScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _circuitReportScheduled = false;
@@ -4031,8 +4032,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                   : <Map<String, Object?>>[],
             },
           ];
-    if (rungs.isEmpty)
+    if (rungs.isEmpty) {
       rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]});
+    }
     final List<String> addresses = <String>[
       'I0',
       'I1',

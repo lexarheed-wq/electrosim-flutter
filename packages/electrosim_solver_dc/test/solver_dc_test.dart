@@ -7,6 +7,25 @@ void main() {
   const TopologyEngine topologyEngine = TopologyEngine();
   const SolverDC solver = SolverDC();
 
+  test('solver options expose stable defaults and configurable limits', () {
+    const DcSolverOptions defaults = DcSolverOptions();
+    expect(defaults.pivotTolerance, 1e-12);
+    expect(defaults.residualTolerance, 1e-9);
+    expect(defaults.maxCurrentLimitIterations, 8);
+    expect(defaults.maxNonlinearIterations, 16);
+
+    const DcSolverOptions configured = DcSolverOptions(
+      pivotTolerance: 1e-10,
+      residualTolerance: 1e-8,
+      maxCurrentLimitIterations: 4,
+      maxNonlinearIterations: 6,
+    );
+    expect(configured.pivotTolerance, 1e-10);
+    expect(configured.residualTolerance, 1e-8);
+    expect(configured.maxCurrentLimitIterations, 4);
+    expect(configured.maxNonlinearIterations, 6);
+  });
+
   DcSolveResult solve(CircuitState circuit) =>
       solver.solve(circuit, topologyEngine.compile(circuit));
 

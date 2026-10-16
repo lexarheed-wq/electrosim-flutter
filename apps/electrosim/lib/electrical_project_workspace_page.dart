@@ -223,8 +223,9 @@ final class _ElectricalProjectWorkspacePageState
       });
       widget.onProjectChanged(document.project);
     } on Object catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() => _status = 'Impossible d’ouvrir le projet : $error');
+      }
     }
   }
 

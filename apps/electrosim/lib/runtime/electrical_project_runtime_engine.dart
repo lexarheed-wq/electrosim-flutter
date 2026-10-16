@@ -150,10 +150,11 @@ final class ElectricalProjectRuntimeEngine {
       plcSupply[plc.id.value] = valid;
       if (voltage != null) plcSupplyVoltages[plc.id.value] = voltage;
       supplyValid = supplyValid && valid;
-      if (!valid)
+      if (!valid) {
         diagnostics.add(
           'PLC ${plc.id.value}: alimentation 24 V absente ou hors plage.',
         );
+      }
       final Object? rawProgram = plc.parameters['ladderProgram'];
       final List<Map<String, Object?>> program = _program(rawProgram);
       final String key = '${dcNetwork.id}/${plc.id.value}';
@@ -168,10 +169,11 @@ final class ElectricalProjectRuntimeEngine {
       );
       ladder[key] = scan.state;
       plcProgramErrors[plc.id.value] = scan.programError;
-      if (scan.programError)
+      if (scan.programError) {
         diagnostics.add(
           'PLC ${plc.id.value}: programme Ladder invalide; sorties désactivées.',
         );
+      }
       if (!valid) {
         ladder[key] = LadderRuntimeState(
           outputs: const <String, bool>{},
@@ -207,10 +209,11 @@ final class ElectricalProjectRuntimeEngine {
       final bool actuated = dcFinal.contactorStates[coilId]?.actuated ?? false;
       relayStates[link.id] = actuated;
       relayByCoil[link.relayCoilId] = actuated;
-      if (dcFinal.contactorStates[coilId] == null)
+      if (dcFinal.contactorStates[coilId] == null) {
         diagnostics.add(
           'Liaison ${link.id}: état de bobine relais DC indisponible.',
         );
+      }
     }
 
     final CircuitState acProjected = _projectAcRelayContacts(

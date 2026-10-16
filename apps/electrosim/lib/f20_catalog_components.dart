@@ -333,6 +333,7 @@ final class _P {
     'brake' => 'FREIN',
     'electromagnet' => 'ÉLECTRO.',
     'ldr' => 'LDR',
+    'sensor-proximity' => 'PROX.',
     'ntc' => 'NTC',
     'ptc' => 'PTC',
     'shunt' => 'SHUNT',
@@ -1287,6 +1288,18 @@ final class _P {
       r,
       Paint()..color = const Color(0xFF32464F),
     );
+    if (variant == 'sensor-proximity') {
+      final Offset statusLed = Offset(body.right - h * .075, body.top + h * .09);
+      canvas.drawCircle(
+        statusLed,
+        h * .025,
+        Paint()
+          ..color = state.actuated
+              ? const Color(0xFF42D58A)
+              : const Color(0xFF65737A),
+      );
+      canvas.drawCircle(statusLed, h * .025, outline);
+    }
     if (variant == 'ldr') {
       for (var i = 0; i < 4; i++) {
         final double y = c.dy - h * .08 + i * h * .035;

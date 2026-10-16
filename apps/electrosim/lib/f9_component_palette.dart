@@ -298,6 +298,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.power_outlined,
     kind: F9PaletteElementKind.source,
     terminalLabels: <String>['L+', 'M'],
+    visualVariant: 'control-24v',
     supportedModes: <ElectricalMode>{ElectricalMode.dc},
     defaultParameters: <String, Object?>{
       'voltageV': 24.0,
@@ -314,6 +315,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.sensors_outlined,
     kind: F9PaletteElementKind.component,
     terminalLabels: <String>['13', '14'],
+    visualModelType: 'catalog_sensor_2t',
     supportedModes: <ElectricalMode>{ElectricalMode.dc},
     defaultControlState: <String, Object?>{'closed': false},
     visualVariant: 'sensor-proximity',

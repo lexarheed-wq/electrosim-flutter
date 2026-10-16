@@ -750,7 +750,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
       case 'source-ac-current':
         text(
           c,
-          name.endsWith('current')
+          v.variantKey == 'control-24v'
+              ? 'ALIM. COMMANDE 24 V'
+              : name.endsWith('current')
               ? (name.contains('-ac-') ? 'SOURCE I AC' : 'SOURCE I CC')
               : (name.contains('-ac-') ? 'SOURCE U AC' : 'SOURCE U CC'),
           Offset(w / 2, h * .11),
@@ -1189,7 +1191,11 @@ final class _PhysicalPlatePainter extends CustomPainter {
 
   void portLabels(Canvas c) {
     if (!v.showTerminals) return;
-    final labels = switch (name) {
+    final List<String> labels;
+    if (name == 'source-dc-voltage' && v.variantKey == 'control-24v') {
+      labels = <String>['L+', 'M'];
+    } else {
+      labels = switch (name) {
       'diode-axial' ||
       'diode-glass' ||
       'diode-tvs' ||
@@ -1219,8 +1225,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
       'overload' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
       'breaker4' ||
       'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
-      _ => List<String>.filled(ports.length, ''),
-    };
+          _ => List<String>.filled(ports.length, ''),
+      };
+    }
     for (var i = 0; i < ports.length; i++) {
       if (labels[i].isEmpty) continue;
       final p = ports[i];

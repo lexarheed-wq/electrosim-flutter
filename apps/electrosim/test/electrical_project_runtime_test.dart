@@ -41,16 +41,16 @@ CircuitState _controlCircuit({required bool sourceEnabled}) {
     sources: <SourceInstance>[
       SourceInstance(id: SourceId('s24'), modelType: 'dc_voltage_source', enabled: sourceEnabled,
         terminals: <Terminal>[
-          Terminal(id: TerminalId('s24+'), name: '+', phase: PhaseTag.dcPositive),
-          Terminal(id: TerminalId('s24-'), name: '-', phase: PhaseTag.dcNegative),
+          Terminal(id: TerminalId('s24-pos'), name: '+', phase: PhaseTag.dcPositive),
+          Terminal(id: TerminalId('s24-neg'), name: '-', phase: PhaseTag.dcNegative),
         ], parameters: const <String, Object?>{'voltageV': 24.0}),
     ],
     connections: <Connection>[
-      Connection(id: ConnectionId('l+'), fromTerminalId: TerminalId('s24+'), toTerminalId: TerminalId('plc-0')),
-      Connection(id: ConnectionId('m'), fromTerminalId: TerminalId('s24-'), toTerminalId: TerminalId('plc-1')),
-      Connection(id: ConnectionId('input'), fromTerminalId: TerminalId('s24+'), toTerminalId: TerminalId('plc-2')),
+      Connection(id: ConnectionId('l-positive'), fromTerminalId: TerminalId('s24-pos'), toTerminalId: TerminalId('plc-0')),
+      Connection(id: ConnectionId('m'), fromTerminalId: TerminalId('s24-neg'), toTerminalId: TerminalId('plc-1')),
+      Connection(id: ConnectionId('input'), fromTerminalId: TerminalId('s24-pos'), toTerminalId: TerminalId('plc-2')),
       Connection(id: ConnectionId('q0-relay'), fromTerminalId: TerminalId('plc-6'), toTerminalId: TerminalId('relay-a')),
-      Connection(id: ConnectionId('relay-m'), fromTerminalId: TerminalId('relay-b'), toTerminalId: TerminalId('s24-')),
+      Connection(id: ConnectionId('relay-m'), fromTerminalId: TerminalId('relay-b'), toTerminalId: TerminalId('s24-neg')),
     ],
   );
 }

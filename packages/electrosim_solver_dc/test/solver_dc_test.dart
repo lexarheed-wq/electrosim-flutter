@@ -228,8 +228,13 @@ void main() {
         'resistor',
         const <String, Object?>{'resistanceOhm': 0.0},
       );
+      final CircuitState nonNumericResistance = _componentCircuit(
+        'resistor',
+        const <String, Object?>{'resistanceOhm': '10'},
+      );
       expect(solve(unsupported).status, DcSolveStatus.invalid);
       expect(solve(badResistance).status, DcSolveStatus.invalid);
+      expect(solve(nonNumericResistance).status, DcSolveStatus.invalid);
     });
 
     test('wrong mode and empty DC circuit are explicit failures', () {

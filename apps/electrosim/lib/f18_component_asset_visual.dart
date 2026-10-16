@@ -91,6 +91,7 @@ abstract final class F18ReferenceComponentVisuals {
     'terminal_block_5',
     'timer_star_delta',
     'plc_ac3',
+    'plc_dc',
   };
 
   static bool supports(String modelType) =>
@@ -245,14 +246,25 @@ abstract final class F18ReferenceComponentMetrics {
               ),
               'timer_star_delta' => const Size(180, 260),
               'plc_ac3' => const Size(300, 220),
+              'plc_dc' => const Size(300, 220),
               _ => const Size(104, 64),
             });
 
   static Size paletteSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(82, 58));
+      _fitInside(
+        modelType.toLowerCase() == 'plc_dc'
+            ? const Size(104, 64)
+            : boardSizeFor(modelType),
+        const Size(82, 58),
+      );
 
   static Size dragSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(160, 118));
+      _fitInside(
+        modelType.toLowerCase() == 'plc_dc'
+            ? const Size(104, 64)
+            : boardSizeFor(modelType),
+        const Size(160, 118),
+      );
 
   static Size _fitInside(Size source, Size bounds) {
     final double scale = math.min(
@@ -349,7 +361,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
-    if (type == 'timer_star_delta' || type == 'plc_ac3') {
+    if (type == 'timer_star_delta' ||
+        type == 'plc_ac3' ||
+        type == 'plc_dc') {
       return F18ControlModuleVisual(
         modelType: type,
         size: size,

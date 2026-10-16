@@ -107,7 +107,7 @@ abstract final class TerminalVisualProfile {
         Offset(0, h * 0.39),
         Offset(w * 0.28, h * 0.39),
       ],
-      'plc_ac3' => <Offset>[
+      'plc_ac3' || 'plc_dc' => <Offset>[
         Offset(w * -0.38, h * -0.39),
         Offset(w * -0.23, h * -0.39),
         Offset(w * -0.08, h * -0.39),

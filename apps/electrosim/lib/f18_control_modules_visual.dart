@@ -7,7 +7,9 @@ import 'f18_industrial_physical_plate.dart';
 
 abstract final class F18ControlModuleVisuals {
   static bool supports(String modelType) =>
-      const {'timer_star_delta', 'plc_ac3'}.contains(modelType.toLowerCase());
+      const {'timer_star_delta', 'plc_ac3', 'plc_dc'}.contains(
+        modelType.toLowerCase(),
+      );
 }
 
 /// Dedicated industrial renderings for the two AC3 control modules.

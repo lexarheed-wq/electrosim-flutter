@@ -54,7 +54,7 @@ void main() {
   }
 
   test('timer and PLC are registered as dedicated physical visuals', () {
-    for (final type in ['timer_star_delta', 'plc_ac3']) {
+    for (final type in ['timer_star_delta', 'plc_ac3', 'plc_dc']) {
       expect(
         F18ReferenceComponentVisuals.supports(type),
         isTrue,
@@ -72,6 +72,15 @@ void main() {
       final plcSize = F18ReferenceComponentMetrics.boardSizeFor('plc_ac3');
       expect(timerSize, const Size(180, 260));
       expect(plcSize, const Size(300, 220));
+      expect(
+        F18ReferenceComponentMetrics.boardSizeFor('plc_dc'),
+        const Size(300, 220),
+      );
+      final Size plcPaletteSize = F18ReferenceComponentMetrics.paletteSizeFor(
+        'plc_dc',
+      );
+      expect(plcPaletteSize.width, 82);
+      expect(plcPaletteSize.height, closeTo(50.46, .01));
 
       final timerPorts = List.generate(
         5,
@@ -152,7 +161,7 @@ void main() {
   testWidgets(
     'palette modules use a 3/4 camera while board modules stay frontal',
     (tester) async {
-      for (final type in ['timer_star_delta', 'plc_ac3']) {
+      for (final type in ['timer_star_delta', 'plc_ac3', 'plc_dc']) {
         final front = await render(tester, type);
         final palette = await render(tester, type, perspective: true);
         expect(palette, isNot(equals(front)), reason: type);

@@ -476,7 +476,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           : runtime?.dcBatterySocs[component.id] ??
                 (component.parameters['initialSoc'] as num?)?.toDouble() ??
                 0.0;
-      final ComponentInstance? runtimeComponent = runtime?.effectiveCircuit
+      final ComponentInstance? runtimeComponent = runtime
+          ?.effectiveCircuit
           .components
           .where((ComponentInstance candidate) => candidate.id == component.id)
           .firstOrNull;

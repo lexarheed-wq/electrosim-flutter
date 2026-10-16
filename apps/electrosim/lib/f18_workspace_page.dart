@@ -126,7 +126,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
 
   void _scheduleCircuitReport() {
     final ValueChanged<CircuitState>? callback = widget.onCircuitChanged;
-    if (callback == null || identical(_circuit, _lastReportedCircuit) || _circuitReportScheduled) return;
+    if (callback == null ||
+        identical(_circuit, _lastReportedCircuit) ||
+        _circuitReportScheduled)
+      return;
     _circuitReportScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _circuitReportScheduled = false;
@@ -1294,9 +1297,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             onPowerConnectionChanged: _studentTpReadOnly
                                 ? null
                                 : _configureSelectedPower,
-                            onConfigurePlc: _studentTpReadOnly ? null : _editPlcLadder,
-                            onLinkPlcOutput: _studentTpReadOnly ? null : _linkPlcOutput,
-                            onConfigureTimer: _studentTpReadOnly ? null : _editStarDeltaTimer,
+                            onConfigurePlc: _studentTpReadOnly
+                                ? null
+                                : _editPlcLadder,
+                            onLinkPlcOutput: _studentTpReadOnly
+                                ? null
+                                : _linkPlcOutput,
+                            onConfigureTimer: _studentTpReadOnly
+                                ? null
+                                : _editStarDeltaTimer,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -4005,9 +4014,12 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             };
           }).toList()
         : <Map<String, Object?>>[];
-    final List<Map<String, Object?>> rungs = rawProgram is List &&
+    final List<Map<String, Object?>> rungs =
+        rawProgram is List &&
             rawProgram.isNotEmpty &&
-            rawProgram.whereType<Map>().every((Map row) => row.containsKey('steps'))
+            rawProgram.whereType<Map>().every(
+              (Map row) => row.containsKey('steps'),
+            )
         ? savedRungs
         : <Map<String, Object?>>[
             <String, Object?>{
@@ -4019,14 +4031,38 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                   : <Map<String, Object?>>[],
             },
           ];
-    if (rungs.isEmpty) rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]});
+    if (rungs.isEmpty)
+      rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]});
     final List<String> addresses = <String>[
-      'I0', 'I1', 'I2', 'I3', 'Q0', 'Q1', 'Q2', 'Q3',
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
       for (int i = 0; i < 16; i++) 'M$i',
       for (int i = 0; i < 16; i++) 'T$i',
     ];
-    final List<String> types = <String>['contact_no', 'contact_nc', 'TON', 'timer_done', 'coil', 'coil_set', 'coil_reset'];
-    final List<String> typeLabels = <String>['Contact NO', 'Contact NC', 'TON', 'TON terminé', 'Bobine Q/M', 'SET', 'RESET'];
+    final List<String> types = <String>[
+      'contact_no',
+      'contact_nc',
+      'TON',
+      'timer_done',
+      'coil',
+      'coil_set',
+      'coil_reset',
+    ];
+    final List<String> typeLabels = <String>[
+      'Contact NO',
+      'Contact NC',
+      'TON',
+      'TON terminé',
+      'Bobine Q/M',
+      'SET',
+      'RESET',
+    ];
     final List<dynamic>? result = await showDialog<List<dynamic>>(
       context: context,
       builder: (BuildContext dialogContext) => StatefulBuilder(
@@ -4035,51 +4071,239 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           content: SizedBox(
             width: 620,
             height: 430,
-            child: Column(children: <Widget>[
-              const Text('Les entrées I lisent les boutons/capteurs raccordés. Chaque rung est évalué de gauche à droite; TON temporise puis active son bit DN.'),
-              Expanded(child: ListView.builder(
-                itemCount: rungs.length,
-                itemBuilder: (BuildContext context, int rungIndex) {
-                  final List<Map<String, Object?>> steps = rungs[rungIndex]['steps']! as List<Map<String, Object?>>;
-                  return Card(child: Padding(padding: const EdgeInsets.all(8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                    Row(children: <Widget>[Text('Rung ${rungIndex + 1}', style: Theme.of(context).textTheme.titleSmall), const Spacer(), IconButton(tooltip: 'Supprimer le rung', onPressed: rungs.length <= 1 ? null : () => setDialogState(() => rungs.removeAt(rungIndex)), icon: const Icon(Icons.delete_outline))]),
-                    for (int stepIndex = 0; stepIndex < steps.length; stepIndex++) _ladderStepEditor(
-                      context: context,
-                      step: steps[stepIndex],
-                      types: types,
-                      typeLabels: typeLabels,
-                      addresses: switch (steps[stepIndex]['type']) {
-                        'contact_no' || 'contact_nc' => addresses.where((String address) => !address.startsWith('T')).toList(),
-                        'TON' || 'timer_done' => addresses.where((String address) => address.startsWith('T')).toList(),
-                        _ => addresses.where((String address) => address.startsWith('Q') || address.startsWith('M')).toList(),
-                      },
-                      onChanged: () => setDialogState(() {}),
-                      onDelete: () => setDialogState(() => steps.removeAt(stepIndex)),
-                      isLastStep: stepIndex == steps.length - 1,
+            child: Column(
+              children: <Widget>[
+                const Text(
+                  'Les entrées I lisent les boutons/capteurs raccordés. Chaque rung est évalué de gauche à droite; TON temporise puis active son bit DN.',
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: rungs.length,
+                    itemBuilder: (BuildContext context, int rungIndex) {
+                      final List<Map<String, Object?>> steps =
+                          rungs[rungIndex]['steps']!
+                              as List<Map<String, Object?>>;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
+                                children: <Widget>[
+                                  Text(
+                                    'Rung ${rungIndex + 1}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    tooltip: 'Supprimer le rung',
+                                    onPressed: rungs.length <= 1
+                                        ? null
+                                        : () => setDialogState(
+                                            () => rungs.removeAt(rungIndex),
+                                          ),
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                                ],
+                              ),
+                              for (
+                                int stepIndex = 0;
+                                stepIndex < steps.length;
+                                stepIndex++
+                              )
+                                _ladderStepEditor(
+                                  context: context,
+                                  step: steps[stepIndex],
+                                  types: types,
+                                  typeLabels: typeLabels,
+                                  addresses: switch (steps[stepIndex]['type']) {
+                                    'contact_no' || 'contact_nc' =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                !address.startsWith('T'),
+                                          )
+                                          .toList(),
+                                    'TON' || 'timer_done' =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                address.startsWith('T'),
+                                          )
+                                          .toList(),
+                                    _ =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                address.startsWith('Q') ||
+                                                address.startsWith('M'),
+                                          )
+                                          .toList(),
+                                  },
+                                  onChanged: () => setDialogState(() {}),
+                                  onDelete: () => setDialogState(
+                                    () => steps.removeAt(stepIndex),
+                                  ),
+                                  isLastStep: stepIndex == steps.length - 1,
+                                ),
+                              Wrap(
+                                spacing: 6,
+                                children: <Widget>[
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'contact_no',
+                                              'address': 'I0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Contact'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'TON',
+                                              'address': 'T0',
+                                              'presetSeconds': 1.0,
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.timer_outlined),
+                                    label: const Text('TON'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'coil',
+                                              'address': 'Q0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.electrical_services),
+                                    label: const Text('Bobine'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'contact_nc',
+                                              'address': 'I1',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.sync_alt),
+                                    label: const Text('Contact NC'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'timer_done',
+                                              'address': 'T0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.timer),
+                                    label: const Text('TON terminé'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setDialogState(
+                      () => rungs.add(<String, Object?>{
+                        'steps': <Map<String, Object?>>[],
+                      }),
                     ),
-                    Wrap(spacing: 6, children: <Widget>[
-                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'contact_no', 'address': 'I0'})), icon: const Icon(Icons.add), label: const Text('Contact')),
-                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'TON', 'address': 'T0', 'presetSeconds': 1.0})), icon: const Icon(Icons.timer_outlined), label: const Text('TON')),
-                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'coil', 'address': 'Q0'})), icon: const Icon(Icons.electrical_services), label: const Text('Bobine')),
-                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'contact_nc', 'address': 'I1'})), icon: const Icon(Icons.sync_alt), label: const Text('Contact NC')),
-                      TextButton.icon(onPressed: steps.any((Map<String, Object?> step) => <String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(step['type'])) ? null : () => setDialogState(() => steps.add(<String, Object?>{'type': 'timer_done', 'address': 'T0'})), icon: const Icon(Icons.timer), label: const Text('TON terminé')),
-                    ]),
-                  ])));
-                },
-              )),
-              Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: () => setDialogState(() => rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]})), icon: const Icon(Icons.add), label: const Text('Ajouter un rung'))),
-            ]),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Ajouter un rung'),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, rungs), child: const Text('Enregistrer')),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, rungs),
+              child: const Text('Enregistrer'),
+            ),
           ],
         ),
       ),
     );
     if (!mounted || result == null) return;
-    final CircuitState next = _replaceComponentParameters(componentId, <String, Object?>{'ladderProgram': result});
-    setState(() { _circuit = next; _status = 'Programme Ladder enregistré'; });
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'ladderProgram': result},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Programme Ladder enregistré';
+    });
     _simulation.updateCircuit(next);
     _syncStudentTpCircuit();
   }
@@ -4094,52 +4318,115 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     required VoidCallback onDelete,
     required bool isLastStep,
   }) {
-    return Row(children: <Widget>[
-      Expanded(flex: 3, child: DropdownButtonFormField<String>(
-        initialValue: types.contains(step['type']) ? step['type'] as String : types.first,
-        decoration: const InputDecoration(isDense: true, labelText: 'Élément'),
-        items: <DropdownMenuItem<String>>[
-          for (int index = 0; index < types.length; index++)
-            if (isLastStep || types[index] == step['type'] ||
-                !<String>['TON', 'coil', 'coil_set', 'coil_reset'].contains(types[index]))
-              DropdownMenuItem(value: types[index], child: Text(typeLabels[index])),
-        ],
-        onChanged: (String? value) {
-          if (value != null) {
-            step['type'] = value;
-            if (value == 'TON') {
-              step['address'] = 'T0';
-            } else if (<String>['coil', 'coil_set', 'coil_reset'].contains(value)) {
-              step['address'] = 'Q0';
-            } else if ((step['address'] as String? ?? '').startsWith('T')) {
-              step['address'] = 'I0';
-            }
-            onChanged();
-          }
-        },
-      )),
-      const SizedBox(width: 8),
-      Expanded(flex: 2, child: DropdownButtonFormField<String>(
-        initialValue: addresses.contains(step['address']) ? step['address'] as String : addresses.first,
-        decoration: const InputDecoration(isDense: true, labelText: 'Adresse'),
-        items: addresses.map((String value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-        onChanged: (isLastStep && <String>['coil', 'coil_set', 'coil_reset'].contains(step['type'])) || step['type'] == 'TON'
-            ? null
-            : (String? value) { if (value != null) { step['address'] = value; onChanged(); } },
-      )),
-      if (step['type'] == 'TON') SizedBox(width: 88, child: TextFormField(
-        initialValue: '${step['presetSeconds'] ?? 1}',
-        decoration: const InputDecoration(isDense: true, labelText: 's'),
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        onChanged: (String value) {
-          final double? parsed = double.tryParse(value.replaceAll(',', '.'));
-          if (parsed != null && parsed.isFinite && parsed > 0 && parsed <= 3600) {
-            step['presetSeconds'] = parsed;
-          }
-        },
-      )),
-      IconButton(tooltip: 'Supprimer l’élément', onPressed: onDelete, icon: const Icon(Icons.close)),
-    ]);
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 3,
+          child: DropdownButtonFormField<String>(
+            initialValue: types.contains(step['type'])
+                ? step['type'] as String
+                : types.first,
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Élément',
+            ),
+            items: <DropdownMenuItem<String>>[
+              for (int index = 0; index < types.length; index++)
+                if (isLastStep ||
+                    types[index] == step['type'] ||
+                    !<String>[
+                      'TON',
+                      'coil',
+                      'coil_set',
+                      'coil_reset',
+                    ].contains(types[index]))
+                  DropdownMenuItem(
+                    value: types[index],
+                    child: Text(typeLabels[index]),
+                  ),
+            ],
+            onChanged: (String? value) {
+              if (value != null) {
+                step['type'] = value;
+                if (value == 'TON') {
+                  step['address'] = 'T0';
+                } else if (<String>[
+                  'coil',
+                  'coil_set',
+                  'coil_reset',
+                ].contains(value)) {
+                  step['address'] = 'Q0';
+                } else if ((step['address'] as String? ?? '').startsWith('T')) {
+                  step['address'] = 'I0';
+                }
+                onChanged();
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 2,
+          child: DropdownButtonFormField<String>(
+            initialValue: addresses.contains(step['address'])
+                ? step['address'] as String
+                : addresses.first,
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Adresse',
+            ),
+            items: addresses
+                .map(
+                  (String value) =>
+                      DropdownMenuItem(value: value, child: Text(value)),
+                )
+                .toList(),
+            onChanged:
+                (isLastStep &&
+                        <String>[
+                          'coil',
+                          'coil_set',
+                          'coil_reset',
+                        ].contains(step['type'])) ||
+                    step['type'] == 'TON'
+                ? null
+                : (String? value) {
+                    if (value != null) {
+                      step['address'] = value;
+                      onChanged();
+                    }
+                  },
+          ),
+        ),
+        if (step['type'] == 'TON')
+          SizedBox(
+            width: 88,
+            child: TextFormField(
+              initialValue: '${step['presetSeconds'] ?? 1}',
+              decoration: const InputDecoration(isDense: true, labelText: 's'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onChanged: (String value) {
+                final double? parsed = double.tryParse(
+                  value.replaceAll(',', '.'),
+                );
+                if (parsed != null &&
+                    parsed.isFinite &&
+                    parsed > 0 &&
+                    parsed <= 3600) {
+                  step['presetSeconds'] = parsed;
+                }
+              },
+            ),
+          ),
+        IconButton(
+          tooltip: 'Supprimer l’élément',
+          onPressed: onDelete,
+          icon: const Icon(Icons.close),
+        ),
+      ],
+    );
   }
 
   Future<void> _editStarDeltaTimer(String componentId) async {
@@ -4150,51 +4437,120 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       text: '${(timer.parameters['delaySeconds'] as num?)?.toDouble() ?? 5}',
     );
     final TextEditingController deadTimeController = TextEditingController(
-      text: '${(timer.parameters['deadTimeSeconds'] as num?)?.toDouble() ?? 0.05}',
+      text:
+          '${(timer.parameters['deadTimeSeconds'] as num?)?.toDouble() ?? 0.05}',
     );
     final (String, String)? value = await showDialog<(String, String)>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-      title: const Text('Retard étoile-triangle'),
-      content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-        TextField(controller: delayController, autofocus: true, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Retard étoile (secondes)', helperText: 'Valeur entre 0,1 s et 300 s')),
-        TextField(controller: deadTimeController, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Temps mort avant triangle', helperText: 'Valeur entre 0 et 5 s')),
-      ]),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
-        FilledButton(onPressed: () => Navigator.pop(context, (delayController.text, deadTimeController.text)), child: const Text('Enregistrer')),
-      ],
-    ));
+        title: const Text('Retard étoile-triangle'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              controller: delayController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Retard étoile (secondes)',
+                helperText: 'Valeur entre 0,1 s et 300 s',
+              ),
+            ),
+            TextField(
+              controller: deadTimeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Temps mort avant triangle',
+                helperText: 'Valeur entre 0 et 5 s',
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, (
+              delayController.text,
+              deadTimeController.text,
+            )),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
     delayController.dispose();
     deadTimeController.dispose();
     if (!mounted || value == null) return;
     final double? delay = double.tryParse(value.$1.replaceAll(',', '.'));
     final double? deadTime = double.tryParse(value.$2.replaceAll(',', '.'));
-    if (delay == null || !delay.isFinite || delay < 0.1 || delay > 300 ||
-        deadTime == null || !deadTime.isFinite || deadTime < 0 || deadTime > 5) {
-      _setStatus('Réglages invalides : retard de 0,1 à 300 s et temps mort de 0 à 5 s.');
+    if (delay == null ||
+        !delay.isFinite ||
+        delay < 0.1 ||
+        delay > 300 ||
+        deadTime == null ||
+        !deadTime.isFinite ||
+        deadTime < 0 ||
+        deadTime > 5) {
+      _setStatus(
+        'Réglages invalides : retard de 0,1 à 300 s et temps mort de 0 à 5 s.',
+      );
       return;
     }
-    final CircuitState next = _replaceComponentParameters(componentId, <String, Object?>{
-      'delaySeconds': delay,
-      'deadTimeSeconds': deadTime,
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'delaySeconds': delay, 'deadTimeSeconds': deadTime},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Temporisateur réglé à ${delay.toStringAsFixed(2)} s';
     });
-    setState(() { _circuit = next; _status = 'Temporisateur réglé à ${delay.toStringAsFixed(2)} s'; });
     _simulation.updateCircuit(next);
   }
 
-  CircuitState _replaceComponentParameters(String componentId, Map<String, Object?> updates) {
+  CircuitState _replaceComponentParameters(
+    String componentId,
+    Map<String, Object?> updates,
+  ) {
     return CircuitState(
-      circuitId: _circuit.circuitId, revision: _circuit.revision + 1, mode: _circuit.mode,
-      components: _circuit.components.map((ComponentInstance c) => c.id.value != componentId ? c : ComponentInstance(
-        id: c.id, modelType: c.modelType, terminals: c.terminals, parameters: <String, Object?>{...c.parameters, ...updates}, condition: c.condition, controlState: c.controlState,
-      )).toList(growable: false), sources: _circuit.sources, connections: _circuit.connections, instruments: _circuit.instruments, probes: _circuit.probes, settings: _circuit.settings, metadata: _circuit.metadata,
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components
+          .map(
+            (ComponentInstance c) => c.id.value != componentId
+                ? c
+                : ComponentInstance(
+                    id: c.id,
+                    modelType: c.modelType,
+                    terminals: c.terminals,
+                    parameters: <String, Object?>{...c.parameters, ...updates},
+                    condition: c.condition,
+                    controlState: c.controlState,
+                  ),
+          )
+          .toList(growable: false),
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: _circuit.instruments,
+      probes: _circuit.probes,
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
     );
   }
 
   void _linkPlcOutput(String plcId, String output, String? targetId) {
     final ComponentInstance? plc = _circuit.components
-        .where((ComponentInstance c) => c.id.value == plcId && c.modelType == 'plc_ac3')
+        .where(
+          (ComponentInstance c) =>
+              c.id.value == plcId && c.modelType == 'plc_ac3',
+        )
         .firstOrNull;
     if (plc == null) return;
     final Map<String, Object?> links = <String, Object?>{
@@ -4204,10 +4560,14 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (targetId == null || targetId.isEmpty) {
       links.remove(output);
     } else {
-      final bool validTarget = _circuit.components.any((ComponentInstance c) =>
-          c.id.value == targetId && c.modelType == 'contactor_3p');
+      final bool validTarget = _circuit.components.any(
+        (ComponentInstance c) =>
+            c.id.value == targetId && c.modelType == 'contactor_3p',
+      );
       if (!validTarget) {
-        _setStatus('La sortie PLC AC3 doit cibler un contacteur triphasé existant.');
+        _setStatus(
+          'La sortie PLC AC3 doit cibler un contacteur triphasé existant.',
+        );
         return;
       }
       for (final MapEntry<String, Object?> entry in links.entries.toList()) {
@@ -4218,9 +4578,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       }
       links[output] = targetId;
     }
-    final CircuitState next = _replaceComponentParameters(plcId, <String, Object?>{
-      'outputLinks': links,
-    });
+    final CircuitState next = _replaceComponentParameters(
+      plcId,
+      <String, Object?>{'outputLinks': links},
+    );
     setState(() {
       _circuit = next;
       _status = targetId == null || targetId.isEmpty
@@ -5107,40 +5468,41 @@ class _WorkspaceTopBar extends StatelessWidget {
             onPressed: onDeleteSelected,
             icon: const Icon(Icons.delete_outline),
           ),
-          if (showSimulationControls) Tooltip(
-            message: simulationAdvancing
-                ? 'Annuler l’avance temporelle'
-                : simulationRunning
-                ? 'Mettre la simulation en pause'
-                : 'Démarrer la simulation',
-            child: FilledButton.icon(
-              key: const Key('workspace-simulation-toggle'),
-              onPressed: simulationAdvancing
-                  ? onCancelAdvance
-                  : onToggleSimulation,
-              style: FilledButton.styleFrom(
-                backgroundColor: simulationRunning
-                    ? ElectroSimColors.primary
-                    : ElectroSimColors.success,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 48),
-              ),
-              icon: Icon(
-                simulationAdvancing
-                    ? Icons.stop_circle_outlined
-                    : simulationRunning
-                    ? Icons.pause
-                    : Icons.play_arrow,
-              ),
-              label: Text(
-                simulationAdvancing
-                    ? 'Stop'
-                    : simulationRunning
-                    ? 'Pause'
-                    : 'Lancer',
+          if (showSimulationControls)
+            Tooltip(
+              message: simulationAdvancing
+                  ? 'Annuler l’avance temporelle'
+                  : simulationRunning
+                  ? 'Mettre la simulation en pause'
+                  : 'Démarrer la simulation',
+              child: FilledButton.icon(
+                key: const Key('workspace-simulation-toggle'),
+                onPressed: simulationAdvancing
+                    ? onCancelAdvance
+                    : onToggleSimulation,
+                style: FilledButton.styleFrom(
+                  backgroundColor: simulationRunning
+                      ? ElectroSimColors.primary
+                      : ElectroSimColors.success,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                ),
+                icon: Icon(
+                  simulationAdvancing
+                      ? Icons.stop_circle_outlined
+                      : simulationRunning
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                ),
+                label: Text(
+                  simulationAdvancing
+                      ? 'Stop'
+                      : simulationRunning
+                      ? 'Pause'
+                      : 'Lancer',
+                ),
               ),
             ),
-          ),
           _moreMenu(),
         ];
         return Column(

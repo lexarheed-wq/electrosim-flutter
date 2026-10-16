@@ -35,8 +35,8 @@ final class F18ControlModuleVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool timer = modelType.toLowerCase() == 'timer_star_delta';
-    final bool powered = active &&
-        controlState[timer ? 'timerActuated' : 'supplyValid'] == true;
+    final bool powered =
+        active && controlState[timer ? 'timerActuated' : 'supplyValid'] == true;
     final String state = timer
         ? !powered
               ? 'hors tension'
@@ -51,7 +51,8 @@ final class F18ControlModuleVisual extends StatelessWidget {
         ? 'automate alimenté'
         : 'arrêté';
     return Semantics(
-      label: '${timer ? 'Temporisateur étoile-triangle' : 'Automate programmable'}, $state',
+      label:
+          '${timer ? 'Temporisateur étoile-triangle' : 'Automate programmable'}, $state',
       image: true,
       child: SizedBox(
         width: size.width,
@@ -107,7 +108,11 @@ final class _F18ControlModulePainter extends CustomPainter {
     return raw is num && raw.toDouble().isFinite ? raw.toDouble() : fallback;
   }
 
-  void _text(Canvas canvas, String value, Offset center, double fontSize, {
+  void _text(
+    Canvas canvas,
+    String value,
+    Offset center,
+    double fontSize, {
     Color color = _ink,
     FontWeight weight = FontWeight.w600,
     double maxWidth = double.infinity,
@@ -128,12 +133,18 @@ final class _F18ControlModulePainter extends CustomPainter {
       maxLines: 1,
       ellipsis: '…',
     )..layout(maxWidth: maxWidth);
-    painter.paint(canvas, center - Offset(painter.width / 2, painter.height / 2));
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
+    );
   }
 
   void _body(Canvas canvas) {
     final Rect front = Rect.fromLTWH(w * .055, h * .055, w * .89, h * .89);
-    final RRect body = RRect.fromRectAndRadius(front, Radius.circular(w * .035));
+    final RRect body = RRect.fromRectAndRadius(
+      front,
+      Radius.circular(w * .035),
+    );
     canvas.drawShadow(Path()..addRRect(body), const Color(0x880A1116), 7, true);
     if (perspective) {
       final Offset depth = Offset(w * .045, -h * .018);
@@ -209,7 +220,11 @@ final class _F18ControlModulePainter extends CustomPainter {
   }
 
   void _screw(Canvas canvas, Offset center, double radius) {
-    canvas.drawCircle(center, radius * 1.25, Paint()..color = const Color(0xFF3A464A));
+    canvas.drawCircle(
+      center,
+      radius * 1.25,
+      Paint()..color = const Color(0xFF3A464A),
+    );
     canvas.drawCircle(
       center,
       radius,
@@ -246,7 +261,8 @@ final class _F18ControlModulePainter extends CustomPainter {
 
   void _terminal(Canvas canvas, int index, String label) {
     final Size size = Size(w, h);
-    final Offset port = size.center(Offset.zero) +
+    final Offset port =
+        size.center(Offset.zero) +
         TerminalVisualProfile.terminalOffset(
           modelType: modelType,
           size: size,
@@ -254,16 +270,42 @@ final class _F18ControlModulePainter extends CustomPainter {
           count: isTimer ? 5 : 10,
         );
     final double radius = isTimer ? 6.7 : 7.2;
-    canvas.drawCircle(port, radius * 1.52, Paint()..color = const Color(0xFF5A6365));
-    canvas.drawCircle(port, radius * 1.19, Paint()..color = const Color(0xFF1E292E));
+    canvas.drawCircle(
+      port,
+      radius * 1.52,
+      Paint()..color = const Color(0xFF5A6365),
+    );
+    canvas.drawCircle(
+      port,
+      radius * 1.19,
+      Paint()..color = const Color(0xFF1E292E),
+    );
     _screw(canvas, port, radius * .76);
     if (!showTerminals) return;
-    final double labelY = port.dy < h / 2 ? port.dy + radius * 2.1 : port.dy - radius * 2.1;
-    _text(canvas, label, Offset(port.dx, labelY), isTimer ? 6.0 : 7.1, color: _ink);
+    final double labelY = port.dy < h / 2
+        ? port.dy + radius * 2.1
+        : port.dy - radius * 2.1;
+    _text(
+      canvas,
+      label,
+      Offset(port.dx, labelY),
+      isTimer ? 6.0 : 7.1,
+      color: _ink,
+    );
   }
 
-  void _led(Canvas canvas, Offset center, {required bool on, required Color color, double radius = 4}) {
-    canvas.drawCircle(center, radius * 1.65, Paint()..color = const Color(0xFF26343A));
+  void _led(
+    Canvas canvas,
+    Offset center, {
+    required bool on,
+    required Color color,
+    double radius = 4,
+  }) {
+    canvas.drawCircle(
+      center,
+      radius * 1.65,
+      Paint()..color = const Color(0xFF26343A),
+    );
     canvas.drawCircle(
       center,
       radius,
@@ -286,9 +328,19 @@ final class _F18ControlModulePainter extends CustomPainter {
     }
   }
 
-  void _dial(Canvas canvas, Offset center, double radius, String caption, String reading,
-      {double angle = -.55}) {
-    canvas.drawCircle(center, radius * 1.18, Paint()..color = const Color(0xFF687477));
+  void _dial(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    String caption,
+    String reading, {
+    double angle = -.55,
+  }) {
+    canvas.drawCircle(
+      center,
+      radius * 1.18,
+      Paint()..color = const Color(0xFF687477),
+    );
     canvas.drawCircle(
       center,
       radius,
@@ -314,16 +366,42 @@ final class _F18ControlModulePainter extends CustomPainter {
       canvas.drawLine(
         center + Offset(math.cos(theta) * inner, math.sin(theta) * inner),
         center + Offset(math.cos(theta) * outer, math.sin(theta) * outer),
-        Paint()..color = const Color(0xFFE0E4DF)..strokeWidth = .75,
+        Paint()
+          ..color = const Color(0xFFE0E4DF)
+          ..strokeWidth = .75,
       );
     }
-    final Offset tip = center + Offset(math.cos(angle) * radius * .6, math.sin(angle) * radius * .6);
-    canvas.drawLine(center, tip, Paint()..color = const Color(0xFFE9EBE6)..strokeWidth = radius * .09);
-    canvas.drawCircle(center, radius * .12, Paint()..color = const Color(0xFFD9DEDA));
-    _text(canvas, caption, center + Offset(0, radius * 1.3), radius * .42,
-        color: _ink, maxWidth: radius * 3.4);
-    _text(canvas, reading, center + Offset(0, radius * 1.73), radius * .36,
-        color: const Color(0xFF37454A), maxWidth: radius * 3.8);
+    final Offset tip =
+        center +
+        Offset(math.cos(angle) * radius * .6, math.sin(angle) * radius * .6);
+    canvas.drawLine(
+      center,
+      tip,
+      Paint()
+        ..color = const Color(0xFFE9EBE6)
+        ..strokeWidth = radius * .09,
+    );
+    canvas.drawCircle(
+      center,
+      radius * .12,
+      Paint()..color = const Color(0xFFD9DEDA),
+    );
+    _text(
+      canvas,
+      caption,
+      center + Offset(0, radius * 1.3),
+      radius * .42,
+      color: _ink,
+      maxWidth: radius * 3.4,
+    );
+    _text(
+      canvas,
+      reading,
+      center + Offset(0, radius * 1.73),
+      radius * .36,
+      color: const Color(0xFF37454A),
+      maxWidth: radius * 3.8,
+    );
   }
 
   void _timer(Canvas canvas) {
@@ -344,26 +422,67 @@ final class _F18ControlModulePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = .65,
     );
-    _text(canvas, 'TEMPORISATEUR', Offset(w * .50, h * .245), 8.2,
-        color: Colors.white, weight: FontWeight.w700);
-    _text(canvas, 'ETOILE  →  TRIANGLE', Offset(w * .50, h * .285), 5.7,
-        color: const Color(0xFFBEC8C6));
+    _text(
+      canvas,
+      'TEMPORISATEUR',
+      Offset(w * .50, h * .245),
+      8.2,
+      color: Colors.white,
+      weight: FontWeight.w700,
+    );
+    _text(
+      canvas,
+      'ETOILE  →  TRIANGLE',
+      Offset(w * .50, h * .285),
+      5.7,
+      color: const Color(0xFFBEC8C6),
+    );
     final double delay = _value('delaySeconds', 5.0);
     final double deadTime = _value('deadTimeSeconds', .05);
     final Offset first = Offset(w * .37, h * .49);
     final Offset second = Offset(w * .63, h * .49);
-    _dial(canvas, first, w * .095, 'DELAI', '${delay.toStringAsFixed(1)} s',
-        angle: -math.pi * .26);
-    _dial(canvas, second, w * .095, 'PAUSE', '${(deadTime * 1000).round()} ms',
-        angle: -math.pi * .58);
+    _dial(
+      canvas,
+      first,
+      w * .095,
+      'DELAI',
+      '${delay.toStringAsFixed(1)} s',
+      angle: -math.pi * .26,
+    );
+    _dial(
+      canvas,
+      second,
+      w * .095,
+      'PAUSE',
+      '${(deadTime * 1000).round()} ms',
+      angle: -math.pi * .58,
+    );
     final bool powered = active && controlState['timerActuated'] == true;
     final bool star = powered && controlState['timerNcClosed'] == true;
     final bool delta = powered && controlState['timerNoClosed'] == true;
-    _led(canvas, Offset(w * .29, h * .69), on: powered, color: _green, radius: 3.4);
+    _led(
+      canvas,
+      Offset(w * .29, h * .69),
+      on: powered,
+      color: _green,
+      radius: 3.4,
+    );
     _text(canvas, 'U', Offset(w * .29, h * .735), 5.4, color: Colors.white);
-    _led(canvas, Offset(w * .50, h * .69), on: star, color: _amber, radius: 3.4);
+    _led(
+      canvas,
+      Offset(w * .50, h * .69),
+      on: star,
+      color: _amber,
+      radius: 3.4,
+    );
     _text(canvas, 'Y', Offset(w * .50, h * .735), 5.4, color: Colors.white);
-    _led(canvas, Offset(w * .71, h * .69), on: delta, color: _green, radius: 3.4);
+    _led(
+      canvas,
+      Offset(w * .71, h * .69),
+      on: delta,
+      color: _green,
+      radius: 3.4,
+    );
     _text(canvas, 'Δ', Offset(w * .71, h * .735), 5.4, color: Colors.white);
     if (showTerminals) {
       for (int i = 0; i < 5; i++) {
@@ -420,13 +539,25 @@ final class _F18ControlModulePainter extends CustomPainter {
           ..strokeWidth = 1.1,
       );
     }
-    _text(canvas, 'ETHERNET', Offset(w * .197, h * .57), 5.6, color: Colors.white);
+    _text(
+      canvas,
+      'ETHERNET',
+      Offset(w * .197, h * .57),
+      5.6,
+      color: Colors.white,
+    );
     final Rect usb = Rect.fromLTWH(w * .15, h * .615, w * .095, h * .035);
     canvas.drawRRect(
       RRect.fromRectAndRadius(usb, const Radius.circular(2)),
       Paint()..color = const Color(0xFF313B3F),
     );
-    _text(canvas, 'SERVICE', Offset(w * .197, h * .68), 5.0, color: Colors.white);
+    _text(
+      canvas,
+      'SERVICE',
+      Offset(w * .197, h * .68),
+      5.0,
+      color: Colors.white,
+    );
 
     final Rect central = Rect.fromLTWH(w * .33, h * .285, w * .33, h * .415);
     canvas.drawRRect(
@@ -438,12 +569,28 @@ final class _F18ControlModulePainter extends CustomPainter {
           end: Alignment.bottomCenter,
         ).createShader(central),
     );
-    _text(canvas, 'AUTOMATE', Offset(w * .495, h * .37), 9,
-        color: Colors.white, weight: FontWeight.w700);
-    _text(canvas, 'LOGIQUE 24 V CC', Offset(w * .495, h * .425), 6.5,
-        color: const Color(0xFFD6DCD8));
-    _text(canvas, 'LADDER  ·  4 E / 4 S', Offset(w * .495, h * .68), 6.0,
-        color: const Color(0xFFB9C3C0));
+    _text(
+      canvas,
+      'AUTOMATE',
+      Offset(w * .495, h * .37),
+      9,
+      color: Colors.white,
+      weight: FontWeight.w700,
+    );
+    _text(
+      canvas,
+      'LOGIQUE 24 V CC',
+      Offset(w * .495, h * .425),
+      6.5,
+      color: const Color(0xFFD6DCD8),
+    );
+    _text(
+      canvas,
+      'LADDER  ·  4 E / 4 S',
+      Offset(w * .495, h * .68),
+      6.0,
+      color: const Color(0xFFB9C3C0),
+    );
 
     final bool powered = active && controlState['supplyValid'] == true;
     final bool run = powered && active && controlState['programError'] != true;
@@ -459,18 +606,52 @@ final class _F18ControlModulePainter extends CustomPainter {
     ];
     for (int i = 0; i < statusLeds.length; i++) {
       final double y = h * (.36 + i * .075);
-      _led(canvas, Offset(w * .725, y), on: statusLeds[i].$2, color: statusLeds[i].$3, radius: 3.2);
-      _text(canvas, statusLeds[i].$1, Offset(w * .77, y), 5.2, color: Colors.white,
-          maxWidth: w * .08);
+      _led(
+        canvas,
+        Offset(w * .725, y),
+        on: statusLeds[i].$2,
+        color: statusLeds[i].$3,
+        radius: 3.2,
+      );
+      _text(
+        canvas,
+        statusLeds[i].$1,
+        Offset(w * .77, y),
+        5.2,
+        color: Colors.white,
+        maxWidth: w * .08,
+      );
     }
-    _text(canvas, 'INPUTS', Offset(w * .825, h * .61), 5.0, color: const Color(0xFFCCD4D0));
-    _text(canvas, 'OUTPUTS', Offset(w * .825, h * .665), 5.0, color: const Color(0xFFCCD4D0));
+    _text(
+      canvas,
+      'INPUTS',
+      Offset(w * .825, h * .61),
+      5.0,
+      color: const Color(0xFFCCD4D0),
+    );
+    _text(
+      canvas,
+      'OUTPUTS',
+      Offset(w * .825, h * .665),
+      5.0,
+      color: const Color(0xFFCCD4D0),
+    );
     for (int i = 0; i < 4; i++) {
       final double x = w * (.79 + i * .028);
-      _led(canvas, Offset(x, h * .635), on: controlState['I$i'] == true,
-          color: const Color(0xFF57C97E), radius: 2.1);
-      _led(canvas, Offset(x, h * .69), on: controlState['Q$i'] == true,
-          color: const Color(0xFFFFB950), radius: 2.1);
+      _led(
+        canvas,
+        Offset(x, h * .635),
+        on: controlState['I$i'] == true,
+        color: const Color(0xFF57C97E),
+        radius: 2.1,
+      );
+      _led(
+        canvas,
+        Offset(x, h * .69),
+        on: controlState['Q$i'] == true,
+        color: const Color(0xFFFFB950),
+        radius: 2.1,
+      );
     }
     if (showTerminals) {
       for (int i = 0; i < 6; i++) {

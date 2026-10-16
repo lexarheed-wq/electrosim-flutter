@@ -1922,9 +1922,24 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.memory_outlined,
     kind: F9PaletteElementKind.component,
     supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-    terminalLabels: <String>['L+ 24 V', 'M 0 V', 'I0', 'I1', 'I2', 'I3', 'Q0', 'Q1', 'Q2', 'Q3'],
+    terminalLabels: <String>[
+      'L+ 24 V',
+      'M 0 V',
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
+    ],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('L+', role: TerminalRole.positive, idSuffix: 'lplus'),
+      F9PaletteTerminalSpec(
+        'L+',
+        role: TerminalRole.positive,
+        idSuffix: 'lplus',
+      ),
       F9PaletteTerminalSpec('M', role: TerminalRole.common, idSuffix: 'm'),
       F9PaletteTerminalSpec('I0', role: TerminalRole.input, idSuffix: 'i0'),
       F9PaletteTerminalSpec('I1', role: TerminalRole.input, idSuffix: 'i1'),
@@ -1960,7 +1975,8 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       'Q2': false,
       'Q3': false,
     },
-    subtitle: 'Alimentation logique interne 24 V CC · Ladder · Q commande contacteurs',
+    subtitle:
+        'Alimentation logique interne 24 V CC · Ladder · Q commande contacteurs',
   ),
   F9PaletteDefinition(
     keyName: 'plc-dc',
@@ -1970,9 +1986,24 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.memory_outlined,
     kind: F9PaletteElementKind.component,
     supportedModes: <ElectricalMode>{ElectricalMode.dc},
-    terminalLabels: <String>['L+', 'M', 'I0', 'I1', 'I2', 'I3', 'Q0', 'Q1', 'Q2', 'Q3'],
+    terminalLabels: <String>[
+      'L+',
+      'M',
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
+    ],
     terminals: <F9PaletteTerminalSpec>[
-      F9PaletteTerminalSpec('L+', role: TerminalRole.positive, idSuffix: 'lplus'),
+      F9PaletteTerminalSpec(
+        'L+',
+        role: TerminalRole.positive,
+        idSuffix: 'lplus',
+      ),
       F9PaletteTerminalSpec('M', role: TerminalRole.common, idSuffix: 'm'),
       F9PaletteTerminalSpec('I0', role: TerminalRole.input, idSuffix: 'i0'),
       F9PaletteTerminalSpec('I1', role: TerminalRole.input, idSuffix: 'i1'),
@@ -1985,16 +2016,21 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     ],
     defaultParameters: <String, Object?>{
       'ladderProgram': <Object?>[
-        <String, Object?>{'steps': <Object?>[
-          <String, Object?>{'type': 'contact_no', 'address': 'I0'},
-          <String, Object?>{'type': 'coil', 'address': 'Q0'},
-        ]},
+        <String, Object?>{
+          'steps': <Object?>[
+            <String, Object?>{'type': 'contact_no', 'address': 'I0'},
+            <String, Object?>{'type': 'coil', 'address': 'Q0'},
+          ],
+        },
       ],
       'inputAddresses': <String>['I0', 'I1', 'I2', 'I3'],
       'outputAddresses': <String>['Q0', 'Q1', 'Q2', 'Q3'],
     },
     defaultControlState: <String, Object?>{
-      'Q0': false, 'Q1': false, 'Q2': false, 'Q3': false,
+      'Q0': false,
+      'Q1': false,
+      'Q2': false,
+      'Q3': false,
     },
     subtitle: 'L+ / M · entrées mesurées · sorties Q résolues en 24 V CC',
   ),
@@ -2636,9 +2672,8 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
                 (String label) => label.toLowerCase().contains(q),
               ) ||
               item.terminals.any(
-                (F9PaletteTerminalSpec terminal) => terminal.label
-                    .toLowerCase()
-                    .contains(q),
+                (F9PaletteTerminalSpec terminal) =>
+                    terminal.label.toLowerCase().contains(q),
               );
           return categoryMatches && queryMatches;
         })

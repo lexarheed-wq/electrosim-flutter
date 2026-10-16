@@ -44,9 +44,9 @@ void main() {
               as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage();
       try {
-        return (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
-            .buffer
-            .asUint8List();
+        return (await image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        ))!.buffer.asUint8List();
       } finally {
         image.dispose();
       }
@@ -63,41 +63,46 @@ void main() {
     }
   });
 
-  test('control modules expose real terminal layouts at their physical scale', () {
-    final timerSize = F18ReferenceComponentMetrics.boardSizeFor(
-      'timer_star_delta',
-    );
-    final plcSize = F18ReferenceComponentMetrics.boardSizeFor('plc_ac3');
-    expect(timerSize, const Size(180, 260));
-    expect(plcSize, const Size(300, 220));
+  test(
+    'control modules expose real terminal layouts at their physical scale',
+    () {
+      final timerSize = F18ReferenceComponentMetrics.boardSizeFor(
+        'timer_star_delta',
+      );
+      final plcSize = F18ReferenceComponentMetrics.boardSizeFor('plc_ac3');
+      expect(timerSize, const Size(180, 260));
+      expect(plcSize, const Size(300, 220));
 
-    final timerPorts = List.generate(
-      5,
-      (index) => TerminalVisualProfile.terminalOffset(
-        modelType: 'timer_star_delta',
-        size: timerSize,
-        index: index,
-        count: 5,
-      ),
-    );
-    final plcPorts = List.generate(
-      10,
-      (index) => TerminalVisualProfile.terminalOffset(
-        modelType: 'plc_ac3',
-        size: plcSize,
-        index: index,
-        count: 10,
-      ),
-    );
-    expect(timerPorts.toSet(), hasLength(5));
-    expect(plcPorts.toSet(), hasLength(10));
-    expect(timerPorts.take(2).every((point) => point.dy < 0), isTrue);
-    expect(timerPorts.skip(2).every((point) => point.dy > 0), isTrue);
-    expect(plcPorts.take(6).every((point) => point.dy < 0), isTrue);
-    expect(plcPorts.skip(6).every((point) => point.dy > 0), isTrue);
-  });
+      final timerPorts = List.generate(
+        5,
+        (index) => TerminalVisualProfile.terminalOffset(
+          modelType: 'timer_star_delta',
+          size: timerSize,
+          index: index,
+          count: 5,
+        ),
+      );
+      final plcPorts = List.generate(
+        10,
+        (index) => TerminalVisualProfile.terminalOffset(
+          modelType: 'plc_ac3',
+          size: plcSize,
+          index: index,
+          count: 10,
+        ),
+      );
+      expect(timerPorts.toSet(), hasLength(5));
+      expect(plcPorts.toSet(), hasLength(10));
+      expect(timerPorts.take(2).every((point) => point.dy < 0), isTrue);
+      expect(timerPorts.skip(2).every((point) => point.dy > 0), isTrue);
+      expect(plcPorts.take(6).every((point) => point.dy < 0), isTrue);
+      expect(plcPorts.skip(6).every((point) => point.dy > 0), isTrue);
+    },
+  );
 
-  testWidgets('timer face follows the star-to-delta runtime state', (tester) async {
+  testWidgets('timer face follows the star-to-delta runtime state', (
+    tester,
+  ) async {
     final idle = await render(tester, 'timer_star_delta');
     final star = await render(
       tester,
@@ -144,13 +149,14 @@ void main() {
     expect(active, isNot(equals(idle)));
   });
 
-  testWidgets('palette modules use a 3/4 camera while board modules stay frontal', (
-    tester,
-  ) async {
-    for (final type in ['timer_star_delta', 'plc_ac3']) {
-      final front = await render(tester, type);
-      final palette = await render(tester, type, perspective: true);
-      expect(palette, isNot(equals(front)), reason: type);
-    }
-  });
+  testWidgets(
+    'palette modules use a 3/4 camera while board modules stay frontal',
+    (tester) async {
+      for (final type in ['timer_star_delta', 'plc_ac3']) {
+        final front = await render(tester, type);
+        final palette = await render(tester, type, perspective: true);
+        expect(palette, isNot(equals(front)), reason: type);
+      }
+    },
+  );
 }

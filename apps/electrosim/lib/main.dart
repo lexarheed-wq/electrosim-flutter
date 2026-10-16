@@ -189,21 +189,35 @@ class _F9HomePageState extends State<F9HomePage> {
   }
 
   static void _openMixedElectricalWorkspace(BuildContext context) {
-    final ElectricalProject project = ElectricalProject(networks: <ElectricalNetwork>[
-      ElectricalNetwork(id: 'control', circuit: CircuitState(
-        circuitId: CircuitId('mixed-control'), revision: 0, mode: ElectricalMode.dc,
-      )),
-      ElectricalNetwork(id: 'power', circuit: CircuitState(
-        circuitId: CircuitId('mixed-power'), revision: 0, mode: ElectricalMode.ac3,
-      )),
-    ]);
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      settings: const RouteSettings(name: 'mixed-electrical-project'),
-      builder: (_) => ElectricalProjectWorkspacePage(
-        initialProject: project,
-        onProjectChanged: (ElectricalProject _) {},
+    final ElectricalProject project = ElectricalProject(
+      networks: <ElectricalNetwork>[
+        ElectricalNetwork(
+          id: 'control',
+          circuit: CircuitState(
+            circuitId: CircuitId('mixed-control'),
+            revision: 0,
+            mode: ElectricalMode.dc,
+          ),
+        ),
+        ElectricalNetwork(
+          id: 'power',
+          circuit: CircuitState(
+            circuitId: CircuitId('mixed-power'),
+            revision: 0,
+            mode: ElectricalMode.ac3,
+          ),
+        ),
+      ],
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'mixed-electrical-project'),
+        builder: (_) => ElectricalProjectWorkspacePage(
+          initialProject: project,
+          onProjectChanged: (ElectricalProject _) {},
+        ),
       ),
-    ));
+    );
   }
 
   static void _openMaintenanceCenter(

@@ -1291,7 +1291,10 @@ final class _P {
       Paint()..color = const Color(0xFF32464F),
     );
     if (variant == 'sensor-proximity') {
-      final Offset statusLed = Offset(body.right - h * .075, body.top + h * .09);
+      final Offset statusLed = Offset(
+        body.right - h * .075,
+        body.top + h * .09,
+      );
       canvas.drawCircle(
         statusLed,
         h * .025,

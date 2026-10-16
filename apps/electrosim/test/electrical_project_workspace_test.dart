@@ -4,29 +4,57 @@ import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CircuitState _circuit(String id, ElectricalMode mode, List<ComponentInstance> components) => CircuitState(
-  circuitId: CircuitId(id), revision: 0, mode: mode, components: components,
+CircuitState _circuit(
+  String id,
+  ElectricalMode mode,
+  List<ComponentInstance> components,
+) => CircuitState(
+  circuitId: CircuitId(id),
+  revision: 0,
+  mode: mode,
+  components: components,
 );
-ComponentInstance _component(String id, String model, int terminalCount) => ComponentInstance(
-  id: ComponentId(id), modelType: model,
-  terminals: <Terminal>[for (int i = 0; i < terminalCount; i++) Terminal(id: TerminalId('$id-$i'), name: '$i')],
-);
+ComponentInstance _component(String id, String model, int terminalCount) =>
+    ComponentInstance(
+      id: ComponentId(id),
+      modelType: model,
+      terminals: <Terminal>[
+        for (int i = 0; i < terminalCount; i++)
+          Terminal(id: TerminalId('$id-$i'), name: '$i'),
+      ],
+    );
 
-ElectricalProject _project() => ElectricalProject(networks: <ElectricalNetwork>[
-  ElectricalNetwork(id: 'control', circuit: _circuit('dc', ElectricalMode.dc, <ComponentInstance>[
-    _component('plc', 'plc_dc', 10), _component('coil', 'relay_coil', 2),
-  ])),
-  ElectricalNetwork(id: 'power', circuit: _circuit('ac3', ElectricalMode.ac3, <ComponentInstance>[
-    _component('contact', 'contactor_aux_no', 2),
-  ])),
-]);
+ElectricalProject _project() => ElectricalProject(
+  networks: <ElectricalNetwork>[
+    ElectricalNetwork(
+      id: 'control',
+      circuit: _circuit('dc', ElectricalMode.dc, <ComponentInstance>[
+        _component('plc', 'plc_dc', 10),
+        _component('coil', 'relay_coil', 2),
+      ]),
+    ),
+    ElectricalNetwork(
+      id: 'power',
+      circuit: _circuit('ac3', ElectricalMode.ac3, <ComponentInstance>[
+        _component('contact', 'contactor_aux_no', 2),
+      ]),
+    ),
+  ],
+);
 
 void main() {
-  testWidgets('network selector shows separate DC and AC3 workspaces', (WidgetTester tester) async {
+  testWidgets('network selector shows separate DC and AC3 workspaces', (
+    WidgetTester tester,
+  ) async {
     ElectricalProject? changed;
-    await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
-      initialProject: _project(), onProjectChanged: (ElectricalProject p) => changed = p,
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ElectricalProjectWorkspacePage(
+          initialProject: _project(),
+          onProjectChanged: (ElectricalProject p) => changed = p,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Commande 24 V CC'), findsOneWidget);
     expect(find.text('Puissance AC3'), findsOneWidget);
@@ -37,11 +65,18 @@ void main() {
     expect(changed, isNull);
   });
 
-  testWidgets('creates and removes an explicit PLC-to-relay bridge', (WidgetTester tester) async {
+  testWidgets('creates and removes an explicit PLC-to-relay bridge', (
+    WidgetTester tester,
+  ) async {
     ElectricalProject? changed;
-    await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
-      initialProject: _project(), onProjectChanged: (ElectricalProject p) => changed = p,
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ElectricalProjectWorkspacePage(
+          initialProject: _project(),
+          onProjectChanged: (ElectricalProject p) => changed = p,
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Liaisons PLC et relais'));
     await tester.pumpAndSettle();
@@ -56,10 +91,17 @@ void main() {
     expect(changed!.relayLinks, isEmpty);
   });
 
-  testWidgets('shared clock start, pause and single step show project status', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
-      initialProject: _project(), onProjectChanged: (_) {},
-    )));
+  testWidgets('shared clock start, pause and single step show project status', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ElectricalProjectWorkspacePage(
+          initialProject: _project(),
+          onProjectChanged: (_) {},
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('project-simulation-toggle')));
     await tester.pump(const Duration(milliseconds: 260));

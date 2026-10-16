@@ -646,7 +646,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
         state: F20CatalogState(
           powerConnectionMode: powerConnectionMode,
           energized: energized,
-          actuated: actuated ||
+          actuated:
+              actuated ||
               (catalogDevice == F20CatalogDevice.sensor2t && closed == true),
           currentA: currentA,
           voltageV: voltageV,

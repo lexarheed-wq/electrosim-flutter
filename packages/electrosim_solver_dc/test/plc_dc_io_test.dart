@@ -26,15 +26,15 @@ CircuitState _circuit({required bool q0, required bool supplyValid}) {
     sources: <SourceInstance>[
       SourceInstance(id: SourceId('v24'), modelType: 'dc_voltage_source',
         terminals: <Terminal>[
-          Terminal(id: TerminalId('v+'), name: '+', phase: PhaseTag.dcPositive),
-          Terminal(id: TerminalId('v-'), name: '-', phase: PhaseTag.dcNegative),
+          Terminal(id: TerminalId('v-pos'), name: '+', phase: PhaseTag.dcPositive),
+          Terminal(id: TerminalId('v-neg'), name: '-', phase: PhaseTag.dcNegative),
         ], parameters: const <String, Object?>{'voltageV': 24.0}),
     ],
     connections: <Connection>[
-      Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('v+'), toTerminalId: TerminalId('p0')),
-      Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('v-'), toTerminalId: TerminalId('p1')),
+      Connection(id: ConnectionId('w1'), fromTerminalId: TerminalId('v-pos'), toTerminalId: TerminalId('p0')),
+      Connection(id: ConnectionId('w2'), fromTerminalId: TerminalId('v-neg'), toTerminalId: TerminalId('p1')),
       Connection(id: ConnectionId('w3'), fromTerminalId: TerminalId('p6'), toTerminalId: TerminalId('load-a')),
-      Connection(id: ConnectionId('w4'), fromTerminalId: TerminalId('load-b'), toTerminalId: TerminalId('v-')),
+      Connection(id: ConnectionId('w4'), fromTerminalId: TerminalId('load-b'), toTerminalId: TerminalId('v-neg')),
     ],
   );
 }

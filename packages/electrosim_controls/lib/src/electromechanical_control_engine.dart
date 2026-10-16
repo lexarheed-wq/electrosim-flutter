@@ -469,6 +469,9 @@ CircuitState _applyStates(
     bool? actuated;
     if (states.containsKey(component.id)) {
       actuated = states[component.id]!;
+    } else if (component.controlState['externalLinkResolved'] == true) {
+      final Object? raw = component.controlState['actuated'];
+      actuated = raw is bool ? raw : false;
     } else if (_isLinkedElectromechanicalContact(component)) {
       final Object? linked =
           component.parameters['linkedRelayId'] ??

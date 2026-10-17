@@ -1,1 +1,178 @@
-˛Î+˝∏ß˝∂¨{Æ%äwµﬂØ›zˇÏµ⁄.¥Í^≠´b¢yË∂ó´ö+myﬂÓ≤ø€ä€j«∫‡èŒz∫ËÆâ‚ûõ≠
+import 'dart:io';
+
+import 'package:electrosim_storage/electrosim_storage.dart';
+import 'package:electrosim_tp/electrosim_tp.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:electrosim/main.dart';
+import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
+import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
+
+Future<void> _openTop(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimTopRegionKey);
+  if (region.evaluate().isEmpty || tester.getRect(region).bottom <= 0) {
+    await tester.tap(find.byKey(electroSimTopEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _openPalette(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimPaletteRegionKey);
+  if (region.evaluate().isEmpty || tester.getRect(region).right <= 0) {
+    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
+
+void main() {
+  group('F17-R8 local persistence', () {
+    late Directory temp;
+    late ElectroSimPersistenceController persistence;
+
+    setUp(() async {
+      temp = await Directory.systemTemp.createTemp('electrosim-r8-');
+      final LocalStorageRepository repository = LocalStorageRepository(temp);
+      await repository.initialize();
+      persistence = ElectroSimPersistenceController(repository);
+    });
+
+    tearDown(() async {
+      if (await temp.exists()) {
+        await temp.delete(recursive: true);
+      }
+    });
+
+    test('restores circuit revision, workspace and TP lifecycle', () async {
+      final ElectroSimTpSessionController source =
+          ElectroSimTpSessionController();
+      source.createDraft();
+      source.publish();
+      source.startStudent();
+      source.addDiagnosticEntry(
+        promptId: 'hypothesis',
+        answer: 'Branche ouverte v√©rifi√©e au voltm√®tre.',
+      );
+      source.submitStudent();
+      source.evaluateTeacher(score: 78);
+
+      final savedCircuit = source.studentCircuit!;
+      final saved = await persistence.saveWorkspace(
+        circuit: savedCircuit,
+        workspace: 'Supervision',
+        tpController: source,
+      );
+
+      expect(saved.circuit.revision, savedCircuit.revision);
+
+      final ElectroSimTpSessionController restoredTp =
+          ElectroSimTpSessionController();
+      final restored = await persistence.openLatest(tpController: restoredTp);
+
+      expect(restored, isNotNull);
+      expect(restored!.workspace, 'Supervision');
+      expect(restored.circuit, savedCircuit);
+      expect(restored.circuit.revision, savedCircuit.revision);
+      expect(restoredTp.lifecycle, TpLifecycle.evaluated);
+      expect(restoredTp.evaluation?.score, 78);
+      expect(
+        restoredTp.session!.diagnosticSheet.entries.single.answer,
+        'Branche ouverte v√©rifi√©e au voltm√®tre.',
+      );
+    });
+
+    test('explicit update preserves original creation time', () async {
+      final ElectroSimTpSessionController tp = ElectroSimTpSessionController();
+      tp.createDraft();
+      final first = await persistence.saveWorkspace(
+        circuit: tp.studentCircuit!,
+        workspace: 'C√¢blage',
+        tpController: tp,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final second = await persistence.saveWorkspace(
+        circuit: first.circuit,
+        workspace: 'Recherche de d√©rangement',
+        tpController: tp,
+      );
+
+      expect(second.createdAtUtc, first.createdAtUtc);
+      expect(second.updatedAtUtc.isBefore(first.updatedAtUtc), isFalse);
+      expect((await persistence.listSaves()).length, 1);
+    });
+
+    testWidgets('workspace exposes explicit save and resume actions', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: F9WorkspaceDemoPage(persistenceController: persistence),
+        ),
+      );
+
+      expect(find.byKey(const Key('workspace-more-actions')), findsOneWidget);
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+
+      final Finder saveAction = find.byKey(const Key('workspace-save-action'));
+      final Finder openAction = find.byKey(const Key('workspace-open-action'));
+      expect(saveAction, findsOneWidget);
+      expect(openAction, findsOneWidget);
+      expect(find.text('Sauvegarder'), findsOneWidget);
+      expect(find.text('Reprendre'), findsOneWidget);
+    });
+
+    testWidgets('resume confirms before replacing an edited circuit', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: F9WorkspaceDemoPage(persistenceController: persistence),
+        ),
+      );
+
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-save-action')));
+      await tester.pumpAndSettle();
+
+      await _openPalette(tester);
+      await tester.enterText(
+        find.byKey(const Key('palette-search-field')),
+        'r√©sistance',
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('palette-quick-add-resistor')),
+      );
+      await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
+      await tester.pumpAndSettle();
+
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-open-action')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('workspace-resume-cancel')), findsOneWidget);
+      expect(find.byKey(const Key('workspace-resume-confirm')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('workspace-resume-cancel')));
+      await tester.pumpAndSettle();
+
+      expect(
+        (tester.widget<Text>(find.byKey(const Key('status-circuit-count'))))
+            .data,
+        contains('1 √©l√©ment ¬∑ 0 source'),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

@@ -1,1 +1,527 @@
-˛Î+˝∏ß˝∂¨{Æ%äwµﬂØ›zˇÏµ⁄.¥Í^≠´b¢yË∂ó´ö+myﬂÓ≤ø€ä€j«∫‡èŒz∫ËÆâ‚ûõ≠
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
+import 'package:electrosim_scenarios/electrosim_scenarios.dart';
+import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
+import 'package:flutter/material.dart';
+
+import 'f18_industrial_physical_plate.dart';
+import 'f18_home.dart';
+import 'f18_product_library_pages.dart';
+import 'f18_session_coordinator.dart';
+import 'f18_shell_navigation.dart';
+import 'f18_v1_navigation_flow.dart';
+import 'reference_components/disjoncteur_3d.dart';
+import 'f9_ui_context.dart';
+import 'pneumatics/pneumatic_workshop_page.dart';
+import 'runtime/pneumatic_feature_gate.dart';
+import 'runtime/electrosim_lan_sync.dart';
+import 'runtime/electrosim_persistence_controller.dart';
+import 'runtime/electrosim_tp_session_controller.dart';
+
+import 'f18_workspace_page.dart';
+import 'electrical_project_workspace_page.dart';
+export 'f18_workspace_page.dart' show F18WorkspacePage;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final physicalTextures = Disjoncteur3D.prechargerTextures();
+  final industrialTextures = F18PhysicalPlateAssets.preload();
+  final ElectroSimPersistenceController persistenceController =
+      await ElectroSimPersistenceController.createDefault();
+  await physicalTextures;
+  await industrialTextures;
+  runApp(ElectroSimApp(persistenceController: persistenceController));
+}
+
+class ElectroSimApp extends StatelessWidget {
+  const ElectroSimApp({super.key, this.persistenceController});
+
+  final ElectroSimPersistenceController? persistenceController;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'ElectroSim',
+      theme: ElectroSimTheme.light(),
+      home: F9HomePage(persistenceController: persistenceController),
+    );
+  }
+}
+
+class F9HomePage extends StatefulWidget {
+  const F9HomePage({
+    super.key,
+    this.persistenceController,
+    this.onResumeSession,
+  });
+
+  final ElectroSimPersistenceController? persistenceController;
+
+  final VoidCallback? onResumeSession;
+  @override
+  State<F9HomePage> createState() => _F9HomePageState();
+}
+
+class _F9HomePageState extends State<F9HomePage> {
+  Route<void>? _activeSessionRoute;
+  bool _creatingSession = false;
+  ElectroSimPersistenceController? get persistenceController =>
+      widget.persistenceController;
+  @override
+  Widget build(BuildContext context) {
+    return F18HomeSurface(
+      activeSession:
+          widget.onResumeSession != null || _activeSessionRoute != null,
+      onCreateSession: () {
+        if (widget.onResumeSession != null) {
+          widget.onResumeSession!();
+        } else {
+          _openSessionShell(context, persistenceController);
+        }
+      },
+      onMaintenance: () =>
+          _openMaintenanceCenter(context, persistenceController),
+      onDesign: () => _openDesignCenter(context, persistenceController),
+      onJoinSession: () => _joinLanSession(context, persistenceController),
+    );
+  }
+
+  static Future<void> _joinLanSession(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) async {
+    final _NetworkJoinRequest? request = await showDialog<_NetworkJoinRequest>(
+      context: context,
+      builder: (BuildContext dialogContext) => const _NetworkJoinDialog(),
+    );
+    if (request == null || !context.mounted) return;
+
+    final ElectroSimTpSessionController controller =
+        ElectroSimTpSessionController();
+    final ElectroSimLanSyncClient client = ElectroSimLanSyncClient(
+      controller: controller,
+      sessionCode: request.sessionCode,
+      clientId: ElectroSimLanSyncClient.generateClientId(),
+    );
+    try {
+      await client.connect(request.endpoint);
+      if (!context.mounted) {
+        await client.close();
+        controller.dispose();
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => F18WorkspacePage(
+            entryLabel: 'Session √©l√®ve',
+            initialWorkspace: 'Recherche de d√©rangement',
+            sessionNavigation: true,
+            role: F9UserRole.student,
+            tpSessionController: controller,
+            persistenceController: persistenceController,
+            syncClient: client,
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      await client.close();
+      controller.dispose();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Connexion √† la session impossible : $error')),
+        );
+    }
+  }
+
+  static void _openDesignCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'design-center'),
+        builder: (BuildContext routeContext) => F18DesignCenterPage(
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) =>
+                route.isFirst || route.settings.name == 'session-home',
+          ),
+          onWiring: () => _openWorkspace(
+            routeContext,
+            'Centre de conception',
+            initialWorkspace: 'C√¢blage',
+            persistenceController: persistenceController,
+            parentRouteName: 'design-center',
+          ),
+          onMixedElectrical: () => _openMixedElectricalWorkspace(routeContext),
+          onPneumatics: const PneumaticFeatureGate().enabled
+              ? () => Navigator.of(routeContext).push(
+                  MaterialPageRoute<void>(
+                    settings: const RouteSettings(
+                      name: 'pneumatic-experimental',
+                    ),
+                    builder: (BuildContext airContext) =>
+                        const PneumaticWorkshopPage(),
+                  ),
+                )
+              : null,
+          onSchemaLibrary: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'design-schema-library'),
+              builder: (BuildContext libraryContext) => F18SchemaLibraryPage(
+                library: buildV2ProductLibrary(),
+                onOpen: (ExampleDefinition schema) => _openWorkspace(
+                  libraryContext,
+                  'Biblioth√®que de sch√©mas',
+                  initialWorkspace: 'C√¢blage',
+                  initialCircuit: schema.circuit,
+                  persistenceController: persistenceController,
+                  parentRouteName: 'design-schema-library',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void _openMixedElectricalWorkspace(
+    BuildContext context, [CircuitState? existingCircuit]
+  ) {
+    final ElectricalProject empty = ElectricalProject.emptyMixedBoard();
+    final ElectricalProject project = existingCircuit == null
+        ? empty
+        : ElectricalProject(networks: <ElectricalNetwork>[
+            for (final network in empty.networks)
+              ElectricalNetwork(
+                id: network.id,
+                circuit: network.circuit.mode == existingCircuit.mode
+                    ? existingCircuit
+                    : network.circuit,
+              ),
+          ]);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: 'mixed-electrical-project'),
+      builder: (_) => ElectricalProjectWorkspacePage(
+        initialProject: project,
+        onProjectChanged: (ElectricalProject _) {},
+      ),
+    ));
+  }
+
+  static void _openMaintenanceCenter(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'maintenance-center'),
+        builder: (BuildContext routeContext) => F18MaintenanceCenterPage(
+          onHome: () => Navigator.of(routeContext).popUntil(
+            (Route<dynamic> route) =>
+                route.isFirst || route.settings.name == 'session-home',
+          ),
+          onTroubleshooting: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(
+                name: 'maintenance-troubleshooting-setup',
+              ),
+              builder: (BuildContext setupContext) => F18ActivitySetupPage(
+                pageKey: const Key('maintenance-troubleshooting-setup-page'),
+                title: 'Pr√©parer une recherche de d√©rangement',
+                description:
+                    'Pr√©parez le diagnostic avant d‚Äôouvrir l‚Äôatelier de maintenance.',
+                parentLabel: 'centre de maintenance',
+                onBack: () => Navigator.of(setupContext).pop(),
+                onOpenWorkshop: () => _openWorkspace(
+                  setupContext,
+                  'Centre de maintenance',
+                  initialWorkspace: 'Recherche de d√©rangement',
+                  persistenceController: persistenceController,
+                  parentRouteName: 'maintenance-center',
+                ),
+              ),
+            ),
+          ),
+          onFaultLibrary: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'maintenance-fault-library'),
+              builder: (BuildContext libraryContext) => F18FaultLibraryPage(
+                library: buildV2ProductLibrary(),
+                onLaunch: (FaultScenarioDefinition scenario) => _openWorkspace(
+                  libraryContext,
+                  'Biblioth√®que de pannes',
+                  initialWorkspace: 'Recherche de d√©rangement',
+                  initialCircuit: scenario.faultyCircuit,
+                  persistenceController: persistenceController,
+                  parentRouteName: 'maintenance-fault-library',
+                ),
+              ),
+            ),
+          ),
+          onStudentValidation: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(
+                name: 'student-situation-validation',
+              ),
+              builder: (BuildContext validationContext) =>
+                  F18StudentSituationValidationPage(
+                    onBack: () => Navigator.of(validationContext).pop(),
+                    onLaunch: (String referenceCircuit, String faultScenario) {
+                      _openWorkspace(
+                        validationContext,
+                        'Validation en situation √©l√®ve',
+                        initialWorkspace: 'Recherche de d√©rangement',
+                        persistenceController: persistenceController,
+                        parentRouteName: 'maintenance-center',
+                      );
+                    },
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSessionShell(
+    BuildContext context,
+    ElectroSimPersistenceController? persistenceController,
+  ) async {
+    if (_activeSessionRoute != null) {
+      Navigator.of(
+        context,
+      ).popUntil((route) => identical(route, _activeSessionRoute));
+      return;
+    }
+    if (_creatingSession) return;
+    _creatingSession = true;
+    final F18SessionCreationDraft? draft =
+        await showDialog<F18SessionCreationDraft>(
+          context: context,
+          builder: (BuildContext dialogContext) =>
+              const F18CreateSessionDialog(),
+        );
+    _creatingSession = false;
+    if (draft == null || !context.mounted) return;
+
+    final String sessionCode = ElectroSimLanSyncHost.generateSessionCode();
+    final route = MaterialPageRoute<void>(
+      settings: const RouteSettings(name: 'teacher-session'),
+      builder: (BuildContext routeContext) => F18TeacherSessionCoordinatorPage(
+        sessionName: draft.name,
+        sessionCode: sessionCode,
+        onHome: () => _showActiveSessionHome(context),
+        workspaceBuilder:
+            (
+              BuildContext workspaceContext,
+              ElectroSimTpSessionController controller,
+              String workspace,
+              VoidCallback onDashboard,
+              ValueChanged<CircuitState> onManageSession,
+            ) => F18WorkspacePage(
+              entryLabel: 'Session active',
+              initialWorkspace: workspace,
+              sessionNavigation: true,
+              tpSessionController: controller,
+              persistenceController: persistenceController,
+              onSessionHome: () => _showActiveSessionHome(workspaceContext),
+              onSessionDashboard: onDashboard,
+              onSessionManageWithCircuit: onManageSession,
+            ),
+      ),
+    );
+    setState(() => _activeSessionRoute = route);
+    await Navigator.of(context).push(route);
+    if (mounted) setState(() => _activeSessionRoute = null);
+  }
+
+  void _showActiveSessionHome(BuildContext context) {
+    final current = ModalRoute.of(context);
+    final returnRoute = current != null && !current.isFirst
+        ? current
+        : _activeSessionRoute;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'session-home'),
+        builder: (_) => F9HomePage(
+          persistenceController: persistenceController,
+          onResumeSession: () => Navigator.of(
+            context,
+          ).popUntil((route) => identical(route, returnRoute)),
+        ),
+      ),
+    );
+  }
+
+  static void _openWorkspace(
+    BuildContext context,
+    String entryLabel, {
+    required String initialWorkspace,
+    CircuitState? initialCircuit,
+    bool sessionNavigation = false,
+    ElectroSimPersistenceController? persistenceController,
+    String? parentRouteName,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: RouteSettings(
+          name: initialWorkspace == 'C√¢blage'
+              ? 'cabling-workspace'
+              : 'troubleshooting-workspace',
+        ),
+        builder: (BuildContext workspaceContext) => F18WorkspacePage(
+          entryLabel: entryLabel,
+          initialWorkspace: initialWorkspace,
+          initialCircuit: initialCircuit,
+          sessionNavigation: sessionNavigation,
+          persistenceController: persistenceController,
+          onOpenMixedMode: (CircuitState circuit) =>
+              _openMixedElectricalWorkspace(workspaceContext, circuit),
+          onExitWorkspace: parentRouteName == null
+              ? null
+              : () => Navigator.of(workspaceContext).popUntil(
+                  (Route<dynamic> route) =>
+                      route.settings.name == parentRouteName,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _NetworkJoinRequest {
+  const _NetworkJoinRequest({
+    required this.endpoint,
+    required this.sessionCode,
+  });
+
+  final Uri endpoint;
+  final String sessionCode;
+}
+
+class _NetworkJoinDialog extends StatefulWidget {
+  const _NetworkJoinDialog();
+
+  @override
+  State<_NetworkJoinDialog> createState() => _NetworkJoinDialogState();
+}
+
+class _NetworkJoinDialogState extends State<_NetworkJoinDialog> {
+  final TextEditingController _endpoint = TextEditingController();
+  final TextEditingController _code = TextEditingController();
+  String? _error;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Rejoindre une session'),
+      content: SizedBox(
+        width: 460,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              key: const Key('join-session-endpoint'),
+              controller: _endpoint,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Adresse du professeur',
+                hintText: 'ws://192.168.1.20:12345/electrosim-sync',
+              ),
+            ),
+            const SizedBox(height: ElectroSimSpacing.sm),
+            TextField(
+              key: const Key('join-session-code'),
+              controller: _code,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Code de session',
+                hintText: 'ABC234',
+              ),
+            ),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: ElectroSimSpacing.sm),
+              Text(_error!, key: const Key('join-session-error')),
+            ],
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          key: const Key('join-session-submit'),
+          onPressed: _submit,
+          child: const Text('Rejoindre'),
+        ),
+      ],
+    );
+  }
+
+  void _submit() {
+    final String rawEndpoint = _endpoint.text.trim();
+    final String rawCode = _code.text.trim().toUpperCase();
+    final Uri? endpoint = Uri.tryParse(
+      rawEndpoint.startsWith('ws://') || rawEndpoint.startsWith('wss://')
+          ? rawEndpoint
+          : 'ws://$rawEndpoint',
+    );
+    if (endpoint == null ||
+        (endpoint.scheme != 'ws' && endpoint.scheme != 'wss') ||
+        endpoint.host.isEmpty) {
+      setState(() {
+        _error = 'Adresse r√©seau invalide.';
+      });
+      return;
+    }
+    if (rawCode.length != 6 || RegExp(r'[^A-Z2-9]').hasMatch(rawCode)) {
+      setState(() {
+        _error = 'Le code de session doit contenir 6 caract√®res.';
+      });
+      return;
+    }
+    Navigator.of(
+      context,
+    ).pop(_NetworkJoinRequest(endpoint: endpoint, sessionCode: rawCode));
+  }
+
+  @override
+  void dispose() {
+    _endpoint.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+}
+
+/// Compatibility entry point used by legacy tests and proof binaries.
+///
+/// It no longer injects a product demo circuit. Callers that need a deterministic
+/// regression fixture must provide [initialCircuit] explicitly.
+class F9WorkspaceDemoPage extends F18WorkspacePage {
+  const F9WorkspaceDemoPage({
+    super.key,
+    super.entryLabel = 'Centre de conception',
+    super.initialWorkspace = 'C√¢blage',
+    super.sessionNavigation = false,
+    super.initialSelectedElementId,
+    super.initialCircuit,
+    super.initialCabinetLayout,
+    super.role = F9UserRole.teacher,
+    super.tpSessionController,
+    super.persistenceController,
+    super.layoutPreferences,
+    super.layoutPreferencesFuture,
+    super.syncClient,
+    super.onSessionDashboard,
+    super.onSessionManage,
+    super.onSessionManageWithCircuit,
+    super.onExitWorkspace,
+  });
+}

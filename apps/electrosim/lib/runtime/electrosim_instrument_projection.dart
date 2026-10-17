@@ -1,1 +1,926 @@
-þë+ý¸§ý¶¬{®%Šwµß¯ÝzÿìµÚ.´ê^­«b¢yè¶—«š+myßî²¿ÛŠÛjÇºàÎzºè®‰âž›­
+import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_measurements/electrosim_measurements.dart';
+
+import 'electrosim_runtime_engine.dart';
+import 'f18_resistance_projection.dart';
+import 'f18_ammeter_fuse_safety.dart';
+import 'pv_series_burden_projection.dart';
+
+enum PhysicalInstrumentStatus {
+  valid,
+  off,
+  invalidWiring,
+  overRange,
+  blownFuse,
+  unsupportedMode,
+  unavailable,
+}
+
+final class PhysicalInstrumentReading {
+  const PhysicalInstrumentReading({
+    required this.instrumentId,
+    required this.status,
+    this.result,
+    this.message,
+  });
+
+  final InstrumentId instrumentId;
+  final PhysicalInstrumentStatus status;
+  final MeasurementResult? result;
+  final String? message;
+
+  bool get isValid =>
+      status == PhysicalInstrumentStatus.valid && (result?.isValid ?? false);
+}
+
+/// Executes independent measurement projections against the existing solvers.
+/// No probe is added to the permanent circuit; adding/removing an instrument
+/// cannot change the stored wiring without an explicit edit.
+final class ElectroSimInstrumentProjection {
+  const ElectroSimInstrumentProjection({
+    this.engine = const ElectroSimRuntimeEngine(),
+  });
+
+  final ElectroSimRuntimeEngine engine;
+
+  /// Read the physical shunt from the same solved topology as all loads.
+  /// A switched-off LCD does not disconnect the current input or its fuse.
+  double? dcSeriesCurrent(
+    ElectroSimRuntimeSnapshot snapshot,
+    InstrumentInstance meter,
+  ) {
+    if (snapshot.effectiveCircuit.mode != ElectricalMode.dc ||
+        meter.kind != InstrumentKind.ammeter ||
+        meter.fuseBlown ||
+        F18AmmeterFuseSafety.wiredCut(snapshot.circuit, meter) == null) {
+      return null;
+    }
+    final shunt = snapshot.effectiveCircuit.components
+        .where(
+          (c) =>
+              c.modelType == 'resistor' &&
+              c.id.value.startsWith('g5-amperemeter-burden-') &&
+              c.controlState['runtimeMeterId'] == meter.id.value,
+        )
+        .firstOrNull;
+    if (shunt == null) return null;
+    final measured = snapshot.measureCurrent(
+      branchId: 'component:${shunt.id.value}',
+    );
+    return measured.isValid ? measured.reading?.value : null;
+  }
+
+  /// Current through the meter's burden in the already-solved circuit.
+  /// Reading the common branch keeps displayed values and fuse protection
+  /// consistent with the circuit loads in DC, AC1 and AC3.
+  double? seriesCurrent(
+    ElectroSimRuntimeSnapshot snapshot,
+    InstrumentInstance meter,
+  ) {
+    final mode = snapshot.effectiveCircuit.mode;
+    if ((mode != ElectricalMode.dc &&
+            mode != ElectricalMode.ac1 &&
+            mode != ElectricalMode.ac3) ||
+        meter.kind != InstrumentKind.ammeter ||
+        meter.fuseBlown ||
+        F18AmmeterFuseSafety.wiredCut(snapshot.circuit, meter) == null) {
+      return null;
+    }
+    final shunt = snapshot.effectiveCircuit.components
+        .where(
+          (component) =>
+              component.modelType == 'resistor' &&
+              component.id.value.startsWith('g5-amperemeter-burden-') &&
+              component.controlState['runtimeMeterId'] == meter.id.value,
+        )
+        .firstOrNull;
+    if (shunt == null) return null;
+    final branchId = 'component:${shunt.id.value}';
+    final measured = mode == ElectricalMode.dc
+        ? snapshot.measureCurrent(branchId: branchId)
+        : snapshot.measureAcCurrent(branchId: branchId);
+    final value = measured.reading?.value;
+    return measured.isValid && value != null && value.isFinite ? value : null;
+  }
+
+  PhysicalInstrumentReading read({
+    required ElectroSimRuntimeSnapshot snapshot,
+    required InstrumentInstance instrument,
+  }) {
+    PhysicalInstrumentReading error(
+      PhysicalInstrumentStatus status,
+      String message,
+    ) => PhysicalInstrumentReading(
+      instrumentId: instrument.id,
+      status: status,
+      message: message,
+    );
+
+    // A physically blown fuse remains failed when the instrument is OFF.
+    // Do not mask the failure behind the power switch state.
+    if (instrument.fuseBlown) {
+      return error(
+        PhysicalInstrumentStatus.blownFuse,
+        'Instrument fuse blown. Replacement required.',
+      );
+    }
+    if (!instrument.poweredOn) {
+      return error(PhysicalInstrumentStatus.off, 'Instrument switched off.');
+    }
+    // The PV runtime can legitimately solve an autonomous battery as a
+    // DC island, without any array or inverter. Instruments must use the
+    // effective solver topology (DC) rather than the originally selected PV
+    // workspace mode; otherwise live battery voltage/current reads N/A.
+    final CircuitState circuit =
+        snapshot.circuit.mode == ElectricalMode.pv &&
+            snapshot.effectiveCircuit.mode == ElectricalMode.dc &&
+            snapshot.dcResult != null &&
+            snapshot.pvResult == null
+        ? CircuitState.fromJson({
+            ...snapshot.circuit.toJson(),
+            // Validate leads against authored wires, not the cut conductor
+            // disabled internally when the finite meter shunt is inserted.
+            'mode': ElectricalMode.dc.name,
+          })
+        : snapshot.circuit;
+    if (!circuit.instruments.any((item) => item.id == instrument.id)) {
+      return error(
+        PhysicalInstrumentStatus.invalidWiring,
+        'Instrument is not part of the circuit.',
+      );
+    }
+    final List<ProbeConnection> leads = circuit.probes
+        .where((item) => item.instrumentId == instrument.id)
+        .toList(growable: false);
+
+    ProbeConnection? probe(InstrumentPort port) {
+      for (final lead in leads) {
+        if (lead.port == port) return lead;
+      }
+      return null;
+    }
+
+    // Î© uses an internal test source only in a disposable DC projection.
+    // Route it before PV/AC dispatch; never measure a connected live source.
+    if (instrument.mode == InstrumentMode.resistance) {
+      return F18ResistanceProjection.read(
+        engine: engine,
+        circuit: circuit,
+        instrument: instrument,
+        first: probe(InstrumentPort.voltOhm)?.terminalId,
+        second: probe(InstrumentPort.common)?.terminalId,
+      );
+    }
+
+    // A probe is disconnected until its leads are placed. Do not display
+    // N/A (which means a real incompatibility) before any PV measurement.
+    if (circuit.mode == ElectricalMode.pv) {
+      return _readPv(snapshot, instrument, probe);
+    }
+
+    final InstrumentMode mode = instrument.mode;
+    if (mode == InstrumentMode.frequency) {
+      if (circuit.mode != ElectricalMode.ac1 &&
+          circuit.mode != ElectricalMode.ac3) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Frequency measurement needs an AC1 or AC3 supply.',
+        );
+      }
+      final TerminalId? first = probe(InstrumentPort.voltOhm)?.terminalId;
+      final TerminalId? second = probe(InstrumentPort.common)?.terminalId;
+      if (first == null || second == null || first == second) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Frequency requires V/Î© and COM on distinct energized terminals.',
+        );
+      }
+      // A frequency meter does not report the network setting when the
+      // probes are disconnected or when no AC voltage exists at the probes.
+      final _ProjectionWiring meterLoad = _projectionWiring(
+        circuit,
+        resistanceOhm: instrument.inputImpedanceOhm,
+        first: first,
+        second: second,
+      );
+      final ElectroSimRuntimeSnapshot loaded = engine.evaluate(
+        meterLoad.circuit,
+      );
+      final MeasurementResult rms = loaded.measureAcVoltage(
+        positiveProbe: meterLoad.first,
+        negativeProbe: meterLoad.second,
+      );
+      final double? voltage = rms.reading?.value;
+      if (!rms.isValid || voltage == null || !voltage.isFinite) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          rms.message ?? 'AC probe voltage is unavailable.',
+        );
+      }
+      if (voltage.abs() > instrument.maximumVoltageV) {
+        return error(
+          PhysicalInstrumentStatus.overRange,
+          'Frequency meter maximum input voltage exceeded.',
+        );
+      }
+      if (voltage.abs() < 1e-6) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          'No measurable AC voltage across the frequency probes.',
+        );
+      }
+      final MeasurementResult measured = loaded.measureFrequency();
+      if (!measured.isValid || measured.reading == null) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          measured.message ?? 'Frequency result unavailable.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: measured,
+      );
+    }
+
+    if (mode == InstrumentMode.phaseSequence) {
+      if (circuit.mode != ElectricalMode.ac3 || !snapshot.solved) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Phase sequence requires a solved three-phase supply.',
+        );
+      }
+      final List<TerminalId?> picks = <TerminalId?>[
+        probe(InstrumentPort.phase1)?.terminalId,
+        probe(InstrumentPort.phase2)?.terminalId,
+        probe(InstrumentPort.phase3)?.terminalId,
+      ];
+      if (picks.any((id) => id == null) || picks.toSet().length != 3) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Connect L1/L2/L3 to three distinct phase terminals.',
+        );
+      }
+      final Map<TerminalId, String> nodes = snapshot.topology.terminalToNode;
+      final List<String?> selectedNodes = <String?>[
+        for (final TerminalId? pick in picks) nodes[pick],
+      ];
+      if (selectedNodes.any((node) => node == null) ||
+          selectedNodes.toSet().length != 3) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Phase sequence probes must reach three distinct active nodes.',
+        );
+      }
+      final Set<List<int>> candidateOrders = <List<int>>{};
+      // Values are physical phase nodes, not the labels attached to the
+      // probes. A reversed wiring must reverse the indicated sequence.
+      for (final SourceInstance source in circuit.sources) {
+        final Map<PhaseTag, String?> phaseNodes = <PhaseTag, String?>{
+          for (final PhaseTag phase in <PhaseTag>[
+            PhaseTag.l1,
+            PhaseTag.l2,
+            PhaseTag.l3,
+          ])
+            phase: source.terminals
+                .where((t) => t.phase == phase)
+                .map((t) => nodes[t.id])
+                .firstOrNull,
+        };
+        if (phaseNodes.values.any((n) => n == null)) continue;
+        final String? l1 = phaseNodes[PhaseTag.l1];
+        final String? l2 = phaseNodes[PhaseTag.l2];
+        final String? l3 = phaseNodes[PhaseTag.l3];
+        if ({l1, l2, l3}.length != 3) continue;
+        final labels = <String?>[l1, l2, l3];
+        final order = <int>[
+          for (final node in selectedNodes) labels.indexOf(node),
+        ];
+        if (!order.contains(-1)) candidateOrders.add(order);
+      }
+      if (candidateOrders.length != 1) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'The three probes must belong to the same resolved AC3 supply.',
+        );
+      }
+      final List<int> order = candidateOrders.single;
+      int inversions = 0;
+      for (int i = 0; i < 3; i++) {
+        for (int j = i + 1; j < 3; j++) {
+          if (order[i] > order[j]) inversions++;
+        }
+      }
+      final MeasurementResult base = snapshot.measurePhaseSequence();
+      if (!base.isValid ||
+          base.displayText == null ||
+          base.displayText == 'IndÃ©terminÃ©') {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          'Three-phase sequence is indeterminate.',
+        );
+      }
+      final bool sourcePositive = base.displayText == 'L1 â†’ L2 â†’ L3';
+      final bool measuredPositive = inversions.isEven
+          ? sourcePositive
+          : !sourcePositive;
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: MeasurementResult.text(
+          kind: MeasurementKind.phaseSequence,
+          value: measuredPositive ? 'L1 â†’ L2 â†’ L3' : 'L1 â†’ L3 â†’ L2',
+          evidenceIds: <String>[
+            ...base.evidenceIds,
+            for (final TerminalId? pick in picks) 'probe:${pick!.value}',
+          ],
+        ),
+      );
+    }
+
+    if (mode == InstrumentMode.voltageDc ||
+        mode == InstrumentMode.voltageAcRms) {
+      final bool dc = mode == InstrumentMode.voltageDc;
+      if ((dc && circuit.mode != ElectricalMode.dc) ||
+          (!dc && circuit.mode == ElectricalMode.dc)) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Voltage mode does not match the circuit.',
+        );
+      }
+      final TerminalId? positive = probe(InstrumentPort.voltOhm)?.terminalId;
+      final TerminalId? common = probe(InstrumentPort.common)?.terminalId;
+      if (positive == null || common == null || positive == common) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Connect V/Î© and COM to two distinct electrical terminals.',
+        );
+      }
+
+      // Finite input impedance: solve a temporary shunt using the same MNA
+      // solver as the original circuit, instead of reading an ideal voltage.
+      final _ProjectionWiring wiring = _projectionWiring(
+        dc ? snapshot.effectiveCircuit : circuit,
+        resistanceOhm: instrument.inputImpedanceOhm,
+        first: positive,
+        second: common,
+      );
+      final ElectroSimRuntimeSnapshot loaded = engine.evaluate(wiring.circuit);
+      final MeasurementResult measured = dc
+          ? loaded.measureVoltage(
+              positiveProbe: wiring.first,
+              negativeProbe: wiring.second,
+            )
+          : loaded.measureAcVoltage(
+              positiveProbe: wiring.first,
+              negativeProbe: wiring.second,
+            );
+      if (!measured.isValid || measured.reading == null) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          measured.message ?? 'Physical voltage projection did not solve.',
+        );
+      }
+      if (measured.reading!.value.abs() > instrument.maximumVoltageV) {
+        return error(
+          PhysicalInstrumentStatus.overRange,
+          'Measurement exceeds instrument maximum voltage.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: measured,
+      );
+    }
+
+    if (mode == InstrumentMode.currentDc ||
+        mode == InstrumentMode.currentAcRms) {
+      final bool dc = mode == InstrumentMode.currentDc;
+      if ((dc && circuit.mode != ElectricalMode.dc) ||
+          (!dc && circuit.mode == ElectricalMode.dc)) {
+        return error(
+          PhysicalInstrumentStatus.unsupportedMode,
+          'Current mode does not match the circuit.',
+        );
+      }
+      if (instrument.kind == InstrumentKind.clampAmmeter) {
+        final ConnectionId? target = probe(InstrumentPort.clamp)?.connectionId;
+        if (target == null) {
+          return error(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Place the clamp on one existing conductor.',
+          );
+        }
+        final Connection? cable = circuit.connections
+            .where((item) => item.id == target)
+            .firstOrNull;
+        if (cable == null || !cable.enabled) {
+          return error(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Clamped conductor is absent or disabled.',
+          );
+        }
+        final double reading = snapshot
+            .connectionCurrentEvidence(cable)
+            .magnitudeA;
+        if (!reading.isFinite) {
+          return error(
+            PhysicalInstrumentStatus.unavailable,
+            'Cable current has no physical solution.',
+          );
+        }
+        // Clamp current uses solver wire evidence and does not disturb the
+        // circuit; signed direction is intentionally not claimed for AC.
+        final MeasurementResult measured = MeasurementResult.valid(
+          kind: dc ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+          value: reading,
+          unit: ElectricalUnit.ampere,
+          evidenceIds: <String>['wire:${target.value}'],
+        );
+        if (reading > instrument.maximumCurrentA) {
+          return error(
+            PhysicalInstrumentStatus.overRange,
+            'Clamp range exceeded.',
+          );
+        }
+        return PhysicalInstrumentReading(
+          instrumentId: instrument.id,
+          status: PhysicalInstrumentStatus.valid,
+          result: measured,
+        );
+      }
+
+      final ConnectionId? cut = instrument.cutConnectionId;
+      if (cut == null ||
+          probe(InstrumentPort.amp) == null ||
+          probe(InstrumentPort.common) == null) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Series current measurement requires cut wire, A and COM leads.',
+        );
+      }
+      final Connection? original = circuit.connections
+          .where((item) => item.id == cut)
+          .firstOrNull;
+      if (original == null || !original.enabled) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Series connection is absent or disabled.',
+        );
+      }
+      final TerminalId? amp = probe(InstrumentPort.amp)?.terminalId;
+      final TerminalId? common = probe(InstrumentPort.common)?.terminalId;
+      final bool isAcrossCut =
+          (amp == original.fromTerminalId && common == original.toTerminalId) ||
+          (amp == original.toTerminalId && common == original.fromTerminalId);
+      if (!isAcrossCut) {
+        return error(
+          PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must connect to opposite ends of the opened series wire.',
+        );
+      }
+      final MeasurementResult measured;
+      {
+        final current = seriesCurrent(snapshot, instrument);
+        if (current == null || !current.isFinite) {
+          return error(
+            PhysicalInstrumentStatus.unavailable,
+            'The series meter has no valid shunt in the common solved topology.',
+          );
+        }
+        measured = MeasurementResult.valid(
+          kind: dc ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+          value: dc && amp != original.fromTerminalId ? -current : current,
+          unit: ElectricalUnit.ampere,
+          evidenceIds: ['wire:${cut.value}', 'meter:${instrument.id.value}'],
+        );
+      }
+      if (!measured.isValid || measured.reading == null) {
+        return error(
+          PhysicalInstrumentStatus.unavailable,
+          measured.message ?? 'Physical current projection did not solve.',
+        );
+      }
+      if (measured.reading!.value.abs() > instrument.fuseRatingA) {
+        return error(
+          PhysicalInstrumentStatus.blownFuse,
+          'Meter current exceeds fuse rating; opening required.',
+        );
+      }
+      if (measured.reading!.value.abs() > instrument.maximumCurrentA) {
+        return error(
+          PhysicalInstrumentStatus.overRange,
+          'Meter current range exceeded.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: measured,
+      );
+    }
+    return error(
+      PhysicalInstrumentStatus.unsupportedMode,
+      'This physical instrument mode has not yet been implemented.',
+    );
+  }
+
+  /// PV currently publishes solved bus quantities rather than per-terminal
+  /// phasors. Only match probes to a known PV/DC or inverter AC terminal pair;
+  /// never infer a battery voltage from an unrelated conductor.
+  PhysicalInstrumentReading _readPv(
+    ElectroSimRuntimeSnapshot snapshot,
+    InstrumentInstance instrument,
+    ProbeConnection? Function(InstrumentPort) probe,
+  ) {
+    PhysicalInstrumentReading invalid(
+      PhysicalInstrumentStatus status,
+      String message,
+    ) => PhysicalInstrumentReading(
+      instrumentId: instrument.id,
+      status: status,
+      message: message,
+    );
+
+    final circuit = snapshot.circuit;
+    final mode = instrument.mode;
+    final bool voltage =
+        mode == InstrumentMode.voltageDc || mode == InstrumentMode.voltageAcRms;
+    final bool current =
+        mode == InstrumentMode.currentDc || mode == InstrumentMode.currentAcRms;
+
+    if (voltage) {
+      final first = probe(InstrumentPort.voltOhm)?.terminalId;
+      final second = probe(InstrumentPort.common)?.terminalId;
+      if (first == null || second == null || first == second) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Connect V/Î© and COM to two distinct PV terminals.',
+        );
+      }
+      final pv = snapshot.pvResult;
+      if (pv == null || !pv.isSolved) {
+        return invalid(
+          PhysicalInstrumentStatus.unavailable,
+          'PV source or topology is not solved; voltage cannot be measured.',
+        );
+      }
+      final nodes = snapshot.topology.terminalToNode;
+      final firstNode = nodes[first];
+      final secondNode = nodes[second];
+      if (firstNode == null || secondNode == null || firstNode == secondNode) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'PV voltage probes must reach distinct connected nodes.',
+        );
+      }
+      final circuit = snapshot.circuit;
+      double? reading;
+      String? evidence;
+      bool matchesPair(
+        List<Terminal> terminals,
+        PhaseTag positive,
+        PhaseTag negative,
+      ) {
+        final p = terminals.where((t) => t.phase == positive).toList();
+        final n = terminals.where((t) => t.phase == negative).toList();
+        if (p.length != 1 || n.length != 1) return false;
+        final pNode = nodes[p.single.id];
+        final nNode = nodes[n.single.id];
+        return pNode != null &&
+            nNode != null &&
+            ((firstNode == pNode && secondNode == nNode) ||
+                (firstNode == nNode && secondNode == pNode));
+      }
+
+      if (mode == InstrumentMode.voltageDc) {
+        for (final source in circuit.sources) {
+          if (source.modelType == 'pv_array' &&
+              matchesPair(
+                source.terminals,
+                PhaseTag.dcPositive,
+                PhaseTag.dcNegative,
+              )) {
+            reading = pv.pvOperatingVoltageV;
+            evidence = 'pv-array:${source.id.value}';
+            break;
+          }
+        }
+        if (reading == null && pv.batteryPresent) {
+          for (final component in circuit.components) {
+            if (component.modelType == 'pv_battery' &&
+                matchesPair(
+                  component.terminals,
+                  PhaseTag.dcPositive,
+                  PhaseTag.dcNegative,
+                )) {
+              reading = pv.batteryVoltageV;
+              evidence = 'pv-battery:${component.id.value}';
+              break;
+            }
+          }
+        }
+      } else {
+        for (final component in circuit.components) {
+          if (component.modelType == 'pv_inverter' &&
+              matchesPair(component.terminals, PhaseTag.l1, PhaseTag.neutral)) {
+            reading = pv.inverterOutputVoltageRmsV;
+            evidence = 'pv-inverter:${component.id.value}';
+            break;
+          }
+        }
+      }
+      if (reading == null || evidence == null || !reading.isFinite) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'PV measurement terminals do not correspond to a solved DC bus '
+          'or inverter AC output for the selected function.',
+        );
+      }
+      if (reading.abs() > instrument.maximumVoltageV) {
+        return invalid(
+          PhysicalInstrumentStatus.overRange,
+          'PV voltage exceeds the voltmeter range.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: MeasurementResult.valid(
+          kind: mode == InstrumentMode.voltageDc
+              ? MeasurementKind.voltageDc
+              : MeasurementKind.voltageAcRms,
+          value: reading.abs(),
+          unit: ElectricalUnit.volt,
+          evidenceIds: [evidence],
+        ),
+      );
+    }
+    if (current) {
+      if (instrument.kind == InstrumentKind.clampAmmeter) {
+        final wireId = probe(InstrumentPort.clamp)?.connectionId;
+        if (wireId == null) {
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Place the PV current clamp on an existing conductor.',
+          );
+        }
+        final circuit = snapshot.circuit;
+        final wires = circuit.connections
+            .where((c) => c.id == wireId && c.enabled)
+            .toList();
+        if (wires.length != 1) {
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'Clamped PV conductor is missing or disabled.',
+          );
+        }
+        final pv = snapshot.pvResult;
+        if (pv == null || !pv.isSolved) {
+          return invalid(
+            PhysicalInstrumentStatus.unavailable,
+            'PV solver has no valid current evidence.',
+          );
+        }
+        final cable = wires.single;
+        // Only known PV source-side and inverter output buses are supported.
+        // Never assign a global PV current to an arbitrary DC cable.
+        final nodes = snapshot.topology.terminalToNode;
+        final endpoint = nodes[cable.fromTerminalId];
+        final endpoint2 = nodes[cable.toTerminalId];
+        if (endpoint == null || endpoint2 == null || endpoint != endpoint2) {
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'PV clamp cable does not belong to a connected bus.',
+          );
+        }
+        double? value;
+        String? evidence;
+        if (mode == InstrumentMode.currentDc) {
+          for (final source in circuit.sources.where(
+            (s) => s.modelType == 'pv_array',
+          )) {
+            final sourceNodes = source.terminals
+                .map((t) => nodes[t.id])
+                .toSet();
+            if (sourceNodes.contains(endpoint)) {
+              value = pv.pvDrawnCurrentA.abs();
+              evidence = 'pv-array:${source.id.value}';
+              break;
+            }
+          }
+        } else {
+          for (final component in circuit.components.where(
+            (c) => c.modelType == 'pv_inverter',
+          )) {
+            final terminals = component.terminals.where(
+              (t) => t.phase == PhaseTag.l1 || t.phase == PhaseTag.neutral,
+            );
+            if (terminals.any((t) => nodes[t.id] == endpoint)) {
+              value = pv.inverterOutputCurrentRmsA.abs();
+              evidence = 'pv-inverter:${component.id.value}';
+              break;
+            }
+          }
+        }
+        if (value == null &&
+            pv.batteryPresent &&
+            mode == InstrumentMode.currentDc &&
+            pv.batteryVoltageV > 0) {
+          // Only a cable physically terminating on the battery port can
+          // report battery charge/discharge current; do not map an unrelated
+          // conductor on the same common bus to battery current.
+          for (final battery in circuit.components.where(
+            (c) => c.modelType == 'pv_battery',
+          )) {
+            if (battery.terminals.any(
+              (t) => t.id == cable.fromTerminalId || t.id == cable.toTerminalId,
+            )) {
+              value = (pv.batteryPowerW / pv.batteryVoltageV).abs();
+              evidence = 'pv-battery:${battery.id.value}';
+              break;
+            }
+          }
+        }
+        if (value == null || evidence == null) {
+          return invalid(
+            PhysicalInstrumentStatus.invalidWiring,
+            'No solved PV cable current is available at the clamp position.',
+          );
+        }
+        if (value > instrument.maximumCurrentA) {
+          return invalid(
+            PhysicalInstrumentStatus.overRange,
+            'PV current exceeds the clamp range.',
+          );
+        }
+        return PhysicalInstrumentReading(
+          instrumentId: instrument.id,
+          status: PhysicalInstrumentStatus.valid,
+          result: MeasurementResult.valid(
+            kind: mode == InstrumentMode.currentDc
+                ? MeasurementKind.currentDc
+                : MeasurementKind.currentAcRms,
+            value: value,
+            unit: ElectricalUnit.ampere,
+            evidenceIds: [evidence, 'wire:${wireId.value}'],
+          ),
+        );
+      }
+      final cut = instrument.cutConnectionId;
+      final ampTerminal = probe(InstrumentPort.amp)?.terminalId;
+      final commonTerminal = probe(InstrumentPort.common)?.terminalId;
+      if (cut == null || ampTerminal == null || commonTerminal == null) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'Insert the PV ammeter in series using A and COM.',
+        );
+      }
+      final connections = circuit.connections
+          .where((connection) => connection.id == cut && connection.enabled)
+          .toList();
+      if (connections.length != 1) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'The PV wire to be opened is missing or disabled.',
+        );
+      }
+      final wire = connections.single;
+      final correctOrientation =
+          (ampTerminal == wire.fromTerminalId &&
+              commonTerminal == wire.toTerminalId) ||
+          (ampTerminal == wire.toTerminalId &&
+              commonTerminal == wire.fromTerminalId);
+      if (!correctOrientation) {
+        return invalid(
+          PhysicalInstrumentStatus.invalidWiring,
+          'A and COM must terminate at opposite ends of the selected cut PV wire.',
+        );
+      }
+      final solved = PvSeriesBurdenProjection.solve(
+        snapshot: snapshot,
+        wire: wire,
+        meter: instrument,
+        engine: engine,
+      );
+      if (!solved.valid) {
+        return invalid(
+          PhysicalInstrumentStatus.unavailable,
+          solved.issue ?? 'PV series meter has no physically supported branch.',
+        );
+      }
+      final currentA = solved.currentA!;
+      if (currentA > instrument.fuseRatingA) {
+        return invalid(
+          PhysicalInstrumentStatus.blownFuse,
+          'PV series current exceeds the meter fuse rating.',
+        );
+      }
+      if (currentA > instrument.maximumCurrentA) {
+        return invalid(
+          PhysicalInstrumentStatus.overRange,
+          'PV series current exceeds the selected ammeter range.',
+        );
+      }
+      return PhysicalInstrumentReading(
+        instrumentId: instrument.id,
+        status: PhysicalInstrumentStatus.valid,
+        result: MeasurementResult.valid(
+          kind: mode == InstrumentMode.currentDc
+              ? MeasurementKind.currentDc
+              : MeasurementKind.currentAcRms,
+          value: currentA,
+          unit: ElectricalUnit.ampere,
+          evidenceIds: [
+            solved.evidence,
+            'wire:${wire.id.value}',
+            'burden-ohm:${instrument.burdenResistanceOhm}',
+            'meter-loss-w:${solved.lossW}',
+            'meter-drop-v:${solved.voltageDropV}',
+          ],
+        ),
+      );
+    }
+    return invalid(
+      PhysicalInstrumentStatus.unsupportedMode,
+      'Selected PV instrument function is not supported.',
+    );
+  }
+
+  _ProjectionWiring _projectionWiring(
+    CircuitState circuit, {
+    required double resistanceOhm,
+    required TerminalId first,
+    required TerminalId second,
+    ConnectionId? cutConnection,
+  }) {
+    var suffix = 0;
+    String marker;
+    do {
+      marker = 'meter-projection-$suffix';
+      suffix++;
+    } while (circuit.components.any((c) => c.id.value == marker) ||
+        circuit.connections.any((c) => c.id.value.startsWith(marker)) ||
+        circuit.components.any(
+          (c) => c.terminals.any((t) => t.id.value.startsWith(marker)),
+        ) ||
+        circuit.sources.any(
+          (s) => s.terminals.any((t) => t.id.value.startsWith(marker)),
+        ));
+    final TerminalId a = TerminalId('$marker-a');
+    final TerminalId b = TerminalId('$marker-b');
+    final ComponentInstance burden = ComponentInstance(
+      id: ComponentId(marker),
+      modelType: 'resistor',
+      terminals: <Terminal>[
+        Terminal(id: a, name: 'A'),
+        Terminal(id: b, name: 'B'),
+      ],
+      parameters: <String, Object?>{'resistanceOhm': resistanceOhm},
+    );
+    final CircuitState loaded = CircuitState(
+      circuitId: circuit.circuitId,
+      revision: circuit.revision,
+      mode: circuit.mode,
+      components: <ComponentInstance>[...circuit.components, burden],
+      sources: circuit.sources,
+      connections: <Connection>[
+        for (final connection in circuit.connections)
+          if (connection.id != cutConnection) connection,
+        Connection(
+          id: ConnectionId('$marker-wire-1'),
+          fromTerminalId: first,
+          toTerminalId: a,
+        ),
+        Connection(
+          id: ConnectionId('$marker-wire-2'),
+          fromTerminalId: b,
+          toTerminalId: second,
+        ),
+      ],
+      settings: circuit.settings,
+      metadata: circuit.metadata,
+    );
+    return _ProjectionWiring(
+      circuit: loaded,
+      first: a,
+      second: b,
+      branchId: 'component:$marker',
+    );
+  }
+}
+
+final class _ProjectionWiring {
+  const _ProjectionWiring({
+    required this.circuit,
+    required this.first,
+    required this.second,
+    required this.branchId,
+  });
+
+  final CircuitState circuit;
+  final TerminalId first;
+  final TerminalId second;
+  final String branchId;
+}

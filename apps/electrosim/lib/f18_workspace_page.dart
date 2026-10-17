@@ -1316,10 +1316,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       simulatedTime: _simulatedTime,
                       onToggleSimulation: widget.mixedRuntimeView == null
                           ? _simulation.toggle
-                          : null,
+                          : () {},
                       onResetSimulation: widget.mixedRuntimeView == null
                           ? _simulation.resetDynamics
-                          : null,
+                          : () {},
                       simulationAdvancing: _simulation.fastForwarding,
                       onAdvanceSimulation: widget.mixedRuntimeView == null
                           ? (Duration elapsed) {
@@ -1328,7 +1328,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                           : (_) {},
                       onCancelAdvance: widget.mixedRuntimeView == null
                           ? _simulation.cancelAdvance
-                          : null,
+                          : () {},
                       onUndo: _undoHistory.isEmpty || _studentTpReadOnly
                           ? null
                           : _undoEdit,

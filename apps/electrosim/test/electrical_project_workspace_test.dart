@@ -2,6 +2,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
+import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,9 +15,26 @@ ComponentInstance _component(String id, String model, int terminalCount) => Comp
 );
 
 ElectricalProject _project() => ElectricalProject(networks: <ElectricalNetwork>[
-  ElectricalNetwork(id: 'control', circuit: _circuit('dc', ElectricalMode.dc, <ComponentInstance>[
-    _component('plc', 'plc_dc', 10), _component('coil', 'relay_coil', 2),
-  ])),
+  ElectricalNetwork(id: 'control', circuit: CircuitState(
+    circuitId: CircuitId('dc'), revision: 0, mode: ElectricalMode.dc,
+    components: <ComponentInstance>[
+      ComponentInstance(id: ComponentId('plc'), modelType: 'plc_dc',
+        terminals: <Terminal>[for (int i = 0; i < 10; i++) Terminal(id: TerminalId('plc-$i'), name: '$i')],
+        parameters: const <String, Object?>{'ladderProgram': <Object?>[]}),
+      _component('coil', 'relay_coil', 2),
+    ],
+    sources: <SourceInstance>[SourceInstance(
+      id: SourceId('supply'), modelType: 'dc_voltage_source',
+      terminals: <Terminal>[
+        Terminal(id: TerminalId('supply-pos'), name: '+', phase: PhaseTag.dcPositive),
+        Terminal(id: TerminalId('supply-neg'), name: '-', phase: PhaseTag.dcNegative),
+      ], parameters: const <String, Object?>{'voltageV': 24.0},
+    )],
+    connections: <Connection>[
+      Connection(id: ConnectionId('supply-to-plc-plus'), fromTerminalId: TerminalId('supply-pos'), toTerminalId: TerminalId('plc-0')),
+      Connection(id: ConnectionId('supply-to-plc-minus'), fromTerminalId: TerminalId('supply-neg'), toTerminalId: TerminalId('plc-1')),
+    ],
+  )),
   ElectricalNetwork(id: 'power', circuit: _circuit('ac3', ElectricalMode.ac3, <ComponentInstance>[
     _component('contact', 'contactor_aux_no', 2),
     _component('motor-contactor', 'contactor_3p', 8),
@@ -164,5 +182,37 @@ void main() {
     await tester.tap(find.byTooltip('Un pas de 250 ms'));
     await tester.pumpAndSettle();
     expect(find.text('t = 0.50 s'), findsOneWidget);
+  });
+
+  testWidgets('mixed board shows source voltage and PLC power at time zero', (WidgetTester tester) async {
+    expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
+    await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
+      initialProject: _project(), onProjectChanged: (_) {},
+    )));
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel(
+        'Automate programmable, automate alimenté',
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Alimentation CC, active, 24.0 volts, 0.00 ampères',
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('mixed board shows contactor resting state and closed NC contact before start', (WidgetTester tester) async {
+    expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
+    await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
+      initialProject: _project(), onProjectChanged: (_) {},
+    )));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Contact auxiliaire normalement ouvert, ouvert', skipOffstage: false), findsOneWidget);
+    expect(find.bySemanticsLabel('Contacteur 3P, au repos', skipOffstage: false), findsOneWidget);
   });
 }

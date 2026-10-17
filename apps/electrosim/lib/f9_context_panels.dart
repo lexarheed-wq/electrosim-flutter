@@ -10,6 +10,7 @@ import 'f18_industrial_physical_plate.dart';
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
+import 'mixed_board_runtime_view.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
@@ -25,6 +26,7 @@ class F9ContextPanels extends StatefulWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.onPowerConnectionChanged,
     this.onConfigurePlc,
     this.onLinkPlcOutput,
@@ -42,6 +44,7 @@ class F9ContextPanels extends StatefulWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final void Function(String mode, String? socketId)? onPowerConnectionChanged;
   final ValueChanged<String>? onConfigurePlc;
   final void Function(String plcId, String output, String? targetId)?
@@ -164,6 +167,7 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
                   runtimeSnapshot: widget.runtimeSnapshot,
+                  mixedRuntimeView: widget.mixedRuntimeView,
                   onPowerConnectionChanged: widget.onPowerConnectionChanged,
                   onConfigurePlc: widget.onConfigurePlc,
                   onLinkPlcOutput: widget.onLinkPlcOutput,
@@ -175,9 +179,16 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   circuit: widget.circuit,
                   selectedId: widget.selectedId,
                   runtimeSnapshot: widget.runtimeSnapshot,
+                  mixedRuntimeView: widget.mixedRuntimeView,
                 ),
                 if (widget.showEie)
-                  _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
+                  _EiePanel(
+                    runtimeSnapshot: widget.mixedRuntimeView
+                            ?.runtimeForElement(widget.selectedId ?? '') ??
+                        widget.mixedRuntimeView
+                            ?.runtimeForTerminal(widget.selectedId ?? '') ??
+                        widget.runtimeSnapshot,
+                  ),
                 if (widget.showDiagnostic)
                   _StudentDiagnosticPanel(
                     controller: widget.tpSessionController,
@@ -206,6 +217,7 @@ class _PropertiesPanel extends StatelessWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.onPowerConnectionChanged,
     this.onConfigurePlc,
     this.onLinkPlcOutput,
@@ -220,6 +232,7 @@ class _PropertiesPanel extends StatelessWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final void Function(String mode, String? socketId)? onPowerConnectionChanged;
   final ValueChanged<String>? onConfigurePlc;
   final void Function(String plcId, String output, String? targetId)?
@@ -233,6 +246,14 @@ class _PropertiesPanel extends StatelessWidget {
       circuit,
       selectedId,
     );
+    final ElectroSimRuntimeSnapshot elementRuntime = details == null
+        ? runtimeSnapshot
+        : mixedRuntimeView?.runtimeForElement(details.id) ?? runtimeSnapshot;
+    final String runtimeElementId = details == null
+        ? ''
+        : mixedRuntimeView?.localIdForElement(details.id) ?? details.id;
+    String runtimeIdFor(String boardId) =>
+        mixedRuntimeView?.localIdForElement(boardId) ?? boardId;
     final bool? primaryToggleValue = details?.primaryToggleValue;
     final bool directCanvasControl = switch (details?.modelType.toLowerCase()) {
       'switch' ||
@@ -251,7 +272,8 @@ class _PropertiesPanel extends StatelessWidget {
         ? null
         : F18G7PropertyPresenter.describe(
             details: details,
-            runtimeSnapshot: runtimeSnapshot,
+            runtimeSnapshot: elementRuntime,
+            runtimeElementId: runtimeElementId,
           );
     return ListView(
       key: const Key('properties-panel'),
@@ -304,7 +326,9 @@ class _PropertiesPanel extends StatelessWidget {
             F18PowerConnectionPanel(
               circuit: circuit,
               component: component,
-              runtimeSnapshot: runtimeSnapshot,
+              runtimeSnapshot:
+                  mixedRuntimeView?.runtimeForElement(component.id.value) ??
+                  runtimeSnapshot,
               onChanged: onPowerConnectionChanged,
             ),
         const SizedBox(height: ElectroSimSpacing.md),
@@ -347,10 +371,10 @@ class _PropertiesPanel extends StatelessWidget {
           if (details.modelType == 'plc_ac3' ||
               details.modelType == 'plc_dc') ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
-            if (runtimeSnapshot.effectiveCircuit.components
+            if (elementRuntime.effectiveCircuit.components
                     .where(
                       (ComponentInstance component) =>
-                          component.id.value == details.id,
+                          component.id.value == runtimeElementId,
                     )
                     .firstOrNull
                     ?.controlState['programError'] ==
@@ -362,27 +386,27 @@ class _PropertiesPanel extends StatelessWidget {
             _PropertyLine(
               label: 'Alimentation logique',
               value:
-                  runtimeSnapshot.effectiveCircuit.components
+              elementRuntime.effectiveCircuit.components
                           .where(
                             (ComponentInstance component) =>
-                                component.id.value == details.id,
+                            component.id.value == runtimeElementId,
                           )
                           .firstOrNull
                           ?.controlState[details.modelType == 'plc_dc'
                           ? 'plcSupplyValid'
                           : 'supplyValid'] ==
                       true
-                  ? '${(runtimeSnapshot.effectiveCircuit.components.where((ComponentInstance component) => component.id.value == details.id).firstOrNull?.controlState['supplyVoltageV'] as num?)?.toStringAsFixed(1) ?? '24.0'} V CC'
+                  ? '${(elementRuntime.effectiveCircuit.components.where((ComponentInstance component) => component.id.value == runtimeElementId).firstOrNull?.controlState['supplyVoltageV'] as num?)?.toStringAsFixed(1) ?? '24.0'} V CC'
                   : 'Défaut — sorties désactivées',
             ),
             for (int input = 0; input < 4; input++)
               _PropertyLine(
                 label: 'I$input',
                 value:
-                    runtimeSnapshot.effectiveCircuit.components
+                    elementRuntime.effectiveCircuit.components
                             .where(
                               (ComponentInstance component) =>
-                                  component.id.value == details.id,
+                                  component.id.value == runtimeElementId,
                             )
                             .firstOrNull
                             ?.controlState['I$input'] ==
@@ -397,10 +421,10 @@ class _PropertiesPanel extends StatelessWidget {
                   _PropertyLine(
                     label: 'Q$output',
                     value:
-                        runtimeSnapshot.effectiveCircuit.components
+                        elementRuntime.effectiveCircuit.components
                                 .where(
                                   (ComponentInstance component) =>
-                                      component.id.value == details.id,
+                                      component.id.value == runtimeElementId,
                                 )
                                 .firstOrNull
                                 ?.controlState['Q$output'] ==
@@ -414,11 +438,13 @@ class _PropertiesPanel extends StatelessWidget {
                     _PropertyLine(
                       label: 'Bobine',
                       value:
-                          runtimeSnapshot.contactorActuated(
+                          elementRuntime.contactorActuated(
                             ComponentId(
-                              (details.parameters['outputLinks']
-                                      as Map)['Q$output']
-                                  as String,
+                              runtimeIdFor(
+                                (details.parameters['outputLinks']
+                                        as Map)['Q$output']
+                                    as String,
+                              ),
                             ),
                           )
                           ? 'Contacteur collé'
@@ -495,19 +521,19 @@ class _PropertiesPanel extends StatelessWidget {
             _PropertyLine(
               label: 'État',
               value:
-                  runtimeSnapshot.effectiveCircuit.components
+              elementRuntime.effectiveCircuit.components
                           .where(
                             (ComponentInstance component) =>
-                                component.id.value == details.id,
+                            component.id.value == runtimeElementId,
                           )
                           .firstOrNull
                           ?.controlState['timerNoClosed'] ==
                       true
                   ? 'Triangle'
-                  : runtimeSnapshot.effectiveCircuit.components
+                  : elementRuntime.effectiveCircuit.components
                             .where(
                               (ComponentInstance component) =>
-                                  component.id.value == details.id,
+                                  component.id.value == runtimeElementId,
                             )
                             .firstOrNull
                             ?.controlState['timerActuated'] ==
@@ -652,31 +678,37 @@ class _MeasurementsPanel extends StatelessWidget {
     required this.circuit,
     required this.selectedId,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
   });
 
   final CircuitState circuit;
   final String? selectedId;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
 
   @override
   Widget build(BuildContext context) {
-    if (runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.pv) {
-      return _PvRuntimePanel(runtimeSnapshot: runtimeSnapshot);
+    final ElectroSimRuntimeSnapshot selectedRuntime =
+        mixedRuntimeView?.runtimeForElement(selectedId ?? '') ??
+        mixedRuntimeView?.runtimeForTerminal(selectedId ?? '') ??
+        runtimeSnapshot;
+    if (selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.pv) {
+      return _PvRuntimePanel(runtimeSnapshot: selectedRuntime);
     }
 
     final bool ac3 =
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac3;
     final MeasurementResult? phaseSequence = ac3
-        ? runtimeSnapshot.measurePhaseSequence()
+        ? selectedRuntime.measurePhaseSequence()
         : null;
     final MeasurementResult? totalActive = ac3
-        ? runtimeSnapshot.measureActivePower()
+        ? selectedRuntime.measureActivePower()
         : null;
     final MeasurementResult? totalReactive = ac3
-        ? runtimeSnapshot.measureReactivePower()
+        ? selectedRuntime.measureReactivePower()
         : null;
     final MeasurementResult? totalApparent = ac3
-        ? runtimeSnapshot.measureApparentPower()
+        ? selectedRuntime.measureApparentPower()
         : null;
 
     final _MeasurementTarget? target = _target();
@@ -743,37 +775,37 @@ class _MeasurementsPanel extends StatelessWidget {
     }
 
     final bool ac =
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac1 ||
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac1 ||
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac3;
     final MeasurementResult voltage = ac
-        ? runtimeSnapshot.measureAcVoltage(
+        ? selectedRuntime.measureAcVoltage(
             positiveProbe: target.terminals[0].id,
             negativeProbe: target.terminals[1].id,
           )
-        : runtimeSnapshot.measureVoltage(
+        : selectedRuntime.measureVoltage(
             positiveProbe: target.terminals[0].id,
             negativeProbe: target.terminals[1].id,
           );
     final MeasurementResult current = ac
-        ? runtimeSnapshot.measureAcCurrent(branchId: target.branchId)
-        : runtimeSnapshot.measureCurrent(branchId: target.branchId);
+        ? selectedRuntime.measureAcCurrent(branchId: target.branchId)
+        : selectedRuntime.measureCurrent(branchId: target.branchId);
     final MeasurementResult? frequency = ac
-        ? runtimeSnapshot.measureFrequency()
+        ? selectedRuntime.measureFrequency()
         : null;
     final MeasurementResult? activePower = ac
         ? (ac3
               ? totalActive
-              : runtimeSnapshot.measureActivePower(branchId: target.branchId))
+              : selectedRuntime.measureActivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? reactivePower = ac
         ? (ac3
               ? totalReactive
-              : runtimeSnapshot.measureReactivePower(branchId: target.branchId))
+              : selectedRuntime.measureReactivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? apparentPower = ac
         ? (ac3
               ? totalApparent
-              : runtimeSnapshot.measureApparentPower(branchId: target.branchId))
+              : selectedRuntime.measureApparentPower(branchId: target.branchId))
         : null;
     final bool available =
         voltage.isValid &&
@@ -899,8 +931,14 @@ class _MeasurementsPanel extends StatelessWidget {
       if (component.id.value == id && component.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(component.modelType)} · ${component.id.value}',
-          terminals: component.terminals,
-          branchId: 'component:${component.id.value}',
+          terminals: component.terminals.map((Terminal terminal) => Terminal(
+            id: TerminalId(
+              mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                  terminal.id.value,
+            ), name: terminal.name, role: terminal.role, phase: terminal.phase,
+            metadata: terminal.metadata,
+          )).toList(growable: false),
+          branchId: 'component:${mixedRuntimeView?.localIdForElement(component.id.value) ?? component.id.value}',
         );
       }
     }
@@ -908,8 +946,14 @@ class _MeasurementsPanel extends StatelessWidget {
       if (source.id.value == id && source.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(source.modelType)} · ${source.id.value}',
-          terminals: source.terminals,
-          branchId: 'source:${source.id.value}',
+          terminals: source.terminals.map((Terminal terminal) => Terminal(
+            id: TerminalId(
+              mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                  terminal.id.value,
+            ), name: terminal.name, role: terminal.role, phase: terminal.phase,
+            metadata: terminal.metadata,
+          )).toList(growable: false),
+          branchId: 'source:${mixedRuntimeView?.localIdForElement(source.id.value) ?? source.id.value}',
         );
       }
     }
@@ -1189,218 +1233,4 @@ class _EiePanel extends StatelessWidget {
                       Text(
                         item.title,
                         key: Key('eie-advice-${item.code.name}'),
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: ElectroSimSpacing.xs),
-                      Text(item.explanation),
-                      const SizedBox(height: ElectroSimSpacing.xs),
-                      ExpansionTile(
-                        key: Key('eie-evidence-${item.code.name}'),
-                        initiallyExpanded: false,
-                        tilePadding: EdgeInsets.zero,
-                        childrenPadding: EdgeInsets.zero,
-                        title: const Text('Détails techniques'),
-                        children: <Widget>[
-                          for (final String evidenceId in item.evidenceIds)
-                            Builder(
-                              builder: (BuildContext context) {
-                                final evidence = report.evidence.firstWhere(
-                                  (candidate) => candidate.id == evidenceId,
-                                );
-                                return Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: ElectroSimSpacing.xs,
-                                    ),
-                                    child: Text(
-                                      '$evidenceId\n${evidence.summary}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color:
-                                                ElectroSimColors.textSecondary,
-                                          ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _StudentDiagnosticPanel extends StatefulWidget {
-  const _StudentDiagnosticPanel({this.controller});
-
-  final ElectroSimTpSessionController? controller;
-
-  @override
-  State<_StudentDiagnosticPanel> createState() =>
-      _StudentDiagnosticPanelState();
-}
-
-class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
-  final TextEditingController _symptom = TextEditingController();
-  final TextEditingController _hypothesis = TextEditingController();
-  final TextEditingController _conclusion = TextEditingController();
-  String _status = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final ElectroSimTpSessionController? controller = widget.controller;
-    final int savedCount =
-        controller?.session?.diagnosticSheet.entries.length ?? 0;
-    return ListView(
-      key: const Key('student-diagnostic-panel'),
-      padding: const EdgeInsets.all(ElectroSimSpacing.md),
-      children: <Widget>[
-        const ElectroSimSectionTitle(
-          title: 'Fiche de diagnostic',
-          subtitle:
-              'Visible uniquement pour l’élève pendant la recherche de dérangement',
-        ),
-        const SizedBox(height: ElectroSimSpacing.md),
-        TextField(
-          key: const Key('diagnostic-symptom'),
-          controller: _symptom,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Symptôme observé'),
-        ),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        TextField(
-          key: const Key('diagnostic-hypothesis'),
-          controller: _hypothesis,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Hypothèse'),
-        ),
-        const SizedBox(height: ElectroSimSpacing.sm),
-        TextField(
-          key: const Key('diagnostic-conclusion'),
-          controller: _conclusion,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Conclusion'),
-        ),
-        const SizedBox(height: ElectroSimSpacing.md),
-        FilledButton.icon(
-          key: const Key('diagnostic-save'),
-          onPressed: controller == null ? null : _save,
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Enregistrer dans le TP'),
-        ),
-        const SizedBox(height: ElectroSimSpacing.xs),
-        Text(
-          'Entrées enregistrées : $savedCount',
-          key: const Key('diagnostic-saved-count'),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: ElectroSimColors.textSecondary,
-          ),
-        ),
-        if (_status.isNotEmpty) ...<Widget>[
-          const SizedBox(height: ElectroSimSpacing.xs),
-          Text(
-            _status,
-            key: const Key('diagnostic-save-status'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ],
-    );
-  }
-
-  void _save() {
-    final ElectroSimTpSessionController? controller = widget.controller;
-    if (controller == null) {
-      return;
-    }
-    final List<DiagnosticEntry> entries = <DiagnosticEntry>[
-      if (_symptom.text.trim().isNotEmpty)
-        DiagnosticEntry(promptId: 'symptom', answer: _symptom.text.trim()),
-      if (_hypothesis.text.trim().isNotEmpty)
-        DiagnosticEntry(
-          promptId: 'hypothesis',
-          answer: _hypothesis.text.trim(),
-        ),
-      if (_conclusion.text.trim().isNotEmpty)
-        DiagnosticEntry(
-          promptId: 'conclusion',
-          answer: _conclusion.text.trim(),
-        ),
-    ];
-    if (entries.isEmpty) {
-      setState(() => _status = 'Aucune réponse à enregistrer.');
-      return;
-    }
-    for (final DiagnosticEntry entry in entries) {
-      controller.addDiagnosticEntry(
-        promptId: entry.promptId,
-        answer: entry.answer,
-      );
-    }
-    _symptom.clear();
-    _hypothesis.clear();
-    _conclusion.clear();
-    setState(() => _status = 'Fiche enregistrée dans le TP.');
-  }
-
-  @override
-  void dispose() {
-    _symptom.dispose();
-    _hypothesis.dispose();
-    _conclusion.dispose();
-    super.dispose();
-  }
-}
-
-class _PropertyLine extends StatelessWidget {
-  const _PropertyLine({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final labelWidget = Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: ElectroSimColors.textSecondary,
-          ),
-        );
-        if (constraints.maxWidth < 260 ||
-            MediaQuery.textScalerOf(context).scale(14) > 18) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [labelWidget, const SizedBox(height: 4), Text(value)],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: (constraints.maxWidth * .42).clamp(88.0, 128.0),
-              child: labelWidget,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(value)),
-          ],
-        );
-      },
-    ),
-  );
-}
+                        sty

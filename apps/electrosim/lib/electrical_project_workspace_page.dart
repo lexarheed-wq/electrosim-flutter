@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import 'f18_workspace_page.dart';
 import 'mixed_board_projection.dart';
+import 'mixed_board_runtime_view.dart';
 import 'runtime/electrical_project_runtime_engine.dart';
 import 'runtime/electrosim_layout_persistence.dart';
 
@@ -50,19 +51,35 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
   void initState() {
     super.initState();
     _selectedNetworkId = _project.networks.where((ElectricalNetwork n) => n.circuit.mode == ElectricalMode.dc).firstOrNull?.id ?? _project.networks.firstOrNull?.id;
+    _runtime = _engine.advance(_project, elapsed: Duration.zero);
   }
 
   void _setProject(ElectricalProject next) {
+    final ElectricalProjectRuntimeSnapshot runtime = _engine.advance(
+      next,
+      elapsed: Duration.zero,
+      previous: _runtime,
+    );
     setState(() {
       _project = next;
-      _runtime = null;
-      _status = 'Projet modifié';
+      _runtime = runtime;
+      _status = runtime.diagnostics.isEmpty
+          ? 'Projet modifié · simulation résolue'
+          : runtime.diagnostics.first;
     });
     widget.onProjectChanged(next);
   }
 
   void _onCircuitChanged(String networkId, CircuitState circuit) {
-    if (circuit == MixedBoardProjection.fromProject(_project).circuit) return;
+    final CircuitState currentBoard = MixedBoardProjection.fromProject(
+      _project,
+    ).circuit;
+    if (circuit == currentBoard) return;
+    final Map<String, Object?> normalized = circuit.toJson()
+      ..['revision'] = currentBoard.revision;
+    final bool unchangedTopology =
+        CircuitState.fromJson(normalized) == currentBoard;
+    if (unchangedTopology) return;
     try {
       final ElectricalProject next = MixedBoardProjection.applyBoardEdit(
         _project, circuit, networkId,
@@ -78,6 +95,7 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
 
   void _start() {
     if (_running) return;
+    _advance(Duration.zero);
     setState(() => _running = true);
     _clock = Timer.periodic(const Duration(milliseconds: 250), (_) => _advance(const Duration(milliseconds: 250)));
   }
@@ -127,11 +145,15 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
     try {
       final SavedElectricalProjectDocument document = SavedElectricalProjectDocument.fromJsonString(await file.readAsString());
       _pause();
+      final ElectricalProjectRuntimeSnapshot runtime = _engine.advance(
+        document.project,
+        elapsed: Duration.zero,
+      );
       setState(() {
         _project = document.project;
         _boardGeneration++;
         _selectedNetworkId = document.project.networks.where((ElectricalNetwork n) => n.circuit.mode == ElectricalMode.dc).firstOrNull?.id ?? document.project.networks.first.id;
-        _runtime = null;
+        _runtime = runtime;
         final Object? rawLayouts = document.appState['layouts'];
         _layouts.clear();
         if (rawLayouts is Map<String, dynamic>) {
@@ -235,6 +257,13 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
   @override
   Widget build(BuildContext context) {
     final ElectricalNetwork? selected = _selected;
+    final MixedBoardProjection board = MixedBoardProjection.fromProject(_project);
+    final MixedBoardRuntimeView runtimeView = MixedBoardRuntimeView(
+      projection: board,
+      snapshot: _runtime,
+      running: _running,
+      defaultNetworkId: selected?.id,
+    );
     return Scaffold(
       body: SafeArea(child: Column(children: <Widget>[
         Material(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: Padding(
@@ -264,8 +293,9 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
             : F18WorkspacePage(
                 key: ValueKey<String>('mixed-board-$_boardGeneration'),
                 entryLabel: 'Simulateur — mode Mixte',
-                initialCircuit: MixedBoardProjection.fromProject(_project).circuit,
+                initialCircuit: board.circuit,
                 compositeNetworkMode: true,
+                mixedRuntimeView: runtimeView,
                 paletteModeOverride: selected.circuit.mode,
                 initialVisualLayout: _sharedLayout,
                 onVisualLayoutChanged: (CircuitVisualLayout layout) {
@@ -409,13 +439,4 @@ final class _ProjectLinkDialog extends StatelessWidget {
             dense: true, leading: const Icon(Icons.link_off),
             title: Text('${link.converterComponentId} → ${link.outputNetworkId}'),
             trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline)),
-          ),
-        for (final CrossNetworkRelayLink link in project.relayLinks)
-          ListTile(dense: true, leading: const Icon(Icons.link_off), title: Text('${link.outputAddress} · ${link.relayCoilId} → ${link.ac3ContactId}'), trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline))),
-        for (final CrossNetworkSignalLink link in project.signalLinks)
-          ListTile(dense: true, leading: const Icon(Icons.link_off), title: Text('${link.inputAddress} · ${link.auxiliaryContactId} → ${link.plcComponentId}'), trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline))),
-      ])),
-      actions: <Widget>[TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer'))],
-    );
-  }
-}
+          )

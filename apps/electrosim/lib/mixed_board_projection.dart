@@ -36,6 +36,7 @@ final class MixedBoardProjection {
   final Map<String, MixedBoardOrigin> connectionOrigins;
   final Map<String, MixedBoardOrigin> terminalOrigins;
   final Map<String, MixedBoardOrigin> _instrumentOrigins;
+  Map<String, MixedBoardOrigin> get instrumentOrigins => _instrumentOrigins;
 
   static ElectricalProject applyBoardEdit(
     ElectricalProject project,
@@ -471,9 +472,4 @@ final class MixedBoardProjection {
       origin: Offset.zero,
     );
     return CircuitVisualLayout(
-      elementPositions: positions, elementSizes: sizes, wireRoutes: routes,
-      elementQuarterTurns: turns,
-      cabinetLayout: CabinetLayout(fixtures, envelope: envelope, mounts: mounts),
-    );
-  }
-}
+      elementPositions: positi

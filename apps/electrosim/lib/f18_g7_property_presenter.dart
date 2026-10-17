@@ -42,14 +42,16 @@ abstract final class F18G7PropertyPresenter {
   static F18G7PropertySnapshot describe({
     required F9ElementDetails details,
     required ElectroSimRuntimeSnapshot runtimeSnapshot,
+    String? runtimeElementId,
   }) {
+    final String runtimeId = runtimeElementId ?? details.id;
     final List<F18G7PropertyRow> runtimeValues = <F18G7PropertyRow>[];
     final List<String> evidenceIds = <String>[];
     String? runtimeStateLabel;
 
     if (details.kind == F9ElementKind.component) {
       final ComponentOperatingState? state = runtimeSnapshot
-          .componentOperatingState(ComponentId(details.id));
+          .componentOperatingState(ComponentId(runtimeId));
       if (state != null) {
         runtimeStateLabel = _operatingStateLabel(state.code);
         _addRuntimeQuantity(runtimeValues, 'Tension', state.voltageV, 'V');
@@ -67,7 +69,7 @@ abstract final class F18G7PropertyPresenter {
       }
       if (runtimeSnapshot.solved) {
         final ComponentHealthState health = runtimeSnapshot
-            .componentHealthState(ComponentId(details.id));
+            .componentHealthState(ComponentId(runtimeId));
         runtimeValues.add(
           F18G7PropertyRow(label: 'Santé', value: _healthLabel(health.code)),
         );
@@ -99,7 +101,7 @@ abstract final class F18G7PropertyPresenter {
     } else if (details.kind == F9ElementKind.source) {
       final SourceInstance? source = _sourceById(
         runtimeSnapshot.circuit,
-        details.id,
+        runtimeId,
       );
       if (source != null &&
           runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.pv &&
@@ -326,15 +328,4 @@ abstract final class F18G7PropertyPresenter {
       'efficiency' => ' %',
       _ => '',
     };
-    final double displayed = key == 'efficiency' && number.abs() <= 1.0
-        ? number * 100.0
-        : number;
-    final String text = displayed == displayed.roundToDouble()
-        ? displayed.toStringAsFixed(0)
-        : displayed
-              .toStringAsFixed(3)
-              .replaceFirst(RegExp(r'0+$'), '')
-              .replaceFirst(RegExp(r'\.$'), '');
-    return '$text$unit';
-  }
-}
+    final 

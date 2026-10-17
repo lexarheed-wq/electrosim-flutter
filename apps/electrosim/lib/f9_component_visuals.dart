@@ -17,6 +17,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
 import 'f9_source_voltage_readout.dart';
+import 'mixed_board_runtime_view.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/industrial_alarm_audio.dart';
 import 'runtime/rotor_motion.dart';
@@ -35,6 +36,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.pointerWorldPositionListenable,
     this.wirePreviewPlanner,
     this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.simulationRunning = false,
     this.soundEnabled = true,
   });
@@ -50,6 +52,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final ValueListenable<Offset?>? pointerWorldPositionListenable;
   final WirePreviewPlanner? wirePreviewPlanner;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final bool simulationRunning;
   final bool soundEnabled;
 
@@ -227,6 +230,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     geometry: geometry,
                     semantics: semantics,
                     runtimeSnapshot: widget.runtimeSnapshot,
+                    mixedRuntimeView: widget.mixedRuntimeView,
                     simulationRunning: widget.simulationRunning,
                     motionSeconds: _motionSeconds,
                   ),
@@ -423,25 +427,35 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
+      final ElectroSimRuntimeSnapshot? sourceRuntime =
+          widget.mixedRuntimeView?.runtimeForElement(source.id.value) ?? runtime;
+      final SourceId sourceId = SourceId(
+        widget.mixedRuntimeView?.localIdForElement(source.id.value) ??
+            source.id.value,
+      );
       final double currentA = _sourceCurrentA(
-        runtime,
-        source.id,
+        sourceRuntime,
+        sourceId,
         source.modelType,
       );
       final double voltageV = F9SourceVoltageReadout.voltageV(
-        runtime,
+        sourceRuntime,
         source,
-        simulationRunning: widget.simulationRunning,
+        simulationRunning: widget.simulationRunning ||
+            (widget.mixedRuntimeView != null && source.enabled),
+        sourceId: sourceId,
       );
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
         visualModelType: source.parameters['_visualModelType'] as String?,
         visualVariant: source.parameters['_visualVariant'] as String?,
-        enabled: source.enabled,
+        enabled: source.enabled &&
+            (source.modelType != 'dc_voltage_source' ||
+                source.parameters['voltageV'] is num),
         energized:
-            widget.simulationRunning &&
-            (runtime?.solved ?? false) &&
+            (widget.simulationRunning || widget.mixedRuntimeView != null) &&
+            (sourceRuntime?.solved ?? false) &&
             source.enabled,
         closed: true,
         tripped: false,
@@ -459,37 +473,44 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       );
     }
     for (final ComponentInstance component in widget.circuit.components) {
+      final ElectroSimRuntimeSnapshot? componentRuntime =
+          widget.mixedRuntimeView?.runtimeForElement(component.id.value) ??
+          runtime;
+      final ComponentId componentId = ComponentId(
+        widget.mixedRuntimeView?.localIdForElement(component.id.value) ??
+            component.id.value,
+      );
       final double currentA = _componentSignedCurrentA(
-        runtime,
-        component.id,
+        componentRuntime,
+        componentId,
         component.modelType,
       );
       final double voltageV = _componentVoltageV(
-        runtime,
-        component.id,
+        componentRuntime,
+        componentId,
         component.modelType,
       );
       final double batterySoc = component.modelType != 'pv_battery'
           ? 0.0
-          : (runtime?.pvResult?.isSolved ?? false)
-          ? runtime!.pvResult!.batterySoc
-          : runtime?.dcBatterySocs[component.id] ??
+          : (componentRuntime?.pvResult?.isSolved ?? false)
+          ? componentRuntime!.pvResult!.batterySoc
+          : componentRuntime?.dcBatterySocs[componentId] ??
                 (component.parameters['initialSoc'] as num?)?.toDouble() ??
                 0.0;
-      final ComponentInstance? runtimeComponent = runtime?.effectiveCircuit
+      final ComponentInstance? runtimeComponent = componentRuntime?.effectiveCircuit
           .components
-          .where((ComponentInstance candidate) => candidate.id == component.id)
+          .where((ComponentInstance candidate) => candidate.id == componentId)
           .firstOrNull;
       final Map<String, Object?> visualControlState =
           runtimeComponent?.controlState ?? component.controlState;
-      final componentState = runtime?.componentOperatingState(component.id);
+      final componentState = componentRuntime?.componentOperatingState(componentId);
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
           componentState?.code == ComponentOperatingCode.overloaded;
-      final meterReading = runtime?.energyMeters[component.id];
+      final meterReading = componentRuntime?.energyMeters[componentId];
       final bool energized =
-          widget.simulationRunning &&
-          (runtime?.solved ?? false) &&
+          (widget.simulationRunning || widget.mixedRuntimeView != null) &&
+          (componentRuntime?.solved ?? false) &&
           (meterReading != null
               ? meterReading.available
               : stateAllowsEnergy && currentA.abs() > 1e-6);
@@ -501,7 +522,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         _ => (component.controlState['closed'] as bool?) ?? true,
       };
       final bool tripped =
-          (runtime?.protectionTripped(component.id) ?? false) ||
+          (componentRuntime?.protectionTripped(componentId) ?? false) ||
           component.controlState['tripped'] == true;
       final bool contactorAux =
           type == 'contactor_aux_no' || type == 'contactor_aux_nc';
@@ -510,9 +531,11 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final Object? linkedId = component
           .parameters[relayAux ? 'linkedRelayId' : 'linkedContactorId'];
       final bool actuated = (contactorAux || relayAux) && linkedId is String
-          ? (runtime?.contactorActuated(ComponentId(linkedId)) ??
+          ? (componentRuntime?.contactorActuated(ComponentId(
+                  widget.mixedRuntimeView?.localIdForElement(linkedId) ?? linkedId,
+                )) ??
                 (component.controlState['actuated'] == true))
-          : (runtime?.contactorActuated(component.id) ??
+          : (componentRuntime?.contactorActuated(componentId) ??
                 (component.controlState['actuated'] == true));
 
       addVisual(
@@ -520,8 +543,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         modelType: component.modelType,
         meterReading: meterReading,
         angularSpeedRadS: rotorVelocity(
-          runtime,
-          component,
+          componentRuntime,
+          widget.mixedRuntimeView?.runtimeComponent(component) ?? component,
           running: widget.simulationRunning,
           energized: energized,
           voltageV: voltageV,
@@ -567,7 +590,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         controlState: visualControlState,
         componentParameters: component.parameters,
         healthState:
-            runtime?.componentHealthState(component.id) ??
+            componentRuntime?.componentHealthState(componentId) ??
             const ComponentHealthState.normal(),
       );
     }
@@ -1008,6 +1031,7 @@ class _F9CurrentFlowPainter extends CustomPainter {
     required this.geometry,
     required this.semantics,
     required this.runtimeSnapshot,
+    required this.mixedRuntimeView,
     required this.simulationRunning,
     required this.motionSeconds,
   }) : super(repaint: motionSeconds);
@@ -1018,23 +1042,27 @@ class _F9CurrentFlowPainter extends CustomPainter {
   final CircuitGeometryIndex geometry;
   final WireSemantics semantics;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final bool simulationRunning;
   final ValueListenable<double> motionSeconds;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final ElectroSimRuntimeSnapshot? runtime = runtimeSnapshot;
-    if (!simulationRunning || runtime == null || !runtime.solved) return;
-
     for (final Connection connection in circuit.connections) {
       if (connection.metadata.containsKey(AppliancePowerConnection.cableTag)) {
         continue;
       }
-      if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
+      final ElectroSimRuntimeSnapshot? runtime =
+          mixedRuntimeView?.runtimeForElement(connection.id.value) ??
+          runtimeSnapshot;
+      final Connection runtimeConnection =
+          mixedRuntimeView?.runtimeConnection(connection) ?? connection;
+      if (runtime == null || !runtime.solved) continue;
+      if (!runtime.topology.enabledConnectionIds.contains(runtimeConnection.id)) {
         continue;
       }
       final ConnectionCurrentEvidence flow = runtime.connectionCurrentEvidence(
-        connection,
+        runtimeConnection,
       );
       final double currentA = flow.magnitudeA;
       if (!f9ShouldPaintCurrentFlow(flow)) continue;
@@ -1339,202 +1367,4 @@ class _F9StaticOverlayPainter extends CustomPainter {
           outline,
         );
         continue;
-      }
-
-      Connection? selectedConnection;
-      for (final Connection connection in circuit.connections) {
-        if (connection.id.value == id) {
-          selectedConnection = connection;
-          break;
-        }
-      }
-      if (selectedConnection == null) continue;
-      final Offset? start =
-          geometry.terminalPositions[selectedConnection.fromTerminalId];
-      final Offset? end =
-          geometry.terminalPositions[selectedConnection.toTerminalId];
-      if (start == null || end == null) continue;
-      final List<Offset> points = <Offset>[
-        start,
-        ...layout.routeFor(selectedConnection.id.value),
-        end,
-      ];
-      final Path path = Path();
-      final Offset first = viewport.worldToScreen(points.first);
-      path.moveTo(first.dx, first.dy);
-      for (final Offset point in points.skip(1)) {
-        final Offset screen = viewport.worldToScreen(point);
-        path.lineTo(screen.dx, screen.dy);
-      }
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = ElectroSimColors.primary
-          ..strokeWidth = 6
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-      );
-    }
-  }
-
-  void _paintSmartWirePreview(Canvas canvas) {
-    final TerminalId? pending = pendingTerminalId;
-    final Offset? pointer = pointerWorldPosition;
-    final WirePreviewPlanner? planner = wirePreviewPlanner;
-    if (pending == null || pointer == null || planner == null) return;
-
-    final WirePreviewSession? session = wirePreviewSession;
-    final WirePreviewPlan plan = session == null
-        ? planner.plan(
-            circuit: circuit,
-            layout: layout,
-            startTerminalId: pending,
-            pointerWorldPosition: pointer,
-          )
-        : planner.planPrepared(session: session, pointerWorldPosition: pointer);
-    if (!plan.route.isResolved) return;
-
-    final List<Offset> points = plan.route.path!.points;
-    if (points.length < 2) return;
-    final Path path = Path();
-    final Offset first = viewport.worldToScreen(points.first);
-    path.moveTo(first.dx, first.dy);
-    for (final Offset point in points.skip(1)) {
-      final Offset screen = viewport.worldToScreen(point);
-      path.lineTo(screen.dx, screen.dy);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = ElectroSimColors.primary
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  void _paintTerminals(Canvas canvas, CircuitGeometryIndex geometry) {
-    final descriptors = F18TerminalAffordances.descriptors(circuit);
-    final plugTerminalIds = {
-      for (final c in circuit.components)
-        if (AppliancePowerConnection.isExternal(c) &&
-            AppliancePowerConnection.mode(c) != 'fixed')
-          ...c.terminals.map((t) => t.id),
-    };
-    for (final entry in geometry.terminalPositions.entries) {
-      if (plugTerminalIds.contains(entry.key)) continue;
-      final descriptor = descriptors[entry.key];
-      final pending = entry.key == pendingTerminalId;
-      final hovered = entry.key == hoverTerminalId;
-      final selected = selectedElementIds.contains(descriptor?.owner);
-      if (!F18TerminalAffordances.visible(
-        hovered: hovered,
-        pending: pending,
-        selected: selected,
-        showAll: showAllTerminals,
-      )) {
-        continue;
-      }
-      F18TerminalAffordances.paint(
-        canvas,
-        viewport.worldToScreen(entry.value),
-        hovered: hovered,
-        pending: pending,
-        name: descriptor?.name ?? '',
-      );
-    }
-  }
-
-  void _paintWiringTargets(Canvas canvas, CircuitGeometryIndex geometry) {
-    final TerminalId? pending = pendingTerminalId;
-    if (pending == null) return;
-    for (final MapEntry<TerminalId, Offset> entry
-        in geometry.terminalPositions.entries) {
-      final Offset screen = viewport.worldToScreen(entry.value);
-      if (entry.key == pending) continue;
-      final F9WiringDecision decision =
-          wiringDecisions[entry.key] ??
-          F9WiringPolicy.evaluateAndBuild(circuit, pending, entry.key);
-      final bool hovered = entry.key == hoverTerminalId;
-      if (!decision.accepted && !hovered) continue;
-      final Color color = decision.accepted
-          ? ElectroSimColors.success
-          : ElectroSimColors.danger;
-      canvas.drawCircle(
-        screen,
-        hovered ? 12 : 9,
-        Paint()
-          ..color = color
-          ..strokeWidth = hovered ? 3 : 2
-          ..style = PaintingStyle.stroke,
-      );
-      if (hovered) {
-        final TextPainter marker = TextPainter(
-          text: TextSpan(
-            text: decision.accepted ? '✓' : '×',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        marker.paint(canvas, Offset(screen.dx + 10, screen.dy - 16));
-      }
-    }
-  }
-
-  void _paintElementGlyph(
-    Canvas canvas,
-    Rect worldRect,
-    String modelType,
-    bool active,
-    int quarterTurns,
-  ) {
-    final Offset center = viewport.worldToScreen(worldRect.center);
-    final Size visualSize = F18ReferenceComponentVisuals.supports(modelType)
-        ? Size(
-            worldRect.width * viewport.scale,
-            worldRect.height * viewport.scale,
-          )
-        : _f9VisualSize(worldRect, viewport);
-    final Color color = active
-        ? ElectroSimColors.primary
-        : ElectroSimColors.textSecondary;
-
-    if (!F18ReferenceComponentVisuals.supports(modelType)) {
-      canvas.save();
-      canvas.translate(center.dx, center.dy);
-      canvas.rotate(math.pi / 2 * quarterTurns);
-      paintF18ComponentIdentity(
-        canvas,
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: visualSize.width,
-          height: visualSize.height,
-        ),
-        modelType,
-        color,
-      );
-      canvas.restore();
-    }
-
-    // Physical device markings remain on the body; palette and inspector
-    // provide component names without duplicating captions on the plate.
-  }
-
-  @override
-  bool shouldRepaint(_F9StaticOverlayPainter oldDelegate) => true;
-}
-
-Size _f9VisualSize(Rect worldRect, ViewportController viewport) {
-  final double scale = viewport.scale;
-  return Size(
-    (worldRect.width * scale * 0.96).clamp(72.0, 136.0).toDouble(),
-    (worldRect.height * scale * 0.96).clamp(46.0, 92.0).toDouble(),
-  );
-}
+   

@@ -2730,7 +2730,18 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               )
               .length
         : filtered.length;
-    final bool canExpand = filtered.length > _collapsedLimit;
+    final bool hasCollapsedInstrument =
+        _query.trim().isEmpty &&
+        _category == 'Tous' &&
+        f9PaletteCatalog.any(
+          (F9PaletteDefinition item) =>
+              item.kind == F9PaletteElementKind.instrument &&
+              item.supportsMode(widget.mode) &&
+              item.searchOnlyModes.contains(widget.mode) &&
+              item.keyName != 'instrument-voltmeter',
+        );
+    final bool canExpand =
+        filtered.length > _collapsedLimit || hasCollapsedInstrument;
     // Catalogue additions and asynchronous asset loads must not displace
     // the approved DC quick controls.
     const dcQuickKeys = [

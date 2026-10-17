@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
+import 'support/golden_font.dart';
 
 void main() {
+  setUpAll(loadElectroSimGoldenFont);
   // Reference PNGs were recorded using the Linux Material platform.
   // Keep this visual-only fixture deterministic on macOS Intel; native
   // macOS behavior is validated separately by the full functional suite.

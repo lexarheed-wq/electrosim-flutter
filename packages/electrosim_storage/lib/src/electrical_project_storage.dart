@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 
 import 'storage_models.dart';

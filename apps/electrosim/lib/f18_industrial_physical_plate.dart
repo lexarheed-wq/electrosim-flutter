@@ -1221,8 +1221,10 @@ final class _PhysicalPlatePainter extends CustomPainter {
       'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
       'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
       'breaker3' ||
-      'isolator3' ||
-      'overload' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+      'isolator3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+      'overload' => [
+        '1L1', '3L2', '5L3', '2T1', '4T2', '6T3', '95', '96', '97', '98',
+      ],
       'breaker4' ||
       'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
           _ => List<String>.filled(ports.length, ''),

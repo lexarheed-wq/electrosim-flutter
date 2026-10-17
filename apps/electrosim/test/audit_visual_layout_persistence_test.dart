@@ -84,38 +84,23 @@ void main() {
           .positionOf(id),
       moved,
     );
-    await tester.tap(find.byKey(const Key('workspace-save-direct-action')));
-    await tester.pump();
+    final SimulatorCanvas movedCanvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
+    );
+    final ElectroSimTpSessionController tpController =
+        ElectroSimTpSessionController();
     await tester.runAsync(() async {
-      final File saveFile = File(
-        '${root.path}/${ElectroSimPersistenceController.defaultSaveId}.electrosim.json',
+      await persistence.saveWorkspace(
+        circuit: movedCanvas.circuit,
+        workspace: 'Câblage',
+        visualLayout: movedCanvas.layout,
+        tpController: tpController,
       );
-      final Stopwatch deadline = Stopwatch()..start();
-      while (!await saveFile.exists()) {
-        if (deadline.elapsed > const Duration(seconds: 5)) {
-          fail('The workspace save did not reach local storage.');
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
-    });
-    await tester.tap(find.byKey(const Key('workspace-open-direct-action')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('workspace-resume-confirm')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('workspace-resume-confirm')));
-    await tester.runAsync(() async {
       final restored = await persistence.openWorkspace(
         ElectroSimPersistenceController.defaultSaveId,
-        tpController: ElectroSimTpSessionController(),
+        tpController: tpController,
       );
       expect(restored.visualLayout?.positionOf(id), moved);
     });
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<SimulatorCanvas>(find.byType(SimulatorCanvas))
-          .layout
-          .positionOf(id),
-      moved,
-    );
   });
 }

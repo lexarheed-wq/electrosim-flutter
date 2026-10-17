@@ -282,9 +282,8 @@ final class _ElectricalProjectWorkspacePageState extends State<ElectricalProject
             ]),
           ]),
         )),
-        if (_runtime != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: Row(children: <Widget>[
+        if (_runtime != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: Wrap(spacing: 16, runSpacing: 4, children: <Widget>[
           Text('t = ${(_runtime!.elapsed.inMilliseconds / 1000).toStringAsFixed(2)} s'),
-          const SizedBox(width: 16),
           for (final ElectricalNetwork n in _project.networks)
             Padding(padding: const EdgeInsets.only(right: 12), child: Text('${_modeLabel(n.circuit.mode)} : ${_runtime!.networks[n.id]?.solved == true ? 'résolu' : 'défaut'}')),
         ])),

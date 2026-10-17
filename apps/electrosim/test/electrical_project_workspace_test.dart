@@ -185,6 +185,7 @@ void main() {
   });
 
   testWidgets('mixed board shows source voltage and PLC power at time zero', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
     await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
       initialProject: _project(), onProjectChanged: (_) {},
@@ -204,15 +205,18 @@ void main() {
       ),
       findsOneWidget,
     );
+    semantics.dispose();
   });
 
   testWidgets('mixed board shows contactor resting state and closed NC contact before start', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
     await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
       initialProject: _project(), onProjectChanged: (_) {},
     )));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Contact auxiliaire normalement ouvert, ouvert', skipOffstage: false), findsOneWidget);
-    expect(find.bySemanticsLabel('Contacteur 3P, au repos', skipOffstage: false), findsOneWidget);
+    expect(find.bySemanticsLabel('Contacteur triphasé, au repos', skipOffstage: false), findsOneWidget);
+    semantics.dispose();
   });
 }

@@ -78,6 +78,19 @@ jobs:
           if [[ -d "$source_dir" ]]; then
             cp -R "$source_dir" "$output_dir/failures"
             find "$output_dir/failures" -type f -print | sort
+            contact_sheet="$output_dir/visual-contact-sheet.jpg"
+            mkdir -p "$RUNNER_TEMP/swift-module-cache"
+            if swiftc -module-cache-path "$RUNNER_TEMP/swift-module-cache" \
+              tools/test_visual_diagnostics_contact_sheet.swift \
+              -o "$RUNNER_TEMP/electrosim-contact-sheet" && \
+              "$RUNNER_TEMP/electrosim-contact-sheet" "$source_dir" "$contact_sheet"; then
+              echo "VISUAL_CONTACT_SHEET_BASE64_BEGIN"
+              base64 -i "$contact_sheet" | tr -d '\n'
+              echo
+              echo "VISUAL_CONTACT_SHEET_BASE64_END"
+            else
+              echo "Could not generate the visual diagnostic contact sheet."
+            fi
           else
             echo "Flutter produced no test/failures directory." > "$output_dir/README.txt"
           fi

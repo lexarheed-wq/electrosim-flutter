@@ -4,10 +4,7 @@ import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'support/golden_font.dart';
-
 void main() {
-  setUpAll(loadElectroSimGoldenFont);
   const samples = <String>[
     'dc_voltage_source',
     'breaker_dc',

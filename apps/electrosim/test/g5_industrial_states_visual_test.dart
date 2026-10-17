@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
 
 void main() {
   setUpAll(() async {
@@ -77,7 +78,9 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-industrial-state-proof')),
-      matchesGoldenFile('goldens/g5_industrial_off_on_trip.png'),
+      matchesGoldenFile(
+        platformGoldenPath('g5_industrial_off_on_trip.png'),
+      ),
     );
   });
 }

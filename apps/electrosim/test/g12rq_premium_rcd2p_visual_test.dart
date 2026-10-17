@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
 
 void main() {
   setUpAll(() async {
@@ -86,7 +87,9 @@ void main() {
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(F18PremiumRcd2pShowcase),
-      matchesGoldenFile('goldens/g12rq_premium_rcd2p_palette_board.png'),
+      matchesGoldenFile(
+        platformGoldenPath('g12rq_premium_rcd2p_palette_board.png'),
+      ),
     );
   });
 

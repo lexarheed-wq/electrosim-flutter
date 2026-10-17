@@ -65,6 +65,21 @@ jobs:
         working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
         run: |
           set -euo pipefail
+          if [[ ! -f test/goldens/macos/f9_compact_base.png ]]; then
+            echo "Creating platform-specific Mac golden references from the reviewed runner rendering."
+            flutter test --concurrency=1 --update-goldens \
+              test/f9_goldens_test.dart \
+              test/g12rq_real_industrial_capture_test.dart \
+              test/g12rq_actual_app_visual_proof_test.dart \
+              test/g12rq_premium_rcd2p_visual_test.dart \
+              test/g5_industrial_states_visual_test.dart
+            for golden in test/goldens/macos/*.png; do
+              echo "MAC_GOLDEN_FILE_BEGIN:${golden##*/}"
+              base64 -i "$golden" | tr -d '\n'
+              echo
+              echo "MAC_GOLDEN_FILE_END:${golden##*/}"
+            done
+          fi
           flutter test --concurrency=1
 
       - name: Collect Flutter test failure images

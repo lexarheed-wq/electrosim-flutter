@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
 
 void main() {
   setUpAll(() async {
@@ -103,7 +104,9 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-actual-widgets-proof')),
-      matchesGoldenFile('goldens/g12rq_actual_widgets_palette_board.png'),
+      matchesGoldenFile(
+        platformGoldenPath('g12rq_actual_widgets_palette_board.png'),
+      ),
     );
   });
 }

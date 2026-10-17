@@ -1,13 +1,10 @@
-import 'dart:ui';
-
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
+import 'package:electrosim/mixed_board_projection.dart';
+import 'package:electrosim/runtime/electrosim_layout_persistence.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../lib/mixed_board_projection.dart';
-import '../lib/runtime/electrosim_layout_persistence.dart';
 
 CircuitState _circuit(ElectricalMode mode) => CircuitState(
   circuitId: CircuitId('same-circuit'), revision: 0, mode: mode,

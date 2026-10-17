@@ -1003,7 +1003,9 @@ final class ElectroSimRuntimeEngine {
           program.any((dynamic row) => !validRung(row));
       final List<dynamic> safeProgram = programError ? const <dynamic>[] : program;
       if (programError) {
-        for (int i = 0; i < 4; i++) outputs['Q$i'] = false;
+        for (int i = 0; i < 4; i++) {
+          outputs['Q$i'] = false;
+        }
       }
       final Map<String, bool> inputs = <String, bool>{};
       for (var index = 0; index < 4; index++) {

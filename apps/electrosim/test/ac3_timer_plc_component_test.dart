@@ -3,7 +3,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/f9_component_palette.dart';
+import 'package:electrosim/f9_component_palette.dart';
 
 void main() {
   test('timer, PLC and existing locking contacts are available in AC3', () {

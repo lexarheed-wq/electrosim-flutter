@@ -356,9 +356,12 @@ final class MixedBoardProjection {
     if (value is List) {
       return value.map((item) => _mapReferenceValue(item, mapId)).toList(growable: false);
     }
-    if (value is Map<String, Object?>) return <String, Object?>{
-      for (final entry in value.entries) entry.key: _mapReferenceValue(entry.value, mapId),
-    };
+    if (value is Map<String, Object?>) {
+      return <String, Object?>{
+        for (final entry in value.entries)
+          entry.key: _mapReferenceValue(entry.value, mapId),
+      };
+    }
     return value;
   }
 

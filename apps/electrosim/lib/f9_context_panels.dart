@@ -1233,4 +1233,218 @@ class _EiePanel extends StatelessWidget {
                       Text(
                         item.title,
                         key: Key('eie-advice-${item.code.name}'),
-                        sty
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: ElectroSimSpacing.xs),
+                      Text(item.explanation),
+                      const SizedBox(height: ElectroSimSpacing.xs),
+                      ExpansionTile(
+                        key: Key('eie-evidence-${item.code.name}'),
+                        initiallyExpanded: false,
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: EdgeInsets.zero,
+                        title: const Text('Détails techniques'),
+                        children: <Widget>[
+                          for (final String evidenceId in item.evidenceIds)
+                            Builder(
+                              builder: (BuildContext context) {
+                                final evidence = report.evidence.firstWhere(
+                                  (candidate) => candidate.id == evidenceId,
+                                );
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: ElectroSimSpacing.xs,
+                                    ),
+                                    child: Text(
+                                      '$evidenceId\n${evidence.summary}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color:
+                                                ElectroSimColors.textSecondary,
+                                          ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StudentDiagnosticPanel extends StatefulWidget {
+  const _StudentDiagnosticPanel({this.controller});
+
+  final ElectroSimTpSessionController? controller;
+
+  @override
+  State<_StudentDiagnosticPanel> createState() =>
+      _StudentDiagnosticPanelState();
+}
+
+class _StudentDiagnosticPanelState extends State<_StudentDiagnosticPanel> {
+  final TextEditingController _symptom = TextEditingController();
+  final TextEditingController _hypothesis = TextEditingController();
+  final TextEditingController _conclusion = TextEditingController();
+  String _status = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final ElectroSimTpSessionController? controller = widget.controller;
+    final int savedCount =
+        controller?.session?.diagnosticSheet.entries.length ?? 0;
+    return ListView(
+      key: const Key('student-diagnostic-panel'),
+      padding: const EdgeInsets.all(ElectroSimSpacing.md),
+      children: <Widget>[
+        const ElectroSimSectionTitle(
+          title: 'Fiche de diagnostic',
+          subtitle:
+              'Visible uniquement pour l’élève pendant la recherche de dérangement',
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        TextField(
+          key: const Key('diagnostic-symptom'),
+          controller: _symptom,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Symptôme observé'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        TextField(
+          key: const Key('diagnostic-hypothesis'),
+          controller: _hypothesis,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Hypothèse'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.sm),
+        TextField(
+          key: const Key('diagnostic-conclusion'),
+          controller: _conclusion,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Conclusion'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.md),
+        FilledButton.icon(
+          key: const Key('diagnostic-save'),
+          onPressed: controller == null ? null : _save,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Enregistrer dans le TP'),
+        ),
+        const SizedBox(height: ElectroSimSpacing.xs),
+        Text(
+          'Entrées enregistrées : $savedCount',
+          key: const Key('diagnostic-saved-count'),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: ElectroSimColors.textSecondary,
+          ),
+        ),
+        if (_status.isNotEmpty) ...<Widget>[
+          const SizedBox(height: ElectroSimSpacing.xs),
+          Text(
+            _status,
+            key: const Key('diagnostic-save-status'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _save() {
+    final ElectroSimTpSessionController? controller = widget.controller;
+    if (controller == null) {
+      return;
+    }
+    final List<DiagnosticEntry> entries = <DiagnosticEntry>[
+      if (_symptom.text.trim().isNotEmpty)
+        DiagnosticEntry(promptId: 'symptom', answer: _symptom.text.trim()),
+      if (_hypothesis.text.trim().isNotEmpty)
+        DiagnosticEntry(
+          promptId: 'hypothesis',
+          answer: _hypothesis.text.trim(),
+        ),
+      if (_conclusion.text.trim().isNotEmpty)
+        DiagnosticEntry(
+          promptId: 'conclusion',
+          answer: _conclusion.text.trim(),
+        ),
+    ];
+    if (entries.isEmpty) {
+      setState(() => _status = 'Aucune réponse à enregistrer.');
+      return;
+    }
+    for (final DiagnosticEntry entry in entries) {
+      controller.addDiagnosticEntry(
+        promptId: entry.promptId,
+        answer: entry.answer,
+      );
+    }
+    _symptom.clear();
+    _hypothesis.clear();
+    _conclusion.clear();
+    setState(() => _status = 'Fiche enregistrée dans le TP.');
+  }
+
+  @override
+  void dispose() {
+    _symptom.dispose();
+    _hypothesis.dispose();
+    _conclusion.dispose();
+    super.dispose();
+  }
+}
+
+class _PropertyLine extends StatelessWidget {
+  const _PropertyLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ElectroSimSpacing.xs),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final labelWidget = Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: ElectroSimColors.textSecondary,
+          ),
+        );
+        if (constraints.maxWidth < 260 ||
+            MediaQuery.textScalerOf(context).scale(14) > 18) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labelWidget, const SizedBox(height: 4), Text(value)],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: (constraints.maxWidth * .42).clamp(88.0, 128.0),
+              child: labelWidget,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(value)),
+          ],
+        );
+      },
+    ),
+  );
+}

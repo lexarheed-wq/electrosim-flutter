@@ -439,4 +439,13 @@ final class _ProjectLinkDialog extends StatelessWidget {
             dense: true, leading: const Icon(Icons.link_off),
             title: Text('${link.converterComponentId} → ${link.outputNetworkId}'),
             trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline)),
-          )
+          ),
+        for (final CrossNetworkRelayLink link in project.relayLinks)
+          ListTile(dense: true, leading: const Icon(Icons.link_off), title: Text('${link.outputAddress} · ${link.relayCoilId} → ${link.ac3ContactId}'), trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline))),
+        for (final CrossNetworkSignalLink link in project.signalLinks)
+          ListTile(dense: true, leading: const Icon(Icons.link_off), title: Text('${link.inputAddress} · ${link.auxiliaryContactId} → ${link.plcComponentId}'), trailing: IconButton(tooltip: 'Supprimer la liaison', onPressed: () => Navigator.pop(context, _ProjectLinkChoice(removeId: link.id)), icon: const Icon(Icons.delete_outline))),
+      ])),
+      actions: <Widget>[TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer'))],
+    );
+  }
+}

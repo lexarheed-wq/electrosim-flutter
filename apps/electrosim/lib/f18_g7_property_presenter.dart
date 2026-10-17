@@ -328,4 +328,15 @@ abstract final class F18G7PropertyPresenter {
       'efficiency' => ' %',
       _ => '',
     };
-    final 
+    final double displayed = key == 'efficiency' && number.abs() <= 1.0
+        ? number * 100.0
+        : number;
+    final String text = displayed == displayed.roundToDouble()
+        ? displayed.toStringAsFixed(0)
+        : displayed
+              .toStringAsFixed(3)
+              .replaceFirst(RegExp(r'0+$'), '')
+              .replaceFirst(RegExp(r'\.$'), '');
+    return '$text$unit';
+  }
+}

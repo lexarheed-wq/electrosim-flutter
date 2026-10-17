@@ -1161,4 +1161,185 @@ final class _PhysicalPlatePainter extends CustomPainter {
           color: Colors.white,
         );
       case 'overload':
- 
+        text(
+          c,
+          'RELAIS THERMIQUE',
+          Offset(w / 2, h * .23),
+          font: h * .033,
+          color: Colors.white,
+        );
+        text(
+          c,
+          'STOP',
+          Offset(w * .78, h * .67),
+          font: h * .032,
+          color: Colors.white,
+        );
+        text(
+          c,
+          'RESET',
+          Offset(w * .78, h * .37),
+          font: h * .03,
+          color: Colors.white,
+        );
+        text(
+          c,
+          v.tripped ? 'DÉCLENCHÉ' : '3 PÔLES',
+          Offset(w / 2, h * .71),
+          font: h * .04,
+          color: v.tripped ? const Color(0xFFBA2424) : Colors.white,
+        );
+        c.drawLine(
+          project(Offset(w * .34, h * .58), z: 29),
+          project(Offset(w * .37, h * .545), z: 29),
+          Paint()
+            ..color = graphite
+            ..strokeWidth = 1.2,
+        );
+    }
+  }
+
+  void portLabels(Canvas c) {
+    if (!v.showTerminals) return;
+    final List<String> labels;
+    if (name == 'source-dc-voltage' && v.variantKey == 'control-24v') {
+      labels = <String>['L+', 'M'];
+    } else {
+      labels = switch (name) {
+      'diode-axial' ||
+      'diode-glass' ||
+      'diode-tvs' ||
+      'led-red' ||
+      'led-green' => ['A', 'K'],
+      'switch-toggle' => ['1', '2'],
+      'source-dc-voltage' ||
+      'source-dc-current' ||
+      'solar-battery' ||
+      'solar-panel' => ['+', '−'],
+      'source-ac-voltage' || 'source-ac-current' => ['L', 'N'],
+      'controller-mppt' || 'controller-pwm' => ['PV+', 'PV−', 'BAT+', 'BAT−'],
+      'solar-inverter' => ['DC+', 'DC−', 'L', 'N'],
+      'supply' => ['+', '−'],
+      'coil' => ['A1', 'A2'],
+      'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
+      'fuse-holder' => ['1', '2'],
+      'auxiliary-no' => ['13', '14'],
+      'auxiliary-nc' => ['21', '22'],
+      'terminal5' => ['1', '2', '3', '4', 'PE', '1', '2', '3', '4', 'PE'],
+      'resistor-axial' || 'capacitor-film' || 'inductor-drum' => ['1', '2'],
+      'motor3' => ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
+      'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
+      'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
+      'breaker3' ||
+      'isolator3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+      'overload' => [
+        '1L1', '3L2', '5L3', '2T1', '4T2', '6T3', '95', '96', '97', '98',
+      ],
+      'breaker4' ||
+      'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
+          _ => List<String>.filled(ports.length, ''),
+      };
+    }
+    for (var i = 0; i < ports.length; i++) {
+      if (labels[i].isEmpty) continue;
+      final p = ports[i];
+      text(
+        c,
+        labels[i],
+        p +
+            Offset(
+              0,
+              name == 'motor3'
+                  ? (p.dy < h * .5 ? -h * .035 : h * .035)
+                  : (p.dy < h * .5 ? h * .052 : -h * .055),
+            ),
+        font: math.min(8, w * .065),
+        z: name == 'motor3'
+            ? h * .34 + 34
+            : name.startsWith('contactor') || name == 'overload'
+            ? 34
+            : 29,
+        color:
+            name.startsWith('contactor') ||
+                name == 'overload' ||
+                name == 'coil' ||
+                name == 'solar-battery' ||
+                name == 'solar-inverter' ||
+                name.startsWith('controller-') ||
+                name == 'fuse-holder' ||
+                name.startsWith('auxiliary-') ||
+                name == 'motor3'
+            ? Colors.white
+            : graphite,
+      );
+    }
+  }
+
+  @override
+  void paint(Canvas c, Size size) {
+    name = F18PhysicalPlateAssets.modelFor(
+      v.modelType,
+      variantKey: v.variantKey,
+    )!;
+    final g = F18PhysicalPlateAssets._geometry[name]!;
+    final dims = g['size'] as List;
+    design = Size((dims[0] as num).toDouble(), (dims[1] as num).toDouble());
+    ports = (g['ports'] as List)
+        .map((p) => Offset((p[0] as num).toDouble(), (p[1] as num).toDouble()))
+        .toList();
+    final image = F18PhysicalPlateAssets
+        ._images['$name-${v.perspective ? 'palette' : 'front'}']!;
+    final scale = math.min(
+      size.width / design.width,
+      size.height / design.height,
+    );
+    c.save();
+    c.translate(
+      (size.width - design.width * scale) / 2,
+      (size.height - design.height * scale) / 2,
+    );
+    c.scale(scale);
+    c.drawImageRect(
+      image,
+      Offset.zero & Size(image.width.toDouble(), image.height.toDouble()),
+      Offset.zero & design,
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+    overlays(c);
+    portLabels(c);
+    c.restore();
+  }
+
+  @override
+  bool shouldRepaint(_PhysicalPlatePainter old) =>
+      old.v.modelType != v.modelType ||
+      old.v.variantKey != v.variantKey ||
+      old.v.size != v.size ||
+      old.v.perspective != v.perspective ||
+      old.handle != handle ||
+      old.v.closed != v.closed ||
+      old.v.tripped != v.tripped ||
+      old.v.pressed != v.pressed ||
+      old.v.energized != v.energized ||
+      old.v.actuated != v.actuated ||
+      (old.v.phase != v.phase &&
+          {'motor3', 'motor-dc', 'fan'}.contains(
+            F18PhysicalPlateAssets.modelFor(
+              v.modelType,
+              variantKey: v.variantKey,
+            ),
+          )) ||
+      (old.v.voltageV != v.voltageV &&
+          F18PhysicalPlateAssets.modelFor(
+                v.modelType,
+                variantKey: v.variantKey,
+              ) ==
+              'lamp') ||
+      old.v.ratedCurrentA != v.ratedCurrentA ||
+      old.v.resistanceOhm != v.resistanceOhm ||
+      old.v.batterySoc != v.batterySoc ||
+      old.v.active != v.active ||
+      (old.v.currentA != v.currentA && v.modelType.contains('source')) ||
+      (old.v.voltageV != v.voltageV && v.modelType.contains('source')) ||
+      old.v.showTerminals != v.showTerminals;
+}

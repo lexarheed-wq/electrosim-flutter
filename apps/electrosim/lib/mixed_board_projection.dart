@@ -472,4 +472,9 @@ final class MixedBoardProjection {
       origin: Offset.zero,
     );
     return CircuitVisualLayout(
-      elementPositions: positi
+      elementPositions: positions, elementSizes: sizes, wireRoutes: routes,
+      elementQuarterTurns: turns,
+      cabinetLayout: CabinetLayout(fixtures, envelope: envelope, mounts: mounts),
+    );
+  }
+}

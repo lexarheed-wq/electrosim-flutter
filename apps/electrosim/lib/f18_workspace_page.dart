@@ -4756,4 +4756,1581 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 ),
                 FilledButton(
                   onPressed: () =>
-                      Navigator.pop(context, (selectedA, sele
+                      Navigator.pop(context, (selectedA, selectedB)),
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            ),
+      ),
+    );
+    if (!mounted || pair == null) return;
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'contactorAId': pair.$1, 'contactorBId': pair.$2},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Verrouillage mécanique configuré : ${pair.$1} / ${pair.$2}';
+    });
+    _updateSimulationCircuit(next);
+  }
+
+  CircuitState _replaceComponentParameters(
+    String componentId,
+    Map<String, Object?> updates,
+  ) {
+    return CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components
+          .map(
+            (ComponentInstance c) => c.id.value != componentId
+                ? c
+                : ComponentInstance(
+                    id: c.id,
+                    modelType: c.modelType,
+                    terminals: c.terminals,
+                    parameters: <String, Object?>{...c.parameters, ...updates},
+                    condition: c.condition,
+                    controlState: c.controlState,
+                  ),
+          )
+          .toList(growable: false),
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: _circuit.instruments,
+      probes: _circuit.probes,
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+  }
+
+  void _linkPlcOutput(String plcId, String output, String? targetId) {
+    final ComponentInstance? plc = _circuit.components
+        .where(
+          (ComponentInstance c) =>
+              c.id.value == plcId && c.modelType == 'plc_ac3',
+        )
+        .firstOrNull;
+    if (plc == null) return;
+    final Map<String, Object?> links = <String, Object?>{
+      if (plc.parameters['outputLinks'] is Map)
+        ...(plc.parameters['outputLinks'] as Map).cast<String, Object?>(),
+    };
+    if (targetId == null || targetId.isEmpty) {
+      links.remove(output);
+    } else {
+      final bool validTarget = _circuit.components.any(
+        (ComponentInstance c) =>
+            c.id.value == targetId && c.modelType == 'contactor_3p',
+      );
+      if (!validTarget) {
+        _setStatus(
+          'La sortie PLC AC3 doit cibler un contacteur triphasé existant.',
+        );
+        return;
+      }
+      for (final MapEntry<String, Object?> entry in links.entries.toList()) {
+        if (entry.key != output && entry.value == targetId) {
+          _setStatus('Ce contacteur est déjà lié à ${entry.key}.');
+          return;
+        }
+      }
+      links[output] = targetId;
+    }
+    final CircuitState next = _replaceComponentParameters(
+      plcId,
+      <String, Object?>{'outputLinks': links},
+    );
+    setState(() {
+      _circuit = next;
+      _status = targetId == null || targetId.isEmpty
+          ? '$output déliée'
+          : '$output commande le contacteur $targetId';
+    });
+    _updateSimulationCircuit(next);
+    _syncStudentTpCircuit();
+  }
+
+  void _configureSelectedPower(String mode, String? socketId) {
+    if (_blockStudentTpMutation() || _selected == null) return;
+    try {
+      final next = mode == 'fault-on' || mode == 'fault-off'
+          ? AppliancePowerConnection.setInsulationFault(
+              _circuit,
+              _selected!,
+              mode == 'fault-on',
+            )
+          : AppliancePowerConnection.configure(
+              _circuit,
+              _selected!,
+              mode,
+              socketId: socketId,
+            );
+      var nextLayout = _layout;
+      for (final wire in next.connections) {
+        if (!mode.startsWith('fault-') &&
+            wire.metadata[AppliancePowerConnection.cableTag] == _selected) {
+          nextLayout = _g2aWireLayoutEngine.routeConnection(
+            circuit: next,
+            layout: nextLayout,
+            connectionId: wire.id,
+          );
+        }
+      }
+      setState(() {
+        _circuit = next;
+        _layout = nextLayout;
+        _status = mode.startsWith('fault-')
+            ? (mode == 'fault-on'
+                  ? 'Défaut d’isolement activé.'
+                  : 'Défaut d’isolement supprimé.')
+            : socketId == null
+            ? 'Raccordement modifié — fiche débranchée si présente.'
+            : 'Fiche branchée dans $socketId';
+      });
+      _updateSimulationCircuit(next);
+      _syncStudentTpCircuit();
+    } on ArgumentError catch (error) {
+      _setStatus(error.message.toString());
+    }
+  }
+
+  void _rotateSelectedElement() {
+    if (_blockStudentTpMutation()) return;
+    final String? selected = _selected;
+    if (selected == null ||
+        F9ElementEditor.describe(_circuit, selected) == null) {
+      _setStatus('Rotation impossible : aucun élément sélectionné.');
+      return;
+    }
+
+    final CircuitVisualLayout previous = _layout;
+    var provisional = previous.rotateElement(selected);
+    final mount = provisional.cabinetLayout.mounts[selected];
+    if (mount?.railId != null) {
+      provisional = provisional.withCabinetLayout(
+        provisional.cabinetLayout.withMount(selected, mount!.withoutRail()),
+      );
+    }
+    final problem = _cabinetConfigurationProblem(
+      provisional.cabinetLayout,
+      layout: provisional,
+    );
+    if (problem != null) {
+      _setStatus(problem);
+      return;
+    }
+    final CircuitState circuit = _circuit;
+    setState(() {
+      _layout = provisional;
+      _status = 'Rotation 90° : $selected · routage en cours.';
+    });
+    unawaited(_finishRotationRoute(circuit, provisional, previous, selected));
+  }
+
+  Future<void> _finishRotationRoute(
+    CircuitState circuit,
+    CircuitVisualLayout provisional,
+    CircuitVisualLayout previous,
+    String elementId,
+  ) async {
+    try {
+      final CircuitVisualLayout? routed = await _connectionRouter
+          .routeChangedElement(
+            circuit: circuit,
+            layout: provisional,
+            elementId: elementId,
+          );
+      if (!mounted ||
+          routed == null ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional)) {
+        return;
+      }
+      if (!F18WorkspaceWireSafety.isRenderable(
+        circuit: circuit,
+        layout: routed,
+      )) {
+        setState(() {
+          _layout = previous;
+          _status = 'Rotation refusée : fils non routables.';
+        });
+        return;
+      }
+      setState(() {
+        _layout = routed;
+        _status = 'Rotation 90° : $elementId';
+      });
+    } on Object catch (error) {
+      if (!mounted ||
+          !identical(_circuit, circuit) ||
+          !identical(_layout, provisional)) {
+        return;
+      }
+      setState(() {
+        _layout = previous;
+        _status = 'Rotation annulée : $error';
+      });
+    }
+  }
+
+  void _deleteSelectedElement() {
+    if (_blockStudentTpMutation()) return;
+    if (_selectedCabinetFixtureId != null) {
+      final id = _selectedCabinetFixtureId!;
+      setState(() {
+        _layout = _layout.withCabinetLayout(_layout.cabinetLayout.remove(id));
+        _selectedCabinetFixtureId = null;
+        _status = 'Élément d’armoire supprimé : $id';
+      });
+      return;
+    }
+    if (_selectedIds.length > 1) {
+      _deleteMultipleSelection();
+      return;
+    }
+    final String? selected = _selected;
+    if (selected == null) {
+      _setStatus('Suppression impossible : aucune sélection.');
+      return;
+    }
+    if (_circuit.instruments.any((item) => item.id.value == selected)) {
+      final CircuitState next = CircuitState(
+        circuitId: _circuit.circuitId,
+        revision: _circuit.revision + 1,
+        mode: _circuit.mode,
+        components: _circuit.components,
+        sources: _circuit.sources,
+        connections: _circuit.connections,
+        instruments: <InstrumentInstance>[
+          for (final InstrumentInstance item in _circuit.instruments)
+            if (item.id.value != selected) item,
+        ],
+        probes: <ProbeConnection>[
+          for (final ProbeConnection item in _circuit.probes)
+            if (item.instrumentId.value != selected) item,
+        ],
+        settings: _circuit.settings,
+        metadata: _circuit.metadata,
+      );
+      final CircuitVisualLayout old = _layout;
+      setState(() {
+        _circuit = next;
+        _layout = CircuitVisualLayout(
+          elementPositions: <String, Offset>{...old.elementPositions}
+            ..remove(selected),
+          elementSizes: <String, Size>{...old.elementSizes}..remove(selected),
+          wireRoutes: old.wireRoutes,
+          elementQuarterTurns: <String, int>{...old.elementQuarterTurns}
+            ..remove(selected),
+          defaultElementSize: old.defaultElementSize,
+          cabinetLayout: old.cabinetLayout,
+        );
+        _selected = null;
+        _status = 'Instrument physique supprimé : $selected';
+      });
+      _updateSimulationCircuit(next);
+      return;
+    }
+    final F9ElementDetails? details = F9ElementEditor.describe(
+      _circuit,
+      selected,
+    );
+    if (details == null) {
+      _setStatus('Suppression impossible : sélection introuvable.');
+      return;
+    }
+
+    if (details.kind == F9ElementKind.connection) {
+      final CircuitState next = F9ElementEditor.deleteConnection(
+        _circuit,
+        selected,
+      );
+      if (identical(next, _circuit)) {
+        _setStatus('Suppression impossible : fil introuvable.');
+        return;
+      }
+      final Map<String, List<Offset>> routes = <String, List<Offset>>{
+        ..._layout.wireRoutes,
+      }..remove(selected);
+      setState(() {
+        _circuit = next;
+        _layout = CircuitVisualLayout(
+          elementPositions: _layout.elementPositions,
+          elementSizes: _layout.elementSizes,
+          wireRoutes: routes,
+          elementQuarterTurns: _layout.elementQuarterTurns,
+          defaultElementSize: _layout.defaultElementSize,
+          cabinetLayout: _layout.cabinetLayout,
+        );
+        _selected = null;
+        _status = 'Suppression : fil — $selected';
+      });
+      _updateSimulationCircuit(_circuit);
+      _syncStudentTpCircuit();
+      _announce(_status);
+      return;
+    }
+    final Set<TerminalId> removedTerminalIds = <TerminalId>{};
+    for (final ComponentInstance component in _circuit.components) {
+      if (component.id.value == selected) {
+        removedTerminalIds.addAll(
+          component.terminals.map((Terminal item) => item.id),
+        );
+      }
+    }
+    for (final SourceInstance source in _circuit.sources) {
+      if (source.id.value == selected) {
+        removedTerminalIds.addAll(
+          source.terminals.map((Terminal item) => item.id),
+        );
+      }
+    }
+    final Set<String> removedConnectionIds = _circuit.connections
+        .where(
+          (Connection connection) =>
+              removedTerminalIds.contains(connection.fromTerminalId) ||
+              removedTerminalIds.contains(connection.toTerminalId),
+        )
+        .map((Connection connection) => connection.id.value)
+        .toSet();
+    final CircuitState next = F9ElementEditor.deleteElement(_circuit, selected);
+    final Map<String, Offset> positions = <String, Offset>{
+      ..._layout.elementPositions,
+    }..remove(selected);
+    final Map<String, Size> sizes = <String, Size>{..._layout.elementSizes}
+      ..remove(selected);
+    final Map<String, int> rotations = <String, int>{
+      ..._layout.elementQuarterTurns,
+    }..remove(selected);
+    final Map<String, List<Offset>> routes =
+        <String, List<Offset>>{..._layout.wireRoutes}..removeWhere(
+          (String key, List<Offset> value) =>
+              removedConnectionIds.contains(key),
+        );
+    setState(() {
+      _circuit = next;
+      _layout = CircuitVisualLayout(
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
+        cabinetLayout: _layout.cabinetLayout.retainMounts({
+          for (final c in next.components) c.id.value,
+          for (final c in next.sources) c.id.value,
+        }),
+      );
+      _selected = null;
+      _status = 'Suppression : ${details.modelType} — $selected';
+    });
+    _updateSimulationCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
+  void _deleteMultipleSelection() {
+    final Set<String> selectedIds = <String>{..._selectedIds};
+    if (selectedIds.isEmpty) {
+      _setStatus('Suppression impossible : aucune sélection.');
+      return;
+    }
+
+    CircuitState next = _circuit;
+    var removedCount = 0;
+    for (final String id in selectedIds) {
+      final F9ElementDetails? details =
+          F9ElementEditor.describe(next, id) ??
+          F9ElementEditor.describe(_circuit, id);
+      if (details == null &&
+          next.instruments.any((item) => item.id.value == id)) {
+        next = CircuitState(
+          circuitId: next.circuitId,
+          revision: next.revision + 1,
+          mode: next.mode,
+          components: next.components,
+          sources: next.sources,
+          connections: next.connections,
+          instruments: <InstrumentInstance>[
+            for (final InstrumentInstance item in next.instruments)
+              if (item.id.value != id) item,
+          ],
+          probes: <ProbeConnection>[
+            for (final ProbeConnection item in next.probes)
+              if (item.instrumentId.value != id) item,
+          ],
+          settings: next.settings,
+          metadata: next.metadata,
+        );
+        removedCount += 1;
+        continue;
+      }
+      if (details == null) continue;
+      final CircuitState candidate = details.kind == F9ElementKind.connection
+          ? F9ElementEditor.deleteConnection(next, id)
+          : F9ElementEditor.deleteElement(next, id);
+      if (!identical(candidate, next)) {
+        next = candidate;
+        removedCount += 1;
+      }
+    }
+
+    if (removedCount == 0) {
+      _setStatus('Suppression impossible : sélection introuvable.');
+      return;
+    }
+
+    final Set<String> remainingElements = <String>{
+      ...next.sources.map((SourceInstance item) => item.id.value),
+      ...next.components.map((ComponentInstance item) => item.id.value),
+      ...next.instruments.map((InstrumentInstance item) => item.id.value),
+    };
+    final Set<String> remainingConnections = next.connections
+        .map((Connection item) => item.id.value)
+        .toSet();
+
+    final Map<String, Offset> positions = <String, Offset>{
+      for (final MapEntry<String, Offset> entry
+          in _layout.elementPositions.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, Size> sizes = <String, Size>{
+      for (final MapEntry<String, Size> entry in _layout.elementSizes.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, int> rotations = <String, int>{
+      for (final MapEntry<String, int> entry
+          in _layout.elementQuarterTurns.entries)
+        if (remainingElements.contains(entry.key)) entry.key: entry.value,
+    };
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      for (final MapEntry<String, List<Offset>> entry
+          in _layout.wireRoutes.entries)
+        if (remainingConnections.contains(entry.key)) entry.key: entry.value,
+    };
+
+    setState(() {
+      _circuit = next;
+      _layout = CircuitVisualLayout(
+        elementPositions: positions,
+        elementSizes: sizes,
+        wireRoutes: routes,
+        elementQuarterTurns: rotations,
+        defaultElementSize: _layout.defaultElementSize,
+        cabinetLayout: _layout.cabinetLayout.retainMounts(remainingElements),
+      );
+      _selected = null;
+      _status = 'Suppression multiple : $removedCount éléments sélectionnés';
+    });
+    _updateSimulationCircuit(_circuit);
+    _syncStudentTpCircuit();
+    _announce(_status);
+  }
+
+  bool _blockStudentTpMutation() {
+    if (!_studentTpReadOnly) {
+      return false;
+    }
+    _setStatus('TP remis : montage en lecture seule.');
+    return true;
+  }
+
+  void _syncStudentTpCircuit() {
+    if (widget.role != F9UserRole.student ||
+        _tpController.lifecycle != TpLifecycle.started) {
+      return;
+    }
+    _tpController.updateStudentCircuit(_circuit);
+  }
+
+  CircuitVisualLayout _layoutForCircuit(CircuitState circuit) {
+    final Map<String, Offset> positions = <String, Offset>{};
+    final Map<String, Size> sizes = <String, Size>{};
+    final List<(String, String)> elements = <(String, String)>[
+      ...circuit.sources.map(
+        (SourceInstance item) => (
+          item.id.value,
+          (item.parameters['_visualModelType'] as String?) ?? item.modelType,
+        ),
+      ),
+      ...circuit.components.map(
+        (ComponentInstance item) => (
+          item.id.value,
+          (item.parameters['_visualModelType'] as String?) ?? item.modelType,
+        ),
+      ),
+      ...circuit.instruments.map(
+        (InstrumentInstance item) => (item.id.value, 'physical-instrument'),
+      ),
+    ];
+    final variants = {
+      for (final source in circuit.sources)
+        source.id.value:
+            NativeApplianceGeometry.forSource(source)?.variant ??
+            source.parameters['_visualVariant'] as String?,
+      for (final c in circuit.components)
+        c.id.value:
+            NativeApplianceGeometry.forComponent(c)?.variant ??
+            c.parameters['_visualVariant'] as String?,
+    };
+    double rowTop = 96;
+    for (var start = 0; start < elements.length; start += 3) {
+      final row = elements.skip(start).take(3).toList();
+      double left = 48;
+      double rowHeight = 192;
+      for (final (id, modelType) in row) {
+        final size = modelType == 'physical-instrument'
+            ? const Size(112, 152)
+            : F18ReferenceComponentVisuals.supports(modelType)
+            ? F18ReferenceComponentMetrics.boardSizeFor(
+                modelType,
+                variantKey: variants[id],
+              )
+            : const Size(104, 64);
+        if (modelType == 'physical-instrument' ||
+            F18ReferenceComponentVisuals.supports(modelType)) {
+          sizes[id] = size;
+        }
+        positions[id] = Offset(
+          left + math.max(96, size.width / 2),
+          rowTop + math.max(96, size.height / 2),
+        );
+        left += math.max(240, size.width + 48);
+        rowHeight = math.max(rowHeight, size.height + 48);
+      }
+      rowTop += rowHeight;
+    }
+
+    final CircuitVisualLayout base = CircuitVisualLayout(
+      elementPositions: positions,
+      elementSizes: sizes,
+    );
+    final CircuitVisualLayout arranged = _arrangeSimpleDcCircuit(circuit, base);
+    return _routeWithG2A(circuit, arranged);
+  }
+
+  CircuitVisualLayout _arrangeSimpleDcCircuit(
+    CircuitState circuit,
+    CircuitVisualLayout base,
+  ) {
+    if (!_isSimpleSeriesDc(circuit) ||
+        circuit.sources.length != 1 ||
+        circuit.components.isEmpty) {
+      return base;
+    }
+
+    final ComponentInstance load = _preferredDcLoad(circuit.components);
+    final List<ComponentInstance> inline = circuit.components
+        .where((ComponentInstance item) => item.id != load.id)
+        .toList(growable: false);
+
+    final double width =
+        576 + (inline.length > 1 ? (inline.length - 1) * 168.0 : 0);
+    final DcRectangularArrangement arrangement = _dcArrangePolicy.arrange(
+      topLeft: const Offset(168, 144),
+      width: width,
+      height: 336,
+      sourceId: circuit.sources.single.id.value,
+      loadId: load.id.value,
+      topInlineElements: inline
+          .map(
+            (ComponentInstance item) => DcInlineElement(
+              id: item.id.value,
+              extent: base.sizeOf(item.id.value).width,
+            ),
+          )
+          .toList(growable: false),
+    );
+    if (!arrangement.isResolved) {
+      return base;
+    }
+
+    return CircuitVisualLayout(
+      elementPositions: <String, Offset>{
+        ...base.elementPositions,
+        ...arrangement.positions,
+      },
+      elementSizes: base.elementSizes,
+      elementQuarterTurns: base.elementQuarterTurns,
+      defaultElementSize: base.defaultElementSize,
+      cabinetLayout: base.cabinetLayout,
+    );
+  }
+
+  bool _isSimpleSeriesDc(CircuitState circuit) {
+    if (circuit.mode != ElectricalMode.dc ||
+        circuit.sources.length != 1 ||
+        circuit.connections.length != circuit.components.length + 1) {
+      return false;
+    }
+
+    final Map<TerminalId, String> owners = <TerminalId, String>{};
+    final SourceInstance source = circuit.sources.single;
+    if (source.terminals.length != 2) {
+      return false;
+    }
+    for (final Terminal terminal in source.terminals) {
+      owners[terminal.id] = source.id.value;
+    }
+    for (final ComponentInstance component in circuit.components) {
+      if (component.terminals.length != 2) {
+        return false;
+      }
+      for (final Terminal terminal in component.terminals) {
+        owners[terminal.id] = component.id.value;
+      }
+    }
+
+    final Map<String, int> degree = <String, int>{
+      source.id.value: 0,
+      for (final ComponentInstance component in circuit.components)
+        component.id.value: 0,
+    };
+    for (final Connection connection in circuit.connections) {
+      final String? from = owners[connection.fromTerminalId];
+      final String? to = owners[connection.toTerminalId];
+      if (from == null || to == null || from == to) {
+        return false;
+      }
+      degree[from] = (degree[from] ?? 0) + 1;
+      degree[to] = (degree[to] ?? 0) + 1;
+    }
+    return degree.values.every((int value) => value == 2);
+  }
+
+  ComponentInstance _preferredDcLoad(List<ComponentInstance> components) {
+    const Set<String> loadTypes = <String>{
+      'lamp',
+      'motor_dc',
+      'fan_dc',
+      'buzzer',
+      'resistor',
+    };
+    for (final ComponentInstance component in components.reversed) {
+      if (loadTypes.contains(component.modelType.toLowerCase())) {
+        return component;
+      }
+    }
+    return components.last;
+  }
+
+  CircuitVisualLayout _routeWithG2A(
+    CircuitState circuit,
+    CircuitVisualLayout layout,
+  ) {
+    final CircuitVisualLayout routed = _g2aWireLayoutEngine.routeAll(
+      circuit: circuit,
+      layout: layout,
+    );
+    if (!_isSimpleSeriesDc(circuit)) {
+      return routed;
+    }
+
+    // The G2A router may deliberately leave a connection without waypoints.
+    // With the larger reference-component envelopes that can expose a direct
+    // diagonal segment. For the bounded simple-series DC arrangement only,
+    // insert one Manhattan corner so the public wire contract stays strictly
+    // orthogonal. The normal G2A route remains authoritative whenever it
+    // produced an explicit route.
+    final CircuitGeometryIndex geometry = CircuitGeometryIndex.build(
+      circuit,
+      routed,
+    );
+    final Map<String, List<Offset>> routes = <String, List<Offset>>{
+      ...routed.wireRoutes,
+    };
+    var changed = false;
+
+    for (final Connection connection in circuit.connections) {
+      final List<Offset> existing = routed.routeFor(connection.id.value);
+      if (existing.isNotEmpty) continue;
+
+      final Offset? start =
+          geometry.terminalPositions[connection.fromTerminalId];
+      final Offset? end = geometry.terminalPositions[connection.toTerminalId];
+      if (start == null ||
+          end == null ||
+          start.dx == end.dx ||
+          start.dy == end.dy) {
+        continue;
+      }
+
+      routes[connection.id.value] = <Offset>[Offset(end.dx, start.dy)];
+      changed = true;
+    }
+
+    if (!changed) {
+      return routed;
+    }
+    return CircuitVisualLayout(
+      elementPositions: routed.elementPositions,
+      elementSizes: routed.elementSizes,
+      wireRoutes: routes,
+      elementQuarterTurns: routed.elementQuarterTurns,
+      defaultElementSize: routed.defaultElementSize,
+      cabinetLayout: routed.cabinetLayout,
+    );
+  }
+
+  void _setStatus(String value) {
+    setState(() {
+      _status = value;
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_visualLayoutMatchesSession &&
+        !identical(_layout, _lastReportedVisualLayout)) {
+      widget.onVisualLayoutChanged?.call(_layout);
+    }
+    _layoutSaveTimer?.cancel();
+    _workspaceLayout.removeListener(_scheduleLayoutSave);
+    _tpController.removeListener(_onStudentTpChanged);
+    if (_layoutEdited) {
+      unawaited(
+        _persistWorkspaceLayout(
+          _workspaceLayout.toJson(),
+          order: _layoutEditOrder,
+        ),
+      );
+    }
+    _workspaceLayout.dispose();
+    _connectionRouter.dispose();
+    for (final Timer timer in _momentaryReleaseTimers.values) {
+      timer.cancel();
+    }
+    _momentaryReleaseTimers.clear();
+    _simulation.dispose();
+    unawaited(_continuityAudio.dispose());
+    widget.syncClient?.removeListener(_onLanSyncChanged);
+    final ElectroSimLanSyncHost? host = _lanHost;
+    if (host != null) unawaited(host.close());
+    final ElectroSimLanSyncClient? client = widget.syncClient;
+    if (client != null) unawaited(client.close());
+    _dragPreviewLayout.dispose();
+    _wiringPointerWorld.dispose();
+    _viewport.dispose();
+    if (_ownsTpController || client != null) {
+      _tpController.dispose();
+    }
+    super.dispose();
+  }
+}
+
+class _CabinetSelectionPainter extends CustomPainter {
+  const _CabinetSelectionPainter({
+    required this.fixture,
+    required this.viewport,
+  });
+  final CabinetFixture? fixture;
+  final ViewportController viewport;
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintCabinetSelection(
+      canvas,
+      fixture: fixture,
+      worldToScreen: viewport.worldToScreen,
+      scale: viewport.scale,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CabinetSelectionPainter old) =>
+      old.fixture != fixture ||
+      old.viewport != viewport ||
+      old.viewport.scale != viewport.scale ||
+      old.viewport.translation != viewport.translation;
+}
+
+class _WorkspaceTopBar extends StatelessWidget {
+  const _WorkspaceTopBar({
+    required this.entryLabel,
+    required this.workspace,
+    required this.sessionNavigation,
+    required this.onHome,
+    required this.onDashboard,
+    required this.onManageSession,
+    required this.onExitWorkspace,
+    required this.onSave,
+    required this.onOpen,
+    this.onGenerateIndustrialMarkings,
+    this.onEditIndustrialMarking,
+    this.onExportSchematicSvg,
+    this.onExportSchematicPdf,
+    required this.onRotateSelected,
+    required this.onDeleteSelected,
+    required this.onRecenter,
+    this.onConfigureCabinet,
+    this.onPreviewCabinet,
+    this.representation = WorkspaceRepresentation.plate,
+    this.onSelectRepresentation,
+    this.onAddDinRail,
+    this.onAddWireDuct,
+    this.onAddTerminalZone,
+    this.onToggleCabinetSnap,
+    this.onRouteCabinetWires,
+    this.cabinetSnapEnabled = false,
+    required this.electricalMode,
+    required this.onSelectElectricalMode,
+    this.showAllTerminals = false,
+    this.onToggleTerminals,
+    this.soundEnabled = true,
+    this.onToggleSound,
+    required this.simulationRunning,
+    required this.simulatedTime,
+    required this.onToggleSimulation,
+    required this.onResetSimulation,
+    required this.simulationAdvancing,
+    required this.onAdvanceSimulation,
+    required this.onCancelAdvance,
+    required this.onUndo,
+    required this.onRedo,
+    this.showSimulationControls = true,
+    this.showModeSelector = true,
+  });
+
+  final String entryLabel;
+  final String workspace;
+  final bool sessionNavigation;
+  final VoidCallback onHome;
+  final VoidCallback? onDashboard;
+  final VoidCallback? onManageSession;
+  final VoidCallback? onExitWorkspace;
+  final VoidCallback? onSave;
+  final VoidCallback? onOpen;
+  final VoidCallback? onGenerateIndustrialMarkings;
+  final VoidCallback? onEditIndustrialMarking;
+  final VoidCallback? onExportSchematicSvg;
+  final VoidCallback? onExportSchematicPdf;
+  final VoidCallback? onRotateSelected;
+  final VoidCallback? onDeleteSelected;
+  final VoidCallback onRecenter;
+  final VoidCallback? onConfigureCabinet, onPreviewCabinet;
+  final WorkspaceRepresentation representation;
+  final ValueChanged<WorkspaceRepresentation>? onSelectRepresentation;
+  final VoidCallback? onAddDinRail;
+  final VoidCallback? onAddWireDuct;
+  final VoidCallback? onAddTerminalZone;
+  final VoidCallback? onToggleCabinetSnap;
+  final VoidCallback? onRouteCabinetWires;
+  final bool cabinetSnapEnabled;
+  final ElectricalMode electricalMode;
+  final ValueChanged<ElectricalMode> onSelectElectricalMode;
+  final bool showAllTerminals;
+  final VoidCallback? onToggleTerminals;
+  final bool soundEnabled;
+  final VoidCallback? onToggleSound;
+  final bool simulationRunning;
+  final Duration simulatedTime;
+  final VoidCallback onToggleSimulation;
+  final VoidCallback onResetSimulation;
+  final bool simulationAdvancing;
+  final ValueChanged<Duration> onAdvanceSimulation;
+  final VoidCallback onCancelAdvance;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
+  final bool showSimulationControls;
+  final bool showModeSelector;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 720;
+        final wrapTools =
+            constraints.maxWidth < 1000 ||
+            MediaQuery.textScalerOf(context).scale(14) > 18;
+        final headerIcons = IconButtonThemeData(
+          style: IconButton.styleFrom(
+            foregroundColor: ElectroSimColors.workspaceOnHeader,
+            minimumSize: const Size.square(48),
+          ),
+        );
+        final tools = <Widget>[
+          for (final view in WorkspaceRepresentation.values)
+            TextButton(
+              key: Key('workspace-view-${view.name}'),
+              onPressed: () => onSelectRepresentation?.call(view),
+              style: TextButton.styleFrom(
+                foregroundColor: representation == view
+                    ? const Color(0xFF1D4ED8)
+                    : const Color(0xFF334155),
+                backgroundColor: representation == view
+                    ? const Color(0xFFE0ECFF)
+                    : Colors.transparent,
+                minimumSize: const Size(76, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: Text(
+                view == WorkspaceRepresentation.plate ? 'Platine' : 'Schéma',
+              ),
+            ),
+          if (representation == WorkspaceRepresentation.plate)
+            IconButton(
+              key: const Key('workspace-toggle-terminals'),
+              tooltip: showAllTerminals
+                  ? 'Masquer les bornes'
+                  : 'Afficher les bornes',
+              isSelected: showAllTerminals,
+              onPressed: onToggleTerminals,
+              icon: const Icon(Icons.adjust_outlined),
+              selectedIcon: const Icon(Icons.adjust, color: Color(0xFF2563EB)),
+            ),
+          if (showModeSelector) _modeMenu(compact),
+          if (showSimulationControls && !compact)
+            PopupMenuButton<Duration>(
+              key: const Key('workspace-time-advance'),
+              tooltip: 'Avancer le temps simulé',
+              enabled: !simulationAdvancing,
+              icon: const Icon(Icons.more_time_outlined),
+              onSelected: onAdvanceSimulation,
+              itemBuilder: (context) => const [
+                PopupMenuItem<Duration>(
+                  key: Key('workspace-time-plus-minute'),
+                  value: Duration(minutes: 1),
+                  child: Text('Avancer de +1 min'),
+                ),
+                PopupMenuItem<Duration>(
+                  key: Key('workspace-time-plus-hour'),
+                  value: Duration(hours: 1),
+                  child: Text('Avancer de +1 h'),
+                ),
+                PopupMenuItem<Duration>(
+                  key: Key('workspace-time-plus-day'),
+                  value: Duration(hours: 24),
+                  child: Text('Avancer de +24 h'),
+                ),
+              ],
+            ),
+          if (!compact && onSave != null)
+            IconButton(
+              key: const Key('workspace-save-direct-action'),
+              tooltip: 'Sauvegarder',
+              onPressed: onSave,
+              icon: const Icon(Icons.save_outlined),
+            ),
+          if (!compact && onOpen != null)
+            IconButton(
+              key: const Key('workspace-open-direct-action'),
+              tooltip: 'Reprendre',
+              onPressed: onOpen,
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
+          IconButton(
+            key: const Key('workspace-rotate-action'),
+            tooltip: 'Rotation 90°',
+            onPressed: onRotateSelected,
+            icon: const Icon(Icons.rotate_right_outlined),
+          ),
+          IconButton(
+            key: const Key('workspace-delete-action'),
+            tooltip: 'Supprimer la sélection',
+            onPressed: onDeleteSelected,
+            icon: const Icon(Icons.delete_outline),
+          ),
+          if (showSimulationControls)
+            Tooltip(
+              message: simulationAdvancing
+                  ? 'Annuler l’avance temporelle'
+                  : simulationRunning
+                  ? 'Mettre la simulation en pause'
+                  : 'Démarrer la simulation',
+              child: FilledButton.icon(
+                key: const Key('workspace-simulation-toggle'),
+                onPressed: simulationAdvancing
+                    ? onCancelAdvance
+                    : onToggleSimulation,
+                style: FilledButton.styleFrom(
+                  backgroundColor: simulationRunning
+                      ? ElectroSimColors.primary
+                      : ElectroSimColors.success,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                ),
+                icon: Icon(
+                  simulationAdvancing
+                      ? Icons.stop_circle_outlined
+                      : simulationRunning
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                ),
+                label: Text(
+                  simulationAdvancing
+                      ? 'Stop'
+                      : simulationRunning
+                      ? 'Pause'
+                      : 'Lancer',
+                ),
+              ),
+            ),
+          _moreMenu(),
+        ];
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Material(
+              color: ElectroSimColors.workspaceHeader,
+              child: Theme(
+                data: Theme.of(context).copyWith(iconButtonTheme: headerIcons),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: compact ? 56 : 64),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          key: const Key('session-home-action'),
+                          tooltip: 'Accueil',
+                          onPressed: onHome,
+                          icon: const Icon(Icons.home_outlined),
+                        ),
+                        if (onExitWorkspace != null)
+                          IconButton(
+                            key: const Key('workspace-exit-action'),
+                            tooltip: 'Quitter l’atelier',
+                            onPressed: onExitWorkspace,
+                            icon: const Icon(Icons.arrow_back_outlined),
+                          ),
+                        if (!compact && !wrapTools) ...[
+                          const Icon(
+                            Icons.hub_outlined,
+                            color: ElectroSimColors.workspaceAccent,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'ElectroSim',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: ElectroSimColors.workspaceAccent,
+                                ),
+                          ),
+                          const SizedBox(width: 24),
+                        ],
+                        Expanded(
+                          child: Tooltip(
+                            message: entryLabel,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entryLabel,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(
+                                        color:
+                                            ElectroSimColors.workspaceOnHeader,
+                                      ),
+                                ),
+                                Text(
+                                  workspace,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: const Color(0xFFB9C7D9),
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (sessionNavigation) ...[
+                          IconButton(
+                            key: const Key('session-dashboard-action'),
+                            tooltip: 'Tableau de bord',
+                            onPressed: onDashboard,
+                            icon: const Icon(Icons.dashboard_outlined),
+                          ),
+                          IconButton(
+                            key: const Key('session-manage-action'),
+                            tooltip: 'Gérer la session',
+                            onPressed: onManageSession,
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Material(
+              color: ElectroSimColors.surface,
+              child: Container(
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: ElectroSimColors.workspaceDivider,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: wrapTools
+                    ? Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: tools,
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          Text(
+                            'Outils de l’atelier',
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  color: ElectroSimColors.textSecondary,
+                                ),
+                          ),
+                          const Spacer(),
+                          ...tools,
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _modeMenu(bool compact) => PopupMenuButton<ElectricalMode>(
+    key: const Key('workspace-electrical-mode'),
+    tooltip: 'Domaine électrique',
+    initialValue: electricalMode,
+    onSelected: onSelectElectricalMode,
+    itemBuilder: (context) => const [
+      PopupMenuItem(
+        key: Key('workspace-mode-dc'),
+        value: ElectricalMode.dc,
+        child: Text('CC — courant continu'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-ac1'),
+        value: ElectricalMode.ac1,
+        child: Text('AC 1φ — monophasé'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-ac3'),
+        value: ElectricalMode.ac3,
+        child: Text('AC 3φ — triphasé'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-pv'),
+        value: ElectricalMode.pv,
+        child: Text('PV — photovoltaïque'),
+      ),
+      PopupMenuItem(
+        key: Key('workspace-mode-mixed'),
+        value: ElectricalMode.mixed,
+        child: Text('Mixte — CC, AC, triphasé et PV'),
+      ),
+    ],
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bolt_outlined, size: 20),
+            if (!compact) ...[
+              const SizedBox(width: 6),
+              Text(switch (electricalMode) {
+                ElectricalMode.dc => 'CC',
+                ElectricalMode.ac1 => 'AC 1φ',
+                ElectricalMode.ac3 => 'AC 3φ',
+                ElectricalMode.pv => 'PV',
+                ElectricalMode.mixed => 'Mixte',
+              }),
+            ],
+            const Icon(Icons.arrow_drop_down, size: 18),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _moreMenu() => PopupMenuButton<_WorkspaceSecondaryAction>(
+    key: const Key('workspace-more-actions'),
+    tooltip: 'Plus d’actions',
+    icon: const Icon(Icons.more_horiz),
+    onSelected: (action) {
+      switch (action) {
+        case _WorkspaceSecondaryAction.toggleSound:
+          onToggleSound?.call();
+        case _WorkspaceSecondaryAction.undo:
+          onUndo?.call();
+        case _WorkspaceSecondaryAction.redo:
+          onRedo?.call();
+        case _WorkspaceSecondaryAction.advanceMinute:
+          onAdvanceSimulation(const Duration(minutes: 1));
+        case _WorkspaceSecondaryAction.advanceHour:
+          onAdvanceSimulation(const Duration(hours: 1));
+        case _WorkspaceSecondaryAction.advanceDay:
+          onAdvanceSimulation(const Duration(hours: 24));
+        case _WorkspaceSecondaryAction.save:
+          onSave?.call();
+        case _WorkspaceSecondaryAction.open:
+          onOpen?.call();
+        case _WorkspaceSecondaryAction.generateIndustrialMarkings:
+          onGenerateIndustrialMarkings?.call();
+        case _WorkspaceSecondaryAction.editIndustrialMarking:
+          onEditIndustrialMarking?.call();
+        case _WorkspaceSecondaryAction.exportSchematicSvg:
+          onExportSchematicSvg?.call();
+        case _WorkspaceSecondaryAction.exportSchematicPdf:
+          onExportSchematicPdf?.call();
+        case _WorkspaceSecondaryAction.recenter:
+          onRecenter();
+        case _WorkspaceSecondaryAction.addDinRail:
+          onAddDinRail?.call();
+        case _WorkspaceSecondaryAction.addWireDuct:
+          onAddWireDuct?.call();
+        case _WorkspaceSecondaryAction.addTerminalZone:
+          onAddTerminalZone?.call();
+        case _WorkspaceSecondaryAction.toggleDinSnap:
+          onToggleCabinetSnap?.call();
+        case _WorkspaceSecondaryAction.configureCabinet:
+          onConfigureCabinet?.call();
+        case _WorkspaceSecondaryAction.previewCabinet:
+          onPreviewCabinet?.call();
+        case _WorkspaceSecondaryAction.routeCabinetWires:
+          onRouteCabinetWires?.call();
+        case _WorkspaceSecondaryAction.resetSimulation:
+          onResetSimulation();
+      }
+    },
+    itemBuilder: (context) => [
+      const PopupMenuItem(
+        key: Key('workspace-recenter-action'),
+        value: _WorkspaceSecondaryAction.recenter,
+        child: ListTile(
+          leading: Icon(Icons.center_focus_strong),
+          title: Text('Recentrer la platine'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      const PopupMenuItem(
+        key: Key('workspace-reset-simulation-action'),
+        value: _WorkspaceSecondaryAction.resetSimulation,
+        child: ListTile(
+          leading: Icon(Icons.restart_alt),
+          title: Text('Réinitialiser la simulation'),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      if (onToggleSound != null)
+        PopupMenuItem(
+          key: const Key('workspace-sound-action'),
+          value: _WorkspaceSecondaryAction.toggleSound,
+          child: Text(
+            soundEnabled
+                ? 'Couper les sons des composants'
+                : 'Activer les sons des composants',
+          ),
+        ),
+      PopupMenuItem(
+        key: const Key('workspace-undo-action'),
+        value: _WorkspaceSecondaryAction.undo,
+        enabled: onUndo != null,
+        child: const Text('Annuler · ⌘Z / Ctrl+Z'),
+      ),
+      PopupMenuItem(
+        key: const Key('workspace-redo-action'),
+        value: _WorkspaceSecondaryAction.redo,
+        enabled: onRedo != null,
+        child: const Text('Rétablir · ⌘⇧Z / Ctrl+Y'),
+      ),
+      if (MediaQuery.sizeOf(context).width < 720 &&
+          !simulationAdvancing) ...const [
+        PopupMenuItem(
+          key: Key('workspace-time-plus-minute'),
+          value: _WorkspaceSecondaryAction.advanceMinute,
+          child: Text('Avancer de +1 min'),
+        ),
+        PopupMenuItem(
+          key: Key('workspace-time-plus-hour'),
+          value: _WorkspaceSecondaryAction.advanceHour,
+          child: Text('Avancer de +1 h'),
+        ),
+        PopupMenuItem(
+          key: Key('workspace-time-plus-day'),
+          value: _WorkspaceSecondaryAction.advanceDay,
+          child: Text('Avancer de +24 h'),
+        ),
+      ],
+      if (onSave != null)
+        const PopupMenuItem(
+          key: Key('workspace-save-action'),
+          value: _WorkspaceSecondaryAction.save,
+          child: ListTile(
+            leading: Icon(Icons.save_outlined),
+            title: Text('Sauvegarder'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onOpen != null)
+        const PopupMenuItem(
+          key: Key('workspace-open-action'),
+          value: _WorkspaceSecondaryAction.open,
+          child: ListTile(
+            leading: Icon(Icons.restore_outlined),
+            title: Text('Reprendre'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onGenerateIndustrialMarkings != null)
+        const PopupMenuItem(
+          key: Key('workspace-generate-industrial-markings'),
+          value: _WorkspaceSecondaryAction.generateIndustrialMarkings,
+          child: Text('Repérage : générer / actualiser'),
+        ),
+      if (onEditIndustrialMarking != null)
+        const PopupMenuItem(
+          key: Key('workspace-edit-industrial-marking'),
+          value: _WorkspaceSecondaryAction.editIndustrialMarking,
+          child: Text('Repérage : modifier / verrouiller'),
+        ),
+      if (onExportSchematicSvg != null)
+        const PopupMenuItem(
+          key: Key('workspace-export-schematic-svg'),
+          value: _WorkspaceSecondaryAction.exportSchematicSvg,
+          child: ListTile(
+            leading: Icon(Icons.code_outlined),
+            title: Text('Schéma : exporter en SVG'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onExportSchematicPdf != null)
+        const PopupMenuItem(
+          key: Key('workspace-export-schematic-pdf'),
+          value: _WorkspaceSecondaryAction.exportSchematicPdf,
+          child: ListTile(
+            leading: Icon(Icons.picture_as_pdf_outlined),
+            title: Text('Schéma : exporter en PDF'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onAddDinRail != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-din-rail'),
+          value: _WorkspaceSecondaryAction.addDinRail,
+          child: ListTile(
+            leading: Icon(Icons.view_stream_outlined),
+            title: Text('Armoire : ajouter un rail DIN'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onAddWireDuct != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-wire-duct'),
+          value: _WorkspaceSecondaryAction.addWireDuct,
+          child: ListTile(
+            leading: Icon(Icons.table_rows_outlined),
+            title: Text('Armoire : ajouter une goulotte'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onAddTerminalZone != null)
+        const PopupMenuItem(
+          key: Key('workspace-add-terminal-zone'),
+          value: _WorkspaceSecondaryAction.addTerminalZone,
+          child: ListTile(
+            leading: Icon(Icons.grid_on_outlined),
+            title: Text('Armoire : zone de borniers'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onConfigureCabinet != null)
+        const PopupMenuItem(
+          key: Key('workspace-configure-cabinet'),
+          value: _WorkspaceSecondaryAction.configureCabinet,
+          child: Text('Armoire : dimensions et montages'),
+        ),
+      if (onPreviewCabinet != null)
+        const PopupMenuItem(
+          key: Key('workspace-preview-3d'),
+          value: _WorkspaceSecondaryAction.previewCabinet,
+          child: Text('Aperçu 3D de l’armoire'),
+        ),
+      if (onRouteCabinetWires != null)
+        const PopupMenuItem(
+          key: Key('workspace-route-wiring-duct'),
+          value: _WorkspaceSecondaryAction.routeCabinetWires,
+          child: ListTile(
+            leading: Icon(Icons.cable_outlined),
+            title: Text('Armoire : router les fils en goulottes'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (onToggleCabinetSnap != null)
+        PopupMenuItem(
+          key: const Key('workspace-toggle-din-snap'),
+          value: _WorkspaceSecondaryAction.toggleDinSnap,
+          child: ListTile(
+            leading: Icon(
+              cabinetSnapEnabled
+                  ? Icons.check_box
+                  : Icons.check_box_outline_blank,
+            ),
+            title: Text(
+              cabinetSnapEnabled
+                  ? 'Placement DIN assisté : activé'
+                  : 'Placement DIN assisté : désactivé',
+            ),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+    ],
+  );
+}
+
+enum _WorkspaceSecondaryAction {
+  toggleSound,
+  undo,
+  redo,
+  save,
+  open,
+  generateIndustrialMarkings,
+  editIndustrialMarking,
+  exportSchematicSvg,
+  exportSchematicPdf,
+  recenter,
+  addDinRail,
+  addWireDuct,
+  addTerminalZone,
+  toggleDinSnap,
+  routeCabinetWires,
+  configureCabinet,
+  previewCabinet,
+  resetSimulation,
+  advanceMinute,
+  advanceHour,
+  advanceDay,
+}
+
+class _DashboardDestination extends StatelessWidget {
+  const _DashboardDestination({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      minTileHeight: ElectroSimGeometry.minimumTouchTarget,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ElectroSimRadii.card),
+        side: const BorderSide(color: ElectroSimColors.outline),
+      ),
+      leading: Icon(icon, color: ElectroSimColors.primary),
+      title: Text(title),
+      subtitle: Text(description),
+      trailing: const Icon(Icons.chevron_right),
+    );
+  }
+}
+
+class _StatusBar extends StatelessWidget {
+  const _StatusBar({
+    required this.circuit,
+    required this.status,
+    required this.simulationRunning,
+    required this.simulatedTime,
+  });
+
+  final CircuitState circuit;
+  final String status;
+  final bool simulationRunning;
+  final Duration simulatedTime;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: ElectroSimColors.surfaceElevated,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool compact =
+              constraints.maxWidth < ElectroSimBreakpoints.compactUpperBound;
+          final int elementCount =
+              circuit.components.length + circuit.sources.length;
+          final String simulationLabel =
+              '${simulationRunning ? '▶' : 'Ⅱ'} t=${(simulatedTime.inMilliseconds / 1000).toStringAsFixed(1)} s';
+          final String countLabel = compact
+              ? '$elementCount élém. · $simulationLabel'
+              : '$elementCount élément${elementCount == 1 ? '' : 's'} · '
+                    '${circuit.sources.length} source${circuit.sources.length == 1 ? '' : 's'} · '
+                    '${circuit.mode.name.toUpperCase()} · $simulationLabel · Révision ${circuit.revision}';
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ElectroSimSpacing.sm,
+            ),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.info_outline, size: 18),
+                const SizedBox(width: ElectroSimSpacing.xs),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    label: 'État du simulateur',
+                    child: Text(
+                      status,
+                      key: const Key('status-message'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: ElectroSimSpacing.sm),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: compact ? 104 : 320),
+                  child: Text(
+                    countLabel,
+                    key: const Key('status-circuit-count'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+CircuitState _buildBlankCircuit() => CircuitState(
+  circuitId: CircuitId('workspace-blank'),
+  revision: 0,
+  mode: ElectricalMode.dc,
+  components: <ComponentInstance>[],
+  connections: <Connection>[],
+  sources: <SourceInstance>[],
+  settings: <String, Object?>{},
+  metadata: <String, Object?>{'origin': 'blank-workspace'},
+);

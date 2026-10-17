@@ -623,6 +623,17 @@ final class _Painter {
       );
     }
 
+    // Dry auxiliary contacts (95-96 NC and 97-98 NO) are routed to the four
+    // side lugs; keeping these visible makes all ten model terminals usable.
+    for (final (String label, double y) in <(String, double)>[
+      ('95', rect.top + h * .28),
+      ('96', rect.top + h * .402),
+      ('97', rect.top + h * .5694),
+      ('98', rect.top + h * .7078),
+    ]) {
+      terminal(Offset(rect.right - w * .035, y), label: label);
+    }
+
     final Offset dial = Offset(
       c.dx - body.width * .20,
       body.top + body.height * .22,

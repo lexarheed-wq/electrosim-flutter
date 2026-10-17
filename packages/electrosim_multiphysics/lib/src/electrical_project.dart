@@ -229,7 +229,7 @@ final class ElectricalProject {
       final ElectricalNetwork? dcNet = byId[link.dcNetworkId];
       final ElectricalNetwork? acNet = byId[link.ac3NetworkId];
       if (plcNet == null || dcNet == null || acNet == null) _fail('dangling_link', 'Relay link ${link.id} names an absent network.');
-      if (plcNet!.circuit.mode != ElectricalMode.dc || dcNet!.circuit.mode != ElectricalMode.dc || acNet!.circuit.mode != ElectricalMode.ac3) _fail('wrong_mode', 'Relay link ${link.id} has incompatible network modes.');
+      if (plcNet.circuit.mode != ElectricalMode.dc || dcNet.circuit.mode != ElectricalMode.dc || acNet.circuit.mode != ElectricalMode.ac3) _fail('wrong_mode', 'Relay link ${link.id} has incompatible network modes.');
       if (plcNet.id != dcNet.id) _fail('split_control_network', 'PLC and relay coil must be in the same DC network.');
       _component(plcNet.circuit, link.plcComponentId, 'plc_dc', link.id);
       _component(dcNet.circuit, link.relayCoilId, 'relay_coil', link.id);
@@ -244,7 +244,7 @@ final class ElectricalProject {
       final ElectricalNetwork? acNet = byId[link.ac3NetworkId];
       final ElectricalNetwork? dcNet = byId[link.dcNetworkId];
       if (acNet == null || dcNet == null) _fail('dangling_link', 'Signal link ${link.id} names an absent network.');
-      if (acNet!.circuit.mode != ElectricalMode.ac3 || dcNet!.circuit.mode != ElectricalMode.dc) _fail('wrong_mode', 'Signal link ${link.id} has incompatible network modes.');
+      if (acNet.circuit.mode != ElectricalMode.ac3 || dcNet.circuit.mode != ElectricalMode.dc) _fail('wrong_mode', 'Signal link ${link.id} has incompatible network modes.');
       _component(dcNet.circuit, link.plcComponentId, 'plc_dc', link.id);
       final ComponentInstance contact = _componentAny(acNet.circuit, link.auxiliaryContactId, link.id);
       if (!<String>{'contactor_aux_no', 'contactor_aux_nc', 'aux_no', 'aux_nc'}.contains(contact.modelType)) _fail('invalid_contact', 'Signal link ${link.id} must target an AC3 auxiliary contact.');
@@ -256,7 +256,7 @@ final class ElectricalProject {
       if (!linkIds.add(link.id)) _fail('duplicate_link', 'Duplicate link: ${link.id}');
       final ElectricalNetwork? plc = byId[link.plcNetworkId], target = byId[link.targetNetworkId];
       if (plc == null || target == null) _fail('dangling_link', 'Actuator link ${link.id} names an absent network.');
-      if (plc!.circuit.mode != ElectricalMode.dc || !<ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3}.contains(target!.circuit.mode)) {
+      if (plc.circuit.mode != ElectricalMode.dc || !<ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3}.contains(target.circuit.mode)) {
         _fail('wrong_mode', 'Actuator link must connect a DC PLC to an AC1 or AC3 network.');
       }
       _component(plc.circuit, link.plcComponentId, 'plc_dc', link.id);
@@ -270,7 +270,7 @@ final class ElectricalProject {
       if (!linkIds.add(link.id)) _fail('duplicate_link', 'Duplicate link: ${link.id}');
       final ElectricalNetwork? input = byId[link.inputNetworkId], output = byId[link.outputNetworkId];
       if (input == null || output == null) _fail('dangling_link', 'Converter link ${link.id} names an absent network.');
-      if (input!.id == output!.id || input.circuit.mode != ElectricalMode.pv || output.circuit.mode != ElectricalMode.ac1) {
+      if (input.id == output.id || input.circuit.mode != ElectricalMode.pv || output.circuit.mode != ElectricalMode.ac1) {
         _fail('wrong_mode', 'The modeled PV inverter boundary requires a PV input network and an AC1 output network.');
       }
       _component(input.circuit, link.converterComponentId, 'pv_inverter', link.id);

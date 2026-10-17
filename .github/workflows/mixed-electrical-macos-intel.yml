@@ -67,6 +67,30 @@ jobs:
           set -euo pipefail
           flutter test --concurrency=1
 
+      - name: Collect Flutter test failure images
+        if: always() && steps.app_tests.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_dir="${{ steps.prepare.outputs.runner }}/apps/electrosim/test/failures"
+          output_dir="$GITHUB_WORKSPACE/flutter-test-diagnostics"
+          mkdir -p "$output_dir"
+          if [[ -d "$source_dir" ]]; then
+            cp -R "$source_dir" "$output_dir/failures"
+            find "$output_dir/failures" -type f -print | sort
+          else
+            echo "Flutter produced no test/failures directory." > "$output_dir/README.txt"
+          fi
+
+      - name: Upload Flutter test failure images
+        if: always() && steps.app_tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-Test-Diagnostics
+          path: flutter-test-diagnostics/
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Run mixed-project package tests and analysis
         id: package_tests
         continue-on-error: true

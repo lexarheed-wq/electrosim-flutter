@@ -9,7 +9,10 @@ abstract interface class F18ContinuityAudioBackend {
 
 final class PlayerF18ContinuityAudioBackend
     implements F18ContinuityAudioBackend {
-  final AudioPlayer _player = AudioPlayer();
+  // AudioPlayer initializes audioplayers' global platform scope in its
+  // constructor. Keep that initialization out of workspaces which never turn
+  // the continuity buzzer on (including headless/widget-test sessions).
+  AudioPlayer? _player;
   bool _active = false;
 
   @override
@@ -17,18 +20,23 @@ final class PlayerF18ContinuityAudioBackend
     if (_active == active) return;
     _active = active;
     if (active) {
-      await _player.setReleaseMode(ReleaseMode.loop);
-      await _player.play(
+      final AudioPlayer player = _player ??= AudioPlayer();
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.play(
         AssetSource('sounds/continuity.wav'),
         volume: 0.12,
       );
     } else {
-      await _player.stop();
+      await _player?.stop();
     }
   }
 
   @override
-  Future<void> dispose() => _player.dispose();
+  Future<void> dispose() async {
+    await _player?.dispose();
+    _player = null;
+    _active = false;
+  }
 }
 
 /// Shares one looping continuity tone across the workspace and serializes

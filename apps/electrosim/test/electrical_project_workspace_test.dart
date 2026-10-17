@@ -53,15 +53,30 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Liaisons PLC et relais'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('coil → contact'));
-    await tester.tap(find.text('coil → contact'));
+    final Finder relayBridge = find.text('coil → contact');
+    await tester.scrollUntilVisible(
+      relayBridge,
+      200,
+      scrollable: find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.tap(relayBridge);
     await tester.pumpAndSettle();
     expect(changed!.relayLinks, hasLength(1));
     expect(changed!.relayLinks.single.outputAddress, 'Q0');
     await tester.tap(find.byTooltip('Liaisons PLC et relais'));
     await tester.pumpAndSettle();
     final Finder removeLink = find.byTooltip('Supprimer la liaison');
-    await tester.ensureVisible(removeLink);
+    await tester.scrollUntilVisible(
+      removeLink,
+      200,
+      scrollable: find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(Scrollable),
+      ).first,
+    );
     await tester.tap(removeLink);
     await tester.pumpAndSettle();
     expect(changed!.relayLinks, isEmpty);

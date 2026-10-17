@@ -237,6 +237,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ElectricalMode.ac1,
       ElectricalMode.ac3,
       ElectricalMode.pv,
+      ElectricalMode.mixed,
     },
     subtitle: 'Sondes V/Ω et COM, impédance réelle',
   ),
@@ -253,6 +254,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ElectricalMode.ac1,
       ElectricalMode.ac3,
       ElectricalMode.pv,
+      ElectricalMode.mixed,
     },
     subtitle: 'Insertion en série, fusible et charge interne',
   ),
@@ -2565,7 +2567,10 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.device_thermostat_outlined,
     kind: F9PaletteElementKind.component,
     supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-    terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+    terminalLabels: <String>[
+      '1L1', '3L2', '5L3', '2T1', '4T2', '6T3',
+      '95', '96', '97', '98',
+    ],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '1L1',
@@ -2602,6 +2607,26 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         role: TerminalRole.loadT3,
         phase: PhaseTag.l3,
         idSuffix: '6t3',
+      ),
+      F9PaletteTerminalSpec(
+        '95',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '95',
+      ),
+      F9PaletteTerminalSpec(
+        '96',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '96',
+      ),
+      F9PaletteTerminalSpec(
+        '97',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '97',
+      ),
+      F9PaletteTerminalSpec(
+        '98',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '98',
       ),
     ],
     defaultParameters: <String, Object?>{ProtectionRating.ratedCurrentKey: 5.0},

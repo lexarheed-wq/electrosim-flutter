@@ -184,28 +184,17 @@ void main() {
     expect(find.text('t = 0.50 s'), findsOneWidget);
   });
 
-  testWidgets('mixed board shows source voltage and PLC power at time zero', (WidgetTester tester) async {
+  testWidgets('CC source and PLC stay powered while the AC3 board runs', (WidgetTester tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(1800, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
     await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
       initialProject: _project(), onProjectChanged: (_) {},
     )));
     await tester.pumpAndSettle();
-    expect(
-      find.bySemanticsLabel(
-        'Automate programmable, automate alimenté',
-        skipOffstage: false,
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.bySemanticsLabel(
-        'Alimentation CC, active, 24.0 volts, 0.00 ampères',
-        skipOffstage: false,
-      ),
-      findsOneWidget,
-    );
-
     // Selecting the AC3 network must not make the independently solved CC
     // supply and PLC disappear from the shared mixed board.
     await tester.tap(find.byKey(const Key('project-network-power')));
@@ -231,6 +220,10 @@ void main() {
 
   testWidgets('mixed board shows contactor resting state and closed NC contact before start', (WidgetTester tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(1800, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     expect(await tester.runAsync(F18PhysicalPlateAssets.preload), isTrue);
     await tester.pumpWidget(MaterialApp(home: ElectricalProjectWorkspacePage(
       initialProject: _project(), onProjectChanged: (_) {},

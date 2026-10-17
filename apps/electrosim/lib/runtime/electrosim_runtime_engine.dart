@@ -1213,7 +1213,7 @@ final class ElectroSimRuntimeEngine {
             validDelay &&
             validDeadTime &&
             timerActuated &&
-            nextElapsed >= delay + deadTime;
+            nextElapsed + 1e-9 >= delay + deadTime;
         components.add(ComponentInstance(
           id: component.id,
           modelType: component.modelType,

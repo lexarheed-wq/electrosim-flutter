@@ -60,7 +60,9 @@ void main() {
     expect(changed!.relayLinks.single.outputAddress, 'Q0');
     await tester.tap(find.byTooltip('Liaisons PLC et relais'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Supprimer la liaison'));
+    final Finder removeLink = find.byTooltip('Supprimer la liaison');
+    await tester.ensureVisible(removeLink);
+    await tester.tap(removeLink);
     await tester.pumpAndSettle();
     expect(changed!.relayLinks, isEmpty);
   });

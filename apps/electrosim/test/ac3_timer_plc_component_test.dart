@@ -421,6 +421,15 @@ CircuitState _plcCircuitWithParameters(Map<String, Object?> plcParameters) {
         ],
         controlState: const <String, Object?>{'pressed': true},
       ),
+      ComponentInstance(
+        id: ComponentId('button-reset'),
+        modelType: 'push_button_no',
+        terminals: <Terminal>[
+          _terminal('button-reset-a', '13', PhaseTag.none, TerminalRole.generic),
+          _terminal('button-reset-b', '14', PhaseTag.none, TerminalRole.generic),
+        ],
+        controlState: const <String, Object?>{'pressed': false},
+      ),
     ],
     connections: <Connection>[
       for (final String id in <String>['k1', 'k2']) ...<Connection>[
@@ -429,7 +438,7 @@ CircuitState _plcCircuitWithParameters(Map<String, Object?> plcParameters) {
         _wire('$id-l3', 'l3', '$id-l3'),
       ],
       _wire('plc-in-a', 'plc-2', 'button-a'),
-      _wire('plc-in-b', 'plc-3', 'button-b'),
+      _wire('plc-in-b', 'plc-3', 'button-reset-a'),
       _wire('k1-coil-phase', 'l1', 'k1-a1'),
       _wire('k1-n', 'k1-a2', 'n'),
     ],

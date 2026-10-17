@@ -416,6 +416,12 @@ abstract final class CoreComponentPhysicsContracts {
               ComponentDynamicBehavior.electromagnetic,
             },
           ),
+          // A mechanical interlock constrains two contactors but has no
+          // electrical terminals or current path of its own.
+          'mechanical_interlock_ac3': const ComponentPhysicsContract(
+            modelType: 'mechanical_interlock_ac3',
+            electricalLaw: ComponentElectricalLaw.unsupported,
+          ),
           'pv_controller': const ComponentPhysicsContract(
             modelType: 'pv_controller',
             functionalRole: ComponentFunctionalRole.pvController,

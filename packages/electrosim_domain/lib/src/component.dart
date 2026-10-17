@@ -14,7 +14,9 @@ final class ComponentInstance {
     this.condition = ComponentCondition.normal,
     Map<String, Object?> controlState = const <String, Object?>{},
   }) : modelType = _validateModelType(modelType),
-       terminals = List<Terminal>.unmodifiable(terminals),
+       terminals = List<Terminal>.unmodifiable(
+         _normalizeThermalOverloadTerminals(id, modelType, terminals),
+       ),
        parameters = freezeJsonMap(
          _normalizeLegacyProtectionRating(modelType, parameters),
        ),
@@ -78,6 +80,26 @@ final class ComponentInstance {
         if (entry.key != 'ratedCurrentA') entry.key: entry.value,
       ProtectionRating.ratedCurrentKey: legacy.toDouble(),
     };
+  }
+
+  /// Older saved overload relays have six power terminals. Add the two dry
+  /// auxiliary contacts deterministically when loading or constructing them;
+  /// old wire references and all pre-existing terminal IDs remain unchanged.
+  static List<Terminal> _normalizeThermalOverloadTerminals(
+    ComponentId id,
+    String modelType,
+    List<Terminal> terminals,
+  ) {
+    if (modelType != 'thermal_overload_3p' || terminals.length != 6) {
+      return terminals;
+    }
+    return <Terminal>[
+      ...terminals,
+      Terminal(id: TerminalId('${id.value}-95'), name: '95'),
+      Terminal(id: TerminalId('${id.value}-96'), name: '96'),
+      Terminal(id: TerminalId('${id.value}-97'), name: '97'),
+      Terminal(id: TerminalId('${id.value}-98'), name: '98'),
+    ];
   }
 
   static String _validateModelType(String value) {

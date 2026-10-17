@@ -38,6 +38,10 @@ abstract final class F9ElementEditor {
       final bool isPushButton =
           component.modelType == 'push_button_no' ||
           component.modelType == 'push_button_nc';
+      final bool isMaintainedSensor =
+          component.modelType == 'proximity_sensor_24v' ||
+          component.modelType == 'limit_switch_no' ||
+          component.modelType == 'limit_switch_nc';
       final bool? primaryValue = isPushButton
           ? (pressed is bool ? pressed : null)
           : (closed is bool ? closed : null);
@@ -54,11 +58,13 @@ abstract final class F9ElementEditor {
             : isPushButton && pressed is bool
             ? (pressed ? 'appuyé' : 'relâché')
             : closed is bool
-            ? (closed ? 'fermé' : 'ouvert')
+            ? (isMaintainedSensor
+                  ? (closed ? 'actionné' : 'au repos')
+                  : (closed ? 'fermé' : 'ouvert'))
             : component.condition.name,
         primaryToggleLabel: isPushButton
             ? (pressed is bool ? 'Appuyé' : null)
-            : (closed is bool ? 'Fermé' : null),
+            : (closed is bool ? (isMaintainedSensor ? 'Actionné' : 'Fermé') : null),
         primaryToggleValue: primaryValue,
       );
     }

@@ -1,0 +1,19 @@
+{
+  "artifactSha256": "7f3c71cedd4d39330d3a0947701a260e885714e6241a2cb1c050e5cdd564ae67",
+  "buildCommand": "/Users/macbookpro/Documents/Codex/2026-10-14/t/ElectroSim_G5_Audit_Current/.toolchain/flutter/bin/flutter build macos --debug",
+  "createdAtUtc": "2026-10-14T22:11:44.984286+00:00",
+  "dart": "Dart SDK version: 3.10.9 (stable) (Tue Feb 3 00:02:25 2026 -0800) on \"macos_x64\"",
+  "flutter": "Flutter 3.38.10 \u2022 channel stable \u2022 https://github.com/flutter/flutter.git",
+  "host": {
+    "machine": "x86_64",
+    "release": "22.6.0",
+    "system": "Darwin",
+    "uname": "Darwin"
+  },
+  "offlineCoreSmoke": "PASS",
+  "phase": "F15-R7",
+  "schemaVersion": 1,
+  "smokeTest": "PASS",
+  "status": "PASS",
+  "target": "macos"
+}

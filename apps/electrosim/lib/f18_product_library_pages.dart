@@ -542,6 +542,7 @@ String _modeLabel(ElectricalMode mode) => switch (mode) {
   ElectricalMode.ac1 => 'AC1',
   ElectricalMode.ac3 => 'AC3',
   ElectricalMode.pv => 'PV',
+  ElectricalMode.mixed => 'Mixte',
 };
 
 String _difficultyLabel(FaultDifficulty difficulty) => switch (difficulty) {

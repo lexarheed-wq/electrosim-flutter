@@ -841,6 +841,14 @@ void main() {
       await _openContext(tester);
       await tester.tap(find.byKey(const Key('properties-replace-element')));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('replace-resistor')),
+        180,
+        scrollable: find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(Scrollable),
+        ),
+      );
       await tester.tap(find.byKey(const Key('replace-resistor')));
       await tester.pumpAndSettle();
       expect(find.text('Résistance'), findsWidgets);

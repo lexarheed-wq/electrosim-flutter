@@ -5,3 +5,4 @@ export 'src/local_storage_repository.dart';
 export 'src/storage_models.dart';
 
 export 'src/multiphysics_storage.dart';
+export 'src/electrical_project_storage.dart';

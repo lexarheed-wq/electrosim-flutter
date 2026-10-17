@@ -55,6 +55,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: Duration.zero,
       previousProtectionState: _snapshot.protectionState,
       previousContactorStates: _currentContactorStates(),
+      previousControlStates: _currentControlStates(next),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
@@ -104,6 +105,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: elapsed,
       previousProtectionState: _snapshot.protectionState,
       previousContactorStates: _currentContactorStates(),
+      previousControlStates: _currentControlStates(_circuit),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
@@ -241,6 +243,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: Duration.zero,
       previousProtectionState: tested,
       previousContactorStates: _currentContactorStates(),
+      previousControlStates: _currentControlStates(_circuit),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
@@ -264,6 +267,7 @@ final class ElectroSimSimulationController extends ChangeNotifier {
       elapsed: Duration.zero,
       previousProtectionState: previous.reset(componentId),
       previousContactorStates: _currentContactorStates(),
+      previousControlStates: _currentControlStates(_circuit),
       previousComponentHealthStates: _snapshot.componentHealthStates,
       previousPvBatterySoc: _currentPvBatterySoc(),
       previousDcBatterySocs: _snapshot.dcBatterySocs,
@@ -281,6 +285,16 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     for (final MapEntry<ComponentId, ContactorActuationState> entry
         in _snapshot.contactorStates.entries)
       entry.key: entry.value.actuated,
+  };
+
+  Map<ComponentId, Map<String, Object?>> _currentControlStates(
+    CircuitState? nextCircuit,
+  ) => <ComponentId, Map<String, Object?>>{
+    for (final MapEntry<ComponentId, Map<String, Object?>> entry
+        in _snapshot.controlRuntimeStates.entries)
+      if (nextCircuit == null ||
+          nextCircuit.components.any((ComponentInstance c) => c.id == entry.key))
+        entry.key: entry.value,
   };
 
   @override

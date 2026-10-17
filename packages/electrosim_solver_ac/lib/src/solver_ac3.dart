@@ -488,6 +488,7 @@ _CompiledAc3Model _compileModel(
             a.id.value.compareTo(b.id.value),
       );
   for (final ComponentInstance component in components) {
+    if (component.modelType == 'mechanical_interlock_ac3') continue;
     if (component.modelType == 'phase_sequence_probe') {
       if (component.terminals.length != 3) {
         diagnostics.add(
@@ -519,6 +520,19 @@ _CompiledAc3Model _compileModel(
     final ComponentModelContract? structural = CoreComponentModelContracts
         .registry
         .resolve(component.modelType);
+    if (component.modelType == 'plc_ac3') {
+      if (component.terminals.length != 10) {
+        diagnostics.add(
+          Ac3SolverDiagnostic(
+            code: Ac3DiagnosticCode.invalidTerminalCount,
+            severity: Ac3DiagnosticSeverity.error,
+            message: 'AC3 PLC must expose ten isolated I/O terminals.',
+            componentId: component.id,
+          ),
+        );
+      }
+      continue;
+    }
     if (physics == null ||
         structural == null ||
         !structural.supportsMode(ElectricalMode.ac3) ||
@@ -554,6 +568,9 @@ _CompiledAc3Model _compileModel(
     final List<TopologyBranch> topologyBranches = topology.branchesForComponent(
       component.id,
     );
+    if (component.modelType == 'plc_ac3') {
+      continue;
+    }
     if (_compileFeedThroughAc3(
       component: component,
       branches: topologyBranches,
@@ -783,6 +800,7 @@ _CompiledAc3Model _compileModel(
           ),
         );
       case ComponentElectricalLaw.feedThrough:
+      case ComponentElectricalLaw.programmableController:
       case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
       case ComponentElectricalLaw.loadWyeThreePhase:
@@ -1308,11 +1326,20 @@ bool _compileThreePoleProtectionAc3({
           .length ??
       0;
   if (expectedPoles <= 1) return false;
-  if (branches.length != expectedPoles ||
-      branches.any(
+  final List<TopologyBranch> powerBranches = branches
+      .where(
         (TopologyBranch branch) =>
-            branch.role != ElectricalBranchRole.powerPole,
-      )) {
+            branch.role == ElectricalBranchRole.powerPole,
+      )
+      .toList(growable: false);
+  final bool hasOnlySupportedBranches = branches.every(
+    (TopologyBranch branch) =>
+        branch.role == ElectricalBranchRole.powerPole ||
+        (component.modelType == 'thermal_overload_3p' &&
+            (branch.role == ElectricalBranchRole.auxiliaryNormallyClosed ||
+                branch.role == ElectricalBranchRole.auxiliaryNormallyOpen)),
+  );
+  if (powerBranches.length != expectedPoles || !hasOnlySupportedBranches) {
     diagnostics.add(
       Ac3SolverDiagnostic(
         code: Ac3DiagnosticCode.invalidTerminalCount,
@@ -1378,7 +1405,7 @@ bool _compileThreePoleProtectionAc3({
   final bool conducting =
       component.condition == ComponentCondition.normal && closed && !tripped;
 
-  for (final TopologyBranch branch in branches) {
+  for (final TopologyBranch branch in powerBranches) {
     elements.add(
       _Ac3Element(
         id: _componentBranchElementIdAc3(component, branch, branches.length),
@@ -1396,6 +1423,34 @@ bool _compileThreePoleProtectionAc3({
         phase: _phaseForBranch(component, branch),
       ),
     );
+  }
+  if (component.modelType == 'thermal_overload_3p') {
+    for (final TopologyBranch branch in branches.where(
+      (TopologyBranch candidate) =>
+          candidate.role == ElectricalBranchRole.auxiliaryNormallyClosed ||
+          candidate.role == ElectricalBranchRole.auxiliaryNormallyOpen,
+    )) {
+      final bool normallyClosed =
+          branch.role == ElectricalBranchRole.auxiliaryNormallyClosed;
+      final bool auxiliaryClosed = normallyClosed ? !tripped : tripped;
+      elements.add(
+        _Ac3Element(
+          id: _componentBranchElementIdAc3(component, branch, branches.length),
+          modelType: component.modelType,
+          kind: auxiliaryClosed
+              ? _Ac3ElementKind.idealVoltage
+              : _Ac3ElementKind.impedance,
+          branchKind: auxiliaryClosed
+              ? Ac3BranchKind.idealProtection
+              : Ac3BranchKind.openCircuit,
+          fromNodeId: branch.fromNodeId,
+          toNodeId: branch.toNodeId,
+          value: auxiliaryClosed ? AcComplex.zero : const AcComplex(1e300, 0.0),
+          isOpen: !auxiliaryClosed,
+          phase: null,
+        ),
+      );
+    }
   }
   return true;
 }
@@ -1419,11 +1474,12 @@ bool _compileElectromechanicalAc3({
         (TopologyBranch branch) =>
             branch.role == ElectricalBranchRole.powerPole,
       );
+  final bool isStarDeltaTimer = component.modelType == 'timer_star_delta';
   final bool isAuxNo =
       physics.controlLaw == ComponentControlLaw.relayNormallyOpen;
   final bool isAuxNc =
       physics.controlLaw == ComponentControlLaw.relayNormallyClosed;
-  if (!isPowerContactor && !isAuxNo && !isAuxNc) {
+  if (!isPowerContactor && !isAuxNo && !isAuxNc && !isStarDeltaTimer) {
     return false;
   }
 
@@ -1490,6 +1546,89 @@ bool _compileElectromechanicalAc3({
         phase: _phaseForBranch(component, branch),
       ),
     );
+    return true;
+  }
+
+  if (isStarDeltaTimer) {
+    final TopologyBranch? coil = _branchWithRoleAc3(
+      branches,
+      ElectricalBranchRole.controlCoil,
+    );
+    final List<TopologyBranch> contacts = branches
+        .where(
+          (TopologyBranch branch) =>
+              branch.role == ElectricalBranchRole.auxiliaryNormallyOpen ||
+              branch.role == ElectricalBranchRole.auxiliaryNormallyClosed,
+        )
+        .toList(growable: false);
+    if (coil == null || contacts.length != 2 || branches.length != 3) {
+      diagnostics.add(
+        Ac3SolverDiagnostic(
+          code: Ac3DiagnosticCode.invalidTerminalCount,
+          severity: Ac3DiagnosticSeverity.error,
+          message:
+              'Star-delta timer requires a coil and one changeover contact.',
+          componentId: component.id,
+        ),
+      );
+      return true;
+    }
+    final double? resistance = _positiveParameter(
+      component.parameters,
+      ComponentParameterKeys.coilResistanceOhm,
+    );
+    if (resistance == null) {
+      diagnostics.add(
+        Ac3SolverDiagnostic(
+          code: Ac3DiagnosticCode.invalidParameter,
+          severity: Ac3DiagnosticSeverity.error,
+          message: 'Star-delta timer requires coilResistanceOhm > 0.',
+          componentId: component.id,
+        ),
+      );
+      return true;
+    }
+    final bool forcedOpen = component.condition != ComponentCondition.normal;
+    final Object? rawNc = component.controlState['timerNcClosed'];
+    final Object? rawNo = component.controlState['timerNoClosed'];
+    final bool ncClosed = !forcedOpen && (rawNc is bool ? rawNc : true);
+    final bool noClosed = !forcedOpen && (rawNo is bool ? rawNo : false);
+    elements.add(
+      _Ac3Element(
+        id: _componentBranchElementIdAc3(component, coil, branches.length),
+        modelType: component.modelType,
+        kind: _Ac3ElementKind.impedance,
+        branchKind: Ac3BranchKind.controlCoil,
+        fromNodeId: coil.fromNodeId,
+        toNodeId: coil.toNodeId,
+        value: forcedOpen
+            ? const AcComplex(1e300, 0)
+            : AcComplex(resistance, 0),
+        isOpen: forcedOpen,
+        phase: _phaseForBranch(component, coil),
+      ),
+    );
+    for (final TopologyBranch contact in contacts) {
+      final bool closed =
+          contact.role == ElectricalBranchRole.auxiliaryNormallyClosed
+          ? ncClosed
+          : noClosed;
+      elements.add(
+        _Ac3Element(
+          id: _componentBranchElementIdAc3(component, contact, branches.length),
+          modelType: component.modelType,
+          kind: _Ac3ElementKind.impedance,
+          branchKind: Ac3BranchKind.contactorContact,
+          fromNodeId: contact.fromNodeId,
+          toNodeId: contact.toNodeId,
+          value: closed
+              ? const AcComplex(_ac3ControlContactOnResistanceOhm, 0)
+              : const AcComplex(1e300, 0),
+          isOpen: !closed,
+          phase: _phaseForBranch(component, contact),
+        ),
+      );
+    }
     return true;
   }
 
@@ -1715,6 +1854,7 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.binarySwitch:
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.programmableController:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
@@ -1794,6 +1934,7 @@ Ac3BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.binarySwitch:
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.programmableController:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:

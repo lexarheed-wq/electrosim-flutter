@@ -4,6 +4,8 @@ import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/platform_golden_path.dart';
+
 void main() {
   const samples = <String>[
     'dc_voltage_source',
@@ -126,7 +128,9 @@ void main() {
         expect(tester.takeException(), isNull);
         await expectLater(
           find.byKey(const Key('industrial-proof-scene')),
-          matchesGoldenFile('goldens/g12rq_real_industrial_set$page.png'),
+          matchesGoldenFile(
+            platformGoldenPath('g12rq_real_industrial_set$page.png'),
+          ),
         );
       },
     );

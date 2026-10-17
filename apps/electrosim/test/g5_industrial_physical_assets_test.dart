@@ -23,7 +23,7 @@ const industrialModels = <String, (String, int)>{
   'contactor_ac1': ('contactor1', 4),
   'contactor_3p': ('contactor3', 8),
   'breaker_3p': ('breaker3', 6),
-  'thermal_overload_3p': ('overload', 6),
+  'thermal_overload_3p': ('overload', 10),
   'motor_3p_6t': ('motor3', 6),
   'isolator_3p': ('isolator3', 6),
   'isolator_4p': ('isolator4', 8),
@@ -212,6 +212,16 @@ void main() {
                       pixels.getUint8(index + 1) +
                       pixels.getUint8(index + 2)) /
                   3;
+              if (entry.key == 'thermal_overload_3p' && i >= 6) {
+                // Auxiliary 95-96 / 97-98 lugs are metallic side tabs, unlike
+                // the recessed dark screw wells used by the six power poles.
+                expect(
+                  luminance,
+                  greaterThan(170),
+                  reason: '${entry.key} auxiliary port $i must land on its metal lug',
+                );
+                continue;
+              }
               expect(
                 luminance,
                 lessThan(170),

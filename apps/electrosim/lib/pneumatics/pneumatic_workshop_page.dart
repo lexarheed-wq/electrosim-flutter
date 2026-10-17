@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
+import 'electropneumatic_training_bench_page.dart';
 import 'pneumatic_reference_cycle_page.dart';
 
 /// Experimental two-view editor of one canonical MultiphysicsProject.
@@ -455,6 +456,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ),
             ),
             icon: const Icon(Icons.play_circle_outline),
+          ),
+          IconButton(
+            key: const Key('open-electropneumatic-training-bench'),
+            tooltip: 'Ouvrir le banc électropneumatique 24 V / 5/2 / vérin',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ElectropneumaticTrainingBenchPage(),
+              ),
+            ),
+            icon: const Icon(Icons.electrical_services),
           ),
           IconButton(
             key: const Key('air-undo'),

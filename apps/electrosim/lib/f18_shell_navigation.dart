@@ -8,12 +8,14 @@ class F18DesignCenterPage extends StatelessWidget {
     required this.onWiring,
     required this.onSchemaLibrary,
     this.onPneumatics,
+    this.onMixedElectrical,
   });
 
   final VoidCallback onHome;
   final VoidCallback onWiring;
   final VoidCallback onSchemaLibrary;
   final VoidCallback? onPneumatics;
+  final VoidCallback? onMixedElectrical;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,16 @@ class F18DesignCenterPage extends StatelessWidget {
           actionLabel: 'Ouvrir l’atelier',
           onTap: onWiring,
         ),
+        if (onMixedElectrical != null)
+          _F18CenterAction(
+            key: const Key('design-mixed-electrical'),
+            icon: Icons.hub_outlined,
+            title: 'Commande 24 V et puissance AC3',
+            description:
+                'Concevoir deux réseaux séparés et les relier par un relais physique simulé.',
+            actionLabel: 'Créer le projet',
+            onTap: onMixedElectrical!,
+          ),
         if (onPneumatics != null)
           _F18CenterAction(
             key: const Key('design-pneumatics-experimental'),

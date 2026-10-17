@@ -14,6 +14,7 @@ import 'f18_crusher_3d_assets.dart';
 import 'f18_crusher_visual.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
+import 'f18_control_modules_visual.dart';
 import 'f18_industrial_physical_devices.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'reference_components/reference_models.dart';
@@ -88,6 +89,10 @@ abstract final class F18ReferenceComponentVisuals {
     'isolator_4p',
     'breaker_4p',
     'terminal_block_5',
+    'timer_star_delta',
+    'plc_ac3',
+    'plc_dc',
+    'mechanical_interlock_ac3',
   };
 
   static bool supports(String modelType) =>
@@ -240,14 +245,26 @@ abstract final class F18ReferenceComponentMetrics {
               'terminal_block_5' => F23DistributionGeometry.boardSizeFor(
                 F23DistributionDevice.terminalBlock5,
               ),
+              'timer_star_delta' => const Size(180, 260),
+              'plc_ac3' => const Size(300, 220),
+              'plc_dc' => const Size(300, 220),
+              'mechanical_interlock_ac3' => const Size(180, 110),
               _ => const Size(104, 64),
             });
 
-  static Size paletteSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(82, 58));
+  static Size paletteSizeFor(String modelType) => _fitInside(
+    modelType.toLowerCase() == 'plc_dc'
+        ? const Size(104, 64)
+        : boardSizeFor(modelType),
+    const Size(82, 58),
+  );
 
-  static Size dragSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(160, 118));
+  static Size dragSizeFor(String modelType) => _fitInside(
+    modelType.toLowerCase() == 'plc_dc'
+        ? const Size(104, 64)
+        : boardSizeFor(modelType),
+    const Size(160, 118),
+  );
 
   static Size _fitInside(Size source, Size bounds) {
     final double scale = math.min(
@@ -311,6 +328,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
     this.residualTripCurrentA = 0,
+    this.controlState = const <String, Object?>{},
+    this.componentParameters = const <String, Object?>{},
   });
 
   final String modelType;
@@ -336,10 +355,56 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final double currentLimitA;
   final double resistanceOhm;
   final double residualTripCurrentA;
+  final Map<String, Object?> controlState;
+  final Map<String, Object?> componentParameters;
 
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (type == 'mechanical_interlock_ac3') {
+      return SizedBox.fromSize(
+        size: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                Color(0xfff0f3f5),
+                Color(0xffaeb8c1),
+                Color(0xff77848e),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(size.width * .09),
+            border: Border.all(color: const Color(0xff4d5962), width: 2),
+            boxShadow: const <BoxShadow>[
+              BoxShadow(
+                color: Color(0x55000000),
+                blurRadius: 5,
+                offset: Offset(2, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              Icons.lock_outline,
+              size: size.height * .55,
+              color: const Color(0xff28343b),
+            ),
+          ),
+        ),
+      );
+    }
+    if (type == 'timer_star_delta' || type == 'plc_ac3' || type == 'plc_dc') {
+      return F18ControlModuleVisual(
+        modelType: type,
+        size: size,
+        controlState: controlState,
+        parameters: componentParameters,
+        active: active,
+        showTerminals: showTerminals,
+      );
+    }
     final native = NativeApplianceGeometry.forVisual(type, variantKey);
     if (native != null) {
       return F18NativeApplianceVisual(
@@ -627,7 +692,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
         state: F20CatalogState(
           powerConnectionMode: powerConnectionMode,
           energized: energized,
-          actuated: actuated,
+          actuated:
+              actuated ||
+              (catalogDevice == F20CatalogDevice.sensor2t && closed == true),
           currentA: currentA,
           voltageV: voltageV,
           animationValue: animationValue,

@@ -1,6 +1,7 @@
 import 'package:electrosim/runtime/electrosim_instrument_projection.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim/runtime/f18_ammeter_fuse_safety.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -128,6 +129,64 @@ void main() {
       reason: measured.message,
     );
     expect(measured.result?.reading?.value, closeTo(10.0, .1));
+    final runtimeBurden = snapshot.effectiveCircuit.components.where(
+      (component) =>
+          component.id.value.startsWith('g5-amperemeter-burden-') &&
+          component.controlState['runtimeMeterId'] == meter.id.value,
+    );
+    expect(runtimeBurden, hasLength(1));
+    expect(
+      snapshot
+          .measureAcCurrent(
+            branchId: 'component:${runtimeBurden.single.id.value}',
+          )
+          .reading
+          ?.value,
+      closeTo(measured.result!.reading!.value, 1e-6),
+    );
+  });
+
+  test('powered-off AC series ammeter still trips its fuse on overload', () {
+    final meter = InstrumentInstance(
+      id: InstrumentId('off-a'),
+      kind: InstrumentKind.ammeter,
+      mode: InstrumentMode.currentAcRms,
+      poweredOn: false,
+      burdenResistanceOhm: 0.01,
+      fuseRatingA: 5,
+      maximumCurrentA: 20,
+      cutConnectionId: ConnectionId('line-1'),
+    );
+    final circuit = _fixture(
+      instruments: [meter],
+      probes: [
+        ProbeConnection(
+          id: ProbeId('off-amp'),
+          instrumentId: meter.id,
+          port: InstrumentPort.amp,
+          terminalId: TerminalId('grid-l1'),
+        ),
+        ProbeConnection(
+          id: ProbeId('off-com'),
+          instrumentId: meter.id,
+          port: InstrumentPort.common,
+          terminalId: TerminalId('load-l1'),
+        ),
+      ],
+    );
+    final snapshot = engine.evaluate(circuit);
+    final measured = projection.read(snapshot: snapshot, instrument: meter);
+    final current = projection.seriesCurrent(snapshot, meter);
+    expect(measured.status, PhysicalInstrumentStatus.off);
+    expect(current, greaterThan(5));
+    expect(
+      F18AmmeterFuseSafety.shouldTrip(
+        circuit: circuit,
+        instrument: meter,
+        solverDetectedOvercurrent: current!.abs() > meter.fuseRatingA,
+      ),
+      isTrue,
+    );
   });
 }
 

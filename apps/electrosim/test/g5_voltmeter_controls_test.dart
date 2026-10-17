@@ -1,4 +1,5 @@
 import 'package:electrosim/f18_voltmeter_controls.dart';
+import 'package:electrosim/runtime/f18_continuity_audio.dart';
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -198,6 +199,73 @@ void main() {
     );
   });
 
+  test('Ω mode reports continuity only for valid readings at or below 30 Ω', () {
+    final InstrumentInstance ohms = InstrumentInstance(
+      id: InstrumentId('ohm-meter'),
+      kind: InstrumentKind.voltmeter,
+      mode: InstrumentMode.resistance,
+    );
+
+    expect(
+      F18VoltmeterControls.continuityDetected(
+        meter: ohms,
+        resistanceOhm: 30,
+        validReading: true,
+      ),
+      isTrue,
+    );
+    expect(
+      F18VoltmeterControls.continuityDetected(
+        meter: ohms,
+        resistanceOhm: 30.01,
+        validReading: true,
+      ),
+      isFalse,
+    );
+    expect(
+      F18VoltmeterControls.continuityDetected(
+        meter: ohms,
+        resistanceOhm: 0,
+        validReading: false,
+      ),
+      isFalse,
+    );
+    expect(
+      F18VoltmeterControls.display(
+        meter: ohms,
+        computedText: '0.00 Ω',
+        computedValue: 0,
+        validReading: true,
+      ),
+      '0.00 Ω CONT',
+    );
+    expect(
+      F18VoltmeterControls.display(
+        meter: ohms,
+        computedText: 'OL',
+        validReading: false,
+      ),
+      'OL',
+    );
+  });
+
+  test(
+    'continuity audio is deduplicated and stops after continuity ends',
+    () async {
+      final _FakeContinuityAudioBackend backend =
+          _FakeContinuityAudioBackend();
+      final F18ContinuityAudio audio = F18ContinuityAudio(backend: backend);
+
+      await audio.setActive(true);
+      await audio.setActive(true);
+      await audio.setActive(false);
+      await audio.dispose();
+
+      expect(backend.transitions, <bool>[true, false]);
+      expect(backend.disposed, isTrue);
+    },
+  );
+
   test('instrument state does not insert power wires or probe leads', () {
     final base = buildRegressionFixtureCircuit();
     final m = meter();
@@ -235,4 +303,19 @@ void main() {
     expect(circuit.probes, hasLength(2));
     expect(updatedMeter.settings[F18VoltmeterControls.lightKey], true);
   });
+}
+
+final class _FakeContinuityAudioBackend implements F18ContinuityAudioBackend {
+  final List<bool> transitions = <bool>[];
+  bool disposed = false;
+
+  @override
+  Future<void> setActive(bool active) async {
+    transitions.add(active);
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposed = true;
+  }
 }

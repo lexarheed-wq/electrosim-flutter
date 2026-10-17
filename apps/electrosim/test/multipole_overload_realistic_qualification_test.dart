@@ -88,7 +88,10 @@ CircuitState poles(
   Map<String, Object?> parameters = const <String, Object?>{},
 }) {
   final spec = preset(key);
-  final three = spec.terminalCount == 6 || spec.modelType == 'contactor_3p';
+  final three =
+      spec.terminalCount == 6 ||
+      spec.modelType == 'thermal_overload_3p' ||
+      spec.modelType == 'contactor_3p';
   final offset = three ? 3 : 4;
   final parts = <ComponentInstance>[instance(spec, extra: parameters)];
   final wires = <Connection>[];

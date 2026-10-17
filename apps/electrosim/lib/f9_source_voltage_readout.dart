@@ -14,9 +14,10 @@ abstract final class F9SourceVoltageReadout {
     ElectroSimRuntimeSnapshot? runtime,
     SourceInstance source, {
     required bool simulationRunning,
+    SourceId? sourceId,
   }) {
     if (runtime == null || !source.enabled) return 0;
-    final String target = 'source:${source.id.value}';
+    final String target = 'source:${(sourceId ?? source.id).value}';
 
     final dc = runtime.dcResult;
     if (dc != null && dc.isSolved) {

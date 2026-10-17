@@ -25,6 +25,7 @@ enum ElectricalBranchRole {
   auxiliaryNormallyOpen,
   auxiliaryNormallyClosed,
   measurement,
+  plcOutput,
 }
 
 /// Defines one internal two-terminal branch of a component model.
@@ -99,10 +100,13 @@ final class ComponentModelContract {
   }) : modelType = _validateModelType(modelType),
        supportedModes = Set<ElectricalMode>.unmodifiable(supportedModes),
        branches = List<ComponentBranchDefinition>.unmodifiable(branches) {
-    if (terminalCount <= 0) {
+    if (terminalCount < 0 ||
+        (terminalCount == 0 &&
+            (family != ComponentFamily.other || branches.isNotEmpty))) {
       throw DomainException(
         code: DomainErrorCode.invalidValue,
-        message: 'Component model terminalCount must be greater than zero.',
+        message:
+            'Component models need terminals except non-electrical metadata models.',
         context: <String, Object?>{
           'modelType': this.modelType,
           'terminalCount': terminalCount,
@@ -205,6 +209,12 @@ final class CoreComponentModelContracts {
 
   static final ComponentModelRegistry
   registry = ComponentModelRegistry(<ComponentModelContract>[
+    ComponentModelContract(
+      modelType: 'mechanical_interlock_ac3',
+      family: ComponentFamily.other,
+      terminalCount: 0,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    ),
     ComponentModelContract(
       modelType: 'resistor',
       family: ComponentFamily.passive,
@@ -327,6 +337,60 @@ final class CoreComponentModelContracts {
     ),
     ComponentModelContract(
       modelType: 'push_button_nc',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'proximity_sensor_24v',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'output',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'limit_switch_no',
+      family: ComponentFamily.switching,
+      terminalCount: 2,
+      supportedModes: <ElectricalMode>{
+        ElectricalMode.dc,
+        ElectricalMode.ac1,
+        ElectricalMode.ac3,
+      },
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'main',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.main,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'limit_switch_nc',
       family: ComponentFamily.switching,
       terminalCount: 2,
       supportedModes: <ElectricalMode>{
@@ -719,9 +783,23 @@ final class CoreComponentModelContracts {
     ComponentModelContract(
       modelType: 'thermal_overload_3p',
       family: ComponentFamily.protection,
-      terminalCount: 6,
+      terminalCount: 10,
       supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-      branches: _threePowerPoles,
+      branches: <ComponentBranchDefinition>[
+        ..._threePowerPoles,
+        ComponentBranchDefinition(
+          id: '95-96',
+          fromTerminalIndex: 6,
+          toTerminalIndex: 7,
+          role: ElectricalBranchRole.auxiliaryNormallyClosed,
+        ),
+        ComponentBranchDefinition(
+          id: '97-98',
+          fromTerminalIndex: 8,
+          toTerminalIndex: 9,
+          role: ElectricalBranchRole.auxiliaryNormallyOpen,
+        ),
+      ],
     ),
     ComponentModelContract(
       modelType: 'contactor_aux_no',
@@ -784,6 +862,54 @@ final class CoreComponentModelContracts {
           fromTerminalIndex: 6,
           toTerminalIndex: 7,
           role: ElectricalBranchRole.controlCoil,
+        ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'plc_ac3',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 10,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: const <ComponentBranchDefinition>[],
+    ),
+    ComponentModelContract(
+      modelType: 'plc_dc',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 10,
+      supportedModes: <ElectricalMode>{ElectricalMode.dc},
+      branches: <ComponentBranchDefinition>[
+        for (int output = 0; output < 4; output++)
+          ComponentBranchDefinition(
+            id: 'output:Q$output',
+            fromTerminalIndex: 0,
+            toTerminalIndex: 6 + output,
+            role: ElectricalBranchRole.plcOutput,
+          ),
+      ],
+    ),
+    ComponentModelContract(
+      modelType: 'timer_star_delta',
+      family: ComponentFamily.electromechanicalControl,
+      terminalCount: 5,
+      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      branches: <ComponentBranchDefinition>[
+        ComponentBranchDefinition(
+          id: 'coil',
+          fromTerminalIndex: 0,
+          toTerminalIndex: 1,
+          role: ElectricalBranchRole.controlCoil,
+        ),
+        ComponentBranchDefinition(
+          id: 'contact:nc',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 3,
+          role: ElectricalBranchRole.auxiliaryNormallyClosed,
+        ),
+        ComponentBranchDefinition(
+          id: 'contact:no',
+          fromTerminalIndex: 2,
+          toTerminalIndex: 4,
+          role: ElectricalBranchRole.auxiliaryNormallyOpen,
         ),
       ],
     ),

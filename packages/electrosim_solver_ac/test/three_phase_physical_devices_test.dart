@@ -10,6 +10,39 @@ void main() {
   Ac3SolveResult solve(CircuitState circuit) =>
       solver.solve(circuit, topologyEngine.compile(circuit));
 
+  test(
+    'legacy thermal overload terminals migrate to the auxiliary contract',
+    () {
+      final ComponentInstance overload = ComponentInstance(
+        id: ComponentId('rt-legacy'),
+        modelType: 'thermal_overload_3p',
+        terminals: <Terminal>[
+          _t('rt-l1-in', '1L1', PhaseTag.l1),
+          _t('rt-l2-in', '3L2', PhaseTag.l2),
+          _t('rt-l3-in', '5L3', PhaseTag.l3),
+          _t('rt-l1-out', '2T1', PhaseTag.l1),
+          _t('rt-l2-out', '4T2', PhaseTag.l2),
+          _t('rt-l3-out', '6T3', PhaseTag.l3),
+        ],
+      );
+      final CircuitState circuit = CircuitState(
+        circuitId: CircuitId('legacy-thermal'),
+        revision: 0,
+        mode: ElectricalMode.ac3,
+        components: <ComponentInstance>[overload],
+      );
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      expect(overload.terminals, hasLength(10));
+      expect(
+        topology.findings.where(
+          (TopologyFinding finding) =>
+              finding.code == TopologyFindingCode.componentContractMismatch,
+        ),
+        isEmpty,
+      );
+    },
+  );
+
   test('six-terminal motor windings solve in external star connection', () {
     final CircuitState circuit = _motorStarCircuit();
     final Ac3SolveResult result = solve(circuit);
@@ -69,78 +102,91 @@ void main() {
     expect(diagnostic.severity, Ac3DiagnosticSeverity.warning);
   });
 
-  test('three-phase motor open condition creates an explicit floating island', () {
-    final CircuitState base = _motorStarCircuit();
-    final CircuitState circuit = _replaceOnlyComponent(
-      base,
-      condition: ComponentCondition.openCircuit,
-    );
-    final Ac3SolveResult result = solve(circuit);
-    expect(result.isSolved, isTrue);
-    expect(result.branchResults.where((b) => b.modelType == 'motor_3p_6t')
-        .every((b) => (b.current?.magnitude ?? 0) <= 1e-9), isTrue);
-    expect(
-      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
-      contains(Ac3DiagnosticCode.floatingElectricalIsland),
-    );
-  });
-
-  test('three-phase motor short condition is modeled as ideal winding shorts', () {
-    final CircuitState base = _motorStarCircuit();
-    final CircuitState circuit = _replaceOnlyComponent(
-      base,
-      condition: ComponentCondition.shortCircuit,
-    );
-    final Ac3SolveResult result = solve(circuit);
-    expect(result.status, isNot(Ac3SolveStatus.solved));
-    expect(
-      result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
-      contains(Ac3DiagnosticCode.singularMatrix),
-    );
-  });
-
-  test('three-phase device rejects degraded condition and invalid parameters', () {
-    final CircuitState base = _motorStarCircuit();
-
-    final Ac3SolveResult degraded = solve(
-      _replaceOnlyComponent(base, condition: ComponentCondition.degraded),
-    );
-    expect(degraded.status, Ac3SolveStatus.invalid);
-    expect(
-      degraded.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
-      contains(Ac3DiagnosticCode.unsupportedComponentCondition),
-    );
-
-    final Ac3SolveResult badResistance = solve(
-      _replaceOnlyComponent(
+  test(
+    'three-phase motor open condition creates an explicit floating island',
+    () {
+      final CircuitState base = _motorStarCircuit();
+      final CircuitState circuit = _replaceOnlyComponent(
         base,
-        parameters: const <String, Object?>{
-          'resistanceOhm': 0.0,
-          'inductanceH': 0.0,
-        },
-      ),
-    );
-    expect(badResistance.status, Ac3SolveStatus.invalid);
-    expect(
-      badResistance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
-      contains(Ac3DiagnosticCode.invalidParameter),
-    );
+        condition: ComponentCondition.openCircuit,
+      );
+      final Ac3SolveResult result = solve(circuit);
+      expect(result.isSolved, isTrue);
+      expect(
+        result.branchResults
+            .where((b) => b.modelType == 'motor_3p_6t')
+            .every((b) => (b.current?.magnitude ?? 0) <= 1e-9),
+        isTrue,
+      );
+      expect(
+        result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.floatingElectricalIsland),
+      );
+    },
+  );
 
-    final Ac3SolveResult badInductance = solve(
-      _replaceOnlyComponent(
+  test(
+    'three-phase motor short condition is modeled as ideal winding shorts',
+    () {
+      final CircuitState base = _motorStarCircuit();
+      final CircuitState circuit = _replaceOnlyComponent(
         base,
-        parameters: const <String, Object?>{
-          'resistanceOhm': 23.0,
-          'inductanceH': -0.001,
-        },
-      ),
-    );
-    expect(badInductance.status, Ac3SolveStatus.invalid);
-    expect(
-      badInductance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
-      contains(Ac3DiagnosticCode.invalidParameter),
-    );
-  });
+        condition: ComponentCondition.shortCircuit,
+      );
+      final Ac3SolveResult result = solve(circuit);
+      expect(result.status, isNot(Ac3SolveStatus.solved));
+      expect(
+        result.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.singularMatrix),
+      );
+    },
+  );
+
+  test(
+    'three-phase device rejects degraded condition and invalid parameters',
+    () {
+      final CircuitState base = _motorStarCircuit();
+
+      final Ac3SolveResult degraded = solve(
+        _replaceOnlyComponent(base, condition: ComponentCondition.degraded),
+      );
+      expect(degraded.status, Ac3SolveStatus.invalid);
+      expect(
+        degraded.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.unsupportedComponentCondition),
+      );
+
+      final Ac3SolveResult badResistance = solve(
+        _replaceOnlyComponent(
+          base,
+          parameters: const <String, Object?>{
+            'resistanceOhm': 0.0,
+            'inductanceH': 0.0,
+          },
+        ),
+      );
+      expect(badResistance.status, Ac3SolveStatus.invalid);
+      expect(
+        badResistance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.invalidParameter),
+      );
+
+      final Ac3SolveResult badInductance = solve(
+        _replaceOnlyComponent(
+          base,
+          parameters: const <String, Object?>{
+            'resistanceOhm': 23.0,
+            'inductanceH': -0.001,
+          },
+        ),
+      );
+      expect(badInductance.status, Ac3SolveStatus.invalid);
+      expect(
+        badInductance.diagnostics.map((Ac3SolverDiagnostic item) => item.code),
+        contains(Ac3DiagnosticCode.invalidParameter),
+      );
+    },
+  );
 
   test('delta load solves three real line-to-line branches', () {
     final CircuitState circuit = _deltaLoadCircuit();

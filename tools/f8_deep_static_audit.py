@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,7 +38,11 @@ if not errors:
 
     check('F8-A01', all(t in hit for t in ('viewportScale', 'terminalWorldRadius', 'wireWorldTolerance')), 'Hit tolerances are converted from screen pixels to world units using viewport scale.')
     check('F8-A02', 'background tap cancels pending wiring' in gestures and canvas.count('_pointerWorldPosition = null;') >= 3, 'Pending wiring has explicit cancellation and state cleanup.')
-    check('F8-A03', 'selected ? selectionColor : _phaseColor(connection.phase)' in painter and 'clicking a wire selects its connection id' in gestures, 'Wire selection has a visible render state and an interaction test.')
+    selected_wire_is_visible = re.search(
+        r'\.\.color\s*=\s*selected\s*\?\s*selectionColor\s*:\s*schematicPresentation\s*\?\s*Colors\.black\s*:\s*_phaseColor\(connection\.phase\)',
+        painter,
+    ) is not None
+    check('F8-A03', selected_wire_is_visible and 'clicking a wire selects its connection id' in gestures, 'Wire selection has a visible render state and an interaction test.')
     check('F8-A04', 'globally unique visual IDs across sources, components, and connections' in geometry and 'cross-type visual id collision fails explicitly' in hit_tests and 'element and connection visual id collision fails explicitly' in hit_tests, 'Visual identifier collisions fail explicitly instead of aliasing layout or selection.')
 
     if 'compatibleTerminal' not in canvas and 'compatibleTerminal' not in painter:

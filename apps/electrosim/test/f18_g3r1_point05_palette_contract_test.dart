@@ -90,6 +90,36 @@ void main() {
     },
   );
 
+  testWidgets('search includes component labels and terminal names', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const MaterialApp(home: app.F9WorkspaceDemoPage()));
+    await tester.pumpAndSettle();
+    await _openPalette(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'V/Ω',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('palette-item-instrument-voltmeter')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('palette-search-field')),
+      'A1',
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('palette-item-relay-coil')), findsOneWidget);
+  });
+
   testWidgets(
     'quick add preserves visual model and variant on the board component',
     (WidgetTester tester) async {

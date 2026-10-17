@@ -41,9 +41,27 @@ for path in (
 ):
     check(f"required:{path}", (ROOT / path).is_file())
 
-tracked = subprocess.check_output(
-    ["git", "ls-files"], cwd=ROOT, text=True
-).splitlines()
+git_root = subprocess.run(
+    ["git", "rev-parse", "--show-toplevel"],
+    cwd=ROOT,
+    check=False,
+    capture_output=True,
+    text=True,
+)
+history_available = git_root.returncode == 0
+if history_available:
+    tracked = subprocess.check_output(
+        ["git", "ls-files"], cwd=ROOT, text=True
+    ).splitlines()
+else:
+    # Source ZIPs intentionally omit .git. We can still inspect the delivered
+    # tree for one-shot workflows, but must not claim the G11-to-G12 diff passed.
+    tracked = [
+        path.relative_to(ROOT).as_posix()
+        for path in ROOT.rglob("*")
+        if path.is_file() and ".git" not in path.relative_to(ROOT).parts
+    ]
+check("g12-git-history-available", history_available)
 check(
     "no-one-shot-golden-workflow",
     not any("golden-refresh" in p or "golden-seed" in p for p in tracked),
@@ -73,11 +91,15 @@ check(
 )
 
 # G12 must not change the product after the fully-qualified G11 integration SHA.
-changed = subprocess.check_output(
-    ["git", "diff", "--name-only", f"{G11_MERGED_SHA}..HEAD"],
-    cwd=ROOT,
-    text=True,
-).splitlines()
+changed = (
+    subprocess.check_output(
+        ["git", "diff", "--name-only", f"{G11_MERGED_SHA}..HEAD"],
+        cwd=ROOT,
+        text=True,
+    ).splitlines()
+    if history_available
+    else []
+)
 allowed_prefixes = (
     ".github/workflows/f18-g12-final-qualification.yml",
     "tools/f18_g12_contract.py",
@@ -91,7 +113,10 @@ unexpected = [
         for prefix in allowed_prefixes
     )
 ]
-check("g12-no-product-code-drift-after-g11", not unexpected)
+check(
+    "g12-no-product-code-drift-after-g11",
+    history_available and not unexpected,
+)
 
 workflow = read(".github/workflows/f18-g12-final-qualification.yml")
 check("g12-read-only-repository", "contents: read" in workflow)
@@ -106,6 +131,7 @@ payload = {
     "phase": "F18-G12",
     "status": "PASS" if not errors else "FAIL",
     "g11MergedSha": G11_MERGED_SHA,
+    "gitHistoryAvailable": history_available,
     "changedSinceG11": changed,
     "unexpectedProductChanges": unexpected,
     "checks": checks,

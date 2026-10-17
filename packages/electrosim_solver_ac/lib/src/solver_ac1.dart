@@ -683,6 +683,8 @@ _CompiledAc1Model _compileModel(
         throw StateError(
           'Feed-through components are handled before single-branch AC1 compilation.',
         );
+      case ComponentElectricalLaw.programmableController:
+        throw StateError('DC PLCs are not compiled by SolverAC1.');
       case ComponentElectricalLaw.diode:
       case ComponentElectricalLaw.motorDc:
       case ComponentElectricalLaw.motorThreePhase:
@@ -1065,6 +1067,7 @@ AcComplex? _componentImpedance(
     case ComponentElectricalLaw.binarySwitch:
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.programmableController:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:
@@ -1143,6 +1146,7 @@ Ac1BranchKind _branchKindForPhysics(ComponentPhysicsContract physics) {
     case ComponentElectricalLaw.binarySwitch:
     case ComponentElectricalLaw.protectionSwitch:
     case ComponentElectricalLaw.feedThrough:
+    case ComponentElectricalLaw.programmableController:
     case ComponentElectricalLaw.diode:
     case ComponentElectricalLaw.motorDc:
     case ComponentElectricalLaw.motorThreePhase:

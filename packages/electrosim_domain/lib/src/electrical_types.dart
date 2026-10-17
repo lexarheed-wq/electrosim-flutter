@@ -1,7 +1,8 @@
 import 'domain_error.dart';
 import 'json_support.dart';
 
-enum ElectricalMode { dc, ac1, ac3, pv }
+/// `mixed` is a board/editor selection only; circuits retain one solver domain.
+enum ElectricalMode { dc, ac1, ac3, pv, mixed }
 
 enum ElectricalUnit {
   volt('V'),

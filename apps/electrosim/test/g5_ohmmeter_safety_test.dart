@@ -13,25 +13,31 @@ void main() {
     kind: InstrumentKind.voltmeter,
     mode: InstrumentMode.resistance,
   );
-  ComponentInstance resistor(String id, Terminal one, Terminal two) =>
+  ComponentInstance resistor(
+    String id,
+    Terminal one,
+    Terminal two, {
+    double resistanceOhm = 100,
+  }) =>
       ComponentInstance(
         id: ComponentId(id),
         modelType: 'resistor',
         terminals: [one, two],
-        parameters: const {'resistanceOhm': 100.0},
+        parameters: {'resistanceOhm': resistanceOhm},
       );
   CircuitState state({
     List<SourceInstance> sources = const [],
     List<Connection> wires = const [],
     bool second = false,
     bool active = false,
+    double resistanceOhm = 100,
   }) => CircuitState(
     circuitId: CircuitId('ohm-safety'),
     revision: 0,
     mode: ElectricalMode.dc,
     sources: sources,
     components: [
-      resistor('r1', a, b),
+      resistor('r1', a, b, resistanceOhm: resistanceOhm),
       if (second) resistor('r2', c, d),
       if (active)
         ComponentInstance(
@@ -107,6 +113,16 @@ void main() {
     );
     expect(reading.result!.reading!.value, closeTo(0, 0.02));
     expect(circuit.connections, hasLength(1));
+  });
+
+  test('ohmmeter accurately reads low resistance for continuity detection', () {
+    final PhysicalInstrumentReading reading = read(state(resistanceOhm: 12));
+    expect(
+      reading.status,
+      PhysicalInstrumentStatus.valid,
+      reason: reading.message,
+    );
+    expect(reading.result!.reading!.value, closeTo(12, 0.02));
   });
 
   test('active component blocks ohmmeter even without SourceInstance', () {

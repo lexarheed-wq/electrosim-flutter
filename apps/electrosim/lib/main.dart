@@ -1,4 +1,5 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
 import 'f18_workspace_page.dart';
+import 'electrical_project_workspace_page.dart';
 export 'f18_workspace_page.dart' show F18WorkspacePage;
 
 Future<void> main() async {
@@ -153,6 +155,7 @@ class _F9HomePageState extends State<F9HomePage> {
             persistenceController: persistenceController,
             parentRouteName: 'design-center',
           ),
+          onMixedElectrical: () => _openMixedElectricalWorkspace(routeContext),
           onPneumatics: const PneumaticFeatureGate().enabled
               ? () => Navigator.of(routeContext).push(
                   MaterialPageRoute<void>(
@@ -183,6 +186,30 @@ class _F9HomePageState extends State<F9HomePage> {
         ),
       ),
     );
+  }
+
+  static void _openMixedElectricalWorkspace(
+    BuildContext context, [CircuitState? existingCircuit]
+  ) {
+    final ElectricalProject empty = ElectricalProject.emptyMixedBoard();
+    final ElectricalProject project = existingCircuit == null
+        ? empty
+        : ElectricalProject(networks: <ElectricalNetwork>[
+            for (final network in empty.networks)
+              ElectricalNetwork(
+                id: network.id,
+                circuit: network.circuit.mode == existingCircuit.mode
+                    ? existingCircuit
+                    : network.circuit,
+              ),
+          ]);
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: 'mixed-electrical-project'),
+      builder: (_) => ElectricalProjectWorkspacePage(
+        initialProject: project,
+        onProjectChanged: (ElectricalProject _) {},
+      ),
+    ));
   }
 
   static void _openMaintenanceCenter(
@@ -352,6 +379,8 @@ class _F9HomePageState extends State<F9HomePage> {
           initialCircuit: initialCircuit,
           sessionNavigation: sessionNavigation,
           persistenceController: persistenceController,
+          onOpenMixedMode: (CircuitState circuit) =>
+              _openMixedElectricalWorkspace(workspaceContext, circuit),
           onExitWorkspace: parentRouteName == null
               ? null
               : () => Navigator.of(workspaceContext).popUntil(

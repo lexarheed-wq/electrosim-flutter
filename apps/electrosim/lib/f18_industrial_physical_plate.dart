@@ -314,6 +314,16 @@ class F18IndustrialPhysicalPlate extends StatelessWidget {
     final shape =
         F18PhysicalPlateAssets.modelFor(modelType, variantKey: variantKey) ??
         '';
+    if (shape.startsWith('source-')) {
+      if (!active) return 'arrêtée';
+      final String voltage = voltageV.isFinite
+          ? '${voltageV.toStringAsFixed(1)} volts'
+          : 'tension indisponible';
+      final String current = currentA.isFinite
+          ? '${currentA.toStringAsFixed(2)} ampères'
+          : 'courant indisponible';
+      return 'active, $voltage, $current';
+    }
     if (shape.startsWith('button-')) return pressed ? 'appuyé' : 'relâché';
     if (shape.startsWith('contactor')) return actuated ? 'attiré' : 'au repos';
     if (shape.startsWith('auxiliary-')) {
@@ -750,7 +760,9 @@ final class _PhysicalPlatePainter extends CustomPainter {
       case 'source-ac-current':
         text(
           c,
-          name.endsWith('current')
+          v.variantKey == 'control-24v'
+              ? 'ALIM. COMMANDE 24 V'
+              : name.endsWith('current')
               ? (name.contains('-ac-') ? 'SOURCE I AC' : 'SOURCE I CC')
               : (name.contains('-ac-') ? 'SOURCE U AC' : 'SOURCE U CC'),
           Offset(w / 2, h * .11),
@@ -1189,7 +1201,11 @@ final class _PhysicalPlatePainter extends CustomPainter {
 
   void portLabels(Canvas c) {
     if (!v.showTerminals) return;
-    final labels = switch (name) {
+    final List<String> labels;
+    if (name == 'source-dc-voltage' && v.variantKey == 'control-24v') {
+      labels = <String>['L+', 'M'];
+    } else {
+      labels = switch (name) {
       'diode-axial' ||
       'diode-glass' ||
       'diode-tvs' ||
@@ -1215,12 +1231,15 @@ final class _PhysicalPlatePainter extends CustomPainter {
       'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
       'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
       'breaker3' ||
-      'isolator3' ||
-      'overload' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+      'isolator3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+      'overload' => [
+        '1L1', '3L2', '5L3', '2T1', '4T2', '6T3', '95', '96', '97', '98',
+      ],
       'breaker4' ||
       'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
-      _ => List<String>.filled(ports.length, ''),
-    };
+          _ => List<String>.filled(ports.length, ''),
+      };
+    }
     for (var i = 0; i < ports.length; i++) {
       if (labels[i].isEmpty) continue;
       final p = ports[i];

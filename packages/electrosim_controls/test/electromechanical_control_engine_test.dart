@@ -114,6 +114,107 @@ void main() {
     }
   });
 
+  test('invalid mechanical interlock reference fails the contactor open', () {
+    final CircuitState base = _ac3Circuit();
+    final CircuitState circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      components: <ComponentInstance>[
+        ...base.components,
+        ComponentInstance(
+          id: ComponentId('mi1'),
+          modelType: 'mechanical_interlock_ac3',
+          terminals: const <Terminal>[],
+          parameters: const <String, Object?>{
+            'contactorAId': 'k1',
+            'contactorBId': 'missing',
+          },
+        ),
+      ],
+      connections: base.connections,
+      sources: base.sources,
+      settings: base.settings,
+    );
+    final outcome = controls.solveAc3(
+      circuit: circuit,
+      topology: topologyEngine.compile(base),
+    );
+
+    expect(outcome.contactors[ComponentId('k1')]!.actuated, isFalse);
+    expect(
+      outcome.issues.map((issue) => issue.code),
+      contains(ElectromechanicalControlIssueCode.invalidMechanicalInterlock),
+    );
+  });
+
+  test(
+    'mechanical interlock releases both contactors on simultaneous demand',
+    () {
+      final CircuitState base = _ac3Circuit();
+      final CircuitState circuit = CircuitState(
+        circuitId: base.circuitId,
+        revision: base.revision,
+        mode: base.mode,
+        components: <ComponentInstance>[
+          ...base.components,
+          ComponentInstance(
+            id: ComponentId('k2'),
+            modelType: 'contactor_3p',
+            terminals: <Terminal>[
+              _t('k2-l1-in', '1L1', phase: PhaseTag.l1),
+              _t('k2-l2-in', '3L2', phase: PhaseTag.l2),
+              _t('k2-l3-in', '5L3', phase: PhaseTag.l3),
+              _t('k2-l1-out', '2T1', phase: PhaseTag.l1),
+              _t('k2-l2-out', '4T2', phase: PhaseTag.l2),
+              _t('k2-l3-out', '6T3', phase: PhaseTag.l3),
+              _t('k2-a1', 'A1', role: TerminalRole.coilA1, phase: PhaseTag.l1),
+              _t(
+                'k2-a2',
+                'A2',
+                role: TerminalRole.coilA2,
+                phase: PhaseTag.neutral,
+              ),
+            ],
+            parameters: const <String, Object?>{
+              'coilResistanceOhm': 1000.0,
+              'coilPickupVoltageV': 180.0,
+              'coilDropoutVoltageV': 100.0,
+            },
+          ),
+          ComponentInstance(
+            id: ComponentId('mi1'),
+            modelType: 'mechanical_interlock_ac3',
+            terminals: const <Terminal>[],
+            parameters: const <String, Object?>{
+              'contactorAId': 'k1',
+              'contactorBId': 'k2',
+            },
+          ),
+        ],
+        connections: <Connection>[
+          ...base.connections,
+          _wire('c3', 'v1-p', 'k2-a1'),
+          _wire('c4', 'k2-a2', 'v1-n'),
+        ],
+        sources: base.sources,
+        settings: base.settings,
+      );
+      final outcome = controls.solveAc3(
+        circuit: circuit,
+        topology: topologyEngine.compile(circuit),
+      );
+
+      expect(outcome.converged, isTrue);
+      expect(outcome.contactors[ComponentId('k1')]!.actuated, isFalse);
+      expect(outcome.contactors[ComponentId('k2')]!.actuated, isFalse);
+      expect(
+        outcome.issues.map((issue) => issue.code),
+        contains(ElectromechanicalControlIssueCode.mechanicalInterlockConflict),
+      );
+    },
+  );
+
   test('AC1 start stop self-hold follows industrial NO NC sequence', () {
     final CircuitState startPressed = _ac1SelfHoldCircuit(
       startPressed: true,

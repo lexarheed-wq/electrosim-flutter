@@ -2,6 +2,7 @@ import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_controls/electrosim_controls.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
+import 'package:electrosim/f9_source_voltage_readout.dart';
 import 'package:electrosim/runtime/electrical_project_runtime_engine.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -188,6 +189,43 @@ void main() {
       expect(result.networks.keys, containsAll(modes.map((ElectricalMode m) => m.name)));
       expect(result.diagnostics, isEmpty);
     }
+  });
+
+  test('CC source and PLC remain powered while the AC3 network is simulated', () {
+    final ElectricalProject project = ElectricalProject(networks: <ElectricalNetwork>[
+      ElectricalNetwork(id: 'control', circuit: _plcCircuit()),
+      ElectricalNetwork(id: 'power', circuit: _ac3MotorCircuit()),
+    ]);
+    final ElectricalProjectRuntimeEngine engine = const ElectricalProjectRuntimeEngine();
+
+    // The mixed workspace's AC3 chip only changes the selected view. Both
+    // homogeneous networks must continue advancing on every shared clock tick.
+    ElectricalProjectRuntimeSnapshot runtime = engine.advance(
+      project, elapsed: const Duration(milliseconds: 250),
+    );
+    runtime = engine.advance(
+      project,
+      elapsed: const Duration(milliseconds: 250),
+      previous: runtime,
+    );
+
+    final ElectroSimRuntimeSnapshot control = runtime.networks['control']!;
+    final ElectroSimRuntimeSnapshot power = runtime.networks['power']!;
+    expect(control.solverKind, ElectroSimRuntimeSolverKind.dc);
+    expect(control.dcResult?.isSolved, isTrue);
+    expect(power.solverKind, ElectroSimRuntimeSolverKind.ac3);
+    expect(power.ac3Result?.isSolved, isTrue);
+    expect(
+      F9SourceVoltageReadout.voltageV(
+        control,
+        control.circuit.sources.single,
+        simulationRunning: true,
+      ),
+      closeTo(24.0, 1e-6),
+    );
+    final ComponentInstance plc = control.effectiveCircuit.components.single;
+    expect(plc.controlState['plcSupplyValid'], isTrue);
+    expect(plc.controlState['supplyVoltageV'], closeTo(24.0, 1e-6));
   });
 
   test('mixedRuntimeAdvancesElapsedOnceAndRejectsMixedSolverInput', () {

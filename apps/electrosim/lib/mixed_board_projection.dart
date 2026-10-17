@@ -25,8 +25,8 @@ final class MixedBoardProjection {
     required this.sourceOrigins,
     required this.connectionOrigins,
     required this.terminalOrigins,
-    required this._instrumentOrigins,
-  });
+    required Map<String, MixedBoardOrigin> instrumentOrigins,
+  }) : _instrumentOrigins = instrumentOrigins;
 
   static const String projectionMetadataKey = 'electrosim.renderOnlyMixedBoard';
 
@@ -331,7 +331,7 @@ final class MixedBoardProjection {
       sourceOrigins: Map.unmodifiable(sourceOrigins),
       connectionOrigins: Map.unmodifiable(connectionOrigins),
       terminalOrigins: Map.unmodifiable(terminalOrigins),
-      _instrumentOrigins: Map.unmodifiable(instrumentOrigins),
+      instrumentOrigins: Map.unmodifiable(instrumentOrigins),
     );
   }
 

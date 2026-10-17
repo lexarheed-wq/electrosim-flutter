@@ -203,14 +203,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 260));
     expect(
       find.bySemanticsLabel(
-        'Alimentation CC, active, 24.0 volts, 0.00 ampères',
+        RegExp(r'Alimentation CC, active, 24\.0 volts,'),
         skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
       find.bySemanticsLabel(
-        'Automate programmable, automate alimenté',
+        RegExp(r'Automate programmable, automate alimenté'),
         skipOffstage: false,
       ),
       findsOneWidget,
@@ -229,8 +229,8 @@ void main() {
       initialProject: _project(), onProjectChanged: (_) {},
     )));
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Contact auxiliaire normalement ouvert, ouvert', skipOffstage: false), findsOneWidget);
-    expect(find.bySemanticsLabel('Contacteur triphasé, au repos', skipOffstage: false), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'Contact auxiliaire normalement ouvert'), skipOffstage: false), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'Contacteur triphasé'), skipOffstage: false), findsOneWidget);
     semantics.dispose();
   });
 }

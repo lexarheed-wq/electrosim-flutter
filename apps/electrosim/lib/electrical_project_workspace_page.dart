@@ -352,7 +352,7 @@ final class _ProjectLinkDialog extends StatelessWidget {
           ),
         const Divider(),
         const ListTile(title: Text('Conversion photovoltaïque → AC monophasé')),
-        for (final (pvNetwork, inverter) in pvConverters)
+        for (final (_, inverter) in pvConverters)
           for (final acNetwork in project.networks.where((network) => network.circuit.mode == ElectricalMode.ac1))
             for (final line in <Terminal>[
               ...acNetwork.circuit.components.expand((component) => component.terminals),

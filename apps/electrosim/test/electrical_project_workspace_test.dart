@@ -3,6 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
+import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -201,15 +202,18 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('project-simulation-toggle')));
     await tester.pump(const Duration(milliseconds: 260));
-    expect(
-      find.bySemanticsLabel(
-        // The standard source is rendered by ReferenceComponentView, whose
-        // accessible label exposes the measured voltage and current directly.
-        RegExp(r'Alimentation 24\.00 volts,'),
-        skipOffstage: false,
-      ),
-      findsOneWidget,
+    final Finder sourceVisual = find.byKey(
+      const ValueKey<String>('board-v1-visual-n0--supply'),
     );
+    expect(sourceVisual, findsOneWidget);
+    final ReferenceComponentView source = tester.widget<ReferenceComponentView>(
+      find.descendant(
+        of: sourceVisual,
+        matching: find.byType(ReferenceComponentView),
+      ),
+    );
+    expect(source.device, ReferenceDevice.supply);
+    expect(source.state.voltageV, closeTo(24.0, 1e-6));
     expect(
       find.bySemanticsLabel(
         RegExp(r'Automate programmable, automate alimenté'),

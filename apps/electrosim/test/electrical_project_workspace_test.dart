@@ -203,7 +203,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 260));
     expect(
       find.bySemanticsLabel(
-        RegExp(r'Alimentation CC, active, 24\.0 volts,'),
+        // The standard source is rendered by ReferenceComponentView, whose
+        // accessible label exposes the measured voltage and current directly.
+        RegExp(r'Alimentation 24\.00 volts,'),
         skipOffstage: false,
       ),
       findsOneWidget,

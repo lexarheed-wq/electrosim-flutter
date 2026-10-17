@@ -205,6 +205,27 @@ void main() {
       ),
       findsOneWidget,
     );
+
+    // Selecting the AC3 network must not make the independently solved CC
+    // supply and PLC disappear from the shared mixed board.
+    await tester.tap(find.byKey(const Key('project-network-power')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-simulation-toggle')));
+    await tester.pump(const Duration(milliseconds: 260));
+    expect(
+      find.bySemanticsLabel(
+        'Alimentation CC, active, 24.0 volts, 0.00 ampères',
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Automate programmable, automate alimenté',
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
     semantics.dispose();
   });
 

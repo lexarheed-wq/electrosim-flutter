@@ -28,6 +28,19 @@ abstract final class F9SourceVoltageReadout {
       }
     }
 
+    // A DC ideal voltage supply keeps its declared terminal voltage even
+    // when the solver omits a source branch measurement (for example, when
+    // the source powers a PLC on another network of a mixed board).
+    if (simulationRunning &&
+        runtime.solverKind == ElectroSimRuntimeSolverKind.dc &&
+        (source.modelType == 'dc_voltage_source' ||
+            source.modelType == 'voltage_source')) {
+      final Object? configured = source.parameters['voltageV'];
+      if (configured is num && configured.isFinite && configured >= 0) {
+        return configured.toDouble();
+      }
+    }
+
     final ac1 = runtime.ac1Result;
     if (ac1 != null && ac1.isSolved) {
       double value = 0;

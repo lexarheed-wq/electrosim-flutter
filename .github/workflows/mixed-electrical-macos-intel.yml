@@ -39,6 +39,8 @@ jobs:
           blender --version
 
       - name: Render control and pneumatic components
+        env:
+          ELECTROSIM_RENDER_DENOISE: '0'
         run: |
           set -euo pipefail
           blender --background --python tools/render_control_components.py

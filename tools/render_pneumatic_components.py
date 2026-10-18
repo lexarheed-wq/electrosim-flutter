@@ -105,7 +105,7 @@ def build(kind):
         box('pneumatic accessory',(0,0,0),(.70,.48,.62),'white'); port(-.25,-.31); port(.25,-.31); label('PNEUMATIC',(0,-.25,.05),.09)
 
 def setup():
-    s=bpy.context.scene; s.render.engine='CYCLES'; s.cycles.samples=int(os.getenv('ELECTROSIM_RENDER_SAMPLES','32')); s.cycles.use_denoising=True
+    s=bpy.context.scene; s.render.engine='CYCLES'; s.cycles.samples=int(os.getenv('ELECTROSIM_RENDER_SAMPLES','32')); s.cycles.use_denoising=os.getenv('ELECTROSIM_RENDER_DENOISE','1')!='0'
     s.render.resolution_x=600; s.render.resolution_y=440; s.render.resolution_percentage=80; s.render.film_transparent=True
     s.render.image_settings.file_format='PNG'; s.render.image_settings.color_mode='RGBA'; s.view_settings.view_transform='AgX'
     for name,loc,power,size in [('key',(4,-5,6),900,5),('fill',(-4,-4,2),600,4),('rim',(2,4,5),1100,3)]:

@@ -255,7 +255,7 @@ def render(kind, view, builder, output_kind=None):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
     scene.cycles.samples = int(os.getenv("ELECTROSIM_RENDER_SAMPLES", "40"))
-    scene.cycles.use_denoising = True
+    scene.cycles.use_denoising = os.getenv("ELECTROSIM_RENDER_DENOISE", "1") != "0"
     portrait = kind in {"timer-star-delta", "sensor-proximity", "limit-switch-no", "limit-switch-nc"}
     scene.render.resolution_x = 700 if portrait else 900
     scene.render.resolution_y = 900 if portrait else 700

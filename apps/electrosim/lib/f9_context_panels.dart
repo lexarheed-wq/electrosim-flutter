@@ -32,6 +32,7 @@ class F9ContextPanels extends StatefulWidget {
     this.onLinkPlcOutput,
     this.onConfigureTimer,
     this.onConfigureMechanicalInterlock,
+    this.onProximityTargetDistanceChanged,
     this.tpSessionController,
   });
 

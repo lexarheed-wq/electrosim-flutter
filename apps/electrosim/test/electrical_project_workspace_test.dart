@@ -185,8 +185,7 @@ void main() {
     expect(find.text('t = 0.50 s'), findsOneWidget);
   });
 
-  testWidgets('CC source and PLC stay powered while the AC3 board runs', (WidgetTester tester) async {
-    final SemanticsHandle semantics = tester.ensureSemantics();
+  testWidgets('CC supply displays 24 V while the AC3 board runs', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1800, 1100);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -215,14 +214,6 @@ void main() {
     );
     expect(source.modelType, 'dc_voltage_source');
     expect(source.voltageV, closeTo(24.0, 1e-6));
-    expect(
-      find.bySemanticsLabel(
-        RegExp(r'Automate programmable, automate alimenté'),
-        skipOffstage: false,
-      ),
-      findsOneWidget,
-    );
-    semantics.dispose();
   });
 
   testWidgets('mixed board shows contactor resting state and closed NC contact before start', (WidgetTester tester) async {

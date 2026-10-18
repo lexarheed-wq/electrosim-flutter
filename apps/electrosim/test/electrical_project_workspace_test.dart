@@ -3,6 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
+import 'package:electrosim/f18_industrial_physical_devices.dart';
 import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -206,14 +207,14 @@ void main() {
       const ValueKey<String>('board-v1-visual-n0--supply'),
     );
     expect(sourceVisual, findsOneWidget);
-    final ReferenceComponentView source = tester.widget<ReferenceComponentView>(
+    final IndustrialPhysicalView source = tester.widget<IndustrialPhysicalView>(
       find.descendant(
         of: sourceVisual,
-        matching: find.byType(ReferenceComponentView),
+        matching: find.byType(IndustrialPhysicalView),
       ),
     );
-    expect(source.device, ReferenceDevice.supply);
-    expect(source.state.voltageV, closeTo(24.0, 1e-6));
+    expect(source.device, IndustrialDevice.supply);
+    expect(source.voltageV, closeTo(24.0, 1e-6));
     expect(
       find.bySemanticsLabel(
         RegExp(r'Automate programmable, automate alimenté'),

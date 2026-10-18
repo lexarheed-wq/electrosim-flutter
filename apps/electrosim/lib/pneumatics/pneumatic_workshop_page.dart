@@ -431,7 +431,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     return Scaffold(
       key: const Key('pneumatic-r4-workshop'),
       appBar: AppBar(
-        title: const Text('Atelier pneumatique expérimental'),
+        title: const Text('Atelier pneumatique · bêta'),
         actions: <Widget>[
           IconButton(
             key: const Key('air-advance'),
@@ -751,7 +751,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     kind: device.kind,
                     schematic: !plate,
                     width: 110,
-                    height: 38,
+                    height: 58,
+                    frontView: plate,
                   ),
                   Text(
                     '${device.id} : ${device.kind.name}',

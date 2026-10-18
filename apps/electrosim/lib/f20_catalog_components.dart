@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'f18_control_device_assets.dart';
+import 'f18_industrial_physical_plate.dart';
 
 enum F20CatalogDevice {
   battery,
@@ -113,13 +115,31 @@ class F20CatalogComponentView extends StatelessWidget {
   final F20CatalogState state;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: size.width,
-    height: size.height,
-    child: CustomPaint(
-      painter: _F20Painter(device: device, state: state),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final String? key = device == F20CatalogDevice.sensor2t
+        ? F18ControlDeviceAssets.imageKey('catalog_sensor_2t', state.variantKey)
+        : null;
+    final bool palette = F18PhysicalPresentationScope.perspectiveOf(context);
+    final image = key == null
+        ? null
+        : F18ControlDeviceAssets.image(
+            key,
+            palette: palette,
+            actuated: state.actuated,
+          );
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: image == null
+          ? CustomPaint(painter: _F20Painter(device: device, state: state))
+          : RawImage(
+              key: Key('catalog-sensor-product-image-$key-${state.actuated ? 'actuated' : 'rest'}-${palette ? 'palette' : 'front'}'),
+              image: image,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+    );
+  }
 }
 
 final class _F20Painter extends CustomPainter {
@@ -1278,6 +1298,14 @@ final class _P {
   }
 
   void sensor() {
+    if (variant == 'sensor-proximity') {
+      _inductiveProximitySensor();
+      return;
+    }
+    if (variant == 'limit-switch-no' || variant == 'limit-switch-nc') {
+      _mechanicalLimitSwitch();
+      return;
+    }
     final Rect body = Rect.fromCenter(
       center: c,
       width: w * .56,
@@ -1322,8 +1350,206 @@ final class _P {
       );
     }
     final List<Offset> t = bottomPair();
-    terminal(t[0], '1');
-    terminal(t[1], '2');
+    terminal(t[0], '13');
+    terminal(t[1], '14');
+  }
+
+  void _inductiveProximitySensor() {
+    final double bodyWidth = w * .40;
+    final double top = c.dy - h * .31;
+    final double bottom = c.dy + h * .22;
+    final Rect shell = Rect.fromLTRB(
+      c.dx - bodyWidth / 2,
+      top,
+      c.dx + bodyWidth / 2,
+      bottom,
+    );
+    final RRect barrel = RRect.fromRectAndRadius(
+      shell,
+      Radius.circular(bodyWidth * .22),
+    );
+    canvas.drawRRect(
+      barrel.shift(Offset(w * .012, h * .018)),
+      Paint()..color = const Color(0x30000000),
+    );
+    canvas.drawRRect(
+      barrel,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0xFF5C6970),
+            Color(0xFFE2E7E8),
+            Color(0xFF8B979C),
+            Color(0xFF48565D),
+          ],
+          stops: [0, .24, .61, 1],
+        ).createShader(shell),
+    );
+    canvas.drawRRect(barrel, outline);
+
+    // Two steel locknuts and machined thread grooves around the barrel.
+    for (final double y in [top + h * .20, top + h * .31]) {
+      final Rect nut = Rect.fromCenter(
+        center: Offset(c.dx, y),
+        width: bodyWidth * 1.30,
+        height: h * .055,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(nut, Radius.circular(h * .014)),
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF46545A), Color(0xFFD6DDDF), Color(0xFF66747A)],
+          ).createShader(nut),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(nut, Radius.circular(h * .014)),
+        Paint()
+          ..color = const Color(0xFF526067)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+    }
+    for (int i = 0; i < 5; i++) {
+      final double y = top + h * (.38 + i * .035);
+      canvas.drawLine(
+        Offset(shell.left + 2, y),
+        Offset(shell.right - 2, y),
+        Paint()
+          ..color = const Color(0x66505C61)
+          ..strokeWidth = 1,
+      );
+    }
+
+    final Rect cap = Rect.fromLTRB(
+      shell.left - bodyWidth * .08,
+      top - h * .035,
+      shell.right + bodyWidth * .08,
+      top + h * .09,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(cap, Radius.circular(h * .04)),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF374D57), Color(0xFF101A20)],
+        ).createShader(cap),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(cap, Radius.circular(h * .04)),
+      Paint()
+        ..color = const Color(0xFF263840)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1,
+    );
+
+    final Offset statusLed = Offset(shell.right - bodyWidth * .12, bottom - h * .11);
+    canvas.drawCircle(
+      statusLed,
+      h * .023,
+      Paint()..color = const Color(0xFF27363B),
+    );
+    canvas.drawCircle(
+      statusLed,
+      h * .014,
+      Paint()
+        ..shader = RadialGradient(
+          colors: state.actuated
+              ? const [Color(0xFFFFFFFF), Color(0xFF40E58A), Color(0xFF087342)]
+              : const [Color(0xFF758087), Color(0xFF344148)],
+        ).createShader(Rect.fromCircle(center: statusLed, radius: h * .014)),
+    );
+
+    final List<Offset> t = bottomPair();
+    terminal(t[0], '13');
+    terminal(t[1], '14');
+  }
+
+  void _mechanicalLimitSwitch() {
+    final Rect body = Rect.fromCenter(
+      center: Offset(c.dx, c.dy + h * .015),
+      width: w * .61,
+      height: h * .48,
+    );
+    box(body, top: const Color(0xFFE7ECEE), bottom: const Color(0xFF9BA8AE));
+    final Rect face = Rect.fromLTWH(
+      body.left + body.width * .12,
+      body.top + body.height * .12,
+      body.width * .76,
+      body.height * .70,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(face, Radius.circular(h * .025)),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF49575D), Color(0xFF18242A)],
+        ).createShader(face),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(face, Radius.circular(h * .025)),
+      Paint()
+        ..color = const Color(0xFF25343B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    final bool actuated = state.actuated;
+    final Offset pivot = Offset(c.dx, body.top + h * .10);
+    final Offset rollerCenter = actuated
+        ? Offset(c.dx + w * .16, body.top - h * .005)
+        : Offset(c.dx + w * .26, body.top - h * .11);
+    canvas.drawCircle(
+      pivot,
+      h * .035,
+      Paint()..color = const Color(0xFF36434A),
+    );
+    canvas.drawLine(
+      pivot,
+      rollerCenter,
+      Paint()
+        ..color = const Color(0xFFB7C0C3)
+        ..strokeWidth = h * .035
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawLine(
+      pivot,
+      rollerCenter,
+      Paint()
+        ..color = const Color(0xFF58666C)
+        ..strokeWidth = h * .010
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(
+      rollerCenter.translate(0, h * .018),
+      h * .055,
+      Paint()..color = const Color(0xFF354149),
+    );
+    canvas.drawCircle(
+      rollerCenter.translate(0, h * .018),
+      h * .039,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-.3, -.4),
+          colors: [Color(0xFFF5F7F5), Color(0xFF9EA9AD), Color(0xFF5F6A70)],
+        ).createShader(
+          Rect.fromCircle(
+            center: rollerCenter.translate(0, h * .018),
+            radius: h * .039,
+          ),
+        ),
+    );
+    text(
+      variant == 'limit-switch-nc' ? 'NC · 21/22' : 'NO · 13/14',
+      Offset(face.center.dx, face.center.dy),
+      size: h * .075,
+      color: const Color(0xFFE9EFED),
+    );
+    final List<Offset> t = bottomPair();
+    terminal(t[0], variant == 'limit-switch-nc' ? '21' : '13');
+    terminal(t[1], variant == 'limit-switch-nc' ? '22' : '14');
   }
 
   void indicator() {

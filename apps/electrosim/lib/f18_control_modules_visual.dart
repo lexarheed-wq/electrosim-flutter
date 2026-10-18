@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_industrial_physical_plate.dart';
+import 'f18_control_device_assets.dart';
 
 abstract final class F18ControlModuleVisuals {
   static bool supports(String modelType) => const {
@@ -13,10 +15,10 @@ abstract final class F18ControlModuleVisuals {
   }.contains(modelType.toLowerCase());
 }
 
-/// Dedicated industrial renderings for the two AC3 control modules.
+/// Dedicated industrial renderings for control modules.
 ///
-/// Palette art receives a shallow three-quarter extrusion; board art remains
-/// frontal so its ports continue to line up with the canvas hit targets.
+/// Product images are static material/shape only. Operating LEDs are overlaid
+/// from the current runtime control state; the painter remains the fallback.
 final class F18ControlModuleVisual extends StatelessWidget {
   const F18ControlModuleVisual({
     super.key,
@@ -53,6 +55,17 @@ final class F18ControlModuleVisual extends StatelessWidget {
         : powered
         ? 'automate alimenté'
         : 'arrêté';
+    final bool palette = F18PhysicalPresentationScope.perspectiveOf(context);
+    final String assetKey = switch (modelType.toLowerCase()) {
+      'timer_star_delta' => 'timer-star-delta',
+      'plc_ac3' => 'plc-ac3',
+      'plc_dc' => 'plc-dc',
+      'mechanical_interlock_ac3' => 'mechanical-interlock-ac3',
+      _ => '',
+    };
+    final ui.Image? productImage = assetKey.isEmpty
+        ? null
+        : F18ControlDeviceAssets.image(assetKey, palette: palette);
     return Semantics(
       label:
           '${timer ? 'Temporisateur étoile-triangle' : 'Automate programmable'}, $state',
@@ -61,7 +74,8 @@ final class F18ControlModuleVisual extends StatelessWidget {
         width: size.width,
         height: size.height,
         child: RepaintBoundary(
-          child: CustomPaint(
+          child: productImage == null
+              ? CustomPaint(
             key: Key('control-module-${modelType.toLowerCase()}'),
             painter: _F18ControlModulePainter(
               modelType: modelType.toLowerCase(),
@@ -71,11 +85,123 @@ final class F18ControlModuleVisual extends StatelessWidget {
               showTerminals: showTerminals,
               perspective: F18PhysicalPresentationScope.perspectiveOf(context),
             ),
-          ),
+          )
+              : Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    RawImage(
+                  key: Key('control-product-image-$assetKey-${palette ? 'palette' : 'front'}'),
+                  image: productImage,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  alignment: Alignment.center,
+                    ),
+                    CustomPaint(
+                      painter: _F18ControlStatusPainter(
+                        timer: timer,
+                        powered: powered,
+                        running: (controlState['programRunning'] == true || powered) &&
+                            controlState['programError'] != true,
+                        programError: powered &&
+                            controlState['programError'] == true,
+                        starActive: powered &&
+                            controlState['timerNcClosed'] == true,
+                        deltaActive: controlState['timerNoClosed'] == true,
+                        palette: palette,
+                        delaySeconds:
+                            (parameters['delaySeconds'] as num?)?.toDouble() ?? 5,
+                        outputStates: [
+                          for (int i = 0; i < 4; i++)
+                            controlState['Q$i'] == true,
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
+}
+
+/// Dynamic indicators are painted over the immutable Cycles product image.
+final class _F18ControlStatusPainter extends CustomPainter {
+  const _F18ControlStatusPainter({
+    required this.timer,
+    required this.powered,
+    required this.running,
+    required this.programError,
+    required this.starActive,
+    required this.deltaActive,
+    required this.palette,
+    required this.delaySeconds,
+    required this.outputStates,
+  });
+
+  final bool timer, powered, running, programError, starActive, deltaActive, palette;
+  final double delaySeconds;
+  final List<bool> outputStates;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double scaleX = size.width / (timer ? 180 : 300);
+    final double scaleY = size.height / (timer ? 260 : 220);
+    Offset p(double x, double y) => Offset(x * scaleX, y * scaleY);
+    void light(Offset center, Color color, bool on, double radius) {
+      if (on) {
+        canvas.drawCircle(
+          center,
+          radius * 2.3,
+          Paint()
+            ..color = color.withValues(alpha: .25)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        );
+      }
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()..color = on ? color : const Color(0xFF697579),
+      );
+    }
+
+    if (timer) {
+      // Approximate the three image LEDs in the timer face coordinate space.
+      light(p(76, 149), const Color(0xFF24C877), starActive, 3.0 * scaleX);
+      light(p(90, 149), const Color(0xFFFFB12C), powered && !starActive && !deltaActive, 3.0 * scaleX);
+      light(p(104, 149), const Color(0xFF24C877), deltaActive, 3.0 * scaleX);
+      final double fraction = (delaySeconds / 60).clamp(0.0, 1.0);
+      final double angle = math.pi * (1.25 - fraction * 1.5);
+      final Offset center = p(90, 119);
+      canvas.drawLine(
+        center,
+        center + Offset(math.cos(angle) * 10 * scaleX, math.sin(angle) * 10 * scaleY),
+        Paint()
+          ..color = const Color(0xFFFFC94D)
+          ..strokeWidth = 2 * scaleX
+          ..strokeCap = StrokeCap.round,
+      );
+    } else {
+      light(p(230, 79), const Color(0xFF24C877), powered, 4.0 * scaleX);
+      light(p(230, 104), const Color(0xFF24C877), running, 4.0 * scaleX);
+      light(p(230, 129), const Color(0xFFFF493F), programError, 4.0 * scaleX);
+      const outputX = [72.0, 124.0, 176.0, 228.0];
+      for (int index = 0; index < outputStates.length && index < outputX.length; index++) {
+        light(
+          p(outputX[index], 174),
+          const Color(0xFF24C877),
+          powered && outputStates[index],
+          2.7 * scaleX,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_F18ControlStatusPainter old) =>
+      timer != old.timer || powered != old.powered || running != old.running ||
+      programError != old.programError || starActive != old.starActive ||
+      deltaActive != old.deltaActive || palette != old.palette ||
+      delaySeconds != old.delaySeconds || outputStates.join(',') != old.outputStates.join(',');
 }
 
 final class _F18ControlModulePainter extends CustomPainter {

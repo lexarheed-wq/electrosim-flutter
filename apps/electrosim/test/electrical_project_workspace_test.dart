@@ -3,7 +3,7 @@ import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
-import 'package:electrosim/f18_component_asset_visual.dart';
+import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -185,7 +185,8 @@ void main() {
     expect(find.text('t = 0.50 s'), findsOneWidget);
   });
 
-  testWidgets('CC supply displays 24 V while the AC3 board runs', (WidgetTester tester) async {
+  testWidgets('CC source and PLC stay powered while the AC3 board runs', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     tester.view.physicalSize = const Size(1800, 1100);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -205,15 +206,22 @@ void main() {
       const ValueKey<String>('board-v1-visual-n0--supply'),
     );
     expect(sourceVisual, findsOneWidget);
-    final F18ComponentAssetVisual source =
-        tester.widget<F18ComponentAssetVisual>(
+    final ReferenceComponentView source = tester.widget<ReferenceComponentView>(
       find.descendant(
         of: sourceVisual,
-        matching: find.byType(F18ComponentAssetVisual),
+        matching: find.byType(ReferenceComponentView),
       ),
     );
-    expect(source.modelType, 'dc_voltage_source');
-    expect(source.voltageV, closeTo(24.0, 1e-6));
+    expect(source.device, ReferenceDevice.supply);
+    expect(source.state.voltageV, closeTo(24.0, 1e-6));
+    expect(
+      find.bySemanticsLabel(
+        RegExp(r'Automate programmable, automate alimenté'),
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
   });
 
   testWidgets('mixed board shows contactor resting state and closed NC contact before start', (WidgetTester tester) async {

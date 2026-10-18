@@ -319,9 +319,15 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     terminalLabels: <String>['13', '14'],
     visualModelType: 'catalog_sensor_2t',
     supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      'sensingDistanceMm': 8.0,
+      'hysteresisPercent': 10.0,
+      'targetDistanceMm': 20.0,
+      'targetMaterial': 'ferrous',
+    },
     defaultControlState: <String, Object?>{'closed': false},
     visualVariant: 'sensor-proximity',
-    subtitle: 'Contact sec NO 2 fils · état commutable',
+    subtitle: 'Inductif 24 V · cible ferreuse · portée nominale 8 mm',
   ),
   F9PaletteDefinition(
     keyName: 'limit-switch-no',
@@ -3389,6 +3395,7 @@ class F9ComponentPreview extends StatelessWidget {
     return F18IndustrialDualView(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,
+      variantKey: definition.visualVariant,
       size: visualSize,
       presentation: F18IndustrialPresentation.palettePerspective,
       child: canonicalArtwork,

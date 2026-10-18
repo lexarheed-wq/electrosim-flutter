@@ -51,6 +51,8 @@ class F9ContextPanels extends StatefulWidget {
   onLinkPlcOutput;
   final ValueChanged<String>? onConfigureTimer;
   final ValueChanged<String>? onConfigureMechanicalInterlock;
+  final void Function(String sensorId, double distanceMm)?
+      onProximityTargetDistanceChanged;
   final ElectroSimTpSessionController? tpSessionController;
 
   bool get showEie => role == F9UserRole.teacher;
@@ -174,6 +176,8 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   onConfigureTimer: widget.onConfigureTimer,
                   onConfigureMechanicalInterlock:
                       widget.onConfigureMechanicalInterlock,
+                  onProximityTargetDistanceChanged:
+                      widget.onProximityTargetDistanceChanged,
                 ),
                 _MeasurementsPanel(
                   circuit: widget.circuit,
@@ -223,6 +227,7 @@ class _PropertiesPanel extends StatelessWidget {
     this.onLinkPlcOutput,
     this.onConfigureTimer,
     this.onConfigureMechanicalInterlock,
+    this.onProximityTargetDistanceChanged,
   });
 
   final CircuitState circuit;
@@ -239,6 +244,8 @@ class _PropertiesPanel extends StatelessWidget {
   onLinkPlcOutput;
   final ValueChanged<String>? onConfigureTimer;
   final ValueChanged<String>? onConfigureMechanicalInterlock;
+  final void Function(String sensorId, double distanceMm)?
+      onProximityTargetDistanceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +267,6 @@ class _PropertiesPanel extends StatelessWidget {
       'switch_spst' ||
       'push_button_no' ||
       'push_button_nc' ||
-      'proximity_sensor_24v' ||
       'limit_switch_no' ||
       'limit_switch_nc' ||
       'breaker_dc' ||
@@ -542,6 +548,44 @@ class _PropertiesPanel extends StatelessWidget {
                   : 'Étoile',
             ),
           ],
+          if (details.modelType == 'proximity_sensor_24v') ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _PropertyLine(
+              label: 'Portée nominale',
+              value:
+                  '${((details.parameters['sensingDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityRangeMm).toStringAsFixed(0)} mm',
+            ),
+            _PropertyLine(
+              label: 'Distance de la cible',
+              value:
+                  '${((details.parameters['targetDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityTargetDistanceMm).toStringAsFixed(0)} mm',
+            ),
+            Slider(
+              key: const Key('proximity-target-distance'),
+              min: 0,
+              max: 100,
+              divisions: 100,
+              label:
+                  '${((details.parameters['targetDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityTargetDistanceMm).toStringAsFixed(0)} mm',
+              value: ((details.parameters['targetDistanceMm'] as num?)
+                          ?.toDouble() ??
+                      F9ElementEditor.defaultProximityTargetDistanceMm)
+                  .clamp(0.0, 100.0)
+                  .toDouble(),
+              onChanged: onProximityTargetDistanceChanged == null
+                  ? null
+                  : (double distance) => onProximityTargetDistanceChanged!(
+                      details.id,
+                      distance,
+                    ),
+            ),
+            Text(
+              details.primaryToggleValue == true
+                  ? 'Cible détectée · sortie NO fermée'
+                  : 'Hors portée · sortie NO ouverte',
+              key: const Key('proximity-detection-state'),
+            ),
+          ],
           if (details.modelType == 'mechanical_interlock_ac3') ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             _PropertyLine(
@@ -561,7 +605,9 @@ class _PropertiesPanel extends StatelessWidget {
               label: const Text('Choisir les contacteurs'),
             ),
           ],
-          if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
+          if (primaryToggleValue != null &&
+              !directCanvasControl &&
+              details.modelType != 'proximity_sensor_24v') ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             SwitchListTile.adaptive(
               key: const Key('properties-primary-toggle'),

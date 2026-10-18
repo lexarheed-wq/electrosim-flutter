@@ -5,6 +5,7 @@ import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_industrial_physical_plate.dart';
+import 'f18_control_device_assets.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
@@ -13,7 +14,6 @@ import 'f18_v1_navigation_flow.dart';
 import 'reference_components/disjoncteur_3d.dart';
 import 'f9_ui_context.dart';
 import 'pneumatics/pneumatic_workshop_page.dart';
-import 'runtime/pneumatic_feature_gate.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
@@ -26,10 +26,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final physicalTextures = Disjoncteur3D.prechargerTextures();
   final industrialTextures = F18PhysicalPlateAssets.preload();
+  final controlTextures = F18ControlDeviceAssets.preload();
   final ElectroSimPersistenceController persistenceController =
       await ElectroSimPersistenceController.createDefault();
   await physicalTextures;
   await industrialTextures;
+  await controlTextures;
   runApp(ElectroSimApp(persistenceController: persistenceController));
 }
 
@@ -156,17 +158,17 @@ class _F9HomePageState extends State<F9HomePage> {
             parentRouteName: 'design-center',
           ),
           onMixedElectrical: () => _openMixedElectricalWorkspace(routeContext),
-          onPneumatics: const PneumaticFeatureGate().enabled
-              ? () => Navigator.of(routeContext).push(
-                  MaterialPageRoute<void>(
-                    settings: const RouteSettings(
-                      name: 'pneumatic-experimental',
-                    ),
-                    builder: (BuildContext airContext) =>
-                        const PneumaticWorkshopPage(),
-                  ),
-                )
-              : null,
+          // The pneumatic workshop ships in this same ElectroSim application.
+          // Its editor/solver coverage is still explicitly described as beta
+          // on the design-center card; hiding the route behind a compile-time
+          // flag made the second product family appear to be a separate app.
+          onPneumatics: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'pneumatic-workshop'),
+              builder: (BuildContext airContext) =>
+                  const PneumaticWorkshopPage(),
+            ),
+          ),
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'design-schema-library'),

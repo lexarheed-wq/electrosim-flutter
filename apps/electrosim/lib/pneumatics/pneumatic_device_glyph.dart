@@ -1,8 +1,8 @@
 import 'package:electrosim_pneumatic_domain/electrosim_pneumatic_domain.dart';
 import 'package:flutter/material.dart';
 
-/// Original, vector-only pneumatic pictograms. They are not photos or claims
-/// of manufacturer-specific certified ISO 1219 symbol sets.
+/// Physical renders are used in the workshop palette and on the plate;
+/// normalized circuit symbols remain vector-drawn in schematic view.
 class PneumaticDeviceGlyph extends StatelessWidget {
   const PneumaticDeviceGlyph({
     super.key,
@@ -10,21 +10,35 @@ class PneumaticDeviceGlyph extends StatelessWidget {
     required this.schematic,
     this.width = 118,
     this.height = 42,
+    this.frontView = false,
   });
 
   final PneumaticDeviceKind kind;
   final bool schematic;
   final double width;
   final double height;
+  /// False selects the three-quarter palette render; true selects the frontal
+  /// render used on the physical plate. Ignored for schematic symbols.
+  final bool frontView;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: width,
-    height: height,
-    child: CustomPaint(
+  Widget build(BuildContext context) {
+    final Widget vector = CustomPaint(
       painter: _GlyphPainter(kind: kind, schematic: schematic),
-    ),
-  );
+    );
+    return SizedBox(
+      width: width,
+      height: height,
+      child: schematic
+          ? vector
+          : Image.asset(
+              'assets/g5_pneumatic/${kind.name}-${frontView ? 'front' : 'palette'}.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, Object error, StackTrace? stackTrace) =>
+                  vector,
+            ),
+    );
+  }
 }
 
 class _GlyphPainter extends CustomPainter {

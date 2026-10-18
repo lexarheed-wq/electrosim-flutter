@@ -71,4 +71,6 @@ flutter:
     - assets/g5_physical/housing-palette.png
     - assets/g5_physical/housing-platine.png
     - assets/g5_industrial/
+    - assets/g5_pneumatic/
+    - assets/g5_control/
     - assets/sounds/

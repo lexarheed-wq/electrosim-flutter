@@ -34,6 +34,65 @@ void main() {
     expect(next.revision, circuit.revision + 1);
   });
 
+  test('proximity target closes NO output only inside configured range', () {
+    final CircuitState base = _circuit();
+    final Terminal sensorIn = Terminal(
+      id: TerminalId('sensor-13'),
+      name: '13',
+      role: TerminalRole.input,
+      phase: PhaseTag.dcPositive,
+    );
+    final Terminal sensorOut = Terminal(
+      id: TerminalId('sensor-14'),
+      name: '14',
+      role: TerminalRole.output,
+      phase: PhaseTag.dcPositive,
+    );
+    CircuitState circuit = CircuitState(
+      circuitId: base.circuitId,
+      revision: base.revision,
+      mode: base.mode,
+      components: <ComponentInstance>[
+        ...base.components,
+        ComponentInstance(
+          id: ComponentId('sensor-1'),
+          modelType: 'proximity_sensor_24v',
+          terminals: <Terminal>[sensorIn, sensorOut],
+          parameters: const <String, Object?>{
+            'sensingDistanceMm': 8.0,
+            'targetDistanceMm': 20.0,
+            'targetMaterial': 'ferrous',
+          },
+          controlState: const <String, Object?>{'closed': false},
+        ),
+      ],
+      sources: base.sources,
+      connections: base.connections,
+    );
+
+    circuit = F9ElementEditor.setProximityTargetDistance(
+      circuit,
+      'sensor-1',
+      distanceMm: 8.0,
+    );
+    expect(circuit.components.last.controlState['closed'], isTrue);
+
+    circuit = F9ElementEditor.setProximityTargetDistance(
+      circuit,
+      'sensor-1',
+      distanceMm: 8.7,
+    );
+    expect(circuit.components.last.controlState['closed'], isTrue);
+
+    circuit = F9ElementEditor.setProximityTargetDistance(
+      circuit,
+      'sensor-1',
+      distanceMm: 8.9,
+    );
+    expect(circuit.components.last.controlState['closed'], isFalse);
+    expect(circuit.components.last.parameters['targetDistanceMm'], 8.9);
+  });
+
   test(
     'replaces a component while preserving id, terminals and connections',
     () {

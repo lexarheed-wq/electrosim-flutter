@@ -48,12 +48,14 @@ class F18DesignCenterPage extends StatelessWidget {
           ),
         if (onPneumatics != null)
           _F18CenterAction(
-            key: const Key('design-pneumatics-experimental'),
+            key: const Key('design-pneumatics'),
             icon: Icons.air,
-            title: 'Atelier pneumatique expérimental',
+            title: 'Atelier pneumatique · bêta',
             description:
-                'Deux vues d’un même réseau : appareils, tuyaux et schéma. '
-                'La simulation n’est pas encore raccordée à cet éditeur.',
+                'Accéder à la pneumatique dans ElectroSim : appareils, tuyaux '
+                'et schéma. Le solveur couvre actuellement un sous-ensemble '
+                'calibré des composants ; les circuits mixtes électropneumatiques '
+                'ne sont pas encore exécutables dans cet atelier.',
             actionLabel: 'Ouvrir l’atelier',
             onTap: onPneumatics!,
           ),

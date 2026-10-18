@@ -1368,6 +1368,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             onConfigureMechanicalInterlock: _studentTpReadOnly
                                 ? null
                                 : _editMechanicalInterlock,
+                            onProximityTargetDistanceChanged:
+                                _studentTpReadOnly
+                                ? null
+                                : _setProximityTargetDistance,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -3386,7 +3390,6 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'switch_spst' ||
         'push_button_no' ||
         'push_button_nc' ||
-        'proximity_sensor_24v' ||
         'limit_switch_no' ||
         'limit_switch_nc' ||
         'breaker_dc' ||
@@ -3456,8 +3459,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    if (type == 'proximity_sensor_24v' ||
-        type == 'limit_switch_no' ||
+    if (type == 'limit_switch_no' ||
         type == 'limit_switch_nc') {
       final ComponentInstance? sensor = _circuit.components
           .where((ComponentInstance item) => item.id.value == elementId)
@@ -3531,6 +3533,28 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'Commande directe : $elementId — ${details?.stateLabel ?? 'mis à jour'}';
     });
     _updateSimulationCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
+  void _setProximityTargetDistance(String sensorId, double distanceMm) {
+    final CircuitState next = F9ElementEditor.setProximityTargetDistance(
+      _circuit,
+      sensorId,
+      distanceMm: distanceMm,
+    );
+    if (identical(next, _circuit)) return;
+    final bool detected = next.components
+            .where((ComponentInstance item) => item.id.value == sensorId)
+            .firstOrNull
+            ?.controlState['closed'] ==
+        true;
+    setState(() {
+      _circuit = next;
+      _selected = sensorId;
+      _status =
+          'Capteur $sensorId — cible à ${distanceMm.toStringAsFixed(0)} mm, ${detected ? 'détectée' : 'hors portée'}';
+    });
+    _updateSimulationCircuit(next);
     _syncStudentTpCircuit();
   }
 

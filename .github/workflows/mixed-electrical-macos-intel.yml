@@ -24,7 +24,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  render-blender-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install Blender CPU renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Render control and pneumatic components
+        run: |
+          set -euo pipefail
+          blender --background --python tools/render_control_components.py
+          blender --background --python tools/render_pneumatic_components.py
+          test "$(find apps/electrosim/assets/g5_control -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 24
+          test "$(find apps/electrosim/assets/g5_pneumatic -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Blender-Assets
+          path: |
+            apps/electrosim/assets/g5_control
+            apps/electrosim/assets/g5_pneumatic
+          if-no-files-found: error
+          retention-days: 1
+
   qualify-macos-intel:
+    needs: render-blender-assets
     runs-on: macos-15-intel
     timeout-minutes: 180
     steps:
@@ -51,6 +83,12 @@ jobs:
             F17_RUNNER_PATH=*) echo "runner=${output#F17_RUNNER_PATH=}" >> "$GITHUB_OUTPUT" ;;
             *) echo "INVALID_F17_RUNNER_PROTOCOL: $output" >&2; exit 69 ;;
           esac
+
+      - name: Add rendered Blender assets to the app workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: ElectroSim-Blender-Assets
+          path: ${{ steps.prepare.outputs.runner }}/apps/electrosim/assets
 
       - name: Analyze app
         working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim

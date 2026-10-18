@@ -501,8 +501,21 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           .components
           .where((ComponentInstance candidate) => candidate.id == componentId)
           .firstOrNull;
-      final Map<String, Object?> visualControlState =
-          runtimeComponent?.controlState ?? component.controlState;
+      final Map<String, Object?> visualControlState = <String, Object?>{
+        ...(runtimeComponent?.controlState ?? component.controlState),
+        if (component.modelType == 'mechanical_interlock_ac3') ...<String, Object?>{
+          'contactorAActuated': _linkedContactorActuated(
+            component.parameters['contactorAId'],
+            componentRuntime,
+            widget.mixedRuntimeView,
+          ),
+          'contactorBActuated': _linkedContactorActuated(
+            component.parameters['contactorBId'],
+            componentRuntime,
+            widget.mixedRuntimeView,
+          ),
+        },
+      };
       final componentState = componentRuntime?.componentOperatingState(componentId);
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
@@ -595,6 +608,16 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       );
     }
     return widgets;
+  }
+
+  bool _linkedContactorActuated(
+    Object? rawId,
+    ElectroSimRuntimeSnapshot? runtime,
+    MixedBoardRuntimeView? mixedRuntimeView,
+  ) {
+    if (rawId is! String || rawId.isEmpty || runtime == null) return false;
+    final String localId = mixedRuntimeView?.localIdForElement(rawId) ?? rawId;
+    return runtime.contactorActuated(ComponentId(localId));
   }
 
   static double _componentSignedCurrentA(
@@ -838,6 +861,7 @@ class _F9ReferenceAsset extends StatefulWidget {
   // painter continues to own all terminal and state geometry.
   Widget _visual(double phase) => F18IndustrialDualView(
     modelType: modelType,
+    variantKey: variantKey,
     size: size,
     presentation: F18IndustrialPresentation.boardFront,
     child: F18ComponentAssetVisual(

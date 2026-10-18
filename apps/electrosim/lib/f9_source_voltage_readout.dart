@@ -8,7 +8,8 @@ import 'runtime/electrosim_runtime_engine.dart';
 ///
 /// The AC1 ideal voltage source is specified by its RMS voltage independently
 /// of load current. An open downstream protective device must never cause
-/// a spurious 0 V readout. Other source families still use solver evidence.
+/// a spurious 0 V readout. A DC supply's setpoint also remains visible when
+/// another network (for example AC3) is selected in a mixed project.
 abstract final class F9SourceVoltageReadout {
   static double voltageV(
     ElectroSimRuntimeSnapshot? runtime,
@@ -16,29 +17,47 @@ abstract final class F9SourceVoltageReadout {
     required bool simulationRunning,
     SourceId? sourceId,
   }) {
-    if (runtime == null || !source.enabled) return 0;
+    if (!source.enabled) return 0;
+    final bool isDcVoltageSource =
+        source.modelType == 'dc_voltage_source' ||
+        source.modelType == 'voltage_source';
+    double? configuredDcVoltage() {
+      final Object? configured = source.parameters['voltageV'];
+      if (configured is num && configured.isFinite && configured >= 0) {
+        return configured.toDouble();
+      }
+      return null;
+    }
+
+    if (runtime == null) {
+      return isDcVoltageSource ? configuredDcVoltage() ?? 0 : 0;
+    }
     final String target = 'source:${(sourceId ?? source.id).value}';
 
     final dc = runtime.dcResult;
     if (dc != null && dc.isSolved) {
       for (final branch in dc.branchResults) {
         if (branch.id == target && branch.voltageV.isFinite) {
-          return branch.voltageV.abs();
+          final double measured = branch.voltageV.abs();
+          if (measured > 0 || !isDcVoltageSource) {
+            return measured;
+          }
+          // A zero here is not a useful indication of the configured output
+          // of an enabled ideal supply. Continue to the nominal setpoint
+          // fallback below (the circuit can still be open or the snapshot can
+          // belong to a different selected mode).
         }
       }
     }
 
-    // A DC ideal voltage supply keeps its declared terminal voltage even
-    // when the solver omits a source branch measurement (for example, when
-    // the source powers a PLC on another network of a mixed board).
-    if (simulationRunning &&
-        runtime.solverKind == ElectroSimRuntimeSolverKind.dc &&
-        (source.modelType == 'dc_voltage_source' ||
-            source.modelType == 'voltage_source')) {
-      final Object? configured = source.parameters['voltageV'];
-      if (configured is num && configured.isFinite && configured >= 0) {
-        return configured.toDouble();
-      }
+    // A mixed-board mode switch can leave the displayed/runtime snapshot on
+    // AC3 while this source belongs to the DC network. Preserve the supply's
+    // configured setpoint if this snapshot has no DC branch measurement or
+    // reports zero for the ideal source. Any non-zero solver measurement above
+    // still takes precedence.
+    if (isDcVoltageSource) {
+      final double? configured = configuredDcVoltage();
+      if (configured != null) return configured;
     }
 
     final ac1 = runtime.ac1Result;

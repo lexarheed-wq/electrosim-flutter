@@ -4,7 +4,6 @@ import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:electrosim/f18_industrial_physical_devices.dart';
-import 'package:electrosim/reference_components/reference_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -207,7 +207,12 @@ void main() {
     );
     expect(sourceVisual, findsOneWidget);
     final F18ComponentAssetVisual source =
-        tester.widget<F18ComponentAssetVisual>(sourceVisual);
+        tester.widget<F18ComponentAssetVisual>(
+      find.descendant(
+        of: sourceVisual,
+        matching: find.byType(F18ComponentAssetVisual),
+      ),
+    );
     expect(source.modelType, 'dc_voltage_source');
     expect(source.voltageV, closeTo(24.0, 1e-6));
     expect(

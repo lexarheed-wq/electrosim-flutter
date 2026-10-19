@@ -245,7 +245,7 @@ final class ElectricalProject {
       final ElectricalNetwork? dcNet = byId[link.dcNetworkId];
       if (acNet == null || dcNet == null) _fail('dangling_link', 'Signal link ${link.id} names an absent network.');
       if (acNet.circuit.mode != ElectricalMode.ac3 || dcNet.circuit.mode != ElectricalMode.dc) _fail('wrong_mode', 'Signal link ${link.id} has incompatible network modes.');
-      _component(dcNet.circuit, link.plcComponentId, 'plc_dc', link.id);
+      _plcComponent(dcNet.circuit, link.plcComponentId, link.id);
       final ComponentInstance contact = _componentAny(acNet.circuit, link.auxiliaryContactId, link.id);
       if (!<String>{'contactor_aux_no', 'contactor_aux_nc', 'aux_no', 'aux_nc'}.contains(contact.modelType)) _fail('invalid_contact', 'Signal link ${link.id} must target an AC3 auxiliary contact.');
       if (!_iAddress.hasMatch(link.inputAddress)) _fail('invalid_address', 'Invalid PLC input address: ${link.inputAddress}');
@@ -259,7 +259,7 @@ final class ElectricalProject {
       if (plc.circuit.mode != ElectricalMode.dc || !<ElectricalMode>{ElectricalMode.ac1, ElectricalMode.ac3}.contains(target.circuit.mode)) {
         _fail('wrong_mode', 'Actuator link must connect a DC PLC to an AC1 or AC3 network.');
       }
-      _component(plc.circuit, link.plcComponentId, 'plc_dc', link.id);
+      _plcComponent(plc.circuit, link.plcComponentId, link.id);
       final ComponentInstance contactor = _componentAny(target.circuit, link.contactorId, link.id);
       if (!<String>{'contactor_ac1', 'contactor_3p'}.contains(contactor.modelType)) _fail('invalid_contactor', 'Actuator link must target a power contactor.');
       if (!_qAddress.hasMatch(link.outputAddress)) _fail('invalid_address', 'Invalid PLC output address: ${link.outputAddress}');
@@ -294,6 +294,13 @@ final class ElectricalProject {
   static ComponentInstance _component(CircuitState circuit, String id, String model, String link) {
     final ComponentInstance component = _componentAny(circuit, id, link);
     if (component.modelType != model) _fail('wrong_component', 'Link $link expected $model but found ${component.modelType}.');
+    return component;
+  }
+  static ComponentInstance _plcComponent(CircuitState circuit, String id, String link) {
+    final ComponentInstance component = _componentAny(circuit, id, link);
+    if (!<String>{'plc_dc', 'plc_ac3'}.contains(component.modelType)) {
+      _fail('wrong_component', 'Link $link expected a PLC but found ${component.modelType}.');
+    }
     return component;
   }
   static ComponentInstance _componentAny(CircuitState circuit, String id, String link) {

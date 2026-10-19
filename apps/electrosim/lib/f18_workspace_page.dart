@@ -6359,3 +6359,18 @@ class _StatusBar extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+CircuitState _buildBlankCircuit() => CircuitState(
+  circuitId: CircuitId('workspace-blank'),
+  revision: 0,
+  mode: ElectricalMode.dc,
+  components: <ComponentInstance>[],
+  connections: <Connection>[],
+  sources: <SourceInstance>[],
+  settings: <String, Object?>{},
+  metadata: <String, Object?>{'origin': 'blank-workspace'},
+);

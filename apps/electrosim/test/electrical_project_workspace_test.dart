@@ -4,6 +4,7 @@ import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim/electrical_project_workspace_page.dart';
 import 'package:electrosim/f18_industrial_physical_plate.dart';
 import 'package:electrosim/f18_industrial_physical_devices.dart';
+import 'package:electrosim/f18_control_modules_visual.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,7 +23,15 @@ ElectricalProject _project() => ElectricalProject(networks: <ElectricalNetwork>[
       ComponentInstance(id: ComponentId('plc'), modelType: 'plc_dc',
         terminals: <Terminal>[for (int i = 0; i < 10; i++) Terminal(id: TerminalId('plc-$i'), name: '$i')],
         parameters: const <String, Object?>{'ladderProgram': <Object?>[]}),
-      _component('coil', 'relay_coil', 2),
+      ComponentInstance(
+        id: ComponentId('coil'),
+        modelType: 'relay_coil',
+        terminals: <Terminal>[
+          Terminal(id: TerminalId('coil-0'), name: 'A1'),
+          Terminal(id: TerminalId('coil-1'), name: 'A2'),
+        ],
+        parameters: const <String, Object?>{'resistanceOhm': 1200.0},
+      ),
     ],
     sources: <SourceInstance>[SourceInstance(
       id: SourceId('supply'), modelType: 'dc_voltage_source',
@@ -206,21 +215,25 @@ void main() {
       const ValueKey<String>('board-v1-visual-n0--supply'),
     );
     expect(sourceVisual, findsOneWidget);
-    final IndustrialPhysicalView source = tester.widget<IndustrialPhysicalView>(
+    final F18IndustrialPhysicalPlate source =
+        tester.widget<F18IndustrialPhysicalPlate>(
       find.descendant(
         of: sourceVisual,
-        matching: find.byType(IndustrialPhysicalView),
+        matching: find.byType(F18IndustrialPhysicalPlate),
       ),
     );
-    expect(source.device, IndustrialDevice.supply);
+    expect(source.modelType, 'dc_voltage_source');
     expect(source.voltageV, closeTo(24.0, 1e-6));
-    expect(
-      find.bySemanticsLabel(
-        RegExp(r'Automate programmable, automate alimenté'),
-        skipOffstage: false,
-      ),
-      findsOneWidget,
+    final Finder plcVisual = find.byKey(
+      const ValueKey<String>('board-v1-visual-n0--plc'),
     );
+    final F18ControlModuleVisual plc = tester.widget<F18ControlModuleVisual>(
+      find.descendant(
+        of: plcVisual,
+        matching: find.byType(F18ControlModuleVisual),
+      ),
+    );
+    expect(plc.controlState['supplyValid'], isTrue);
     semantics.dispose();
   });
 

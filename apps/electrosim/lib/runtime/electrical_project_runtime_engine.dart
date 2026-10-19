@@ -895,7 +895,8 @@ final class ElectricalProjectRuntimeEngine {
     final Map<String, ElectroSimRuntimeSnapshot> snapshots =
         <String, ElectroSimRuntimeSnapshot>{dcNetwork.id: dcFinal};
     for (final ElectricalNetwork network in project.networks) {
-      if (network.id == dcNetwork.id || converterNetworks.contains(network.id)) {
+      if (network.id == dcNetwork.id ||
+          converterNetworks.contains(network.id)) {
         continue;
       }
       snapshots[network.id] = networkEngine.advance(

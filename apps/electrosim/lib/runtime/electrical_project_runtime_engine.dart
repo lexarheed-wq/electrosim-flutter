@@ -134,10 +134,11 @@ final class ElectricalProjectRuntimeEngine {
         );
         single[input.id] = coupling.pvSnapshot;
         single[output.id] = coupling.acSnapshot;
-        if (!coupling.converged)
+        if (!coupling.converged) {
           diagnostics.add(
             'Convertisseur ${link.id}: couplage PV–AC1 non convergé après 8 itérations; frontière ouverte.',
           );
+        }
       }
       return ElectricalProjectRuntimeSnapshot(
         networks: single,
@@ -203,10 +204,11 @@ final class ElectricalProjectRuntimeEngine {
       plcSupply[plc.id.value] = valid;
       if (voltage != null) plcSupplyVoltages[plc.id.value] = voltage;
       supplyValid = supplyValid && valid;
-      if (!valid)
+      if (!valid) {
         diagnostics.add(
           'PLC ${plc.id.value}: alimentation 24 V absente ou hors plage.',
         );
+      }
       final Object? rawProgram = plc.parameters['ladderProgram'];
       final List<Map<String, Object?>> program = _program(rawProgram);
       final String key = '${dcNetwork.id}/${plc.id.value}';
@@ -221,10 +223,11 @@ final class ElectricalProjectRuntimeEngine {
       );
       ladder[key] = scan.state;
       plcProgramErrors[plc.id.value] = scan.programError;
-      if (scan.programError)
+      if (scan.programError) {
         diagnostics.add(
           'PLC ${plc.id.value}: programme Ladder invalide; sorties désactivées.',
         );
+      }
       if (!valid) {
         ladder[key] = LadderRuntimeState(
           outputs: const <String, bool>{},
@@ -269,10 +272,11 @@ final class ElectricalProjectRuntimeEngine {
       final bool actuated = dcFinal.contactorStates[coilId]?.actuated ?? false;
       relayStates[link.id] = actuated;
       relayByCoil[link.relayCoilId] = actuated;
-      if (dcFinal.contactorStates[coilId] == null)
+      if (dcFinal.contactorStates[coilId] == null) {
         diagnostics.add(
           'Liaison ${link.id}: état de bobine relais DC indisponible.',
         );
+      }
     }
 
     final CircuitState acProjected = _projectPlcActuatorCommands(
@@ -721,10 +725,11 @@ final class ElectricalProjectRuntimeEngine {
           ladder['${dcNetwork.id}/${link.plcComponentId}']?.outputs[link
                   .outputAddress] ==
               true;
-      if (!enabled)
+      if (!enabled) {
         diagnostics.add(
           'Liaison ${link.id}: automate non alimenté ou programme invalide; contacteur relâché.',
         );
+      }
       (commands[link.targetNetworkId] ??= <String, bool>{})[link.contactorId] =
           requested;
     }
@@ -824,10 +829,11 @@ final class ElectricalProjectRuntimeEngine {
           plc.condition == ComponentCondition.normal;
       supply[plc.id.value] = valid;
       if (voltage != null) supplyVoltage[plc.id.value] = voltage;
-      if (!valid)
+      if (!valid) {
         diagnostics.add(
           'PLC ${plc.id.value}: alimentation 24 V absente ou hors plage.',
         );
+      }
       plcInputs[plc.id.value] = <String, bool>{
         for (int i = 0; i < 4; i++) 'I$i': inputs['I$i'] ?? false,
       };
@@ -846,10 +852,11 @@ final class ElectricalProjectRuntimeEngine {
               timerDone: scan.state.timerDone,
             );
       programErrors[plc.id.value] = scan.programError;
-      if (scan.programError)
+      if (scan.programError) {
         diagnostics.add(
           'PLC ${plc.id.value}: programme Ladder invalide; sorties désactivées.',
         );
+      }
     }
     final CircuitState corrected = _projectPlcState(
       dcNetwork.id,
@@ -885,8 +892,9 @@ final class ElectricalProjectRuntimeEngine {
     final Map<String, ElectroSimRuntimeSnapshot> snapshots =
         <String, ElectroSimRuntimeSnapshot>{dcNetwork.id: dcFinal};
     for (final ElectricalNetwork network in project.networks) {
-      if (network.id == dcNetwork.id || converterNetworks.contains(network.id))
+      if (network.id == dcNetwork.id || converterNetworks.contains(network.id)) {
         continue;
+      }
       snapshots[network.id] = networkEngine.advance(
         _projectPlcActuatorCommands(
           network.circuit,
@@ -923,10 +931,11 @@ final class ElectricalProjectRuntimeEngine {
       );
       snapshots[input.id] = coupling.pvSnapshot;
       snapshots[output.id] = coupling.acSnapshot;
-      if (!coupling.converged)
+      if (!coupling.converged) {
         diagnostics.add(
           'Convertisseur ${link.id}: couplage PV–AC1 non convergé après 8 itérations; frontière ouverte.',
         );
+      }
     }
     return ElectricalProjectRuntimeSnapshot(
       networks: snapshots,

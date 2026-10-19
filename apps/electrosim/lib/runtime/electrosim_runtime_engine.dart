@@ -1312,8 +1312,9 @@ final class ElectroSimRuntimeEngine {
     if (plcs.isEmpty &&
         !circuit.components.any(
           (ComponentInstance c) => c.modelType == 'timer_star_delta',
-        ))
+        )) {
       return circuit;
+    }
     return CircuitState(
       circuitId: circuit.circuitId,
       revision: circuit.revision,

@@ -134,7 +134,8 @@ abstract final class F18ControlDeviceAssets {
   }
 
   static void _validateDimensions(String model, ui.Image image) {
-    final bool portrait = model == 'timer-star-delta' ||
+    final bool portrait =
+        model == 'timer-star-delta' ||
         model == 'sensor-proximity' ||
         model.startsWith('limit-switch-');
     final int expectedWidth = portrait ? 700 : 900;

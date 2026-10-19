@@ -67,7 +67,9 @@ abstract final class F9ElementEditor {
             : component.condition.name,
         primaryToggleLabel: isPushButton
             ? (pressed is bool ? 'Appuyé' : null)
-            : (closed is bool ? (isMaintainedSensor ? 'Actionné' : 'Fermé') : null),
+            : (closed is bool
+                  ? (isMaintainedSensor ? 'Actionné' : 'Fermé')
+                  : null),
         primaryToggleValue: primaryValue,
       );
     }

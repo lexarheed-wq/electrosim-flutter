@@ -53,7 +53,7 @@ class F9ContextPanels extends StatefulWidget {
   final ValueChanged<String>? onConfigureTimer;
   final ValueChanged<String>? onConfigureMechanicalInterlock;
   final void Function(String sensorId, double distanceMm)?
-      onProximityTargetDistanceChanged;
+  onProximityTargetDistanceChanged;
   final ElectroSimTpSessionController? tpSessionController;
 
   bool get showEie => role == F9UserRole.teacher;
@@ -188,10 +188,13 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                 ),
                 if (widget.showEie)
                   _EiePanel(
-                    runtimeSnapshot: widget.mixedRuntimeView
-                            ?.runtimeForElement(widget.selectedId ?? '') ??
-                        widget.mixedRuntimeView
-                            ?.runtimeForTerminal(widget.selectedId ?? '') ??
+                    runtimeSnapshot:
+                        widget.mixedRuntimeView?.runtimeForElement(
+                          widget.selectedId ?? '',
+                        ) ??
+                        widget.mixedRuntimeView?.runtimeForTerminal(
+                          widget.selectedId ?? '',
+                        ) ??
                         widget.runtimeSnapshot,
                   ),
                 if (widget.showDiagnostic)
@@ -246,7 +249,7 @@ class _PropertiesPanel extends StatelessWidget {
   final ValueChanged<String>? onConfigureTimer;
   final ValueChanged<String>? onConfigureMechanicalInterlock;
   final void Function(String sensorId, double distanceMm)?
-      onProximityTargetDistanceChanged;
+  onProximityTargetDistanceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -393,10 +396,10 @@ class _PropertiesPanel extends StatelessWidget {
             _PropertyLine(
               label: 'Alimentation logique',
               value:
-              elementRuntime.effectiveCircuit.components
+                  elementRuntime.effectiveCircuit.components
                           .where(
                             (ComponentInstance component) =>
-                            component.id.value == runtimeElementId,
+                                component.id.value == runtimeElementId,
                           )
                           .firstOrNull
                           ?.controlState[details.modelType == 'plc_dc'
@@ -528,10 +531,10 @@ class _PropertiesPanel extends StatelessWidget {
             _PropertyLine(
               label: 'État',
               value:
-              elementRuntime.effectiveCircuit.components
+                  elementRuntime.effectiveCircuit.components
                           .where(
                             (ComponentInstance component) =>
-                            component.id.value == runtimeElementId,
+                                component.id.value == runtimeElementId,
                           )
                           .firstOrNull
                           ?.controlState['timerNoClosed'] ==
@@ -568,17 +571,16 @@ class _PropertiesPanel extends StatelessWidget {
               divisions: 100,
               label:
                   '${((details.parameters['targetDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityTargetDistanceMm).toStringAsFixed(0)} mm',
-              value: ((details.parameters['targetDistanceMm'] as num?)
-                          ?.toDouble() ??
-                      F9ElementEditor.defaultProximityTargetDistanceMm)
-                  .clamp(0.0, 100.0)
-                  .toDouble(),
+              value:
+                  ((details.parameters['targetDistanceMm'] as num?)
+                              ?.toDouble() ??
+                          F9ElementEditor.defaultProximityTargetDistanceMm)
+                      .clamp(0.0, 100.0)
+                      .toDouble(),
               onChanged: onProximityTargetDistanceChanged == null
                   ? null
-                  : (double distance) => onProximityTargetDistanceChanged!(
-                      details.id,
-                      distance,
-                    ),
+                  : (double distance) =>
+                        onProximityTargetDistanceChanged!(details.id, distance),
             ),
             Text(
               details.primaryToggleValue == true
@@ -978,14 +980,22 @@ class _MeasurementsPanel extends StatelessWidget {
       if (component.id.value == id && component.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(component.modelType)} · ${component.id.value}',
-          terminals: component.terminals.map((Terminal terminal) => Terminal(
-            id: TerminalId(
-              mixedRuntimeView?.localTerminalId(terminal.id.value) ??
-                  terminal.id.value,
-            ), name: terminal.name, role: terminal.role, phase: terminal.phase,
-            metadata: terminal.metadata,
-          )).toList(growable: false),
-          branchId: 'component:${mixedRuntimeView?.localIdForElement(component.id.value) ?? component.id.value}',
+          terminals: component.terminals
+              .map(
+                (Terminal terminal) => Terminal(
+                  id: TerminalId(
+                    mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                        terminal.id.value,
+                  ),
+                  name: terminal.name,
+                  role: terminal.role,
+                  phase: terminal.phase,
+                  metadata: terminal.metadata,
+                ),
+              )
+              .toList(growable: false),
+          branchId:
+              'component:${mixedRuntimeView?.localIdForElement(component.id.value) ?? component.id.value}',
         );
       }
     }
@@ -993,14 +1003,22 @@ class _MeasurementsPanel extends StatelessWidget {
       if (source.id.value == id && source.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(source.modelType)} · ${source.id.value}',
-          terminals: source.terminals.map((Terminal terminal) => Terminal(
-            id: TerminalId(
-              mixedRuntimeView?.localTerminalId(terminal.id.value) ??
-                  terminal.id.value,
-            ), name: terminal.name, role: terminal.role, phase: terminal.phase,
-            metadata: terminal.metadata,
-          )).toList(growable: false),
-          branchId: 'source:${mixedRuntimeView?.localIdForElement(source.id.value) ?? source.id.value}',
+          terminals: source.terminals
+              .map(
+                (Terminal terminal) => Terminal(
+                  id: TerminalId(
+                    mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                        terminal.id.value,
+                  ),
+                  name: terminal.name,
+                  role: terminal.role,
+                  phase: terminal.phase,
+                  metadata: terminal.metadata,
+                ),
+              )
+              .toList(growable: false),
+          branchId:
+              'source:${mixedRuntimeView?.localIdForElement(source.id.value) ?? source.id.value}',
         );
       }
     }

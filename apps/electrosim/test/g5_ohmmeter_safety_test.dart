@@ -18,13 +18,12 @@ void main() {
     Terminal one,
     Terminal two, {
     double resistanceOhm = 100,
-  }) =>
-      ComponentInstance(
-        id: ComponentId(id),
-        modelType: 'resistor',
-        terminals: [one, two],
-        parameters: {'resistanceOhm': resistanceOhm},
-      );
+  }) => ComponentInstance(
+    id: ComponentId(id),
+    modelType: 'resistor',
+    terminals: [one, two],
+    parameters: {'resistanceOhm': resistanceOhm},
+  );
   CircuitState state({
     List<SourceInstance> sources = const [],
     List<Connection> wires = const [],

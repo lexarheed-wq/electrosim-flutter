@@ -2574,8 +2574,16 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     kind: F9PaletteElementKind.component,
     supportedModes: <ElectricalMode>{ElectricalMode.ac3},
     terminalLabels: <String>[
-      '1L1', '3L2', '5L3', '2T1', '4T2', '6T3',
-      '95', '96', '97', '98',
+      '1L1',
+      '3L2',
+      '5L3',
+      '2T1',
+      '4T2',
+      '6T3',
+      '95',
+      '96',
+      '97',
+      '98',
     ],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(

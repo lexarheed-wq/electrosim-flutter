@@ -428,7 +428,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
       final ElectroSimRuntimeSnapshot? sourceRuntime =
-          widget.mixedRuntimeView?.runtimeForElement(source.id.value) ?? runtime;
+          widget.mixedRuntimeView?.runtimeForElement(source.id.value) ??
+          runtime;
       final SourceId sourceId = SourceId(
         widget.mixedRuntimeView?.localIdForElement(source.id.value) ??
             source.id.value,
@@ -441,7 +442,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final double voltageV = F9SourceVoltageReadout.voltageV(
         sourceRuntime,
         source,
-        simulationRunning: widget.simulationRunning ||
+        simulationRunning:
+            widget.simulationRunning ||
             (widget.mixedRuntimeView != null && source.enabled),
         sourceId: sourceId,
       );
@@ -450,7 +452,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         modelType: source.modelType,
         visualModelType: source.parameters['_visualModelType'] as String?,
         visualVariant: source.parameters['_visualVariant'] as String?,
-        enabled: source.enabled &&
+        enabled:
+            source.enabled &&
             (source.modelType != 'dc_voltage_source' ||
                 source.parameters['voltageV'] is num),
         energized:
@@ -497,13 +500,15 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           : componentRuntime?.dcBatterySocs[componentId] ??
                 (component.parameters['initialSoc'] as num?)?.toDouble() ??
                 0.0;
-      final ComponentInstance? runtimeComponent = componentRuntime?.effectiveCircuit
+      final ComponentInstance? runtimeComponent = componentRuntime
+          ?.effectiveCircuit
           .components
           .where((ComponentInstance candidate) => candidate.id == componentId)
           .firstOrNull;
       final Map<String, Object?> visualControlState = <String, Object?>{
         ...(runtimeComponent?.controlState ?? component.controlState),
-        if (component.modelType == 'mechanical_interlock_ac3') ...<String, Object?>{
+        if (component.modelType ==
+            'mechanical_interlock_ac3') ...<String, Object?>{
           'contactorAActuated': _linkedContactorActuated(
             component.parameters['contactorAId'],
             componentRuntime,
@@ -516,7 +521,9 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
           ),
         },
       };
-      final componentState = componentRuntime?.componentOperatingState(componentId);
+      final componentState = componentRuntime?.componentOperatingState(
+        componentId,
+      );
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
           componentState?.code == ComponentOperatingCode.overloaded;
@@ -544,9 +551,12 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final Object? linkedId = component
           .parameters[relayAux ? 'linkedRelayId' : 'linkedContactorId'];
       final bool actuated = (contactorAux || relayAux) && linkedId is String
-          ? (componentRuntime?.contactorActuated(ComponentId(
-                  widget.mixedRuntimeView?.localIdForElement(linkedId) ?? linkedId,
-                )) ??
+          ? (componentRuntime?.contactorActuated(
+                  ComponentId(
+                    widget.mixedRuntimeView?.localIdForElement(linkedId) ??
+                        linkedId,
+                  ),
+                ) ??
                 (component.controlState['actuated'] == true))
           : (componentRuntime?.contactorActuated(componentId) ??
                 (component.controlState['actuated'] == true));
@@ -1082,7 +1092,9 @@ class _F9CurrentFlowPainter extends CustomPainter {
       final Connection runtimeConnection =
           mixedRuntimeView?.runtimeConnection(connection) ?? connection;
       if (runtime == null || !runtime.solved) continue;
-      if (!runtime.topology.enabledConnectionIds.contains(runtimeConnection.id)) {
+      if (!runtime.topology.enabledConnectionIds.contains(
+        runtimeConnection.id,
+      )) {
         continue;
       }
       final ConnectionCurrentEvidence flow = runtime.connectionCurrentEvidence(

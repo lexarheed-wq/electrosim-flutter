@@ -78,9 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-industrial-state-proof')),
-      matchesGoldenFile(
-        platformGoldenPath('g5_industrial_off_on_trip.png'),
-      ),
+      matchesGoldenFile(platformGoldenPath('g5_industrial_off_on_trip.png')),
     );
   });
 }

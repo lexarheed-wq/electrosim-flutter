@@ -293,7 +293,9 @@ final class ElectroSimSimulationController extends ChangeNotifier {
     for (final MapEntry<ComponentId, Map<String, Object?>> entry
         in _snapshot.controlRuntimeStates.entries)
       if (nextCircuit == null ||
-          nextCircuit.components.any((ComponentInstance c) => c.id == entry.key))
+          nextCircuit.components.any(
+            (ComponentInstance c) => c.id == entry.key,
+          ))
         entry.key: entry.value,
   };
 

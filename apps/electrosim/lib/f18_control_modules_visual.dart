@@ -76,40 +76,47 @@ final class F18ControlModuleVisual extends StatelessWidget {
         child: RepaintBoundary(
           child: productImage == null
               ? CustomPaint(
-            key: Key('control-module-${modelType.toLowerCase()}'),
-            painter: _F18ControlModulePainter(
-              modelType: modelType.toLowerCase(),
-              controlState: controlState,
-              parameters: parameters,
-              active: active,
-              showTerminals: showTerminals,
-              perspective: F18PhysicalPresentationScope.perspectiveOf(context),
-            ),
-          )
+                  key: Key('control-module-${modelType.toLowerCase()}'),
+                  painter: _F18ControlModulePainter(
+                    modelType: modelType.toLowerCase(),
+                    controlState: controlState,
+                    parameters: parameters,
+                    active: active,
+                    showTerminals: showTerminals,
+                    perspective: F18PhysicalPresentationScope.perspectiveOf(
+                      context,
+                    ),
+                  ),
+                )
               : Stack(
                   fit: StackFit.expand,
                   children: [
                     RawImage(
-                  key: Key('control-product-image-$assetKey-${palette ? 'palette' : 'front'}'),
-                  image: productImage,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  alignment: Alignment.center,
+                      key: Key(
+                        'control-product-image-$assetKey-${palette ? 'palette' : 'front'}',
+                      ),
+                      image: productImage,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      alignment: Alignment.center,
                     ),
                     CustomPaint(
                       painter: _F18ControlStatusPainter(
                         timer: timer,
                         powered: powered,
-                        running: (controlState['programRunning'] == true || powered) &&
+                        running:
+                            (controlState['programRunning'] == true ||
+                                powered) &&
                             controlState['programError'] != true,
-                        programError: powered &&
-                            controlState['programError'] == true,
-                        starActive: powered &&
-                            controlState['timerNcClosed'] == true,
+                        programError:
+                            powered && controlState['programError'] == true,
+                        starActive:
+                            powered && controlState['timerNcClosed'] == true,
                         deltaActive: controlState['timerNoClosed'] == true,
                         palette: palette,
                         delaySeconds:
-                            (parameters['delaySeconds'] as num?)?.toDouble() ?? 5,
+                            (parameters['delaySeconds'] as num?)?.toDouble() ??
+                            5,
                         outputStates: [
                           for (int i = 0; i < 4; i++)
                             controlState['Q$i'] == true,
@@ -138,7 +145,13 @@ final class _F18ControlStatusPainter extends CustomPainter {
     required this.outputStates,
   });
 
-  final bool timer, powered, running, programError, starActive, deltaActive, palette;
+  final bool timer,
+      powered,
+      running,
+      programError,
+      starActive,
+      deltaActive,
+      palette;
   final double delaySeconds;
   final List<bool> outputStates;
 
@@ -167,14 +180,23 @@ final class _F18ControlStatusPainter extends CustomPainter {
     if (timer) {
       // Approximate the three image LEDs in the timer face coordinate space.
       light(p(76, 149), const Color(0xFF24C877), starActive, 3.0 * scaleX);
-      light(p(90, 149), const Color(0xFFFFB12C), powered && !starActive && !deltaActive, 3.0 * scaleX);
+      light(
+        p(90, 149),
+        const Color(0xFFFFB12C),
+        powered && !starActive && !deltaActive,
+        3.0 * scaleX,
+      );
       light(p(104, 149), const Color(0xFF24C877), deltaActive, 3.0 * scaleX);
       final double fraction = (delaySeconds / 60).clamp(0.0, 1.0);
       final double angle = math.pi * (1.25 - fraction * 1.5);
       final Offset center = p(90, 119);
       canvas.drawLine(
         center,
-        center + Offset(math.cos(angle) * 10 * scaleX, math.sin(angle) * 10 * scaleY),
+        center +
+            Offset(
+              math.cos(angle) * 10 * scaleX,
+              math.sin(angle) * 10 * scaleY,
+            ),
         Paint()
           ..color = const Color(0xFFFFC94D)
           ..strokeWidth = 2 * scaleX
@@ -185,7 +207,11 @@ final class _F18ControlStatusPainter extends CustomPainter {
       light(p(230, 104), const Color(0xFF24C877), running, 4.0 * scaleX);
       light(p(230, 129), const Color(0xFFFF493F), programError, 4.0 * scaleX);
       const outputX = [72.0, 124.0, 176.0, 228.0];
-      for (int index = 0; index < outputStates.length && index < outputX.length; index++) {
+      for (
+        int index = 0;
+        index < outputStates.length && index < outputX.length;
+        index++
+      ) {
         light(
           p(outputX[index], 174),
           const Color(0xFF24C877),
@@ -198,10 +224,15 @@ final class _F18ControlStatusPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_F18ControlStatusPainter old) =>
-      timer != old.timer || powered != old.powered || running != old.running ||
-      programError != old.programError || starActive != old.starActive ||
-      deltaActive != old.deltaActive || palette != old.palette ||
-      delaySeconds != old.delaySeconds || outputStates.join(',') != old.outputStates.join(',');
+      timer != old.timer ||
+      powered != old.powered ||
+      running != old.running ||
+      programError != old.programError ||
+      starActive != old.starActive ||
+      deltaActive != old.deltaActive ||
+      palette != old.palette ||
+      delaySeconds != old.delaySeconds ||
+      outputStates.join(',') != old.outputStates.join(',');
 }
 
 final class _F18ControlModulePainter extends CustomPainter {

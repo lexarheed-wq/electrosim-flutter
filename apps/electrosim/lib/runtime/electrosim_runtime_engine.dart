@@ -867,7 +867,9 @@ final class ElectroSimRuntimeEngine {
         );
     snapshot = snapshot.withComponentHealthStates(
       nextHealth,
-      controlRuntimeStates: _controlStatesFromRuntime(snapshot.effectiveCircuit),
+      controlRuntimeStates: _controlStatesFromRuntime(
+        snapshot.effectiveCircuit,
+      ),
     );
 
     final bool newFailure = circuit.components.any((
@@ -955,34 +957,47 @@ final class ElectroSimRuntimeEngine {
       final double supplyVoltage = rawSupplyVoltage is num
           ? rawSupplyVoltage.toDouble()
           : 24.0;
-      final bool supplyValid = supplyVoltage.isFinite &&
-          supplyVoltage >= 20.4 && supplyVoltage <= 28.8;
-      final bool plcConfigured = plc.terminals.length == 10 &&
-          plc.condition == ComponentCondition.normal && supplyValid;
+      final bool supplyValid =
+          supplyVoltage.isFinite &&
+          supplyVoltage >= 20.4 &&
+          supplyVoltage <= 28.8;
+      final bool plcConfigured =
+          plc.terminals.length == 10 &&
+          plc.condition == ComponentCondition.normal &&
+          supplyValid;
       final Object? rawProgram = plc.parameters['ladderProgram'];
-      final List<dynamic> program = rawProgram is List ? rawProgram : const <dynamic>[];
+      final List<dynamic> program = rawProgram is List
+          ? rawProgram
+          : const <dynamic>[];
       bool validStep(dynamic step) {
-        if (step is! Map || step['type'] is! String || step['address'] is! String) {
+        if (step is! Map ||
+            step['type'] is! String ||
+            step['address'] is! String) {
           return false;
         }
         final String type = step['type'] as String;
         final String address = step['address'] as String;
-        if (!RegExp(r'^(I[0-3]|Q[0-3]|M(?:[0-9]|1[0-5])|T(?:[0-9]|1[0-5]))$').hasMatch(address)) {
+        if (!RegExp(
+          r'^(I[0-3]|Q[0-3]|M(?:[0-9]|1[0-5])|T(?:[0-9]|1[0-5]))$',
+        ).hasMatch(address)) {
           return false;
         }
         return switch (type) {
           'contact_no' || 'contact_nc' => !address.startsWith('T'),
-          'TON' => address.startsWith('T') &&
-              step['presetSeconds'] is num &&
-              (step['presetSeconds'] as num).toDouble().isFinite &&
-              (step['presetSeconds'] as num).toDouble() > 0 &&
-              (step['presetSeconds'] as num).toDouble() <= 3600,
+          'TON' =>
+            address.startsWith('T') &&
+                step['presetSeconds'] is num &&
+                (step['presetSeconds'] as num).toDouble().isFinite &&
+                (step['presetSeconds'] as num).toDouble() > 0 &&
+                (step['presetSeconds'] as num).toDouble() <= 3600,
           'timer_done' => address.startsWith('T'),
-          'coil' || 'coil_set' || 'coil_reset' =>
-            address.startsWith('Q') || address.startsWith('M'),
+          'coil' ||
+          'coil_set' ||
+          'coil_reset' => address.startsWith('Q') || address.startsWith('M'),
           _ => false,
         };
       }
+
       bool validRung(dynamic row) {
         if (row is! Map || row['steps'] is! List) return false;
         final List<dynamic> steps = row['steps'] as List<dynamic>;
@@ -999,9 +1014,14 @@ final class ElectroSimRuntimeEngine {
             (outputInstructionIndexes.isEmpty ||
                 outputInstructionIndexes.single == steps.length - 1);
       }
-      final bool programError = !plcConfigured || rawProgram is! List ||
+
+      final bool programError =
+          !plcConfigured ||
+          rawProgram is! List ||
           program.any((dynamic row) => !validRung(row));
-      final List<dynamic> safeProgram = programError ? const <dynamic>[] : program;
+      final List<dynamic> safeProgram = programError
+          ? const <dynamic>[]
+          : program;
       if (programError) {
         for (int i = 0; i < 4; i++) {
           outputs['Q$i'] = false;
@@ -1011,8 +1031,13 @@ final class ElectroSimRuntimeEngine {
       for (var index = 0; index < 4; index++) {
         final String address = 'I$index';
         final TerminalId terminal = plc.terminals[index + 2].id;
-        final List<Connection> wires = circuit.connections.where((Connection c) => c.enabled &&
-            (c.fromTerminalId == terminal || c.toTerminalId == terminal)).toList(growable: false);
+        final List<Connection> wires = circuit.connections
+            .where(
+              (Connection c) =>
+                  c.enabled &&
+                  (c.fromTerminalId == terminal || c.toTerminalId == terminal),
+            )
+            .toList(growable: false);
         if (wires.isEmpty) {
           inputs[address] = false;
           continue;
@@ -1022,12 +1047,18 @@ final class ElectroSimRuntimeEngine {
           final TerminalId peer = wire.fromTerminalId == terminal
               ? wire.toTerminalId
               : wire.fromTerminalId;
-          final ComponentInstance? target = circuit.components.where((ComponentInstance item) =>
-              item.terminals.any((Terminal t) => t.id == peer)).firstOrNull;
+          final ComponentInstance? target = circuit.components
+              .where(
+                (ComponentInstance item) =>
+                    item.terminals.any((Terminal t) => t.id == peer),
+              )
+              .firstOrNull;
           if (target?.modelType == 'push_button_no') {
-            inputClosed = inputClosed || target!.controlState['pressed'] == true;
+            inputClosed =
+                inputClosed || target!.controlState['pressed'] == true;
           } else if (target?.modelType == 'push_button_nc') {
-            inputClosed = inputClosed || target!.controlState['pressed'] != true;
+            inputClosed =
+                inputClosed || target!.controlState['pressed'] != true;
           } else if (target?.modelType == 'proximity_sensor_24v' ||
               target?.modelType == 'limit_switch_no') {
             inputClosed = inputClosed || target!.controlState['closed'] == true;
@@ -1035,11 +1066,12 @@ final class ElectroSimRuntimeEngine {
             inputClosed = inputClosed || target!.controlState['closed'] != true;
           } else if (target?.modelType.startsWith('contactor_aux_') == true) {
             final Object? linked = target!.parameters['linkedContactorId'];
-            final bool actuated = linked is String &&
+            final bool actuated =
+                linked is String &&
                 (previousContactorStates[ComponentId(linked)] ?? false);
-            inputClosed = inputClosed || (target.modelType == 'contactor_aux_no'
-                ? actuated
-                : !actuated);
+            inputClosed =
+                inputClosed ||
+                (target.modelType == 'contactor_aux_no' ? actuated : !actuated);
           }
         }
         inputs[address] = inputClosed;
@@ -1058,34 +1090,52 @@ final class ElectroSimRuntimeEngine {
         var energized = true;
         final Set<String> addressedOutputs = <String>{};
         for (final dynamic rawStep in steps) {
-          final String type = rawStep['type'] is String ? rawStep['type'] as String : '';
-          final String address = rawStep['address'] is String ? rawStep['address'] as String : '';
-          if (!RegExp(r'^(I[0-3]|Q[0-3]|M(?:[0-9]|1[0-5])|T(?:[0-9]|1[0-5]))$').hasMatch(address)) {
+          final String type = rawStep['type'] is String
+              ? rawStep['type'] as String
+              : '';
+          final String address = rawStep['address'] is String
+              ? rawStep['address'] as String
+              : '';
+          if (!RegExp(
+            r'^(I[0-3]|Q[0-3]|M(?:[0-9]|1[0-5])|T(?:[0-9]|1[0-5]))$',
+          ).hasMatch(address)) {
             energized = false;
             break;
           }
           if (type == 'TON') {
-            final double preset = (rawStep['presetSeconds'] as num?)?.toDouble() ?? 1.0;
-            if (!preset.isFinite || preset <= 0 || preset > 3600 || !address.startsWith('T')) {
+            final double preset =
+                (rawStep['presetSeconds'] as num?)?.toDouble() ?? 1.0;
+            if (!preset.isFinite ||
+                preset <= 0 ||
+                preset > 3600 ||
+                !address.startsWith('T')) {
               energized = false;
               break;
             }
             timerPresets[address] = preset;
             final double next = energized
                 ? (timerAccumulators[address] ?? 0.0) +
-                    elapsed.inMicroseconds / 1e6
+                      elapsed.inMicroseconds / 1e6
                 : 0.0;
             timerAccumulators[address] = next;
             timerDone[address] = energized && next >= preset;
             continue;
           }
           final bool value = switch (type) {
-            'contact_no' => address.startsWith('T')
-                ? timerDone[address] ?? false
-                : inputs[address] ?? outputs[address] ?? memories[address] ?? false,
-            'contact_nc' => address.startsWith('T')
-                ? !(timerDone[address] ?? false)
-                : !(inputs[address] ?? outputs[address] ?? memories[address] ?? false),
+            'contact_no' =>
+              address.startsWith('T')
+                  ? timerDone[address] ?? false
+                  : inputs[address] ??
+                        outputs[address] ??
+                        memories[address] ??
+                        false,
+            'contact_nc' =>
+              address.startsWith('T')
+                  ? !(timerDone[address] ?? false)
+                  : !(inputs[address] ??
+                        outputs[address] ??
+                        memories[address] ??
+                        false),
             'timer_done' => timerDone[address] ?? false,
             'coil' => energized,
             'coil_set' => energized || (memories[address] ?? false),
@@ -1109,8 +1159,12 @@ final class ElectroSimRuntimeEngine {
           }
         }
         for (final String output in addressedOutputs) {
-          final bool hasOrdinaryCoil = steps.any((dynamic rawStep) =>
-              rawStep is Map && rawStep['type'] == 'coil' && rawStep['address'] == output);
+          final bool hasOrdinaryCoil = steps.any(
+            (dynamic rawStep) =>
+                rawStep is Map &&
+                rawStep['type'] == 'coil' &&
+                rawStep['address'] == output,
+          );
           if (hasOrdinaryCoil) outputs[output] = energized;
         }
       }
@@ -1156,8 +1210,8 @@ final class ElectroSimRuntimeEngine {
             ...inputs,
             ...plcRuntimeState,
             'programError': programError,
-        'supplyVoltageV': supplyVoltage,
-        'supplyValid': supplyValid,
+            'supplyVoltageV': supplyVoltage,
+            'supplyValid': supplyValid,
           },
         ),
       );
@@ -1165,22 +1219,9 @@ final class ElectroSimRuntimeEngine {
 
     for (final ComponentInstance component in circuit.components) {
       if (component.modelType == 'plc_ac3') continue;
-      if ((component.modelType == 'contactor_3p' || component.modelType == 'contactor_ac1') && plcActuations.containsKey(component.id)) {
-        components.add(ComponentInstance(
-          id: component.id,
-          modelType: component.modelType,
-          terminals: component.terminals,
-          parameters: component.parameters,
-          condition: component.condition,
-          controlState: <String, Object?>{
-            for (final MapEntry<String, Object?> entry in component.controlState.entries)
-              if (entry.key != 'plcCommand') entry.key: entry.value,
-            'plcEnable': plcActuations[component.id],
-          },
-        ));
-        continue;
-      }
-      if (component.modelType == 'contactor_3p' || component.modelType == 'contactor_ac1') {
+      if ((component.modelType == 'contactor_3p' ||
+              component.modelType == 'contactor_ac1') &&
+          plcActuations.containsKey(component.id)) {
         components.add(
           ComponentInstance(
             id: component.id,
@@ -1189,7 +1230,27 @@ final class ElectroSimRuntimeEngine {
             parameters: component.parameters,
             condition: component.condition,
             controlState: <String, Object?>{
-              for (final MapEntry<String, Object?> entry in component.controlState.entries)
+              for (final MapEntry<String, Object?> entry
+                  in component.controlState.entries)
+                if (entry.key != 'plcCommand') entry.key: entry.value,
+              'plcEnable': plcActuations[component.id],
+            },
+          ),
+        );
+        continue;
+      }
+      if (component.modelType == 'contactor_3p' ||
+          component.modelType == 'contactor_ac1') {
+        components.add(
+          ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              for (final MapEntry<String, Object?> entry
+                  in component.controlState.entries)
                 if (entry.key != 'plcCommand') entry.key: entry.value,
             },
           ),
@@ -1197,12 +1258,26 @@ final class ElectroSimRuntimeEngine {
         continue;
       }
       if (component.modelType == 'timer_star_delta') {
-        final ComponentInstance runtimeComponent = _withRuntimeControlState(component, previousControlStates[component.id]);
-        final bool timerActuated = _isTimerCoilEnergized(circuit, runtimeComponent);
-        final double delay = (component.parameters['delaySeconds'] as num?)?.toDouble() ?? 5;
-        final double previous = (runtimeComponent.controlState['elapsedSeconds'] as num?)?.toDouble() ?? 0;
-        final double nextElapsed = timerActuated ? previous + elapsed.inMicroseconds / 1e6 : 0;
-        final double deadTime = (component.parameters['deadTimeSeconds'] as num?)?.toDouble() ?? 0.05;
+        final ComponentInstance runtimeComponent = _withRuntimeControlState(
+          component,
+          previousControlStates[component.id],
+        );
+        final bool timerActuated = _isTimerCoilEnergized(
+          circuit,
+          runtimeComponent,
+        );
+        final double delay =
+            (component.parameters['delaySeconds'] as num?)?.toDouble() ?? 5;
+        final double previous =
+            (runtimeComponent.controlState['elapsedSeconds'] as num?)
+                ?.toDouble() ??
+            0;
+        final double nextElapsed = timerActuated
+            ? previous + elapsed.inMicroseconds / 1e6
+            : 0;
+        final double deadTime =
+            (component.parameters['deadTimeSeconds'] as num?)?.toDouble() ??
+            0.05;
         final bool validDelay = delay.isFinite && delay > 0;
         final bool validDeadTime = deadTime.isFinite && deadTime >= 0;
         final bool starContactClosed =
@@ -1214,19 +1289,31 @@ final class ElectroSimRuntimeEngine {
             validDeadTime &&
             timerActuated &&
             nextElapsed + 1e-9 >= delay + deadTime;
-        components.add(ComponentInstance(
-          id: component.id,
-          modelType: component.modelType,
-          terminals: component.terminals,
-          parameters: component.parameters,
-          condition: component.condition,
-          controlState: <String, Object?>{...runtimeComponent.controlState, 'elapsedSeconds': nextElapsed, 'timerNcClosed': starContactClosed, 'timerNoClosed': triangleContactClosed, 'timerActuated': timerActuated},
-        ));
+        components.add(
+          ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: component.parameters,
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...runtimeComponent.controlState,
+              'elapsedSeconds': nextElapsed,
+              'timerNcClosed': starContactClosed,
+              'timerNoClosed': triangleContactClosed,
+              'timerActuated': timerActuated,
+            },
+          ),
+        );
       } else {
         components.add(component);
       }
     }
-    if (plcs.isEmpty && !circuit.components.any((ComponentInstance c) => c.modelType == 'timer_star_delta')) return circuit;
+    if (plcs.isEmpty &&
+        !circuit.components.any(
+          (ComponentInstance c) => c.modelType == 'timer_star_delta',
+        ))
+      return circuit;
     return CircuitState(
       circuitId: circuit.circuitId,
       revision: circuit.revision,
@@ -1243,18 +1330,25 @@ final class ElectroSimRuntimeEngine {
 
   bool _isTimerCoilEnergized(CircuitState circuit, ComponentInstance timer) {
     if (timer.terminals.length < 2) return false;
-    final Set<TerminalId> coilNodes = <TerminalId>{timer.terminals[0].id, timer.terminals[1].id};
+    final Set<TerminalId> coilNodes = <TerminalId>{
+      timer.terminals[0].id,
+      timer.terminals[1].id,
+    };
     bool connected(TerminalId terminal) => circuit.connections.any(
-      (Connection connection) => connection.enabled &&
-          (connection.fromTerminalId == terminal || connection.toTerminalId == terminal),
+      (Connection connection) =>
+          connection.enabled &&
+          (connection.fromTerminalId == terminal ||
+              connection.toTerminalId == terminal),
     );
     if (!coilNodes.every(connected) ||
         timer.condition != ComponentCondition.normal) {
       return false;
     }
     final double coilVoltage = _coilVoltageForAc3(circuit, timer);
-    final double pickup = (timer.parameters['coilPickupVoltageV'] as num?)?.toDouble() ?? 180.0;
-    final double dropout = (timer.parameters['coilDropoutVoltageV'] as num?)?.toDouble() ?? 100.0;
+    final double pickup =
+        (timer.parameters['coilPickupVoltageV'] as num?)?.toDouble() ?? 180.0;
+    final double dropout =
+        (timer.parameters['coilDropoutVoltageV'] as num?)?.toDouble() ?? 100.0;
     final Object? prior = timer.controlState['timerActuated'];
     return coilVoltage >= (prior == true ? dropout : pickup);
   }
@@ -1270,19 +1364,33 @@ final class ElectroSimRuntimeEngine {
         final TerminalId current = queue.removeAt(0);
         if (!visited.add(current)) continue;
         for (final SourceInstance source in circuit.sources) {
-          final Terminal? sourceTerminal = source.terminals.where((Terminal t) => t.id == current).firstOrNull;
+          final Terminal? sourceTerminal = source.terminals
+              .where((Terminal t) => t.id == current)
+              .firstOrNull;
           if (sourceTerminal != null) {
             if (sourceTerminal.role == TerminalRole.neutral) return 0.0;
-            return ((source.parameters['phaseVoltageRmsV'] ?? source.parameters['voltageRmsV']) as num?)?.toDouble() ?? 0.0;
+            return ((source.parameters['phaseVoltageRmsV'] ??
+                            source.parameters['voltageRmsV'])
+                        as num?)
+                    ?.toDouble() ??
+                0.0;
           }
         }
-        for (final Connection connection in circuit.connections.where((Connection c) => c.enabled &&
-            (c.fromTerminalId == current || c.toTerminalId == current))) {
-          queue.add(connection.fromTerminalId == current ? connection.toTerminalId : connection.fromTerminalId);
+        for (final Connection connection in circuit.connections.where(
+          (Connection c) =>
+              c.enabled &&
+              (c.fromTerminalId == current || c.toTerminalId == current),
+        )) {
+          queue.add(
+            connection.fromTerminalId == current
+                ? connection.toTerminalId
+                : connection.fromTerminalId,
+          );
         }
       }
       return null;
     }
+
     final TerminalRole firstRole = timer.terminals[0].role;
     final TerminalRole secondRole = timer.terminals[1].role;
     final TerminalId phaseId = firstRole == TerminalRole.coilA2
@@ -1291,8 +1399,14 @@ final class ElectroSimRuntimeEngine {
     final TerminalId neutralId = firstRole == TerminalRole.coilA2
         ? timer.terminals[0].id
         : timer.terminals[1].id;
-    if (!<TerminalRole>{TerminalRole.coilA1, TerminalRole.coilA2}.contains(firstRole) ||
-        !<TerminalRole>{TerminalRole.coilA1, TerminalRole.coilA2}.contains(secondRole)) {
+    if (!<TerminalRole>{
+          TerminalRole.coilA1,
+          TerminalRole.coilA2,
+        }.contains(firstRole) ||
+        !<TerminalRole>{
+          TerminalRole.coilA1,
+          TerminalRole.coilA2,
+        }.contains(secondRole)) {
       return 0.0;
     }
     final double? phase = sourceVoltage(phaseId);
@@ -1301,12 +1415,14 @@ final class ElectroSimRuntimeEngine {
     return (phase - neutral).abs();
   }
 
-  Map<ComponentId, Map<String, Object?>> _controlStatesFromRuntime(CircuitState circuit) =>
-      <ComponentId, Map<String, Object?>>{
-        for (final ComponentInstance component in circuit.components)
-          if (component.modelType == 'timer_star_delta' || component.modelType == 'plc_ac3')
-            component.id: component.controlState,
-      };
+  Map<ComponentId, Map<String, Object?>> _controlStatesFromRuntime(
+    CircuitState circuit,
+  ) => <ComponentId, Map<String, Object?>>{
+    for (final ComponentInstance component in circuit.components)
+      if (component.modelType == 'timer_star_delta' ||
+          component.modelType == 'plc_ac3')
+        component.id: component.controlState,
+  };
 
   ComponentInstance _withRuntimeControlState(
     ComponentInstance component,
@@ -1495,7 +1611,7 @@ final class ElectroSimRuntimeEngine {
     Map<ComponentId, double> previous,
   ) {
     if (previous.isEmpty) return circuit;
-      final List<ComponentInstance> components = <ComponentInstance>[];
+    final List<ComponentInstance> components = <ComponentInstance>[];
     var changed = false;
     for (final ComponentInstance component in circuit.components) {
       final double? soc = previous[component.id];

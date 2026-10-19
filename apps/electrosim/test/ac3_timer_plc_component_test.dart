@@ -17,12 +17,14 @@ void main() {
     expect(plc.terminalCount, 10);
     expect(plc.branches, isEmpty);
     expect(
-      f9PaletteCatalog.singleWhere((item) => item.modelType == 'timer_star_delta')
+      f9PaletteCatalog
+          .singleWhere((item) => item.modelType == 'timer_star_delta')
           .supportsMode(ElectricalMode.ac3),
       isTrue,
     );
     expect(
-      f9PaletteCatalog.singleWhere((item) => item.modelType == 'plc_ac3')
+      f9PaletteCatalog
+          .singleWhere((item) => item.modelType == 'plc_ac3')
           .supportsMode(ElectricalMode.ac3),
       isTrue,
     );
@@ -35,36 +37,40 @@ void main() {
       isTrue,
     );
     expect(
-      f9PaletteCatalog.singleWhere((item) => item.modelType == 'plc_ac3')
-          .terminalLabels.take(2).toList(),
+      f9PaletteCatalog
+          .singleWhere((item) => item.modelType == 'plc_ac3')
+          .terminalLabels
+          .take(2)
+          .toList(),
       <String>['L+ 24 V', 'M 0 V'],
     );
   });
 
-  test('24 V command supply and field sensors are available in their modes', () {
-    expect(
-      f9PaletteCatalog.singleWhere((item) => item.keyName == 'source-control-24v')
-          .supportsMode(ElectricalMode.dc),
-      isTrue,
-    );
-    for (final String model in <String>[
-      'proximity_sensor_24v',
-      'limit_switch_no',
-      'limit_switch_nc',
-    ]) {
+  test(
+    '24 V command supply and field sensors are available in their modes',
+    () {
       expect(
-        CoreComponentModelContracts.registry.resolve(model)?.supportsMode(
-              ElectricalMode.dc,
-            ),
-        isTrue,
-        reason: '$model should have a DC electrical contract',
-      );
-      expect(
-        f9PaletteCatalog.any((item) => item.modelType == model),
+        f9PaletteCatalog
+            .singleWhere((item) => item.keyName == 'source-control-24v')
+            .supportsMode(ElectricalMode.dc),
         isTrue,
       );
-    }
-  });
+      for (final String model in <String>[
+        'proximity_sensor_24v',
+        'limit_switch_no',
+        'limit_switch_nc',
+      ]) {
+        expect(
+          CoreComponentModelContracts.registry
+              .resolve(model)
+              ?.supportsMode(ElectricalMode.dc),
+          isTrue,
+          reason: '$model should have a DC electrical contract',
+        );
+        expect(f9PaletteCatalog.any((item) => item.modelType == model), isTrue);
+      }
+    },
+  );
 
   test('star-delta timer opens NC then closes NO after the dead time', () {
     final CircuitState circuit = _timerCircuit();
@@ -72,23 +78,24 @@ void main() {
     final ElectroSimRuntimeSnapshot initial = engine.evaluate(circuit);
     expect(initial.solved, isTrue, reason: _diagnostics(initial));
     final ComponentInstance initialTimer = initial.effectiveCircuit.components
-        .singleWhere((ComponentInstance component) => component.id.value == 'timer');
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'timer',
+        );
     expect(initialTimer.controlState['timerActuated'], isTrue);
 
     final ElectroSimRuntimeSnapshot switched = engine.advance(
       circuit,
       elapsed: const Duration(milliseconds: 150),
-      previousContactorStates: <ComponentId, bool>{
-        ComponentId('timer'): true,
-      },
+      previousContactorStates: <ComponentId, bool>{ComponentId('timer'): true},
       previousControlStates: <ComponentId, Map<String, Object?>>{
         ComponentId('timer'): <String, Object?>{'elapsedSeconds': 0.0},
       },
     );
     expect(switched.solved, isTrue, reason: _diagnostics(switched));
-    final ComponentInstance timer = switched.effectiveCircuit.components.singleWhere(
-      (ComponentInstance component) => component.id.value == 'timer',
-    );
+    final ComponentInstance timer = switched.effectiveCircuit.components
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'timer',
+        );
     expect(timer.controlState['timerNcClosed'], isFalse);
     expect(timer.controlState['timerNoClosed'], isTrue);
   });
@@ -101,7 +108,8 @@ void main() {
     expect(snapshot.contactorActuated(ComponentId('k1')), isTrue);
     expect(snapshot.contactorActuated(ComponentId('k2')), isFalse);
     expect(
-      circuit.components.singleWhere((ComponentInstance c) => c.id.value == 'k1')
+      circuit.components
+          .singleWhere((ComponentInstance c) => c.id.value == 'k1')
           .controlState['plcCommand'],
       isNull,
       reason: 'runtime projection must leave the authored contactor unchanged',
@@ -111,21 +119,24 @@ void main() {
       revision: circuit.revision + 1,
       mode: circuit.mode,
       sources: circuit.sources,
-      components: circuit.components.map((ComponentInstance c) =>
-          c.id.value == 'button'
-              ? ComponentInstance(
-                  id: c.id,
-                  modelType: c.modelType,
-                  terminals: c.terminals,
-                  parameters: c.parameters,
-                  controlState: const <String, Object?>{'pressed': false},
-                )
-              : c).toList(),
+      components: circuit.components
+          .map(
+            (ComponentInstance c) => c.id.value == 'button'
+                ? ComponentInstance(
+                    id: c.id,
+                    modelType: c.modelType,
+                    terminals: c.terminals,
+                    parameters: c.parameters,
+                    controlState: const <String, Object?>{'pressed': false},
+                  )
+                : c,
+          )
+          .toList(),
       connections: circuit.connections,
       settings: circuit.settings,
     );
-    final ElectroSimRuntimeSnapshot stoppedSnapshot = const ElectroSimRuntimeEngine()
-        .evaluate(stopped);
+    final ElectroSimRuntimeSnapshot stoppedSnapshot =
+        const ElectroSimRuntimeEngine().evaluate(stopped);
     expect(stoppedSnapshot.contactorActuated(ComponentId('k1')), isFalse);
   });
 
@@ -136,14 +147,23 @@ void main() {
       modelType: 'plc_ac3',
       terminals: <Terminal>[
         for (int index = 0; index < 10; index++)
-          _terminal('plc-ton-$index', 'PLC-$index', PhaseTag.none, TerminalRole.generic),
+          _terminal(
+            'plc-ton-$index',
+            'PLC-$index',
+            PhaseTag.none,
+            TerminalRole.generic,
+          ),
       ],
       parameters: const <String, Object?>{
         'ladderProgram': <Object?>[
           <String, Object?>{
             'steps': <Object?>[
               <String, Object?>{'type': 'contact_no', 'address': 'I0'},
-              <String, Object?>{'type': 'TON', 'address': 'T0', 'presetSeconds': 0.2},
+              <String, Object?>{
+                'type': 'TON',
+                'address': 'T0',
+                'presetSeconds': 0.2,
+              },
             ],
           },
           <String, Object?>{
@@ -158,7 +178,12 @@ void main() {
     );
     final List<Terminal> plcTerminals = <Terminal>[
       for (int index = 0; index < 10; index++)
-        _terminal('plc-ton-$index', 'PLC-$index', PhaseTag.none, TerminalRole.generic),
+        _terminal(
+          'plc-ton-$index',
+          'PLC-$index',
+          PhaseTag.none,
+          TerminalRole.generic,
+        ),
     ];
     final List<Connection> plcWires = <Connection>[
       ...baseCircuit.connections,
@@ -203,9 +228,10 @@ void main() {
       elapsed: const Duration(milliseconds: 100),
       previousControlStates: first.controlRuntimeStates,
     );
-    final ComponentInstance plc = second.effectiveCircuit.components.singleWhere(
-      (ComponentInstance component) => component.id.value == 'plc-ton',
-    );
+    final ComponentInstance plc = second.effectiveCircuit.components
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'plc-ton',
+        );
     expect(plc.controlState['ton:T0'], 0.2);
     expect(plc.controlState['T0.DN'], isTrue);
     expect(plc.controlState['Q0'], isTrue);
@@ -235,7 +261,9 @@ void main() {
     final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
         .evaluate(circuit);
     final ComponentInstance plc = snapshot.effectiveCircuit.components
-        .singleWhere((ComponentInstance component) => component.id.value == 'plc');
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'plc',
+        );
     expect(plc.controlState['M0'], isTrue);
     expect(plc.controlState['Q0'], isTrue);
   });
@@ -252,40 +280,43 @@ void main() {
     final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
         .evaluate(circuit);
     final ComponentInstance plc = snapshot.effectiveCircuit.components
-        .singleWhere((ComponentInstance component) => component.id.value == 'plc');
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'plc',
+        );
     expect(plc.controlState['programError'], isTrue);
     expect(plc.controlState['Q0'], isFalse);
     expect(snapshot.contactorActuated(ComponentId('k1')), isFalse);
   });
 
   test('PLC invalid 24 V control supply disables all outputs', () {
-    final CircuitState circuit = _plcCircuitWithParameters(
-      <String, Object?>{
-        'controlVoltageV': 12.0,
-        'outputLinks': <String, Object?>{'Q0': 'k1'},
-        'ladderProgram': <Object?>[
-          <String, Object?>{
-            'steps': <Object?>[
-              <String, Object?>{'type': 'coil', 'address': 'Q0'},
-            ],
-          },
-        ],
-      },
-    );
+    final CircuitState circuit = _plcCircuitWithParameters(<String, Object?>{
+      'controlVoltageV': 12.0,
+      'outputLinks': <String, Object?>{'Q0': 'k1'},
+      'ladderProgram': <Object?>[
+        <String, Object?>{
+          'steps': <Object?>[
+            <String, Object?>{'type': 'coil', 'address': 'Q0'},
+          ],
+        },
+      ],
+    });
     final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
         .evaluate(circuit);
     final ComponentInstance plc = snapshot.effectiveCircuit.components
-        .singleWhere((ComponentInstance component) => component.id.value == 'plc');
+        .singleWhere(
+          (ComponentInstance component) => component.id.value == 'plc',
+        );
     expect(plc.controlState['supplyValid'], isFalse);
     expect(plc.controlState['programError'], isTrue);
     expect(snapshot.contactorActuated(ComponentId('k1')), isFalse);
   });
 }
 
-String _diagnostics(ElectroSimRuntimeSnapshot snapshot) => snapshot.ac3Result
-    ?.diagnostics
-    .map((Ac3SolverDiagnostic issue) => issue.message)
-    .join(' | ') ?? 'AC3 result missing';
+String _diagnostics(ElectroSimRuntimeSnapshot snapshot) =>
+    snapshot.ac3Result?.diagnostics
+        .map((Ac3SolverDiagnostic issue) => issue.message)
+        .join(' | ') ??
+    'AC3 result missing';
 
 CircuitState _timerCircuit() => CircuitState(
   circuitId: CircuitId('star-delta-timer'),
@@ -384,7 +415,16 @@ CircuitState _plcCircuitWithParameters(Map<String, Object?> plcParameters) {
   ];
   final List<Terminal> plcTerminals = <Terminal>[
     for (int i = 0; i < 10; i++)
-      _terminal('plc-$i', 'PLC-$i', PhaseTag.none, i == 8 ? TerminalRole.output : i >= 2 && i <= 5 ? TerminalRole.input : TerminalRole.generic),
+      _terminal(
+        'plc-$i',
+        'PLC-$i',
+        PhaseTag.none,
+        i == 8
+            ? TerminalRole.output
+            : i >= 2 && i <= 5
+            ? TerminalRole.input
+            : TerminalRole.generic,
+      ),
   ];
   return CircuitState(
     circuitId: CircuitId('plc-coil-control'),
@@ -425,8 +465,18 @@ CircuitState _plcCircuitWithParameters(Map<String, Object?> plcParameters) {
         id: ComponentId('button-reset'),
         modelType: 'push_button_no',
         terminals: <Terminal>[
-          _terminal('button-reset-a', '13', PhaseTag.none, TerminalRole.generic),
-          _terminal('button-reset-b', '14', PhaseTag.none, TerminalRole.generic),
+          _terminal(
+            'button-reset-a',
+            '13',
+            PhaseTag.none,
+            TerminalRole.generic,
+          ),
+          _terminal(
+            'button-reset-b',
+            '14',
+            PhaseTag.none,
+            TerminalRole.generic,
+          ),
         ],
         controlState: const <String, Object?>{'pressed': false},
       ),

@@ -168,8 +168,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        (tester.widget<Text>(find.byKey(const Key('status-circuit-count'))))
-            .data,
+        (tester.widget<Text>(
+          find.byKey(const Key('status-circuit-count')),
+        )).data,
         contains('1 élément · 0 source'),
       );
       expect(tester.takeException(), isNull);

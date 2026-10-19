@@ -7,11 +7,11 @@ void main() {
   testWidgets('workshop opens the authored electro-pneumatic bench', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: PneumaticWorkshopPage()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: PneumaticWorkshopPage()));
 
-    await tester.tap(find.byKey(const Key('open-electropneumatic-training-bench')));
+    await tester.tap(
+      find.byKey(const Key('open-electropneumatic-training-bench')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(ElectropneumaticTrainingBenchPage), findsOneWidget);

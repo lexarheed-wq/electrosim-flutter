@@ -112,10 +112,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(
-      find.byKey(const Key('palette-search-field')),
-      'A1',
-    );
+    await tester.enterText(find.byKey(const Key('palette-search-field')), 'A1');
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('palette-item-relay-coil')), findsOneWidget);
   });

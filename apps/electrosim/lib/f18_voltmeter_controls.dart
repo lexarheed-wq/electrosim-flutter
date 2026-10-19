@@ -163,10 +163,10 @@ abstract final class F18VoltmeterControls {
     }
     if (meter.mode == InstrumentMode.resistance) {
       return continuityDetected(
-        meter: meter,
-        resistanceOhm: computedValue,
-        validReading: validReading,
-      )
+            meter: meter,
+            resistanceOhm: computedValue,
+            validReading: validReading,
+          )
           ? '$computedText CONT'
           : computedText;
     }

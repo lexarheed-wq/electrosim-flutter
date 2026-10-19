@@ -57,8 +57,9 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final Directory root =
-        Directory.systemTemp.createTempSync('es-layout-audit-');
+    final Directory root = Directory.systemTemp.createTempSync(
+      'es-layout-audit-',
+    );
     addTearDown(() => root.deleteSync(recursive: true));
     final ElectroSimPersistenceController persistence =
         ElectroSimPersistenceController(LocalStorageRepository(root));

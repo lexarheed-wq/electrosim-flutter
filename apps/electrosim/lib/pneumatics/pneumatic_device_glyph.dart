@@ -17,6 +17,7 @@ class PneumaticDeviceGlyph extends StatelessWidget {
   final bool schematic;
   final double width;
   final double height;
+
   /// False selects the three-quarter palette render; true selects the frontal
   /// render used on the physical plate. Ignored for schematic symbols.
   final bool frontView;
@@ -34,8 +35,7 @@ class PneumaticDeviceGlyph extends StatelessWidget {
           : Image.asset(
               'assets/g5_pneumatic/${kind.name}-${frontView ? 'front' : 'palette'}.png',
               fit: BoxFit.contain,
-              errorBuilder: (_, Object error, StackTrace? stackTrace) =>
-                  vector,
+              errorBuilder: (_, Object error, StackTrace? stackTrace) => vector,
             ),
     );
   }

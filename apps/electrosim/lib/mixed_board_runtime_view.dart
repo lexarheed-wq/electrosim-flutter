@@ -49,8 +49,9 @@ final class MixedBoardRuntimeView {
       projection.terminalOrigins[boardTerminalId]?.localId;
 
   ComponentInstance? runtimeComponent(ComponentInstance boardComponent) {
-    final ElectroSimRuntimeSnapshot? runtime =
-        runtimeForElement(boardComponent.id.value);
+    final ElectroSimRuntimeSnapshot? runtime = runtimeForElement(
+      boardComponent.id.value,
+    );
     final String? localId = localIdForElement(boardComponent.id.value);
     if (runtime == null || localId == null) return null;
     return runtime.effectiveCircuit.components
@@ -61,8 +62,7 @@ final class MixedBoardRuntimeView {
   InstrumentInstance? runtimeInstrument(InstrumentInstance boardInstrument) {
     final String? localId = localIdForElement(boardInstrument.id.value);
     if (localId == null) return null;
-    final Map<String, Object?> raw = boardInstrument.toJson()
-      ..['id'] = localId;
+    final Map<String, Object?> raw = boardInstrument.toJson()..['id'] = localId;
     final String? cutConnection = boardInstrument.cutConnectionId?.value;
     if (cutConnection != null) {
       raw['cutConnectionId'] =
@@ -73,7 +73,9 @@ final class MixedBoardRuntimeView {
 
   Connection? runtimeConnection(Connection boardConnection) {
     final String? localId = localIdForElement(boardConnection.id.value);
-    final String? fromId = localTerminalId(boardConnection.fromTerminalId.value);
+    final String? fromId = localTerminalId(
+      boardConnection.fromTerminalId.value,
+    );
     final String? toId = localTerminalId(boardConnection.toTerminalId.value);
     if (localId == null || fromId == null || toId == null) return null;
     return Connection(

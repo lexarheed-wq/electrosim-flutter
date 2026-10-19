@@ -131,9 +131,13 @@ class F20CatalogComponentView extends StatelessWidget {
       width: size.width,
       height: size.height,
       child: image == null
-          ? CustomPaint(painter: _F20Painter(device: device, state: state))
+          ? CustomPaint(
+              painter: _F20Painter(device: device, state: state),
+            )
           : RawImage(
-              key: Key('catalog-sensor-product-image-$key-${state.actuated ? 'actuated' : 'rest'}-${palette ? 'palette' : 'front'}'),
+              key: Key(
+                'catalog-sensor-product-image-$key-${state.actuated ? 'actuated' : 'rest'}-${palette ? 'palette' : 'front'}',
+              ),
               image: image,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
@@ -1319,7 +1323,10 @@ final class _P {
       Paint()..color = const Color(0xFF32464F),
     );
     if (variant == 'sensor-proximity') {
-      final Offset statusLed = Offset(body.right - h * .075, body.top + h * .09);
+      final Offset statusLed = Offset(
+        body.right - h * .075,
+        body.top + h * .09,
+      );
       canvas.drawCircle(
         statusLed,
         h * .025,
@@ -1445,7 +1452,10 @@ final class _P {
         ..strokeWidth = 1.1,
     );
 
-    final Offset statusLed = Offset(shell.right - bodyWidth * .12, bottom - h * .11);
+    final Offset statusLed = Offset(
+      shell.right - bodyWidth * .12,
+      bottom - h * .11,
+    );
     canvas.drawCircle(
       statusLed,
       h * .023,
@@ -1531,15 +1541,16 @@ final class _P {
       rollerCenter.translate(0, h * .018),
       h * .039,
       Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(-.3, -.4),
-          colors: [Color(0xFFF5F7F5), Color(0xFF9EA9AD), Color(0xFF5F6A70)],
-        ).createShader(
-          Rect.fromCircle(
-            center: rollerCenter.translate(0, h * .018),
-            radius: h * .039,
-          ),
-        ),
+        ..shader =
+            const RadialGradient(
+              center: Alignment(-.3, -.4),
+              colors: [Color(0xFFF5F7F5), Color(0xFF9EA9AD), Color(0xFF5F6A70)],
+            ).createShader(
+              Rect.fromCircle(
+                center: rollerCenter.translate(0, h * .018),
+                radius: h * .039,
+              ),
+            ),
     );
     text(
       variant == 'limit-switch-nc' ? 'NC · 21/22' : 'NO · 13/14',

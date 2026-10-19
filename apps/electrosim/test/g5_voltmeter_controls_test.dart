@@ -199,61 +199,63 @@ void main() {
     );
   });
 
-  test('Ω mode reports continuity only for valid readings at or below 30 Ω', () {
-    final InstrumentInstance ohms = InstrumentInstance(
-      id: InstrumentId('ohm-meter'),
-      kind: InstrumentKind.voltmeter,
-      mode: InstrumentMode.resistance,
-    );
+  test(
+    'Ω mode reports continuity only for valid readings at or below 30 Ω',
+    () {
+      final InstrumentInstance ohms = InstrumentInstance(
+        id: InstrumentId('ohm-meter'),
+        kind: InstrumentKind.voltmeter,
+        mode: InstrumentMode.resistance,
+      );
 
-    expect(
-      F18VoltmeterControls.continuityDetected(
-        meter: ohms,
-        resistanceOhm: 30,
-        validReading: true,
-      ),
-      isTrue,
-    );
-    expect(
-      F18VoltmeterControls.continuityDetected(
-        meter: ohms,
-        resistanceOhm: 30.01,
-        validReading: true,
-      ),
-      isFalse,
-    );
-    expect(
-      F18VoltmeterControls.continuityDetected(
-        meter: ohms,
-        resistanceOhm: 0,
-        validReading: false,
-      ),
-      isFalse,
-    );
-    expect(
-      F18VoltmeterControls.display(
-        meter: ohms,
-        computedText: '0.00 Ω',
-        computedValue: 0,
-        validReading: true,
-      ),
-      '0.00 Ω CONT',
-    );
-    expect(
-      F18VoltmeterControls.display(
-        meter: ohms,
-        computedText: 'OL',
-        validReading: false,
-      ),
-      'OL',
-    );
-  });
+      expect(
+        F18VoltmeterControls.continuityDetected(
+          meter: ohms,
+          resistanceOhm: 30,
+          validReading: true,
+        ),
+        isTrue,
+      );
+      expect(
+        F18VoltmeterControls.continuityDetected(
+          meter: ohms,
+          resistanceOhm: 30.01,
+          validReading: true,
+        ),
+        isFalse,
+      );
+      expect(
+        F18VoltmeterControls.continuityDetected(
+          meter: ohms,
+          resistanceOhm: 0,
+          validReading: false,
+        ),
+        isFalse,
+      );
+      expect(
+        F18VoltmeterControls.display(
+          meter: ohms,
+          computedText: '0.00 Ω',
+          computedValue: 0,
+          validReading: true,
+        ),
+        '0.00 Ω CONT',
+      );
+      expect(
+        F18VoltmeterControls.display(
+          meter: ohms,
+          computedText: 'OL',
+          validReading: false,
+        ),
+        'OL',
+      );
+    },
+  );
 
   test(
     'continuity audio is deduplicated and stops after continuity ends',
     () async {
-      final _FakeContinuityAudioBackend backend =
-          _FakeContinuityAudioBackend();
+      final _FakeContinuityAudioBackend backend = _FakeContinuityAudioBackend();
       final F18ContinuityAudio audio = F18ContinuityAudio(backend: backend);
 
       await audio.setActive(true);

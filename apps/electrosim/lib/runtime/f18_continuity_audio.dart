@@ -22,10 +22,7 @@ final class PlayerF18ContinuityAudioBackend
     if (active) {
       final AudioPlayer player = _player ??= AudioPlayer();
       await player.setReleaseMode(ReleaseMode.loop);
-      await player.play(
-        AssetSource('sounds/continuity.wav'),
-        volume: 0.12,
-      );
+      await player.play(AssetSource('sounds/continuity.wav'), volume: 0.12);
     } else {
       await _player?.stop();
     }

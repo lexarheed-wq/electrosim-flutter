@@ -218,7 +218,8 @@ void main() {
                 expect(
                   luminance,
                   greaterThan(170),
-                  reason: '${entry.key} auxiliary port $i must land on its metal lug',
+                  reason:
+                      '${entry.key} auxiliary port $i must land on its metal lug',
                 );
                 continue;
               }

@@ -113,9 +113,20 @@ void main() {
       (F9PaletteDefinition item) => item.modelType == 'thermal_overload_3p',
     );
     expect(
-      overload.terminals.map((F9PaletteTerminalSpec terminal) => terminal.label),
+      overload.terminals.map(
+        (F9PaletteTerminalSpec terminal) => terminal.label,
+      ),
       <String>[
-        '1L1', '3L2', '5L3', '2T1', '4T2', '6T3', '95', '96', '97', '98',
+        '1L1',
+        '3L2',
+        '5L3',
+        '2T1',
+        '4T2',
+        '6T3',
+        '95',
+        '96',
+        '97',
+        '98',
       ],
     );
     expect(overload.terminals[6].role, TerminalRole.auxiliaryNormallyClosed);

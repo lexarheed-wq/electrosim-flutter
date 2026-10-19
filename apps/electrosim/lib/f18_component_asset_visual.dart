@@ -684,8 +684,9 @@ class F18ComponentAssetVisual extends StatelessWidget {
       _ => null,
     };
     if (catalogDevice != null) {
-      final bool sensorContactActuated =
-          type == 'limit_switch_nc' ? closed == false : closed == true;
+      final bool sensorContactActuated = type == 'limit_switch_nc'
+          ? closed == false
+          : closed == true;
       return F20CatalogComponentView(
         device: catalogDevice,
         size: size,
@@ -716,7 +717,10 @@ class F18ComponentAssetVisual extends StatelessWidget {
 /// closing together. The palette adds shallow depth; the plate keeps a square
 /// frontal view so the hardware reads clearly at component scale.
 final class _MechanicalInterlockPainter extends CustomPainter {
-  const _MechanicalInterlockPainter({required this.perspective, this.activeSide});
+  const _MechanicalInterlockPainter({
+    required this.perspective,
+    this.activeSide,
+  });
 
   final bool perspective;
   final String? activeSide;
@@ -774,11 +778,7 @@ final class _MechanicalInterlockPainter extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFF5F6F3),
-            Color(0xFFC9D0D2),
-            Color(0xFF87939A),
-          ],
+          colors: [Color(0xFFF5F6F3), Color(0xFFC9D0D2), Color(0xFF87939A)],
           stops: [0, .52, 1],
         ).createShader(const Rect.fromLTWH(12, 24, 176, 72)),
     );

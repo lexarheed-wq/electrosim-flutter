@@ -1206,38 +1206,46 @@ final class _PhysicalPlatePainter extends CustomPainter {
       labels = <String>['L+', 'M'];
     } else {
       labels = switch (name) {
-      'diode-axial' ||
-      'diode-glass' ||
-      'diode-tvs' ||
-      'led-red' ||
-      'led-green' => ['A', 'K'],
-      'switch-toggle' => ['1', '2'],
-      'source-dc-voltage' ||
-      'source-dc-current' ||
-      'solar-battery' ||
-      'solar-panel' => ['+', '−'],
-      'source-ac-voltage' || 'source-ac-current' => ['L', 'N'],
-      'controller-mppt' || 'controller-pwm' => ['PV+', 'PV−', 'BAT+', 'BAT−'],
-      'solar-inverter' => ['DC+', 'DC−', 'L', 'N'],
-      'supply' => ['+', '−'],
-      'coil' => ['A1', 'A2'],
-      'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
-      'fuse-holder' => ['1', '2'],
-      'auxiliary-no' => ['13', '14'],
-      'auxiliary-nc' => ['21', '22'],
-      'terminal5' => ['1', '2', '3', '4', 'PE', '1', '2', '3', '4', 'PE'],
-      'resistor-axial' || 'capacitor-film' || 'inductor-drum' => ['1', '2'],
-      'motor3' => ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
-      'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
-      'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
-      'breaker3' ||
-      'isolator3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
-      'overload' => [
-        '1L1', '3L2', '5L3', '2T1', '4T2', '6T3', '95', '96', '97', '98',
-      ],
-      'breaker4' ||
-      'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
-          _ => List<String>.filled(ports.length, ''),
+        'diode-axial' ||
+        'diode-glass' ||
+        'diode-tvs' ||
+        'led-red' ||
+        'led-green' => ['A', 'K'],
+        'switch-toggle' => ['1', '2'],
+        'source-dc-voltage' ||
+        'source-dc-current' ||
+        'solar-battery' ||
+        'solar-panel' => ['+', '−'],
+        'source-ac-voltage' || 'source-ac-current' => ['L', 'N'],
+        'controller-mppt' || 'controller-pwm' => ['PV+', 'PV−', 'BAT+', 'BAT−'],
+        'solar-inverter' => ['DC+', 'DC−', 'L', 'N'],
+        'supply' => ['+', '−'],
+        'coil' => ['A1', 'A2'],
+        'motor-dc' || 'fan' || 'buzzer' => ['+', '−'],
+        'fuse-holder' => ['1', '2'],
+        'auxiliary-no' => ['13', '14'],
+        'auxiliary-nc' => ['21', '22'],
+        'terminal5' => ['1', '2', '3', '4', 'PE', '1', '2', '3', '4', 'PE'],
+        'resistor-axial' || 'capacitor-film' || 'inductor-drum' => ['1', '2'],
+        'motor3' => ['U1', 'V1', 'W1', 'U2', 'V2', 'W2'],
+        'contactor1' => ['1L1', '2T1', 'A1', 'A2'],
+        'contactor3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3', 'A1', 'A2'],
+        'breaker3' || 'isolator3' => ['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+        'overload' => [
+          '1L1',
+          '3L2',
+          '5L3',
+          '2T1',
+          '4T2',
+          '6T3',
+          '95',
+          '96',
+          '97',
+          '98',
+        ],
+        'breaker4' ||
+        'isolator4' => ['1L1', '3L2', '5L3', 'N', '2T1', '4T2', '6T3', 'N'],
+        _ => List<String>.filled(ports.length, ''),
       };
     }
     for (var i = 0; i < ports.length; i++) {

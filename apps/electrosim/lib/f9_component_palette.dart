@@ -1944,7 +1944,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     modelType: 'plc_ac3',
     icon: Icons.memory_outlined,
     kind: F9PaletteElementKind.component,
-    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac3},
     terminalLabels: <String>[
       'L+ 24 V',
       'M 0 V',

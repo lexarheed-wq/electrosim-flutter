@@ -8,12 +8,14 @@ import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-
 import 'f18_workspace_page.dart';
 import 'mixed_board_projection.dart';
 import 'mixed_board_runtime_view.dart';
 import 'runtime/electrical_project_runtime_engine.dart';
 import 'runtime/electrosim_layout_persistence.dart';
+
+bool _isProjectPlcModel(String modelType) =>
+    modelType == 'plc_dc' || modelType == 'plc_ac3';
 
 /// Shared visual board over independent electrical networks and one project clock.
 final class ElectricalProjectWorkspacePage extends StatefulWidget {
@@ -327,7 +329,7 @@ final class _ElectricalProjectWorkspacePageState
         (network) => network.circuit.mode == ElectricalMode.dc,
       );
       final ComponentInstance plc = dc.circuit.components.firstWhere(
-        (component) => component.modelType == 'plc_dc',
+        (component) => _isProjectPlcModel(component.modelType),
       );
       final String? output = <String>['Q0', 'Q1', 'Q2', 'Q3']
           .where(
@@ -375,7 +377,7 @@ final class _ElectricalProjectWorkspacePageState
         (network) => network.circuit.mode == ElectricalMode.dc,
       );
       final ComponentInstance plc = dc.circuit.components.firstWhere(
-        (component) => component.modelType == 'plc_dc',
+        (component) => _isProjectPlcModel(component.modelType),
       );
       final String? input = <String>['I0', 'I1', 'I2', 'I3']
           .where(
@@ -637,7 +639,7 @@ final class _ProjectLinkDialog extends StatelessWidget {
         .firstOrNull;
     final plcComponents =
         dc?.circuit.components
-            .where((component) => component.modelType == 'plc_dc')
+            .where((component) => _isProjectPlcModel(component.modelType))
             .toList() ??
         const <ComponentInstance>[];
     final relayCoils =

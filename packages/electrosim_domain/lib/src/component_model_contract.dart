@@ -869,7 +869,7 @@ final class CoreComponentModelContracts {
       modelType: 'plc_ac3',
       family: ComponentFamily.electromechanicalControl,
       terminalCount: 10,
-      supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+      supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac3},
       branches: const <ComponentBranchDefinition>[],
     ),
     ComponentModelContract(

@@ -9,6 +9,9 @@ import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 
 import 'electrosim_runtime_engine.dart';
 
+bool _isProjectPlc(ComponentInstance component) =>
+    component.modelType == 'plc_dc' || component.modelType == 'plc_ac3';
+
 /// Runtime state for a project containing any set of homogeneous networks.
 final class ElectricalProjectRuntimeSnapshot {
   ElectricalProjectRuntimeSnapshot({
@@ -189,7 +192,7 @@ final class ElectricalProjectRuntimeEngine {
     final Map<String, Map<String, bool>> plcInputs =
         <String, Map<String, bool>>{};
     for (final ComponentInstance plc in dcNetwork.circuit.components.where(
-      (ComponentInstance c) => c.modelType == 'plc_dc',
+      (ComponentInstance c) => _isProjectPlc(c),
     )) {
       final double? voltage = _terminalVoltage(
         dcFirst,
@@ -716,7 +719,7 @@ final class ElectricalProjectRuntimeEngine {
       final ComponentInstance? plc = dcNetwork.circuit.components
           .where(
             (ComponentInstance c) =>
-                c.id.value == link.plcComponentId && c.modelType == 'plc_dc',
+                c.id.value == link.plcComponentId && _isProjectPlc(c),
           )
           .firstOrNull;
       final bool enabled =
@@ -820,7 +823,7 @@ final class ElectricalProjectRuntimeEngine {
     final Map<String, Map<String, bool>> plcInputs =
         <String, Map<String, bool>>{};
     for (final ComponentInstance plc in dcNetwork.circuit.components.where(
-      (ComponentInstance c) => c.modelType == 'plc_dc',
+      (ComponentInstance c) => _isProjectPlc(c),
     )) {
       final double? voltage = plc.terminals.length >= 2
           ? _terminalVoltage(dcFirst, plc.terminals[0].id, plc.terminals[1].id)
@@ -1004,7 +1007,7 @@ final class ElectricalProjectRuntimeEngine {
     mode: circuit.mode,
     components: circuit.components
         .map((ComponentInstance component) {
-          if (component.modelType != 'plc_dc') return component;
+          if (!_isProjectPlc(component)) return component;
           final LadderRuntimeState state =
               ladder['$networkId/${component.id.value}'] ??
               LadderRuntimeState();
@@ -1087,7 +1090,7 @@ final class ElectricalProjectRuntimeEngine {
     if (result == null || !result.isSolved) return <String, bool>{};
     final Map<String, bool> inputs = <String, bool>{};
     for (final ComponentInstance plc in circuit.components.where(
-      (ComponentInstance c) => c.modelType == 'plc_dc',
+      (ComponentInstance c) => _isProjectPlc(c),
     )) {
       for (int i = 0; i < 4; i++) {
         final String address = 'I$i';

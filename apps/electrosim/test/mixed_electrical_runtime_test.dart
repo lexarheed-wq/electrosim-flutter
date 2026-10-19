@@ -472,62 +472,221 @@ void main() {
   });
 
   test(
-    'mixed PLC command starts and stops a wired AC3 motor through contactor poles',
+    'legacy PLC with wired NO start and NC stop controls a mixed AC3 motor',
     () {
-      ElectricalProject motorProject({required bool startCommand}) =>
-          ElectricalProject(
-            networks: <ElectricalNetwork>[
-              ElectricalNetwork(
-                id: 'control',
-                circuit: _plcCircuit(startCommand: startCommand),
-              ),
-              ElectricalNetwork(id: 'power', circuit: _ac3MotorCircuit()),
+      ElectricalProject wiredProject({
+        required bool startPressed,
+        required bool stopPressed,
+      }) {
+        final ComponentInstance plc = ComponentInstance(
+          id: ComponentId('plc'),
+          modelType: 'plc_ac3',
+          terminals: <Terminal>[
+            for (int i = 0; i < 10; i++)
+              Terminal(id: TerminalId('plc-$i'), name: 'T$i'),
+          ],
+          parameters: <String, Object?>{
+            'ladderProgram': <Object?>[
+              <String, Object?>{
+                'steps': <Object?>[
+                  <String, Object?>{'type': 'contact_no', 'address': 'I0'},
+                  <String, Object?>{'type': 'coil_set', 'address': 'M0'},
+                ],
+              },
+              <String, Object?>{
+                'steps': <Object?>[
+                  <String, Object?>{'type': 'contact_nc', 'address': 'I1'},
+                  <String, Object?>{'type': 'coil_reset', 'address': 'M0'},
+                ],
+              },
+              <String, Object?>{
+                'steps': <Object?>[
+                  <String, Object?>{'type': 'contact_no', 'address': 'M0'},
+                  <String, Object?>{'type': 'coil', 'address': 'Q0'},
+                ],
+              },
             ],
-            actuatorLinks: <CrossNetworkActuatorLink>[
-              CrossNetworkActuatorLink(
-                id: 'motor-start',
-                plcNetworkId: 'control',
-                plcComponentId: 'plc',
-                outputAddress: 'Q0',
-                targetNetworkId: 'power',
-                contactorId: 'k1',
-              ),
-            ],
-          );
+          },
+        );
+        final ComponentInstance start = ComponentInstance(
+          id: ComponentId('start'),
+          modelType: 'push_button_no',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('start-13'), name: '13'),
+            Terminal(id: TerminalId('start-14'), name: '14'),
+          ],
+          controlState: <String, Object?>{'pressed': startPressed},
+        );
+        final ComponentInstance stop = ComponentInstance(
+          id: ComponentId('stop'),
+          modelType: 'push_button_nc',
+          terminals: <Terminal>[
+            Terminal(id: TerminalId('stop-21'), name: '21'),
+            Terminal(id: TerminalId('stop-22'), name: '22'),
+          ],
+          controlState: <String, Object?>{'pressed': stopPressed},
+        );
+        final SourceInstance source = SourceInstance(
+          id: SourceId('s24'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('s24-pos'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('s24-neg'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        );
+        final CircuitState control = CircuitState(
+          circuitId: CircuitId('mixed-control'),
+          revision: 0,
+          mode: ElectricalMode.dc,
+          components: <ComponentInstance>[plc, start, stop],
+          sources: <SourceInstance>[source],
+          connections: <Connection>[
+            Connection(
+              id: ConnectionId('supply-lplus'),
+              fromTerminalId: TerminalId('s24-pos'),
+              toTerminalId: TerminalId('plc-0'),
+            ),
+            Connection(
+              id: ConnectionId('supply-m'),
+              fromTerminalId: TerminalId('s24-neg'),
+              toTerminalId: TerminalId('plc-1'),
+            ),
+            Connection(
+              id: ConnectionId('feed-start'),
+              fromTerminalId: TerminalId('s24-pos'),
+              toTerminalId: TerminalId('start-13'),
+            ),
+            Connection(
+              id: ConnectionId('start-input'),
+              fromTerminalId: TerminalId('start-14'),
+              toTerminalId: TerminalId('plc-2'),
+            ),
+            Connection(
+              id: ConnectionId('feed-stop'),
+              fromTerminalId: TerminalId('s24-pos'),
+              toTerminalId: TerminalId('stop-21'),
+            ),
+            Connection(
+              id: ConnectionId('stop-input'),
+              fromTerminalId: TerminalId('stop-22'),
+              toTerminalId: TerminalId('plc-3'),
+            ),
+          ],
+        );
+        return ElectricalProject(
+          networks: <ElectricalNetwork>[
+            ElectricalNetwork(id: 'control', circuit: control),
+            ElectricalNetwork(id: 'power', circuit: _ac3MotorCircuit()),
+          ],
+          actuatorLinks: <CrossNetworkActuatorLink>[
+            CrossNetworkActuatorLink(
+              id: 'motor-start',
+              plcNetworkId: 'control',
+              plcComponentId: 'plc',
+              outputAddress: 'Q0',
+              targetNetworkId: 'power',
+              contactorId: 'k1',
+            ),
+          ],
+        );
+      }
 
       final engine = const ElectricalProjectRuntimeEngine();
-      final started = engine.advance(
-        motorProject(startCommand: true),
-        elapsed: const Duration(milliseconds: 20),
-      );
-      final motorBranches = started.networks['power']!.ac3Result!.branchResults
+      ElectricalProjectRuntimeSnapshot? previous;
+      ElectricalProjectRuntimeSnapshot run({
+        required bool startPressed,
+        required bool stopPressed,
+      }) {
+        previous = engine.advance(
+          wiredProject(
+            startPressed: startPressed,
+            stopPressed: stopPressed,
+          ),
+          elapsed: const Duration(milliseconds: 20),
+          previous: previous,
+        );
+        return previous!;
+      }
+
+      List<dynamic> motorBranches(
+        ElectricalProjectRuntimeSnapshot snapshot,
+      ) => snapshot.networks['power']!.ac3Result!.branchResults
           .where((branch) => branch.id.startsWith('component:motor:'))
           .toList();
-      expect(started.networks['power']!.ac3Result!.isSolved, isTrue);
+
+      // Released pushbuttons: NC stop feeds I1; NO start leaves I0 low.
+      final idle = run(startPressed: false, stopPressed: false);
+      expect(idle.networks['control']!.dcResult!.isSolved, isTrue);
+      expect(idle.networks['power']!.ac3Result!.isSolved, isTrue);
+      expect(
+        F9SourceVoltageReadout.voltageV(
+          idle.networks['control']!,
+          idle.networks['control']!.circuit.sources.single,
+          simulationRunning: true,
+        ),
+        closeTo(24.0, 1e-6),
+      );
+      expect(idle.ladderStates['control']!['plc']!.outputs['Q0'], isFalse);
+      expect(
+        idle.networks['power']!.contactorActuated(ComponentId('k1')),
+        isFalse,
+      );
+      expect(
+        motorBranches(idle).every(
+          (branch) => (branch.current?.magnitude ?? 0) < 1e-7,
+        ),
+        isTrue,
+      );
+
+      // Pressing NO start sets M0, energizes PLC Q0 and closes the AC3 contactor.
+      final started = run(startPressed: true, stopPressed: false);
+      expect(started.ladderStates['control']!['plc']!.outputs['Q0'], isTrue);
       expect(
         started.networks['power']!.contactorActuated(ComponentId('k1')),
         isTrue,
       );
-      expect(motorBranches, hasLength(3));
+      expect(motorBranches(started), hasLength(3));
       expect(
-        motorBranches.every(
+        motorBranches(started).every(
           (branch) => (branch.current?.magnitude ?? 0) > 0.01,
         ),
         isTrue,
       );
 
-      final stopped = engine.advance(
-        motorProject(startCommand: false),
-        elapsed: const Duration(milliseconds: 20),
+      // Releasing start must leave the motor running through the Ladder latch.
+      final held = run(startPressed: false, stopPressed: false);
+      expect(held.ladderStates['control']!['plc']!.outputs['Q0'], isTrue);
+      expect(
+        held.networks['power']!.contactorActuated(ComponentId('k1')),
+        isTrue,
       );
+      expect(
+        motorBranches(held).every(
+          (branch) => (branch.current?.magnitude ?? 0) > 0.01,
+        ),
+        isTrue,
+      );
+
+      // Pressing the physical NC stop opens I1 and resets the latch and motor.
+      final stopped = run(startPressed: false, stopPressed: true);
+      expect(stopped.ladderStates['control']!['plc']!.outputs['Q0'], isFalse);
       expect(
         stopped.networks['power']!.contactorActuated(ComponentId('k1')),
         isFalse,
       );
       expect(
-        stopped.networks['power']!.ac3Result!.branchResults
-            .where((branch) => branch.id.startsWith('component:motor:'))
-            .every((branch) => (branch.current?.magnitude ?? 0) < 1e-7),
+        motorBranches(stopped).every(
+          (branch) => (branch.current?.magnitude ?? 0) < 1e-7,
+        ),
         isTrue,
       );
     },

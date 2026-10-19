@@ -607,21 +607,17 @@ void main() {
         required bool stopPressed,
       }) {
         previous = engine.advance(
-          wiredProject(
-            startPressed: startPressed,
-            stopPressed: stopPressed,
-          ),
+          wiredProject(startPressed: startPressed, stopPressed: stopPressed),
           elapsed: const Duration(milliseconds: 20),
           previous: previous,
         );
         return previous!;
       }
 
-      List<dynamic> motorBranches(
-        ElectricalProjectRuntimeSnapshot snapshot,
-      ) => snapshot.networks['power']!.ac3Result!.branchResults
-          .where((branch) => branch.id.startsWith('component:motor:'))
-          .toList();
+      List<dynamic> motorBranches(ElectricalProjectRuntimeSnapshot snapshot) =>
+          snapshot.networks['power']!.ac3Result!.branchResults
+              .where((branch) => branch.id.startsWith('component:motor:'))
+              .toList();
 
       // Released pushbuttons: NC stop feeds I1; NO start leaves I0 low.
       final idle = run(startPressed: false, stopPressed: false);
@@ -641,9 +637,9 @@ void main() {
         isFalse,
       );
       expect(
-        motorBranches(idle).every(
-          (branch) => (branch.current?.magnitude ?? 0) < 1e-7,
-        ),
+        motorBranches(
+          idle,
+        ).every((branch) => (branch.current?.magnitude ?? 0) < 1e-7),
         isTrue,
       );
 
@@ -656,9 +652,9 @@ void main() {
       );
       expect(motorBranches(started), hasLength(3));
       expect(
-        motorBranches(started).every(
-          (branch) => (branch.current?.magnitude ?? 0) > 0.01,
-        ),
+        motorBranches(
+          started,
+        ).every((branch) => (branch.current?.magnitude ?? 0) > 0.01),
         isTrue,
       );
 
@@ -670,9 +666,9 @@ void main() {
         isTrue,
       );
       expect(
-        motorBranches(held).every(
-          (branch) => (branch.current?.magnitude ?? 0) > 0.01,
-        ),
+        motorBranches(
+          held,
+        ).every((branch) => (branch.current?.magnitude ?? 0) > 0.01),
         isTrue,
       );
 
@@ -684,9 +680,9 @@ void main() {
         isFalse,
       );
       expect(
-        motorBranches(stopped).every(
-          (branch) => (branch.current?.magnitude ?? 0) < 1e-7,
-        ),
+        motorBranches(
+          stopped,
+        ).every((branch) => (branch.current?.magnitude ?? 0) < 1e-7),
         isTrue,
       );
     },

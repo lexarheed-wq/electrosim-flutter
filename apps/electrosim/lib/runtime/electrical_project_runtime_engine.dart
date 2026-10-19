@@ -373,10 +373,11 @@ final class ElectricalProjectRuntimeEngine {
       );
       snapshots[input.id] = result.pvSnapshot;
       snapshots[output.id] = result.acSnapshot;
-      if (!result.converged)
+      if (!result.converged) {
         diagnostics.add(
           'Convertisseur ${link.id}: couplage PV–AC1 non convergé après 8 itérations; frontière ouverte.',
         );
+      }
     }
     return ElectricalProjectRuntimeSnapshot(
       networks: snapshots,
@@ -460,8 +461,9 @@ final class ElectricalProjectRuntimeEngine {
       final PvSolveResult? pvResult = finalPv.pvResult;
       if (pvResult == null ||
           !pvResult.isSolved ||
-          pvResult.inverterOutputPowerW <= 0.0)
+          pvResult.inverterOutputPowerW <= 0.0) {
         break;
+      }
       pvSoc = pvResult.batteryPresent ? pvResult.batterySoc : pvSoc;
       final double nominal =
           _positiveParameter(inverter.parameters['nominalAcVoltageV']) ?? 230.0;
@@ -600,8 +602,9 @@ final class ElectricalProjectRuntimeEngine {
   ) {
     if (circuit.sources.any(
       (SourceInstance s) => s.id.value == 'mixed-${link.id}-source',
-    ))
+    )) {
       return circuit;
+    }
     final String id = 'mixed-${link.id}-source';
     final SourceInstance source = SourceInstance(
       id: SourceId(id),

@@ -70,6 +70,39 @@ final class ElectroSimInstrumentProjection {
     return measured.isValid ? measured.reading?.value : null;
   }
 
+  /// Current through the meter's burden in the already-solved circuit.
+  /// Reading the common branch keeps displayed values and fuse protection
+  /// consistent with the circuit loads in DC, AC1 and AC3.
+  double? seriesCurrent(
+    ElectroSimRuntimeSnapshot snapshot,
+    InstrumentInstance meter,
+  ) {
+    final mode = snapshot.effectiveCircuit.mode;
+    if ((mode != ElectricalMode.dc &&
+            mode != ElectricalMode.ac1 &&
+            mode != ElectricalMode.ac3) ||
+        meter.kind != InstrumentKind.ammeter ||
+        meter.fuseBlown ||
+        F18AmmeterFuseSafety.wiredCut(snapshot.circuit, meter) == null) {
+      return null;
+    }
+    final shunt = snapshot.effectiveCircuit.components
+        .where(
+          (component) =>
+              component.modelType == 'resistor' &&
+              component.id.value.startsWith('g5-amperemeter-burden-') &&
+              component.controlState['runtimeMeterId'] == meter.id.value,
+        )
+        .firstOrNull;
+    if (shunt == null) return null;
+    final branchId = 'component:${shunt.id.value}';
+    final measured = mode == ElectricalMode.dc
+        ? snapshot.measureCurrent(branchId: branchId)
+        : snapshot.measureAcCurrent(branchId: branchId);
+    final value = measured.reading?.value;
+    return measured.isValid && value != null && value.isFinite ? value : null;
+  }
+
   PhysicalInstrumentReading read({
     required ElectroSimRuntimeSnapshot snapshot,
     required InstrumentInstance instrument,
@@ -448,8 +481,8 @@ final class ElectroSimInstrumentProjection {
         );
       }
       final MeasurementResult measured;
-      if (dc) {
-        final current = dcSeriesCurrent(snapshot, instrument);
+      {
+        final current = seriesCurrent(snapshot, instrument);
         if (current == null || !current.isFinite) {
           return error(
             PhysicalInstrumentStatus.unavailable,
@@ -457,24 +490,11 @@ final class ElectroSimInstrumentProjection {
           );
         }
         measured = MeasurementResult.valid(
-          kind: MeasurementKind.currentDc,
-          value: amp == original.fromTerminalId ? current : -current,
+          kind: dc ? MeasurementKind.currentDc : MeasurementKind.currentAcRms,
+          value: dc && amp != original.fromTerminalId ? -current : current,
           unit: ElectricalUnit.ampere,
           evidenceIds: ['wire:${cut.value}', 'meter:${instrument.id.value}'],
         );
-      } else {
-        // AC keeps its established projection until phase-specific burden
-        // parity is qualified separately.
-        final wiring = _projectionWiring(
-          circuit,
-          resistanceOhm: instrument.burdenResistanceOhm,
-          first: original.fromTerminalId,
-          second: original.toTerminalId,
-          cutConnection: cut,
-        );
-        measured = engine
-            .evaluate(wiring.circuit)
-            .measureAcCurrent(branchId: wiring.branchId);
       }
       if (!measured.isValid || measured.reading == null) {
         return error(

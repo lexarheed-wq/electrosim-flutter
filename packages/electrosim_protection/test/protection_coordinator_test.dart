@@ -1,5 +1,6 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
 import 'package:electrosim_protection/electrosim_protection.dart';
+import 'package:electrosim_solver_ac/electrosim_solver_ac.dart';
 import 'package:electrosim_topology/electrosim_topology.dart';
 import 'package:test/test.dart';
 
@@ -102,6 +103,14 @@ void main() {
     );
     expect(tripped.state[ComponentId('rt1')]!.tripped, isTrue);
     expect(
+      tripped.state[ComponentId('rt1')]!.normallyClosedAuxiliaryClosed,
+      isFalse,
+    );
+    expect(
+      tripped.state[ComponentId('rt1')]!.normallyOpenAuxiliaryClosed,
+      isTrue,
+    );
+    expect(
       tripped.state[ComponentId('rt1')]!.tripCause,
       ProtectionTripCause.timeCurrent,
     );
@@ -118,6 +127,81 @@ void main() {
         closeTo(0.0, 1e-12),
       );
     }
+    expect(
+      half.state[ComponentId('rt1')]!.normallyClosedAuxiliaryClosed,
+      isTrue,
+    );
+    expect(
+      half.state[ComponentId('rt1')]!.normallyOpenAuxiliaryClosed,
+      isFalse,
+    );
+    expect(
+      half.result.branch('component:rt1:95-96').kind,
+      Ac3BranchKind.idealProtection,
+    );
+    expect(
+      half.result.branch('component:rt1:97-98').kind,
+      Ac3BranchKind.openCircuit,
+    );
+    expect(
+      tripped.result.branch('component:rt1:95-96').kind,
+      Ac3BranchKind.openCircuit,
+    );
+    expect(
+      tripped.result.branch('component:rt1:97-98').kind,
+      Ac3BranchKind.idealProtection,
+    );
+  });
+
+  test(
+    'thermal overload reset is rejected while forced-closed current exceeds rating',
+    () {
+      final CircuitState circuit = _ac3ThermalCircuit(
+        ratedCurrentA: 5.0,
+        resistanceOhm: 23.0,
+      );
+      final TopologyGraph topology = topologyEngine.compile(circuit);
+      final ProtectionAc3Outcome tripped = protections.advanceAc3(
+        circuit: circuit,
+        topology: topology,
+        elapsed: const Duration(seconds: 120),
+      );
+
+      final ProtectionResetResult reset = protections.resetThermalOverload(
+        circuit: tripped.effectiveCircuit,
+        topology: topology,
+        state: tripped.state,
+        componentId: ComponentId('rt1'),
+      );
+      expect(reset.accepted, isFalse);
+      expect(reset.state.isTripped(ComponentId('rt1')), isTrue);
+      expect(reset.measuredCurrentA, greaterThan(5.0));
+    },
+  );
+
+  test('thermal overload resets after trial current falls below rating', () {
+    final CircuitState overloadedCircuit = _ac3ThermalCircuit(
+      ratedCurrentA: 5.0,
+      resistanceOhm: 23.0,
+    );
+    final ProtectionAc3Outcome tripped = protections.advanceAc3(
+      circuit: overloadedCircuit,
+      topology: topologyEngine.compile(overloadedCircuit),
+      elapsed: const Duration(seconds: 120),
+    );
+    final CircuitState cooledCircuit = _ac3ThermalCircuit(
+      ratedCurrentA: 5.0,
+      resistanceOhm: 230.0,
+    );
+    final ProtectionResetResult reset = protections.resetThermalOverload(
+      circuit: cooledCircuit,
+      topology: topologyEngine.compile(cooledCircuit),
+      state: tripped.state,
+      componentId: ComponentId('rt1'),
+    );
+    expect(reset.accepted, isTrue);
+    expect(reset.state.isTripped(ComponentId('rt1')), isFalse);
+    expect(reset.measuredCurrentA, lessThan(5.0));
   });
 
   test('tripped protection is latched until explicit reset', () {
@@ -249,6 +333,10 @@ CircuitState _ac3ThermalCircuit({
         _t('rt-l1-out', '2T1', phase: PhaseTag.l1),
         _t('rt-l2-out', '4T2', phase: PhaseTag.l2),
         _t('rt-l3-out', '6T3', phase: PhaseTag.l3),
+        _t('rt-95', '95'),
+        _t('rt-96', '96'),
+        _t('rt-97', '97'),
+        _t('rt-98', '98'),
       ],
       parameters: <String, Object?>{
         ProtectionRating.ratedCurrentKey: ratedCurrentA,

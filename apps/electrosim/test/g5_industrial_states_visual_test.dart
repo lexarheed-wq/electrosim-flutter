@@ -1,30 +1,18 @@
-import 'dart:io';
-
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
 
 void main() {
   setUpAll(() async {
+    await loadElectroSimGoldenFont();
     expect(await Disjoncteur3D.prechargerTextures(), isTrue);
   });
   testWidgets('G5 OFF ON TRIP: same industrial assembly, same four ports', (
     tester,
   ) async {
-    final String? home = Platform.environment['HOME'];
-    final String macFont = '${home ?? ''}/Library/Fonts/DejaVuSans.ttf';
-    final font = File(
-      home != null && File(macFont).existsSync()
-          ? macFont
-          : '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    );
-    if (font.existsSync()) {
-      final bytes = font.readAsBytesSync();
-      await (FontLoader(
-        'Roboto',
-      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
-    }
     tester.view.physicalSize = const Size(1000, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -90,7 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-industrial-state-proof')),
-      matchesGoldenFile('goldens/g5_industrial_off_on_trip.png'),
+      matchesGoldenFile(platformGoldenPath('g5_industrial_off_on_trip.png')),
     );
   });
 }

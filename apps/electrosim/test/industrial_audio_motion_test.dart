@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:electrosim/runtime/f18_continuity_audio.dart';
 import 'package:electrosim/runtime/industrial_alarm_audio.dart';
 import 'package:electrosim/runtime/rotor_motion.dart';
 import 'package:electrosim/runtime/electrosim_runtime_engine.dart';
@@ -78,6 +79,17 @@ CircuitState alarmCircuit({
 );
 
 void main() {
+  test(
+    'inactive continuity audio does not initialize a platform player',
+    () async {
+      final F18ContinuityAudioBackend backend =
+          PlayerF18ContinuityAudioBackend();
+
+      await backend.setActive(false);
+      await backend.dispose();
+    },
+  );
+
   test(
     'alarms require solved powered circuit and running unmuted simulation',
     () {

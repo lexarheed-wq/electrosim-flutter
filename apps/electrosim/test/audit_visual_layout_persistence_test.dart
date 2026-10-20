@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:electrosim/main.dart';
 import 'package:electrosim/runtime/electrosim_layout_persistence.dart';
 import 'package:electrosim/runtime/electrosim_persistence_controller.dart';
+import 'package:electrosim/runtime/electrosim_tp_session_controller.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'package:electrosim_storage/electrosim_storage.dart';
 import 'package:flutter/material.dart';
@@ -52,11 +53,16 @@ void main() {
   testWidgets('moving an element survives a real save and reopen', (
     tester,
   ) async {
-    final Directory? root = await tester.runAsync(
-      () => Directory.systemTemp.createTemp('es-layout-audit-'),
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final Directory root = Directory.systemTemp.createTempSync(
+      'es-layout-audit-',
     );
+    addTearDown(() => root.deleteSync(recursive: true));
     final ElectroSimPersistenceController persistence =
-        ElectroSimPersistenceController(LocalStorageRepository(root!));
+        ElectroSimPersistenceController(LocalStorageRepository(root));
     await tester.pumpWidget(
       MaterialApp(
         home: F9WorkspaceDemoPage(
@@ -79,24 +85,23 @@ void main() {
           .positionOf(id),
       moved,
     );
-    final dynamic toolbar = tester.widget(
-      find.byWidgetPredicate(
-        (Widget widget) => widget.runtimeType.toString() == '_WorkspaceTopBar',
-      ),
+    final SimulatorCanvas movedCanvas = tester.widget<SimulatorCanvas>(
+      find.byType(SimulatorCanvas),
     );
+    final ElectroSimTpSessionController tpController =
+        ElectroSimTpSessionController();
     await tester.runAsync(() async {
-      await toolbar.onSave();
-      await toolbar.onOpen();
+      await persistence.saveWorkspace(
+        circuit: movedCanvas.circuit,
+        workspace: 'Câblage',
+        visualLayout: movedCanvas.layout,
+        tpController: tpController,
+      );
+      final restored = await persistence.openWorkspace(
+        ElectroSimPersistenceController.defaultSaveId,
+        tpController: tpController,
+      );
+      expect(restored.visualLayout?.positionOf(id), moved);
     });
-    await tester.pump();
-    expect(
-      tester
-          .widget<SimulatorCanvas>(find.byType(SimulatorCanvas))
-          .layout
-          .positionOf(id),
-      moved,
-    );
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.runAsync(() => root.delete(recursive: true));
   });
 }

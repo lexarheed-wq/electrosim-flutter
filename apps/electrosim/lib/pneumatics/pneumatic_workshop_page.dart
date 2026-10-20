@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pneumatic_device_glyph.dart';
+import 'electropneumatic_training_bench_page.dart';
 import 'pneumatic_reference_cycle_page.dart';
 
 /// Experimental two-view editor of one canonical MultiphysicsProject.
@@ -430,7 +431,7 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
     return Scaffold(
       key: const Key('pneumatic-r4-workshop'),
       appBar: AppBar(
-        title: const Text('Atelier pneumatique expérimental'),
+        title: const Text('Atelier pneumatique · bêta'),
         actions: <Widget>[
           IconButton(
             key: const Key('air-advance'),
@@ -455,6 +456,16 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
               ),
             ),
             icon: const Icon(Icons.play_circle_outline),
+          ),
+          IconButton(
+            key: const Key('open-electropneumatic-training-bench'),
+            tooltip: 'Ouvrir le banc électropneumatique 24 V / 5/2 / vérin',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const ElectropneumaticTrainingBenchPage(),
+              ),
+            ),
+            icon: const Icon(Icons.electrical_services),
           ),
           IconButton(
             key: const Key('air-undo'),
@@ -740,7 +751,8 @@ class _PneumaticWorkshopPageState extends State<PneumaticWorkshopPage> {
                     kind: device.kind,
                     schematic: !plate,
                     width: 110,
-                    height: 38,
+                    height: 58,
+                    frontView: plate,
                   ),
                   Text(
                     '${device.id} : ${device.kind.name}',

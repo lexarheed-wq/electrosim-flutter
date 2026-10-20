@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/regression_fixture.dart';
+import 'support/platform_golden_path.dart';
 
 void main() {
   // Reference PNGs were recorded using the Linux Material platform.
@@ -70,7 +71,7 @@ void main() {
     await pumpWorkspace(tester, size);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/${prefix}_base.png'),
+      matchesGoldenFile(platformGoldenPath('${prefix}_base.png')),
     );
 
     if (size.width >= 1200) {
@@ -85,7 +86,7 @@ void main() {
     await openPalette(tester);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/${prefix}_palette.png'),
+      matchesGoldenFile(platformGoldenPath('${prefix}_palette.png')),
     );
 
     await pumpWorkspace(tester, size, selected: 'switch-1');
@@ -101,7 +102,7 @@ void main() {
     await openContext(tester);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/${prefix}_properties.png'),
+      matchesGoldenFile(platformGoldenPath('${prefix}_properties.png')),
     );
   }
 
@@ -156,7 +157,9 @@ void main() {
     expect(find.byKey(const Key('student-diagnostic-panel')), findsOneWidget);
     await expectLater(
       find.byType(Scaffold),
-      matchesGoldenFile('goldens/f9_compact_student_diagnostic.png'),
+      matchesGoldenFile(
+        platformGoldenPath('f9_compact_student_diagnostic.png'),
+      ),
     );
     debugDefaultTargetPlatformOverride = null;
   });

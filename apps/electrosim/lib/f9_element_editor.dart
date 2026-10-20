@@ -25,6 +25,9 @@ final class F9ElementDetails {
 }
 
 abstract final class F9ElementEditor {
+  static const double defaultProximityRangeMm = 8.0;
+  static const double defaultProximityTargetDistanceMm = 20.0;
+
   static F9ElementDetails? describe(CircuitState circuit, String? elementId) {
     if (elementId == null) {
       return null;
@@ -38,6 +41,10 @@ abstract final class F9ElementEditor {
       final bool isPushButton =
           component.modelType == 'push_button_no' ||
           component.modelType == 'push_button_nc';
+      final bool isMaintainedSensor =
+          component.modelType == 'proximity_sensor_24v' ||
+          component.modelType == 'limit_switch_no' ||
+          component.modelType == 'limit_switch_nc';
       final bool? primaryValue = isPushButton
           ? (pressed is bool ? pressed : null)
           : (closed is bool ? closed : null);
@@ -54,11 +61,15 @@ abstract final class F9ElementEditor {
             : isPushButton && pressed is bool
             ? (pressed ? 'appuyé' : 'relâché')
             : closed is bool
-            ? (closed ? 'fermé' : 'ouvert')
+            ? (isMaintainedSensor
+                  ? (closed ? 'actionné' : 'au repos')
+                  : (closed ? 'fermé' : 'ouvert'))
             : component.condition.name,
         primaryToggleLabel: isPushButton
             ? (pressed is bool ? 'Appuyé' : null)
-            : (closed is bool ? 'Fermé' : null),
+            : (closed is bool
+                  ? (isMaintainedSensor ? 'Actionné' : 'Fermé')
+                  : null),
         primaryToggleValue: primaryValue,
       );
     }
@@ -161,6 +172,73 @@ abstract final class F9ElementEditor {
             controlState: <String, Object?>{
               ...component.controlState,
               'closed': closed,
+            },
+          );
+        })
+        .toList(growable: false);
+    if (!changed) return circuit;
+    return _rebuild(circuit, components: components);
+  }
+
+  /// Updates the simulated target position of the two-wire proximity sensor.
+  /// Its NO contact closes only while the target is within sensing range.
+  static CircuitState setProximityTargetDistance(
+    CircuitState circuit,
+    String elementId, {
+    required double distanceMm,
+  }) {
+    if (!distanceMm.isFinite) return circuit;
+    final double targetDistanceMm = distanceMm.clamp(0.0, 100.0).toDouble();
+    var changed = false;
+    final List<ComponentInstance> components = circuit.components
+        .map((ComponentInstance component) {
+          if (component.id.value != elementId ||
+              component.modelType != 'proximity_sensor_24v') {
+            return component;
+          }
+          final double rangeMm =
+              (component.parameters['sensingDistanceMm'] as num?)?.toDouble() ??
+              defaultProximityRangeMm;
+          final String targetMaterial =
+              component.parameters['targetMaterial'] as String? ?? 'ferrous';
+          final double materialFactor = switch (targetMaterial) {
+            'ferrous' => 1.0,
+            'stainless-steel' => 0.7,
+            'aluminum' => 0.45,
+            'copper' || 'brass' => 0.4,
+            _ => 0.0,
+          };
+          final double effectiveRangeMm = rangeMm * materialFactor;
+          final double hysteresisPercent =
+              (component.parameters['hysteresisPercent'] as num?)?.toDouble() ??
+              10.0;
+          final bool wasDetected = component.controlState['closed'] == true;
+          final double releaseDistanceMm =
+              effectiveRangeMm *
+              (1.0 + hysteresisPercent.clamp(0.0, 50.0).toDouble() / 100.0);
+          final bool detected = wasDetected
+              ? targetDistanceMm <= releaseDistanceMm
+              : targetDistanceMm <= effectiveRangeMm;
+          if (component.parameters['targetDistanceMm'] == targetDistanceMm &&
+              component.controlState['closed'] == detected) {
+            return component;
+          }
+          changed = true;
+          return ComponentInstance(
+            id: component.id,
+            modelType: component.modelType,
+            terminals: component.terminals,
+            parameters: <String, Object?>{
+              ...component.parameters,
+              'targetDistanceMm': targetDistanceMm,
+              'sensingDistanceMm': rangeMm,
+              'targetMaterial': targetMaterial,
+              'hysteresisPercent': hysteresisPercent,
+            },
+            condition: component.condition,
+            controlState: <String, Object?>{
+              ...component.controlState,
+              'closed': detected,
             },
           );
         })

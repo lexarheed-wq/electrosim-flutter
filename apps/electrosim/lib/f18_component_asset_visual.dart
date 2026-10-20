@@ -2,6 +2,7 @@ import 'runtime/energy_meter_runtime.dart';
 import 'package:electrosim_canvas/electrosim_canvas.dart';
 import 'f18_native_appliance_visual.dart';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,8 @@ import 'f18_crusher_3d_assets.dart';
 import 'f18_crusher_visual.dart';
 import 'f23_distribution_components.dart';
 import 'f18_component_archetypes.dart';
+import 'f18_control_modules_visual.dart';
+import 'f18_control_device_assets.dart';
 import 'f18_industrial_physical_devices.dart';
 import 'f18_industrial_physical_plate.dart';
 import 'reference_components/reference_models.dart';
@@ -88,6 +91,10 @@ abstract final class F18ReferenceComponentVisuals {
     'isolator_4p',
     'breaker_4p',
     'terminal_block_5',
+    'timer_star_delta',
+    'plc_ac3',
+    'plc_dc',
+    'mechanical_interlock_ac3',
   };
 
   static bool supports(String modelType) =>
@@ -240,14 +247,26 @@ abstract final class F18ReferenceComponentMetrics {
               'terminal_block_5' => F23DistributionGeometry.boardSizeFor(
                 F23DistributionDevice.terminalBlock5,
               ),
+              'timer_star_delta' => const Size(180, 260),
+              'plc_ac3' => const Size(300, 220),
+              'plc_dc' => const Size(300, 220),
+              'mechanical_interlock_ac3' => const Size(180, 110),
               _ => const Size(104, 64),
             });
 
-  static Size paletteSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(82, 58));
+  static Size paletteSizeFor(String modelType) => _fitInside(
+    modelType.toLowerCase() == 'plc_dc'
+        ? const Size(104, 64)
+        : boardSizeFor(modelType),
+    const Size(82, 58),
+  );
 
-  static Size dragSizeFor(String modelType) =>
-      _fitInside(boardSizeFor(modelType), const Size(160, 118));
+  static Size dragSizeFor(String modelType) => _fitInside(
+    modelType.toLowerCase() == 'plc_dc'
+        ? const Size(104, 64)
+        : boardSizeFor(modelType),
+    const Size(160, 118),
+  );
 
   static Size _fitInside(Size source, Size bounds) {
     final double scale = math.min(
@@ -311,6 +330,8 @@ class F18ComponentAssetVisual extends StatelessWidget {
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
     this.residualTripCurrentA = 0,
+    this.controlState = const <String, Object?>{},
+    this.componentParameters = const <String, Object?>{},
   });
 
   final String modelType;
@@ -336,10 +357,52 @@ class F18ComponentAssetVisual extends StatelessWidget {
   final double currentLimitA;
   final double resistanceOhm;
   final double residualTripCurrentA;
+  final Map<String, Object?> controlState;
+  final Map<String, Object?> componentParameters;
 
   @override
   Widget build(BuildContext context) {
     final String type = modelType.toLowerCase();
+    if (type == 'mechanical_interlock_ac3') {
+      final bool palette = F18PhysicalPresentationScope.perspectiveOf(context);
+      final ui.Image? productImage = F18ControlDeviceAssets.image(
+        'mechanical-interlock-ac3',
+        palette: palette,
+        activeSide: controlState['contactorAActuated'] == true
+            ? 'a'
+            : controlState['contactorBActuated'] == true
+            ? 'b'
+            : null,
+      );
+      if (productImage != null) {
+        return RawImage(
+          image: productImage,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        );
+      }
+      return CustomPaint(
+        size: size,
+        painter: _MechanicalInterlockPainter(
+          perspective: F18PhysicalPresentationScope.perspectiveOf(context),
+          activeSide: controlState['contactorAActuated'] == true
+              ? 'a'
+              : controlState['contactorBActuated'] == true
+              ? 'b'
+              : null,
+        ),
+      );
+    }
+    if (type == 'timer_star_delta' || type == 'plc_ac3' || type == 'plc_dc') {
+      return F18ControlModuleVisual(
+        modelType: type,
+        size: size,
+        controlState: controlState,
+        parameters: componentParameters,
+        active: active,
+        showTerminals: showTerminals,
+      );
+    }
     final native = NativeApplianceGeometry.forVisual(type, variantKey);
     if (native != null) {
       return F18NativeApplianceVisual(
@@ -621,13 +684,19 @@ class F18ComponentAssetVisual extends StatelessWidget {
       _ => null,
     };
     if (catalogDevice != null) {
+      final bool sensorContactActuated = type == 'limit_switch_nc'
+          ? closed == false
+          : closed == true;
       return F20CatalogComponentView(
         device: catalogDevice,
         size: size,
         state: F20CatalogState(
           powerConnectionMode: powerConnectionMode,
           energized: energized,
-          actuated: actuated,
+          actuated:
+              actuated ||
+              (catalogDevice == F20CatalogDevice.sensor2t &&
+                  sensorContactActuated),
           currentA: currentA,
           voltageV: voltageV,
           animationValue: animationValue,
@@ -642,4 +711,195 @@ class F18ComponentAssetVisual extends StatelessWidget {
       active: active,
     );
   }
+}
+
+/// Rendered mechanical bridge used to prevent both reversing contactors from
+/// closing together. The palette adds shallow depth; the plate keeps a square
+/// frontal view so the hardware reads clearly at component scale.
+final class _MechanicalInterlockPainter extends CustomPainter {
+  const _MechanicalInterlockPainter({
+    required this.perspective,
+    this.activeSide,
+  });
+
+  final bool perspective;
+  final String? activeSide;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    canvas.save();
+    canvas.scale(size.width / 200, size.height / 120);
+
+    final Path body = Path()
+      ..moveTo(24, 24)
+      ..lineTo(176, 24)
+      ..lineTo(188, 35)
+      ..lineTo(188, 86)
+      ..lineTo(176, 96)
+      ..lineTo(24, 96)
+      ..lineTo(12, 86)
+      ..lineTo(12, 35)
+      ..close();
+    canvas.drawShadow(body, const Color(0x99000000), 6, true);
+
+    if (perspective) {
+      final Path rightWall = Path()
+        ..moveTo(188, 35)
+        ..lineTo(197, 28)
+        ..lineTo(197, 78)
+        ..lineTo(188, 86)
+        ..close();
+      canvas.drawPath(
+        rightWall,
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF68747B), Color(0xFF3C474D)],
+          ).createShader(const Rect.fromLTWH(188, 28, 9, 58)),
+      );
+      final Path topWall = Path()
+        ..moveTo(24, 24)
+        ..lineTo(34, 17)
+        ..lineTo(197, 20)
+        ..lineTo(188, 27)
+        ..close();
+      canvas.drawPath(
+        topWall,
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFFF7F8F5), Color(0xFF9EA8AD)],
+          ).createShader(const Rect.fromLTWH(24, 17, 173, 10)),
+      );
+    }
+
+    canvas.drawPath(
+      body,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF5F6F3), Color(0xFFC9D0D2), Color(0xFF87939A)],
+          stops: [0, .52, 1],
+        ).createShader(const Rect.fromLTWH(12, 24, 176, 72)),
+    );
+    canvas.drawPath(
+      body,
+      Paint()
+        ..color = const Color(0xFF566168)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8,
+    );
+
+    // Mounting ears and captive fasteners at both contactor ends.
+    for (final double x in [4, 196]) {
+      final Rect ear = Rect.fromCenter(
+        center: Offset(x, 60),
+        width: 12,
+        height: 42,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(ear, const Radius.circular(3)),
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFFE8ECEB), Color(0xFF66737A)],
+          ).createShader(ear),
+      );
+      canvas.drawCircle(
+        Offset(x, 60),
+        3.7,
+        Paint()..color = const Color(0xFF3D484E),
+      );
+      canvas.drawCircle(
+        Offset(x, 60),
+        2.2,
+        Paint()
+          ..shader = const RadialGradient(
+            colors: [Color(0xFFF9FAF8), Color(0xFF79858B)],
+          ).createShader(Rect.fromCircle(center: Offset(x, 60), radius: 2.2)),
+      );
+      canvas.drawLine(
+        Offset(x - 1.4, 60),
+        Offset(x + 1.4, 60),
+        Paint()
+          ..color = const Color(0xFF404A50)
+          ..strokeWidth = .7,
+      );
+    }
+
+    // The central sliding bridge locks one contactor arm while the other is
+    // pulled in. Layered rails give the mechanism a molded, machined profile.
+    final RRect track = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(37, 43, 126, 36),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(track, Paint()..color = const Color(0xFF414D53));
+    canvas.drawRRect(
+      track.deflate(3),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF758187), Color(0xFF29343A)],
+        ).createShader(const Rect.fromLTWH(40, 46, 120, 30)),
+    );
+    final double sliderShift = activeSide == 'a'
+        ? -28
+        : activeSide == 'b'
+        ? 28
+        : 0;
+    final RRect slider = RRect.fromRectAndRadius(
+      Rect.fromLTWH(75 + sliderShift, 48, 50, 26),
+      const Radius.circular(5),
+    );
+    canvas.drawRRect(
+      slider,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFD15A), Color(0xFFD38B16), Color(0xFF855515)],
+        ).createShader(slider.outerRect),
+    );
+    canvas.drawRRect(
+      slider,
+      Paint()
+        ..color = const Color(0xFF714D1B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    canvas.drawLine(
+      Offset(100 + sliderShift, 51),
+      Offset(100 + sliderShift, 71),
+      Paint()
+        ..color = const Color(0xFF5E441F)
+        ..strokeWidth = 2,
+    );
+
+    // Small safety marking and embossed device designation.
+    final Path warning = Path()
+      ..moveTo(100, 29)
+      ..lineTo(111, 39)
+      ..lineTo(89, 39)
+      ..close();
+    canvas.drawPath(warning, Paint()..color = const Color(0xFFE6AA23));
+    canvas.drawLine(
+      const Offset(100, 32),
+      const Offset(100, 36),
+      Paint()
+        ..color = const Color(0xFF4A3A1B)
+        ..strokeWidth = 1.3,
+    );
+    canvas.drawCircle(
+      const Offset(100, 37.5),
+      .8,
+      Paint()..color = const Color(0xFF4A3A1B),
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_MechanicalInterlockPainter oldDelegate) =>
+      oldDelegate.perspective != perspective ||
+      oldDelegate.activeSide != activeSide;
 }

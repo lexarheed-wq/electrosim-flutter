@@ -1,404 +1,44 @@
 {
   "external-air-conditioner": {
-    "visual": "catalog_appliance_2t",
-    "variant": "air-conditioner",
-    "size": [
-      320,
-      160
-    ],
-    "board": [
-      640,
-      320
-    ],
-    "ports": [
-      [
-        277,
-        108
-      ],
-      [
-        287,
-        108
-      ],
-      [
-        297,
-        108
-      ]
-    ],
-    "box": [
-      287,
-      108,
-      36,
-      22,
-      56
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 56
   },
   "external-compressor": {
-    "visual": "catalog_motor_driven_6t",
-    "variant": "compressor",
-    "size": [
-      240,
-      220
-    ],
-    "board": [
-      480,
-      440
-    ],
-    "ports": [
-      [
-        46,
-        143
-      ],
-      [
-        56,
-        143
-      ],
-      [
-        66,
-        143
-      ],
-      [
-        56,
-        156
-      ],
-      [
-        66,
-        156
-      ],
-      [
-        46,
-        156
-      ],
-      [
-        79,
-        156
-      ]
-    ],
-    "box": [
-      62,
-      150,
-      54,
-      36,
-      64
-    ],
-    "kind": "ac3"
+    "kind": "ac3",
+    "terminal_z": 64
   },
   "external-freezer": {
-    "visual": "catalog_appliance_2t",
-    "variant": "freezer",
-    "size": [
-      320,
-      210
-    ],
-    "board": [
-      640,
-      420
-    ],
-    "ports": [
-      [
-        228,
-        174
-      ],
-      [
-        238,
-        174
-      ],
-      [
-        248,
-        174
-      ]
-    ],
-    "box": [
-      238,
-      174,
-      36,
-      24,
-      65
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 65
   },
   "external-conveyor": {
-    "visual": "catalog_motor_driven_6t",
-    "variant": "conveyor",
-    "size": [
-      360,
-      230
-    ],
-    "board": [
-      720,
-      460
-    ],
-    "ports": [
-      [
-        286.08,
-        130.66
-      ],
-      [
-        292.28,
-        130.66
-      ],
-      [
-        298.48,
-        130.66
-      ],
-      [
-        292.28,
-        138.72
-      ],
-      [
-        298.48,
-        138.72
-      ],
-      [
-        286.08,
-        138.72
-      ],
-      [
-        306.54,
-        138.72
-      ]
-    ],
-    "box": [
-      296,
-      135,
-      33.48,
-      22.32,
-      66
-    ],
     "kind": "ac3",
+    "terminal_z": 66,
     "terminal_scale": 0.62
   },
   "external-iron": {
-    "visual": "catalog_heater",
-    "variant": "iron",
-    "size": [
-      240,
-      180
-    ],
-    "board": [
-      320,
-      240
-    ],
-    "ports": [
-      [
-        200,
-        66
-      ],
-      [
-        208,
-        66
-      ],
-      [
-        216,
-        66
-      ]
-    ],
-    "box": [
-      208,
-      66,
-      30,
-      23,
-      57
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 57
   },
   "external-mixer": {
-    "visual": "catalog_motor_driven_6t",
-    "variant": "mixer",
-    "size": [
-      200,
-      300
-    ],
-    "board": [
-      400,
-      600
-    ],
-    "ports": [
-      [
-        118.08,
-        84.66
-      ],
-      [
-        124.28,
-        84.66
-      ],
-      [
-        130.48,
-        84.66
-      ],
-      [
-        124.28,
-        92.72
-      ],
-      [
-        130.48,
-        92.72
-      ],
-      [
-        118.08,
-        92.72
-      ],
-      [
-        138.54,
-        92.72
-      ]
-    ],
-    "box": [
-      128,
-      89,
-      33.48,
-      22.32,
-      61
-    ],
     "kind": "ac3",
+    "terminal_z": 61,
     "terminal_scale": 0.62
   },
   "external-computer": {
-    "visual": "catalog_appliance_2t",
-    "variant": "computer",
-    "size": [
-      280,
-      240
-    ],
-    "board": [
-      420,
-      360
-    ],
-    "ports": [
-      [
-        219,
-        187
-      ],
-      [
-        229,
-        187
-      ],
-      [
-        239,
-        187
-      ]
-    ],
-    "box": [
-      229,
-      187,
-      36,
-      22,
-      33
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 33
   },
   "external-pump-3p": {
-    "visual": "catalog_motor_driven_6t",
-    "variant": "pump",
-    "size": [
-      300,
-      200
-    ],
-    "board": [
-      480,
-      320
-    ],
-    "ports": [
-      [
-        172,
-        53
-      ],
-      [
-        182,
-        53
-      ],
-      [
-        192,
-        53
-      ],
-      [
-        182,
-        66
-      ],
-      [
-        192,
-        66
-      ],
-      [
-        172,
-        66
-      ],
-      [
-        205,
-        66
-      ]
-    ],
-    "box": [
-      188,
-      60,
-      54,
-      36,
-      61
-    ],
-    "kind": "ac3"
+    "kind": "ac3",
+    "terminal_z": 61
   },
   "external-pump-ac1": {
-    "visual": "catalog_motor_driven_2t",
-    "variant": "pump-ac1",
-    "size": [
-      260,
-      180
-    ],
-    "board": [
-      390,
-      270
-    ],
-    "ports": [
-      [
-        153,
-        59
-      ],
-      [
-        163,
-        59
-      ],
-      [
-        173,
-        59
-      ]
-    ],
-    "box": [
-      163,
-      59,
-      38,
-      25,
-      64
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 64
   },
   "external-solar-pump": {
-    "visual": "catalog_motor_driven_2t",
-    "variant": "solar-pump",
-    "size": [
-      180,
-      300
-    ],
-    "board": [
-      270,
-      450
-    ],
-    "ports": [
-      [
-        132,
-        86
-      ],
-      [
-        144,
-        86
-      ]
-    ],
-    "box": [
-      138,
-      86,
-      32,
-      23,
-      55
-    ],
-    "kind": "dc"
+    "kind": "dc",
+    "terminal_z": 55
   }
 }

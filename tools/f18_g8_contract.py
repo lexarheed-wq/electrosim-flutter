@@ -14,7 +14,7 @@ models = read("packages/electrosim_tp/lib/src/tp_models.dart")
 engine = read("packages/electrosim_tp/lib/src/tp_engine.dart")
 controller = read("apps/electrosim/lib/runtime/electrosim_tp_session_controller.dart")
 dialog = read("apps/electrosim/lib/f17_tp_session_dialog.dart")
-main = read("apps/electrosim/lib/main.dart")
+workspace = read("apps/electrosim/lib/f18_workspace_page.dart")
 supervision = read("apps/electrosim/lib/f17_tp_supervision_panel.dart")
 lan = read("apps/electrosim/lib/runtime/electrosim_lan_sync.dart")
 
@@ -55,11 +55,11 @@ for key in (
 if "tp-student-start" in dialog:
     raise SystemExit("G8 contract failed: student UI must not expose an autonomous start action")
 
-require(main, "bool get _studentTpReadOnly", "workspace read-only derivation missing")
-require(main, "bool _blockStudentTpMutation()", "workspace mutation guard missing")
-if main.count("_blockStudentTpMutation()") < 6:
+require(workspace, "bool get _studentTpReadOnly", "workspace read-only derivation missing")
+require(workspace, "bool _blockStudentTpMutation()", "workspace mutation guard missing")
+if workspace.count("_blockStudentTpMutation()") < 6:
     raise SystemExit("G8 contract failed: workspace mutation guard coverage regressed")
-require(main, "TP remis : montage en lecture seule.", "read-only user feedback missing")
+require(workspace, "TP remis : montage en lecture seule.", "read-only user feedback missing")
 
 for needle, label in (
     ("supervision-grade-input-", "teacher supervision grade input missing"),

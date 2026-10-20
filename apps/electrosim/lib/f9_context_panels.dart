@@ -10,6 +10,7 @@ import 'f18_industrial_physical_plate.dart';
 import 'f9_element_editor.dart';
 import 'f9_model_labels.dart';
 import 'f9_ui_context.dart';
+import 'mixed_board_runtime_view.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
@@ -25,7 +26,13 @@ class F9ContextPanels extends StatefulWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.onPowerConnectionChanged,
+    this.onConfigurePlc,
+    this.onLinkPlcOutput,
+    this.onConfigureTimer,
+    this.onConfigureMechanicalInterlock,
+    this.onProximityTargetDistanceChanged,
     this.tpSessionController,
   });
 
@@ -38,7 +45,15 @@ class F9ContextPanels extends StatefulWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final void Function(String mode, String? socketId)? onPowerConnectionChanged;
+  final ValueChanged<String>? onConfigurePlc;
+  final void Function(String plcId, String output, String? targetId)?
+  onLinkPlcOutput;
+  final ValueChanged<String>? onConfigureTimer;
+  final ValueChanged<String>? onConfigureMechanicalInterlock;
+  final void Function(String sensorId, double distanceMm)?
+  onProximityTargetDistanceChanged;
   final ElectroSimTpSessionController? tpSessionController;
 
   bool get showEie => role == F9UserRole.teacher;
@@ -155,15 +170,33 @@ class _F9ContextPanelsState extends State<F9ContextPanels>
                   onReplaceSelected: widget.onReplaceSelected,
                   onSelectElement: widget.onSelectElement,
                   runtimeSnapshot: widget.runtimeSnapshot,
+                  mixedRuntimeView: widget.mixedRuntimeView,
                   onPowerConnectionChanged: widget.onPowerConnectionChanged,
+                  onConfigurePlc: widget.onConfigurePlc,
+                  onLinkPlcOutput: widget.onLinkPlcOutput,
+                  onConfigureTimer: widget.onConfigureTimer,
+                  onConfigureMechanicalInterlock:
+                      widget.onConfigureMechanicalInterlock,
+                  onProximityTargetDistanceChanged:
+                      widget.onProximityTargetDistanceChanged,
                 ),
                 _MeasurementsPanel(
                   circuit: widget.circuit,
                   selectedId: widget.selectedId,
                   runtimeSnapshot: widget.runtimeSnapshot,
+                  mixedRuntimeView: widget.mixedRuntimeView,
                 ),
                 if (widget.showEie)
-                  _EiePanel(runtimeSnapshot: widget.runtimeSnapshot),
+                  _EiePanel(
+                    runtimeSnapshot:
+                        widget.mixedRuntimeView?.runtimeForElement(
+                          widget.selectedId ?? '',
+                        ) ??
+                        widget.mixedRuntimeView?.runtimeForTerminal(
+                          widget.selectedId ?? '',
+                        ) ??
+                        widget.runtimeSnapshot,
+                  ),
                 if (widget.showDiagnostic)
                   _StudentDiagnosticPanel(
                     controller: widget.tpSessionController,
@@ -192,7 +225,13 @@ class _PropertiesPanel extends StatelessWidget {
     required this.onReplaceSelected,
     required this.onSelectElement,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.onPowerConnectionChanged,
+    this.onConfigurePlc,
+    this.onLinkPlcOutput,
+    this.onConfigureTimer,
+    this.onConfigureMechanicalInterlock,
+    this.onProximityTargetDistanceChanged,
   });
 
   final CircuitState circuit;
@@ -202,7 +241,15 @@ class _PropertiesPanel extends StatelessWidget {
   final VoidCallback? onReplaceSelected;
   final ValueChanged<String?> onSelectElement;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final void Function(String mode, String? socketId)? onPowerConnectionChanged;
+  final ValueChanged<String>? onConfigurePlc;
+  final void Function(String plcId, String output, String? targetId)?
+  onLinkPlcOutput;
+  final ValueChanged<String>? onConfigureTimer;
+  final ValueChanged<String>? onConfigureMechanicalInterlock;
+  final void Function(String sensorId, double distanceMm)?
+  onProximityTargetDistanceChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -210,12 +257,22 @@ class _PropertiesPanel extends StatelessWidget {
       circuit,
       selectedId,
     );
+    final ElectroSimRuntimeSnapshot elementRuntime = details == null
+        ? runtimeSnapshot
+        : mixedRuntimeView?.runtimeForElement(details.id) ?? runtimeSnapshot;
+    final String runtimeElementId = details == null
+        ? ''
+        : mixedRuntimeView?.localIdForElement(details.id) ?? details.id;
+    String runtimeIdFor(String boardId) =>
+        mixedRuntimeView?.localIdForElement(boardId) ?? boardId;
     final bool? primaryToggleValue = details?.primaryToggleValue;
     final bool directCanvasControl = switch (details?.modelType.toLowerCase()) {
       'switch' ||
       'switch_spst' ||
       'push_button_no' ||
       'push_button_nc' ||
+      'limit_switch_no' ||
+      'limit_switch_nc' ||
       'breaker_dc' ||
       'breaker_ac1' ||
       'breaker' => true,
@@ -225,7 +282,8 @@ class _PropertiesPanel extends StatelessWidget {
         ? null
         : F18G7PropertyPresenter.describe(
             details: details,
-            runtimeSnapshot: runtimeSnapshot,
+            runtimeSnapshot: elementRuntime,
+            runtimeElementId: runtimeElementId,
           );
     return ListView(
       key: const Key('properties-panel'),
@@ -278,7 +336,9 @@ class _PropertiesPanel extends StatelessWidget {
             F18PowerConnectionPanel(
               circuit: circuit,
               component: component,
-              runtimeSnapshot: runtimeSnapshot,
+              runtimeSnapshot:
+                  mixedRuntimeView?.runtimeForElement(component.id.value) ??
+                  runtimeSnapshot,
               onChanged: onPowerConnectionChanged,
             ),
         const SizedBox(height: ElectroSimSpacing.md),
@@ -318,7 +378,239 @@ class _PropertiesPanel extends StatelessWidget {
             label: 'Bornes',
             value: details.terminalLabels.join(' · '),
           ),
-          if (primaryToggleValue != null && !directCanvasControl) ...<Widget>[
+          if (details.modelType == 'plc_ac3' ||
+              details.modelType == 'plc_dc') ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            if (elementRuntime.effectiveCircuit.components
+                    .where(
+                      (ComponentInstance component) =>
+                          component.id.value == runtimeElementId,
+                    )
+                    .firstOrNull
+                    ?.controlState['programError'] ==
+                true)
+              const _PropertyLine(
+                label: 'Programme',
+                value: 'Erreur — sorties désactivées',
+              ),
+            _PropertyLine(
+              label: 'Alimentation logique',
+              value:
+                  elementRuntime.effectiveCircuit.components
+                          .where(
+                            (ComponentInstance component) =>
+                                component.id.value == runtimeElementId,
+                          )
+                          .firstOrNull
+                          ?.controlState[details.modelType == 'plc_dc'
+                          ? 'plcSupplyValid'
+                          : 'supplyValid'] ==
+                      true
+                  ? '${(elementRuntime.effectiveCircuit.components.where((ComponentInstance component) => component.id.value == runtimeElementId).firstOrNull?.controlState['supplyVoltageV'] as num?)?.toStringAsFixed(1) ?? '24.0'} V CC'
+                  : 'Défaut — sorties désactivées',
+            ),
+            for (int input = 0; input < 4; input++)
+              _PropertyLine(
+                label: 'I$input',
+                value:
+                    elementRuntime.effectiveCircuit.components
+                            .where(
+                              (ComponentInstance component) =>
+                                  component.id.value == runtimeElementId,
+                            )
+                            .firstOrNull
+                            ?.controlState['I$input'] ==
+                        true
+                    ? 'Actif'
+                    : 'Inactif',
+              ),
+            for (int output = 0; output < 4; output++)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _PropertyLine(
+                    label: 'Q$output',
+                    value:
+                        elementRuntime.effectiveCircuit.components
+                                .where(
+                                  (ComponentInstance component) =>
+                                      component.id.value == runtimeElementId,
+                                )
+                                .firstOrNull
+                                ?.controlState['Q$output'] ==
+                            true
+                        ? 'Actif'
+                        : 'Inactif',
+                  ),
+                  if (details.parameters['outputLinks'] is Map &&
+                      ((details.parameters['outputLinks'] as Map)['Q$output']
+                          is String))
+                    _PropertyLine(
+                      label: 'Bobine',
+                      value:
+                          elementRuntime.contactorActuated(
+                            ComponentId(
+                              runtimeIdFor(
+                                (details.parameters['outputLinks']
+                                        as Map)['Q$output']
+                                    as String,
+                              ),
+                            ),
+                          )
+                          ? 'Contacteur collé'
+                          : 'Contacteur au repos',
+                    ),
+                  if (details.modelType == 'plc_ac3')
+                    DropdownButtonFormField<String>(
+                      key: ValueKey<String>('plc-link-${details.id}-Q$output'),
+                      initialValue: () {
+                        final Object? rawLinks =
+                            details.parameters['outputLinks'];
+                        final Object? rawTarget = rawLinks is Map
+                            ? rawLinks['Q$output']
+                            : null;
+                        return rawTarget is String &&
+                                circuit.components.any(
+                                  (ComponentInstance candidate) =>
+                                      candidate.id.value == rawTarget &&
+                                      candidate.modelType == 'contactor_3p',
+                                )
+                            ? rawTarget
+                            : '';
+                      }(),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: 'Actionneur de Q$output',
+                      ),
+                      items: <DropdownMenuItem<String>>[
+                        const DropdownMenuItem<String>(
+                          value: '',
+                          child: Text('Aucun actionneur'),
+                        ),
+                        for (final ComponentInstance target
+                            in circuit.components.where(
+                              (ComponentInstance c) =>
+                                  c.modelType == 'contactor_3p',
+                            ))
+                          DropdownMenuItem<String>(
+                            value: target.id.value,
+                            child: Text('Contacteur ${target.id.value}'),
+                          ),
+                      ],
+                      onChanged: onLinkPlcOutput == null
+                          ? null
+                          : (String? value) =>
+                                onLinkPlcOutput!(details.id, 'Q$output', value),
+                    ),
+                ],
+              ),
+            OutlinedButton.icon(
+              key: const Key('plc-ladder-editor'),
+              onPressed: onConfigurePlc == null
+                  ? null
+                  : () => onConfigurePlc!(details.id),
+              icon: const Icon(Icons.account_tree_outlined),
+              label: const Text('Modifier le programme Ladder'),
+            ),
+          ],
+          if (details.modelType == 'timer_star_delta') ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            OutlinedButton.icon(
+              key: const Key('timer-delay-editor'),
+              onPressed: onConfigureTimer == null
+                  ? null
+                  : () => onConfigureTimer!(details.id),
+              icon: const Icon(Icons.timer_outlined),
+              label: const Text('Régler le retard'),
+            ),
+            _PropertyLine(
+              label: 'Retard',
+              value:
+                  '${(details.parameters['delaySeconds'] as num?)?.toStringAsFixed(2) ?? '5.00'} s',
+            ),
+            _PropertyLine(
+              label: 'État',
+              value:
+                  elementRuntime.effectiveCircuit.components
+                          .where(
+                            (ComponentInstance component) =>
+                                component.id.value == runtimeElementId,
+                          )
+                          .firstOrNull
+                          ?.controlState['timerNoClosed'] ==
+                      true
+                  ? 'Triangle'
+                  : elementRuntime.effectiveCircuit.components
+                            .where(
+                              (ComponentInstance component) =>
+                                  component.id.value == runtimeElementId,
+                            )
+                            .firstOrNull
+                            ?.controlState['timerActuated'] ==
+                        true
+                  ? 'Temps étoile écoulé'
+                  : 'Étoile',
+            ),
+          ],
+          if (details.modelType == 'proximity_sensor_24v') ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _PropertyLine(
+              label: 'Portée nominale',
+              value:
+                  '${((details.parameters['sensingDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityRangeMm).toStringAsFixed(0)} mm',
+            ),
+            _PropertyLine(
+              label: 'Distance de la cible',
+              value:
+                  '${((details.parameters['targetDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityTargetDistanceMm).toStringAsFixed(0)} mm',
+            ),
+            Slider(
+              key: const Key('proximity-target-distance'),
+              min: 0,
+              max: 100,
+              divisions: 100,
+              label:
+                  '${((details.parameters['targetDistanceMm'] as num?)?.toDouble() ?? F9ElementEditor.defaultProximityTargetDistanceMm).toStringAsFixed(0)} mm',
+              value:
+                  ((details.parameters['targetDistanceMm'] as num?)
+                              ?.toDouble() ??
+                          F9ElementEditor.defaultProximityTargetDistanceMm)
+                      .clamp(0.0, 100.0)
+                      .toDouble(),
+              onChanged: onProximityTargetDistanceChanged == null
+                  ? null
+                  : (double distance) =>
+                        onProximityTargetDistanceChanged!(details.id, distance),
+            ),
+            Text(
+              details.primaryToggleValue == true
+                  ? 'Cible détectée · sortie NO fermée'
+                  : 'Hors portée · sortie NO ouverte',
+              key: const Key('proximity-detection-state'),
+            ),
+          ],
+          if (details.modelType == 'mechanical_interlock_ac3') ...<Widget>[
+            const SizedBox(height: ElectroSimSpacing.sm),
+            _PropertyLine(
+              label: 'Contacteur A',
+              value: '${details.parameters['contactorAId'] ?? 'À configurer'}',
+            ),
+            _PropertyLine(
+              label: 'Contacteur B',
+              value: '${details.parameters['contactorBId'] ?? 'À configurer'}',
+            ),
+            OutlinedButton.icon(
+              key: const Key('mechanical-interlock-configure'),
+              onPressed: onConfigureMechanicalInterlock == null
+                  ? null
+                  : () => onConfigureMechanicalInterlock!(details.id),
+              icon: const Icon(Icons.lock_outline),
+              label: const Text('Choisir les contacteurs'),
+            ),
+          ],
+          if (primaryToggleValue != null &&
+              !directCanvasControl &&
+              details.modelType != 'proximity_sensor_24v') ...<Widget>[
             const SizedBox(height: ElectroSimSpacing.sm),
             SwitchListTile.adaptive(
               key: const Key('properties-primary-toggle'),
@@ -435,31 +727,37 @@ class _MeasurementsPanel extends StatelessWidget {
     required this.circuit,
     required this.selectedId,
     required this.runtimeSnapshot,
+    this.mixedRuntimeView,
   });
 
   final CircuitState circuit;
   final String? selectedId;
   final ElectroSimRuntimeSnapshot runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
 
   @override
   Widget build(BuildContext context) {
-    if (runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.pv) {
-      return _PvRuntimePanel(runtimeSnapshot: runtimeSnapshot);
+    final ElectroSimRuntimeSnapshot selectedRuntime =
+        mixedRuntimeView?.runtimeForElement(selectedId ?? '') ??
+        mixedRuntimeView?.runtimeForTerminal(selectedId ?? '') ??
+        runtimeSnapshot;
+    if (selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.pv) {
+      return _PvRuntimePanel(runtimeSnapshot: selectedRuntime);
     }
 
     final bool ac3 =
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac3;
     final MeasurementResult? phaseSequence = ac3
-        ? runtimeSnapshot.measurePhaseSequence()
+        ? selectedRuntime.measurePhaseSequence()
         : null;
     final MeasurementResult? totalActive = ac3
-        ? runtimeSnapshot.measureActivePower()
+        ? selectedRuntime.measureActivePower()
         : null;
     final MeasurementResult? totalReactive = ac3
-        ? runtimeSnapshot.measureReactivePower()
+        ? selectedRuntime.measureReactivePower()
         : null;
     final MeasurementResult? totalApparent = ac3
-        ? runtimeSnapshot.measureApparentPower()
+        ? selectedRuntime.measureApparentPower()
         : null;
 
     final _MeasurementTarget? target = _target();
@@ -526,37 +824,37 @@ class _MeasurementsPanel extends StatelessWidget {
     }
 
     final bool ac =
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac1 ||
-        runtimeSnapshot.solverKind == ElectroSimRuntimeSolverKind.ac3;
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac1 ||
+        selectedRuntime.solverKind == ElectroSimRuntimeSolverKind.ac3;
     final MeasurementResult voltage = ac
-        ? runtimeSnapshot.measureAcVoltage(
+        ? selectedRuntime.measureAcVoltage(
             positiveProbe: target.terminals[0].id,
             negativeProbe: target.terminals[1].id,
           )
-        : runtimeSnapshot.measureVoltage(
+        : selectedRuntime.measureVoltage(
             positiveProbe: target.terminals[0].id,
             negativeProbe: target.terminals[1].id,
           );
     final MeasurementResult current = ac
-        ? runtimeSnapshot.measureAcCurrent(branchId: target.branchId)
-        : runtimeSnapshot.measureCurrent(branchId: target.branchId);
+        ? selectedRuntime.measureAcCurrent(branchId: target.branchId)
+        : selectedRuntime.measureCurrent(branchId: target.branchId);
     final MeasurementResult? frequency = ac
-        ? runtimeSnapshot.measureFrequency()
+        ? selectedRuntime.measureFrequency()
         : null;
     final MeasurementResult? activePower = ac
         ? (ac3
               ? totalActive
-              : runtimeSnapshot.measureActivePower(branchId: target.branchId))
+              : selectedRuntime.measureActivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? reactivePower = ac
         ? (ac3
               ? totalReactive
-              : runtimeSnapshot.measureReactivePower(branchId: target.branchId))
+              : selectedRuntime.measureReactivePower(branchId: target.branchId))
         : null;
     final MeasurementResult? apparentPower = ac
         ? (ac3
               ? totalApparent
-              : runtimeSnapshot.measureApparentPower(branchId: target.branchId))
+              : selectedRuntime.measureApparentPower(branchId: target.branchId))
         : null;
     final bool available =
         voltage.isValid &&
@@ -682,8 +980,22 @@ class _MeasurementsPanel extends StatelessWidget {
       if (component.id.value == id && component.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(component.modelType)} · ${component.id.value}',
-          terminals: component.terminals,
-          branchId: 'component:${component.id.value}',
+          terminals: component.terminals
+              .map(
+                (Terminal terminal) => Terminal(
+                  id: TerminalId(
+                    mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                        terminal.id.value,
+                  ),
+                  name: terminal.name,
+                  role: terminal.role,
+                  phase: terminal.phase,
+                  metadata: terminal.metadata,
+                ),
+              )
+              .toList(growable: false),
+          branchId:
+              'component:${mixedRuntimeView?.localIdForElement(component.id.value) ?? component.id.value}',
         );
       }
     }
@@ -691,8 +1003,22 @@ class _MeasurementsPanel extends StatelessWidget {
       if (source.id.value == id && source.terminals.length == 2) {
         return _MeasurementTarget(
           label: '${f9ModelLabel(source.modelType)} · ${source.id.value}',
-          terminals: source.terminals,
-          branchId: 'source:${source.id.value}',
+          terminals: source.terminals
+              .map(
+                (Terminal terminal) => Terminal(
+                  id: TerminalId(
+                    mixedRuntimeView?.localTerminalId(terminal.id.value) ??
+                        terminal.id.value,
+                  ),
+                  name: terminal.name,
+                  role: terminal.role,
+                  phase: terminal.phase,
+                  metadata: terminal.metadata,
+                ),
+              )
+              .toList(growable: false),
+          branchId:
+              'source:${mixedRuntimeView?.localIdForElement(source.id.value) ?? source.id.value}',
         );
       }
     }

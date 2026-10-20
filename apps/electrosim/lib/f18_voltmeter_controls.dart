@@ -11,6 +11,21 @@ abstract final class F18VoltmeterControls {
   static const String rangeIndexKey = 'g5_voltmeter_range_index';
   static const String lightKey = 'g5_voltmeter_light';
   static const List<double> voltageRanges = <double>[20, 200, 600];
+  static const double continuityThresholdOhm = 30;
+
+  static bool continuityDetected({
+    required InstrumentInstance meter,
+    required double? resistanceOhm,
+    required bool validReading,
+  }) =>
+      meter.kind == InstrumentKind.voltmeter &&
+      meter.poweredOn &&
+      meter.mode == InstrumentMode.resistance &&
+      validReading &&
+      resistanceOhm != null &&
+      resistanceOhm.isFinite &&
+      resistanceOhm >= 0 &&
+      resistanceOhm <= continuityThresholdOhm;
 
   static bool isHeld(InstrumentInstance meter) =>
       meter.settings[holdKey] == true;
@@ -131,12 +146,30 @@ abstract final class F18VoltmeterControls {
     if (!meter.poweredOn) return 'OFF';
     if (isHeld(meter)) {
       final held = meter.settings[heldTextKey];
-      return held is String && held.isNotEmpty ? held : 'ERR';
+      if (held is! String || held.isEmpty) return 'ERR';
+      final Object? heldValue = meter.settings[heldValueKey];
+      return meter.mode == InstrumentMode.resistance &&
+              heldValue is num &&
+              continuityDetected(
+                meter: meter,
+                resistanceOhm: heldValue.toDouble(),
+                validReading: true,
+              )
+          ? '$held CONT'
+          : held;
     }
     if (!validReading || computedValue == null || !computedValue.isFinite) {
       return computedText;
     }
-    if (meter.mode == InstrumentMode.resistance) return computedText;
+    if (meter.mode == InstrumentMode.resistance) {
+      return continuityDetected(
+            meter: meter,
+            resistanceOhm: computedValue,
+            validReading: validReading,
+          )
+          ? '$computedText CONT'
+          : computedText;
+    }
     final index = rangeIndex(meter);
     return index != 0 && computedValue.abs() > voltageRanges[index - 1]
         ? 'OL'

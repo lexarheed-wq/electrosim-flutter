@@ -237,6 +237,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ElectricalMode.ac1,
       ElectricalMode.ac3,
       ElectricalMode.pv,
+      ElectricalMode.mixed,
     },
     subtitle: 'Sondes V/Ω et COM, impédance réelle',
   ),
@@ -253,6 +254,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ElectricalMode.ac1,
       ElectricalMode.ac3,
       ElectricalMode.pv,
+      ElectricalMode.mixed,
     },
     subtitle: 'Insertion en série, fusible et charge interne',
   ),
@@ -289,6 +291,69 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     kind: F9PaletteElementKind.source,
     terminalLabels: <String>['+', '−'],
     subtitle: '24 V CC',
+  ),
+  F9PaletteDefinition(
+    keyName: 'source-control-24v',
+    title: 'Alimentation de commande 24 V CC',
+    category: 'Sources',
+    modelType: 'dc_voltage_source',
+    icon: Icons.power_outlined,
+    kind: F9PaletteElementKind.source,
+    terminalLabels: <String>['L+', 'M'],
+    visualVariant: 'control-24v',
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      'voltageV': 24.0,
+      '_displayLabel': 'Alim. commande',
+      '_visualVariant': 'control-24v',
+    },
+    subtitle: '24 V CC · source idéale pour circuits de commande',
+  ),
+  F9PaletteDefinition(
+    keyName: 'proximity-sensor-24v',
+    title: 'Capteur de proximité 24 V',
+    category: 'Capteurs',
+    modelType: 'proximity_sensor_24v',
+    icon: Icons.sensors_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['13', '14'],
+    visualModelType: 'catalog_sensor_2t',
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    defaultParameters: <String, Object?>{
+      'sensingDistanceMm': 8.0,
+      'hysteresisPercent': 10.0,
+      'targetDistanceMm': 20.0,
+      'targetMaterial': 'ferrous',
+    },
+    defaultControlState: <String, Object?>{'closed': false},
+    visualVariant: 'sensor-proximity',
+    subtitle: 'Inductif 24 V · cible ferreuse · portée nominale 8 mm',
+  ),
+  F9PaletteDefinition(
+    keyName: 'limit-switch-no',
+    title: 'Fin de course NO',
+    category: 'Capteurs',
+    modelType: 'limit_switch_no',
+    icon: Icons.switch_access_shortcut_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['13', '14'],
+    visualModelType: 'catalog_sensor_2t',
+    visualVariant: 'limit-switch-no',
+    defaultControlState: <String, Object?>{'closed': false},
+    subtitle: 'Contact mécanique NO · actionné/repassé',
+  ),
+  F9PaletteDefinition(
+    keyName: 'limit-switch-nc',
+    title: 'Fin de course NC',
+    category: 'Capteurs',
+    modelType: 'limit_switch_nc',
+    icon: Icons.switch_access_shortcut_outlined,
+    kind: F9PaletteElementKind.component,
+    terminalLabels: <String>['21', '22'],
+    visualModelType: 'catalog_sensor_2t',
+    visualVariant: 'limit-switch-nc',
+    defaultControlState: <String, Object?>{'closed': true},
+    subtitle: 'Contact mécanique NC · actionné/repassé',
   ),
   F9PaletteDefinition(
     keyName: 'switch-no',
@@ -1781,7 +1846,7 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
   ),
   F9PaletteDefinition(
     keyName: 'aux-contact-no',
-    title: 'Contact auxiliaire NO',
+    title: 'Contact de verrouillage NO',
     category: 'Commande',
     modelType: 'contactor_aux_no',
     icon: Icons.call_split_outlined,
@@ -1800,11 +1865,11 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ),
     ],
     defaultControlState: <String, Object?>{'actuated': false},
-    subtitle: 'Contact lié au contacteur',
+    subtitle: '13–14 · interverrouillage et auto-maintien AC3',
   ),
   F9PaletteDefinition(
     keyName: 'aux-contact-nc',
-    title: 'Contact auxiliaire NC',
+    title: 'Contact de verrouillage NC',
     category: 'Commande',
     modelType: 'contactor_aux_nc',
     icon: Icons.call_merge_outlined,
@@ -1823,7 +1888,174 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
       ),
     ],
     defaultControlState: <String, Object?>{'actuated': false},
-    subtitle: 'Contact lié au contacteur',
+    subtitle: '21–22 · interverrouillage électrique AC3',
+  ),
+  F9PaletteDefinition(
+    keyName: 'timer-star-delta',
+    title: 'Temporisateur étoile-triangle',
+    category: 'Commande',
+    modelType: 'timer_star_delta',
+    icon: Icons.timer_outlined,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    terminalLabels: <String>['A1', 'A2', '15', '16', '18'],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec('A1', role: TerminalRole.coilA1, idSuffix: 'a1'),
+      F9PaletteTerminalSpec('A2', role: TerminalRole.coilA2, idSuffix: 'a2'),
+      F9PaletteTerminalSpec('15', idSuffix: '15'),
+      F9PaletteTerminalSpec('16', idSuffix: '16'),
+      F9PaletteTerminalSpec('18', idSuffix: '18'),
+    ],
+    defaultParameters: <String, Object?>{
+      'delaySeconds': 5.0,
+      'deadTimeSeconds': 0.05,
+      'coilResistanceOhm': 1000.0,
+      'coilInductanceH': 0.0,
+      'coilPickupVoltageV': 180.0,
+      'coilDropoutVoltageV': 100.0,
+    },
+    defaultControlState: <String, Object?>{
+      'timerActuated': false,
+      'timerNcClosed': true,
+      'timerNoClosed': false,
+      'elapsedSeconds': 0.0,
+    },
+    subtitle: 'A1/A2 · sortie 15–16/18 temporisée',
+  ),
+  F9PaletteDefinition(
+    keyName: 'mechanical-interlock-ac3',
+    title: 'Verrouillage mécanique 2 contacteurs',
+    category: 'Commande',
+    modelType: 'mechanical_interlock_ac3',
+    icon: Icons.lock_outline,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.ac3},
+    terminalLabels: <String>[],
+    defaultParameters: <String, Object?>{
+      'contactorAId': '',
+      'contactorBId': '',
+    },
+    subtitle: 'Accessoire mécanique · empêche la fermeture simultanée',
+  ),
+  F9PaletteDefinition(
+    keyName: 'plc-ac3',
+    title: 'Automate programmable (PLC)',
+    category: 'Commande',
+    modelType: 'plc_ac3',
+    icon: Icons.memory_outlined,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.dc, ElectricalMode.ac3},
+    terminalLabels: <String>[
+      'L+ 24 V',
+      'M 0 V',
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L+',
+        role: TerminalRole.positive,
+        idSuffix: 'lplus',
+      ),
+      F9PaletteTerminalSpec('M', role: TerminalRole.common, idSuffix: 'm'),
+      F9PaletteTerminalSpec('I0', role: TerminalRole.input, idSuffix: 'i0'),
+      F9PaletteTerminalSpec('I1', role: TerminalRole.input, idSuffix: 'i1'),
+      F9PaletteTerminalSpec('I2', role: TerminalRole.input, idSuffix: 'i2'),
+      F9PaletteTerminalSpec('I3', role: TerminalRole.input, idSuffix: 'i3'),
+      F9PaletteTerminalSpec('Q0', role: TerminalRole.output, idSuffix: 'q0'),
+      F9PaletteTerminalSpec('Q1', role: TerminalRole.output, idSuffix: 'q1'),
+      F9PaletteTerminalSpec('Q2', role: TerminalRole.output, idSuffix: 'q2'),
+      F9PaletteTerminalSpec('Q3', role: TerminalRole.output, idSuffix: 'q3'),
+    ],
+    defaultParameters: <String, Object?>{
+      'controlVoltageV': 24.0,
+      'ladderProgram': <Object?>[
+        <String, Object?>{
+          'steps': <Object?>[
+            <String, Object?>{'type': 'contact_no', 'address': 'I0'},
+            <String, Object?>{'type': 'coil', 'address': 'Q0'},
+          ],
+        },
+      ],
+      'inputAddresses': <String>['I0', 'I1', 'I2', 'I3'],
+      'outputAddresses': <String>['Q0', 'Q1', 'Q2', 'Q3'],
+    },
+    defaultControlState: <String, Object?>{
+      'supplyValid': false,
+      'programError': false,
+      'I0': false,
+      'I1': false,
+      'I2': false,
+      'I3': false,
+      'Q0': false,
+      'Q1': false,
+      'Q2': false,
+      'Q3': false,
+    },
+    subtitle:
+        'Alimentation logique interne 24 V CC · Ladder · Q commande contacteurs',
+  ),
+  F9PaletteDefinition(
+    keyName: 'plc-dc',
+    title: 'Automate programmable 24 V CC',
+    category: 'Commande',
+    modelType: 'plc_dc',
+    icon: Icons.memory_outlined,
+    kind: F9PaletteElementKind.component,
+    supportedModes: <ElectricalMode>{ElectricalMode.dc},
+    terminalLabels: <String>[
+      'L+',
+      'M',
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
+    ],
+    terminals: <F9PaletteTerminalSpec>[
+      F9PaletteTerminalSpec(
+        'L+',
+        role: TerminalRole.positive,
+        idSuffix: 'lplus',
+      ),
+      F9PaletteTerminalSpec('M', role: TerminalRole.common, idSuffix: 'm'),
+      F9PaletteTerminalSpec('I0', role: TerminalRole.input, idSuffix: 'i0'),
+      F9PaletteTerminalSpec('I1', role: TerminalRole.input, idSuffix: 'i1'),
+      F9PaletteTerminalSpec('I2', role: TerminalRole.input, idSuffix: 'i2'),
+      F9PaletteTerminalSpec('I3', role: TerminalRole.input, idSuffix: 'i3'),
+      F9PaletteTerminalSpec('Q0', role: TerminalRole.output, idSuffix: 'q0'),
+      F9PaletteTerminalSpec('Q1', role: TerminalRole.output, idSuffix: 'q1'),
+      F9PaletteTerminalSpec('Q2', role: TerminalRole.output, idSuffix: 'q2'),
+      F9PaletteTerminalSpec('Q3', role: TerminalRole.output, idSuffix: 'q3'),
+    ],
+    defaultParameters: <String, Object?>{
+      'ladderProgram': <Object?>[
+        <String, Object?>{
+          'steps': <Object?>[
+            <String, Object?>{'type': 'contact_no', 'address': 'I0'},
+            <String, Object?>{'type': 'coil', 'address': 'Q0'},
+          ],
+        },
+      ],
+      'inputAddresses': <String>['I0', 'I1', 'I2', 'I3'],
+      'outputAddresses': <String>['Q0', 'Q1', 'Q2', 'Q3'],
+    },
+    defaultControlState: <String, Object?>{
+      'Q0': false,
+      'Q1': false,
+      'Q2': false,
+      'Q3': false,
+    },
+    subtitle: 'L+ / M · entrées mesurées · sorties Q résolues en 24 V CC',
   ),
   F9PaletteDefinition(
     keyName: 'contactor-ac1',
@@ -2341,7 +2573,18 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
     icon: Icons.device_thermostat_outlined,
     kind: F9PaletteElementKind.component,
     supportedModes: <ElectricalMode>{ElectricalMode.ac3},
-    terminalLabels: <String>['1L1', '3L2', '5L3', '2T1', '4T2', '6T3'],
+    terminalLabels: <String>[
+      '1L1',
+      '3L2',
+      '5L3',
+      '2T1',
+      '4T2',
+      '6T3',
+      '95',
+      '96',
+      '97',
+      '98',
+    ],
     terminals: <F9PaletteTerminalSpec>[
       F9PaletteTerminalSpec(
         '1L1',
@@ -2378,6 +2621,26 @@ const List<F9PaletteDefinition> f9PaletteCatalog = <F9PaletteDefinition>[
         role: TerminalRole.loadT3,
         phase: PhaseTag.l3,
         idSuffix: '6t3',
+      ),
+      F9PaletteTerminalSpec(
+        '95',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '95',
+      ),
+      F9PaletteTerminalSpec(
+        '96',
+        role: TerminalRole.auxiliaryNormallyClosed,
+        idSuffix: '96',
+      ),
+      F9PaletteTerminalSpec(
+        '97',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '97',
+      ),
+      F9PaletteTerminalSpec(
+        '98',
+        role: TerminalRole.auxiliaryNormallyOpen,
+        idSuffix: '98',
       ),
     ],
     defaultParameters: <String, Object?>{ProtectionRating.ratedCurrentKey: 5.0},
@@ -2455,8 +2718,17 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
           final bool queryMatches =
               q.isEmpty ||
               item.title.toLowerCase().contains(q) ||
+              (item.displayLabel?.toLowerCase().contains(q) ?? false) ||
+              (item.subtitle?.toLowerCase().contains(q) ?? false) ||
               item.category.toLowerCase().contains(q) ||
-              item.modelType.toLowerCase().contains(q);
+              item.modelType.toLowerCase().contains(q) ||
+              item.terminalLabels.any(
+                (String label) => label.toLowerCase().contains(q),
+              ) ||
+              item.terminals.any(
+                (F9PaletteTerminalSpec terminal) =>
+                    terminal.label.toLowerCase().contains(q),
+              );
           return categoryMatches && queryMatches;
         })
         .toList(growable: false);
@@ -2472,7 +2744,18 @@ class _F9ComponentPaletteState extends State<F9ComponentPalette> {
               )
               .length
         : filtered.length;
-    final bool canExpand = filtered.length > _collapsedLimit;
+    final bool hasCollapsedInstrument =
+        _query.trim().isEmpty &&
+        _category == 'Tous' &&
+        f9PaletteCatalog.any(
+          (F9PaletteDefinition item) =>
+              item.kind == F9PaletteElementKind.instrument &&
+              item.supportsMode(widget.mode) &&
+              item.searchOnlyModes.contains(widget.mode) &&
+              item.keyName != 'instrument-voltmeter',
+        );
+    final bool canExpand =
+        filtered.length > _collapsedLimit || hasCollapsedInstrument;
     // Catalogue additions and asynchronous asset loads must not displace
     // the approved DC quick controls.
     const dcQuickKeys = [
@@ -3111,6 +3394,8 @@ class F9ComponentPreview extends StatelessWidget {
                           ?.toDouble() ??
                       0
                 : 0,
+            controlState: definition.defaultControlState,
+            componentParameters: definition.defaultParameters,
           );
 
     // Every family including physical meters uses the same appearance rule.
@@ -3118,6 +3403,7 @@ class F9ComponentPreview extends StatelessWidget {
     return F18IndustrialDualView(
       key: Key('component-identity-preview-${definition.keyName}'),
       modelType: definition.renderedModelType,
+      variantKey: definition.visualVariant,
       size: visualSize,
       presentation: F18IndustrialPresentation.palettePerspective,
       child: canonicalArtwork,

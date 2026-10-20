@@ -4,7 +4,6 @@ Run with Blender --background --python-exit-code 1 --python THIS.
 Checks actual object bounds, not screenshots or source-text patterns. Bounding
 boxes certify these box-to-box welds; curved casing contact also needs review.
 """
-import json
 from pathlib import Path
 import sys
 import bpy
@@ -14,8 +13,9 @@ BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE))
 from lot_06_15_geometry import build
 from render_voltmeter_cycles import CyclesGeometry
+from unified_geometry_contract import load_lot_contract
 
-contract = json.loads((BASE / 'lot_06_15_contract.json').read_text())
+contract = load_lot_contract('06_15')
 
 def bounds(name):
     obj = bpy.data.objects[name]

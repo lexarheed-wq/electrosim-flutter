@@ -18,6 +18,43 @@ void main() {
     );
   });
 
+  test('DC source readout keeps the declared 24 V on a mixed board', () {
+    final circuit = CircuitState(
+      circuitId: CircuitId('mixed-dc-source-readout'),
+      revision: 0,
+      mode: ElectricalMode.dc,
+      sources: <SourceInstance>[
+        SourceInstance(
+          id: SourceId('supply'),
+          modelType: 'dc_voltage_source',
+          terminals: <Terminal>[
+            Terminal(
+              id: TerminalId('supply-positive'),
+              name: '+',
+              phase: PhaseTag.dcPositive,
+            ),
+            Terminal(
+              id: TerminalId('supply-negative'),
+              name: '-',
+              phase: PhaseTag.dcNegative,
+            ),
+          ],
+          parameters: const <String, Object?>{'voltageV': 24.0},
+        ),
+      ],
+    );
+    final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);
+    expect(snapshot.solved, isTrue);
+    expect(
+      F9SourceVoltageReadout.voltageV(
+        snapshot,
+        circuit.sources.single,
+        simulationRunning: true,
+      ),
+      closeTo(24, 1e-6),
+    );
+  });
+
   test('ideal source retains 230 V under load with RCD closed', () {
     final circuit = _circuit(rcdClosed: true);
     final snapshot = const ElectroSimRuntimeEngine().evaluate(circuit);

@@ -132,18 +132,19 @@ abstract final class F18AmmeterFuseSafety {
     );
   }
 
-  /// In DC, the selected ampere meter replaces its cut ideal wire with its
-  /// real burden resistor in the COMMON solver topology (not just in the LCD
-  /// projection). The original wire ID is retained but electrically disabled
-  /// in the runtime copy. Blown fuses are handled by projectOpenFuses first.
-  ///
-  /// AC and PV models remain on their pre-existing measurement projections
-  /// until phase-specific solver parity is verified, avoiding phantom loads.
-  static CircuitState projectDcSeriesBurden({
+  /// In supported DC and AC modes, a series ammeter replaces its cut ideal
+  /// wire with its real burden resistor in the common solver topology. The
+  /// original wire ID is retained but electrically disabled in the runtime
+  /// copy. PV projections keep their specialized path.
+  static CircuitState projectSeriesBurden({
     required CircuitState design,
     required CircuitState fusedRuntime,
   }) {
-    if (fusedRuntime.mode != ElectricalMode.dc) return fusedRuntime;
+    if (fusedRuntime.mode != ElectricalMode.dc &&
+        fusedRuntime.mode != ElectricalMode.ac1 &&
+        fusedRuntime.mode != ElectricalMode.ac3) {
+      return fusedRuntime;
+    }
     final connected = <({InstrumentInstance meter, Connection cut})>[];
     final claimed = <ConnectionId>{};
     for (final meter in design.instruments) {

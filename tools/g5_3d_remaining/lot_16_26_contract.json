@@ -1,519 +1,59 @@
 {
   "external-refrigerator": {
-    "visual": "catalog_appliance_2t",
-    "variant": "refrigerator",
-    "size": [
-      200,
-      320
-    ],
-    "board": [
-      300,
-      480
-    ],
-    "ports": [
-      [
-        151,
-        287
-      ],
-      [
-        161,
-        287
-      ],
-      [
-        171,
-        287
-      ]
-    ],
-    "box": [
-      161,
-      287,
-      40,
-      22,
-      67
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 67
   },
   "external-refrigerator-dc": {
-    "visual": "catalog_appliance_2t",
-    "variant": "refrigerator-dc",
-    "size": [
-      180,
-      240
-    ],
-    "board": [
-      270,
-      360
-    ],
-    "ports": [
-      [
-        133,
-        209
-      ],
-      [
-        145,
-        209
-      ]
-    ],
-    "box": [
-      139,
-      209,
-      32,
-      21,
-      57
-    ],
-    "kind": "dc"
+    "kind": "dc",
+    "terminal_z": 57
   },
   "external-tv": {
-    "visual": "catalog_appliance_2t",
-    "variant": "television",
-    "size": [
-      360,
-      240
-    ],
-    "board": [
-      540,
-      360
-    ],
-    "ports": [
-      [
-        270,
-        205
-      ],
-      [
-        282,
-        205
-      ]
-    ],
-    "box": [
-      276,
-      205,
-      32,
-      22,
-      28
-    ],
-    "kind": "ac1-ii"
+    "kind": "ac1-ii",
+    "terminal_z": 28
   },
   "external-fan-ac1": {
-    "visual": "catalog_motor_driven_2t",
-    "variant": "fan",
-    "size": [
-      200,
-      240
-    ],
-    "board": [
-      250,
-      300
-    ],
-    "ports": [
-      [
-        136,
-        220
-      ],
-      [
-        146,
-        220
-      ],
-      [
-        156,
-        220
-      ]
-    ],
-    "box": [
-      146,
-      220,
-      36,
-      20,
-      38
-    ],
-    "kind": "ac1"
+    "kind": "ac1",
+    "terminal_z": 38
   },
   "external-fan-3p": {
-    "visual": "catalog_motor_driven_6t",
-    "variant": "fan",
-    "size": [
-      280,
-      280
-    ],
-    "board": [
-      420,
-      420
-    ],
-    "ports": [
-      [
-        127,
-        42
-      ],
-      [
-        135,
-        42
-      ],
-      [
-        143,
-        42
-      ],
-      [
-        135,
-        52.4
-      ],
-      [
-        143,
-        52.4
-      ],
-      [
-        127,
-        52.4
-      ],
-      [
-        153.4,
-        52.4
-      ]
-    ],
-    "box": [
-      140,
-      48,
-      43.2,
-      28.8,
-      85
-    ],
     "kind": "ac3",
+    "terminal_z": 85,
     "terminal_scale": 0.8
   },
   "pv-resistive-load": {
-    "visual": "pv_resistive_load",
-    "variant": "pv-load",
-    "size": [
-      220,
-      180
-    ],
-    "board": [
-      330,
-      270
-    ],
-    "ports": [
-      [
-        154,
-        148
-      ],
-      [
-        169,
-        148
-      ]
-    ],
-    "box": [
-      161.5,
-      148,
-      39,
-      24,
-      56
-    ],
-    "kind": "pv"
+    "kind": "pv",
+    "terminal_z": 56
   },
   "source-ac3-grid": {
-    "visual": "ac3_voltage_source",
-    "variant": "ac3-grid",
-    "size": [
-      200,
-      280
-    ],
-    "board": [
-      300,
-      420
-    ],
-    "ports": [
-      [
-        65,
-        237
-      ],
-      [
-        88,
-        237
-      ],
-      [
-        111,
-        237
-      ],
-      [
-        134,
-        237
-      ]
-    ],
-    "box": [
-      100,
-      237,
-      92,
-      28,
-      63
-    ],
-    "kind": "ac3-source"
+    "kind": "ac3-source",
+    "terminal_z": 63
   },
   "source-ac3-alternator": {
-    "visual": "ac3_voltage_source",
-    "variant": "ac3-generator",
-    "size": [
-      360,
-      260
-    ],
-    "board": [
-      540,
-      390
-    ],
-    "ports": [
-      [
-        216,
-        64
-      ],
-      [
-        233,
-        64
-      ],
-      [
-        250,
-        64
-      ],
-      [
-        267,
-        64
-      ]
-    ],
-    "box": [
-      241.5,
-      64,
-      75,
-      28,
-      83
-    ],
-    "kind": "ac3-source"
+    "kind": "ac3-source",
+    "terminal_z": 83
   },
   "load-wye-3p": {
-    "visual": "load_wye_3p",
-    "variant": "load-wye",
-    "size": [
-      220,
-      220
-    ],
-    "board": [
-      330,
-      330
-    ],
-    "ports": [
-      [
-        65,
-        180
-      ],
-      [
-        90,
-        180
-      ],
-      [
-        115,
-        180
-      ],
-      [
-        140,
-        180
-      ]
-    ],
-    "box": [
-      103,
-      180,
-      100,
-      28,
-      58
-    ],
-    "kind": "ac3-load"
+    "kind": "ac3-load",
+    "terminal_z": 58
   },
   "load-delta-3p": {
-    "visual": "load_delta_3p",
-    "variant": "load-delta",
-    "size": [
-      220,
-      220
-    ],
-    "board": [
-      330,
-      330
-    ],
-    "ports": [
-      [
-        70,
-        180
-      ],
-      [
-        100,
-        180
-      ],
-      [
-        130,
-        180
-      ]
-    ],
-    "box": [
-      100,
-      180,
-      86,
-      28,
-      58
-    ],
-    "kind": "ac3-load"
+    "kind": "ac3-load",
+    "terminal_z": 58
   },
   "impedance": {
-    "visual": "impedance",
-    "variant": "impedance",
-    "size": [
-      180,
-      130
-    ],
-    "board": [
-      216,
-      156
-    ],
-    "ports": [
-      [
-        36,
-        104
-      ],
-      [
-        144,
-        104
-      ]
-    ],
-    "box": [
-      90,
-      104,
-      132,
-      24,
-      43
-    ],
-    "kind": "ac1-passive"
+    "kind": "ac1-passive",
+    "terminal_z": 43
   },
   "energy-meter-ac1": {
-    "visual": "energy_meter_ac1",
-    "variant": "meter-ac1",
-    "size": [
-      60,
-      180
-    ],
-    "board": [
-      72,
-      216
-    ],
-    "ports": [
-      [
-        18,
-        23
-      ],
-      [
-        42,
-        23
-      ],
-      [
-        18,
-        157
-      ],
-      [
-        42,
-        157
-      ]
-    ],
-    "box": [
-      30,
-      90,
-      52,
-      162,
-      34
-    ],
-    "kind": "meter-ac1"
+    "kind": "meter-ac1",
+    "terminal_z": 34
   },
   "energy-meter-ac3": {
-    "visual": "energy_meter_ac3",
-    "variant": "meter-ac3",
-    "size": [
-      160,
-      180
-    ],
-    "board": [
-      192,
-      216
-    ],
-    "ports": [
-      [
-        30,
-        23
-      ],
-      [
-        63,
-        23
-      ],
-      [
-        96,
-        23
-      ],
-      [
-        129,
-        23
-      ],
-      [
-        30,
-        157
-      ],
-      [
-        63,
-        157
-      ],
-      [
-        96,
-        157
-      ],
-      [
-        129,
-        157
-      ]
-    ],
-    "box": [
-      80,
-      90,
-      146,
-      162,
-      34
-    ],
-    "kind": "meter-ac3"
+    "kind": "meter-ac3",
+    "terminal_z": 34
   },
   "energy-meter-pv": {
-    "visual": "energy_meter_ac1",
-    "variant": "meter-pv",
-    "size": [
-      60,
-      180
-    ],
-    "board": [
-      72,
-      216
-    ],
-    "ports": [
-      [
-        18,
-        23
-      ],
-      [
-        42,
-        23
-      ],
-      [
-        18,
-        157
-      ],
-      [
-        42,
-        157
-      ]
-    ],
-    "box": [
-      30,
-      90,
-      52,
-      162,
-      34
-    ],
-    "kind": "meter-pv"
+    "kind": "meter-pv",
+    "terminal_z": 34
   }
 }

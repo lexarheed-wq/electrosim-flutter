@@ -51,6 +51,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
   );
 
   static bool _unifiedSolve(CircuitState circuit) {
+    if (circuit.mode == ElectricalMode.mixed) return false;
     final ElectroSimRuntimeSnapshot snapshot = const ElectroSimRuntimeEngine()
         .evaluate(circuit);
     return switch (circuit.mode) {
@@ -58,6 +59,7 @@ final class ElectroSimTpSessionController extends ChangeNotifier {
       ElectricalMode.ac1 => snapshot.ac1Result?.isSolved ?? false,
       ElectricalMode.ac3 => snapshot.ac3Result?.isSolved ?? false,
       ElectricalMode.pv => snapshot.pvResult?.isSolved ?? false,
+      ElectricalMode.mixed => false,
     };
   }
 

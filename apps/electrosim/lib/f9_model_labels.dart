@@ -23,6 +23,12 @@ String f9ModelLabel(String modelType) {
       return 'Disjoncteur';
     case 'push_button_no':
       return 'Bouton-poussoir NO';
+    case 'proximity_sensor_24v':
+      return 'Capteur de proximité 24 V';
+    case 'limit_switch_no':
+      return 'Fin de course NO';
+    case 'limit_switch_nc':
+      return 'Fin de course NC';
     case 'buzzer':
       return 'Buzzer';
     case 'fuse':
@@ -57,6 +63,12 @@ String f9ModelLabel(String modelType) {
       return 'Contacteur AC 1φ';
     case 'contactor_3p':
       return 'Contacteur 3P';
+    case 'timer_star_delta':
+      return 'Temporisateur étoile-triangle';
+    case 'plc_ac3':
+      return 'Automate programmable AC3';
+    case 'plc_dc':
+      return 'Automate programmable 24 V CC';
     case 'breaker_3p':
       return 'Disjoncteur 3P';
     case 'thermal_overload_3p':

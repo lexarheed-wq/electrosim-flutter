@@ -20,6 +20,7 @@ import 'f18_component_archetypes.dart';
 import 'f18_component_asset_visual.dart';
 import 'f18_drag_preview.dart';
 import 'f18_physical_instrument_readouts.dart';
+import 'mixed_board_runtime_view.dart';
 import 'f18_voltmeter_3d_assets.dart';
 import 'f18_ammeter_3d_assets.dart';
 import 'f18_ammeter_controls.dart';
@@ -50,6 +51,7 @@ import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_connection_router.dart';
 import 'runtime/electrosim_instrument_projection.dart';
 import 'runtime/f18_ammeter_fuse_safety.dart';
+import 'runtime/f18_continuity_audio.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_simulation_controller.dart';
@@ -67,6 +69,12 @@ class F18WorkspacePage extends StatefulWidget {
     this.initialCabinetLayout,
     this.initialVisualLayout,
     this.onVisualLayoutChanged,
+    this.onCircuitChanged,
+    this.compositeNetworkMode = false,
+    this.paletteModeOverride,
+    this.onOpenMixedMode,
+    this.externalRuntimeSnapshot,
+    this.mixedRuntimeView,
     this.role = F9UserRole.teacher,
     this.tpSessionController,
     this.persistenceController,
@@ -88,6 +96,12 @@ class F18WorkspacePage extends StatefulWidget {
   final CabinetLayout? initialCabinetLayout;
   final CircuitVisualLayout? initialVisualLayout;
   final ValueChanged<CircuitVisualLayout>? onVisualLayoutChanged;
+  final ValueChanged<CircuitState>? onCircuitChanged;
+  final bool compositeNetworkMode;
+  final ElectricalMode? paletteModeOverride;
+  final ValueChanged<CircuitState>? onOpenMixedMode;
+  final ElectroSimRuntimeSnapshot? externalRuntimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final F9UserRole role;
   final ElectroSimTpSessionController? tpSessionController;
   final ElectroSimPersistenceController? persistenceController;
@@ -115,6 +129,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   String? _studentTpIdValue;
   CircuitVisualLayout? _lastReportedVisualLayout;
   bool _visualLayoutReportScheduled = false;
+  CircuitState? _lastReportedCircuit;
+  bool _circuitReportScheduled = false;
+
+  void _scheduleCircuitReport() {
+    final ValueChanged<CircuitState>? callback = widget.onCircuitChanged;
+    if (callback == null ||
+        identical(_circuit, _lastReportedCircuit) ||
+        _circuitReportScheduled) {
+      return;
+    }
+    _circuitReportScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _circuitReportScheduled = false;
+      if (!mounted || identical(_circuit, _lastReportedCircuit)) return;
+      _lastReportedCircuit = _circuit;
+      widget.onCircuitChanged?.call(_circuit);
+    });
+  }
 
   bool get _visualLayoutMatchesSession {
     if (widget.role != F9UserRole.student) return true;
@@ -230,6 +262,34 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return IndustrialMarkingRegistry.materialize(candidate);
   }
 
+  CircuitVisualLayout _mergeBoardLayout(
+    CircuitVisualLayout defaults,
+    CircuitVisualLayout saved,
+  ) => CircuitVisualLayout(
+    elementPositions: <String, Offset>{
+      ...defaults.elementPositions,
+      ...saved.elementPositions,
+    },
+    elementSizes: <String, Size>{
+      ...defaults.elementSizes,
+      ...saved.elementSizes,
+    },
+    wireRoutes: <String, List<Offset>>{
+      ...defaults.wireRoutes,
+      ...saved.wireRoutes,
+    },
+    elementQuarterTurns: <String, int>{
+      ...defaults.elementQuarterTurns,
+      ...saved.elementQuarterTurns,
+    },
+    defaultElementSize: saved.defaultElementSize,
+    cabinetLayout: saved.cabinetLayout,
+    terminalAnchorOffsets: <String, Offset>{
+      ...defaults.terminalAnchorOffsets,
+      ...saved.terminalAnchorOffsets,
+    },
+  );
+
   void _generateIndustrialMarkings() {
     if (widget.role != F9UserRole.teacher) {
       _setStatus('Repérage réservé au professeur.');
@@ -250,7 +310,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _circuit = next;
       _status = message;
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
   }
 
   Future<void> _editSelectedIndustrialMarking() async {
@@ -377,7 +437,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             'Repère enregistré : ${answer.$3}. '
             '${issues.length} anomalie(s) de repérage.';
       });
-      _simulation.updateCircuit(next);
+      _updateSimulationCircuit(next);
     } on Object catch (error) {
       _setStatus('Repérage refusé : $error');
     }
@@ -712,7 +772,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } finally {
       _restoringHistory = false;
     }
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
   }
 
@@ -775,6 +835,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ElectroSimRuntimeSnapshot? _meterReadoutCacheSnapshot;
   int? _meterReadoutCacheSecond;
   Map<String, String> _meterReadoutCache = const <String, String>{};
+  final F18ContinuityAudio _continuityAudio = F18ContinuityAudio();
   late String _workspace;
   int _canvasInteractionEpoch = 0;
   final HitTestEngine _hitTest = const HitTestEngine();
@@ -810,7 +871,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     milliseconds: 420,
   );
   static const double _directControlDoubleTapDistance = 28;
-  DateTime? _lastDirectControlTapTime;
+  Duration? _lastDirectControlTapTime;
   String? _lastDirectControlTapElementId;
   Offset? _lastDirectControlTapLocal;
   final Map<String, Timer> _momentaryReleaseTimers = <String, Timer>{};
@@ -819,6 +880,23 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   ElectroSimLanSyncHost? _lanHost;
   ElectroSimLanHostInfo? _lanHostInfo;
   late final ElectroSimSimulationController _simulation;
+
+  void _updateSimulationCircuit(CircuitState next) {
+    // A shared mixed board is only a render/edit projection. Project runtime
+    // owns simulation and sends homogeneous networks to their specialist solvers.
+    if (widget.compositeNetworkMode) return;
+    _simulation.updateCircuit(next);
+  }
+
+  ElectroSimRuntimeSnapshot get _runtimeSnapshot =>
+      (widget.mixedRuntimeView?.runtimeForElement(_selected ?? '') ??
+          widget.mixedRuntimeView?.defaultRuntime) ??
+      widget.externalRuntimeSnapshot ??
+      _simulation.snapshot;
+  bool get _simulationRunning =>
+      widget.mixedRuntimeView?.running ?? _simulation.running;
+  Duration get _simulatedTime =>
+      widget.mixedRuntimeView?.elapsed ?? _simulation.simulatedTime;
 
   CabinetFixture? _cabinetFixtureAt(Offset local) {
     if (_representation != WorkspaceRepresentation.plate) return null;
@@ -969,10 +1047,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Câblage'
           : 'Recherche de dérangement';
     }
-    if (tp == null) {
+    if (tp == null && !widget.compositeNetworkMode) {
       _circuit = AppliancePowerConnection.addProtectiveEarth(_circuit);
     }
-    _layout = widget.initialVisualLayout ?? _layoutForCircuit(_circuit);
+    _layout = widget.initialVisualLayout == null
+        ? _layoutForCircuit(_circuit)
+        : widget.compositeNetworkMode
+        ? _mergeBoardLayout(
+            _layoutForCircuit(_circuit),
+            widget.initialVisualLayout!,
+          )
+        : widget.initialVisualLayout!;
     _layout = migrateCrusherPhysicalLayout(
       _circuit,
       _layout,
@@ -986,7 +1071,9 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     if (widget.initialCabinetLayout != null) {
       _layout = _layout.withCabinetLayout(widget.initialCabinetLayout!);
     }
-    _simulation = ElectroSimSimulationController(circuit: _circuit);
+    _simulation = ElectroSimSimulationController(
+      circuit: widget.compositeNetworkMode ? _buildBlankCircuit() : _circuit,
+    );
     if (widget.role == F9UserRole.student) {
       _tpController.addListener(_onStudentTpChanged);
     }
@@ -1096,6 +1183,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
   @override
   Widget build(BuildContext context) {
     _scheduleVisualLayoutReport();
+    _scheduleCircuitReport();
     final F9ElementDetails? selectedDetails = F9ElementEditor.describe(
       _circuit,
       _selected,
@@ -1235,25 +1323,35 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                       ),
                       onToggleSound: () =>
                           setState(() => _soundEnabled = !_soundEnabled),
-                      simulationRunning: _simulation.running,
-                      simulatedTime: _simulation.simulatedTime,
-                      onToggleSimulation: _simulation.toggle,
-                      onResetSimulation: _simulation.resetDynamics,
+                      simulationRunning: _simulationRunning,
+                      simulatedTime: _simulatedTime,
+                      onToggleSimulation: widget.mixedRuntimeView == null
+                          ? _simulation.toggle
+                          : () {},
+                      onResetSimulation: widget.mixedRuntimeView == null
+                          ? _simulation.resetDynamics
+                          : () {},
                       simulationAdvancing: _simulation.fastForwarding,
-                      onAdvanceSimulation: (Duration elapsed) {
-                        unawaited(_advanceSimulation(elapsed));
-                      },
-                      onCancelAdvance: _simulation.cancelAdvance,
+                      onAdvanceSimulation: widget.mixedRuntimeView == null
+                          ? (Duration elapsed) {
+                              unawaited(_advanceSimulation(elapsed));
+                            }
+                          : (_) {},
+                      onCancelAdvance: widget.mixedRuntimeView == null
+                          ? _simulation.cancelAdvance
+                          : () {},
                       onUndo: _undoHistory.isEmpty || _studentTpReadOnly
                           ? null
                           : _undoEdit,
                       onRedo: _redoHistory.isEmpty || _studentTpReadOnly
                           ? null
                           : _redoEdit,
+                      showSimulationControls: !widget.compositeNetworkMode,
+                      showModeSelector: !widget.compositeNetworkMode,
                     ),
               ),
               palette: F9ComponentPalette(
-                mode: _circuit.mode,
+                mode: widget.paletteModeOverride ?? _circuit.mode,
                 onStatus: _setStatus,
                 onQuickAdd: _quickAddFromPalette,
               ),
@@ -1269,6 +1367,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                             onPowerConnectionChanged: _studentTpReadOnly
                                 ? null
                                 : _configureSelectedPower,
+                            onConfigurePlc: _studentTpReadOnly
+                                ? null
+                                : _editPlcLadder,
+                            onLinkPlcOutput: _studentTpReadOnly
+                                ? null
+                                : _linkPlcOutput,
+                            onConfigureTimer: _studentTpReadOnly
+                                ? null
+                                : _editStarDeltaTimer,
+                            onConfigureMechanicalInterlock: _studentTpReadOnly
+                                ? null
+                                : _editMechanicalInterlock,
+                            onProximityTargetDistanceChanged: _studentTpReadOnly
+                                ? null
+                                : _setProximityTargetDistance,
                             selectedId: _selected,
                             status: _status,
                             workspace: _workspace,
@@ -1291,7 +1404,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                     : 'Sélection clavier : $id';
                               });
                             },
-                            runtimeSnapshot: _simulation.snapshot,
+                            runtimeSnapshot: _runtimeSnapshot,
+                            mixedRuntimeView: widget.mixedRuntimeView,
                             tpSessionController:
                                 widget.sessionNavigation ||
                                     widget.tpSessionController != null
@@ -1304,8 +1418,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 builder: (BuildContext context, Widget? child) => _StatusBar(
                   circuit: _circuit,
                   status: _status,
-                  simulationRunning: _simulation.running,
-                  simulatedTime: _simulation.simulatedTime,
+                  simulationRunning: _simulationRunning,
+                  simulatedTime: _simulatedTime,
                 ),
               ),
               canvas: KeyedSubtree(
@@ -1441,11 +1555,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                                                       wirePreviewPlanner:
                                                           _g2aWirePreviewPlanner,
                                                       runtimeSnapshot:
-                                                          _simulation.snapshot,
+                                                          _runtimeSnapshot,
+                                                      mixedRuntimeView: widget
+                                                          .mixedRuntimeView,
                                                       soundEnabled:
                                                           _soundEnabled,
                                                       simulationRunning:
-                                                          _simulation.running,
+                                                          _simulationRunning,
                                                     ),
                                               ),
                                             if (_representation ==
@@ -1600,7 +1716,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final saved = await persistence.saveWorkspace(
         circuit: EnergyMeterRuntime.persist(
           _circuit,
-          _simulation.snapshot.energyMeters,
+          _runtimeSnapshot.energyMeters,
         ),
         workspace: _workspace,
         visualLayout: _layout,
@@ -1622,6 +1738,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final ElectroSimPersistenceController? persistence =
         widget.persistenceController;
     if (persistence == null) return;
+    if (_workspaceHasAuthoredContent()) {
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) => AlertDialog(
+          title: const Text('Remplacer le travail actuel ?'),
+          content: const Text(
+            'Reprendre la dernière sauvegarde remplacera le circuit et sa '
+            'disposition ouverts. Enregistrez-les avant de continuer si vous '
+            'souhaitez les conserver.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              key: const Key('workspace-resume-cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Continuer le travail actuel'),
+            ),
+            FilledButton(
+              key: const Key('workspace-resume-confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Reprendre la sauvegarde'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
     try {
       final restored = await persistence.openLatest(
         tpController: _tpController,
@@ -1659,12 +1801,21 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           router: _g2aWireLayoutEngine,
         );
       });
-      _simulation.updateCircuit(_circuit);
+      _updateSimulationCircuit(_circuit);
     } catch (error) {
       if (!mounted) return;
       _setStatus('Échec de reprise locale : $error');
     }
   }
+
+  bool _workspaceHasAuthoredContent() =>
+      _circuit.components.isNotEmpty ||
+      _circuit.sources.isNotEmpty ||
+      _circuit.connections.isNotEmpty ||
+      _layout.elementPositions.isNotEmpty ||
+      _layout.elementSizes.isNotEmpty ||
+      _layout.wireRoutes.isNotEmpty ||
+      _layout.cabinetLayout.fixtures.isNotEmpty;
 
   Future<ElectroSimLanHostInfo> _enableLanSharing() async {
     final ElectroSimLanSyncHost? existing = _lanHost;
@@ -1735,7 +1886,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Câblage'
           : 'Recherche de dérangement';
       _circuit = next;
-      _simulation.updateCircuit(_circuit);
+      _updateSimulationCircuit(_circuit);
     }
     setState(() {});
   }
@@ -1763,7 +1914,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
 
     if (circuitChanged) {
-      _simulation.updateCircuit(_circuit);
+      _updateSimulationCircuit(_circuit);
     }
 
     setState(() {
@@ -1799,7 +1950,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
                 : 'Recherche de dérangement';
             _status = 'TP commencé — montage élève chargé.';
           });
-          _simulation.updateCircuit(_circuit);
+          _updateSimulationCircuit(_circuit);
         },
       ),
     );
@@ -1843,10 +1994,13 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         builder: (BuildContext dialogContext) => AlertDialog(
           title: const Text('Changer de domaine électrique'),
           content: Text(
-            'Passer de ${_electricalModeLabel(_circuit.mode)} à '
-            '${_electricalModeLabel(mode)} crée une nouvelle platine vide. '
-            'Le circuit actuel doit être sauvegardé avant ce changement si '
-            'vous souhaitez le conserver.',
+            mode == ElectricalMode.mixed
+                ? 'Le circuit ${_electricalModeLabel(_circuit.mode)} actuel sera conservé sur la platine Mixte. '
+                      'Les autres domaines seront ajoutés vides et les réseaux resteront électriquement séparés.'
+                : 'Passer de ${_electricalModeLabel(_circuit.mode)} à '
+                      '${_electricalModeLabel(mode)} crée une nouvelle platine vide. '
+                      'Le circuit actuel doit être sauvegardé avant ce changement si '
+                      'vous souhaitez le conserver.',
           ),
           actions: <Widget>[
             TextButton(
@@ -1863,6 +2017,17 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         ),
       );
       if (confirmed != true || !mounted) return;
+    }
+
+    if (mode == ElectricalMode.mixed) {
+      final ValueChanged<CircuitState>? openMixed = widget.onOpenMixedMode;
+      if (openMixed == null) {
+        _setStatus('Ouvrez le mode Mixte depuis le simulateur principal.');
+      } else {
+        _simulation.pause();
+        openMixed(_circuit);
+      }
+      return;
     }
 
     final CircuitState next = CircuitState(
@@ -1888,7 +2053,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _wiringPointerWorld.value = null;
       _status = 'Nouvelle platine ${_electricalModeLabel(mode)} prête.';
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
     _simulation.resetDynamics();
     _syncStudentTpCircuit();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1906,6 +2071,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           'cellTemperatureC': 25.0,
           'shadingPct': 0.0,
         },
+        ElectricalMode.mixed => const <String, Object?>{},
       };
 
   String _electricalModeLabel(ElectricalMode mode) => switch (mode) {
@@ -1913,6 +2079,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     ElectricalMode.ac1 => 'AC 1φ',
     ElectricalMode.ac3 => 'AC 3φ',
     ElectricalMode.pv => 'PV',
+    ElectricalMode.mixed => 'Mixte',
   };
 
   void _quickAddFromPalette(F9PaletteDefinition definition) {
@@ -2013,7 +2180,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final ComponentModelContract? contract = CoreComponentModelContracts
           .registry
           .resolve(definition.modelType);
-      if (contract != null && !contract.supportsMode(_circuit.mode)) {
+      if (contract != null &&
+          !contract.supportsMode(widget.paletteModeOverride ?? _circuit.mode)) {
         _setStatus(
           '${definition.title} n’est pas compatible avec le mode '
           '${_circuit.mode.name.toUpperCase()}.',
@@ -2141,7 +2309,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       ),
     );
 
-    if (_tpController.session == null) {
+    if (_tpController.session == null && !widget.compositeNetworkMode) {
       nextCircuit = AppliancePowerConnection.addProtectiveEarth(nextCircuit);
     }
     final CircuitVisualLayout moved = _layout.moveElement(
@@ -2188,7 +2356,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _status = 'Ajout : ${definition.title} — $elementId';
     });
     final CircuitVisualLayout afterInsertion = _layout;
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
     unawaited(_finishElementRoute(nextCircuit, afterInsertion, elementId));
   }
@@ -2216,20 +2384,24 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             'Ampèremètre : fusible déclenché. '
             'Circuit de mesure ouvert. Remplacement requis.';
       });
-      _simulation.updateCircuit(after);
+      _updateSimulationCircuit(after);
       _syncStudentTpCircuit();
     });
   }
 
   Map<String, String> _physicalMeterReadouts() {
-    if (_circuit.instruments.isEmpty) return const <String, String>{};
-    final int second = _simulation.simulatedTime.inMilliseconds ~/ 1000;
-    final ElectroSimRuntimeSnapshot snapshot = _simulation.snapshot;
+    if (_circuit.instruments.isEmpty) {
+      unawaited(_continuityAudio.setActive(false));
+      return const <String, String>{};
+    }
+    final int second = _simulatedTime.inMilliseconds ~/ 1000;
+    final ElectroSimRuntimeSnapshot snapshot = _runtimeSnapshot;
     // The authored circuit identity invalidates cache on wiring edits.
     // Recalculate immediately if solve status changes (ERR -> valid) while
     // retaining one-second throttling during steady-state simulation; each
     // physical probe may require a separate expensive solver projection.
-    if (identical(_meterReadoutCacheCircuit, _circuit) &&
+    if (widget.mixedRuntimeView == null &&
+        identical(_meterReadoutCacheCircuit, _circuit) &&
         _meterReadoutCacheSecond == second &&
         (_meterReadoutCacheSnapshot?.solved == snapshot.solved)) {
       return _meterReadoutCache;
@@ -2237,17 +2409,22 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     const ElectroSimInstrumentProjection projection =
         ElectroSimInstrumentProjection();
     final Map<String, String> results = <String, String>{};
+    bool continuityActive = false;
     for (final InstrumentInstance item in _circuit.instruments) {
+      final ElectroSimRuntimeSnapshot itemRuntime =
+          widget.mixedRuntimeView?.runtimeForElement(item.id.value) ?? snapshot;
+      final InstrumentInstance runtimeItem =
+          widget.mixedRuntimeView?.runtimeInstrument(item) ?? item;
       final PhysicalInstrumentReading reading = projection.read(
-        snapshot: snapshot,
-        instrument: item,
+        snapshot: itemRuntime,
+        instrument: runtimeItem,
       );
       if (F18AmmeterFuseSafety.shouldTrip(
         circuit: _circuit,
         instrument: item,
         solverDetectedOvercurrent:
             reading.status == PhysicalInstrumentStatus.blownFuse ||
-            (projection.dcSeriesCurrent(snapshot, item)?.abs() ?? 0) >
+            (projection.seriesCurrent(itemRuntime, runtimeItem)?.abs() ?? 0) >
                 item.fuseRatingA,
       )) {
         _scheduleAmmeterFuseTrip(item.id);
@@ -2255,6 +2432,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       final double? value = reading.result?.reading?.value;
       final String? textValue = reading.result?.displayText;
       final bool valid = reading.status == PhysicalInstrumentStatus.valid;
+      if (!continuityActive &&
+          !F18VoltmeterControls.isHeld(item) &&
+          F18VoltmeterControls.continuityDetected(
+            meter: item,
+            resistanceOhm: value,
+            validReading: valid,
+          )) {
+        continuityActive = true;
+      }
       final String raw;
       if (valid && textValue != null) {
         raw = textValue;
@@ -2293,6 +2479,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     _meterReadoutCacheSnapshot = snapshot;
     _meterReadoutCacheSecond = second;
     _meterReadoutCache = Map<String, String>.unmodifiable(results);
+    unawaited(_continuityAudio.setActive(continuityActive));
     return _meterReadoutCache;
   }
 
@@ -2320,9 +2507,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     final bool phaseSequence =
         definition.keyName == 'instrument-phase-sequence';
     final String elementId = _allocateElementId(definition.keyName);
+    final ElectricalMode placementMode =
+        widget.paletteModeOverride ?? _circuit.mode;
     final bool dc =
-        _circuit.mode == ElectricalMode.dc ||
-        _circuit.mode == ElectricalMode.pv;
+        placementMode == ElectricalMode.dc ||
+        placementMode == ElectricalMode.pv;
     final InstrumentInstance instrument = InstrumentInstance(
       id: InstrumentId(elementId),
       kind: current
@@ -2378,7 +2567,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Ordre des phases : sélectionnez trois bornes L1, L2 et L3 successivement.'
           : 'Voltmètre physique ajouté : sélectionnez V puis COM sur deux bornes.';
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
   }
 
   List<Terminal> _buildPaletteTerminals(
@@ -2701,7 +2890,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? 'Sonde V/Ω : ${target.value}. Sélectionner une borne pour COM.'
           : 'Sonde COM : ${target.value}. Mesure physique disponible.';
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
     return true;
   }
 
@@ -2780,7 +2969,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _status =
           'Ampèremètre inséré virtuellement en série sur ${target.value}.';
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
     return true;
   }
 
@@ -2885,7 +3074,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     } else if (!_directPointerMoved &&
         _wiringPendingTerminal == null &&
         !_selectionModifierAtPointerDown) {
-      _handleDirectControlTap(event.localPosition);
+      _handleDirectControlTap(event.localPosition, event.timeStamp);
     }
     _clearDirectPointerState();
   }
@@ -2948,7 +3137,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       if (_blockStudentTpMutation()) return true;
       final PhysicalInstrumentReading reading =
           const ElectroSimInstrumentProjection().read(
-            snapshot: _simulation.snapshot,
+            snapshot: _runtimeSnapshot,
             instrument: meter,
           );
       final double? value = reading.result?.reading?.value;
@@ -3013,7 +3202,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             '${next.poweredOn ? next.mode.name : 'OFF'}';
         _meterReadoutCacheCircuit = null;
       });
-      _simulation.updateCircuit(candidate);
+      _updateSimulationCircuit(candidate);
       _syncStudentTpCircuit();
       return true;
     }
@@ -3067,7 +3256,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _meterReadoutCacheCircuit = null;
       _status = 'Fusible remplacé. Ampèremètre encore hors tension.';
     });
-    _simulation.updateCircuit(next);
+    _updateSimulationCircuit(next);
     _syncStudentTpCircuit();
   }
 
@@ -3169,7 +3358,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     return null;
   }
 
-  void _handleDirectControlTap(Offset screenPosition) {
+  void _handleDirectControlTap(Offset screenPosition, Duration eventTimeStamp) {
     final ({String id, String modelType})? target = _directControlAt(
       screenPosition,
     );
@@ -3178,12 +3367,15 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    final DateTime now = DateTime.now();
     final bool sameTarget = _lastDirectControlTapElementId == target.id;
+    final Duration? previousTimeStamp = _lastDirectControlTapTime;
+    final Duration? elapsed = previousTimeStamp == null
+        ? null
+        : eventTimeStamp - previousTimeStamp;
     final bool withinTime =
-        _lastDirectControlTapTime != null &&
-        now.difference(_lastDirectControlTapTime!) <=
-            _directControlDoubleTapWindow;
+        elapsed != null &&
+        elapsed >= Duration.zero &&
+        elapsed <= _directControlDoubleTapWindow;
     final bool withinDistance =
         _lastDirectControlTapLocal != null &&
         (screenPosition - _lastDirectControlTapLocal!).distance <=
@@ -3195,7 +3387,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       return;
     }
 
-    _lastDirectControlTapTime = now;
+    _lastDirectControlTapTime = eventTimeStamp;
     _lastDirectControlTapElementId = target.id;
     _lastDirectControlTapLocal = screenPosition;
   }
@@ -3212,6 +3404,8 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         'switch_spst' ||
         'push_button_no' ||
         'push_button_nc' ||
+        'limit_switch_no' ||
+        'limit_switch_nc' ||
         'breaker_dc' ||
         'breaker_ac1' ||
         'rcd_2p_ac1' ||
@@ -3254,7 +3448,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           _selected = elementId;
           _status = 'Commande directe : $elementId — appuyé';
         });
-        _simulation.updateCircuit(_circuit);
+        _updateSimulationCircuit(_circuit);
         _syncStudentTpCircuit();
       }
 
@@ -3272,10 +3466,32 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             _circuit = released;
             _status = 'Commande directe : $elementId — relâché';
           });
-          _simulation.updateCircuit(_circuit);
+          _updateSimulationCircuit(_circuit);
           _syncStudentTpCircuit();
         },
       );
+      return;
+    }
+
+    if (type == 'limit_switch_no' || type == 'limit_switch_nc') {
+      final ComponentInstance? sensor = _circuit.components
+          .where((ComponentInstance item) => item.id.value == elementId)
+          .firstOrNull;
+      if (sensor == null) return;
+      final bool oldState = sensor.controlState['closed'] == true;
+      final CircuitState next = F9ElementEditor.setComponentClosed(
+        _circuit,
+        elementId,
+        closed: !oldState,
+      );
+      if (identical(next, _circuit)) return;
+      setState(() {
+        _circuit = next;
+        _selected = elementId;
+        _status = 'Capteur $elementId — ${!oldState ? 'actionné' : 'au repos'}';
+      });
+      _updateSimulationCircuit(next);
+      _syncStudentTpCircuit();
       return;
     }
 
@@ -3287,8 +3503,10 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         type == 'breaker_3p' ||
         type == 'breaker_4p' ||
         type == 'thermal_overload_3p';
+    final String runtimeElementId =
+        widget.mixedRuntimeView?.localIdForElement(elementId) ?? elementId;
     if (isProtectionReset &&
-        _simulation.snapshot.protectionTripped(ComponentId(elementId))) {
+        _runtimeSnapshot.protectionTripped(ComponentId(runtimeElementId))) {
       final CircuitState closed = F9ElementEditor.setComponentClosed(
         _circuit,
         elementId,
@@ -3299,9 +3517,11 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           _circuit = closed;
           _selected = elementId;
         });
-        _simulation.updateCircuit(_circuit);
+        _updateSimulationCircuit(_circuit);
       }
-      _simulation.rearmProtection(ComponentId(elementId));
+      if (widget.mixedRuntimeView == null) {
+        _simulation.rearmProtection(ComponentId(runtimeElementId));
+      }
       setState(() {
         _selected = elementId;
         _status = 'Commande directe : $elementId — protection réarmée';
@@ -3325,7 +3545,30 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _status =
           'Commande directe : $elementId — ${details?.stateLabel ?? 'mis à jour'}';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
+  void _setProximityTargetDistance(String sensorId, double distanceMm) {
+    final CircuitState next = F9ElementEditor.setProximityTargetDistance(
+      _circuit,
+      sensorId,
+      distanceMm: distanceMm,
+    );
+    if (identical(next, _circuit)) return;
+    final bool detected =
+        next.components
+            .where((ComponentInstance item) => item.id.value == sensorId)
+            .firstOrNull
+            ?.controlState['closed'] ==
+        true;
+    setState(() {
+      _circuit = next;
+      _selected = sensorId;
+      _status =
+          'Capteur $sensorId — cible à ${distanceMm.toStringAsFixed(0)} mm, ${detected ? 'détectée' : 'hors portée'}';
+    });
+    _updateSimulationCircuit(next);
     _syncStudentTpCircuit();
   }
 
@@ -3543,7 +3786,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
           ? decision.message
           : '${decision.message} Routage graphique provisoire.';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
     if (backgroundRouting) {
@@ -3786,7 +4029,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         .where(
           (F9PaletteDefinition item) =>
               item.kind == F9PaletteElementKind.component &&
-              item.supportsMode(_circuit.mode) &&
+              item.supportsMode(widget.paletteModeOverride ?? _circuit.mode) &&
               item.terminalCount == original.terminals.length,
         )
         .toList(growable: false);
@@ -3902,13 +4145,19 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _layout = proposed;
       _status = 'Remplacement : $selected → ${replacement.title}';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
     unawaited(_finishElementRoute(_circuit, _layout, selected));
   }
 
   void _toggleSelectedPrimaryState() {
+    if (widget.compositeNetworkMode) {
+      _setStatus(
+        'Utilisez les commandes du projet mixte pour piloter la simulation.',
+      );
+      return;
+    }
     if (_blockStudentTpMutation()) return;
     final String? selected = _selected;
     if (selected == null) {
@@ -3928,7 +4177,719 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _status =
           'État modifié : $selected — ${details?.stateLabel ?? 'mis à jour'}';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
+    _syncStudentTpCircuit();
+  }
+
+  Future<void> _editPlcLadder(String componentId) async {
+    final ComponentInstance plc = _circuit.components.firstWhere(
+      (ComponentInstance c) => c.id.value == componentId,
+    );
+    final Object? rawProgram = plc.parameters['ladderProgram'];
+    final List<Map<String, Object?>> savedRungs = rawProgram is List
+        ? rawProgram.whereType<Map>().map((Map row) {
+            final Object? rawSteps = row['steps'];
+            return <String, Object?>{
+              'steps': rawSteps is List
+                  ? rawSteps
+                        .whereType<Map>()
+                        .map((Map step) => Map<String, Object?>.from(step))
+                        .toList()
+                  : <Map<String, Object?>>[],
+            };
+          }).toList()
+        : <Map<String, Object?>>[];
+    final List<Map<String, Object?>> rungs =
+        rawProgram is List &&
+            rawProgram.isNotEmpty &&
+            rawProgram.whereType<Map>().every(
+              (Map row) => row.containsKey('steps'),
+            )
+        ? savedRungs
+        : <Map<String, Object?>>[
+            <String, Object?>{
+              'steps': rawProgram is List
+                  ? rawProgram
+                        .whereType<Map>()
+                        .map((Map step) => Map<String, Object?>.from(step))
+                        .toList()
+                  : <Map<String, Object?>>[],
+            },
+          ];
+    if (rungs.isEmpty) {
+      rungs.add(<String, Object?>{'steps': <Map<String, Object?>>[]});
+    }
+    final List<String> addresses = <String>[
+      'I0',
+      'I1',
+      'I2',
+      'I3',
+      'Q0',
+      'Q1',
+      'Q2',
+      'Q3',
+      for (int i = 0; i < 16; i++) 'M$i',
+      for (int i = 0; i < 16; i++) 'T$i',
+    ];
+    final List<String> types = <String>[
+      'contact_no',
+      'contact_nc',
+      'TON',
+      'timer_done',
+      'coil',
+      'coil_set',
+      'coil_reset',
+    ];
+    final List<String> typeLabels = <String>[
+      'Contact NO',
+      'Contact NC',
+      'TON',
+      'TON terminé',
+      'Bobine Q/M',
+      'SET',
+      'RESET',
+    ];
+    final List<dynamic>? result = await showDialog<List<dynamic>>(
+      context: context,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) => AlertDialog(
+          title: const Text('Programme Ladder'),
+          content: SizedBox(
+            width: 620,
+            height: 430,
+            child: Column(
+              children: <Widget>[
+                const Text(
+                  'Les entrées I lisent les boutons/capteurs raccordés. Chaque rung est évalué de gauche à droite; TON temporise puis active son bit DN.',
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: rungs.length,
+                    itemBuilder: (BuildContext context, int rungIndex) {
+                      final List<Map<String, Object?>> steps =
+                          rungs[rungIndex]['steps']!
+                              as List<Map<String, Object?>>;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
+                                children: <Widget>[
+                                  Text(
+                                    'Rung ${rungIndex + 1}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
+                                  ),
+                                  const Spacer(),
+                                  IconButton(
+                                    tooltip: 'Supprimer le rung',
+                                    onPressed: rungs.length <= 1
+                                        ? null
+                                        : () => setDialogState(
+                                            () => rungs.removeAt(rungIndex),
+                                          ),
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                                ],
+                              ),
+                              for (
+                                int stepIndex = 0;
+                                stepIndex < steps.length;
+                                stepIndex++
+                              )
+                                _ladderStepEditor(
+                                  context: context,
+                                  step: steps[stepIndex],
+                                  types: types,
+                                  typeLabels: typeLabels,
+                                  addresses: switch (steps[stepIndex]['type']) {
+                                    'contact_no' || 'contact_nc' =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                !address.startsWith('T'),
+                                          )
+                                          .toList(),
+                                    'TON' || 'timer_done' =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                address.startsWith('T'),
+                                          )
+                                          .toList(),
+                                    _ =>
+                                      addresses
+                                          .where(
+                                            (String address) =>
+                                                address.startsWith('Q') ||
+                                                address.startsWith('M'),
+                                          )
+                                          .toList(),
+                                  },
+                                  onChanged: () => setDialogState(() {}),
+                                  onDelete: () => setDialogState(
+                                    () => steps.removeAt(stepIndex),
+                                  ),
+                                  isLastStep: stepIndex == steps.length - 1,
+                                ),
+                              Wrap(
+                                spacing: 6,
+                                children: <Widget>[
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'contact_no',
+                                              'address': 'I0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Contact'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'TON',
+                                              'address': 'T0',
+                                              'presetSeconds': 1.0,
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.timer_outlined),
+                                    label: const Text('TON'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'coil',
+                                              'address': 'Q0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.electrical_services),
+                                    label: const Text('Bobine'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'contact_nc',
+                                              'address': 'I1',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.sync_alt),
+                                    label: const Text('Contact NC'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        steps.any(
+                                          (Map<String, Object?> step) =>
+                                              <String>[
+                                                'TON',
+                                                'coil',
+                                                'coil_set',
+                                                'coil_reset',
+                                              ].contains(step['type']),
+                                        )
+                                        ? null
+                                        : () => setDialogState(
+                                            () => steps.add(<String, Object?>{
+                                              'type': 'timer_done',
+                                              'address': 'T0',
+                                            }),
+                                          ),
+                                    icon: const Icon(Icons.timer),
+                                    label: const Text('TON terminé'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setDialogState(
+                      () => rungs.add(<String, Object?>{
+                        'steps': <Map<String, Object?>>[],
+                      }),
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Ajouter un rung'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, rungs),
+              child: const Text('Enregistrer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'ladderProgram': result},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Programme Ladder enregistré';
+    });
+    _updateSimulationCircuit(next);
+    _syncStudentTpCircuit();
+  }
+
+  Widget _ladderStepEditor({
+    required BuildContext context,
+    required Map<String, Object?> step,
+    required List<String> types,
+    required List<String> typeLabels,
+    required List<String> addresses,
+    required VoidCallback onChanged,
+    required VoidCallback onDelete,
+    required bool isLastStep,
+  }) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 3,
+          child: DropdownButtonFormField<String>(
+            initialValue: types.contains(step['type'])
+                ? step['type'] as String
+                : types.first,
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Élément',
+            ),
+            items: <DropdownMenuItem<String>>[
+              for (int index = 0; index < types.length; index++)
+                if (isLastStep ||
+                    types[index] == step['type'] ||
+                    !<String>[
+                      'TON',
+                      'coil',
+                      'coil_set',
+                      'coil_reset',
+                    ].contains(types[index]))
+                  DropdownMenuItem(
+                    value: types[index],
+                    child: Text(typeLabels[index]),
+                  ),
+            ],
+            onChanged: (String? value) {
+              if (value != null) {
+                step['type'] = value;
+                if (value == 'TON') {
+                  step['address'] = 'T0';
+                } else if (<String>[
+                  'coil',
+                  'coil_set',
+                  'coil_reset',
+                ].contains(value)) {
+                  step['address'] = 'Q0';
+                } else if ((step['address'] as String? ?? '').startsWith('T')) {
+                  step['address'] = 'I0';
+                }
+                onChanged();
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 2,
+          child: DropdownButtonFormField<String>(
+            initialValue: addresses.contains(step['address'])
+                ? step['address'] as String
+                : addresses.first,
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Adresse',
+            ),
+            items: addresses
+                .map(
+                  (String value) =>
+                      DropdownMenuItem(value: value, child: Text(value)),
+                )
+                .toList(),
+            onChanged:
+                (isLastStep &&
+                        <String>[
+                          'coil',
+                          'coil_set',
+                          'coil_reset',
+                        ].contains(step['type'])) ||
+                    step['type'] == 'TON'
+                ? null
+                : (String? value) {
+                    if (value != null) {
+                      step['address'] = value;
+                      onChanged();
+                    }
+                  },
+          ),
+        ),
+        if (step['type'] == 'TON')
+          SizedBox(
+            width: 88,
+            child: TextFormField(
+              initialValue: '${step['presetSeconds'] ?? 1}',
+              decoration: const InputDecoration(isDense: true, labelText: 's'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onChanged: (String value) {
+                final double? parsed = double.tryParse(
+                  value.replaceAll(',', '.'),
+                );
+                if (parsed != null &&
+                    parsed.isFinite &&
+                    parsed > 0 &&
+                    parsed <= 3600) {
+                  step['presetSeconds'] = parsed;
+                }
+              },
+            ),
+          ),
+        IconButton(
+          tooltip: 'Supprimer l’élément',
+          onPressed: onDelete,
+          icon: const Icon(Icons.close),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editStarDeltaTimer(String componentId) async {
+    final ComponentInstance timer = _circuit.components.firstWhere(
+      (ComponentInstance c) => c.id.value == componentId,
+    );
+    final TextEditingController delayController = TextEditingController(
+      text: '${(timer.parameters['delaySeconds'] as num?)?.toDouble() ?? 5}',
+    );
+    final TextEditingController deadTimeController = TextEditingController(
+      text:
+          '${(timer.parameters['deadTimeSeconds'] as num?)?.toDouble() ?? 0.05}',
+    );
+    final (String, String)? value = await showDialog<(String, String)>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Retard étoile-triangle'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              controller: delayController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Retard étoile (secondes)',
+                helperText: 'Valeur entre 0,1 s et 300 s',
+              ),
+            ),
+            TextField(
+              controller: deadTimeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Temps mort avant triangle',
+                helperText: 'Valeur entre 0 et 5 s',
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, (
+              delayController.text,
+              deadTimeController.text,
+            )),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+    delayController.dispose();
+    deadTimeController.dispose();
+    if (!mounted || value == null) return;
+    final double? delay = double.tryParse(value.$1.replaceAll(',', '.'));
+    final double? deadTime = double.tryParse(value.$2.replaceAll(',', '.'));
+    if (delay == null ||
+        !delay.isFinite ||
+        delay < 0.1 ||
+        delay > 300 ||
+        deadTime == null ||
+        !deadTime.isFinite ||
+        deadTime < 0 ||
+        deadTime > 5) {
+      _setStatus(
+        'Réglages invalides : retard de 0,1 à 300 s et temps mort de 0 à 5 s.',
+      );
+      return;
+    }
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'delaySeconds': delay, 'deadTimeSeconds': deadTime},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Temporisateur réglé à ${delay.toStringAsFixed(2)} s';
+    });
+    _updateSimulationCircuit(next);
+  }
+
+  Future<void> _editMechanicalInterlock(String componentId) async {
+    final ComponentInstance accessory = _circuit.components.firstWhere(
+      (ComponentInstance c) => c.id.value == componentId,
+    );
+    final List<ComponentInstance> contactors = _circuit.components
+        .where((ComponentInstance c) => c.modelType == 'contactor_3p')
+        .toList(growable: false);
+    if (contactors.length < 2) {
+      _setStatus(
+        'Ajoutez au moins deux contacteurs triphasés pour configurer le verrouillage.',
+      );
+      return;
+    }
+    String selectedA =
+        accessory.parameters['contactorAId'] as String? ??
+        contactors[0].id.value;
+    String selectedB =
+        accessory.parameters['contactorBId'] as String? ??
+        contactors[1].id.value;
+    if (selectedA == selectedB ||
+        !contactors.any((c) => c.id.value == selectedA)) {
+      selectedA = contactors[0].id.value;
+    }
+    if (selectedA == selectedB ||
+        !contactors.any((c) => c.id.value == selectedB)) {
+      selectedB = contactors
+          .firstWhere((c) => c.id.value != selectedA)
+          .id
+          .value;
+    }
+    final (String, String)? pair = await showDialog<(String, String)>(
+      context: context,
+      builder: (BuildContext context) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) =>
+            AlertDialog(
+              title: const Text('Verrouillage mécanique'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  DropdownButtonFormField<String>(
+                    key: const Key('mechanical-interlock-contactora'),
+                    initialValue: selectedA,
+                    decoration: const InputDecoration(
+                      labelText: 'Contacteur A',
+                    ),
+                    items: [
+                      for (final c in contactors)
+                        DropdownMenuItem(
+                          value: c.id.value,
+                          child: Text(c.id.value),
+                        ),
+                    ],
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        setDialogState(() {
+                          selectedA = value;
+                          if (selectedA == selectedB) {
+                            selectedB = contactors
+                                .firstWhere((c) => c.id.value != selectedA)
+                                .id
+                                .value;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  DropdownButtonFormField<String>(
+                    key: const Key('mechanical-interlock-contactorb'),
+                    initialValue: selectedB,
+                    decoration: const InputDecoration(
+                      labelText: 'Contacteur B',
+                    ),
+                    items: [
+                      for (final c in contactors.where(
+                        (c) => c.id.value != selectedA,
+                      ))
+                        DropdownMenuItem(
+                          value: c.id.value,
+                          child: Text(c.id.value),
+                        ),
+                    ],
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        setDialogState(() => selectedB = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.pop(context, (selectedA, selectedB)),
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            ),
+      ),
+    );
+    if (!mounted || pair == null) return;
+    final CircuitState next = _replaceComponentParameters(
+      componentId,
+      <String, Object?>{'contactorAId': pair.$1, 'contactorBId': pair.$2},
+    );
+    setState(() {
+      _circuit = next;
+      _status = 'Verrouillage mécanique configuré : ${pair.$1} / ${pair.$2}';
+    });
+    _updateSimulationCircuit(next);
+  }
+
+  CircuitState _replaceComponentParameters(
+    String componentId,
+    Map<String, Object?> updates,
+  ) {
+    return CircuitState(
+      circuitId: _circuit.circuitId,
+      revision: _circuit.revision + 1,
+      mode: _circuit.mode,
+      components: _circuit.components
+          .map(
+            (ComponentInstance c) => c.id.value != componentId
+                ? c
+                : ComponentInstance(
+                    id: c.id,
+                    modelType: c.modelType,
+                    terminals: c.terminals,
+                    parameters: <String, Object?>{...c.parameters, ...updates},
+                    condition: c.condition,
+                    controlState: c.controlState,
+                  ),
+          )
+          .toList(growable: false),
+      sources: _circuit.sources,
+      connections: _circuit.connections,
+      instruments: _circuit.instruments,
+      probes: _circuit.probes,
+      settings: _circuit.settings,
+      metadata: _circuit.metadata,
+    );
+  }
+
+  void _linkPlcOutput(String plcId, String output, String? targetId) {
+    final ComponentInstance? plc = _circuit.components
+        .where(
+          (ComponentInstance c) =>
+              c.id.value == plcId && c.modelType == 'plc_ac3',
+        )
+        .firstOrNull;
+    if (plc == null) return;
+    final Map<String, Object?> links = <String, Object?>{
+      if (plc.parameters['outputLinks'] is Map)
+        ...(plc.parameters['outputLinks'] as Map).cast<String, Object?>(),
+    };
+    if (targetId == null || targetId.isEmpty) {
+      links.remove(output);
+    } else {
+      final bool validTarget = _circuit.components.any(
+        (ComponentInstance c) =>
+            c.id.value == targetId && c.modelType == 'contactor_3p',
+      );
+      if (!validTarget) {
+        _setStatus(
+          'La sortie PLC AC3 doit cibler un contacteur triphasé existant.',
+        );
+        return;
+      }
+      for (final MapEntry<String, Object?> entry in links.entries.toList()) {
+        if (entry.key != output && entry.value == targetId) {
+          _setStatus('Ce contacteur est déjà lié à ${entry.key}.');
+          return;
+        }
+      }
+      links[output] = targetId;
+    }
+    final CircuitState next = _replaceComponentParameters(
+      plcId,
+      <String, Object?>{'outputLinks': links},
+    );
+    setState(() {
+      _circuit = next;
+      _status = targetId == null || targetId.isEmpty
+          ? '$output déliée'
+          : '$output commande le contacteur $targetId';
+    });
+    _updateSimulationCircuit(next);
     _syncStudentTpCircuit();
   }
 
@@ -3969,7 +4930,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
             ? 'Raccordement modifié — fiche débranchée si présente.'
             : 'Fiche branchée dans $socketId';
       });
-      _simulation.updateCircuit(next);
+      _updateSimulationCircuit(next);
       _syncStudentTpCircuit();
     } on ArgumentError catch (error) {
       _setStatus(error.message.toString());
@@ -4110,7 +5071,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _selected = null;
         _status = 'Instrument physique supprimé : $selected';
       });
-      _simulation.updateCircuit(next);
+      _updateSimulationCircuit(next);
       return;
     }
     final F9ElementDetails? details = F9ElementEditor.describe(
@@ -4147,7 +5108,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
         _selected = null;
         _status = 'Suppression : fil — $selected';
       });
-      _simulation.updateCircuit(_circuit);
+      _updateSimulationCircuit(_circuit);
       _syncStudentTpCircuit();
       _announce(_status);
       return;
@@ -4205,7 +5166,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = null;
       _status = 'Suppression : ${details.modelType} — $selected';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
   }
 
@@ -4302,7 +5263,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
       _selected = null;
       _status = 'Suppression multiple : $removedCount éléments sélectionnés';
     });
-    _simulation.updateCircuit(_circuit);
+    _updateSimulationCircuit(_circuit);
     _syncStudentTpCircuit();
     _announce(_status);
   }
@@ -4582,6 +5543,7 @@ class _F18WorkspacePageState extends State<F18WorkspacePage> {
     }
     _momentaryReleaseTimers.clear();
     _simulation.dispose();
+    unawaited(_continuityAudio.dispose());
     widget.syncClient?.removeListener(_onLanSyncChanged);
     final ElectroSimLanSyncHost? host = _lanHost;
     if (host != null) unawaited(host.close());
@@ -4665,6 +5627,8 @@ class _WorkspaceTopBar extends StatelessWidget {
     required this.onCancelAdvance,
     required this.onUndo,
     required this.onRedo,
+    this.showSimulationControls = true,
+    this.showModeSelector = true,
   });
 
   final String entryLabel;
@@ -4707,6 +5671,8 @@ class _WorkspaceTopBar extends StatelessWidget {
   final VoidCallback onCancelAdvance;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final bool showSimulationControls;
+  final bool showModeSelector;
 
   @override
   Widget build(BuildContext context) {
@@ -4752,8 +5718,8 @@ class _WorkspaceTopBar extends StatelessWidget {
               icon: const Icon(Icons.adjust_outlined),
               selectedIcon: const Icon(Icons.adjust, color: Color(0xFF2563EB)),
             ),
-          _modeMenu(compact),
-          if (!compact)
+          if (showModeSelector) _modeMenu(compact),
+          if (showSimulationControls && !compact)
             PopupMenuButton<Duration>(
               key: const Key('workspace-time-advance'),
               tooltip: 'Avancer le temps simulé',
@@ -4804,40 +5770,41 @@ class _WorkspaceTopBar extends StatelessWidget {
             onPressed: onDeleteSelected,
             icon: const Icon(Icons.delete_outline),
           ),
-          Tooltip(
-            message: simulationAdvancing
-                ? 'Annuler l’avance temporelle'
-                : simulationRunning
-                ? 'Mettre la simulation en pause'
-                : 'Démarrer la simulation',
-            child: FilledButton.icon(
-              key: const Key('workspace-simulation-toggle'),
-              onPressed: simulationAdvancing
-                  ? onCancelAdvance
-                  : onToggleSimulation,
-              style: FilledButton.styleFrom(
-                backgroundColor: simulationRunning
-                    ? ElectroSimColors.primary
-                    : ElectroSimColors.success,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(0, 48),
-              ),
-              icon: Icon(
-                simulationAdvancing
-                    ? Icons.stop_circle_outlined
-                    : simulationRunning
-                    ? Icons.pause
-                    : Icons.play_arrow,
-              ),
-              label: Text(
-                simulationAdvancing
-                    ? 'Stop'
-                    : simulationRunning
-                    ? 'Pause'
-                    : 'Lancer',
+          if (showSimulationControls)
+            Tooltip(
+              message: simulationAdvancing
+                  ? 'Annuler l’avance temporelle'
+                  : simulationRunning
+                  ? 'Mettre la simulation en pause'
+                  : 'Démarrer la simulation',
+              child: FilledButton.icon(
+                key: const Key('workspace-simulation-toggle'),
+                onPressed: simulationAdvancing
+                    ? onCancelAdvance
+                    : onToggleSimulation,
+                style: FilledButton.styleFrom(
+                  backgroundColor: simulationRunning
+                      ? ElectroSimColors.primary
+                      : ElectroSimColors.success,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                ),
+                icon: Icon(
+                  simulationAdvancing
+                      ? Icons.stop_circle_outlined
+                      : simulationRunning
+                      ? Icons.pause
+                      : Icons.play_arrow,
+                ),
+                label: Text(
+                  simulationAdvancing
+                      ? 'Stop'
+                      : simulationRunning
+                      ? 'Pause'
+                      : 'Lancer',
+                ),
               ),
             ),
-          ),
           _moreMenu(),
         ];
         return Column(
@@ -5006,6 +5973,11 @@ class _WorkspaceTopBar extends StatelessWidget {
         value: ElectricalMode.pv,
         child: Text('PV — photovoltaïque'),
       ),
+      PopupMenuItem(
+        key: Key('workspace-mode-mixed'),
+        value: ElectricalMode.mixed,
+        child: Text('Mixte — CC, AC, triphasé et PV'),
+      ),
     ],
     child: ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -5022,6 +5994,7 @@ class _WorkspaceTopBar extends StatelessWidget {
                 ElectricalMode.ac1 => 'AC 1φ',
                 ElectricalMode.ac3 => 'AC 3φ',
                 ElectricalMode.pv => 'PV',
+                ElectricalMode.mixed => 'Mixte',
               }),
             ],
             const Icon(Icons.arrow_drop_down, size: 18),

@@ -1,32 +1,20 @@
-import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:electrosim/f9_component_palette.dart';
 import 'package:electrosim/f18_component_asset_visual.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
+
 void main() {
   setUpAll(() async {
+    await loadElectroSimGoldenFont();
     expect(await Disjoncteur3D.prechargerTextures(), isTrue);
   });
   testWidgets('G5 proof uses the actual palette and board widgets', (
     tester,
   ) async {
-    // Render readable typography in test mode, as in the G5 native showcase.
-    final String? home = Platform.environment['HOME'];
-    final String macFont = '${home ?? ''}/Library/Fonts/DejaVuSans.ttf';
-    final font = File(
-      home != null && File(macFont).existsSync()
-          ? macFont
-          : '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    );
-    if (font.existsSync()) {
-      final bytes = font.readAsBytesSync();
-      await (FontLoader(
-        'Roboto',
-      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
-    }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -116,7 +104,9 @@ void main() {
     expect(tester.takeException(), isNull);
     await expectLater(
       find.byKey(const Key('g5-actual-widgets-proof')),
-      matchesGoldenFile('goldens/g12rq_actual_widgets_palette_board.png'),
+      matchesGoldenFile(
+        platformGoldenPath('g12rq_actual_widgets_palette_board.png'),
+      ),
     );
   });
 }

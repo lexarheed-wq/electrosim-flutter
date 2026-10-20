@@ -109,7 +109,13 @@ void main() {
           );
           continue;
         }
-        expect(item.terminalCount, greaterThan(0), reason: item.keyName);
+        if (item.keyName == 'mechanical-interlock-ac3') {
+          // This is a mechanical accessory mounted between two contactors;
+          // it must have a board visual but correctly has no electrical pins.
+          expect(item.terminalCount, 0, reason: item.keyName);
+        } else {
+          expect(item.terminalCount, greaterThan(0), reason: item.keyName);
+        }
         expect(
           F18ReferenceComponentVisuals.supports(item.renderedModelType),
           isTrue,

@@ -17,6 +17,7 @@ import 'f18_component_asset_visual.dart';
 import 'f18_industrial_dual_view.dart';
 import 'f9_wiring_policy.dart';
 import 'f9_source_voltage_readout.dart';
+import 'mixed_board_runtime_view.dart';
 import 'runtime/electrosim_runtime_engine.dart';
 import 'runtime/industrial_alarm_audio.dart';
 import 'runtime/rotor_motion.dart';
@@ -35,6 +36,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
     this.pointerWorldPositionListenable,
     this.wirePreviewPlanner,
     this.runtimeSnapshot,
+    this.mixedRuntimeView,
     this.simulationRunning = false,
     this.soundEnabled = true,
   });
@@ -50,6 +52,7 @@ class F9CanvasVisualOverlay extends StatefulWidget {
   final ValueListenable<Offset?>? pointerWorldPositionListenable;
   final WirePreviewPlanner? wirePreviewPlanner;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final bool simulationRunning;
   final bool soundEnabled;
 
@@ -227,6 +230,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     geometry: geometry,
                     semantics: semantics,
                     runtimeSnapshot: widget.runtimeSnapshot,
+                    mixedRuntimeView: widget.mixedRuntimeView,
                     simulationRunning: widget.simulationRunning,
                     motionSeconds: _motionSeconds,
                   ),
@@ -344,6 +348,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       MeterEnergyReading? meterReading,
       double residualTripCurrentA = 0,
       ComponentHealthState healthState = const ComponentHealthState.normal(),
+      Map<String, Object?> controlState = const <String, Object?>{},
+      Map<String, Object?> componentParameters = const <String, Object?>{},
     }) {
       final String renderedModelType = visualModelType ?? modelType;
       if (!F18ReferenceComponentVisuals.supports(renderedModelType)) return;
@@ -409,6 +415,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                   currentLimitA: currentLimitA,
                   resistanceOhm: resistanceOhm,
                   residualTripCurrentA: residualTripCurrentA,
+                  controlState: controlState,
+                  componentParameters: componentParameters,
                 ),
               ),
             ),
@@ -419,25 +427,38 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
 
     final ElectroSimRuntimeSnapshot? runtime = widget.runtimeSnapshot;
     for (final SourceInstance source in widget.circuit.sources) {
+      final ElectroSimRuntimeSnapshot? sourceRuntime =
+          widget.mixedRuntimeView?.runtimeForElement(source.id.value) ??
+          runtime;
+      final SourceId sourceId = SourceId(
+        widget.mixedRuntimeView?.localIdForElement(source.id.value) ??
+            source.id.value,
+      );
       final double currentA = _sourceCurrentA(
-        runtime,
-        source.id,
+        sourceRuntime,
+        sourceId,
         source.modelType,
       );
       final double voltageV = F9SourceVoltageReadout.voltageV(
-        runtime,
+        sourceRuntime,
         source,
-        simulationRunning: widget.simulationRunning,
+        simulationRunning:
+            widget.simulationRunning ||
+            (widget.mixedRuntimeView != null && source.enabled),
+        sourceId: sourceId,
       );
       addVisual(
         elementId: source.id.value,
         modelType: source.modelType,
         visualModelType: source.parameters['_visualModelType'] as String?,
         visualVariant: source.parameters['_visualVariant'] as String?,
-        enabled: source.enabled,
+        enabled:
+            source.enabled &&
+            (source.modelType != 'dc_voltage_source' ||
+                source.parameters['voltageV'] is num),
         energized:
-            widget.simulationRunning &&
-            (runtime?.solved ?? false) &&
+            (widget.simulationRunning || widget.mixedRuntimeView != null) &&
+            (sourceRuntime?.solved ?? false) &&
             source.enabled,
         closed: true,
         tripped: false,
@@ -455,31 +476,61 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       );
     }
     for (final ComponentInstance component in widget.circuit.components) {
+      final ElectroSimRuntimeSnapshot? componentRuntime =
+          widget.mixedRuntimeView?.runtimeForElement(component.id.value) ??
+          runtime;
+      final ComponentId componentId = ComponentId(
+        widget.mixedRuntimeView?.localIdForElement(component.id.value) ??
+            component.id.value,
+      );
       final double currentA = _componentSignedCurrentA(
-        runtime,
-        component.id,
+        componentRuntime,
+        componentId,
         component.modelType,
       );
       final double voltageV = _componentVoltageV(
-        runtime,
-        component.id,
+        componentRuntime,
+        componentId,
         component.modelType,
       );
       final double batterySoc = component.modelType != 'pv_battery'
           ? 0.0
-          : (runtime?.pvResult?.isSolved ?? false)
-          ? runtime!.pvResult!.batterySoc
-          : runtime?.dcBatterySocs[component.id] ??
+          : (componentRuntime?.pvResult?.isSolved ?? false)
+          ? componentRuntime!.pvResult!.batterySoc
+          : componentRuntime?.dcBatterySocs[componentId] ??
                 (component.parameters['initialSoc'] as num?)?.toDouble() ??
                 0.0;
-      final componentState = runtime?.componentOperatingState(component.id);
+      final ComponentInstance? runtimeComponent = componentRuntime
+          ?.effectiveCircuit
+          .components
+          .where((ComponentInstance candidate) => candidate.id == componentId)
+          .firstOrNull;
+      final Map<String, Object?> visualControlState = <String, Object?>{
+        ...(runtimeComponent?.controlState ?? component.controlState),
+        if (component.modelType ==
+            'mechanical_interlock_ac3') ...<String, Object?>{
+          'contactorAActuated': _linkedContactorActuated(
+            component.parameters['contactorAId'],
+            componentRuntime,
+            widget.mixedRuntimeView,
+          ),
+          'contactorBActuated': _linkedContactorActuated(
+            component.parameters['contactorBId'],
+            componentRuntime,
+            widget.mixedRuntimeView,
+          ),
+        },
+      };
+      final componentState = componentRuntime?.componentOperatingState(
+        componentId,
+      );
       final bool stateAllowsEnergy =
           componentState?.code == ComponentOperatingCode.energized ||
           componentState?.code == ComponentOperatingCode.overloaded;
-      final meterReading = runtime?.energyMeters[component.id];
+      final meterReading = componentRuntime?.energyMeters[componentId];
       final bool energized =
-          widget.simulationRunning &&
-          (runtime?.solved ?? false) &&
+          (widget.simulationRunning || widget.mixedRuntimeView != null) &&
+          (componentRuntime?.solved ?? false) &&
           (meterReading != null
               ? meterReading.available
               : stateAllowsEnergy && currentA.abs() > 1e-6);
@@ -491,7 +542,7 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         _ => (component.controlState['closed'] as bool?) ?? true,
       };
       final bool tripped =
-          (runtime?.protectionTripped(component.id) ?? false) ||
+          (componentRuntime?.protectionTripped(componentId) ?? false) ||
           component.controlState['tripped'] == true;
       final bool contactorAux =
           type == 'contactor_aux_no' || type == 'contactor_aux_nc';
@@ -500,9 +551,14 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
       final Object? linkedId = component
           .parameters[relayAux ? 'linkedRelayId' : 'linkedContactorId'];
       final bool actuated = (contactorAux || relayAux) && linkedId is String
-          ? (runtime?.contactorActuated(ComponentId(linkedId)) ??
+          ? (componentRuntime?.contactorActuated(
+                  ComponentId(
+                    widget.mixedRuntimeView?.localIdForElement(linkedId) ??
+                        linkedId,
+                  ),
+                ) ??
                 (component.controlState['actuated'] == true))
-          : (runtime?.contactorActuated(component.id) ??
+          : (componentRuntime?.contactorActuated(componentId) ??
                 (component.controlState['actuated'] == true));
 
       addVisual(
@@ -510,8 +566,8 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
         modelType: component.modelType,
         meterReading: meterReading,
         angularSpeedRadS: rotorVelocity(
-          runtime,
-          component,
+          componentRuntime,
+          widget.mixedRuntimeView?.runtimeComponent(component) ?? component,
           running: widget.simulationRunning,
           energized: energized,
           voltageV: voltageV,
@@ -554,12 +610,24 @@ class _F9CanvasVisualOverlayState extends State<F9CanvasVisualOverlay>
                     as num?)
                 ?.toDouble() ??
             0,
+        controlState: visualControlState,
+        componentParameters: component.parameters,
         healthState:
-            runtime?.componentHealthState(component.id) ??
+            componentRuntime?.componentHealthState(componentId) ??
             const ComponentHealthState.normal(),
       );
     }
     return widgets;
+  }
+
+  bool _linkedContactorActuated(
+    Object? rawId,
+    ElectroSimRuntimeSnapshot? runtime,
+    MixedBoardRuntimeView? mixedRuntimeView,
+  ) {
+    if (rawId is! String || rawId.isEmpty || runtime == null) return false;
+    final String localId = mixedRuntimeView?.localIdForElement(rawId) ?? rawId;
+    return runtime.contactorActuated(ComponentId(localId));
   }
 
   static double _componentSignedCurrentA(
@@ -767,6 +835,8 @@ class _F9ReferenceAsset extends StatefulWidget {
     this.currentLimitA = 2,
     this.resistanceOhm = 0,
     this.residualTripCurrentA = 0,
+    this.controlState = const <String, Object?>{},
+    this.componentParameters = const <String, Object?>{},
   });
 
   final String modelType;
@@ -794,11 +864,14 @@ class _F9ReferenceAsset extends StatefulWidget {
   final double currentLimitA;
   final double resistanceOhm;
   final double residualTripCurrentA;
+  final Map<String, Object?> controlState;
+  final Map<String, Object?> componentParameters;
 
   // Board camera is locked to zero yaw/pitch. The same canonical device
   // painter continues to own all terminal and state geometry.
   Widget _visual(double phase) => F18IndustrialDualView(
     modelType: modelType,
+    variantKey: variantKey,
     size: size,
     presentation: F18IndustrialPresentation.boardFront,
     child: F18ComponentAssetVisual(
@@ -825,6 +898,8 @@ class _F9ReferenceAsset extends StatefulWidget {
       currentLimitA: currentLimitA,
       resistanceOhm: resistanceOhm,
       residualTripCurrentA: residualTripCurrentA,
+      controlState: controlState,
+      componentParameters: componentParameters,
     ),
   );
 
@@ -990,6 +1065,7 @@ class _F9CurrentFlowPainter extends CustomPainter {
     required this.geometry,
     required this.semantics,
     required this.runtimeSnapshot,
+    required this.mixedRuntimeView,
     required this.simulationRunning,
     required this.motionSeconds,
   }) : super(repaint: motionSeconds);
@@ -1000,23 +1076,29 @@ class _F9CurrentFlowPainter extends CustomPainter {
   final CircuitGeometryIndex geometry;
   final WireSemantics semantics;
   final ElectroSimRuntimeSnapshot? runtimeSnapshot;
+  final MixedBoardRuntimeView? mixedRuntimeView;
   final bool simulationRunning;
   final ValueListenable<double> motionSeconds;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final ElectroSimRuntimeSnapshot? runtime = runtimeSnapshot;
-    if (!simulationRunning || runtime == null || !runtime.solved) return;
-
     for (final Connection connection in circuit.connections) {
       if (connection.metadata.containsKey(AppliancePowerConnection.cableTag)) {
         continue;
       }
-      if (!runtime.topology.enabledConnectionIds.contains(connection.id)) {
+      final ElectroSimRuntimeSnapshot? runtime =
+          mixedRuntimeView?.runtimeForElement(connection.id.value) ??
+          runtimeSnapshot;
+      final Connection runtimeConnection =
+          mixedRuntimeView?.runtimeConnection(connection) ?? connection;
+      if (runtime == null || !runtime.solved) continue;
+      if (!runtime.topology.enabledConnectionIds.contains(
+        runtimeConnection.id,
+      )) {
         continue;
       }
       final ConnectionCurrentEvidence flow = runtime.connectionCurrentEvidence(
-        connection,
+        runtimeConnection,
       );
       final double currentA = flow.magnitudeA;
       if (!f9ShouldPaintCurrentFlow(flow)) continue;

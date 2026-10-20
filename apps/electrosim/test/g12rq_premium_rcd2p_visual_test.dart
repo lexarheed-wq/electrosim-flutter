@@ -1,13 +1,14 @@
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:electrosim/f18_premium_rcd2p_showcase.dart';
 import 'package:electrosim/reference_components/disjoncteur_3d.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/golden_font.dart';
+import 'support/platform_golden_path.dart';
+
 void main() {
   setUpAll(() async {
+    await loadElectroSimGoldenFont();
     expect(await Disjoncteur3D.prechargerTextures(), isTrue);
   });
   test('the two views are native projector settings, not matrix wrappers', () {
@@ -76,22 +77,6 @@ void main() {
   testWidgets('actual Flutter raster: original 3D palette plus frontal board', (
     tester,
   ) async {
-    // Stock Flutter golden fonts replace letters with black blocks. Load an
-    // ordinary system font for an honest, readable visual review. This font
-    // is never packaged in the ElectroSim application or test artifact.
-    final String? home = Platform.environment['HOME'];
-    final String macFont = '${home ?? ''}/Library/Fonts/DejaVuSans.ttf';
-    final font = File(
-      home != null && File(macFont).existsSync()
-          ? macFont
-          : '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    );
-    if (font.existsSync()) {
-      final bytes = font.readAsBytesSync();
-      await (FontLoader(
-        'Roboto',
-      )..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)))).load();
-    }
     tester.view.physicalSize = const Size(1100, 760);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -102,7 +87,9 @@ void main() {
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(F18PremiumRcd2pShowcase),
-      matchesGoldenFile('goldens/g12rq_premium_rcd2p_palette_board.png'),
+      matchesGoldenFile(
+        platformGoldenPath('g12rq_premium_rcd2p_palette_board.png'),
+      ),
     );
   });
 

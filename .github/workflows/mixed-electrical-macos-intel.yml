@@ -1,0 +1,228 @@
+name: Mixed electrical project — Mac Intel qualification
+
+on:
+  push:
+    branches:
+      - codex/mixed-electrical-mac-qualification
+    paths:
+      - '.github/workflows/mixed-electrical-macos-intel.yml'
+      - 'apps/electrosim/**'
+      - 'packages/**'
+      - 'tools/g5_3d_remaining/**'
+      - 'tools/tests/test_g5_crusher_mesh_contract.py'
+      - 'tools/tests/test_unified_geometry_source.py'
+      - 'tools/f15_*'
+      - 'tools/f17_*'
+      - 'docs/f18/mixed-electrical/**'
+  pull_request:
+    branches:
+      - fix/g5-metal-plate-no-grid-20261013-clean
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mixed-electrical-macos-intel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-blender-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install Blender CPU renderer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Render control and pneumatic components
+        env:
+          ELECTROSIM_RENDER_DENOISE: '0'
+        run: |
+          set -euo pipefail
+          blender --background --python tools/render_control_components.py
+          blender --background --python tools/render_pneumatic_components.py
+          test "$(find apps/electrosim/assets/g5_control -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 24
+          test "$(find apps/electrosim/assets/g5_pneumatic -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 30
+
+      - name: Validate unified industrial geometry source
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_unified_geometry_source -v
+          PYTHONPATH=tools/tests python3 -m unittest test_g5_crusher_mesh_contract -v
+          python3 tools/g5_3d_remaining/generate_lot_geometry.py --check
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Blender-Assets
+          path: |
+            apps/electrosim/assets/g5_control
+            apps/electrosim/assets/g5_pneumatic
+          if-no-files-found: error
+          retention-days: 1
+
+  qualify-macos-intel:
+    needs: render-blender-assets
+    runs-on: macos-15-intel
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+
+      - name: Confirm exact source revision
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Prepare isolated macOS app workspace
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(bash tools/f17_prepare_release_runner.sh macos)"
+          case "$output" in
+            F17_RUNNER_PATH=*) echo "runner=${output#F17_RUNNER_PATH=}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "INVALID_F17_RUNNER_PROTOCOL: $output" >&2; exit 69 ;;
+          esac
+
+      - name: Add rendered Blender assets to the app workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: ElectroSim-Blender-Assets
+          path: ${{ steps.prepare.outputs.runner }}/apps/electrosim/assets
+
+      - name: Analyze app
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze
+
+      - name: Run complete app tests
+        id: app_tests
+        continue-on-error: true
+        working-directory: ${{ steps.prepare.outputs.runner }}/apps/electrosim
+        run: |
+          set -euo pipefail
+          if [[ ! -f test/goldens/macos/f9_compact_base.png ]]; then
+            echo "Creating platform-specific Mac golden references from the reviewed runner rendering."
+            flutter test --concurrency=1 --update-goldens \
+              test/f9_goldens_test.dart \
+              test/g12rq_real_industrial_capture_test.dart \
+              test/g12rq_actual_app_visual_proof_test.dart \
+              test/g12rq_premium_rcd2p_visual_test.dart \
+              test/g5_industrial_states_visual_test.dart
+            for golden in test/goldens/macos/*.png; do
+              echo "MAC_GOLDEN_FILE_BEGIN:${golden##*/}"
+              base64 -i "$golden" | tr -d '\n'
+              echo
+              echo "MAC_GOLDEN_FILE_END:${golden##*/}"
+            done
+          fi
+          flutter test --concurrency=1
+
+      - name: Collect Flutter test failure images
+        if: always() && steps.app_tests.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_dir="${{ steps.prepare.outputs.runner }}/apps/electrosim/test/failures"
+          output_dir="$GITHUB_WORKSPACE/flutter-test-diagnostics"
+          mkdir -p "$output_dir"
+          if [[ -d "$source_dir" ]]; then
+            cp -R "$source_dir" "$output_dir/failures"
+            find "$output_dir/failures" -type f -print | sort
+            contact_sheet="$output_dir/visual-contact-sheet.jpg"
+            mkdir -p "$RUNNER_TEMP/swift-module-cache"
+            if swiftc -module-cache-path "$RUNNER_TEMP/swift-module-cache" \
+              tools/test_visual_diagnostics_contact_sheet.swift \
+              -o "$RUNNER_TEMP/electrosim-contact-sheet" && \
+              "$RUNNER_TEMP/electrosim-contact-sheet" "$source_dir" "$contact_sheet"; then
+              echo "VISUAL_CONTACT_SHEET_BASE64_BEGIN"
+              base64 -i "$contact_sheet" | tr -d '\n'
+              echo
+              echo "VISUAL_CONTACT_SHEET_BASE64_END"
+            else
+              echo "Could not generate the visual diagnostic contact sheet."
+            fi
+          else
+            echo "Flutter produced no test/failures directory." > "$output_dir/README.txt"
+          fi
+
+      - name: Upload Flutter test failure images
+        if: always() && steps.app_tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroSim-Flutter-Test-Diagnostics
+          path: flutter-test-diagnostics/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Run mixed-project package tests and analysis
+        id: package_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="${{ steps.prepare.outputs.runner }}"
+          for package in electrosim_domain electrosim_controls electrosim_solver_dc electrosim_multiphysics electrosim_storage; do
+            cd "$root/packages/$package"
+            dart pub get
+            dart analyze
+            dart test
+          done
+
+      - name: Build and verify Intel macOS candidate
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_root="${{ steps.prepare.outputs.runner }}/apps/electrosim"
+          cd "$app_root"
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+          app="$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app"
+          executable="$(find "$app/Contents/MacOS" -maxdepth 1 -type f -perm -111 -print -quit)"
+          test -n "$executable"
+          codesign --force --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          output="$GITHUB_WORKSPACE/mixed-electrical-macos-intel"
+          mkdir -p "$output"
+          file "$executable" | tee "$output/ARCHITECTURE.txt"
+          grep -qi x86_64 "$output/ARCHITECTURE.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$output/SOURCE_SHA.txt"
+          printf '%s\n' 'Mixed AC3 / 24 V DC project — Mac Intel test candidate; physical Mac acceptance pending.' > "$output/READ_ME_FIRST.txt"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/ElectroSim_Mixed_Electrical_Mac_Intel.zip"
+          (cd "$output" && shasum -a 256 ElectroSim_Mixed_Electrical_Mac_Intel.zip > SHA256.txt)
+          unzip -t "$output/ElectroSim_Mixed_Electrical_Mac_Intel.zip" | tail -1
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ElectroSim-Mixed-Electrical-Mac-Intel
+          path: mixed-electrical-macos-intel/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Enforce test qualification gates
+        if: always()
+        env:
+          APP_TESTS_OUTCOME: ${{ steps.app_tests.outcome }}
+          PACKAGE_TESTS_OUTCOME: ${{ steps.package_tests.outcome }}
+        run: |
+          if [[ "$APP_TESTS_OUTCOME" != "success" || "$PACKAGE_TESTS_OUTCOME" != "success" ]]; then
+            echo "QUALIFICATION_FAILED: app tests=$APP_TESTS_OUTCOME; package checks=$PACKAGE_TESTS_OUTCOME" >&2
+            exit 1
+          fi

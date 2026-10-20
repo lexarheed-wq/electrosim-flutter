@@ -91,7 +91,8 @@ void main() {
       'contactor_ac1': (Size(160, 210), 4),
       'contactor_3p': (Size(220, 240), 8),
       'breaker_3p': (Size(190, 220), 6),
-      'thermal_overload_3p': (Size(200, 220), 6),
+      // Six power poles plus the 95-96 NC and 97-98 NO dry contacts.
+      'thermal_overload_3p': (Size(200, 220), 10),
     };
 
     for (final MapEntry<String, (Size, int)> entry in cases.entries) {
@@ -108,6 +109,30 @@ void main() {
       }
       expect(positions.length, entry.value.$2, reason: entry.key);
     }
+    final F9PaletteDefinition overload = f9PaletteCatalog.singleWhere(
+      (F9PaletteDefinition item) => item.modelType == 'thermal_overload_3p',
+    );
+    expect(
+      overload.terminals.map(
+        (F9PaletteTerminalSpec terminal) => terminal.label,
+      ),
+      <String>[
+        '1L1',
+        '3L2',
+        '5L3',
+        '2T1',
+        '4T2',
+        '6T3',
+        '95',
+        '96',
+        '97',
+        '98',
+      ],
+    );
+    expect(overload.terminals[6].role, TerminalRole.auxiliaryNormallyClosed);
+    expect(overload.terminals[7].role, TerminalRole.auxiliaryNormallyClosed);
+    expect(overload.terminals[8].role, TerminalRole.auxiliaryNormallyOpen);
+    expect(overload.terminals[9].role, TerminalRole.auxiliaryNormallyOpen);
   });
 
   test('C14 contactor terminal order matches topology contracts', () {

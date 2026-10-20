@@ -11,6 +11,8 @@ enum ElectromechanicalControlIssueCode {
   solveFailed,
   oscillatingControlState,
   iterationLimitExceeded,
+  invalidMechanicalInterlock,
+  mechanicalInterlockConflict,
 }
 
 final class ElectromechanicalControlIssue {
@@ -181,7 +183,8 @@ final class ElectromechanicalControlEngine {
         issues.add(
           const ElectromechanicalControlIssue(
             code: ElectromechanicalControlIssueCode.oscillatingControlState,
-            message: 'DC relay control entered a repeating state cycle (chatter).',
+            message:
+                'DC relay control entered a repeating state cycle (chatter).',
           ),
         );
         return ElectromechanicalDcOutcome(
@@ -284,7 +287,8 @@ final class ElectromechanicalControlEngine {
         issues.add(
           const ElectromechanicalControlIssue(
             code: ElectromechanicalControlIssueCode.oscillatingControlState,
-            message: 'AC1 electromechanical control entered a repeating state cycle (chatter).',
+            message:
+                'AC1 electromechanical control entered a repeating state cycle (chatter).',
           ),
         );
         return ElectromechanicalAc1Outcome(
@@ -341,6 +345,7 @@ final class ElectromechanicalControlEngine {
       issues,
       previousStates,
     );
+    _arbitrateMechanicalInterlocks(circuit, states, issues);
     CircuitState effective = _applyStates(circuit, states, issues);
     Ac3SolveResult result = solver.solve(effective, topology);
     final Set<String> seenStates = <String>{_stateSignature(states)};
@@ -370,6 +375,7 @@ final class ElectromechanicalControlEngine {
         result,
         issues,
       );
+      _arbitrateMechanicalInterlocks(circuit, next, issues);
       final bool stable = _sameStates(states, next);
       if (stable) {
         return ElectromechanicalAc3Outcome(
@@ -387,7 +393,8 @@ final class ElectromechanicalControlEngine {
         issues.add(
           const ElectromechanicalControlIssue(
             code: ElectromechanicalControlIssueCode.oscillatingControlState,
-            message: 'AC3 electromechanical control entered a repeating state cycle (chatter).',
+            message:
+                'AC3 electromechanical control entered a repeating state cycle (chatter).',
           ),
         );
         return ElectromechanicalAc3Outcome(
@@ -427,6 +434,81 @@ final class ElectromechanicalControlEngine {
   }
 }
 
+void _arbitrateMechanicalInterlocks(
+  CircuitState circuit,
+  Map<ComponentId, bool> states,
+  List<ElectromechanicalControlIssue> issues,
+) {
+  final Set<String> claimedPairs = <String>{};
+  final Set<String> emitted = issues
+      .map((ElectromechanicalControlIssue issue) => issue.message)
+      .toSet();
+  final Map<String, ComponentInstance> contactors = <String, ComponentInstance>{
+    for (final ComponentInstance component in circuit.components)
+      if (component.modelType == 'contactor_3p') component.id.value: component,
+  };
+  final List<ComponentInstance> accessories =
+      circuit.components
+          .where(
+            (ComponentInstance component) =>
+                component.modelType == 'mechanical_interlock_ac3',
+          )
+          .toList(growable: false)
+        ..sort((a, b) => a.id.value.compareTo(b.id.value));
+  for (final ComponentInstance accessory in accessories) {
+    final Object? rawA = accessory.parameters['contactorAId'];
+    final Object? rawB = accessory.parameters['contactorBId'];
+    final String? a = rawA is String && rawA.isNotEmpty ? rawA : null;
+    final String? b = rawB is String && rawB.isNotEmpty ? rawB : null;
+    final String pair = a == null || b == null
+        ? ''
+        : ([a, b]..sort()).join('|');
+    final bool duplicatePair = pair.isNotEmpty && !claimedPairs.add(pair);
+    final bool valid =
+        a != null &&
+        b != null &&
+        a != b &&
+        contactors.containsKey(a) &&
+        contactors.containsKey(b) &&
+        !duplicatePair;
+    if (!valid) {
+      for (final String? id in <String?>[a, b]) {
+        if (id != null && contactors.containsKey(id))
+          states[ComponentId(id)] = false;
+      }
+      final String message =
+          'Mechanical interlock ${accessory.id.value} has invalid or duplicate contactor references; referenced contactors are released.';
+      if (emitted.add(message)) {
+        issues.add(
+          ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.invalidMechanicalInterlock,
+            message: message,
+            componentId: accessory.id,
+          ),
+        );
+      }
+      continue;
+    }
+    final ComponentId idA = ComponentId(a);
+    final ComponentId idB = ComponentId(b);
+    if (states[idA] == true && states[idB] == true) {
+      states[idA] = false;
+      states[idB] = false;
+      final String message =
+          'Mechanical interlock ${accessory.id.value} prevents simultaneous actuation of $a and $b.';
+      if (emitted.add(message)) {
+        issues.add(
+          ElectromechanicalControlIssue(
+            code: ElectromechanicalControlIssueCode.mechanicalInterlockConflict,
+            message: message,
+            componentId: accessory.id,
+          ),
+        );
+      }
+    }
+  }
+}
+
 Map<ComponentId, bool> _initialStates(
   CircuitState circuit,
   List<ElectromechanicalControlIssue> issues,
@@ -435,7 +517,13 @@ Map<ComponentId, bool> _initialStates(
   final Map<ComponentId, bool> states = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
     if (!_isElectromagneticActuator(component)) continue;
+    final Object? plcEnable = component.controlState['plcEnable'];
+    if (plcEnable is bool && !plcEnable) {
+      states[component.id] = false;
+      continue;
+    }
     final Object? raw = component.controlState['actuated'];
+    final Object? rawPlcCommand = component.controlState['plcCommand'];
     if (raw != null && raw is! bool) {
       issues.add(
         ElectromechanicalControlIssue(
@@ -446,7 +534,9 @@ Map<ComponentId, bool> _initialStates(
         ),
       );
     }
-    states[component.id] = previousStates.containsKey(component.id)
+    states[component.id] = rawPlcCommand is bool
+        ? rawPlcCommand
+        : previousStates.containsKey(component.id)
         ? previousStates[component.id]!
         : raw is bool
         ? raw
@@ -469,6 +559,9 @@ CircuitState _applyStates(
     bool? actuated;
     if (states.containsKey(component.id)) {
       actuated = states[component.id]!;
+    } else if (component.controlState['externalLinkResolved'] == true) {
+      final Object? raw = component.controlState['actuated'];
+      actuated = raw is bool ? raw : false;
     } else if (_isLinkedElectromechanicalContact(component)) {
       final Object? linked =
           component.parameters['linkedRelayId'] ??
@@ -530,6 +623,11 @@ Map<ComponentId, bool> _deriveDcStates(
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
     if (!_isElectromagneticActuator(component)) continue;
+    final Object? plcCommand = component.controlState['plcCommand'];
+    if (plcCommand is bool) {
+      next[component.id] = plcCommand;
+      continue;
+    }
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final DcBranchResult? coil = _findDcBranch(
       result,
@@ -595,6 +693,15 @@ Map<ComponentId, bool> _deriveAc1States(
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
     if (!_isElectromagneticActuator(component)) continue;
+    final Object? command = component.controlState['plcCommand'];
+    if (command is bool) {
+      next[component.id] = command;
+      continue;
+    }
+    if (component.controlState['plcEnable'] == false) {
+      next[component.id] = false;
+      continue;
+    }
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final Ac1BranchResult? coil = _findAc1Branch(
       result,
@@ -615,11 +722,12 @@ Map<ComponentId, bool> _deriveAc1States(
       continue;
     }
     final double voltage = coil.voltage.magnitude;
-    next[component.id] = _nextActuation(
+    final bool coilActuated = _nextActuation(
       previous: previous[component.id] ?? false,
       voltageV: voltage,
       thresholds: thresholds,
     );
+    next[component.id] = coilActuated;
   }
   return next;
 }
@@ -633,6 +741,12 @@ Map<ComponentId, bool> _deriveAc3States(
   final Map<ComponentId, bool> next = <ComponentId, bool>{};
   for (final ComponentInstance component in circuit.components) {
     if (!_isElectromagneticActuator(component)) continue;
+    final Object? command = component.controlState['plcCommand'];
+    final Object? plcEnable = component.controlState['plcEnable'];
+    if (command is bool || plcEnable == false) {
+      next[component.id] = command == true && plcEnable != false;
+      continue;
+    }
     final _CoilThresholds? thresholds = _thresholds(component, issues);
     final Ac3BranchResult? coil = _findAc3Branch(
       result,
@@ -731,8 +845,10 @@ _CoilThresholds? _thresholds(
   ComponentInstance component,
   List<ElectromechanicalControlIssue> issues,
 ) {
-  final Object? pickupRaw = component.parameters[ComponentParameterKeys.coilPickupVoltageV];
-  final Object? dropoutRaw = component.parameters[ComponentParameterKeys.coilDropoutVoltageV];
+  final Object? pickupRaw =
+      component.parameters[ComponentParameterKeys.coilPickupVoltageV];
+  final Object? dropoutRaw =
+      component.parameters[ComponentParameterKeys.coilDropoutVoltageV];
   if (pickupRaw is! num || dropoutRaw is! num) {
     issues.add(
       ElectromechanicalControlIssue(
@@ -777,8 +893,10 @@ String _stateSignature(Map<ComponentId, bool> states) {
           a.key.value.compareTo(b.key.value),
     );
   return entries
-      .map((MapEntry<ComponentId, bool> entry) =>
-          '${entry.key.value}:${entry.value ? 1 : 0}')
+      .map(
+        (MapEntry<ComponentId, bool> entry) =>
+            '${entry.key.value}:${entry.value ? 1 : 0}',
+      )
       .join('|');
 }
 

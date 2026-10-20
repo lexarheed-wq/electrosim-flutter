@@ -15,6 +15,7 @@ enum ComponentElectricalLaw {
   binarySwitch,
   protectionSwitch,
   feedThrough,
+  programmableController,
   acImpedance,
   motorThreePhase,
   loadWyeThreePhase,
@@ -216,6 +217,21 @@ abstract final class CoreComponentPhysicsContracts {
             electricalLaw: ComponentElectricalLaw.binarySwitch,
             controlLaw: ComponentControlLaw.momentaryNormallyClosed,
           ),
+          'proximity_sensor_24v': const ComponentPhysicsContract(
+            modelType: 'proximity_sensor_24v',
+            electricalLaw: ComponentElectricalLaw.binarySwitch,
+            controlLaw: ComponentControlLaw.maintainedSwitch,
+          ),
+          'limit_switch_no': const ComponentPhysicsContract(
+            modelType: 'limit_switch_no',
+            electricalLaw: ComponentElectricalLaw.binarySwitch,
+            controlLaw: ComponentControlLaw.maintainedSwitch,
+          ),
+          'limit_switch_nc': const ComponentPhysicsContract(
+            modelType: 'limit_switch_nc',
+            electricalLaw: ComponentElectricalLaw.binarySwitch,
+            controlLaw: ComponentControlLaw.maintainedSwitch,
+          ),
           'relay_contact_no': const ComponentPhysicsContract(
             modelType: 'relay_contact_no',
             electricalLaw: ComponentElectricalLaw.binarySwitch,
@@ -383,6 +399,28 @@ abstract final class CoreComponentPhysicsContracts {
             dynamicBehaviors: <ComponentDynamicBehavior>{
               ComponentDynamicBehavior.electromagnetic,
             },
+          ),
+          'plc_ac3': const ComponentPhysicsContract(
+            modelType: 'plc_ac3',
+            electricalLaw: ComponentElectricalLaw.feedThrough,
+          ),
+          'plc_dc': const ComponentPhysicsContract(
+            modelType: 'plc_dc',
+            electricalLaw: ComponentElectricalLaw.programmableController,
+          ),
+          'timer_star_delta': const ComponentPhysicsContract(
+            modelType: 'timer_star_delta',
+            electricalLaw: ComponentElectricalLaw.binarySwitch,
+            controlLaw: ComponentControlLaw.electromagneticCoil,
+            dynamicBehaviors: <ComponentDynamicBehavior>{
+              ComponentDynamicBehavior.electromagnetic,
+            },
+          ),
+          // A mechanical interlock constrains two contactors but has no
+          // electrical terminals or current path of its own.
+          'mechanical_interlock_ac3': const ComponentPhysicsContract(
+            modelType: 'mechanical_interlock_ac3',
+            electricalLaw: ComponentElectricalLaw.unsupported,
           ),
           'pv_controller': const ComponentPhysicsContract(
             modelType: 'pv_controller',

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -72,7 +71,7 @@ for package_test_dir in (ROOT / "packages").glob("*/test"):
 check("test-inventory-at-least-100", len(all_tests) >= 100)
 
 panels = read("apps/electrosim/lib/f9_context_panels.dart")
-main = read("apps/electrosim/lib/main.dart")
+workspace = read("apps/electrosim/lib/f18_workspace_page.dart")
 g10_catalog = read("packages/electrosim_scenarios/lib/src/v2_product_catalog.dart")
 g10_examples_path = ROOT / "packages/electrosim_scenarios/lib/src/v2_product_examples.dart"
 g10_faults_path = ROOT / "packages/electrosim_scenarios/lib/src/v2_product_faults.dart"
@@ -83,7 +82,7 @@ check(
 )
 check("student-coach-not-reintroduced", "coach" not in panels.lower())
 check("single-delete-policy-no-properties-delete", "properties-delete-element" not in panels)
-check("single-delete-policy-topbar-delete", "onDeleteSelected:" in main)
+check("single-delete-policy-topbar-delete", "onDeleteSelected:" in workspace)
 check("g10-does-not-import-bootstrap-catalog", "f16_catalog" not in g10_catalog.lower())
 # CORE-UNIFY first removed the old fixture-backed catalog. G10-RQ now
 # reintroduces clean, independent V2-native product content; never require
@@ -109,9 +108,14 @@ check(
 
 # Temporary payload/bootstrap files were useful during construction but must never
 # survive in the integration candidate.
-tracked = subprocess.check_output(
-    ["git", "ls-files"], cwd=ROOT, text=True
-).splitlines()
+# Audit the delivered tree rather than only the Git index. This repository is
+# also distributed as source snapshots without .git, and temporary payloads
+# must be detected whether tracked or not.
+tracked = [
+    path.relative_to(ROOT).as_posix()
+    for path in ROOT.rglob("*")
+    if path.is_file() and ".git" not in path.relative_to(ROOT).parts
+]
 payload_files = [
     path for path in tracked
     if re.search(r"(^|/)\.f18_g\d+_payload(/|$)", path)

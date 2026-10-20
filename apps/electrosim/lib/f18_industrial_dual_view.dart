@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'f18_industrial_physical_plate.dart';
+import 'f18_control_modules_visual.dart';
+import 'f18_control_device_assets.dart';
 import 'f18_component_type_profile.dart';
 
 /// The same component artwork is used in both locations. Only its *camera*
@@ -49,12 +51,14 @@ class F18IndustrialDualView extends StatelessWidget {
     required this.size,
     required this.presentation,
     required this.child,
+    this.variantKey,
   });
 
   final String modelType;
   final Size size;
   final F18IndustrialPresentation presentation;
   final Widget child;
+  final String? variantKey;
 
   static const double paletteYawDegrees = 10;
   static const double palettePitchDegrees = -12;
@@ -76,6 +80,10 @@ class F18IndustrialDualView extends StatelessWidget {
     }
 
     if (F18PhysicalPlateAssets.ready(modelType)) {
+      return F18PhysicalPresentationScope(child: child);
+    }
+    if (F18ControlModuleVisuals.supports(modelType) ||
+        F18ControlDeviceAssets.imageKey(modelType, variantKey) != null) {
       return F18PhysicalPresentationScope(child: child);
     }
 

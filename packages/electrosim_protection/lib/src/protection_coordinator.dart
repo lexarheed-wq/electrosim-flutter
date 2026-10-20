@@ -42,6 +42,9 @@ final class ProtectionDeviceState {
   final ProtectionTripCause tripCause;
   final double lastObservedCurrentA;
 
+  bool get normallyClosedAuxiliaryClosed => !tripped;
+  bool get normallyOpenAuxiliaryClosed => tripped;
+
   ProtectionDeviceState reset() => ProtectionDeviceState(
     componentId: componentId,
     exposure: const ProtectionExposureState.zero(),
@@ -49,6 +52,20 @@ final class ProtectionDeviceState {
     tripCause: ProtectionTripCause.none,
     lastObservedCurrentA: 0.0,
   );
+}
+
+final class ProtectionResetResult {
+  const ProtectionResetResult({
+    required this.accepted,
+    required this.state,
+    required this.measuredCurrentA,
+    required this.message,
+  });
+
+  final bool accepted;
+  final ProtectionRuntimeState state;
+  final double? measuredCurrentA;
+  final String message;
 }
 
 final class ProtectionRuntimeState {
@@ -155,6 +172,83 @@ final class ProtectionCoordinator {
 
   final ProtectionDynamicsEngine dynamics;
   final ElectromechanicalControlEngine controls;
+
+  /// Tests reset by temporarily closing the overload's power poles in a
+  /// zero-time solve. This prevents an operator from resetting into an active
+  /// overcurrent condition while allowing reset after load/supply is removed.
+  ProtectionResetResult resetThermalOverload({
+    required CircuitState circuit,
+    required TopologyGraph topology,
+    required ProtectionRuntimeState state,
+    required ComponentId componentId,
+    SolverAC3 solver = const SolverAC3(),
+  }) {
+    final ComponentInstance? target = _findComponent(circuit, componentId);
+    if (target == null || target.modelType != 'thermal_overload_3p') {
+      return ProtectionResetResult(
+        accepted: false,
+        state: state,
+        measuredCurrentA: null,
+        message: 'Selected component is not a three-phase thermal overload.',
+      );
+    }
+    final ProtectionDeviceState? prior = state[componentId];
+    if (prior == null || !prior.tripped) {
+      return ProtectionResetResult(
+        accepted: false,
+        state: state,
+        measuredCurrentA: null,
+        message: 'Thermal overload is not tripped.',
+      );
+    }
+    final Object? rawRating =
+        target.parameters[ProtectionRating.ratedCurrentKey];
+    if (rawRating is! num || !rawRating.toDouble().isFinite || rawRating <= 0) {
+      return ProtectionResetResult(
+        accepted: false,
+        state: state,
+        measuredCurrentA: null,
+        message: 'Thermal overload has no valid rated-current setting.',
+      );
+    }
+    final CircuitState testCircuit = _withThermalTripState(
+      circuit,
+      componentId,
+      tripped: false,
+    );
+    final Ac3SolveResult test = solver.solve(testCircuit, topology);
+    if (!test.isSolved) {
+      return ProtectionResetResult(
+        accepted: false,
+        state: state,
+        measuredCurrentA: null,
+        message:
+            'Cannot verify overload reset because the AC3 test solve failed.',
+      );
+    }
+    double maximumCurrentA = 0.0;
+    for (final String phase in <String>['L1', 'L2', 'L3']) {
+      final String branchId = 'component:${componentId.value}:power:$phase';
+      for (final Ac3BranchResult branch in test.branchResults) {
+        if (branch.id == branchId) {
+          final double? current = branch.current?.magnitude;
+          if (current != null && current > maximumCurrentA) {
+            maximumCurrentA = current;
+          }
+          break;
+        }
+      }
+    }
+    final bool safeToReset = maximumCurrentA < rawRating.toDouble();
+    return ProtectionResetResult(
+      accepted: safeToReset,
+      state: safeToReset ? state.reset(componentId) : state,
+      measuredCurrentA: maximumCurrentA,
+      message: safeToReset
+          ? 'Thermal overload reset; measured current is below its rating.'
+          : 'Reset rejected: measured current is not below the overload rating.',
+    );
+  }
 
   ProtectionDcOutcome advanceDc({
     required CircuitState circuit,
@@ -749,3 +843,42 @@ final class ProtectionCoordinator {
     }
   }
 }
+
+ComponentInstance? _findComponent(CircuitState circuit, ComponentId id) {
+  for (final ComponentInstance component in circuit.components) {
+    if (component.id == id) return component;
+  }
+  return null;
+}
+
+CircuitState _withThermalTripState(
+  CircuitState circuit,
+  ComponentId id, {
+  required bool tripped,
+}) => CircuitState(
+  circuitId: circuit.circuitId,
+  revision: circuit.revision,
+  mode: circuit.mode,
+  components: circuit.components
+      .map((ComponentInstance component) {
+        if (component.id != id) return component;
+        return ComponentInstance(
+          id: component.id,
+          modelType: component.modelType,
+          terminals: component.terminals,
+          parameters: component.parameters,
+          condition: component.condition,
+          controlState: <String, Object?>{
+            ...component.controlState,
+            'tripped': tripped,
+          },
+        );
+      })
+      .toList(growable: false),
+  connections: circuit.connections,
+  sources: circuit.sources,
+  instruments: circuit.instruments,
+  probes: circuit.probes,
+  settings: circuit.settings,
+  metadata: circuit.metadata,
+);

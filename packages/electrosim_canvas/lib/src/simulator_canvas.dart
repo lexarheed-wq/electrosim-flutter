@@ -50,6 +50,7 @@ final class SimulatorCanvas extends StatefulWidget {
   final WirePreviewPlanner? wirePreviewPlanner;
   final bool smartWireSemantics;
   final bool paintElementChrome;
+
   /// Forces the metallic industrial plate renderer, even if a caller's generic
   /// element-chrome setting would otherwise enable the legacy grid.
   final bool industrialPlatePresentation;
@@ -74,7 +75,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
   Offset? _lastScaleFocal;
   double _scaleStartValue = 1;
   bool _scaleStartedOnBackground = false;
-  DateTime? _lastContextTapTime;
+  Duration? _lastContextTapTime;
+  Duration? _latestPointerUpTimeStamp;
   Offset? _lastContextTapPosition;
   CanvasHitResult? _lastContextTapHit;
 
@@ -220,11 +222,17 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
       case CanvasHitKind.component:
       case CanvasHitKind.source:
         _select(hit.elementId);
-        _maybeEmitContextDoubleTap(hit, details.localPosition);
+        final Duration? timeStamp = _latestPointerUpTimeStamp;
+        if (timeStamp != null) {
+          _maybeEmitContextDoubleTap(hit, details.localPosition, timeStamp);
+        }
         return;
       case CanvasHitKind.wire:
         _select(hit.connectionId?.value);
-        _maybeEmitContextDoubleTap(hit, details.localPosition);
+        final Duration? timeStamp = _latestPointerUpTimeStamp;
+        if (timeStamp != null) {
+          _maybeEmitContextDoubleTap(hit, details.localPosition, timeStamp);
+        }
         return;
       case CanvasHitKind.background:
         _resetContextTapTracking();
@@ -240,10 +248,13 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
     }
   }
 
-  void _maybeEmitContextDoubleTap(CanvasHitResult hit, Offset localPosition) {
-    final DateTime now = DateTime.now();
+  void _maybeEmitContextDoubleTap(
+    CanvasHitResult hit,
+    Offset localPosition,
+    Duration timeStamp,
+  ) {
     final CanvasHitResult? previousHit = _lastContextTapHit;
-    final DateTime? previousTime = _lastContextTapTime;
+    final Duration? previousTime = _lastContextTapTime;
     final Offset? previousPosition = _lastContextTapPosition;
     final bool sameTarget =
         previousHit != null &&
@@ -252,7 +263,8 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
         previousHit.connectionId == hit.connectionId;
     final bool withinTime =
         previousTime != null &&
-        now.difference(previousTime) <= _contextDoubleTapWindow;
+        timeStamp >= previousTime &&
+        timeStamp - previousTime <= _contextDoubleTapWindow;
     final bool withinDistance =
         previousPosition != null &&
         (localPosition - previousPosition).distance <=
@@ -264,7 +276,7 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
       return;
     }
 
-    _lastContextTapTime = now;
+    _lastContextTapTime = timeStamp;
     _lastContextTapPosition = localPosition;
     _lastContextTapHit = hit;
   }
@@ -382,6 +394,9 @@ final class _SimulatorCanvasState extends State<SimulatorCanvas> {
       label: 'ElectroSim simulator canvas',
       child: Listener(
         behavior: HitTestBehavior.opaque,
+        onPointerUp: (PointerUpEvent event) {
+          _latestPointerUpTimeStamp = event.timeStamp;
+        },
         onPointerSignal: _onPointerSignal,
         onPointerMove: _onPointerMove,
         child: MouseRegion(

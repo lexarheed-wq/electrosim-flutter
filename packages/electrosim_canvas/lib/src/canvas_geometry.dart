@@ -98,6 +98,27 @@ abstract final class TerminalVisualProfile {
       'contactor_aux_nc' ||
       'relay_contact_no' ||
       'relay_contact_nc' => <Offset>[Offset(0, h * -0.38), Offset(0, h * 0.38)],
+      // AC3 control modules: control power and timer-coil terminals are at
+      // the top; dry contacts and PLC output terminals are at the bottom.
+      'timer_star_delta' => <Offset>[
+        Offset(w * -0.18, h * -0.39),
+        Offset(w * 0.18, h * -0.39),
+        Offset(w * -0.28, h * 0.39),
+        Offset(0, h * 0.39),
+        Offset(w * 0.28, h * 0.39),
+      ],
+      'plc_ac3' || 'plc_dc' => <Offset>[
+        Offset(w * -0.38, h * -0.39),
+        Offset(w * -0.23, h * -0.39),
+        Offset(w * -0.08, h * -0.39),
+        Offset(w * 0.08, h * -0.39),
+        Offset(w * 0.23, h * -0.39),
+        Offset(w * 0.38, h * -0.39),
+        Offset(w * -0.30, h * 0.39),
+        Offset(w * -0.10, h * 0.39),
+        Offset(w * 0.10, h * 0.39),
+        Offset(w * 0.30, h * 0.39),
+      ],
       'contactor_ac1' => <Offset>[
         Offset(w * -0.1224, h * -0.42),
         Offset(w * -0.1224, h * 0.42),
@@ -129,6 +150,12 @@ abstract final class TerminalVisualProfile {
         Offset(w * -0.2072, h * 0.42),
         Offset(0, h * 0.42),
         Offset(w * 0.2072, h * 0.42),
+        // The device's auxiliary terminals are the four side lugs in the
+        // overload-relay housing asset (95-96 NC, then 97-98 NO).
+        Offset(w * 0.465, h * -0.22),
+        Offset(w * 0.465, h * -0.0983),
+        Offset(w * 0.465, h * 0.0694),
+        Offset(w * 0.465, h * 0.2078),
       ],
       'dc_current_source' || 'ac_voltage_source' || 'ac_current_source' =>
         <Offset>[Offset(w * -0.18, h * 0.40), Offset(w * 0.18, h * 0.40)],

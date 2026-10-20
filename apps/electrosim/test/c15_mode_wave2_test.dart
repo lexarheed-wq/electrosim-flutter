@@ -422,4 +422,37 @@ void main() {
       expect(tester.takeException(), isNull, reason: modelType);
     }
   });
+
+  testWidgets(
+    'mixed selector preserves the current domain circuit for routing',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      CircuitState? routedCircuit;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: app.F18WorkspacePage(
+            initialCircuit: buildRegressionFixtureCircuit(),
+            onOpenMixedMode: (CircuitState circuit) => routedCircuit = circuit,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-electrical-mode')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-mode-mixed')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mode-change-confirm')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('mode-change-confirm')));
+      await tester.pumpAndSettle();
+
+      expect(routedCircuit, isNotNull);
+      expect(routedCircuit!.mode, isNot(ElectricalMode.mixed));
+      expect(routedCircuit!.components, isNotEmpty);
+    },
+  );
 }

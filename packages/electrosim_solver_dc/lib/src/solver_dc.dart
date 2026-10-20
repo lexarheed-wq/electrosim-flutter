@@ -393,6 +393,61 @@ final class SolverDC {
       final List<TopologyBranch> topologyBranches = topology
           .branchesForComponent(component.id);
 
+      if (physics.electricalLaw == ComponentElectricalLaw.programmableController) {
+        if (topologyBranches.length != 4) {
+          diagnostics.add(DcSolverDiagnostic(
+            code: DcDiagnosticCode.invalidTerminalCount,
+            severity: DcDiagnosticSeverity.error,
+            message: 'A DC PLC must expose exactly four output branches.',
+            componentId: component.id,
+          ));
+          continue;
+        }
+        final Object? rawSupplyValid = component.controlState['plcSupplyValid'];
+        if (rawSupplyValid != null && rawSupplyValid is! bool) {
+          diagnostics.add(DcSolverDiagnostic(
+            code: DcDiagnosticCode.invalidParameter,
+            severity: DcDiagnosticSeverity.error,
+            message: 'PLC plcSupplyValid must be boolean when provided.',
+            componentId: component.id,
+          ));
+          continue;
+        }
+        for (final TopologyBranch branch in topologyBranches) {
+          final String address = branch.branchId.replaceFirst('output:', '');
+          final Object? rawOutput = component.controlState[address];
+          if (rawOutput != null && rawOutput is! bool) {
+            diagnostics.add(DcSolverDiagnostic(
+              code: DcDiagnosticCode.invalidParameter,
+              severity: DcDiagnosticSeverity.error,
+              message: 'PLC $address state must be boolean when provided.',
+              componentId: component.id,
+            ));
+            continue;
+          }
+          if (rawOutput == true && rawSupplyValid == true &&
+              component.condition == ComponentCondition.normal) {
+            active.add(_Element.idealVoltage(
+              id: 'component:${component.id.value}:${branch.branchId}',
+              modelType: component.modelType,
+              publicKind: DcBranchKind.idealShort,
+              fromNodeId: branch.fromNodeId,
+              toNodeId: branch.toNodeId,
+              voltageV: 0,
+              redundant: branch.fromNodeId == branch.toNodeId,
+            ));
+          } else {
+            inactive.add(_InactiveElement(
+              id: 'component:${component.id.value}:${branch.branchId}',
+              modelType: component.modelType,
+              fromNodeId: branch.fromNodeId,
+              toNodeId: branch.toNodeId,
+            ));
+          }
+        }
+        continue;
+      }
+
       if (physics.electricalLaw == ComponentElectricalLaw.feedThrough) {
         if (topologyBranches.length != structural.branches.length) {
           diagnostics.add(
@@ -813,6 +868,10 @@ final class SolverDC {
         case ComponentElectricalLaw.feedThrough:
           throw StateError(
             'Feed-through components are handled before single-branch compilation.',
+          );
+        case ComponentElectricalLaw.programmableController:
+          throw StateError(
+            'Programmable controllers are handled before single-branch compilation.',
           );
         case ComponentElectricalLaw.acImpedance:
         case ComponentElectricalLaw.motorThreePhase:

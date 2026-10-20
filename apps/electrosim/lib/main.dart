@@ -1,9 +1,11 @@
 import 'package:electrosim_domain/electrosim_domain.dart';
+import 'package:electrosim_multiphysics/electrosim_multiphysics.dart';
 import 'package:electrosim_scenarios/electrosim_scenarios.dart';
 import 'package:electrosim_ui_kit/electrosim_ui_kit.dart';
 import 'package:flutter/material.dart';
 
 import 'f18_industrial_physical_plate.dart';
+import 'f18_control_device_assets.dart';
 import 'f18_home.dart';
 import 'f18_product_library_pages.dart';
 import 'f18_session_coordinator.dart';
@@ -12,22 +14,24 @@ import 'f18_v1_navigation_flow.dart';
 import 'reference_components/disjoncteur_3d.dart';
 import 'f9_ui_context.dart';
 import 'pneumatics/pneumatic_workshop_page.dart';
-import 'runtime/pneumatic_feature_gate.dart';
 import 'runtime/electrosim_lan_sync.dart';
 import 'runtime/electrosim_persistence_controller.dart';
 import 'runtime/electrosim_tp_session_controller.dart';
 
 import 'f18_workspace_page.dart';
+import 'electrical_project_workspace_page.dart';
 export 'f18_workspace_page.dart' show F18WorkspacePage;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final physicalTextures = Disjoncteur3D.prechargerTextures();
   final industrialTextures = F18PhysicalPlateAssets.preload();
+  final controlTextures = F18ControlDeviceAssets.preload();
   final ElectroSimPersistenceController persistenceController =
       await ElectroSimPersistenceController.createDefault();
   await physicalTextures;
   await industrialTextures;
+  await controlTextures;
   runApp(ElectroSimApp(persistenceController: persistenceController));
 }
 
@@ -153,17 +157,18 @@ class _F9HomePageState extends State<F9HomePage> {
             persistenceController: persistenceController,
             parentRouteName: 'design-center',
           ),
-          onPneumatics: const PneumaticFeatureGate().enabled
-              ? () => Navigator.of(routeContext).push(
-                  MaterialPageRoute<void>(
-                    settings: const RouteSettings(
-                      name: 'pneumatic-experimental',
-                    ),
-                    builder: (BuildContext airContext) =>
-                        const PneumaticWorkshopPage(),
-                  ),
-                )
-              : null,
+          onMixedElectrical: () => _openMixedElectricalWorkspace(routeContext),
+          // The pneumatic workshop ships in this same ElectroSim application.
+          // Its editor/solver coverage is still explicitly described as beta
+          // on the design-center card; hiding the route behind a compile-time
+          // flag made the second product family appear to be a separate app.
+          onPneumatics: () => Navigator.of(routeContext).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'pneumatic-workshop'),
+              builder: (BuildContext airContext) =>
+                  const PneumaticWorkshopPage(),
+            ),
+          ),
           onSchemaLibrary: () => Navigator.of(routeContext).push(
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'design-schema-library'),
@@ -180,6 +185,35 @@ class _F9HomePageState extends State<F9HomePage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  static void _openMixedElectricalWorkspace(
+    BuildContext context, [
+    CircuitState? existingCircuit,
+  ]) {
+    final ElectricalProject empty = ElectricalProject.emptyMixedBoard();
+    final ElectricalProject project = existingCircuit == null
+        ? empty
+        : ElectricalProject(
+            networks: <ElectricalNetwork>[
+              for (final network in empty.networks)
+                ElectricalNetwork(
+                  id: network.id,
+                  circuit: network.circuit.mode == existingCircuit.mode
+                      ? existingCircuit
+                      : network.circuit,
+                ),
+            ],
+          );
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'mixed-electrical-project'),
+        builder: (_) => ElectricalProjectWorkspacePage(
+          initialProject: project,
+          onProjectChanged: (ElectricalProject _) {},
         ),
       ),
     );
@@ -352,6 +386,8 @@ class _F9HomePageState extends State<F9HomePage> {
           initialCircuit: initialCircuit,
           sessionNavigation: sessionNavigation,
           persistenceController: persistenceController,
+          onOpenMixedMode: (CircuitState circuit) =>
+              _openMixedElectricalWorkspace(workspaceContext, circuit),
           onExitWorkspace: parentRouteName == null
               ? null
               : () => Navigator.of(workspaceContext).popUntil(

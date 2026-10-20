@@ -18,6 +18,14 @@ Future<void> _openTop(WidgetTester tester) async {
   }
 }
 
+Future<void> _openPalette(WidgetTester tester) async {
+  final Finder region = find.byKey(electroSimPaletteRegionKey);
+  if (region.evaluate().isEmpty || tester.getRect(region).right <= 0) {
+    await tester.tap(find.byKey(electroSimPaletteEdgeKey));
+    await tester.pumpAndSettle();
+  }
+}
+
 void main() {
   group('F17-R8 local persistence', () {
     late Directory temp;
@@ -114,6 +122,58 @@ void main() {
       expect(openAction, findsOneWidget);
       expect(find.text('Sauvegarder'), findsOneWidget);
       expect(find.text('Reprendre'), findsOneWidget);
+    });
+
+    testWidgets('resume confirms before replacing an edited circuit', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: F9WorkspaceDemoPage(persistenceController: persistence),
+        ),
+      );
+
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-save-action')));
+      await tester.pumpAndSettle();
+
+      await _openPalette(tester);
+      await tester.enterText(
+        find.byKey(const Key('palette-search-field')),
+        'résistance',
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('palette-quick-add-resistor')),
+      );
+      await tester.tap(find.byKey(const Key('palette-quick-add-resistor')));
+      await tester.pumpAndSettle();
+
+      await _openTop(tester);
+      await tester.tap(find.byKey(const Key('workspace-more-actions')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('workspace-open-action')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('workspace-resume-cancel')), findsOneWidget);
+      expect(find.byKey(const Key('workspace-resume-confirm')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('workspace-resume-cancel')));
+      await tester.pumpAndSettle();
+
+      expect(
+        (tester.widget<Text>(
+          find.byKey(const Key('status-circuit-count')),
+        )).data,
+        contains('1 élément · 0 source'),
+      );
+      expect(tester.takeException(), isNull);
     });
   });
 }

@@ -67,8 +67,12 @@ class NativeApplianceGeometry {
       variant: 'air-conditioner',
       designSize: Size(320, 160),
       boardSize: Size(640, 320),
-      ports: [Offset(277, 108), Offset(287, 108), Offset(297, 108)],
-      serviceBox: Rect.fromLTWH(269.0, 97.0, 36, 22),
+      ports: [
+        Offset(277, 108),
+        Offset(287, 108),
+        Offset(297, 108),
+      ],
+      serviceBox: Rect.fromLTWH(269, 97, 36, 22),
       threePhase: false,
     ),
     'external-compressor': NativeApplianceGeometry(
@@ -86,7 +90,7 @@ class NativeApplianceGeometry {
         Offset(46, 156),
         Offset(79, 156),
       ],
-      serviceBox: Rect.fromLTWH(35.0, 132.0, 54, 36),
+      serviceBox: Rect.fromLTWH(35, 132, 54, 36),
       threePhase: true,
     ),
     'external-freezer': NativeApplianceGeometry(
@@ -95,8 +99,12 @@ class NativeApplianceGeometry {
       variant: 'freezer',
       designSize: Size(320, 210),
       boardSize: Size(640, 420),
-      ports: [Offset(228, 174), Offset(238, 174), Offset(248, 174)],
-      serviceBox: Rect.fromLTWH(220.0, 162.0, 36, 24),
+      ports: [
+        Offset(228, 174),
+        Offset(238, 174),
+        Offset(248, 174),
+      ],
+      serviceBox: Rect.fromLTWH(220, 162, 36, 24),
       threePhase: false,
     ),
     'external-conveyor': NativeApplianceGeometry(
@@ -123,8 +131,12 @@ class NativeApplianceGeometry {
       variant: 'iron',
       designSize: Size(240, 180),
       boardSize: Size(320, 240),
-      ports: [Offset(200, 66), Offset(208, 66), Offset(216, 66)],
-      serviceBox: Rect.fromLTWH(193.0, 54.5, 30, 23),
+      ports: [
+        Offset(200, 66),
+        Offset(208, 66),
+        Offset(216, 66),
+      ],
+      serviceBox: Rect.fromLTWH(193, 54.5, 30, 23),
       threePhase: false,
     ),
     'external-mixer': NativeApplianceGeometry(
@@ -151,8 +163,12 @@ class NativeApplianceGeometry {
       variant: 'computer',
       designSize: Size(280, 240),
       boardSize: Size(420, 360),
-      ports: [Offset(219, 187), Offset(229, 187), Offset(239, 187)],
-      serviceBox: Rect.fromLTWH(211.0, 176.0, 36, 22),
+      ports: [
+        Offset(219, 187),
+        Offset(229, 187),
+        Offset(239, 187),
+      ],
+      serviceBox: Rect.fromLTWH(211, 176, 36, 22),
       threePhase: false,
     ),
     'external-pump-3p': NativeApplianceGeometry(
@@ -170,7 +186,7 @@ class NativeApplianceGeometry {
         Offset(172, 66),
         Offset(205, 66),
       ],
-      serviceBox: Rect.fromLTWH(161.0, 42.0, 54, 36),
+      serviceBox: Rect.fromLTWH(161, 42, 54, 36),
       threePhase: true,
     ),
     'external-pump-ac1': NativeApplianceGeometry(
@@ -179,8 +195,12 @@ class NativeApplianceGeometry {
       variant: 'pump-ac1',
       designSize: Size(260, 180),
       boardSize: Size(390, 270),
-      ports: [Offset(153, 59), Offset(163, 59), Offset(173, 59)],
-      serviceBox: Rect.fromLTWH(144.0, 46.5, 38, 25),
+      ports: [
+        Offset(153, 59),
+        Offset(163, 59),
+        Offset(173, 59),
+      ],
+      serviceBox: Rect.fromLTWH(144, 46.5, 38, 25),
       threePhase: false,
     ),
     'external-solar-pump': NativeApplianceGeometry(
@@ -189,8 +209,11 @@ class NativeApplianceGeometry {
       variant: 'solar-pump',
       designSize: Size(180, 300),
       boardSize: Size(270, 450),
-      ports: [Offset(132, 86), Offset(144, 86)],
-      serviceBox: Rect.fromLTWH(122.0, 74.5, 32, 23),
+      ports: [
+        Offset(132, 86),
+        Offset(144, 86),
+      ],
+      serviceBox: Rect.fromLTWH(122, 74.5, 32, 23),
       threePhase: false,
     ),
     'external-refrigerator': NativeApplianceGeometry(
@@ -199,8 +222,12 @@ class NativeApplianceGeometry {
       variant: 'refrigerator',
       designSize: Size(200, 320),
       boardSize: Size(300, 480),
-      ports: [Offset(151, 287), Offset(161, 287), Offset(171, 287)],
-      serviceBox: Rect.fromLTWH(141.0, 276.0, 40, 22),
+      ports: [
+        Offset(151, 287),
+        Offset(161, 287),
+        Offset(171, 287),
+      ],
+      serviceBox: Rect.fromLTWH(141, 276, 40, 22),
       threePhase: false,
     ),
     'external-refrigerator-dc': NativeApplianceGeometry(
@@ -209,8 +236,11 @@ class NativeApplianceGeometry {
       variant: 'refrigerator-dc',
       designSize: Size(180, 240),
       boardSize: Size(270, 360),
-      ports: [Offset(133, 209), Offset(145, 209)],
-      serviceBox: Rect.fromLTWH(123.0, 198.5, 32, 21),
+      ports: [
+        Offset(133, 209),
+        Offset(145, 209),
+      ],
+      serviceBox: Rect.fromLTWH(123, 198.5, 32, 21),
       threePhase: false,
     ),
     'external-tv': NativeApplianceGeometry(
@@ -219,8 +249,11 @@ class NativeApplianceGeometry {
       variant: 'television',
       designSize: Size(360, 240),
       boardSize: Size(540, 360),
-      ports: [Offset(270, 205), Offset(282, 205)],
-      serviceBox: Rect.fromLTWH(260.0, 194.0, 32, 22),
+      ports: [
+        Offset(270, 205),
+        Offset(282, 205),
+      ],
+      serviceBox: Rect.fromLTWH(260, 194, 32, 22),
       threePhase: false,
     ),
     'external-fan-ac1': NativeApplianceGeometry(
@@ -229,8 +262,12 @@ class NativeApplianceGeometry {
       variant: 'fan',
       designSize: Size(200, 240),
       boardSize: Size(250, 300),
-      ports: [Offset(136, 220), Offset(146, 220), Offset(156, 220)],
-      serviceBox: Rect.fromLTWH(128.0, 210.0, 36, 20),
+      ports: [
+        Offset(136, 220),
+        Offset(146, 220),
+        Offset(156, 220),
+      ],
+      serviceBox: Rect.fromLTWH(128, 210, 36, 20),
       threePhase: false,
     ),
     'external-fan-3p': NativeApplianceGeometry(
@@ -257,8 +294,11 @@ class NativeApplianceGeometry {
       variant: 'pv-load',
       designSize: Size(220, 180),
       boardSize: Size(330, 270),
-      ports: [Offset(154, 148), Offset(169, 148)],
-      serviceBox: Rect.fromLTWH(142.0, 136.0, 39, 24),
+      ports: [
+        Offset(154, 148),
+        Offset(169, 148),
+      ],
+      serviceBox: Rect.fromLTWH(142, 136, 39, 24),
       threePhase: false,
     ),
     'source-ac3-grid': NativeApplianceGeometry(
@@ -273,7 +313,7 @@ class NativeApplianceGeometry {
         Offset(111, 237),
         Offset(134, 237),
       ],
-      serviceBox: Rect.fromLTWH(54.0, 223.0, 92, 28),
+      serviceBox: Rect.fromLTWH(54, 223, 92, 28),
       threePhase: false,
     ),
     'source-ac3-alternator': NativeApplianceGeometry(
@@ -288,7 +328,7 @@ class NativeApplianceGeometry {
         Offset(250, 64),
         Offset(267, 64),
       ],
-      serviceBox: Rect.fromLTWH(204.0, 50.0, 75, 28),
+      serviceBox: Rect.fromLTWH(204, 50, 75, 28),
       threePhase: false,
     ),
     'load-wye-3p': NativeApplianceGeometry(
@@ -303,7 +343,7 @@ class NativeApplianceGeometry {
         Offset(115, 180),
         Offset(140, 180),
       ],
-      serviceBox: Rect.fromLTWH(53.0, 166.0, 100, 28),
+      serviceBox: Rect.fromLTWH(53, 166, 100, 28),
       threePhase: false,
     ),
     'load-delta-3p': NativeApplianceGeometry(
@@ -312,8 +352,12 @@ class NativeApplianceGeometry {
       variant: 'load-delta',
       designSize: Size(220, 220),
       boardSize: Size(330, 330),
-      ports: [Offset(70, 180), Offset(100, 180), Offset(130, 180)],
-      serviceBox: Rect.fromLTWH(57.0, 166.0, 86, 28),
+      ports: [
+        Offset(70, 180),
+        Offset(100, 180),
+        Offset(130, 180),
+      ],
+      serviceBox: Rect.fromLTWH(57, 166, 86, 28),
       threePhase: false,
     ),
     'impedance': NativeApplianceGeometry(
@@ -322,8 +366,11 @@ class NativeApplianceGeometry {
       variant: 'impedance',
       designSize: Size(180, 130),
       boardSize: Size(216, 156),
-      ports: [Offset(36, 104), Offset(144, 104)],
-      serviceBox: Rect.fromLTWH(24.0, 92.0, 132, 24),
+      ports: [
+        Offset(36, 104),
+        Offset(144, 104),
+      ],
+      serviceBox: Rect.fromLTWH(24, 92, 132, 24),
       threePhase: false,
     ),
     'energy-meter-ac1': NativeApplianceGeometry(
@@ -332,8 +379,13 @@ class NativeApplianceGeometry {
       variant: 'meter-ac1',
       designSize: Size(60, 180),
       boardSize: Size(72, 216),
-      ports: [Offset(18, 23), Offset(42, 23), Offset(18, 157), Offset(42, 157)],
-      serviceBox: Rect.fromLTWH(4.0, 9.0, 52, 162),
+      ports: [
+        Offset(18, 23),
+        Offset(42, 23),
+        Offset(18, 157),
+        Offset(42, 157),
+      ],
+      serviceBox: Rect.fromLTWH(4, 9, 52, 162),
       threePhase: false,
     ),
     'energy-meter-ac3': NativeApplianceGeometry(
@@ -352,7 +404,7 @@ class NativeApplianceGeometry {
         Offset(96, 157),
         Offset(129, 157),
       ],
-      serviceBox: Rect.fromLTWH(7.0, 9.0, 146, 162),
+      serviceBox: Rect.fromLTWH(7, 9, 146, 162),
       threePhase: false,
     ),
     'energy-meter-pv': NativeApplianceGeometry(
@@ -361,8 +413,13 @@ class NativeApplianceGeometry {
       variant: 'meter-pv',
       designSize: Size(60, 180),
       boardSize: Size(72, 216),
-      ports: [Offset(18, 23), Offset(42, 23), Offset(18, 157), Offset(42, 157)],
-      serviceBox: Rect.fromLTWH(4.0, 9.0, 52, 162),
+      ports: [
+        Offset(18, 23),
+        Offset(42, 23),
+        Offset(18, 157),
+        Offset(42, 157),
+      ],
+      serviceBox: Rect.fromLTWH(4, 9, 52, 162),
       threePhase: false,
     ),
     'power_socket_ac': NativeApplianceGeometry(
@@ -379,7 +436,7 @@ class NativeApplianceGeometry {
         Offset(81.6, 78),
         Offset(60, 54),
       ],
-      serviceBox: Rect.fromLTWH(7.5, 1.0, 105, 108),
+      serviceBox: Rect.fromLTWH(7.5, 1, 105, 108),
       threePhase: false,
     ),
     'power_socket_dc': NativeApplianceGeometry(
@@ -394,7 +451,7 @@ class NativeApplianceGeometry {
         Offset(45.6, 90),
         Offset(74.4, 90),
       ],
-      serviceBox: Rect.fromLTWH(7.5, 1.0, 105, 108),
+      serviceBox: Rect.fromLTWH(7.5, 1, 105, 108),
       threePhase: false,
     ),
   };

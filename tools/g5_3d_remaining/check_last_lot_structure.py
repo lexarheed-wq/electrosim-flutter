@@ -1,12 +1,13 @@
 """Blender checks of real load paths and room for native terminal overlays."""
 from pathlib import Path
-import json,sys
+import sys
 import bpy
 from mathutils import Vector
 BASE=Path(__file__).resolve().parent;sys.path.insert(0,str(BASE))
 from render_voltmeter_cycles import CyclesGeometry
 from lot_16_26_geometry import build
-contract=json.loads((BASE/'lot_16_26_contract.json').read_text())
+from unified_geometry_contract import load_lot_contract
+contract=load_lot_contract('16_26')
 def bounds(n):
  o=bpy.data.objects[n];pts=[o.matrix_world@Vector(v) for v in o.bound_box]
  return [(min(p[i]for p in pts),max(p[i]for p in pts))for i in range(3)]

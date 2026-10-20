@@ -88,6 +88,21 @@ abstract final class F18PhysicalPlateAssets {
   static final _geometry = <String, Map<String, dynamic>>{};
   static final _controlRects = <String, Rect>{};
   static Future<bool>? _loading;
+
+  /// Per-model failures recorded by the last [preload] (model -> reason).
+  /// Empty after a fully successful load; lets callers and tests see which
+  /// model was dropped instead of only getting `false`.
+  static final Map<String, String> loadErrors = <String, String>{};
+
+  /// Opt-in: read the unified manifest (`geometry.unified.json`) instead of
+  /// the legacy `geometry.json` + `controls.json` pair. Off by default so the
+  /// shipped behaviour is unchanged until the unified file is declared the
+  /// source of truth. Enable with
+  /// `--dart-define=ELECTROSIM_UNIFIED_GEOMETRY=true`.
+  static const bool useUnifiedManifest = bool.fromEnvironment(
+    'ELECTROSIM_UNIFIED_GEOMETRY',
+  );
+  static const _unifiedPath = 'assets/g5_industrial/geometry.unified.json';
   static const diodeVariants = <String, String>{
     'rectifier': 'diode-axial',
     'schottky': 'diode-axial',
@@ -117,20 +132,8 @@ abstract final class F18PhysicalPlateAssets {
   static Future<bool> preload() => _loading ??= _load();
   static Future<bool> _load() async {
     try {
-      final manifest =
-          jsonDecode(
-                await rootBundle.loadString(
-                  'assets/g5_industrial/geometry.json',
-                ),
-              )
-              as Map<String, dynamic>;
-      final controls =
-          jsonDecode(
-                await rootBundle.loadString(
-                  'assets/g5_industrial/controls.json',
-                ),
-              )
-              as Map<String, dynamic>;
+      loadErrors.clear();
+      final (manifest, controls) = await _readManifests();
       for (final name in assetModels) {
         final staged = <String, ui.Image>{};
         final stagedRects = <String, Rect>{};
@@ -192,19 +195,111 @@ abstract final class F18PhysicalPlateAssets {
               }
             }
           }
-          _geometry[name] = Map<String, dynamic>.from(manifest[name] as Map);
+          _geometry[name] = _validatedGeometry(name, manifest[name]);
           _images.addAll(staged);
           _controlRects.addAll(stagedRects);
-        } catch (_) {
+        } catch (e) {
+          loadErrors[name] = e.toString();
           for (final image in staged.values) {
             image.dispose();
           }
         }
       }
-    } catch (_) {
+    } catch (e) {
+      loadErrors['_manifests'] = e.toString();
       return false;
     }
     return _geometry.length == assetModels.length;
+  }
+
+  static Future<(Map<String, dynamic>, Map<String, dynamic>)>
+  _readManifests() async {
+    if (useUnifiedManifest) {
+      try {
+        final doc =
+            jsonDecode(await rootBundle.loadString(_unifiedPath))
+                as Map<String, dynamic>;
+        return unifiedToLegacy(doc);
+      } catch (e) {
+        // Fall back to the legacy pair, but keep the reason visible.
+        loadErrors['geometry.unified.json'] = e.toString();
+      }
+    }
+    final manifest =
+        jsonDecode(
+              await rootBundle.loadString('assets/g5_industrial/geometry.json'),
+            )
+            as Map<String, dynamic>;
+    final controls =
+        jsonDecode(
+              await rootBundle.loadString('assets/g5_industrial/controls.json'),
+            )
+            as Map<String, dynamic>;
+    return (manifest, controls);
+  }
+
+  /// Converts the unified manifest into the legacy `(geometry, controls)`
+  /// shapes the loader and painter already consume. Only `status: complete`
+  /// components are exported; `controls_rects` poses map `default` -> '',
+  /// `on` -> '-on', `trip` -> '-trip', matching `controls.json` keys.
+  static (Map<String, dynamic>, Map<String, dynamic>) unifiedToLegacy(
+    Map<String, dynamic> doc,
+  ) {
+    if (doc['schema_version'] != 1) {
+      throw FormatException(
+        'Unsupported geometry schema_version: ${doc['schema_version']}',
+      );
+    }
+    final components = doc['components'] as Map<String, dynamic>;
+    final geometry = <String, dynamic>{};
+    final controls = <String, dynamic>{};
+    for (final entry in components.entries) {
+      final c = entry.value as Map<String, dynamic>;
+      if (c['status'] != 'complete') continue;
+      geometry[entry.key] = <String, dynamic>{
+        'type': c['type'],
+        'size': c['size'],
+        'ports': c['ports'],
+      };
+      final rects = c['controls_rects'] as Map<String, dynamic>?;
+      if (rects == null) continue;
+      for (final pose in rects.entries) {
+        final suffix = pose.key == 'default' ? '' : '-${pose.key}';
+        for (final cam in (pose.value as Map<String, dynamic>).entries) {
+          controls['${entry.key}$suffix-${cam.key}'] = cam.value;
+        }
+      }
+    }
+    return (geometry, controls);
+  }
+
+  static Map<String, dynamic> _validatedGeometry(String name, Object? raw) {
+    if (raw is! Map) throw FormatException('No geometry entry for $name');
+    final g = Map<String, dynamic>.from(raw);
+    bool bad(Object? n) => n is! num || !n.isFinite;
+    final size = g['size'];
+    if (size is! List ||
+        size.length != 2 ||
+        size.any(bad) ||
+        size.any((n) => (n as num) <= 0)) {
+      throw FormatException('Invalid size for $name: $size');
+    }
+    final w = (size[0] as num).toDouble(), h = (size[1] as num).toDouble();
+    final ports = g['ports'];
+    if (ports is! List || ports.isEmpty) {
+      throw FormatException('Missing ports for $name');
+    }
+    for (var i = 0; i < ports.length; i++) {
+      final p = ports[i];
+      if (p is! List || p.length != 2 || p.any(bad)) {
+        throw FormatException('Invalid port $i for $name: $p');
+      }
+      final x = (p[0] as num).toDouble(), y = (p[1] as num).toDouble();
+      if (x < 0 || y < 0 || x > w || y > h) {
+        throw FormatException('Port $i of $name outside its $w x $h frame');
+      }
+    }
+    return g;
   }
 }
 

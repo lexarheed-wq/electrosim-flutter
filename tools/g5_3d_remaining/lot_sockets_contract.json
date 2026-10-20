@@ -1,4 +1,10 @@
 {
-  "power_socket_ac": {"visual":"power_socket_ac","variant":"socket-ac","size":[120,120],"board":[120,120],"ports":[[31.2,12],[60,12],[88.8,12],[38.4,78],[81.6,78],[60,54]],"box":[60,55,105,108,24],"kind":"ac1"},
-  "power_socket_dc": {"visual":"power_socket_dc","variant":"socket-dc","size":[120,120],"board":[120,120],"ports":[[45.6,12],[74.4,12],[45.6,90],[74.4,90]],"box":[60,55,105,108,24],"kind":"dc"}
+  "power_socket_ac": {
+    "kind": "ac1",
+    "terminal_z": 24
+  },
+  "power_socket_dc": {
+    "kind": "dc",
+    "terminal_z": 24
+  }
 }

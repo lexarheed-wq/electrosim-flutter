@@ -8,8 +8,8 @@ from mathutils import Vector,Matrix
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from render_voltmeter_cycles import CyclesGeometry
 from lot_06_15_geometry import build
+from unified_geometry_contract import MANIFEST_PATH, load_lot_contract
 BASE=Path(__file__).resolve().parent
-CONTRACT=json.loads((BASE/'lot_06_15_contract.json').read_text())
 
 def light(scene,name,loc,target,power,w,hh):
     data=bpy.data.lights.new(name,'AREA');data.energy=power;data.shape='RECTANGLE';data.size=w;data.size_y=hh
@@ -21,7 +21,8 @@ def main():
     assert 16<=opts.samples<=256
     contract_file=BASE/f'lot_{opts.lot}_contract.json'
     geometry_file=BASE/f'lot_{opts.lot}_geometry.py'
-    contract=json.loads(contract_file.read_text())
+    contract=load_lot_contract(opts.lot)
+    manifest_sha=hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()
     builder=build
     if opts.lot=='16_26':
         from lot_16_26_geometry import build as builder
@@ -81,6 +82,6 @@ def main():
             data.ortho_scale=max(w,hh)*(1.18 if view=='palette' else 1)
             scene.render.filepath=str(folder/(view+'.png'));bpy.ops.render.render(write_still=True)
             records[view+'.png']={'sha256':hashlib.sha256((folder/(view+'.png')).read_bytes()).hexdigest(),'size':[w*4,hh*4]}
-        (folder/'provenance.json').write_text(json.dumps({'key':key,'images':records,'samples':opts.samples,'blender':bpy.app.version_string,'seconds':round(time.monotonic()-start,2),'contract_sha256':hashlib.sha256(contract_file.read_bytes()).hexdigest(),'geometry_sha256':geometry_sha,'actual_flutter_capture':False},indent=2)+'\n')
+        (folder/'provenance.json').write_text(json.dumps({'key':key,'images':records,'samples':opts.samples,'blender':bpy.app.version_string,'seconds':round(time.monotonic()-start,2),'render_metadata_sha256':hashlib.sha256(contract_file.read_bytes()).hexdigest(),'manifest_sha256':manifest_sha,'geometry_sha256':geometry_sha,'actual_flutter_capture':False},indent=2)+'\n')
         print('COMPLETED '+key,flush=True)
 if __name__=='__main__':main()

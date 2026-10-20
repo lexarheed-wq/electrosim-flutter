@@ -4,12 +4,14 @@ Normal presentation is enclosed. The optional service view exposes six winding
 studs and PE; their location is pedagogical, not manufacturer-certified.
 """
 import math
+from unified_geometry_contract import load_crusher_geometry
 
 KEY = 'external-crusher'
-SIZE = (240, 220)
+_GEOMETRY = load_crusher_geometry()
+SIZE = tuple(_GEOMETRY['size'])
 TEXTURE_SCALE = 6
-PORTS = ((97,174),(107,174),(117,174),(107,187),(117,187),(97,187))
-EARTH_PORT = (130,187)
+PORTS = tuple(tuple(point) for point in _GEOMETRY['ports'])
+EARTH_PORT = tuple(_GEOMETRY['ports_7t_extra'][0])
 
 
 def build(h, job):

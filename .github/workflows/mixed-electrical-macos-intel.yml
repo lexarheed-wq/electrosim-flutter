@@ -8,12 +8,15 @@ on:
       - '.github/workflows/mixed-electrical-macos-intel.yml'
       - 'apps/electrosim/**'
       - 'packages/**'
+      - 'tools/g5_3d_remaining/**'
+      - 'tools/tests/test_g5_crusher_mesh_contract.py'
+      - 'tools/tests/test_unified_geometry_source.py'
       - 'tools/f15_*'
       - 'tools/f17_*'
       - 'docs/f18/mixed-electrical/**'
   pull_request:
     branches:
-      - main
+      - fix/g5-metal-plate-no-grid-20261013-clean
   workflow_dispatch:
 
 permissions:
@@ -47,6 +50,13 @@ jobs:
           blender --background --python tools/render_pneumatic_components.py
           test "$(find apps/electrosim/assets/g5_control -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 24
           test "$(find apps/electrosim/assets/g5_pneumatic -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" -eq 30
+
+      - name: Validate unified industrial geometry source
+        run: |
+          set -euo pipefail
+          python3 -m unittest tools.tests.test_unified_geometry_source -v
+          PYTHONPATH=tools/tests python3 -m unittest test_g5_crusher_mesh_contract -v
+          python3 tools/g5_3d_remaining/generate_lot_geometry.py --check
 
       - uses: actions/upload-artifact@v4
         with:
